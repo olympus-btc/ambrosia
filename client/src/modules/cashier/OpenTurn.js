@@ -1,12 +1,5 @@
 "use client";
 import { useState } from "react";
-<<<<<<< HEAD
-import { openTurn as openTurnService } from "./cashierService";
-import { useRouter } from "next/navigation";
-
-import { openTurn } from "./cashierService";
-=======
->>>>>>> e240c60 (Solve shift bug in userId)
 import { useTurn } from "./useTurn";
 import { useRouter } from "next/navigation";
 

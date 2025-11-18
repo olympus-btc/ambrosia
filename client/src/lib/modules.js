@@ -162,7 +162,6 @@ export const modules = {
         types: ["store"],
         default: true,
       },
-<<<<<<< HEAD
       {
         path: "/store/users",
         component: "Users",
