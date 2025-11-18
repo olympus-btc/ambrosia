@@ -1,20 +1,18 @@
 "use client";
 import { useState } from "react";
-import { openTurn } from "./cashierService";
+import { openTurn as openTurnService } from "./cashierService";
 import { useRouter } from "next/navigation";
 import { useTurn } from "./useTurn";
+import { useAuth } from "./../auth/useAuth";
 
 export default function OpenTurn() {
   const [initialAmount, setInitialAmount] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { user } = useAuth();
 
   const navigate = useRouter();
-  const { updateTurn } = useTurn();
-  // const report = {
-  //   date: "1/1/2023",
-  //   balance: "400",
-  // };
+  const { updateTurn, openShift } = useTurn();
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
@@ -40,8 +38,10 @@ export default function OpenTurn() {
 
     setIsLoading(true);
     try {
-      const response = await openTurn();
-      updateTurn(response.shiftId);
+      const id = await openShift().catch(
+        async () => await openTurnService(user.id),
+      );
+      updateTurn(id);
       navigate("/");
     } catch (err) {
       setError(err.message || "Error al abrir el turno");
@@ -49,10 +49,6 @@ export default function OpenTurn() {
       setIsLoading(false);
     }
   };
-
-  // const addQuickAmount = (amount) => {
-  //   setInitialAmount(amount.toString());
-  // };
 
   return (
     <main className="h-[90%] w-full flex items-center justify-center">

@@ -1,25 +1,35 @@
 package pos.ambrosia.services
 
-import java.sql.Connection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Shift
+import java.sql.Connection
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
-class ShiftService(private val connection: Connection) {
+class ShiftService(
+  private val connection: Connection,
+) {
   companion object {
     private const val ADD_SHIFT =
-            "INSERT INTO shifts (id, user_id, shift_date, start_time, end_time, notes) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO shifts (id, user_id, shift_date, start_time, end_time, notes) VALUES (?, ?, ?, ?, ?, ?)"
     private const val GET_SHIFTS =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE is_deleted = 0"
     private const val GET_SHIFT_BY_ID =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE id = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE id = ? AND is_deleted = 0"
     private const val UPDATE_SHIFT =
-            "UPDATE shifts SET user_id = ?, shift_date = ?, start_time = ?, end_time = ?, notes = ? WHERE id = ?"
+      "UPDATE shifts SET user_id = ?, shift_date = ?, start_time = ?, end_time = ?, notes = ? WHERE id = ?"
     private const val DELETE_SHIFT = "UPDATE shifts SET is_deleted = 1 WHERE id = ?"
     private const val CHECK_USER_EXISTS = "SELECT id FROM users WHERE id = ? AND is_deleted = 0"
     private const val GET_SHIFTS_BY_USER =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE user_id = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE user_id = ? AND is_deleted = 0"
     private const val GET_SHIFTS_BY_DATE =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE shift_date = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE shift_date = ? AND is_deleted = 0"
+    private const val GET_OPEN_SHIFT =
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
+    private const val GET_OPEN_SHIFT_BY_USER =
+      "SELECT id, user_id, shift_date, start_time, end_time, notes FROM shifts WHERE user_id = ? AND end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
+    private const val CLOSE_SHIFT =
+      "UPDATE shifts SET end_time = ? WHERE id = ? AND is_deleted = 0 AND end_time IS NULL"
   }
 
   private fun userExists(userId: String): Boolean {
@@ -30,13 +40,20 @@ class ShiftService(private val connection: Connection) {
   }
 
   suspend fun addShift(shift: Shift): String? {
-    // Verificar que el usuario existe
+    val existingOpen = getOpenShift(null)
+    if (existingOpen != null) {
+      logger.warn("Attempt to open a new shift while one is already open: ${existingOpen.id}")
+      return null
+    }
     if (!userExists(shift.user_id)) {
       logger.error("User does not exist: ${shift.user_id}")
       return null
     }
 
-    val generatedId = java.util.UUID.randomUUID().toString()
+    val generatedId =
+      java.util.UUID
+        .randomUUID()
+        .toString()
     val statement = connection.prepareStatement(ADD_SHIFT)
 
     statement.setString(1, generatedId)
@@ -63,14 +80,14 @@ class ShiftService(private val connection: Connection) {
     val shifts = mutableListOf<Shift>()
     while (resultSet.next()) {
       val shift =
-              Shift(
-                      id = resultSet.getString("id"),
-                      user_id = resultSet.getString("user_id"),
-                      shift_date = resultSet.getString("shift_date"),
-                      start_time = resultSet.getString("start_time"),
-                      end_time = resultSet.getString("end_time"),
-                      notes = resultSet.getString("notes")
-              )
+        Shift(
+          id = resultSet.getString("id"),
+          user_id = resultSet.getString("user_id"),
+          shift_date = resultSet.getString("shift_date"),
+          start_time = resultSet.getString("start_time"),
+          end_time = resultSet.getString("end_time"),
+          notes = resultSet.getString("notes"),
+        )
       shifts.add(shift)
     }
     logger.info("Retrieved ${shifts.size} shifts")
@@ -83,12 +100,12 @@ class ShiftService(private val connection: Connection) {
     val resultSet = statement.executeQuery()
     return if (resultSet.next()) {
       Shift(
-              id = resultSet.getString("id"),
-              user_id = resultSet.getString("user_id"),
-              shift_date = resultSet.getString("shift_date"),
-              start_time = resultSet.getString("start_time"),
-              end_time = resultSet.getString("end_time"),
-              notes = resultSet.getString("notes")
+        id = resultSet.getString("id"),
+        user_id = resultSet.getString("user_id"),
+        shift_date = resultSet.getString("shift_date"),
+        start_time = resultSet.getString("start_time"),
+        end_time = resultSet.getString("end_time"),
+        notes = resultSet.getString("notes"),
       )
     } else {
       logger.warn("Shift not found with ID: $id")
@@ -103,14 +120,14 @@ class ShiftService(private val connection: Connection) {
     val shifts = mutableListOf<Shift>()
     while (resultSet.next()) {
       val shift =
-              Shift(
-                      id = resultSet.getString("id"),
-                      user_id = resultSet.getString("user_id"),
-                      shift_date = resultSet.getString("shift_date"),
-                      start_time = resultSet.getString("start_time"),
-                      end_time = resultSet.getString("end_time"),
-                      notes = resultSet.getString("notes")
-              )
+        Shift(
+          id = resultSet.getString("id"),
+          user_id = resultSet.getString("user_id"),
+          shift_date = resultSet.getString("shift_date"),
+          start_time = resultSet.getString("start_time"),
+          end_time = resultSet.getString("end_time"),
+          notes = resultSet.getString("notes"),
+        )
       shifts.add(shift)
     }
     logger.info("Retrieved ${shifts.size} shifts for user: $userId")
@@ -124,18 +141,43 @@ class ShiftService(private val connection: Connection) {
     val shifts = mutableListOf<Shift>()
     while (resultSet.next()) {
       val shift =
-              Shift(
-                      id = resultSet.getString("id"),
-                      user_id = resultSet.getString("user_id"),
-                      shift_date = resultSet.getString("shift_date"),
-                      start_time = resultSet.getString("start_time"),
-                      end_time = resultSet.getString("end_time"),
-                      notes = resultSet.getString("notes")
-              )
+        Shift(
+          id = resultSet.getString("id"),
+          user_id = resultSet.getString("user_id"),
+          shift_date = resultSet.getString("shift_date"),
+          start_time = resultSet.getString("start_time"),
+          end_time = resultSet.getString("end_time"),
+          notes = resultSet.getString("notes"),
+        )
       shifts.add(shift)
     }
     logger.info("Retrieved ${shifts.size} shifts for date: $date")
     return shifts
+  }
+
+  suspend fun getOpenShift(userId: String? = null): Shift? {
+    val statement =
+      if (userId != null) {
+        val st = connection.prepareStatement(GET_OPEN_SHIFT_BY_USER)
+        st.setString(1, userId)
+        st
+      } else {
+        connection.prepareStatement(GET_OPEN_SHIFT)
+      }
+
+    val resultSet = statement.executeQuery()
+    return if (resultSet.next()) {
+      Shift(
+        id = resultSet.getString("id"),
+        user_id = resultSet.getString("user_id"),
+        shift_date = resultSet.getString("shift_date"),
+        start_time = resultSet.getString("start_time"),
+        end_time = resultSet.getString("end_time"),
+        notes = resultSet.getString("notes"),
+      )
+    } else {
+      null
+    }
   }
 
   suspend fun updateShift(shift: Shift): Boolean {
@@ -144,7 +186,6 @@ class ShiftService(private val connection: Connection) {
       return false
     }
 
-    // Verificar que el usuario existe
     if (!userExists(shift.user_id)) {
       logger.error("User does not exist: ${shift.user_id}")
       return false
@@ -178,5 +219,20 @@ class ShiftService(private val connection: Connection) {
       logger.error("Failed to delete shift: $id")
     }
     return rowsDeleted > 0
+  }
+
+  suspend fun closeShift(id: String): Boolean {
+    val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+    val statement = connection.prepareStatement(CLOSE_SHIFT)
+    statement.setString(1, now)
+    statement.setString(2, id)
+
+    val rows = statement.executeUpdate()
+    if (rows > 0) {
+      logger.info("Shift closed successfully: $id at $now")
+    } else {
+      logger.warn("Shift not closed (not found or already closed): $id")
+    }
+    return rows > 0
   }
 }

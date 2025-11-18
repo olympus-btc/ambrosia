@@ -1,47 +1,78 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
-import { getTurnOpen } from "./cashierService";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  getTurnOpen as fetchOpenTurn,
+  openTurn as createTurn,
+  closeTurn as closeTurnApi,
+} from "./cashierService";
+import { AuthContext } from "../auth/AuthProvider";
 
 const TurnContext = createContext();
 
 export function TurnProvider({ children }) {
   const [openTurn, setOpenTurn] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    const handleOpenTurn = async () => {
-      const data = await getTurnOpen();
-      setOpenTurn(data);
-    };
-    handleOpenTurn();
-  }, []);
-
-  const updateTurn = (newTurnData) => {
-    setOpenTurn(newTurnData);
-  };
-
-  const refreshTurn = async () => {
+  const loadOpenTurn = async () => {
     try {
-      const { data } = await getTurnOpen();
-      setOpenTurn(data);
-      return data;
-    } catch (error) {
-      console.error("Error al refrescar el turno:", error);
+      setError(null);
+      const userId =
+        user?.user_id ||
+        (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
+      const id = await fetchOpenTurn(userId || undefined);
+      setOpenTurn(id);
+      return id;
+    } catch (err) {
+      console.error("Error al obtener turno abierto:", err);
+      setError(err?.message || "Error al obtener turno");
+      setOpenTurn(null);
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <TurnContext.Provider
-      value={{
-        openTurn,
-        setOpenTurn,
-        updateTurn,
-        refreshTurn,
-      }}
-    >
-      {children}
-    </TurnContext.Provider>
+  useEffect(() => {
+    loadOpenTurn();
+  }, [user?.id]);
+
+  const updateTurn = (newTurnId) => setOpenTurn(newTurnId);
+
+  const refreshTurn = async () => {
+    setLoading(true);
+    return await loadOpenTurn();
+  };
+
+  const openShift = async () => {
+    const id = await createTurn(user?.user_id);
+    setOpenTurn(id);
+    return id;
+  };
+
+  const closeShift = async () => {
+    if (!openTurn) return false;
+    await closeTurnApi(openTurn);
+    setOpenTurn(null);
+    return true;
+  };
+
+  const value = useMemo(
+    () => ({
+      openTurn,
+      loading,
+      error,
+      setOpenTurn,
+      updateTurn,
+      refreshTurn,
+      openShift,
+      closeShift,
+    }),
+    [openTurn, loading, error],
   );
+
+  return <TurnContext.Provider value={value}>{children}</TurnContext.Provider>;
 }
 
 export const useTurn = () => useContext(TurnContext);
