@@ -47,9 +47,6 @@ export function ConfigurationsProvider({ children }) {
     fetchConfig();
   }, []);
 
-
-
-
   const updateConfig = async (data) => {
     let logoUrl = null;
     if (data.storeImage) {

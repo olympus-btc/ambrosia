@@ -11,11 +11,9 @@ function firstRouteForModule(moduleKey, businessType = null) {
 }
 
 function fallbackAnyRoute(businessType = null) {
-  for (const [mod] of Object.entries(modules)) {
+  for (const [, mod] of Object.entries(modules)) {
     if (!mod.enabled) continue;
-    const route = (mod.routes || []).find((r) =>
-      matchesBusiness(r, businessType),
-    );
+    const route = (mod.routes || []).find((r) => matchesBusiness(r, businessType));
     if (route) return route.path;
   }
   return "/";

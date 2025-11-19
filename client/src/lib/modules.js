@@ -118,6 +118,7 @@ export const modules = {
         default: true,
         requiresOpenTurn: true,
         requiresOpenTurn: true,
+        default: true,
       },
       {
         path: "/restaurant/modify-order/:pedidoId",
