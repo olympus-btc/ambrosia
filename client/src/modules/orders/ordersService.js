@@ -1,4 +1,4 @@
-﻿import { apiClient } from "../../services/apiClient";
+import { apiClient } from "../../services/apiClient";
 
 export async function getAllOrders() {
   const response = await apiClient("/orders");
@@ -40,12 +40,8 @@ export async function getOrderById(orderId) {
   return response;
 }
 
-export async function createOrder(tableId = null) {
-  //localStorage.setItem('userId', "");
-  if (!localStorage.getItem("userId")) {
-    throw new Error("No hay usuario logeado");
-  }
-  const response = await getUserById(localStorage.getItem("userId"));
+export async function createOrder(tableId = null, userId) {
+  const response = await getUserById(userId);
   //const response = {id: localStorage.getItem('userId'), name: "JordyArreglaLaDBConnection"};
   if (response) {
     const body = {
@@ -71,12 +67,11 @@ export async function addDishToOrder(pedidoId, dishId, dishPrice) {
       {
         dish_id: dishId,
         price_at_order: dishPrice,
-        notes: null
-      }
+        notes: null,
+      },
     ],
   });
 }
-
 
 export async function removeDishToOrder(pedidoId, dish) {
   return await apiClient(`/orders/${pedidoId}/dishes/${dish}`, {
@@ -149,7 +144,7 @@ export async function updateOrderDish(orderId, dishId, orderDish) {
 
 export async function sendOrderDishes(orderId, dishIds) {
   return await apiClient(`/orders/${orderId}/dishes/send`, {
-    method: "PUT", 
+    method: "PUT",
     body: { dishIds },
   });
 }

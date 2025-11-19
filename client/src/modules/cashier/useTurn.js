@@ -5,7 +5,7 @@ import {
   openTurn as createTurn,
   closeTurn as closeTurnApi,
 } from "./cashierService";
-import { AuthContext } from "../auth/AuthProvider";
+import { useAuth } from "./../auth/useAuth";
 
 const TurnContext = createContext();
 
@@ -13,7 +13,7 @@ export function TurnProvider({ children }) {
   const [openTurn, setOpenTurn] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   const loadOpenTurn = async () => {
     try {

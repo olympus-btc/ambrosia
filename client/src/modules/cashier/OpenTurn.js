@@ -1,17 +1,14 @@
 "use client";
 import { useState } from "react";
-import { openTurn as openTurnService } from "./cashierService";
-import { useRouter } from "next/navigation";
 import { useTurn } from "./useTurn";
-import { useAuth } from "./../auth/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function OpenTurn() {
   const [initialAmount, setInitialAmount] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { user } = useAuth();
 
-  const navigate = useRouter();
+  const router = useRouter();
   const { updateTurn, openShift } = useTurn();
 
   const handleAmountChange = (e) => {
@@ -38,11 +35,9 @@ export default function OpenTurn() {
 
     setIsLoading(true);
     try {
-      const id = await openShift().catch(
-        async () => await openTurnService(user.id),
-      );
+      const id = await openShift();
       updateTurn(id);
-      navigate("/");
+      router.push("/");
     } catch (err) {
       setError(err.message || "Error al abrir el turno");
     } finally {
