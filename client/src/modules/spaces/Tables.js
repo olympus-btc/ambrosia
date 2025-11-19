@@ -14,8 +14,8 @@ import {
 import { ChefHat, Coffee, Users, ArrowLeft } from "lucide-react";
 
 import { createOrder } from "../orders/ordersService";
-
-import { getTablesByRoomId, updateTable } from "./spacesService";
+import { updateTable } from "./spacesService";
+import { useAuth } from "../auth/useAuth";
 
 export default function Tables({ dynamicParams }) {
   const roomId = dynamicParams?.roomId;
@@ -24,6 +24,7 @@ export default function Tables({ dynamicParams }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [roomName, setRoomName] = useState("Sala");
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchData() {
@@ -61,12 +62,19 @@ export default function Tables({ dynamicParams }) {
   const handleTableClick = async (table) => {
     if (table.status === "available") {
       try {
-        const orderResponse = await createOrder(table.id);
+        const orderResponse = await createOrder(table.id, user.user_id);
         if (orderResponse.id) {
+<<<<<<< HEAD
           // Actualizar estado local
           const updatedTables = tables.map((t) => (t.id === table.id
             ? { ...t, status: "occupied", order_id: orderResponse.id }
             : t),
+=======
+          const updatedTables = tables.map((t) =>
+            t.id === table.id
+              ? { ...t, status: "occupied", order_id: orderResponse.id }
+              : t,
+>>>>>>> e240c60 (Solve shift bug in userId)
           );
           setTables(updatedTables);
 

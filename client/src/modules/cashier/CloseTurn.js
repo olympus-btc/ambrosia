@@ -10,13 +10,12 @@ export default function CloseTurn() {
   const [finalAmount, setFinalAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useRouter();
+  const router = useRouter();
   const [success, setSuccess] = useState(false);
   const { openTurn, updateTurn } = useTurn();
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
-    // Solo permitir números y punto decimal
     if (/^\d*\.?\d*$/.test(value)) {
       setFinalAmount(value);
     }
@@ -44,7 +43,7 @@ export default function CloseTurn() {
       updateTurn(null);
       setSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      navigate("/");
+      router.push("/");
     } catch (err) {
       setError(err.message || "Error al cerrar el turno");
     } finally {

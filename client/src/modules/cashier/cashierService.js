@@ -34,7 +34,9 @@ export async function getTurnOpen(userId) {
 }
 
 export async function openTurn(userId) {
-  console.log(userId);
+  if (!userId) {
+    return false;
+  }
   const payload = {
     user_id: userId,
     shift_date: formatDateOnly(new Date()),
