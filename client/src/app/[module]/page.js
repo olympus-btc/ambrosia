@@ -33,7 +33,7 @@ export default async function ModulePage({ params }) {
 
   const componentPath =
     routeConfig.moduleConfig.componentPath || routeConfig.module;
-  const componentBase = routeConfig.moduleConfig.componentBase || "modules"; // allow switching base dir (e.g., "components/pages")
+  const componentBase = routeConfig.moduleConfig.componentBase || "modules";
 
   const renderer = (
     <DynamicModuleRenderer

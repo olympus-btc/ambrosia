@@ -96,8 +96,6 @@ export const modules = {
         requiresAdmin: false,
         default: true,
         requiresOpenTurn: true,
-        requiresOpenTurn: true,
-        default: true,
       },
       {
         path: "/restaurant/modify-order/:pedidoId",
@@ -164,6 +162,7 @@ export const modules = {
         types: ["store"],
         default: true,
       },
+<<<<<<< HEAD
       {
         path: "/store/users",
         component: "Users",
