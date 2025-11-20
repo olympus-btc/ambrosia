@@ -153,7 +153,7 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
       const msg =
         typeof data === "string"
           ? data
-          : data?.message || "Invalid Credentials";
+          : data?.message || "Credenciales inválidas";
       const error = new Error(msg);
       error.status = status;
       throw error;
@@ -184,7 +184,7 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
   if (status === 403) {
     if (isAuthEndpoint) {
       const msg =
-        typeof data === "string" ? data : data?.message || "Not authorized";
+        typeof data === "string" ? data : data?.message || "No autorizado";
       const error = new Error(msg);
       error.status = status;
       throw error;

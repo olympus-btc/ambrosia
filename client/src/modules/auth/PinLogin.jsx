@@ -37,6 +37,7 @@ export default function PinLoginNew() {
   ]);
   const { login } = useAuth();
   const { config } = useConfigurations();
+  const router = useRouter();
 
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function PinLoginNew() {
       });
       setPin("");
       setSelectedUser("");
-      window.location.reload();
+      router.push("/");
     } catch (error) {
       setError(t("errorMessages.incorrectPin"));
       setPin("");
