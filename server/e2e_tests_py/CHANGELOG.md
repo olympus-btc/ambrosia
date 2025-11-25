@@ -2,11 +2,11 @@
 
 All notable changes to the Ambrosia POS E2E test suite will be documented in this file.
 
-## [Unreleased] - Authentication Tests
+## [Unreleased] - Authentication Tests & Cookie Security
 
 ### Added
 
-- **Authentication E2E tests** (`test_auth_e2e.py`, 423 lines):
+- **Authentication E2E tests** (`test_auth_e2e.py`, 315 lines):
   - Login success/failure scenarios
   - Token refresh with valid/invalid/missing tokens
   - Access token expiration (60s) and refresh flow
@@ -30,11 +30,6 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
 - Enhanced error handling: tests accept 400/401/500 for known server issues
 - **CI workflow**: Added `--run-slow` flag to run all tests including slow ones
 - **OpenAPI documentation**: Fixed access token duration from 15 minutes to 60 seconds
-- **Logout test fix**: Removed outdated workaround in `test_logout_revokes_tokens` - now properly expects token revocation to always work since logout endpoint requires authentication
-
-### Known Issues
-
-- `/refresh` endpoint sets `secure = true` on accessToken cookie (line 127 in `Authorize.kt`), while `/login` uses `secure = false`. This creates cookie inconsistency. The `test_logout_revokes_tokens` test is skipped until this is resolved with the dynamic secure cookie helper implementation.
 
 ### Fixed
 
@@ -45,8 +40,8 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
   - Applied to login and refresh endpoints
   - Unskipped `test_routing_e2e.py::test_logout_revokes_tokens` test (now passes with dynamic cookies)
 - **Removed Manual Cookie Workarounds**: Cleaned up test code that manually set cookies in `test_auth_e2e.py`:
-  - Removed workaround from `test_access_token_expires_after_one_minute` (lines 147-155)
-  - Removed workaround from `test_logout_revokes_tokens` (lines 170-173)
+  - Removed workaround from `test_access_token_expires_after_one_minute`
+  - Removed workaround from `test_logout_revokes_tokens`
   - httpx now automatically handles Set-Cookie headers with `secure = false`
 
 ### Notes
@@ -73,6 +68,7 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
   - 404 error handling
   - Performance testing
   - CORS headers validation
+  - Logout and token revocation
 
 - **Test infrastructure**:
   - `AmbrosiaTestServer`: Server lifecycle management
