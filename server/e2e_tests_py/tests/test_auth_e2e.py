@@ -140,17 +140,8 @@ class TestAuthentication:
                 "New accessToken should be different from expired one"
             )
 
-            # Explicitly set the new access token in the cookie jar
-            # httpx should update automatically from Set-Cookie headers, but we ensure it's set
-            # This is especially important after the old token has expired
-            # Clear the old expired token and set the new one
-            assert client._client is not None, "HTTP client should be initialized"
-            if "accessToken" in client._client.cookies:
-                del client._client.cookies["accessToken"]
-            set_cookie_in_jar(client, "accessToken", new_access_token)
-            logger.info("Set new accessToken in cookie jar after refresh")
-
             # Verify the new access token works on a protected endpoint
+            # httpx automatically handles Set-Cookie headers with secure=false
             protected_response_after_refresh = await client.get("/users/me")
             assert_status_code(
                 protected_response_after_refresh,
@@ -172,12 +163,8 @@ class TestAuthentication:
 
             access_token, refresh_token = get_tokens_from_response(login_response)
 
-            # Verify access token is in cookie jar (needed for logout to revoke refresh token)
-            # Ensure access token is in the cookie jar (httpx should do this automatically)
-            if client._client is None or "accessToken" not in client._client.cookies:
-                set_cookie_in_jar(client, "accessToken", access_token)
-
             # Logout - this should revoke the refresh token server-side
+            # httpx automatically handles accessToken cookie from login (secure=false)
             logout_response = await client.post("/auth/logout")
             assert_status_code(logout_response, 200)
 

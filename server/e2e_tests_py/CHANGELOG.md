@@ -43,6 +43,11 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
   - Automatically uses `secure = true` for HTTPS (production)
   - Fixes cookie inconsistency between login (`secure = false`) and refresh (`secure = true`) endpoints
   - Applied to login and refresh endpoints
+  - Unskipped `test_routing_e2e.py::test_logout_revokes_tokens` test (now passes with dynamic cookies)
+- **Removed Manual Cookie Workarounds**: Cleaned up test code that manually set cookies in `test_auth_e2e.py`:
+  - Removed workaround from `test_access_token_expires_after_one_minute` (lines 147-155)
+  - Removed workaround from `test_logout_revokes_tokens` (lines 170-173)
+  - httpx now automatically handles Set-Cookie headers with `secure = false`
 
 ### Notes
 

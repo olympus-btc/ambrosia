@@ -104,10 +104,6 @@ class TestRoutingE2E:
                     logger.info(f"Found optional CORS header: {header}")
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="Server uses secure=true for refresh endpoint cookies, which prevents "
-        "logout over HTTP. Will be fixed with dynamic secure cookie implementation."
-    )
     async def test_logout_revokes_tokens(self, server_url: str):
         """Test that logout revokes refresh tokens and prevents further refresh.
 
