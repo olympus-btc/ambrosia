@@ -31,7 +31,12 @@ class AmbrosiaHttpClient:
 
     async def __aenter__(self):
         """Async context manager entry."""
-        self._client = httpx.AsyncClient(timeout=self.timeout)
+        # Configure client with cookie jar and redirect following
+        self._client = httpx.AsyncClient(
+            timeout=self.timeout,
+            follow_redirects=True,
+            cookies=httpx.Cookies(),  # Explicit cookie jar
+        )
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

@@ -207,21 +207,14 @@ class TestAuthentication:
                 # Try to refresh with the revoked token - should fail
                 refresh_response = await new_client.post("/auth/refresh")
 
-                # TODO: Currently logout doesn't require authentication, so principal is null
-                # and the refresh token isn't actually revoked. The logout endpoint should
-                # be wrapped in authenticate("auth-jwt") to ensure userId is available.
-                # Once fixed, this should return 400/401/500. For now, it may succeed (200)
-                # because the token wasn't revoked.
-                if refresh_response.status_code == 200:
-                    logger.warning(
-                        "⚠ Refresh token was not revoked - logout endpoint needs authentication"
-                    )
-                else:
-                    assert refresh_response.status_code in [400, 401, 500], (
-                        f"Expected 400/401/500 when using revoked refresh token, "
-                        f"got {refresh_response.status_code}"
-                    )
-                    logger.info("✓ Revoked refresh token correctly rejected")
+                # The logout endpoint now requires authentication and properly revokes tokens
+                # This should always fail because the refresh token was revoked server-side
+                assert refresh_response.status_code in [400, 401, 500], (
+                    f"Expected refresh to fail after logout (token should be revoked), "
+                    f"got {refresh_response.status_code}. This means the logout endpoint "
+                    f"didn't properly revoke the refresh token on the server."
+                )
+                logger.info("✓ Revoked refresh token correctly rejected")
 
             logger.info(
                 "✓ Logout successful, tokens revoked and refresh token invalidated"

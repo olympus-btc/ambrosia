@@ -147,32 +147,35 @@ fun Route.auth(
     )
   }
 
-  post("/logout") {
-    val principal = call.principal<JWTPrincipal>()
-    val userId = principal?.getClaim("userId", String::class)
+  authenticate("auth-jwt") {
+    post("/logout") {
+      val principal = call.principal<JWTPrincipal>()
+      val userId =
+        principal?.getClaim("userId", String::class)
+          ?: throw InvalidTokenException("User ID not found in token")
 
-    if (userId != null) {
       tokenService.revokeRefreshToken(userId)
+
+      // Eliminar las cookies usando maxAge = 0
+      call.response.cookies.append(
+        Cookie(
+          name = "accessToken",
+          value = "",
+          maxAge = 0,
+          path = "/"
+        )
+      )
+
+      call.response.cookies.append(
+        Cookie(
+          name = "refreshToken",
+          value = "",
+          maxAge = 0,
+          path = "/"
+        )
+      )
+
+      call.respond(Message("Logout successful"))
     }
-
-    call.response.cookies.append(
-      Cookie(
-        name = "accessToken",
-        value = "",
-        maxAge = 0,
-        path = "/"
-      )
-    )
-
-    call.response.cookies.append(
-      Cookie(
-        name = "refreshToken",
-        value = "",
-        maxAge = 0,
-        path = "/"
-      )
-    )
-
-    call.respond(Message("Logout successful"))
   }
 }
