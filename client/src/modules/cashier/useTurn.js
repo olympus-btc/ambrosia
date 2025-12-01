@@ -18,10 +18,7 @@ export function TurnProvider({ children }) {
   const loadOpenTurn = async () => {
     try {
       setError(null);
-      const userId =
-        user?.user_id ||
-        (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
-      const id = await fetchOpenTurn(userId || undefined);
+      const id = await fetchOpenTurn();
       setOpenTurn(id);
       return id;
     } catch (err) {
@@ -46,7 +43,7 @@ export function TurnProvider({ children }) {
   };
 
   const openShift = async () => {
-    const id = await createTurn(user?.user_id);
+    const id = await createTurn(user?.id || user?.user_id);
     setOpenTurn(id);
     return id;
   };

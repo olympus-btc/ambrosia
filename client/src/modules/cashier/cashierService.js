@@ -24,11 +24,8 @@ function formatTimeOnly(date = new Date()) {
   return `${hh}:${mm}:${ss}`;
 }
 
-export async function getTurnOpen(userId) {
-  const endpoint = userId
-    ? `/shifts/open?user_id=${encodeURIComponent(userId)}`
-    : "/shifts/open";
-  const res = await apiClient(endpoint, { silentAuth: true }).catch(() => "");
+export async function getTurnOpen() {
+  const res = await apiClient("/shifts/open", { silentAuth: true }).catch(() => "");
   if (!res || (typeof res === "string" && res.trim() === "")) return null;
   return res?.id || null;
 }
