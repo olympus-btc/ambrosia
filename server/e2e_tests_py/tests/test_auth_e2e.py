@@ -112,9 +112,9 @@ class TestAuthentication:
                 login_response
             )
 
-            # Wait for access token to expire (configured at 10 seconds, wait 15 to be safe)
-            logger.info("Waiting for access token to expire (15 seconds)...")
-            await asyncio.sleep(15)
+            # Wait for access token to expire (configured at 5 seconds, wait 8 to be safe)
+            logger.info("Waiting for access token to expire (8 seconds)...")
+            await asyncio.sleep(8)
 
             # Assert that the access token has expired by trying to use it on a protected endpoint
             # The expired token should be rejected with 401 Unauthorized
