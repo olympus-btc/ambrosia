@@ -19,6 +19,13 @@ class TokenService(environment: ApplicationEnvironment, private val connection: 
   private val audience = config.property("jwt.audience").getString()
   private val algorithm = Algorithm.HMAC256(secret)
 
+  // Access token expiration in seconds (configurable via --jwt-access-token-expiration, default: 60)
+  val accessTokenExpirationSeconds: Long = try {
+    config.property("jwt.accessTokenExpirationSeconds").getString().toLong()
+  } catch (e: Exception) {
+    60L // Default to 60 seconds if not configured
+  }
+
   val verifier: JWTVerifier =
   JWT.require(algorithm).withAudience(audience).withIssuer(issuer).build()
 
@@ -30,7 +37,7 @@ class TokenService(environment: ApplicationEnvironment, private val connection: 
   .withClaim("role", user.role)
   .withClaim("isAdmin", user.isAdmin)
   .withClaim("realm", "Ambrosia-Server")
-  .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(60)))
+  .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(accessTokenExpirationSeconds)))
   .sign(algorithm)
 
   fun generateRefreshToken(user: AuthResponse): String {

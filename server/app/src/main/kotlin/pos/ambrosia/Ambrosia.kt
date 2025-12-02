@@ -84,6 +84,8 @@ class Ambrosia : CliktCommand() {
         val value = AppConfig.getPhoenixProperty("http-password") ?: throw Exception("phoenixd http-password on found in phoenix.conf, please provide it with --phoenixd-password or in the phoenix.conf file")
         value
       }
+    val jwtAccessTokenExpirationSeconds by
+      option("--jwt-access-token-expiration", help = "Access token expiration in seconds (default: 60)").default("60")
   }
   private val options by DaemonOptions()
 
@@ -126,6 +128,7 @@ class Ambrosia : CliktCommand() {
                   put("secret", options.secret)
                   put("phoenixd-url", options.phoenixdUrl)
                   put("phoenixd-password", options.phoenixdPassword)
+                  put("jwt.accessTokenExpirationSeconds", options.jwtAccessTokenExpirationSeconds)
                 }
             },
           configure = {
