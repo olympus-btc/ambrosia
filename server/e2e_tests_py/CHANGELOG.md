@@ -40,7 +40,7 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
   - Applied to login and refresh endpoints
   - Unskipped `test_routing_e2e.py::test_logout_revokes_tokens` test (now passes with dynamic cookies)
 - **Removed Manual Cookie Workarounds**: Cleaned up test code that manually set cookies in `test_auth_e2e.py`:
-  - Removed workaround from `test_access_token_expires_after_one_minute`
+  - Removed workaround from `test_access_token_expiration_and_refresh`
   - Removed workaround from `test_logout_revokes_tokens`
   - httpx now automatically handles Set-Cookie headers with `secure = false`
 

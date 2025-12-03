@@ -94,13 +94,14 @@ class TestAuthentication:
             )
 
     @pytest.mark.asyncio
-    @pytest.mark.slow
-    async def test_access_token_expires_after_one_minute(self, server_url: str):
-        """Test that access token expires after approximately 1 minute.
+    async def test_access_token_expiration_and_refresh(self, server_url: str):
+        """Test that access token expires and refresh token still works.
 
-        Note: This test waits 65 seconds to ensure token expiration.
-        In a real scenario, you might want to mock time or use a shorter
-        expiration for testing.
+        This test verifies:
+        1. Access token expires after configured time (5 seconds in tests)
+        2. Expired access token is rejected (401 on protected endpoints)
+        3. Refresh token still works after access token expires
+        4. New access token is generated and works
 
         Marked as @pytest.mark.slow - can be skipped with: pytest -m "not slow"
         """
