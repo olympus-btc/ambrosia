@@ -94,15 +94,14 @@ class TestAuthentication:
             )
 
     @pytest.mark.asyncio
-    @pytest.mark.slow
-    async def test_access_token_expires_after_one_minute(self, server_url: str):
-        """Test that access token expires after approximately 1 minute.
+    async def test_access_token_expiration_and_refresh(self, server_url: str):
+        """Test that access token expires and refresh token still works.
 
-        Note: This test waits 65 seconds to ensure token expiration.
-        In a real scenario, you might want to mock time or use a shorter
-        expiration for testing.
-
-        Marked as @pytest.mark.slow - can be skipped with: pytest -m "not slow"
+        This test verifies:
+        1. Access token expires after configured time (5 seconds in tests)
+        2. Expired access token is rejected (401 on protected endpoints)
+        3. Refresh token still works after access token expires
+        4. New access token is generated and works
         """
         async with AmbrosiaHttpClient(server_url) as client:
             # Login to get tokens
@@ -112,9 +111,9 @@ class TestAuthentication:
                 login_response
             )
 
-            # Wait for access token to expire (1 minute = 60 seconds, wait 65 to be safe)
-            logger.info("Waiting for access token to expire (65 seconds)...")
-            await asyncio.sleep(65)
+            # Wait for access token to expire (configured at 5 seconds, wait 8 to be safe)
+            logger.info("Waiting for access token to expire (8 seconds)...")
+            await asyncio.sleep(8)
 
             # Assert that the access token has expired by trying to use it on a protected endpoint
             # The expired token should be rejected with 401 Unauthorized
@@ -140,17 +139,8 @@ class TestAuthentication:
                 "New accessToken should be different from expired one"
             )
 
-            # Explicitly set the new access token in the cookie jar
-            # httpx should update automatically from Set-Cookie headers, but we ensure it's set
-            # This is especially important after the old token has expired
-            # Clear the old expired token and set the new one
-            assert client._client is not None, "HTTP client should be initialized"
-            if "accessToken" in client._client.cookies:
-                del client._client.cookies["accessToken"]
-            set_cookie_in_jar(client, "accessToken", new_access_token)
-            logger.info("Set new accessToken in cookie jar after refresh")
-
             # Verify the new access token works on a protected endpoint
+            # httpx automatically handles Set-Cookie headers with secure=false
             protected_response_after_refresh = await client.get("/users/me")
             assert_status_code(
                 protected_response_after_refresh,
@@ -172,12 +162,8 @@ class TestAuthentication:
 
             access_token, refresh_token = get_tokens_from_response(login_response)
 
-            # Verify access token is in cookie jar (needed for logout to revoke refresh token)
-            # Ensure access token is in the cookie jar (httpx should do this automatically)
-            if client._client is None or "accessToken" not in client._client.cookies:
-                set_cookie_in_jar(client, "accessToken", access_token)
-
             # Logout - this should revoke the refresh token server-side
+            # httpx automatically handles accessToken cookie from login (secure=false)
             logout_response = await client.post("/auth/logout")
             assert_status_code(logout_response, 200)
 
@@ -207,21 +193,14 @@ class TestAuthentication:
                 # Try to refresh with the revoked token - should fail
                 refresh_response = await new_client.post("/auth/refresh")
 
-                # TODO: Currently logout doesn't require authentication, so principal is null
-                # and the refresh token isn't actually revoked. The logout endpoint should
-                # be wrapped in authenticate("auth-jwt") to ensure userId is available.
-                # Once fixed, this should return 400/401/500. For now, it may succeed (200)
-                # because the token wasn't revoked.
-                if refresh_response.status_code == 200:
-                    logger.warning(
-                        "⚠ Refresh token was not revoked - logout endpoint needs authentication"
-                    )
-                else:
-                    assert refresh_response.status_code in [400, 401, 500], (
-                        f"Expected 400/401/500 when using revoked refresh token, "
-                        f"got {refresh_response.status_code}"
-                    )
-                    logger.info("✓ Revoked refresh token correctly rejected")
+                # The logout endpoint now requires authentication and properly revokes tokens
+                # This should always fail because the refresh token was revoked server-side
+                assert refresh_response.status_code in [400, 401, 500], (
+                    f"Expected refresh to fail after logout (token should be revoked), "
+                    f"got {refresh_response.status_code}. This means the logout endpoint "
+                    f"didn't properly revoke the refresh token on the server."
+                )
+                logger.info("✓ Revoked refresh token correctly rejected")
 
             logger.info(
                 "✓ Logout successful, tokens revoked and refresh token invalidated"

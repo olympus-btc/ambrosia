@@ -2,11 +2,11 @@
 
 All notable changes to the Ambrosia POS E2E test suite will be documented in this file.
 
-## [Unreleased] - Authentication Tests
+## [Unreleased] - Authentication Tests & Cookie Security
 
 ### Added
 
-- **Authentication E2E tests** (`test_auth_e2e.py`, 423 lines):
+- **Authentication E2E tests** (`test_auth_e2e.py`, 315 lines):
   - Login success/failure scenarios
   - Token refresh with valid/invalid/missing tokens
   - Access token expiration (60s) and refresh flow
@@ -20,6 +20,7 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
 
 - **Documentation**:
   - `README.md`: Added test filtering section for slow tests
+  - `README.md`: Enhanced troubleshooting for server startup timeouts (rebuild, port conflicts, stale processes)
   - `CHANGELOG.md`: Change tracking
 
 ### Changed
@@ -30,11 +31,29 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
 - **CI workflow**: Added `--run-slow` flag to run all tests including slow ones
 - **OpenAPI documentation**: Fixed access token duration from 15 minutes to 60 seconds
 
+### Fixed
+
+- **Dynamic Secure Cookies** (server-side): Implemented `shouldUseSecureCookies()` helper in `Authorize.kt`:
+  - Automatically uses `secure = false` for HTTP (development/testing)
+  - Automatically uses `secure = true` for HTTPS (production)
+  - Fixes cookie inconsistency between login (`secure = false`) and refresh (`secure = true`) endpoints
+  - Applied to login and refresh endpoints
+  - Unskipped `test_routing_e2e.py::test_logout_revokes_tokens` test (now passes with dynamic cookies)
+- **Optimized Token Expiration Test**: `test_access_token_expires_after_one_minute` renamed to `test_access_token_expiration_and_refresh`
+  - Reduced wait time from 65s to 8s using 5-second token expiration
+  - Removed `@pytest.mark.slow` - now runs by default
+  - Test suite now completes in ~15 seconds (was ~80+ seconds)
+- **Removed Manual Cookie Workarounds**: Cleaned up test code that manually set cookies in `test_auth_e2e.py`:
+  - Removed workaround from `test_access_token_expiration_and_refresh`
+  - Removed workaround from `test_logout_revokes_tokens`
+  - httpx now automatically handles Set-Cookie headers with `secure = false`
+
 ### Notes
 
 - Slow tests are skipped by default; use `pytest --run-slow` to run all tests
 - CI automatically runs all tests with `--run-slow` flag
 - Some tests accept 400/401/500 status codes due to server exception handling (see TODO.md)
+- Server timeout? Run `./gradlew build` first
 
 ---
 
@@ -53,6 +72,7 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
   - 404 error handling
   - Performance testing
   - CORS headers validation
+  - Logout and token revocation
 
 - **Test infrastructure**:
   - `AmbrosiaTestServer`: Server lifecycle management

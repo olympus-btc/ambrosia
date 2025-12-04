@@ -99,8 +99,10 @@ To run all tests including slow ones (useful before committing or in CI):
 pytest --run-slow
 ```
 
-**Slow tests** include:
-- `test_access_token_expires_after_one_minute` - Waits 65 seconds for token expiration
+**Slow tests:** Currently none.
+
+Previously slow:
+- `test_access_token_expiration_and_refresh` - Now fast (8s) with configurable token expiration
 
 **Note**: CI automatically runs all tests with `--run-slow`.
 

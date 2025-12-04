@@ -102,3 +102,73 @@ class TestRoutingE2E:
             for header in optional_headers:
                 if header in response.headers:
                     logger.info(f"Found optional CORS header: {header}")
+
+    @pytest.mark.asyncio
+    async def test_logout_revokes_tokens(self, server_url: str):
+        """Test that logout revokes refresh tokens and prevents further refresh.
+
+        This test verifies that:
+        1. Logout requires authentication (accessible only with valid access token)
+        2. When properly authenticated, logout revokes the refresh token server-side
+        3. After logout, even if we manually restore the cookie, the token won't work
+        """
+        async with AmbrosiaHttpClient(server_url) as client:
+            # First, log in with default credentials to obtain tokens
+            login_data = {"name": "cooluser1", "pin": "0000"}
+            login_response = await client.post("/auth/login", json=login_data)
+
+            assert login_response.status_code == 200, (
+                f"Login failed with status {login_response.status_code}. "
+                "Ensure the development database has the default user (cooluser1 / 0000)."
+            )
+
+            logger.info("Successfully logged in, cookies received")
+
+            # Verify that refresh works BEFORE logout (to ensure the token is valid)
+            refresh_before_logout = await client.post("/auth/refresh")
+            assert refresh_before_logout.status_code == 200, (
+                f"Refresh should work before logout, got {refresh_before_logout.status_code}. "
+                "This ensures the refresh token is valid before we test logout."
+            )
+            logger.info("Refresh token works before logout")
+
+            # Save the refresh token value BEFORE logout so we can test server-side revocation
+            saved_refresh_token = client._client.cookies.get("refreshToken")
+            assert saved_refresh_token, (
+                "Should have a refresh token cookie before logout"
+            )
+            logger.info(f"Saved refresh token: {saved_refresh_token[:20]}...")
+
+            # Check if we have an access token (needed for logout authentication)
+            access_token = client._client.cookies.get("accessToken")
+            logger.info(f"Access token present: {bool(access_token)}")
+            logger.info(f"All cookies: {list(client._client.cookies.keys())}")
+
+            # Now log out; this should revoke the refresh token server-side
+            # Note: Logout now requires authentication (access token), which is correct for security
+            logout_response = await client.post("/auth/logout")
+            assert logout_response.status_code == 200, (
+                f"Expected 200 OK for logout, got {logout_response.status_code}. "
+                f"Logout requires authentication (access token cookie must be present)."
+            )
+            logger.info("Successfully logged out")
+
+            # Logout clears the cookies, so manually restore the refresh token
+            # This proves we're testing SERVER-SIDE revocation, not just client-side cookie deletion
+            client._client.cookies.set("refreshToken", saved_refresh_token)
+            logger.info(
+                "Manually restored refresh token cookie to test server-side revocation"
+            )
+
+            # After logout, attempting to refresh should fail because the token was revoked SERVER-SIDE
+            refresh_response = await client.post("/auth/refresh")
+            logger.info(
+                f"Refresh after logout returned: {refresh_response.status_code}"
+            )
+
+            assert refresh_response.status_code in [400, 401, 500], (
+                "Expected refresh to fail after logout (server-side revocation), "
+                f"got status {refresh_response.status_code}. "
+                "This means the logout endpoint didn't properly revoke the refresh token on the server. "
+                "The token should be revoked even though we manually restored the cookie."
+            )

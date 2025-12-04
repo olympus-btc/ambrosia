@@ -24,6 +24,20 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.*
 
+// Helper function to determine if cookies should be secure
+fun ApplicationCall.shouldUseSecureCookies(): Boolean {
+  // Check if request is over HTTPS (primary indicator for production)
+  val isHttps = request.local.scheme == "https"
+  // Also check environment config if available
+  val envConfig = application.environment.config
+  val isProduction = try {
+    envConfig.property("production").getString().toBoolean()
+  } catch (e: Exception) {
+    false // Default to false if property doesn't exist
+  }
+  return isHttps || isProduction
+}
+
 fun Application.configureAuth() {
   val connection: Connection = DatabaseConnection.getConnection()
   val authService = AuthService(environment, connection)
@@ -56,13 +70,15 @@ fun Route.auth(
       return@post
     }
 
+    val useSecureCookies = call.shouldUseSecureCookies()
+
     call.response.cookies.append(
       Cookie(
         name = "accessToken",
         value = accessTokenResponse,
         expires = GMTDate(System.currentTimeMillis() + (60 * 1000L)),
         httpOnly = true,
-        secure = false,
+        secure = useSecureCookies,  // true for HTTPS/production, false for HTTP/development
         path = "/",
       )
     )
@@ -73,7 +89,7 @@ fun Route.auth(
         value = refreshTokenResponse,
         maxAge = 30 * 24 * 60 * 60,
         httpOnly = true,
-        secure = false,
+        secure = useSecureCookies,  // true for HTTPS/production, false for HTTP/development
         path = "/",
       )
     )
@@ -110,14 +126,14 @@ fun Route.auth(
     }
 
     val newAccessToken = tokenService.generateAccessToken(userInfo)
-
+    val useSecureCookies = call.shouldUseSecureCookies()
     call.response.cookies.append(
       Cookie(
         name = "accessToken",
         value = newAccessToken,
         expires = GMTDate(System.currentTimeMillis() + (60 * 1000L)),
         httpOnly = true,
-        secure = true,
+        secure = useSecureCookies,  // true for HTTPS/production, false for HTTP/development
         path = "/"
       )
     )
@@ -131,32 +147,35 @@ fun Route.auth(
     )
   }
 
-  post("/logout") {
-    val principal = call.principal<JWTPrincipal>()
-    val userId = principal?.getClaim("userId", String::class)
+  authenticate("auth-jwt") {
+    post("/logout") {
+      val principal = call.principal<JWTPrincipal>()
+      val userId =
+        principal?.getClaim("userId", String::class)
+          ?: throw InvalidTokenException("User ID not found in token")
 
-    if (userId != null) {
       tokenService.revokeRefreshToken(userId)
+
+      // Eliminar las cookies usando maxAge = 0
+      call.response.cookies.append(
+        Cookie(
+          name = "accessToken",
+          value = "",
+          maxAge = 0,
+          path = "/"
+        )
+      )
+
+      call.response.cookies.append(
+        Cookie(
+          name = "refreshToken",
+          value = "",
+          maxAge = 0,
+          path = "/"
+        )
+      )
+
+      call.respond(Message("Logout successful"))
     }
-
-    call.response.cookies.append(
-      Cookie(
-        name = "accessToken",
-        value = "",
-        maxAge = 0,
-        path = "/"
-      )
-    )
-
-    call.response.cookies.append(
-      Cookie(
-        name = "refreshToken",
-        value = "",
-        maxAge = 0,
-        path = "/"
-      )
-    )
-
-    call.respond(Message("Logout successful"))
   }
 }
