@@ -30,6 +30,14 @@ All notable changes to the Ambrosia POS E2E test suite will be documented in thi
 - **CI workflow**: Added `--run-slow` flag to run all tests including slow ones
 - **OpenAPI documentation**: Fixed access token duration from 15 minutes to 60 seconds
 
+### Fixed
+
+- **Dynamic Secure Cookies** (server-side): Implemented `shouldUseSecureCookies()` helper in `Authorize.kt`:
+  - Automatically uses `secure = false` for HTTP (development/testing)
+  - Automatically uses `secure = true` for HTTPS (production)
+  - Fixes cookie inconsistency between login (`secure = false`) and refresh (`secure = true`) endpoints
+  - Applied to login and refresh endpoints
+
 ### Notes
 
 - Slow tests are skipped by default; use `pytest --run-slow` to run all tests
