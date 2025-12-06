@@ -33,7 +33,7 @@ function mergeLocales(locale) {
 }
 
 export function I18nProvider({ children }) {
-  const [locale, setLocale] = useState("es");
+  const [locale, setLocale] = useState("en");
   const messages = useMemo(() => mergeLocales(locale), [locale]);
 
   useEffect(() => {
@@ -52,16 +52,14 @@ export function I18nProvider({ children }) {
   return (
     <I18nContext.Provider value={{ locale, changeLocale }}>
       <NextIntlClientProvider locale={locale} messages={messages}>
-        <LanguageSwitcher visible="yes" />
         {children}
       </NextIntlClientProvider>
     </I18nContext.Provider>
   );
 }
 
-export function LanguageSwitcher({ visible }) {
+export function LanguageSwitcher() {
   const { locale, changeLocale } = useI18n();
-  if (visible === "none") return null;
   return (
     <div className="absolute top-4 right-4 z-50">
       <Button

@@ -124,7 +124,7 @@ export function BusinessDetailsStep({ data, onChange }) {
         >
           {CURRENCIES.map((currency) => (
               <SelectItem key={currency.code}>
-                {currency.name}
+                {`${currency.code}  -  ${currency.name}`}
               </SelectItem>
             ))}
         </Select>

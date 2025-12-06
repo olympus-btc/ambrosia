@@ -35,7 +35,7 @@ const onboarding_es = {
     },
     tooltips: {
       userPin: "Sirve para accesar a la aplicación.",
-      userPassword: "Requerida para realizar acciones importantes.",
+      userPassword: "Requerida para acceder a la wallet.",
     },
     strength: {
       title: "Fortaleza",
@@ -61,7 +61,7 @@ const onboarding_es = {
       businessPhonePlaceholder: "Ej: 3312345678",
       businessEmail: "Correo electrónico",
       businessEmailPlaceholder: "contacto@deliciosonegocio.com",
-      businessRFC: "RFC",
+      businessRFC: "Tax ID",
       businessRFCPlaceholder: "Ej: ABC123456XYZ",
       businessRFCMessage: "Formato: 13 caracteres (letras y números)",
       businessRFCInvalid: "RFC inválido",

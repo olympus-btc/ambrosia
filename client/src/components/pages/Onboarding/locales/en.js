@@ -34,7 +34,7 @@ const onboarding_en = {
     },
     tooltips: {
       userPin: "To access the application.",
-      userPassword: "Required for performing important actions.",
+      userPassword: "To access the wallet.",
     },
     strength: {
       title: "Password Strength",
@@ -60,7 +60,7 @@ const onboarding_en = {
       businessPhonePlaceholder: "Ej: 3312345678",
       businessEmail: "Email",
       businessEmailPlaceholder: "contact@awesomebusiness.com",
-      businessRFC: "RFC",
+      businessRFC: "Tax ID",
       businessRFCPlaceholder: "Ej: ABC123456XYZ",
       businessRFCMessage: "13 character format (letters and numbers)",
       businessRFCInvalid: "Invalid RFC format",

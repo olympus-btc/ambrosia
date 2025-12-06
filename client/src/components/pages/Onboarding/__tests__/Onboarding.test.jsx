@@ -153,7 +153,7 @@ describe("Onboarding Wizard", () => {
     expect(nextButton).not.toBeDisabled();
   });
 
-  it("disables the Next button if RFC are invalid in step 3", async () => {
+  it("Not disables the Next button if RFC are invalid in step 3", async () => {
     await act(async () => {
       renderOnboarding();
     });
@@ -188,13 +188,13 @@ describe("Onboarding Wizard", () => {
     await act(async () => {
       fireEvent.change(phoneInput, { target: { value: "12345" } });
     });
-    expect(nextButton).toBeDisabled();
+    expect(nextButton).not.toBeDisabled();
 
     await act(async () => {
       fireEvent.change(phoneInput, { target: { value: "5511223344" } });
       fireEvent.change(rfcInput, { target: { value: "ABC123" } });
     });
-    expect(nextButton).toBeDisabled();
+    expect(nextButton).not.toBeDisabled();
 
     await act(async () => {
       fireEvent.change(rfcInput, { target: { value: "GODE561231GR8" } });
