@@ -12,7 +12,7 @@ services:
 
   ambrosia:
     build: server/
-    image: ambrosia
+    image: chrisguida/ambrosia-server:latest
     container_name: ambrosia
     restart: unless-stopped
     networks:
@@ -22,13 +22,13 @@ services:
       - "9443:9443"
     volumes:
       - ambrosia_datadir:/root/.Ambrosia-POS
-      - phoenixd_datadir:/root/.phoenix  
+      - phoenixd_datadir:/root/.phoenix
     depends_on:
       - phoenixd
 
   ambrosia-client:
     build: client/
-    image: ambrosia-client
+    image: chrisguida/ambrosia-client:latest
     container_name: ambrosia-client
     restart: unless-stopped
     networks:
