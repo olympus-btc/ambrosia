@@ -1,16 +1,83 @@
 {
-  "name": "electron",
+  "name": "ambrosia-pos-electron",
   "version": "1.0.0",
-  "description": "Ambrosia-POS-Electron",
+  "description": "Ambrosia-POS Desktop Application",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
-    
+    "dev": "electron .",
+    "dev:inspect": "electron --inspect=5858 .",
+    "build": "npm run build:client && electron-builder",
+    "build:client": "cd ../client && npm run build",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps"
   },
   "author": "BTC-GDL",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^36.1.0"
+    "electron": "^36.1.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6",
+    "wait-on": "^8.0.1",
+    "find-free-port": "^2.0.0",
+    "tree-kill": "^1.2.2"
+  },
+  "build": {
+    "appId": "com.olympus-btc.ambrosia-pos",
+    "productName": "Ambrosia POS",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "../client/.next/**/*",
+      "../client/public/**/*",
+      "../client/src/**/*",
+      "../client/node_modules/**/*",
+      "../client/next.config.mjs",
+      "../client/package.json",
+      "../client/generate-env.cjs",
+      "../client/postcss.config.mjs",
+      "../client/tsconfig.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../client",
+        "to": "client",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg", "zip"],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

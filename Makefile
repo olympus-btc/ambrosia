@@ -1,4 +1,4 @@
-.PHONY: install-jdk install-docker install-docker-compose build-jar up run run-rebuild create-secrets
+.PHONY: install-jdk install-docker install-docker-compose build-jar up run run-rebuild create-secrets electron-dev electron-build electron-build-mac electron-build-win electron-build-linux
 
 install-jdk:
 	@if ! command -v java > /dev/null 2>&1 || ! java -version 2>&1 | grep -q "21"; then \
@@ -50,3 +50,25 @@ run: install-jdk install-docker install-docker-compose build-jar create-secrets 
 
 run-rebuild: REBUILD=1
 run-rebuild: run
+
+# Electron Development
+electron-dev:
+	@echo "Starting Electron in development mode..."
+	cd electron && ./scripts/dev.sh
+
+# Electron Build
+electron-build:
+	@echo "Building Electron application..."
+	cd electron && ./scripts/build.sh
+
+electron-build-mac:
+	@echo "Building Electron application for macOS..."
+	cd electron && npm run dist:mac
+
+electron-build-win:
+	@echo "Building Electron application for Windows..."
+	cd electron && npm run dist:win
+
+electron-build-linux:
+	@echo "Building Electron application for Linux..."
+	cd electron && npm run dist:linux

@@ -35,6 +35,29 @@ pytest
 
 ---
 
+## Desktop Application (Electron)
+
+Ambrosia POS también está disponible como aplicación de escritorio multiplataforma.
+
+### Desarrollo
+
+```bash
+cd electron
+npm install
+npm run dev
+```
+
+### Build
+
+```bash
+cd electron
+npm run build
+```
+
+Ver [electron/README.md](electron/README.md) para instrucciones detalladas.
+
+---
+
 ## Want to contribute?
 
 Check out the [Contribution Guide](Contributing.md) to learn how you can help and be part of the future of POS systems for restaurants.
