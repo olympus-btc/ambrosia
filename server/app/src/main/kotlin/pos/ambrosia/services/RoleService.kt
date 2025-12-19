@@ -99,9 +99,10 @@ class RolesService(private val env: ApplicationEnvironment, private val connecti
     if (role.password != null) sql.append(", password = ? ")
     sql.append("WHERE id = ?")
 
-    if (id == null) return false
+    val targetId = role.id ?: id
+    if (targetId == null) return false
     // Verificar que el nombre del rol no exista ya (excluyendo el rol actual)
-    if (role.id != null && roleNameExistsExcludingId(role.role, role.id)) {
+    if (roleNameExistsExcludingId(role.role, targetId)) {
       logger.error("Role name already exists: ${role.role}")
       return false
     }
@@ -111,16 +112,16 @@ class RolesService(private val env: ApplicationEnvironment, private val connecti
     statement.setString(1, role.role)
     statement.setBoolean(2, role.isAdmin ?: false)
     if (role.password != null) {
-      val encryptedPin = SecurePinProcessor.hashPinForStorage(role.password.toCharArray(), id, env)
+      val encryptedPin = SecurePinProcessor.hashPinForStorage(role.password.toCharArray(), targetId, env)
       statement.setString(3, SecurePinProcessor.byteArrayToBase64(encryptedPin))
     }
-    statement.setString(role.password?.let { 4 } ?: 3, role.id)
+    statement.setString(role.password?.let { 4 } ?: 3, targetId)
 
     val rowsUpdated = statement.executeUpdate()
     if (rowsUpdated > 0) {
-      logger.info("Role updated successfully: ${role.id}")
+      logger.info("Role updated successfully: $targetId")
     } else {
-      logger.error("Failed to update role: ${role.id}")
+      logger.error("Failed to update role: $targetId")
     }
     return rowsUpdated > 0
   }
