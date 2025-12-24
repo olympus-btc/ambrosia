@@ -1,11 +1,12 @@
 const { EventEmitter } = require('events');
-const PhoenixdService = require('./PhoenixdService');
-const BackendService = require('./BackendService');
-const NextJsService = require('./NextJsService');
+
 const { allocatePorts } = require('../utils/portAllocator');
-const { ensureConfigurations, readConfig } = require('./ConfigurationBootstrap');
-const { getDataDirectory, getPhoenixDataDirectory, isDevelopment } = require('../utils/resourcePaths');
-const path = require('path');
+const { isDevelopment } = require('../utils/resourcePaths');
+
+const BackendService = require('./BackendService');
+const { ensureConfigurations } = require('./ConfigurationBootstrap');
+const NextJsService = require('./NextJsService');
+const PhoenixdService = require('./PhoenixdService');
 
 class ServiceManager extends EventEmitter {
   constructor(options = {}) {
@@ -29,7 +30,6 @@ class ServiceManager extends EventEmitter {
       this.configs = await ensureConfigurations(this.ports);
 
       const phoenixConfig = this.configs.phoenix;
-      const ambrosiaConfig = this.configs.ambrosia;
 
       if (this.devMode) {
         console.log('[ServiceManager] Development mode: skipping phoenixd and backend startup');

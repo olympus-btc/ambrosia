@@ -1,7 +1,9 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+
 const bip39 = require('bip39');
+
 const { getDataDirectory, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
 
 /**
@@ -77,7 +79,7 @@ function readConfig(configPath) {
 
 function writeConfig(configPath, config) {
   const lines = Object.entries(config).map(([key, value]) => `${key}=${value}`);
-  fs.writeFileSync(configPath, lines.join('\n') + '\n', 'utf-8');
+  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, 'utf-8');
   console.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
@@ -106,7 +108,7 @@ async function ensureConfigurations(ports) {
     ambrosiaConfig = {
       'http-bind-ip': '127.0.0.1',
       'http-bind-port': ports.backend.toString(),
-      'secret': secret,
+      secret,
       'secret-hash': secretHash,
       'phoenixd-url': `http://localhost:${ports.phoenixd}`,
     };
@@ -128,7 +130,7 @@ async function ensureConfigurations(ports) {
       'http-password': httpPassword,
       'http-password-limited-access': httpPasswordLimited,
       'webhook-secret': webhookSecret,
-      'webhook': `http://127.0.0.1:${ports.backend}/webhook/phoenixd`,
+      webhook: `http://127.0.0.1:${ports.backend}/webhook/phoenixd`,
       'auto-liquidity': 'off',
       'max-mining-fee-sat-vb': '5000',
     };
@@ -136,7 +138,7 @@ async function ensureConfigurations(ports) {
     writeConfig(phoenixConfigPath, phoenixConfig);
     needsUpdate = true;
   } else {
-    phoenixConfig['webhook'] = `http://127.0.0.1:${ports.backend}/webhook/phoenixd`;
+    phoenixConfig.webhook = `http://127.0.0.1:${ports.backend}/webhook/phoenixd`;
   }
 
   if (needsUpdate || !fs.existsSync(ambrosiaConfigPath) || !fs.existsSync(phoenixConfigPath)) {

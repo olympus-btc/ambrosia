@@ -1,6 +1,7 @@
-const path = require('path');
-const { app } = require('electron');
 const os = require('os');
+const path = require('path');
+
+const { app } = require('electron');
 
 function getPlatform() {
   const platform = process.platform;

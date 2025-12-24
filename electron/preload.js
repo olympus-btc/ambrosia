@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('electron', {
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,
-    electron: process.versions.electron
+    electron: process.versions.electron,
   },
 
   // API para comunicación con main process (futuro)
@@ -36,8 +36,8 @@ contextBridge.exposeInMainWorld('electron', {
       if (validChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, callback);
       }
-    }
-  }
+    },
+  },
 });
 
 console.log('[Preload] Electron APIs expuestas correctamente');

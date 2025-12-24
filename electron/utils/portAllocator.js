@@ -1,4 +1,5 @@
 const findFreePort = require('find-free-port');
+
 const { isDevelopment } = require('./resourcePaths');
 
 const DEFAULT_PORTS = {

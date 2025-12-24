@@ -1,11 +1,11 @@
-const https = require('https');
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const path = require('path');
+
 const { getBuildPlatform } = require('./platform-utils');
 
-const JRE_VERSION = '21';
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'jre');
 
 // Adoptium Temurin JRE download URLs
@@ -108,7 +108,7 @@ function extractArchive(archivePath, platform, destDir) {
       execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
 
       // Find the extracted directory (usually has version number)
-      const extractedDirs = fs.readdirSync(destDir).filter(f => {
+      const extractedDirs = fs.readdirSync(destDir).filter((f) => {
         const fullPath = path.join(destDir, f);
         return fs.statSync(fullPath).isDirectory();
       });
@@ -129,7 +129,7 @@ function extractArchive(archivePath, platform, destDir) {
         const files = fs.readdirSync(sourceDir);
 
         // Move contents up to destDir
-        files.forEach(file => {
+        files.forEach((file) => {
           const oldPath = path.join(sourceDir, file);
           const newPath = path.join(destDir, file);
           if (fs.existsSync(newPath)) {
@@ -146,7 +146,7 @@ function extractArchive(archivePath, platform, destDir) {
       execSync(`unzip -q "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
 
       // Find the extracted directory
-      const extractedDirs = fs.readdirSync(destDir).filter(f => {
+      const extractedDirs = fs.readdirSync(destDir).filter((f) => {
         const fullPath = path.join(destDir, f);
         return fs.statSync(fullPath).isDirectory();
       });
@@ -156,7 +156,7 @@ function extractArchive(archivePath, platform, destDir) {
         const files = fs.readdirSync(extractedDir);
 
         // Move contents up one level
-        files.forEach(file => {
+        files.forEach((file) => {
           const oldPath = path.join(extractedDir, file);
           const newPath = path.join(destDir, file);
           if (fs.existsSync(newPath)) {
@@ -242,7 +242,7 @@ async function main() {
   console.log('===========================================');
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

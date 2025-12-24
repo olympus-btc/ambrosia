@@ -1,7 +1,8 @@
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
+
 const { getBuildPlatform } = require('./platform-utils');
 
 const PHOENIXD_VERSION = '0.7.1';
@@ -104,7 +105,7 @@ function extractZip(zipPath, destDir) {
     execSync(`unzip -q "${zipPath}" -d "${destDir}"`, { stdio: 'inherit' });
 
     // Find the extracted directory (usually has version number)
-    const extractedDirs = fs.readdirSync(destDir).filter(f => {
+    const extractedDirs = fs.readdirSync(destDir).filter((f) => {
       const fullPath = path.join(destDir, f);
       return fs.statSync(fullPath).isDirectory();
     });
@@ -114,7 +115,7 @@ function extractZip(zipPath, destDir) {
       const files = fs.readdirSync(extractedDir);
 
       // Move contents up to destDir
-      files.forEach(file => {
+      files.forEach((file) => {
         const oldPath = path.join(extractedDir, file);
         const newPath = path.join(destDir, file);
         if (fs.existsSync(newPath)) {
@@ -142,7 +143,7 @@ async function downloadAndExtractPhoenixd(platform, url, filename) {
   // JVM version (Windows) has bin/phoenixd.bat structure
   const isJvmVersion = url.includes('jvm');
   const phoenixdExecutable = isJvmVersion ? path.join('bin', 'phoenixd.bat') :
-                              platform.startsWith('win') ? 'phoenixd.exe' : 'phoenixd';
+    platform.startsWith('win') ? 'phoenixd.exe' : 'phoenixd';
   const phoenixdPath = path.join(platformDir, phoenixdExecutable);
 
   if (fs.existsSync(phoenixdPath)) {
@@ -202,7 +203,7 @@ async function main() {
   console.log('===========================================');
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

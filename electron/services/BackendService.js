@@ -1,9 +1,11 @@
-const spawn = require('cross-spawn');
-const treeKill = require('tree-kill');
 const fs = require('fs');
 const path = require('path');
-const { getJavaPath, getBackendJarPath, getLogsDirectory } = require('../utils/resourcePaths');
+
+const spawn = require('cross-spawn');
+const treeKill = require('tree-kill');
+
 const { checkBackend } = require('../utils/healthCheck');
+const { getJavaPath, getBackendJarPath, getLogsDirectory } = require('../utils/resourcePaths');
 
 class BackendService {
   constructor() {

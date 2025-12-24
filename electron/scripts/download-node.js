@@ -1,7 +1,8 @@
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
+
 const { getBuildPlatform } = require('./platform-utils');
 
 const NODE_VERSION = 'v20.11.0'; // LTS version compatible with Next.js 16
@@ -84,10 +85,10 @@ function extractArchive(archivePath, platform, destDir) {
     // Move files from nested directory
     const extractedDir = path.join(destDir, path.basename(archivePath, '.zip'));
     const files = fs.readdirSync(extractedDir);
-    files.forEach(file => {
+    files.forEach((file) => {
       fs.renameSync(
         path.join(extractedDir, file),
-        path.join(destDir, file)
+        path.join(destDir, file),
       );
     });
     fs.rmdirSync(extractedDir);

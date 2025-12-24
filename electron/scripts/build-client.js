@@ -135,7 +135,6 @@ function main() {
     console.log('\n===========================================');
     console.log('  ✓ Client build complete!');
     console.log('===========================================');
-
   } catch (error) {
     console.error('\n✗ Client build failed:', error.message);
     process.exit(1);

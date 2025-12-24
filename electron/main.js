@@ -1,5 +1,7 @@
-const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
 const path = require('path');
+
+const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
+
 const ServiceManager = require('./services/ServiceManager');
 
 // To prevent multiple instances of the application
@@ -34,10 +36,10 @@ function createWindow(url) {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
     },
     title: 'Ambrosia POS',
-    show: false
+    show: false,
   });
 
   mainWindow.loadURL(url);
@@ -60,7 +62,7 @@ function createWindow(url) {
 
     dialog.showErrorBox(
       'Loading Error',
-      `The application could not be loaded:\n${errorDescription}\n\nCode: ${errorCode}`
+      `The application could not be loaded:\n${errorDescription}\n\nCode: ${errorCode}`,
     );
   });
 }
@@ -76,7 +78,7 @@ async function handleStartupError(error) {
     detail: error.message || error.toString(),
     buttons: ['Retry', 'Logs', 'Exit'],
     defaultId: 0,
-    cancelId: 2
+    cancelId: 2,
   });
 
   if (response.response === 0) {

@@ -63,7 +63,6 @@ function main() {
     console.log('\n===========================================');
     console.log('  ✓ Backend build complete!');
     console.log('===========================================');
-
   } catch (error) {
     console.error('\n✗ Backend build failed:', error.message);
     process.exit(1);

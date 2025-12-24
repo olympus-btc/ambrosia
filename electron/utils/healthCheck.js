@@ -1,5 +1,6 @@
-const waitOn = require('wait-on');
 const http = require('http');
+
+const waitOn = require('wait-on');
 
 async function waitForHealth(url, options = {}) {
   const {
@@ -14,7 +15,7 @@ async function waitForHealth(url, options = {}) {
     timeout,
     interval,
     verbose,
-    validateStatus: function (status) {
+    validateStatus: (status) => {
       // Accept 2xx responses as healthy
       // Also accept 401 if acceptUnauthorized is true (service is running, just needs auth)
       if (status >= 200 && status < 300) {
@@ -77,7 +78,7 @@ async function checkPhoenixd(port, maxAttempts = 60, intervalMs = 1000) {
         console.log(`[HealthCheck] Still waiting for phoenixd... (attempt ${attempt}/${maxAttempts})`);
       }
 
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
   }
 }
@@ -120,7 +121,7 @@ async function checkBackend(port, maxAttempts = 60, intervalMs = 1000) {
         console.log(`[HealthCheck] Still waiting for backend... (attempt ${attempt}/${maxAttempts})`);
       }
 
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
   }
 }
@@ -163,7 +164,7 @@ async function checkNextJs(port, maxAttempts = 60, intervalMs = 1000) {
         console.log(`[HealthCheck] Still waiting for Next.js... (attempt ${attempt}/${maxAttempts})`);
       }
 
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
   }
 }

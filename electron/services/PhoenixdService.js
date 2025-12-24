@@ -1,9 +1,11 @@
-const spawn = require('cross-spawn');
-const treeKill = require('tree-kill');
 const fs = require('fs');
 const path = require('path');
-const { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
+
+const spawn = require('cross-spawn');
+const treeKill = require('tree-kill');
+
 const { checkPhoenixd } = require('../utils/healthCheck');
+const { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
 
 class PhoenixdService {
   constructor() {
@@ -46,8 +48,8 @@ class PhoenixdService {
       if (config['http-password-limited-access']) {
         args.push(`--http-password-limited-access=${config['http-password-limited-access']}`);
       }
-      if (config['webhook']) {
-        args.push(`--webhook=${config['webhook']}`);
+      if (config.webhook) {
+        args.push(`--webhook=${config.webhook}`);
       }
       if (config['webhook-secret']) {
         args.push(`--webhook-secret=${config['webhook-secret']}`);

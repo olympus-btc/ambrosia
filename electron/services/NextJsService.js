@@ -1,9 +1,11 @@
-const spawn = require('cross-spawn');
-const treeKill = require('tree-kill');
 const fs = require('fs');
 const path = require('path');
-const { getClientPath, getLogsDirectory, isDevelopment, getNodePath } = require('../utils/resourcePaths');
+
+const spawn = require('cross-spawn');
+const treeKill = require('tree-kill');
+
 const { checkNextJs } = require('../utils/healthCheck');
+const { getClientPath, getLogsDirectory, isDevelopment, getNodePath } = require('../utils/resourcePaths');
 
 class NextJsService {
   constructor() {
