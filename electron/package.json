@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "electron .",
     "dev:inspect": "electron --inspect=5858 .",
-    "build": "npm run build:client && electron-builder",
-    "build:client": "cd ../client && npm run build",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win",
-    "dist:linux": "electron-builder --linux",
+    "build:prepare": "bash scripts/prepare-resources.sh",
+    "build": "npm run build:prepare && electron-builder",
+    "pack": "npm run build:prepare && electron-builder --dir",
+    "dist": "npm run build:prepare && electron-builder",
+    "dist:mac:arm64": "TARGET_PLATFORM=macos-arm64 npm run build:prepare && electron-builder --mac",
+    "dist:mac:x64": "TARGET_PLATFORM=macos-x64 npm run build:prepare && electron-builder --mac",
+    "dist:win": "TARGET_PLATFORM=win-x64 npm run build:prepare && electron-builder --win",
+    "dist:linux": "TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux",
     "postinstall": "electron-builder install-app-deps"
   },
   "author": "BTC-GDL",
@@ -22,10 +23,11 @@
     "electron-builder": "^25.1.8"
   },
   "dependencies": {
+    "bip39": "^3.1.0",
     "cross-spawn": "^7.0.6",
-    "wait-on": "^8.0.1",
     "find-free-port": "^2.0.0",
-    "tree-kill": "^1.2.2"
+    "tree-kill": "^1.2.2",
+    "wait-on": "^8.0.1"
   },
   "build": {
     "appId": "com.olympus-btc.ambrosia-pos",
@@ -38,26 +40,24 @@
       "main.js",
       "preload.js",
       "package.json",
-      "../client/.next/**/*",
-      "../client/public/**/*",
-      "../client/src/**/*",
-      "../client/node_modules/**/*",
-      "../client/next.config.mjs",
-      "../client/package.json",
-      "../client/generate-env.cjs",
-      "../client/postcss.config.mjs",
-      "../client/tsconfig.json"
+      "services/**/*",
+      "utils/**/*"
     ],
     "extraResources": [
       {
-        "from": "../client",
-        "to": "client",
-        "filter": ["**/*"]
+        "from": "resources",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
       "category": "public.app-category.business",
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "build/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -65,11 +65,17 @@
       "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Office",
       "icon": "build/icon.png"
     },
