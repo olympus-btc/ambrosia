@@ -1,7 +1,10 @@
-"use client"
+"use client";
+
 import { useTranslations } from "next-intl";
-import { StoreLayout } from "../StoreLayout"
-import { StoreWallet } from "./StoreWallet"
+
+import { StoreLayout } from "../StoreLayout";
+
+import { StoreWallet } from "./StoreWallet";
 
 export function Wallet() {
   const t = useTranslations("wallet");
@@ -17,5 +20,5 @@ export function Wallet() {
       </header>
       <StoreWallet />
     </StoreLayout>
-  )
+  );
 }

@@ -221,6 +221,12 @@ const storeEs = {
     title: "Wallet",
     subtitle: "Supervisa tu saldo y tus transacciones en BTC",
     loadingMessage: "Cargando información de la wallet...",
+    clipboard: {
+      successTitle: "Copiado",
+      successDescription: "Texto copiado al portapapeles",
+      errorTitle: "Error",
+      errorDescription: "No se pudo copiar al portapapeles",
+    },
     access: {
       title: "Confirmar acceso a Wallet",
       passwordLabel: "Contraseña",
@@ -239,6 +245,8 @@ const storeEs = {
       balanceSat: "Balance Local",
       capacitySat: "Capacidad Total:",
       inboundLiquidity: "Liquidez Entrante:",
+      fetchInfoError: "Error al obtener la información de la wallet",
+      getInfoErrorDescription: "No se pudo cargar la información de la wallet",
     },
     payments: {
       receive: {
@@ -249,8 +257,9 @@ const storeEs = {
         invoiceLightningButton: "Crear Factura Lightning",
         invoiceLightningLoading: "Creando Factura...",
         invoiceSuccessTitle: "Factura creada",
-        invoiceSuccessDescription:
-          "La factura Lightning se ha generado correctamente",
+        invoiceSuccessDescription: "La factura Lightning se ha generado correctamente",
+        invoiceAmountError: "Debes ingresar un monto para para generar el invoice",
+        invoiceCreateError: "Error al crear el invoice",
       },
       send: {
         tabTitle: "Enviar",
@@ -262,6 +271,12 @@ const storeEs = {
         routingFee: "Tarifa de enrutamiento:",
         paymentHash: "Payment Hash:",
         copyButton: "Copiar",
+        noInvoiceToPay: "Debes ingresar una invoice para pagar",
+        invalidInvoiceFormat: "El formato de la invoice BOLT11 no es válido",
+        paySuccessTitle: "Pago realizado",
+        paySuccessDescription: "El pago Lightning se ha enviado correctamente",
+        paymentError: "Error al pagar el invoice",
+        paymentErrorDescription: "No se pudo procesar el pago",
       },
       history: {
         tabTitle: "Historial",
@@ -273,6 +288,8 @@ const storeEs = {
           "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
         sent: "Enviado",
         received: "Recibido",
+        getTransactionsError: "Error al cargar historial",
+        getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
       },
     },
     invoiceModal: {

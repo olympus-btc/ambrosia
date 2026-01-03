@@ -221,6 +221,12 @@ const storeEn = {
     title: "Wallet",
     subtitle: "Track your BTC balance and transactions",
     loadingMessage: "Loading wallet info...",
+    clipboard: {
+      successTitle: "Copied",
+      successDescription: "Text copied to clipboard",
+      errorTitle: "Error",
+      errorDescription: "Could not copy to clipboard",
+    },
     access: {
       title: "Confirm Wallet Access",
       passwordLabel: "Password",
@@ -239,6 +245,8 @@ const storeEn = {
       balanceSat: "Sats Balance",
       capacitySat: "Total Capacity:",
       inboundLiquidity: "Inbound Liquidity:",
+      fetchInfoError: "Error fetching wallet information",
+      getInfoErrorDescription: "Could not load wallet information",
     },
     payments: {
       receive: {
@@ -250,6 +258,8 @@ const storeEn = {
         invoiceLightningLoading: "Creating Invoice...",
         invoiceSuccessTitle: "Invoice created",
         invoiceSuccessDescription: "Lightning invoice generated successfully",
+        invoiceAmountError: "You must enter an amount to generate the invoice",
+        invoiceCreateError: "Error creating the invoice",
       },
       send: {
         tabTitle: "Send",
@@ -261,6 +271,12 @@ const storeEn = {
         routingFee: "Routing Fee:",
         paymentHash: "Payment Hash:",
         copyButton: "Copy",
+        noInvoiceToPay: "You must enter an invoice to pay",
+        invalidInvoiceFormat: "Invalid BOLT11 invoice format",
+        paySuccessTitle: "Payment sent",
+        paySuccessDescription: "Lightning payment sent successfully",
+        paymentError: "Error paying the invoice",
+        paymentErrorDescription: "Could not process the payment",
       },
       history: {
         tabTitle: "History",
@@ -272,6 +288,8 @@ const storeEn = {
           "Transactions will appear here once you'll starting to use the wallet",
         sent: "Sent",
         received: "Received",
+        getTransactionsError: "Error loading history",
+        getTransactionsErrorDescription: "Could not load transaction history",
       },
     },
     invoiceModal: {

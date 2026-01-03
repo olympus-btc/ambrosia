@@ -22,6 +22,7 @@ const eslintConfig = [
       "src/components/dashboard/**",
       "src/components/navigation/**",
       "src/components/pages/Store/Wallet/**",
+      "src/components/pages/Store/Orders/**",
       "src/components/pages/Store/hooks/**",
       "src/components/pages/Store/__tests__/**",
       "src/components/pages/Store/StoreLayout.jsx",
