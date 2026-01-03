@@ -1,5 +1,5 @@
 package pos.ambrosia.models
-
+/* 
 object DefaultTemplates {
     val defaultCustomerTicket = TicketTemplate(
         name = "Default Customer Ticket",
@@ -22,4 +22,4 @@ object DefaultTemplates {
             TicketElement(ElementType.FOOTER, "Thank you!", ElementStyle(justification = Justification.CENTER))
         )
     )
-}
+}*/

@@ -15,9 +15,13 @@ class TicketFactoryTest {
         // Arrange
         val mockEscpos: EscPos = mock()
         val template = TicketTemplate(
+            id = "template-1",
             name = "Test Template",
             elements = listOf(
                 TicketElement(
+                    id = "elem-1",
+                    templateId = "template-1",
+                    order = 0,
                     type = ElementType.TEXT,
                     value = "Welcome to {{config.businessName}}"
                 )
@@ -56,9 +60,13 @@ class TicketFactoryTest {
         val mockEscpos: EscPos = mock()
         val stringCaptor = argumentCaptor<String>()
         val template = TicketTemplate(
+            id = "template-2",
             name = "Table Row Template",
             elements = listOf(
                 TicketElement(
+                    id = "elem-2",
+                    templateId = "template-2",
+                    order = 0,
                     type = ElementType.TABLE_ROW,
                     value = "", // Value is ignored for TABLE_ROW
                     style = ElementStyle(bold = false, justification = Justification.LEFT, fontSize = FontSize.NORMAL)
@@ -108,9 +116,13 @@ class TicketFactoryTest {
         // Arrange
         val mockEscpos: EscPos = mock()
         val template = TicketTemplate(
+            id = "template-3",
             name = "Separator Template",
             elements = listOf(
                 TicketElement(
+                    id = "elem-3",
+                    templateId = "template-3",
+                    order = 0,
                     type = ElementType.SEPARATOR,
                     value = "-"
                 )
@@ -148,9 +160,13 @@ class TicketFactoryTest {
         // Arrange
         val mockEscpos: EscPos = mock()
         val template = TicketTemplate(
+            id = "template-4",
             name = "Table Header Template",
             elements = listOf(
                 TicketElement(
+                    id = "elem-4",
+                    templateId = "template-4",
+                    order = 0,
                     type = ElementType.TABLE_HEADER,
                     value = "Item             Qty     Price"
                 )

@@ -264,13 +264,14 @@ data class Permission(
   val assigned: Int,
 )
 
-enum class TicketType {
+enum class PrinterType {
   KITCHEN,
   CUSTOMER,
+  BAR
 }
 
 @Serializable data class SetPrinterRequest(
-  val type: TicketType,
+  val printerType: PrinterType,
   val printerName: String,
 )
 

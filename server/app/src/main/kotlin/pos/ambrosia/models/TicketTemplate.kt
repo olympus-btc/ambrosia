@@ -6,17 +6,21 @@ import kotlinx.serialization.Serializable
 data class PrintRequest(
     val templateName: String,
     val ticketData: TicketData,
-    val type: TicketType
+    val printerType: PrinterType
 )
 
 @Serializable
 data class TicketTemplate(
+    val id: String,
     val name: String,
     val elements: List<TicketElement>
 )
 
 @Serializable
 data class TicketElement(
+    val id: String,
+    val templateId: String,
+    val order: Int,
     val type: ElementType,
     val value: String, // Can be a literal string or a placeholder like {{ticket.total}}
     val style: ElementStyle? = null
@@ -45,3 +49,16 @@ enum class Justification { LEFT, CENTER, RIGHT }
 
 @Serializable
 enum class FontSize { NORMAL, LARGE, EXTRA_LARGE }
+
+@Serializable
+data class TicketTemplateRequest(
+    val name: String,
+    val elements: List<TicketElementCreateRequest>
+)
+
+@Serializable
+data class TicketElementCreateRequest(
+    val type: ElementType,
+    val value: String,
+    val style: ElementStyle? = null
+)

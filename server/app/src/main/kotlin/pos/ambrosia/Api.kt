@@ -118,7 +118,7 @@ class Api() {
     configureTickets()
     configureShifts()
     configureWallet()
-    configurePrinter()
+    configurePrinters()
     configureConfig()
     configureTicketTemplates()
     configureProducts()

@@ -30,3 +30,5 @@ class InvalidTokenException(message: String = "Invalid token") : Exception(messa
 class WalletOnlyException(message: String = "Wallet access required") : SecurityException(message)
 
 class PermissionDeniedException(message: String = "Permission required") : SecurityException(message)
+
+class PrintTicketException(message: String = "Error processing print job") : RuntimeException(message)
