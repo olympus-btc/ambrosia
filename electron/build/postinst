@@ -1,0 +1,13 @@
+#!/bin/bash
+# Post-installation script for Ambrosia POS Electron .deb package
+# This script sets up the chrome-sandbox permissions required by Electron
+
+set -e
+
+# Set correct ownership and permissions for chrome-sandbox
+if [ -f "/opt/AmbrosiaPos/chrome-sandbox" ]; then
+    chown root:root "/opt/AmbrosiaPos/chrome-sandbox"
+    chmod 4755 "/opt/AmbrosiaPos/chrome-sandbox"
+fi
+
+exit 0

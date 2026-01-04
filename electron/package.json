@@ -18,7 +18,8 @@
     "dist:linux": "TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux",
     "postinstall": "electron-builder install-app-deps"
   },
-  "author": "BTC-GDL",
+  "author": "olympus-btc",
+  "homepage": "https://github.com/olympus-btc/ambrosia",
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -37,7 +38,7 @@
   },
   "build": {
     "appId": "com.olympus-btc.ambrosia-pos",
-    "productName": "Ambrosia POS",
+    "productName": "AmbrosiaPos",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -83,7 +84,11 @@
         "deb"
       ],
       "category": "Office",
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "maintainer": "Ivan Robles <contact@ivanrobles.pro>"
+    },
+    "deb": {
+      "afterInstall": "build/postinst"
     },
     "nsis": {
       "oneClick": false,

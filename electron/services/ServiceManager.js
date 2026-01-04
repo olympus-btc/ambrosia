@@ -38,7 +38,10 @@ class ServiceManager extends EventEmitter {
         console.log('  - backend: http://localhost:9154');
 
         console.log('[ServiceManager] Starting Next.js service...');
-        const result = await this.nextjsService.start(this.ports.nextjs);
+        const result = await this.nextjsService.start(this.ports.nextjs, {
+          host: '127.0.0.1',
+          port: this.ports.backend,
+        });
         console.log('[ServiceManager] All services started successfully');
         return result.url;
       }
@@ -58,7 +61,10 @@ class ServiceManager extends EventEmitter {
       this.emit('service:started', { service: 'backend', port: this.ports.backend });
 
       console.log('[ServiceManager] Step 3: Starting Next.js...');
-      const result = await this.nextjsService.start(this.ports.nextjs);
+      const result = await this.nextjsService.start(this.ports.nextjs, {
+        host: '127.0.0.1',
+        port: this.ports.backend,
+      });
       this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
 
       console.log('[ServiceManager] All services started successfully');
@@ -138,7 +144,10 @@ class ServiceManager extends EventEmitter {
           break;
         case 'nextjs':
           await this.nextjsService.stop();
-          await this.nextjsService.start(this.ports.nextjs);
+          await this.nextjsService.start(this.ports.nextjs, {
+            host: '127.0.0.1',
+            port: this.ports.backend,
+          });
           break;
         default:
           throw new Error(`Unknown service: ${serviceName}`);

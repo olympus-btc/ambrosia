@@ -15,7 +15,7 @@ class NextJsService {
     this.logStream = null;
   }
 
-  async start(port) {
+  async start(port, backendConfig = {}) {
     if (this.process) {
       throw new Error('Next.js service is already running');
     }
@@ -53,6 +53,12 @@ class NextJsService {
       console.log(`[NextJsService] Working directory: ${cwd}`);
       console.log(`[NextJsService] Environment PORT: ${port}`);
 
+      // Use backend config passed as parameter (with fallback to defaults)
+      const backendHost = backendConfig.host || '127.0.0.1';
+      const backendPort = backendConfig.port || '9154';
+
+      console.log(`[NextJsService] Backend configuration: ${backendHost}:${backendPort}`);
+
       // Verify server.js exists
       const serverJsPath = path.join(cwd, 'server.js');
       if (!fs.existsSync(serverJsPath)) {
@@ -60,7 +66,21 @@ class NextJsService {
       }
       console.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
 
-      const env = { ...process.env, PORT: port.toString() };
+      // Pass environment variables directly to Next.js (no .env file needed)
+      const env = {
+        ...process.env,
+        PORT: port.toString(),
+        HOST: backendHost,
+        NEXT_PUBLIC_PORT_API: backendPort.toString(),
+        NEXT_PUBLIC_ELECTRON: 'true',
+      };
+
+      console.log(`[NextJsService] Environment variables:`, {
+        PORT: env.PORT,
+        HOST: env.HOST,
+        NEXT_PUBLIC_PORT_API: env.NEXT_PUBLIC_PORT_API,
+        NEXT_PUBLIC_ELECTRON: env.NEXT_PUBLIC_ELECTRON,
+      });
 
       console.log(`[NextJsService] Spawning process...`);
       this.process = spawn(command, args, {
