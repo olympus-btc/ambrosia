@@ -81,7 +81,7 @@ function main() {
     // Create resources directory
     if (fs.existsSync(RESOURCES_DIR)) {
       console.log('Removing old client resources...');
-      execSync(`rm -rf "${RESOURCES_DIR}"`, { stdio: 'inherit' });
+      fs.rmSync(RESOURCES_DIR, { recursive: true, force: true });
     }
 
     fs.mkdirSync(RESOURCES_DIR, { recursive: true });

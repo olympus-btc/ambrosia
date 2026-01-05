@@ -22,9 +22,20 @@ function main() {
     console.log('Building JAR with Gradle...');
     console.log(`Working directory: ${SERVER_DIR}\n`);
 
-    execSync('./gradlew clean jar', {
+    // Use appropriate Gradle wrapper for platform
+    let gradleCommand;
+    if (process.platform === 'win32') {
+      // On Windows, use .\ prefix to execute batch file from current directory
+      gradleCommand = '.\\gradlew.bat clean jar';
+    } else {
+      gradleCommand = './gradlew clean jar';
+    }
+    console.log(`Running: ${gradleCommand}\n`);
+
+    execSync(gradleCommand, {
       cwd: SERVER_DIR,
       stdio: 'inherit',
+      shell: true,
     });
 
     console.log('\n✓ JAR build complete\n');

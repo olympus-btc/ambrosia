@@ -102,7 +102,15 @@ function extractZip(zipPath, destDir) {
   }
 
   try {
-    execSync(`unzip -q "${zipPath}" -d "${destDir}"`, { stdio: 'inherit' });
+    // Extract zip using platform-appropriate method
+    if (process.platform === 'win32') {
+      // Use PowerShell Expand-Archive on Windows (available on Windows 10+)
+      const psCommand = `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`;
+      execSync(psCommand, { stdio: 'inherit' });
+    } else {
+      // Use unzip on Unix systems
+      execSync(`unzip -q "${zipPath}" -d "${destDir}"`, { stdio: 'inherit' });
+    }
 
     // Find the extracted directory (usually has version number)
     const extractedDirs = fs.readdirSync(destDir).filter((f) => {
@@ -119,13 +127,13 @@ function extractZip(zipPath, destDir) {
         const oldPath = path.join(extractedDir, file);
         const newPath = path.join(destDir, file);
         if (fs.existsSync(newPath)) {
-          execSync(`rm -rf "${newPath}"`);
+          fs.rmSync(newPath, { recursive: true, force: true });
         }
         fs.renameSync(oldPath, newPath);
       });
 
       // Remove the extracted directory
-      fs.rmdirSync(extractedDir);
+      fs.rmSync(extractedDir, { recursive: true, force: true });
     }
 
     console.log(`Extracted to: ${destDir}\n`);
@@ -170,7 +178,7 @@ async function downloadAndExtractPhoenixd(platform, url, filename) {
       console.log(`✓ Successfully installed Phoenixd for ${platform}`);
       // Make executable on Unix systems
       if (!platform.startsWith('win')) {
-        execSync(`chmod +x "${phoenixdPath}"`);
+        fs.chmodSync(phoenixdPath, 0o755);
       }
     } else {
       throw new Error(`Phoenixd executable not found at ${phoenixdPath}`);

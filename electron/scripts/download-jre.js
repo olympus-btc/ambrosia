@@ -133,17 +133,24 @@ function extractArchive(archivePath, platform, destDir) {
           const oldPath = path.join(sourceDir, file);
           const newPath = path.join(destDir, file);
           if (fs.existsSync(newPath)) {
-            execSync(`rm -rf "${newPath}"`);
+            fs.rmSync(newPath, { recursive: true, force: true });
           }
           fs.renameSync(oldPath, newPath);
         });
 
         // Remove the extracted directory and all its parents
-        execSync(`rm -rf "${extractedDir}"`);
+        fs.rmSync(extractedDir, { recursive: true, force: true });
       }
     } else if (archivePath.endsWith('.zip')) {
-      // Extract zip (Windows)
-      execSync(`unzip -q "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
+      // Extract zip (Windows and other platforms)
+      if (process.platform === 'win32') {
+        // Use PowerShell Expand-Archive on Windows (available on Windows 10+)
+        const psCommand = `powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`;
+        execSync(psCommand, { stdio: 'inherit' });
+      } else {
+        // Use unzip on Unix systems
+        execSync(`unzip -q "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
+      }
 
       // Find the extracted directory
       const extractedDirs = fs.readdirSync(destDir).filter((f) => {
@@ -160,13 +167,13 @@ function extractArchive(archivePath, platform, destDir) {
           const oldPath = path.join(extractedDir, file);
           const newPath = path.join(destDir, file);
           if (fs.existsSync(newPath)) {
-            execSync(`rm -rf "${newPath}"`);
+            fs.rmSync(newPath, { recursive: true, force: true });
           }
           fs.renameSync(oldPath, newPath);
         });
 
         // Remove empty directory
-        fs.rmdirSync(extractedDir);
+        fs.rmSync(extractedDir, { recursive: true, force: true });
       }
     }
 
@@ -209,7 +216,7 @@ async function downloadAndExtractJRE(platform, url, filename) {
       console.log(`✓ Successfully installed JRE for ${platform}`);
       // Make executable on Unix systems
       if (!platform.startsWith('win')) {
-        execSync(`chmod +x "${javaPath}"`);
+        fs.chmodSync(javaPath, 0o755);
       }
     } else {
       throw new Error(`Java executable not found at ${javaPath}`);

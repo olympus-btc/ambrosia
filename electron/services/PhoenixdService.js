@@ -61,9 +61,21 @@ class PhoenixdService {
       console.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
       console.log(`[PhoenixdService] Command: ${phoenixdPath} ${args.join(' ')}`);
 
+      // Set JAVA_HOME for phoenixd.bat on Windows to use bundled JRE
+      const env = { ...process.env };
+      if (process.platform === 'win32') {
+        const { getJavaPath } = require('../utils/resourcePaths');
+        const javaPath = getJavaPath();
+        // getJavaPath returns path to java.exe, we need the JRE directory
+        const path = require('path');
+        env.JAVA_HOME = path.dirname(path.dirname(javaPath));
+        console.log(`[PhoenixdService] Setting JAVA_HOME: ${env.JAVA_HOME}`);
+      }
+
       this.process = spawn(phoenixdPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
+        env,
       });
 
       this.process.stdout.on('data', (data) => {

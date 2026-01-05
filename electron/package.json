@@ -8,7 +8,7 @@
     "dev:inspect": "electron --inspect=5858 .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:prepare": "bash scripts/prepare-resources.sh",
+    "build:prepare": "node scripts/prepare-resources-wrapper.js",
     "build": "npm run build:prepare && electron-builder",
     "pack": "npm run build:prepare && electron-builder --dir",
     "dist": "npm run build:prepare && electron-builder",
@@ -43,6 +43,10 @@
       "output": "dist",
       "buildResources": "build"
     },
+    "asarUnpack": [
+      "services/**/*",
+      "utils/**/*"
+    ],
     "files": [
       "main.js",
       "preload.js",
@@ -73,8 +77,7 @@
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ],
       "icon": "build/icon.ico"
     },

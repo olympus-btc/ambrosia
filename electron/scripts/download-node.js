@@ -79,8 +79,9 @@ function extractArchive(archivePath, platform, destDir) {
   console.log(`Extracting: ${path.basename(archivePath)}`);
 
   if (platform.startsWith('win')) {
-    // Windows - use unzip
-    execSync(`unzip -q "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
+    // Windows - use PowerShell for zip extraction
+    const psCommand = `powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`;
+    execSync(psCommand, { stdio: 'inherit' });
 
     // Move files from nested directory
     const extractedDir = path.join(destDir, path.basename(archivePath, '.zip'));
@@ -91,7 +92,7 @@ function extractArchive(archivePath, platform, destDir) {
         path.join(destDir, file),
       );
     });
-    fs.rmdirSync(extractedDir);
+    fs.rmSync(extractedDir, { recursive: true, force: true });
   } else {
     // macOS/Linux - use tar
     execSync(`tar -xzf "${archivePath}" -C "${destDir}" --strip-components=1`, { stdio: 'inherit' });
