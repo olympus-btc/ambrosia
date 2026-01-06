@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 data class PrintRequest(
     val templateName: String,
     val ticketData: TicketData,
-    val printerType: PrinterType
+    val printerType: PrinterType,
+    val printerId: String? = null,
+    val broadcast: Boolean = false
 )
 
 @Serializable
