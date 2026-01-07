@@ -57,7 +57,7 @@ export function Settings() {
       </header>
 
       <div className="flex flex-col lg:flex-row lg:w-full lg:space-x-6">
-        <Card className="rounded-lg mb-6 p-6 lg:w-full">
+        <Card shadow="none" className="rounded-lg mb-6 p-6 lg:w-full shadow-lg">
           <CardHeader className="flex flex-col items-start">
             <h2 className="text-2xl font-semibold text-green-900">
               {t("cardInfo.title")}
@@ -151,7 +151,7 @@ export function Settings() {
           </CardFooter>
         </Card>
         <div className="flex flex-col lg:w-full">
-          <Card className="rounded-lg mb-6 p-6">
+          <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
                 {t("cardCurrency.title")}
@@ -185,7 +185,7 @@ export function Settings() {
             </CardBody>
           </Card>
 
-          <Card className="rounded-lg mb-6 p-6">
+          <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
                 {t("cardLanguage.title")}
