@@ -121,11 +121,7 @@ describe("paymentHandlers", () => {
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
       setCashPaymentConfig,
-      processBasePayment: jest.fn(() => Promise.resolve({
-        paymentResult: { id: "pay-1" },
-        orderPayload: { id: "order-1" },
-        orderId: "order-1",
-      })),
+      processBasePayment: jest.fn(),
       updateOrder: jest.fn(),
       onResetCart: jest.fn(),
       onPay: jest.fn(),
@@ -161,9 +157,9 @@ describe("paymentHandlers", () => {
       expect.objectContaining({
         amountDue: 1,
         displayTotal: "fmt-100",
-        paymentResult: { id: "pay-1" },
-        orderPayload: { id: "order-1" },
-        orderId: "order-1",
+        items: [{ id: 1 }],
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       }),
     );
     expect(dispatch).toHaveBeenCalledWith({ type: "start" });
@@ -408,6 +404,11 @@ describe("paymentHandlers", () => {
 
   it("completes cash payment flow", async () => {
     const dispatch = jest.fn();
+    const processBasePayment = jest.fn(() => Promise.resolve({
+      paymentResult: { paymentId: "pay-1", items: [{ id: 1 }], total: 100, ticketId: "ticket-1" },
+      orderPayload: { id: "order-1" },
+      orderId: "order-1",
+    }));
     const updateOrder = jest.fn(() => Promise.resolve());
     const onPay = jest.fn();
     const onResetCart = jest.fn();
@@ -415,21 +416,42 @@ describe("paymentHandlers", () => {
 
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
-        orderId: "order-1",
-        orderPayload: { id: "order-1" },
-        paymentResult: { paymentId: "pay-1" },
+        amountDue: 1,
+        displayTotal: "fmt-100",
+        items: [{ id: 1 }],
+        amounts: {
+          amountFiat: 1,
+          displayTotal: "fmt-100",
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       },
       dispatch,
+      processBasePayment,
+      buildOrderPayload: jest.fn(),
+      buildTicketPayload: jest.fn(),
+      createOrder: jest.fn(),
+      createTicket: jest.fn(),
+      buildPaymentPayload: jest.fn(),
+      createPayment: jest.fn(),
+      linkPaymentToTicket: jest.fn(),
       updateOrder,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
       t,
       setCashPaymentConfig,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { user_id: "u1" },
     });
 
     await handler({ cashReceived: 10, change: 2 });
 
+    expect(processBasePayment).toHaveBeenCalled();
     expect(updateOrder).toHaveBeenCalledWith("order-1", {
       id: "order-1",
       status: "paid",
@@ -453,17 +475,41 @@ describe("paymentHandlers", () => {
 
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
-        orderId: "order-1",
-        orderPayload: { id: "order-1" },
-        paymentResult: { paymentId: "pay-1" },
+        amountDue: 1,
+        displayTotal: "fmt-100",
+        items: [{ id: 1 }],
+        amounts: {
+          amountFiat: 1,
+          displayTotal: "fmt-100",
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       },
       dispatch: jest.fn(),
+      processBasePayment: jest.fn(() => Promise.resolve({
+        paymentResult: { paymentId: "pay-1" },
+        orderPayload: { id: "order-1" },
+        orderId: "order-1",
+      })),
+      buildOrderPayload: jest.fn(),
+      buildTicketPayload: jest.fn(),
+      createOrder: jest.fn(),
+      createTicket: jest.fn(),
+      buildPaymentPayload: jest.fn(),
+      createPayment: jest.fn(),
+      linkPaymentToTicket: jest.fn(),
       updateOrder: jest.fn(() => Promise.reject(new Error("fail"))),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
       t,
       setCashPaymentConfig,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { user_id: "u1" },
     });
 
     await handler({ cashReceived: 10, change: 2 });

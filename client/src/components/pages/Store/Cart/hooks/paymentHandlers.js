@@ -106,6 +106,18 @@ export function buildHandlePay({
         return;
       }
 
+      if (methodName.includes("cash") || methodName.includes("efectivo")) {
+        setCashPaymentConfig({
+          amountDue: amounts.amountFiat,
+          displayTotal: amounts.displayTotal,
+          items,
+          amounts,
+          selectedPaymentMethod,
+          currencyId,
+        });
+        return;
+      }
+
       const { paymentResult, orderPayload, orderId } = await processBasePayment(
         {
           items,
@@ -123,17 +135,6 @@ export function buildHandlePay({
           t,
         },
       );
-
-      if (methodName.includes("cash") || methodName.includes("efectivo")) {
-        setCashPaymentConfig({
-          amountDue: amounts.amountFiat,
-          displayTotal: amounts.displayTotal,
-          paymentResult,
-          orderPayload,
-          orderId,
-        });
-        return;
-      }
 
       if (orderId) {
         await updateOrder(orderId, {
@@ -266,6 +267,14 @@ export function buildHandleBtcComplete({
 export function buildHandleCashComplete({
   cashPaymentConfig,
   dispatch,
+  processBasePayment,
+  buildOrderPayload,
+  buildTicketPayload,
+  createOrder,
+  createTicket,
+  buildPaymentPayload,
+  createPayment,
+  linkPaymentToTicket,
   updateOrder,
   onPay,
   onResetCart,
@@ -273,27 +282,44 @@ export function buildHandleCashComplete({
   t,
   setCashPaymentConfig,
   printCustomerReceipt,
+  user,
 }) {
   return async ({ cashReceived, change }) => {
     if (!cashPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      if (cashPaymentConfig.orderId) {
-        await updateOrder(cashPaymentConfig.orderId, {
-          ...cashPaymentConfig.orderPayload,
-          id: cashPaymentConfig.orderId,
+      const { paymentResult, orderPayload, orderId } = await processBasePayment({
+        items: cashPaymentConfig.items || [],
+        amounts: cashPaymentConfig.amounts,
+        selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
+        currencyId: cashPaymentConfig.currencyId,
+        user,
+        buildOrderPayload,
+        buildTicketPayload,
+        createOrder,
+        createTicket,
+        buildPaymentPayload,
+        createPayment,
+        linkPaymentToTicket,
+        t,
+      });
+
+      if (orderId) {
+        await updateOrder(orderId, {
+          ...orderPayload,
+          id: orderId,
           status: "paid",
         });
       }
 
       await printCustomerReceipt?.({
-        items: cashPaymentConfig.paymentResult?.items,
-        totalCents: cashPaymentConfig.paymentResult?.total,
-        ticketId: cashPaymentConfig.paymentResult?.ticketId,
+        items: paymentResult?.items,
+        totalCents: paymentResult?.total,
+        ticketId: paymentResult?.ticketId,
       });
 
       onPay?.({
-        ...cashPaymentConfig.paymentResult,
+        ...paymentResult,
         cashReceived,
         change,
       });
