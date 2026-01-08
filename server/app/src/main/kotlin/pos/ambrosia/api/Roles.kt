@@ -84,6 +84,13 @@ fun Route.roles(roleService: RolesService, permissionsService: PermissionsServic
       }
 
       val updatedRole = call.receive<Role>()
+      // Evitar colisión de nombre con otro rol
+      val existing = roleService.getRoles()
+      val nameTaken = existing.any { it.role.equals(updatedRole.role, ignoreCase = true) && it.id != id }
+      if (nameTaken) {
+        call.respond(HttpStatusCode.Conflict, "Role name already exists")
+        return@put
+      }
       val isUpdated = roleService.updateRole(id, updatedRole)
       logger.info(isUpdated.toString())
 
