@@ -61,7 +61,7 @@ export function Summary({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card shadow="none" className="rounded-lg shadow-lg">
         <CardHeader>
           <h2 className="text-lg font-semibold text-green-900">
             {t("summary.title")}

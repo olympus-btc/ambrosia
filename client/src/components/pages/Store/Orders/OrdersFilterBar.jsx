@@ -18,24 +18,20 @@ export function OrdersFilterBar({
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-4">
         <Input
+          isClearable
+          className="flex-1"
+          label={t("filter.searchLabel")}
           placeholder={t("filter.searchPlaceholder")}
+          startContent={<Search width={20} height={20} />}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          variant="bordered"
-          size="lg"
-          startContent={<Search className="w-4 h-4 text-gray-400" />}
-          classNames={{
-            input: "text-base",
-          }}
-          className="flex-1"
+          onClear={() => onSearchChange("")}
         />
         <Select
           aria-label="Rows per page"
-          placeholder={t("filter.rowsPerPage")}
+          label={t("filter.rowsPerPage")}
           selectedKeys={[rowsPerPage.toString()]}
           onSelectionChange={(keys) => onRowsPerPageChange(Array.from(keys)[0])}
-          variant="bordered"
-          size="lg"
           className="w-full md:w-48"
         >
           {[5, 10, 20, 50].map((count) => (
@@ -51,7 +47,7 @@ export function OrdersFilterBar({
         onSelectionChange={onFilterChange}
         variant="underlined"
         classNames={{
-          tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
+          tabList: "gap-6 w-full relative rounded-none p-0",
           cursor: "w-full bg-forest",
           tab: "max-w-fit px-6 py-3 h-12",
           tabContent: "group-data-[selected=true]:text-forest",

@@ -314,6 +314,7 @@ const storeEs = {
       paid: "Órdenes Pagadas ({count})",
     },
     filter: {
+      searchLabel: "Buscar",
       searchPlaceholder: "Buscar por ID o usuario...",
       rowsPerPage: "Filas por página",
       rowsOption: "{count} filas",

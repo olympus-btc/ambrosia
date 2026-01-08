@@ -21,7 +21,12 @@ export function DeleteProductsModal({ product, deleteProductsShowModal, setDelet
           <p className="text-red-500 text-sm">{t("modal.warningDelete")}</p>
         </ModalBody>
         <ModalFooter>
-          <Button onPress={() => setDeleteProductsShowModal(false)}>
+          <Button
+            variant="bordered"
+            type="button"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onPress={() => setDeleteProductsShowModal(false)}
+          >
             {t("modal.cancelButton")}
           </Button>
           <Button color="danger" onPress={onConfirm}>

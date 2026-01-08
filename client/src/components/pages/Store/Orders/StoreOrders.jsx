@@ -62,71 +62,69 @@ export default function StoreOrders() {
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
   return (
-    <div className="min-h-screen gradient-fresh p-4">
-      <div className="max-w-7xl mx-auto">
-        <Card className="mb-6 shadow-lg border-0 bg-white">
-          <CardBody>
-            <OrdersFilterBar
-              filter={filter}
-              searchTerm={searchTerm}
-              rowsPerPage={rowsPerPage}
-              paidCount={paidCount}
-              onSearchChange={(value) => {
-                setSearchTerm(value);
-                setPage(1);
-              }}
-              onRowsPerPageChange={(value) => {
-                setRowsPerPage(parseInt(value, 10));
-                setPage(1);
-              }}
-              onFilterChange={(value) => setFilter(String(value))}
-            />
-          </CardBody>
-        </Card>
+    <div className="max-w-7xl mx-auto">
+      <Card shadow="none" className="mb-6 shadow-lg bg-white rounded-lg">
+        <CardBody>
+          <OrdersFilterBar
+            filter={filter}
+            searchTerm={searchTerm}
+            rowsPerPage={rowsPerPage}
+            paidCount={paidCount}
+            onSearchChange={(value) => {
+              setSearchTerm(value);
+              setPage(1);
+            }}
+            onRowsPerPageChange={(value) => {
+              setRowsPerPage(parseInt(value, 10));
+              setPage(1);
+            }}
+            onFilterChange={(value) => setFilter(String(value))}
+          />
+        </CardBody>
+      </Card>
 
-        <Card className="shadow-lg border-0 bg-white">
-          <CardHeader>
-            <h3 className="text-lg font-bold text-deep flex items-center">
-              <Filter className="w-5 h-5 mr-2" />
-              {t("header.paid", { count: filteredOrders.length })}
-            </h3>
-          </CardHeader>
-          <CardBody>
-            {filteredOrders.length > 0 ? (
-              <div className="space-y-4">
-                <OrdersTable
-                  orders={paginatedOrders}
-                  formatAmount={formatAmount}
-                  onViewOrder={handleOrderClick}
-                />
+      <Card shadow="none" className="shadow-lg bg-white rounded-lg">
+        <CardHeader>
+          <h3 className="text-lg font-bold text-deep flex items-center">
+            <Filter className="w-5 h-5 mr-2" />
+            {t("header.paid", { count: filteredOrders.length })}
+          </h3>
+        </CardHeader>
+        <CardBody>
+          {filteredOrders.length > 0 ? (
+            <div className="space-y-4">
+              <OrdersTable
+                orders={paginatedOrders}
+                formatAmount={formatAmount}
+                onViewOrder={handleOrderClick}
+              />
 
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-6">
-                    <Pagination
-                      total={totalPages}
-                      page={page}
-                      onChange={setPage}
-                      color="primary"
-                      showControls
-                      showShadow
-                    />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <EmptyOrdersState filter={filter} searchTerm={searchTerm} />
-            )}
-          </CardBody>
-        </Card>
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <Pagination
+                    total={totalPages}
+                    page={page}
+                    onChange={setPage}
+                    color="primary"
+                    showControls
+                    showShadow
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <EmptyOrdersState filter={filter} searchTerm={searchTerm} />
+          )}
+        </CardBody>
+      </Card>
 
-        <OrderDetailsModal
-          order={selectedOrder}
-          isOpen={showDetails}
-          onClose={() => setShowDetails(false)}
-          onEdit={handleEditOrder}
-          formatAmount={formatAmount}
-        />
-      </div>
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+        onEdit={handleEditOrder}
+        formatAmount={formatAmount}
+      />
     </div>
   );
 }

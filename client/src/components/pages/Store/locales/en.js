@@ -314,6 +314,7 @@ const storeEn = {
       paid: "Paid Orders ({count})",
     },
     filter: {
+      searchLabel: "Search",
       searchPlaceholder: "Search by ID or user...",
       rowsPerPage: "Rows per page",
       rowsOption: "{count} rows",

@@ -134,7 +134,7 @@ export default function WalletGuard({
         hideCloseButton
         backdrop="blur"
       >
-        <ModalContent>
+        <ModalContent className="rounded-lg">
           <ModalHeader>{title}</ModalHeader>
           <ModalBody>
             <Form onSubmit={handleSubmit} id="wallet-guard-form">
@@ -158,7 +158,12 @@ export default function WalletGuard({
             </Form>
           </ModalBody>
           <ModalFooter>
-            <Button color="secondary" onPress={() => setIsOpen(false)}>
+            <Button
+              variant="bordered"
+              type="button"
+              className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onPress={() => setIsOpen(false)}
+            >
               {cancelText}
             </Button>
             <Button

@@ -28,12 +28,16 @@ export function SearchProducts({ products, onAddProduct, categories }) {
       <Input
         isClearable
         className="mb-4"
+        classNames={{
+          inputWrapper: "rounded-lg bg-white data-[hover=true]:bg-white data-[focus=true]:bg-white",
+        }}
         label={t("search.label")}
         placeholder={t("search.placeholder")}
         startContent={
           <Search width={20} height={20} />
         }
         value={search}
+        onClear={() => setSearch("")}
         onChange={(e) => setSearch(e.target.value)}
       />
 
