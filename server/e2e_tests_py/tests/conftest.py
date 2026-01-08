@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from ambrosia.http_client import AmbrosiaHttpClient
+from ambrosia.auth_utils import login_user, create_test_user, create_test_role, grant_permissions
 
 # Import fixtures from test_server to make them available to tests
 # These are pytest fixtures that will be used by tests and other fixtures
@@ -93,11 +94,11 @@ def initialize_database(manage_server_lifecycle, server_url: str):  # noqa: F811
                 "Attempting to initialize database with default user for tests..."
             )
             setup_data = {
-                "businessType": "restaurant",
+                "businessType": "store",
                 "userName": "cooluser1",
                 "userPassword": "password123",
                 "userPin": "0000",
-                "businessName": "Test Restaurant",
+                "businessName": "Test Store",
                 "businessAddress": "123 Test St",
                 "businessPhone": "1234567890",
                 "businessEmail": "test@example.com",
@@ -151,3 +152,26 @@ def initialize_database(manage_server_lifecycle, server_url: str):  # noqa: F811
     yield
 
     # Teardown (if needed) would go here
+
+
+@pytest.fixture
+async def admin_client(server_url: str):
+    """Fixture that provides an authenticated admin client.
+
+    This fixture creates a new AmbrosiaHttpClient, performs login with
+    default admin credentials, and yields the authenticated client.
+    The client is automatically closed after the test.
+    """
+    async with AmbrosiaHttpClient(server_url) as client:
+        await login_user(client)
+        yield client
+
+
+@pytest.fixture
+async def public_client(server_url: str):
+    """Fixture that provides an unauthenticated client.
+    
+    The client is automatically closed after the test.
+    """
+    async with AmbrosiaHttpClient(server_url) as client:
+        yield client
