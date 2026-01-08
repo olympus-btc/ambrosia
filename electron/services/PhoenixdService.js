@@ -64,8 +64,20 @@ class PhoenixdService {
       // Set JAVA_HOME for phoenixd.bat on Windows to use bundled JRE
       const env = { ...process.env };
       if (process.platform === 'win32') {
-        const { getJavaPath } = require('../utils/resourcePaths');
-        const javaPath = getJavaPath();
+        const { getJavaPath, getBasePath } = require('../utils/resourcePaths');
+
+        // Special case: phoenixd doesn't have native ARM64 support for Windows
+        // We need to use x64 JRE (via emulation) even on ARM64
+        let javaPath;
+        if (process.arch === 'arm64') {
+          // Use x64 JRE for phoenixd on ARM64 Windows (runs under emulation)
+          const path = require('path');
+          javaPath = path.join(getBasePath(), 'jre', 'win-x64', 'bin', 'java.exe');
+          console.log(`[PhoenixdService] Using x64 JRE for phoenixd (ARM64 Windows emulation)`);
+        } else {
+          javaPath = getJavaPath();
+        }
+
         // getJavaPath returns path to java.exe, we need the JRE directory
         const path = require('path');
         env.JAVA_HOME = path.dirname(path.dirname(javaPath));

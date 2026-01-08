@@ -65,7 +65,7 @@ echo "=== Step 1: Download Node.js for $PLATFORM ==="
 echo ""
 
 NODE_CHECK=""
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     NODE_CHECK="resources/node/$PLATFORM/node.exe"
 else
     NODE_CHECK="resources/node/$PLATFORM/bin/node"
@@ -84,7 +84,7 @@ echo "=== Step 2: Download JRE 21 for $PLATFORM ==="
 echo ""
 
 JRE_CHECK=""
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     JRE_CHECK="resources/jre/$PLATFORM/bin/java.exe"
 else
     JRE_CHECK="resources/jre/$PLATFORM/bin/java"
@@ -103,7 +103,7 @@ echo "=== Step 3: Download Phoenixd for $PLATFORM ==="
 echo ""
 
 PHOENIXD_CHECK=""
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     PHOENIXD_CHECK="resources/phoenixd/$PLATFORM/bin/phoenixd.bat"
 else
     PHOENIXD_CHECK="resources/phoenixd/$PLATFORM/phoenixd"
@@ -161,7 +161,7 @@ echo "Verifying critical files:"
 ERRORS=0
 
 # Check Node.js for current platform
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     NODE_BIN="resources/node/$PLATFORM/node.exe"
 else
     NODE_BIN="resources/node/$PLATFORM/bin/node"
@@ -175,7 +175,7 @@ else
 fi
 
 # Check JRE for current platform
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     JAVA_BIN="resources/jre/$PLATFORM/bin/java.exe"
 else
     JAVA_BIN="resources/jre/$PLATFORM/bin/java"
@@ -189,7 +189,7 @@ else
 fi
 
 # Check Phoenixd for current platform
-if [ "$PLATFORM" == "win-x64" ]; then
+if [[ "$PLATFORM" == win-* ]]; then
     PHOENIXD_BIN="resources/phoenixd/$PLATFORM/bin/phoenixd.bat"
 else
     PHOENIXD_BIN="resources/phoenixd/$PLATFORM/phoenixd"
@@ -227,10 +227,12 @@ if [ $ERRORS -eq 0 ]; then
     echo -e "===========================================${NC}"
     echo ""
     echo "Next steps:"
-    echo "  • npm run build      - Build for current platform"
-    echo "  • npm run dist:mac   - Build macOS installer"
-    echo "  • npm run dist:win   - Build Windows installer"
-    echo "  • npm run dist:linux - Build Linux installer"
+    echo "  • npm run build          - Build for current platform"
+    echo "  • npm run dist:mac:arm64 - Build macOS ARM64 installer"
+    echo "  • npm run dist:mac:x64   - Build macOS x64 installer"
+    echo "  • npm run dist:win:x64   - Build Windows x64 installer"
+    echo "  • npm run dist:win:arm64 - Build Windows ARM64 installer"
+    echo "  • npm run dist:linux     - Build Linux installer"
     echo ""
     exit 0
 else

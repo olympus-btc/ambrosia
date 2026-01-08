@@ -24,6 +24,11 @@ const ALL_DOWNLOADS = {
     url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-win-x64.zip`,
     filename: `node-${NODE_VERSION}-win-x64.zip`,
   },
+  'win-arm64': {
+    platform: 'win-arm64',
+    url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-win-arm64.zip`,
+    filename: `node-${NODE_VERSION}-win-arm64.zip`,
+  },
   'linux-x64': {
     platform: 'linux-x64',
     url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz`,
@@ -31,7 +36,6 @@ const ALL_DOWNLOADS = {
   },
 };
 
-// Solo descargar para la plataforma actual
 const currentPlatform = getBuildPlatform();
 const DOWNLOADS = [ALL_DOWNLOADS[currentPlatform]];
 

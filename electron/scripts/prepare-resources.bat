@@ -14,7 +14,12 @@ if defined TARGET_PLATFORM (
     set PLATFORM=%TARGET_PLATFORM%
     echo Using TARGET_PLATFORM: %PLATFORM% ^(cross-platform build^)
 ) else (
-    set PLATFORM=win-x64
+    REM Auto-detect Windows architecture
+    if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
+        set PLATFORM=win-arm64
+    ) else (
+        set PLATFORM=win-x64
+    )
     echo Auto-detected platform: %PLATFORM%
 )
 
@@ -179,8 +184,9 @@ if %ERRORS% equ 0 (
     echo ===========================================
     echo.
     echo Next steps:
-    echo   * npm run build      - Build for current platform
-    echo   * npm run dist:win   - Build Windows installer
+    echo   * npm run build          - Build for current platform
+    echo   * npm run dist:win:x64   - Build Windows x64 installer
+    echo   * npm run dist:win:arm64 - Build Windows ARM64 installer
     echo.
     exit /b 0
 ) else (

@@ -25,6 +25,11 @@ const ALL_JRE_DOWNLOADS = {
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk',
     filename: 'jre-win-x64.zip',
   },
+  'win-arm64': {
+    platform: 'win-arm64',
+    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    filename: 'jre-win-arm64.zip',
+  },
   'linux-x64': {
     platform: 'linux-x64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse?project=jdk',
@@ -32,9 +37,19 @@ const ALL_JRE_DOWNLOADS = {
   },
 };
 
-// Solo descargar para la plataforma actual
 const currentPlatform = getBuildPlatform();
-const JRE_DOWNLOADS = [ALL_JRE_DOWNLOADS[currentPlatform]];
+
+// Special case for Windows ARM64: also download x64 JRE for phoenixd
+// (phoenixd doesn't have native ARM64 support yet)
+let JRE_DOWNLOADS;
+if (currentPlatform === 'win-arm64') {
+  JRE_DOWNLOADS = [
+    ALL_JRE_DOWNLOADS['win-arm64'], // For backend (native)
+    ALL_JRE_DOWNLOADS['win-x64'], // For phoenixd (emulated)
+  ];
+} else {
+  JRE_DOWNLOADS = [ALL_JRE_DOWNLOADS[currentPlatform]];
+}
 
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {

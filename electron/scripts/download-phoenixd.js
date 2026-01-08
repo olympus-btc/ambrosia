@@ -25,6 +25,14 @@ const ALL_PHOENIXD_DOWNLOADS = {
     url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
     filename: 'phoenixd-win-x64.zip',
   },
+  'win-arm64': {
+    platform: 'win-arm64',
+    // Note: phoenixd doesn't have native ARM64 support for Windows yet
+    // We use the JVM version which will run under x64 emulation
+    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
+    filename: 'phoenixd-win-arm64.zip',
+    // This will be stored in win-arm64 folder but runs under emulation
+  },
   'linux-x64': {
     platform: 'linux-x64',
     url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-linux-x64.zip`,
@@ -32,7 +40,6 @@ const ALL_PHOENIXD_DOWNLOADS = {
   },
 };
 
-// Solo descargar para la plataforma actual
 const currentPlatform = getBuildPlatform();
 const PHOENIXD_DOWNLOADS = [ALL_PHOENIXD_DOWNLOADS[currentPlatform]];
 

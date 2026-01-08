@@ -10,7 +10,7 @@ function getPlatform() {
   if (platform === 'darwin') {
     return arch === 'arm64' ? 'macos-arm64' : 'macos-x64';
   } else if (platform === 'win32') {
-    return 'win-x64';
+    return arch === 'arm64' ? 'win-arm64' : 'win-x64';
   } else if (platform === 'linux') {
     return 'linux-x64';
   }
