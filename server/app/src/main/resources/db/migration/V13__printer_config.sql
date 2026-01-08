@@ -4,6 +4,7 @@ CREATE TABLE printer_configs (
     id BLOB PRIMARY KEY,
     printer_type TEXT NOT NULL CHECK(printer_type IN ('KITCHEN','CUSTOMER','BAR')),
     printer_name TEXT NOT NULL,
+    template_name TEXT,
     is_default BOOLEAN NOT NULL DEFAULT 0,
     enabled BOOLEAN NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))

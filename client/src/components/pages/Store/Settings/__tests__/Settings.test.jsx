@@ -5,6 +5,8 @@ import * as useCurrencyHook from "@components/hooks/useCurrency";
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
+import * as usePrintersHook from "../hooks/usePrinter";
+import * as useTemplatesHook from "../hooks/useTemplates";
 
 import { Settings } from "../Settings";
 
@@ -100,6 +102,28 @@ beforeEach(() => {
     updateCurrency: mockUpdateCurrency,
     formatAmount: jest.fn(),
     refetch: jest.fn(),
+  });
+
+  jest.spyOn(usePrintersHook, "usePrinters").mockReturnValue({
+    availablePrinters: [],
+    printerConfigs: [],
+    loadingAvailable: false,
+    loadingConfigs: false,
+    error: null,
+    createPrinterConfig: jest.fn(),
+    updatePrinterConfig: jest.fn(),
+    deletePrinterConfig: jest.fn(),
+    setDefaultPrinterConfig: jest.fn(),
+  });
+
+  jest.spyOn(useTemplatesHook, "useTemplates").mockReturnValue({
+    templates: [],
+    loading: false,
+    error: null,
+    refetch: jest.fn(),
+    createTemplate: jest.fn(),
+    updateTemplate: jest.fn(),
+    deleteTemplate: jest.fn(),
   });
 });
 

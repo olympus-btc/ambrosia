@@ -41,6 +41,7 @@ export function buildHandlePay({
   createTicket,
   createPayment,
   linkPaymentToTicket,
+  printCustomerReceipt,
 }) {
   return async function handlePay({
     items = [],
@@ -142,6 +143,12 @@ export function buildHandlePay({
         });
       }
 
+      await printCustomerReceipt?.({
+        items,
+        totalCents: amounts.total,
+        ticketId: paymentResult?.ticketId,
+      });
+
       addToast({
         color: "success",
         description: t("success.paid"),
@@ -157,11 +164,16 @@ export function buildHandlePay({
   };
 }
 
-export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
+export function buildHandleBtcInvoiceReady({
+  setBtcPaymentConfig,
+}) {
   return (data) => {
     setBtcPaymentConfig((prev) => {
       if (!prev) return prev;
-      return { ...prev, invoiceData: data };
+      return {
+        ...prev,
+        invoiceData: data,
+      };
     });
   };
 }
@@ -183,6 +195,7 @@ export function buildHandleBtcComplete({
   t,
   user,
   setBtcPaymentConfig,
+  printCustomerReceipt,
 }) {
   return async (data) => {
     if (!btcPaymentConfig) return;
@@ -211,6 +224,13 @@ export function buildHandleBtcComplete({
       }
 
       await linkPaymentToTicket(paymentResponse.id, ticketId);
+
+      await printCustomerReceipt?.({
+        items: btcPaymentConfig.items,
+        totalCents: btcPaymentConfig.total,
+        ticketId,
+        invoice: data?.invoice?.serialized || "",
+      });
 
       onPay?.({
         items: btcPaymentConfig.items,
@@ -252,6 +272,7 @@ export function buildHandleCashComplete({
   notifyError,
   t,
   setCashPaymentConfig,
+  printCustomerReceipt,
 }) {
   return async ({ cashReceived, change }) => {
     if (!cashPaymentConfig) return;
@@ -264,6 +285,12 @@ export function buildHandleCashComplete({
           status: "paid",
         });
       }
+
+      await printCustomerReceipt?.({
+        items: cashPaymentConfig.paymentResult?.items,
+        totalCents: cashPaymentConfig.paymentResult?.total,
+        ticketId: cashPaymentConfig.paymentResult?.ticketId,
+      });
 
       onPay?.({
         ...cashPaymentConfig.paymentResult,

@@ -18,22 +18,22 @@ enum class PrinterConfigUpdateStatus {
 class PrinterConfigService(private val connection: Connection) {
   companion object {
     private const val ADD_PRINTER_CONFIG = """
-      INSERT INTO printer_configs (id, printer_type, printer_name, is_default, enabled)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO printer_configs (id, printer_type, printer_name, template_name, is_default, enabled)
+      VALUES (?, ?, ?, ?, ?, ?)
     """
     private const val GET_PRINTER_CONFIGS =
-        "SELECT id, printer_type, printer_name, is_default, enabled, created_at FROM printer_configs"
+        "SELECT id, printer_type, printer_name, template_name, is_default, enabled, created_at FROM printer_configs"
     private const val GET_PRINTER_CONFIG_BY_ID =
-        "SELECT id, printer_type, printer_name, is_default, enabled, created_at FROM printer_configs WHERE id = ?"
+        "SELECT id, printer_type, printer_name, template_name, is_default, enabled, created_at FROM printer_configs WHERE id = ?"
     private const val GET_PRINTER_CONFIG_BY_TYPE_NAME =
-        "SELECT id, printer_type, printer_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND printer_name = ?"
+        "SELECT id, printer_type, printer_name, template_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND printer_name = ?"
     private const val GET_DEFAULT_BY_TYPE =
-        "SELECT id, printer_type, printer_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND is_default = 1 AND enabled = 1 LIMIT 1"
+        "SELECT id, printer_type, printer_name, template_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND is_default = 1 AND enabled = 1 LIMIT 1"
     private const val GET_ENABLED_BY_TYPE =
-        "SELECT id, printer_type, printer_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND enabled = 1"
+        "SELECT id, printer_type, printer_name, template_name, is_default, enabled, created_at FROM printer_configs WHERE printer_type = ? AND enabled = 1"
     private const val UPDATE_PRINTER_CONFIG = """
       UPDATE printer_configs
-      SET printer_type = ?, printer_name = ?, is_default = ?, enabled = ?
+      SET printer_type = ?, printer_name = ?, template_name = ?, is_default = ?, enabled = ?
       WHERE id = ?
     """
     private const val DELETE_PRINTER_CONFIG = "DELETE FROM printer_configs WHERE id = ?"
@@ -93,8 +93,9 @@ class PrinterConfigService(private val connection: Connection) {
         stmt.setBytes(1, configId.toBytes())
         stmt.setString(2, request.printerType.name)
         stmt.setString(3, request.printerName)
-        stmt.setBoolean(4, request.isDefault)
-        stmt.setBoolean(5, request.enabled)
+        stmt.setString(4, request.templateName)
+        stmt.setBoolean(5, request.isDefault)
+        stmt.setBoolean(6, request.enabled)
         stmt.executeUpdate()
       }
 
@@ -120,9 +121,10 @@ class PrinterConfigService(private val connection: Connection) {
         connection.prepareStatement(UPDATE_PRINTER_CONFIG).use { stmt ->
           stmt.setString(1, existing.printerType.name)
           stmt.setString(2, existing.printerName)
-          stmt.setBoolean(3, true)
+          stmt.setString(3, existing.templateName)
           stmt.setBoolean(4, true)
-          stmt.setBytes(5, UUID.fromString(existing.id).toBytes())
+          stmt.setBoolean(5, true)
+          stmt.setBytes(6, UUID.fromString(existing.id).toBytes())
           stmt.executeUpdate()
         }
         connection.commit()
@@ -134,8 +136,9 @@ class PrinterConfigService(private val connection: Connection) {
         stmt.setBytes(1, configId.toBytes())
         stmt.setString(2, printerType.name)
         stmt.setString(3, printerName)
-        stmt.setBoolean(4, true)
+        stmt.setString(4, null)
         stmt.setBoolean(5, true)
+        stmt.setBoolean(6, true)
         stmt.executeUpdate()
       }
       connection.commit()
@@ -233,6 +236,7 @@ class PrinterConfigService(private val connection: Connection) {
     val existing = getPrinterConfigById(id) ?: return PrinterConfigUpdateStatus.NOT_FOUND
     val newType = request.printerType ?: existing.printerType
     val newName = request.printerName ?: existing.printerName
+    val newTemplateName = request.templateName ?: existing.templateName
     val newDefault = request.isDefault ?: existing.isDefault
     val newEnabled = request.enabled ?: existing.enabled
 
@@ -250,9 +254,10 @@ class PrinterConfigService(private val connection: Connection) {
       connection.prepareStatement(UPDATE_PRINTER_CONFIG).use { stmt ->
         stmt.setString(1, newType.name)
         stmt.setString(2, newName)
-        stmt.setBoolean(3, newDefault)
-        stmt.setBoolean(4, newEnabled)
-        stmt.setBytes(5, configId.toBytes())
+        stmt.setString(3, newTemplateName)
+        stmt.setBoolean(4, newDefault)
+        stmt.setBoolean(5, newEnabled)
+        stmt.setBytes(6, configId.toBytes())
         stmt.executeUpdate()
       }
 
@@ -306,6 +311,7 @@ class PrinterConfigService(private val connection: Connection) {
         id = rs.getBytes("id").toUUID().toString(),
         printerType = PrinterType.valueOf(rs.getString("printer_type")),
         printerName = rs.getString("printer_name"),
+        templateName = rs.getString("template_name"),
         isDefault = rs.getBoolean("is_default"),
         enabled = rs.getBoolean("enabled"),
         createdAt = rs.getString("created_at")

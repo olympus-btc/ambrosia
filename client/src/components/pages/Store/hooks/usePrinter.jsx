@@ -56,7 +56,9 @@ export function usePrinters() {
       });
       if (created?.id) {
         setPrinterConfigs((prev) =>
-          Array.isArray(prev) ? [...prev, { ...configBody, id: created.id }] : [{ ...configBody, id: created.id }],
+          Array.isArray(prev)
+            ? [...prev, { ...configBody, id: created.id }]
+            : [{ ...configBody, id: created.id }],
         );
       }
       return created;

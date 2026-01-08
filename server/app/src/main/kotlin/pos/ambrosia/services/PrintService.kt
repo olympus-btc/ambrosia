@@ -4,6 +4,7 @@ import com.github.anastaciocintra.escpos.EscPos
 import com.github.anastaciocintra.output.PrinterOutputStream
 import java.io.IOException
 import pos.ambrosia.models.TicketData
+import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.models.Config
 import pos.ambrosia.logger
@@ -30,16 +31,13 @@ class PrintService(
 
   suspend fun printTicket(
       ticketData: TicketData,
-      templateName: String,
+      templateName: String?,
       type: PrinterType,
       config: Config?,
       printerId: String?,
-      broadcast: Boolean
+      broadcast: Boolean,
+      forceTemplateName: Boolean
   ) {
-    val template =
-        ticketTemplateService.getTemplateByName(templateName)
-            ?: throw IOException("Template '$templateName' not found.")
-
     val configs =
         when {
           printerId != null -> {
@@ -65,27 +63,45 @@ class PrintService(
       throw IOException("No printers configured for type $type.")
     }
 
-    val resolvedPrinters =
+    val resolvedConfigs =
         configs.mapNotNull { configItem ->
           val printerService = PrinterOutputStream.getPrintServiceByName(configItem.printerName)
           if (printerService == null) {
             logger.error("Printer '${configItem.printerName}' not found on this system.")
+            null
+          } else {
+            configItem to printerService
           }
-          printerService
         }
 
-    if (resolvedPrinters.isEmpty()) {
+    if (resolvedConfigs.isEmpty()) {
       throw IOException("No configured printers found on this system for type $type.")
     }
 
     try {
-      val ticketFactory = TicketFactory(template)
+      val templateCache = mutableMapOf<String, TicketTemplate>()
       var successCount = 0
 
-      resolvedPrinters.forEach { printerService ->
+      resolvedConfigs.forEach { (configItem, printerService) ->
         try {
+          val resolvedTemplateName =
+              if (forceTemplateName && !templateName.isNullOrBlank()) {
+                templateName
+              } else {
+                configItem.templateName ?: templateName
+              }
+          if (resolvedTemplateName.isNullOrBlank()) {
+            throw IOException("Template not configured for printer ${configItem.printerName}.")
+          }
+          val template =
+              templateCache.getOrPut(resolvedTemplateName) {
+                ticketTemplateService.getTemplateByName(resolvedTemplateName)
+                    ?: throw IOException("Template '$resolvedTemplateName' not found.")
+              }
+
           val printerOutputStream = PrinterOutputStream(printerService)
           val escpos = EscPos(printerOutputStream)
+          val ticketFactory = TicketFactory(template)
           ticketFactory.build(escpos, ticketData, config)
           escpos.feed(5).cut(EscPos.CutMode.FULL)
           escpos.close()

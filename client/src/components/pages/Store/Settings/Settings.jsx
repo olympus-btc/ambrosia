@@ -15,6 +15,7 @@ import { storedAssetUrl } from "../../../utils/storedAssetUrl";
 import { CURRENCIES_EN } from "../../Onboarding/utils/currencies_en";
 import { CURRENCIES_ES } from "../../Onboarding/utils/currencies_es";
 import { usePrinters } from "../hooks/usePrinter";
+import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
@@ -33,6 +34,7 @@ export function Settings() {
     deletePrinterConfig,
     setDefaultPrinterConfig,
   } = usePrinters();
+  const { templates, loading: loadingTemplates } = useTemplates();
   const [data, setData] = useState(config);
   const [editSettingsShowModal, setEditSettingsShowModal] = useState(false);
   const t = useTranslations("settings");
@@ -57,6 +59,7 @@ export function Settings() {
     if (!e.target.value) { return; }
     updateCurrency({ acronym: e.target.value });
   };
+
 
   return (
     <StoreLayout>
@@ -203,6 +206,8 @@ export function Settings() {
             printerConfigs={printerConfigs}
             loadingAvailable={loadingAvailable}
             loadingConfigs={loadingConfigs}
+            loadingTemplates={loadingTemplates}
+            templates={templates}
             error={printersError}
             createPrinterConfig={createPrinterConfig}
             updatePrinterConfig={updatePrinterConfig}

@@ -4,11 +4,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PrintRequest(
-    val templateName: String,
+    val templateName: String? = null,
     val ticketData: TicketData,
     val printerType: PrinterType,
     val printerId: String? = null,
-    val broadcast: Boolean = false
+    val broadcast: Boolean = false,
+    val forceTemplateName: Boolean = false
 )
 
 @Serializable
@@ -36,7 +37,8 @@ enum class ElementType {
     SEPARATOR,
     TABLE_HEADER,
     TABLE_ROW,
-    FOOTER
+    FOOTER,
+    QRCODE
 }
 
 @Serializable

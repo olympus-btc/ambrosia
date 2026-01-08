@@ -16,19 +16,10 @@ import {
 import { useTranslations } from "next-intl";
 import { usePrinters } from "../hooks/usePrinter";
 import { useTemplates } from "../hooks/useTemplates";
+import { TemplateElementsEditor } from "./TemplateElementsEditor";
+import { TemplateList } from "./TemplateList";
+import { TemplatePreview } from "./TemplatePreview";
 
-const ELEMENT_TYPES = [
-  "HEADER",
-  "TEXT",
-  "LINE_BREAK",
-  "SEPARATOR",
-  "TABLE_HEADER",
-  "TABLE_ROW",
-  "FOOTER",
-];
-
-const JUSTIFICATIONS = ["LEFT", "CENTER", "RIGHT"];
-const FONT_SIZES = ["NORMAL", "LARGE", "EXTRA_LARGE"];
 const PRINTER_TYPES = ["KITCHEN", "CUSTOMER", "BAR"];
 const sampleTicket = {
   ticketId: "123",
@@ -40,6 +31,7 @@ const sampleTicket = {
     { quantity: 1, name: "Agua fresca", price: 35, comments: [] },
   ],
   total: 215,
+  invoice: "lnbc10u1p0exampleinvoice",
 };
 
 const sampleConfig = {
@@ -64,7 +56,8 @@ function resolveValue(value) {
     .replaceAll("{{ticket.tableName}}", sampleTicket.tableName)
     .replaceAll("{{ticket.roomName}}", sampleTicket.roomName)
     .replaceAll("{{ticket.date}}", sampleTicket.date)
-    .replaceAll("{{ticket.total}}", sampleTicket.total.toString());
+    .replaceAll("{{ticket.total}}", sampleTicket.total.toString())
+    .replaceAll("{{ticket.invoice}}", sampleTicket.invoice);
 }
 
 function resolveAlignment(justification) {
@@ -86,85 +79,6 @@ function createElement() {
   };
 }
 
-function TemplateElementRow({ element, onChange, onRemove, onMove, t }) {
-  return (
-    <div className="flex flex-wrap items-end gap-3 rounded-md border border-gray-200 p-3">
-      <Select
-        className="min-w-40 max-w-48"
-        label={t("templates.elementTypeLabel")}
-        selectedKeys={element.type ? [element.type] : []}
-        onChange={(e) => onChange({ ...element, type: e.target.value })}
-      >
-        {ELEMENT_TYPES.map((type) => (
-          <SelectItem key={type} value={type}>
-            {t(`templates.elementTypes.${type}`)}
-          </SelectItem>
-        ))}
-      </Select>
-      <Input
-        className="min-w-64 flex-1"
-        label={t("templates.elementValueLabel")}
-        value={element.value ?? ""}
-        onChange={(e) => onChange({ ...element, value: e.target.value })}
-      />
-      <Select
-        className="min-w-36 max-w-40"
-        label={t("templates.justificationLabel")}
-        selectedKeys={element.style?.justification ? [element.style.justification] : []}
-        onChange={(e) =>
-          onChange({
-            ...element,
-            style: { ...element.style, justification: e.target.value },
-          })
-        }
-      >
-        {JUSTIFICATIONS.map((justification) => (
-          <SelectItem key={justification} value={justification}>
-            {t(`templates.justifications.${justification}`)}
-          </SelectItem>
-        ))}
-      </Select>
-      <Select
-        className="min-w-36 max-w-40"
-        label={t("templates.fontSizeLabel")}
-        selectedKeys={element.style?.fontSize ? [element.style.fontSize] : []}
-        onChange={(e) =>
-          onChange({
-            ...element,
-            style: { ...element.style, fontSize: e.target.value },
-          })
-        }
-      >
-        {FONT_SIZES.map((fontSize) => (
-          <SelectItem key={fontSize} value={fontSize}>
-            {t(`templates.fontSizes.${fontSize}`)}
-          </SelectItem>
-        ))}
-      </Select>
-      <Button
-        variant={element.style?.bold ? "solid" : "bordered"}
-        onPress={() =>
-          onChange({
-            ...element,
-            style: { ...element.style, bold: !element.style?.bold },
-          })
-        }
-      >
-        {element.style?.bold ? t("templates.boldOn") : t("templates.boldOff")}
-      </Button>
-      <Button variant="bordered" onPress={() => onMove(element.localId, -1)}>
-        {t("templates.moveUp")}
-      </Button>
-      <Button variant="bordered" onPress={() => onMove(element.localId, 1)}>
-        {t("templates.moveDown")}
-      </Button>
-      <Button color="danger" variant="bordered" onPress={() => onRemove(element.localId)}>
-        {t("templates.removeElement")}
-      </Button>
-    </div>
-  );
-}
-
 export function TicketTemplatesModal({ isOpen, onClose }) {
   const t = useTranslations("settings");
   const {
@@ -184,11 +98,6 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
   const [deleting, setDeleting] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [printerType, setPrinterType] = useState("KITCHEN");
-
-  const selectedTemplate = useMemo(
-    () => templates.find((template) => template.id === selectedId),
-    [templates, selectedId],
-  );
 
   const previewElements = useMemo(() => {
     if (!Array.isArray(elements)) return [];
@@ -213,6 +122,23 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
       }
       if (element.type === "LINE_BREAK") {
         output.push(<div key={`${element.localId}-break`} className="h-3" />);
+        return;
+      }
+      if (element.type === "QRCODE") {
+        const qrValue = resolveValue(element.value || "") || sampleTicket.invoice;
+        output.push(
+          <div
+            key={`${element.localId}-qr`}
+            className={`flex flex-col items-center gap-2 ${commonProps.className}`}
+          >
+            <div className="flex h-28 w-28 items-center justify-center rounded-md border-2 border-dashed border-gray-400 text-xs text-gray-500">
+              QR
+            </div>
+            <span className="text-xs text-gray-500">
+              {qrValue}
+            </span>
+          </div>,
+        );
         return;
       }
       if (element.type === "TABLE_ROW") {
@@ -326,6 +252,7 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
         ticketData: sampleTicket,
         printerType,
         broadcast: false,
+        forceTemplateName: true,
       });
     } catch (err) {
       console.error("Error printing test ticket:", err);
@@ -361,41 +288,15 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
         <ModalHeader>{t("templates.title")}</ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-6 lg:flex-row">
-            <div className="flex w-full flex-col gap-3 lg:w-1/3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-green-900">
-                  {t("templates.listTitle")}
-                </h3>
-                <Button variant="bordered" onPress={resetForm}>
-                  {t("templates.newTemplate")}
-                </Button>
-              </div>
-              {loading && (
-                <p className="text-sm text-gray-600">{t("templates.loading")}</p>
-              )}
-              {error && (
-                <p className="text-sm text-red-600">{t("templates.error")}</p>
-              )}
-              {!loading && templates.length === 0 && (
-                <p className="text-sm text-gray-600">{t("templates.empty")}</p>
-              )}
-              <div className="flex flex-col gap-2">
-                {templates.map((template) => (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => loadTemplate(template)}
-                    className={`rounded-md border px-3 py-2 text-left ${
-                      selectedId === template.id
-                        ? "border-green-600 bg-green-50 text-green-900"
-                        : "border-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {template.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <TemplateList
+              templates={templates}
+              selectedId={selectedId}
+              loading={loading}
+              error={error}
+              onSelect={loadTemplate}
+              onNew={resetForm}
+              t={t}
+            />
 
             <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
               <div className="flex min-w-0 flex-[2] flex-col gap-4">
@@ -405,49 +306,21 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
                   onChange={(e) => setName(e.target.value)}
                 />
 
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-green-900">
-                    {t("templates.elementsTitle")}
-                  </h3>
-                  <Button variant="bordered" onPress={() => setElements((prev) => [...prev, createElement()])}>
-                    {t("templates.addElement")}
-                  </Button>
-                </div>
-
-                <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto pr-2">
-                  {elements.map((element) => (
-                    <TemplateElementRow
-                      key={element.localId}
-                      element={element}
-                      onChange={(updated) =>
-                        setElements((prev) =>
-                          prev.map((el) => (el.localId === updated.localId ? updated : el)),
-                        )
-                      }
-                    onRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
-                    onMove={moveElement}
-                    t={t}
-                  />
-                ))}
-                </div>
+                <TemplateElementsEditor
+                  elements={elements}
+                  onChange={(updated) =>
+                    setElements((prev) =>
+                      prev.map((el) => (el.localId === updated.localId ? updated : el)),
+                    )
+                  }
+                  onAdd={() => setElements((prev) => [...prev, createElement()])}
+                  onMove={moveElement}
+                  onRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
+                  t={t}
+                />
               </div>
 
-              <div className="w-full lg:flex-[1] lg:sticky lg:top-0">
-                <h3 className="text-lg font-semibold text-green-900">
-                  {t("templates.previewTitle")}
-                </h3>
-                <div className="mt-2 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                  {previewElements.length === 0 ? (
-                    <p className="text-sm text-gray-600">
-                      {t("templates.previewEmpty")}
-                    </p>
-                  ) : (
-                    <div className="font-mono text-gray-900">
-                      {previewElements}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TemplatePreview previewElements={previewElements} t={t} />
             </div>
           </div>
         </ModalBody>

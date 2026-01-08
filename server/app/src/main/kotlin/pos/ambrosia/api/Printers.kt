@@ -32,7 +32,6 @@ fun Route.printers(
     printerConfigService: PrinterConfigService
 ) {
   authenticate("auth-jwt") {
-    get { call.respond(printService.getAvailablePrinters()) }
     get("/available") { call.respond(printService.getAvailablePrinters()) }
     get("/configs") { call.respond(printerConfigService.getPrinterConfigs()) }
     post("/configs") {
@@ -105,7 +104,8 @@ fun Route.printers(
             request.printerType,
             config,
             request.printerId,
-            request.broadcast)
+            request.broadcast,
+            request.forceTemplateName)
         call.respondText("Print job sent", status = HttpStatusCode.OK)
       } catch (e: Exception) {
         throw pos.ambrosia.utils.PrintTicketException(e.message ?: "An unknown error occurred during printing.")
