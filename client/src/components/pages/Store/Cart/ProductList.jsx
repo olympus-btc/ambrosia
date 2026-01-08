@@ -16,7 +16,8 @@ export function ProductList({ products, onAddProduct, categories }) {
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {products.map((product) => (
         <Card
-          className="bg-white"
+          shadow="none"
+          className="bg-white rounded-lg"
           key={product.id}
         >
           <CardHeader className="flex flex-col items-start">

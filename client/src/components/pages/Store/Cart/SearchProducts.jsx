@@ -37,6 +37,7 @@ export function SearchProducts({ products, onAddProduct, categories }) {
           <Search width={20} height={20} />
         }
         value={search}
+        onClear={() => setSearch("")}
         onChange={(e) => setSearch(e.target.value)}
       />
 
