@@ -9,7 +9,8 @@ data class TicketData(
     val roomName: String,
     val date: String,
     val items: List<TicketDataItem>,
-    val total: Double
+    val total: Double,
+    val invoice: String? = null
 )
 
 @Serializable

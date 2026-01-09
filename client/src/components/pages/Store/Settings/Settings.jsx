@@ -14,12 +14,27 @@ import { useCurrency } from "../../../hooks/useCurrency";
 import { storedAssetUrl } from "../../../utils/storedAssetUrl";
 import { CURRENCIES_EN } from "../../Onboarding/utils/currencies_en";
 import { CURRENCIES_ES } from "../../Onboarding/utils/currencies_es";
+import { usePrinters } from "../hooks/usePrinter";
+import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
+import { PrinterSettingsCard } from "./PrinterSettingsCard";
 
 export function Settings() {
   const { config, updateConfig } = useConfigurations();
+  const {
+    availablePrinters,
+    printerConfigs,
+    loadingAvailable,
+    loadingConfigs,
+    error: printersError,
+    createPrinterConfig,
+    updatePrinterConfig,
+    deletePrinterConfig,
+    setDefaultPrinterConfig,
+  } = usePrinters();
+  const { templates, loading: loadingTemplates } = useTemplates();
   const [data, setData] = useState(config);
   const [editSettingsShowModal, setEditSettingsShowModal] = useState(false);
   const t = useTranslations("settings");
@@ -184,6 +199,21 @@ export function Settings() {
               </div>
             </CardBody>
           </Card>
+
+          <PrinterSettingsCard
+            availablePrinters={availablePrinters}
+            printerConfigs={printerConfigs}
+            loadingAvailable={loadingAvailable}
+            loadingConfigs={loadingConfigs}
+            loadingTemplates={loadingTemplates}
+            templates={templates}
+            error={printersError}
+            createPrinterConfig={createPrinterConfig}
+            updatePrinterConfig={updatePrinterConfig}
+            deletePrinterConfig={deletePrinterConfig}
+            setDefaultPrinterConfig={setDefaultPrinterConfig}
+            t={t}
+          />
 
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
