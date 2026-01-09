@@ -98,6 +98,9 @@
       "afterInstall": "build/postinst"
     },
     "rpm": {
+      "depends": [
+        "libxcrypt-compat"
+      ],
       "afterInstall": "build/postinst",
       "fpm": [
         "--rpm-posttrans=build/postinst"

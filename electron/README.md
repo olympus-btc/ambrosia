@@ -145,8 +145,36 @@ Los instaladores se generan en `electron/dist/`:
 - **macOS**: `Ambrosia POS-1.0.0.dmg`, `Ambrosia POS-1.0.0-mac.zip`
 - **Windows**: `Ambrosia POS Setup 1.0.0.exe`, portable `.exe`
 - **Linux**:
-  - Debian/Ubuntu: `ambrosia-pos_1.0.0_amd64.deb`, `ambrosia-pos_1.0.0_arm64.deb`
-  - Red Hat/Fedora/CentOS: `ambrosia-pos-1.0.0.x86_64.rpm`, `ambrosia-pos-1.0.0.aarch64.rpm`
+  - `.deb` (Debian/Ubuntu/Mint/Pop!_OS): `ambrosia-pos-electron_1.0.0_amd64.deb`, `ambrosia-pos-electron_1.0.0_arm64.deb`
+  - `.rpm` (Fedora/RHEL/CentOS/openSUSE): `ambrosia-pos-electron-1.0.0.x86_64.rpm`, `ambrosia-pos-electron-1.0.0.aarch64.rpm`
+
+### Instalación en Linux
+
+#### Debian/Ubuntu y derivados
+
+```bash
+# x64
+sudo apt install ./ambrosia-pos-electron_1.0.0_amd64.deb
+
+# ARM64
+sudo apt install ./ambrosia-pos-electron_1.0.0_arm64.deb
+```
+
+#### Fedora/RHEL/CentOS y derivados
+
+```bash
+# x64
+sudo dnf install ambrosia-pos-electron-1.0.0.x86_64.rpm
+
+# ARM64
+sudo dnf install ambrosia-pos-electron-1.0.0.aarch64.rpm
+```
+
+**Características:**
+- Incluye todas las dependencias automáticamente
+- GTK 3 forzado (compatible con sistemas GTK 4)
+- RPM incluye `libxcrypt-compat` para compatibilidad con Fedora
+- Instala en `/opt/AmbrosiaPos/`
 
 ## Estructura del Proyecto
 
@@ -306,6 +334,44 @@ npm run build
 2. Verificar que el servicio anterior en la cadena inició correctamente
 3. Incrementar timeout en `utils/healthCheck.js` si es necesario
 
+### Problemas Específicos de Linux
+
+#### Error: GTK 2/3 symbols detected
+
+**Síntomas**:
+```
+Gtk-ERROR **: GTK 2/3 symbols detected. Using GTK 2/3 and GTK 4 in the same process is not supported
+Trace/breakpoint trap
+```
+
+**Causa**: Sistema tiene GTK 4 pero Electron intenta cargar múltiples versiones de GTK.
+
+**Solución**: Los paquetes `.deb` y `.rpm` incluyen automáticamente un wrapper que fuerza GTK 3. Si instalaste manualmente, ejecuta:
+```bash
+/opt/AmbrosiaPos/ambrosia-pos-electron --gtk-version=3
+```
+
+#### Error: libcrypt.so.1 not found (Fedora/RHEL)
+
+**Síntomas**:
+```
+error while loading shared libraries: libcrypt.so.1: cannot open shared object file
+```
+
+**Causa**: Fedora/RHEL migraron a libcrypt.so.2 pero phoenixd requiere libcrypt.so.1.
+
+**Solución**: Los paquetes `.rpm` incluyen automáticamente la dependencia `libxcrypt-compat`. Si instalaste manualmente:
+```bash
+sudo dnf install libxcrypt-compat
+```
+
+#### Dependencias para Build en Ubuntu/Debian
+
+Para construir paquetes `.rpm` desde Ubuntu/Debian:
+```bash
+sudo apt install rpm
+```
+
 ### Ver Logs de Servicios
 
 Los logs se guardan por fecha en `~/.Ambrosia-POS/logs/`:
@@ -368,6 +434,16 @@ La aplicación implementa las siguientes medidas de seguridad:
 - Puerto dinámico (evita conflictos)
 - Shutdown limpio del servidor Next.js
 - Manejo robusto de errores con diálogos informativos
+
+### Soporte Multi-Plataforma Linux
+- **Formatos de distribución**: `.deb` y `.rpm` para máxima compatibilidad
+- **Distribuciones soportadas**:
+  - Debian, Ubuntu, Linux Mint, Pop!_OS (`.deb`)
+  - Fedora, RHEL, CentOS, openSUSE (`.rpm`)
+- **Arquitecturas**: x64 (amd64/x86_64) y ARM64 (arm64/aarch64)
+- **Compatibilidad GTK**: Wrapper automático fuerza GTK 3 (compatible con GTK 4)
+- **Dependencias incluidas**: RPM incluye `libxcrypt-compat` para Fedora/RHEL
+- **Instalación completa**: phoenixd, backend Kotlin y frontend Next.js bundled
 
 ## Comandos Disponibles
 
