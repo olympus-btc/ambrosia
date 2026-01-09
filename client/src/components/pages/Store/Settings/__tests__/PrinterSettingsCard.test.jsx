@@ -57,8 +57,7 @@ jest.mock("../PrinterConfigRow", () => ({
 }));
 
 jest.mock("../TicketTemplatesModal", () => ({
-  TicketTemplatesModal: ({ isOpen }) =>
-    isOpen ? <div>templates-modal</div> : null,
+  TicketTemplatesModal: ({ isOpen }) => (isOpen ? <div>templates-modal</div> : null),
 }));
 
 const t = (key) => key;
@@ -86,20 +85,18 @@ describe("PrinterSettingsCard", () => {
 
     expect(screen.getByText("cardPrinters.error")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(lastAddProps?.templateName).toBe("Template A"),
+    await waitFor(() => expect(lastAddProps?.templateName).toBe("Template A"),
     );
 
     fireEvent.click(screen.getByText("add-form-submit"));
 
-    await waitFor(() =>
-      expect(createPrinterConfig).toHaveBeenCalledWith({
-        printerType: "KITCHEN",
-        printerName: "Printer A",
-        templateName: "Template A",
-        isDefault: false,
-        enabled: true,
-      }),
+    await waitFor(() => expect(createPrinterConfig).toHaveBeenCalledWith({
+      printerType: "KITCHEN",
+      printerName: "Printer A",
+      templateName: "Template A",
+      isDefault: false,
+      enabled: true,
+    }),
     );
 
     expect(lastAddProps).not.toBeNull();

@@ -1,11 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-
 import { addToast } from "@heroui/react";
-
-import { TicketTemplatesModal } from "../TicketTemplatesModal";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
+import { TicketTemplatesModal } from "../TicketTemplatesModal";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -113,11 +111,10 @@ describe("TicketTemplatesModal", () => {
 
     fireEvent.click(screen.getByText("templates.saveChanges"));
 
-    await waitFor(() =>
-      expect(updateTemplate).toHaveBeenCalledWith("tpl-1", {
-        name: "Kitchen",
-        elements: expect.any(Array),
-      }),
+    await waitFor(() => expect(updateTemplate).toHaveBeenCalledWith("tpl-1", {
+      name: "Kitchen",
+      elements: expect.any(Array),
+    }),
     );
   });
 
@@ -145,23 +142,21 @@ describe("TicketTemplatesModal", () => {
 
     fireEvent.click(screen.getByText("templates.printTest"));
 
-    await waitFor(() =>
-      expect(printTicket).toHaveBeenCalledWith(
-        expect.objectContaining({
-          templateName: "Menu",
-          printerType: "KITCHEN",
-          broadcast: false,
-          forceTemplateName: true,
-        }),
-      ),
+    await waitFor(() => expect(printTicket).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateName: "Menu",
+        printerType: "KITCHEN",
+        broadcast: false,
+        forceTemplateName: true,
+      }),
+    ),
     );
 
-    await waitFor(() =>
-      expect(addToast).toHaveBeenCalledWith({
-        title: "templates.printErrorTitle",
-        description: "templates.printErrorDescription",
-        color: "danger",
-      }),
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith({
+      title: "templates.printErrorTitle",
+      description: "templates.printErrorDescription",
+      color: "danger",
+    }),
     );
 
     fireEvent.change(screen.getByLabelText("templates.nameLabel"), {
@@ -170,15 +165,13 @@ describe("TicketTemplatesModal", () => {
 
     fireEvent.click(screen.getByText("templates.saveNew"));
 
-    await waitFor(() =>
-      expect(createTemplate).toHaveBeenCalledWith({
-        name: "New Template",
-        elements: expect.any(Array),
-      }),
+    await waitFor(() => expect(createTemplate).toHaveBeenCalledWith({
+      name: "New Template",
+      elements: expect.any(Array),
+    }),
     );
 
-    await waitFor(() =>
-      expect(screen.getByText("templates.deleteTemplate")).toBeInTheDocument(),
+    await waitFor(() => expect(screen.getByText("templates.deleteTemplate")).toBeInTheDocument(),
     );
 
     fireEvent.click(screen.getByText("templates.deleteTemplate"));

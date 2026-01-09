@@ -188,6 +188,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleCashComplete({
       cashPaymentConfig,
       dispatch,
+      processBasePayment,
       buildOrderPayload,
       buildTicketPayload,
       createOrder,
