@@ -35,17 +35,22 @@ const ALL_JRE_DOWNLOADS = {
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse?project=jdk',
     filename: 'jre-linux-x64.tar.gz',
   },
+  'linux-arm64': {
+    platform: 'linux-arm64',
+    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    filename: 'jre-linux-arm64.tar.gz',
+  },
 };
 
 const currentPlatform = getBuildPlatform();
 
-// Special case for Windows ARM64: also download x64 JRE for phoenixd
-// (phoenixd doesn't have native ARM64 support yet)
+// Special case for Windows ARM64: also download x64 JRE for phoenixd JVM version
+// Linux ARM64 only needs ARM64 JRE (phoenixd has native ARM64 binary)
 let JRE_DOWNLOADS;
 if (currentPlatform === 'win-arm64') {
   JRE_DOWNLOADS = [
     ALL_JRE_DOWNLOADS['win-arm64'], // For backend (native)
-    ALL_JRE_DOWNLOADS['win-x64'], // For phoenixd (emulated)
+    ALL_JRE_DOWNLOADS['win-x64'], // For phoenixd JVM version (emulated)
   ];
 } else {
   JRE_DOWNLOADS = [ALL_JRE_DOWNLOADS[currentPlatform]];

@@ -38,6 +38,11 @@ const ALL_PHOENIXD_DOWNLOADS = {
     url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-linux-x64.zip`,
     filename: 'phoenixd-linux-x64.zip',
   },
+  'linux-arm64': {
+    platform: 'linux-arm64',
+    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-linux-arm64.zip`,
+    filename: 'phoenixd-linux-arm64.zip',
+  },
 };
 
 const currentPlatform = getBuildPlatform();

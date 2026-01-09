@@ -1,5 +1,4 @@
 const path = require('path');
-
 const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
 
 const ServiceManager = require('./services/ServiceManager');

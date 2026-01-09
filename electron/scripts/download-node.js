@@ -34,6 +34,11 @@ const ALL_DOWNLOADS = {
     url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz`,
     filename: `node-${NODE_VERSION}-linux-x64.tar.gz`,
   },
+  'linux-arm64': {
+    platform: 'linux-arm64',
+    url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz`,
+    filename: `node-${NODE_VERSION}-linux-arm64.tar.gz`,
+  },
 };
 
 const currentPlatform = getBuildPlatform();

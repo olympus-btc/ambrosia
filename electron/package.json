@@ -17,7 +17,8 @@
     "dist:mac:x64": "npm run clean && cross-env TARGET_PLATFORM=macos-x64 npm run build:prepare && electron-builder --mac",
     "dist:win:x64": "npm run clean && cross-env TARGET_PLATFORM=win-x64 npm run build:prepare && electron-builder --win --x64",
     "dist:win:arm64": "npm run clean && cross-env TARGET_PLATFORM=win-arm64 npm run build:prepare && electron-builder --win --arm64",
-    "dist:linux": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux",
+    "dist:linux:x64": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux",
+    "dist:linux:arm64": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux --arm64",
     "postinstall": "electron-builder install-app-deps"
   },
   "author": "olympus-btc",
@@ -86,7 +87,6 @@
     },
     "linux": {
       "target": [
-        "AppImage",
         "deb"
       ],
       "category": "Office",

@@ -93,15 +93,18 @@ make electron-build
 
 ```bash
 # macOS
-npm run dist:mac
+npm run dist:mac:arm64           # ARM64 (Apple Silicon)
+npm run dist:mac:x64             # Intel
 make electron-build-mac
 
 # Windows
-npm run dist:win
+npm run dist:win:x64             # x64
+npm run dist:win:arm64           # ARM64
 make electron-build-win
 
 # Linux
-npm run dist:linux
+npm run dist:linux:x64           # x64
+npm run dist:linux:arm64         # ARM64
 make electron-build-linux
 ```
 
@@ -110,7 +113,7 @@ make electron-build-linux
 Los instaladores se generan en `electron/dist/`:
 - **macOS**: `Ambrosia POS-1.0.0.dmg`, `Ambrosia POS-1.0.0-mac.zip`
 - **Windows**: `Ambrosia POS Setup 1.0.0.exe`, portable `.exe`
-- **Linux**: `ambrosia-pos-1.0.0.AppImage`, `ambrosia-pos_1.0.0_amd64.deb`
+- **Linux**: `ambrosia-pos_1.0.0_amd64.deb`, `ambrosia-pos_1.0.0_arm64.deb`
 
 ## Estructura del Proyecto
 
@@ -248,9 +251,12 @@ npm run build            # Build completo
 npm run build:client     # Solo build del cliente Next.js
 npm run pack             # Empaquetar sin crear instalador
 npm run dist             # Crear instalador para plataforma actual
-npm run dist:mac         # Instalador macOS
-npm run dist:win         # Instalador Windows
-npm run dist:linux       # Instalador Linux
+npm run dist:mac:arm64   # Instalador macOS ARM64
+npm run dist:mac:x64     # Instalador macOS x64
+npm run dist:win:x64     # Instalador Windows x64
+npm run dist:win:arm64   # Instalador Windows ARM64
+npm run dist:linux:x64   # Instalador Linux x64
+npm run dist:linux:arm64 # Instalador Linux ARM64
 ```
 
 ## Notas de Implementación

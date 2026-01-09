@@ -1,4 +1,4 @@
-.PHONY: install-jdk install-docker install-docker-compose build-jar up run run-rebuild create-secrets electron-dev electron-build electron-build-mac electron-build-win electron-build-win-arm64 electron-build-linux
+.PHONY: install-jdk install-docker install-docker-compose build-jar up run run-rebuild create-secrets electron-dev electron-build electron-build-mac electron-build-win electron-build-win-arm64 electron-build-linux electron-build-linux-arm64
 
 install-jdk:
 	@if ! command -v java > /dev/null 2>&1 || ! java -version 2>&1 | grep -q "21"; then \
@@ -74,5 +74,9 @@ electron-build-win-arm64:
 	cd electron && npm run dist:win:arm64
 
 electron-build-linux:
-	@echo "Building Electron application for Linux..."
-	cd electron && npm run dist:linux
+	@echo "Building Electron application for Linux x64..."
+	cd electron && npm run dist:linux:x64
+
+electron-build-linux-arm64:
+	@echo "Building Electron application for Linux ARM64..."
+	cd electron && npm run dist:linux:arm64

@@ -12,7 +12,7 @@ function getPlatform() {
   } else if (platform === 'win32') {
     return arch === 'arm64' ? 'win-arm64' : 'win-x64';
   } else if (platform === 'linux') {
-    return 'linux-x64';
+    return arch === 'arm64' ? 'linux-arm64' : 'linux-x64';
   }
 
   throw new Error(`Unsupported platform: ${platform}`);

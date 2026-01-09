@@ -232,7 +232,8 @@ if [ $ERRORS -eq 0 ]; then
     echo "  • npm run dist:mac:x64   - Build macOS x64 installer"
     echo "  • npm run dist:win:x64   - Build Windows x64 installer"
     echo "  • npm run dist:win:arm64 - Build Windows ARM64 installer"
-    echo "  • npm run dist:linux     - Build Linux installer"
+    echo "  • npm run dist:linux:x64 - Build Linux x64 installer"
+    echo "  • npm run dist:linux:arm64 - Build Linux ARM64 installer"
     echo ""
     exit 0
 else
