@@ -69,10 +69,9 @@ export function TemplateElementRow({ element, onChange, onMove, onRemove, t }) {
             <Select
               label={t("templates.justificationLabel")}
               selectedKeys={element.style?.justification ? [element.style.justification] : []}
-              onChange={(e) =>
-                handleChange({
-                  style: { ...element.style, justification: e.target.value },
-                })
+              onChange={(e) => handleChange({
+                style: { ...element.style, justification: e.target.value },
+              })
               }
             >
               {JUSTIFICATIONS.map((justification) => (
@@ -87,10 +86,9 @@ export function TemplateElementRow({ element, onChange, onMove, onRemove, t }) {
             <Select
               label={t("templates.fontSizeLabel")}
               selectedKeys={element.style?.fontSize ? [element.style.fontSize] : []}
-              onChange={(e) =>
-                handleChange({
-                  style: { ...element.style, fontSize: e.target.value },
-                })
+              onChange={(e) => handleChange({
+                style: { ...element.style, fontSize: e.target.value },
+              })
               }
             >
               {FONT_SIZES.map((fontSize) => (
@@ -105,10 +103,9 @@ export function TemplateElementRow({ element, onChange, onMove, onRemove, t }) {
             <Button
               size="sm"
               variant={element.style?.bold ? "solid" : "bordered"}
-              onPress={() =>
-                handleChange({
-                  style: { ...element.style, bold: !element.style?.bold },
-                })
+              onPress={() => handleChange({
+                style: { ...element.style, bold: !element.style?.bold },
+              })
               }
             >
               {element.style?.bold ? t("templates.boldOn") : t("templates.boldOff")}

@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useMemo, useReducer, useState } from "react";
 
-import { useTranslations } from "next-intl";
 import { addToast } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/modules/auth/useAuth";
@@ -138,10 +138,9 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   );
 
   const handleBtcInvoiceReady = useMemo(
-    () =>
-      buildHandleBtcInvoiceReady({
-        setBtcPaymentConfig,
-      }),
+    () => buildHandleBtcInvoiceReady({
+      setBtcPaymentConfig,
+    }),
     [],
   );
 
@@ -189,7 +188,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleCashComplete({
       cashPaymentConfig,
       dispatch,
-      processBasePayment,
       buildOrderPayload,
       buildTicketPayload,
       createOrder,
@@ -215,12 +213,8 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       printCustomerReceipt,
       t,
       updateOrder,
-      processBasePayment,
-      buildOrderPayload,
-      buildTicketPayload,
       createOrder,
       createTicket,
-      buildPaymentPayload,
       createPayment,
       linkPaymentToTicket,
       user,

@@ -1,12 +1,12 @@
 import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
+import * as useTemplatesHook from "@/components/pages/Store/hooks/useTemplates";
 import * as useCurrencyHook from "@components/hooks/useCurrency";
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
-import * as usePrintersHook from "../hooks/usePrinter";
-import * as useTemplatesHook from "../hooks/useTemplates";
 
 import { Settings } from "../Settings";
 
@@ -69,7 +69,7 @@ beforeEach(() => {
     if (
       typeof args[0] === "string" &&
       (args[0].includes("onAnimationComplete") ||
-       args[0].includes("Unknown event handler property"))
+        args[0].includes("Unknown event handler property"))
     ) {
       return;
     }

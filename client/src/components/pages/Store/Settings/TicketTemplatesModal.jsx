@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import {
   addToast,
   Button,
@@ -14,8 +15,10 @@ import {
   SelectItem,
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
 import { usePrinters } from "../hooks/usePrinter";
 import { useTemplates } from "../hooks/useTemplates";
+
 import { TemplateElementsEditor } from "./TemplateElementsEditor";
 import { TemplateList } from "./TemplateList";
 import { TemplatePreview } from "./TemplatePreview";
@@ -110,9 +113,8 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
       };
       const commonProps = {
         key: element.localId,
-        className: `${resolveAlignment(style.justification)} ${
-          fontSizeClasses[style.fontSize] || fontSizeClasses.NORMAL
-        } ${style.bold ? "font-semibold" : "font-normal"}`,
+        className: `${resolveAlignment(style.justification)} ${fontSizeClasses[style.fontSize] || fontSizeClasses.NORMAL
+          } ${style.bold ? "font-semibold" : "font-normal"}`,
       };
       if (element.type === "SEPARATOR") {
         output.push(
@@ -308,10 +310,8 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
 
                 <TemplateElementsEditor
                   elements={elements}
-                  onChange={(updated) =>
-                    setElements((prev) =>
-                      prev.map((el) => (el.localId === updated.localId ? updated : el)),
-                    )
+                  onChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)),
+                  )
                   }
                   onAdd={() => setElements((prev) => [...prev, createElement()])}
                   onMove={moveElement}

@@ -60,7 +60,6 @@ export function Settings() {
     updateCurrency({ acronym: e.target.value });
   };
 
-
   return (
     <StoreLayout>
       <header className="mb-6">

@@ -38,8 +38,17 @@ class PrintServiceTest {
         )
 
         runBlocking {
+            doReturn(null).whenever(printerConfigService).getDefaultByType(PrinterType.KITCHEN)
             assertFailsWith<IOException> {
-                printService.printTicket(ticketData, "Default", PrinterType.KITCHEN, null, null, false)
+                printService.printTicket(
+                    ticketData,
+                    "Default",
+                    PrinterType.KITCHEN,
+                    null,
+                    null,
+                    false,
+                    false
+                )
             }
         }
     }
@@ -56,6 +65,8 @@ class PrintServiceTest {
             total = 100.00
         )
 
-        whenever(runBlocking { ticketTemplateService.getTemplateByName("NonExistent") }).thenReturn(null)
+        runBlocking {
+            whenever(ticketTemplateService.getTemplateByName("NonExistent")).thenReturn(null)
+        }
     }
 }

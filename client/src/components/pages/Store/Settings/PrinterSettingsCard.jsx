@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+
 import { PrinterAddForm } from "./PrinterAddForm";
 import { PrinterConfigRow } from "./PrinterConfigRow";
 import { TicketTemplatesModal } from "./TicketTemplatesModal";
@@ -73,92 +75,89 @@ export function PrinterSettingsCard({
   return (
     <>
       <Card className="rounded-lg mb-6 p-6">
-      <CardHeader className="flex flex-col items-start">
-        <div className="flex w-full flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-semibold text-green-900">
-              {t("cardPrinters.title")}
-            </h2>
-            <p className="text-gray-800 mt-2">
-              {t("cardPrinters.subtitle")}
-            </p>
-          </div>
-          <Button variant="bordered" onPress={() => setTemplatesModalOpen(true)}>
-            {t("cardPrinters.manageTemplates")}
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardBody>
-        <div className="flex flex-col gap-6">
-          <PrinterAddForm
-            printerType={printerType}
-            printerName={printerName}
-            templateName={templateName}
-            isDefault={isDefault}
-            enabled={enabled}
-            availablePrinters={availablePrinters}
-            templates={templates}
-            loadingAvailable={loadingAvailable}
-            loadingTemplates={loadingTemplates}
-            saving={saving}
-            onPrinterTypeChange={setPrinterType}
-            onPrinterNameChange={setPrinterName}
-            onTemplateNameChange={setTemplateName}
-            onDefaultChange={setIsDefault}
-            onEnabledChange={setEnabled}
-            onSubmit={handleAdd}
-            t={t}
-          />
-
-          {error && (
-            <p className="text-sm text-red-600">
-              {t("cardPrinters.error")}
-            </p>
-          )}
-
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-green-900">
-                {t("cardPrinters.listTitle")}
-              </h3>
-              <span className="text-xs text-gray-500">
-                {t("cardPrinters.listHint")}
-              </span>
+        <CardHeader className="flex flex-col items-start">
+          <div className="flex w-full flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold text-green-900">
+                {t("cardPrinters.title")}
+              </h2>
+              <p className="text-gray-800 mt-2">
+                {t("cardPrinters.subtitle")}
+              </p>
             </div>
-            {loadingConfigs && (
-              <p className="text-sm text-gray-600">
-                {t("cardPrinters.loading")}
-              </p>
-            )}
-            {!loadingConfigs && configRows.length === 0 && (
-              <p className="text-sm text-gray-600">
-                {t("cardPrinters.empty")}
-              </p>
-            )}
-            {configRows.map((config) => (
-              <PrinterConfigRow
-                key={config.id}
-                config={config}
-                templates={templates}
-                loadingTemplates={loadingTemplates}
-                onTemplateChange={(value) =>
-                  updatePrinterConfig(config.id, { templateName: value })
-                }
-                onSetDefault={() => setDefaultPrinterConfig(config.id)}
-                onToggleDefault={(value) =>
-                  updatePrinterConfig(config.id, { isDefault: value })
-                }
-                onToggleEnabled={(value) =>
-                  updatePrinterConfig(config.id, { enabled: value })
-                }
-                onRemove={() => deletePrinterConfig(config.id)}
-                t={t}
-              />
-            ))}
+            <Button variant="bordered" onPress={() => setTemplatesModalOpen(true)}>
+              {t("cardPrinters.manageTemplates")}
+            </Button>
           </div>
-        </div>
-      </CardBody>
+        </CardHeader>
+
+        <CardBody>
+          <div className="flex flex-col gap-6">
+            <PrinterAddForm
+              printerType={printerType}
+              printerName={printerName}
+              templateName={templateName}
+              isDefault={isDefault}
+              enabled={enabled}
+              availablePrinters={availablePrinters}
+              templates={templates}
+              loadingAvailable={loadingAvailable}
+              loadingTemplates={loadingTemplates}
+              saving={saving}
+              onPrinterTypeChange={setPrinterType}
+              onPrinterNameChange={setPrinterName}
+              onTemplateNameChange={setTemplateName}
+              onDefaultChange={setIsDefault}
+              onEnabledChange={setEnabled}
+              onSubmit={handleAdd}
+              t={t}
+            />
+
+            {error && (
+              <p className="text-sm text-red-600">
+                {t("cardPrinters.error")}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-green-900">
+                  {t("cardPrinters.listTitle")}
+                </h3>
+                <span className="text-xs text-gray-500">
+                  {t("cardPrinters.listHint")}
+                </span>
+              </div>
+              {loadingConfigs && (
+                <p className="text-sm text-gray-600">
+                  {t("cardPrinters.loading")}
+                </p>
+              )}
+              {!loadingConfigs && configRows.length === 0 && (
+                <p className="text-sm text-gray-600">
+                  {t("cardPrinters.empty")}
+                </p>
+              )}
+              {configRows.map((config) => (
+                <PrinterConfigRow
+                  key={config.id}
+                  config={config}
+                  templates={templates}
+                  loadingTemplates={loadingTemplates}
+                  onTemplateChange={(value) => updatePrinterConfig(config.id, { templateName: value })
+                  }
+                  onSetDefault={() => setDefaultPrinterConfig(config.id)}
+                  onToggleDefault={(value) => updatePrinterConfig(config.id, { isDefault: value })
+                  }
+                  onToggleEnabled={(value) => updatePrinterConfig(config.id, { enabled: value })
+                  }
+                  onRemove={() => deletePrinterConfig(config.id)}
+                  t={t}
+                />
+              ))}
+            </div>
+          </div>
+        </CardBody>
       </Card>
       {templatesModalOpen && (
         <TicketTemplatesModal

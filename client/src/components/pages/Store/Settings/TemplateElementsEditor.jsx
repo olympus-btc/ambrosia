@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/react";
+
 import { TemplateElementRow } from "./TemplateElementRow";
 
 export function TemplateElementsEditor({ elements, onChange, onAdd, onMove, onRemove, t }) {

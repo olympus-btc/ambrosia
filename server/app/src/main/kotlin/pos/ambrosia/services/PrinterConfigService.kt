@@ -15,7 +15,7 @@ enum class PrinterConfigUpdateStatus {
   CONFLICT
 }
 
-class PrinterConfigService(private val connection: Connection) {
+open class PrinterConfigService(private val connection: Connection) {
   companion object {
     private const val ADD_PRINTER_CONFIG = """
       INSERT INTO printer_configs (id, printer_type, printer_name, template_name, is_default, enabled)
@@ -198,7 +198,7 @@ class PrinterConfigService(private val connection: Connection) {
     }
   }
 
-  suspend fun getDefaultByType(printerType: PrinterType): PrinterConfig? {
+  open suspend fun getDefaultByType(printerType: PrinterType): PrinterConfig? {
     connection.prepareStatement(GET_DEFAULT_BY_TYPE).use { stmt ->
       stmt.setString(1, printerType.name)
       val rs = stmt.executeQuery()
@@ -210,7 +210,7 @@ class PrinterConfigService(private val connection: Connection) {
     }
   }
 
-  suspend fun getEnabledByType(printerType: PrinterType): List<PrinterConfig> {
+  open suspend fun getEnabledByType(printerType: PrinterType): List<PrinterConfig> {
     connection.prepareStatement(GET_ENABLED_BY_TYPE).use { stmt ->
       stmt.setString(1, printerType.name)
       val rs = stmt.executeQuery()

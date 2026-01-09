@@ -205,15 +205,16 @@ const storeEs = {
       subtitle: "Configura defaults y disponibilidad",
       typeLabel: "Tipo",
       nameLabel: "Impresora",
-      templateLabel: "Template",
-      templateNone: "Sin template",
+      templateLabel: "Plantilla",
+      templateNone: "Sin plantilla",
       addButton: "Agregar",
-      manageTemplates: "Administrar templates",
+      manageTemplates: "Administrar plantillas",
       addTitle: "Agregar impresora",
-      addDescription: "Elige el tipo, la impresora del sistema y asigna un template.",
+      addDescription:
+        "Elige el tipo, la impresora del sistema y asigna una plantilla.",
       listTitle: "Impresoras configuradas",
       listHint: "Cada impresora puede tener su template y estado default.",
-      defaultLabel: "Impresora default",
+      defaultLabel: "Impresora por defecto",
       enabledLabel: "Habilitada",
       loading: "Cargando impresoras...",
       empty: "Aun no hay impresoras configuradas.",
@@ -232,10 +233,10 @@ const storeEs = {
       },
     },
     templates: {
-      title: "Templates de ticket",
-      listTitle: "Templates",
+      title: "Plantillas de ticket",
+      listTitle: "Plantillas",
       newTemplate: "Nuevo",
-      nameLabel: "Nombre del template",
+      nameLabel: "Nombre de la plantilla",
       elementsTitle: "Elementos",
       addElement: "Agregar elemento",
       elementTypeLabel: "Tipo",
@@ -343,8 +344,10 @@ const storeEs = {
         invoiceLightningButton: "Crear Factura Lightning",
         invoiceLightningLoading: "Creando Factura...",
         invoiceSuccessTitle: "Factura creada",
-        invoiceSuccessDescription: "La factura Lightning se ha generado correctamente",
-        invoiceAmountError: "Debes ingresar un monto para para generar el invoice",
+        invoiceSuccessDescription:
+          "La factura Lightning se ha generado correctamente",
+        invoiceAmountError:
+          "Debes ingresar un monto para para generar el invoice",
         invoiceCreateError: "Error al crear el invoice",
       },
       send: {
@@ -375,7 +378,8 @@ const storeEs = {
         sent: "Enviado",
         received: "Recibido",
         getTransactionsError: "Error al cargar historial",
-        getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
+        getTransactionsErrorDescription:
+          "No se pudo cargar el historial de transacciones",
       },
     },
     invoiceModal: {

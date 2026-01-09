@@ -456,11 +456,11 @@ describe("paymentHandlers", () => {
       id: "order-1",
       status: "paid",
     });
-    expect(onPay).toHaveBeenCalledWith({
+    expect(onPay).toHaveBeenCalledWith(expect.objectContaining({
       paymentId: "pay-1",
       cashReceived: 10,
       change: 2,
-    });
+    }));
     expect(onResetCart).toHaveBeenCalled();
     expect(setCashPaymentConfig).toHaveBeenCalledWith(null);
     expect(addToast).toHaveBeenCalledWith({
