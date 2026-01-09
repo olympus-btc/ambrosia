@@ -1,5 +1,5 @@
 #!/bin/bash
-# Post-installation script for Ambrosia POS Electron .deb package
+# Post-installation script for Ambrosia POS Electron (.deb and .rpm packages)
 # This script sets up the chrome-sandbox permissions required by Electron
 
 set -e

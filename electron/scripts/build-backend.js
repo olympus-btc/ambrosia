@@ -4,7 +4,6 @@ const path = require('path');
 
 const SERVER_DIR = path.join(__dirname, '..', '..', 'server');
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'backend');
-const JAR_NAME = 'ambrosia-0.3.0-alpha.jar';
 
 function main() {
   console.log('===========================================');
@@ -40,8 +39,19 @@ function main() {
 
     console.log('\n✓ JAR build complete\n');
 
-    // Find the JAR file
-    const jarSourcePath = path.join(SERVER_DIR, 'app', 'build', 'libs', JAR_NAME);
+    // Find the JAR file dynamically
+    const libsDir = path.join(SERVER_DIR, 'app', 'build', 'libs');
+    const jarFiles = fs.readdirSync(libsDir).filter((file) => file.startsWith('ambrosia-') && file.endsWith('.jar'));
+
+    if (jarFiles.length === 0) {
+      throw new Error(`No JAR file found in: ${libsDir}`);
+    }
+
+    if (jarFiles.length > 1) {
+      console.log(`⚠ Multiple JAR files found, using the first one: ${jarFiles[0]}`);
+    }
+
+    const jarSourcePath = path.join(libsDir, jarFiles[0]);
 
     if (!fs.existsSync(jarSourcePath)) {
       throw new Error(`JAR not found at: ${jarSourcePath}`);

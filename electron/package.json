@@ -13,11 +13,11 @@
     "pack": "npm run build:prepare && electron-builder --dir",
     "dist": "npm run build:prepare && electron-builder",
     "clean": "node scripts/clean-build.js",
-    "dist:mac:arm64": "npm run clean && cross-env TARGET_PLATFORM=macos-arm64 npm run build:prepare && electron-builder --mac",
-    "dist:mac:x64": "npm run clean && cross-env TARGET_PLATFORM=macos-x64 npm run build:prepare && electron-builder --mac",
+    "dist:mac:arm64": "npm run clean && cross-env TARGET_PLATFORM=macos-arm64 npm run build:prepare && electron-builder --mac --arm64",
+    "dist:mac:x64": "npm run clean && cross-env TARGET_PLATFORM=macos-x64 npm run build:prepare && electron-builder --mac --x64",
     "dist:win:x64": "npm run clean && cross-env TARGET_PLATFORM=win-x64 npm run build:prepare && electron-builder --win --x64",
     "dist:win:arm64": "npm run clean && cross-env TARGET_PLATFORM=win-arm64 npm run build:prepare && electron-builder --win --arm64",
-    "dist:linux:x64": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux",
+    "dist:linux:x64": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux --x64",
     "dist:linux:arm64": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux --arm64",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -87,7 +87,8 @@
     },
     "linux": {
       "target": [
-        "deb"
+        "deb",
+        "rpm"
       ],
       "category": "Office",
       "icon": "build/icon.png",
@@ -95,6 +96,12 @@
     },
     "deb": {
       "afterInstall": "build/postinst"
+    },
+    "rpm": {
+      "afterInstall": "build/postinst",
+      "fpm": [
+        "--rpm-posttrans=build/postinst"
+      ]
     },
     "nsis": {
       "oneClick": false,
