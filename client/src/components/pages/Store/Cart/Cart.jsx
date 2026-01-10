@@ -66,6 +66,9 @@ export function Cart() {
   };
 
   const updateQuantity = (id, quantity) => {
+    if (!Number.isFinite(quantity)) {
+      return;
+    }
     if (quantity <= 0) {
       removeProduct(id);
       return;
