@@ -4,6 +4,10 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
 import pos.ambrosia.logger
+import kotlinx.io.files.Path
+import pos.ambrosia.datadir
+import pos.ambrosia.phoenixDatadir
+import pos.ambrosia.userHome
 
 /**
  * Application configuration manager.
@@ -19,9 +23,8 @@ object AppConfig {
     private const val PHOENIX_SEED_PATH = ".phoenix/seed.dat"
 
     fun loadConfig() {
-        val userHome = System.getProperty("user.home")
-        val configFile = File(userHome, CONFIG_FILE_PATH)
-        val phoenixFile = File(userHome, PHOENIX_PATH)
+        val configFile = Path(datadir, "ambrosia.db").toString()
+        val phoenixConfFile = Path(phoenixDatadir, "phoenix.conf").toString()
 
         try {
             FileInputStream(configFile).use { fis ->
@@ -32,16 +35,15 @@ object AppConfig {
         }
 
         try {
-            FileInputStream(phoenixFile).use { fis ->
+            FileInputStream(phoenixConfFile).use { fis ->
                 phoenixProperties.load(fis)
             }
         } catch (e: Exception) {
-            logger.error("Error loading Phoenix configuration from {}", phoenixFile)
+            logger.error("Error loading Phoenix configuration from {}", phoenixConfFile)
         }
     }
 
     fun loadPhoenixSeed(): String {
-        val userHome = System.getProperty("user.home")
         val seedFile = File(userHome, PHOENIX_SEED_PATH)
         var seed = ""
 

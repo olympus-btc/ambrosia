@@ -18,20 +18,27 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
+import pos.ambrosia.config.EnvVars
 import pos.ambrosia.config.InjectLogs
 import pos.ambrosia.config.ListValueSource
 import pos.ambrosia.config.SeedGenerator
 import pos.ambrosia.config.AppConfig
 import org.flywaydb.core.Flyway
 
+val userHome = System.getProperty("user.home")
+
+val datadir: Path = System.getenv()[EnvVars.AMBROSIA_DATADIR]?.let { Path(it) } ?: 
+  Path(Path(userHome), ".Ambrosia-POS")
+
+val phoenixDatadir: Path = System.getenv()[EnvVars.PHOENIX_DATADIR]?.let { Path(it) } ?: 
+  Path(Path(userHome), ".phoenix")
 fun main(args: Array<String>) = Ambrosia().main(args)
 
 class Ambrosia : CliktCommand() {
   // En algún archivo de configuración o en Application.kt
   val AppVersion: String = Ambrosia::class.java.getPackage().implementationVersion ?: "-dev"
-  val datadir = Path(Path(System.getProperty("user.home")), ".Ambrosia-POS")
   private val confFile = Path(datadir, "ambrosia.conf")
-  private val phoenixConfFile = Path(Path(System.getProperty("user.home")), ".phoenix/phoenix.conf")
+  private val phoenixConfFile = Path(phoenixDatadir, "phoenix.conf")
 
   init {
     SystemFileSystem.createDirectories(datadir)
