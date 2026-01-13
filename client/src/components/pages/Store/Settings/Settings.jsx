@@ -166,6 +166,21 @@ export function Settings() {
           </CardFooter>
         </Card>
         <div className="flex flex-col lg:w-full">
+          <PrinterSettingsCard
+            availablePrinters={availablePrinters}
+            printerConfigs={printerConfigs}
+            loadingAvailable={loadingAvailable}
+            loadingConfigs={loadingConfigs}
+            loadingTemplates={loadingTemplates}
+            templates={templates}
+            error={printersError}
+            createPrinterConfig={createPrinterConfig}
+            updatePrinterConfig={updatePrinterConfig}
+            deletePrinterConfig={deletePrinterConfig}
+            setDefaultPrinterConfig={setDefaultPrinterConfig}
+            t={t}
+          />
+
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
@@ -199,21 +214,6 @@ export function Settings() {
               </div>
             </CardBody>
           </Card>
-
-          <PrinterSettingsCard
-            availablePrinters={availablePrinters}
-            printerConfigs={printerConfigs}
-            loadingAvailable={loadingAvailable}
-            loadingConfigs={loadingConfigs}
-            loadingTemplates={loadingTemplates}
-            templates={templates}
-            error={printersError}
-            createPrinterConfig={createPrinterConfig}
-            updatePrinterConfig={updatePrinterConfig}
-            deletePrinterConfig={deletePrinterConfig}
-            setDefaultPrinterConfig={setDefaultPrinterConfig}
-            t={t}
-          />
 
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
