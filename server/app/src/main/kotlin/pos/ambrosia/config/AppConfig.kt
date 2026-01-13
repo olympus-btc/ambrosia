@@ -18,12 +18,10 @@ object AppConfig {
 
     private val properties = Properties()
     private val phoenixProperties = Properties()
-    private const val CONFIG_FILE_PATH = ".Ambrosia-POS/ambrosia.conf"
-    private const val PHOENIX_PATH = ".phoenix/phoenix.conf"
     private const val PHOENIX_SEED_PATH = ".phoenix/seed.dat"
 
     fun loadConfig() {
-        val configFile = Path(datadir, "ambrosia.db").toString()
+        val configFile = Path(datadir, "ambrosia.conf").toString()
         val phoenixConfFile = Path(phoenixDatadir, "phoenix.conf").toString()
 
         try {
