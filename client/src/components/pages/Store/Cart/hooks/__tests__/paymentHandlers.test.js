@@ -59,7 +59,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1", acronym: "MXN" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { btc: { id: "btc", name: "BTC" } },
       getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
       setBtcPaymentConfig,
@@ -74,7 +74,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -100,7 +100,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({
         amountFiat: 1,
         currencyAcronym: "usd",
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         items: [{ id: 1 }],
         selectedPaymentMethod: "btc",
       }),
@@ -116,7 +116,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { cash: { id: "cash", name: "Cash" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
@@ -131,7 +131,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -156,7 +156,7 @@ describe("paymentHandlers", () => {
     expect(setCashPaymentConfig).toHaveBeenCalledWith(
       expect.objectContaining({
         amountDue: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         items: [{ id: 1 }],
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
@@ -175,7 +175,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { card: { id: "card", name: "Card" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
@@ -194,7 +194,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -237,7 +237,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { card: { id: "card", name: "Card" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
@@ -254,7 +254,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -417,11 +417,11 @@ describe("paymentHandlers", () => {
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
         amountDue: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         items: [{ id: 1 }],
         amounts: {
           amountFiat: 1,
-          displayTotal: "fmt-100",
+          displayTotal: 100,
           subtotal: 100,
           discount: 0,
           discountAmount: 0,
@@ -476,11 +476,11 @@ describe("paymentHandlers", () => {
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
         amountDue: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         items: [{ id: 1 }],
         amounts: {
           amountFiat: 1,
-          displayTotal: "fmt-100",
+          displayTotal: 100,
           subtotal: 100,
           discount: 0,
           discountAmount: 0,
