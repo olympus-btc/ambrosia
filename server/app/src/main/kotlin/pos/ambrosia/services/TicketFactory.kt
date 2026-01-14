@@ -18,6 +18,16 @@ import pos.ambrosia.util.formatTicketLine
 import pos.ambrosia.logger
 
 class TicketFactory(private val template: TicketTemplate) {
+  private val qrImageSizeByFontSize = mapOf(
+      FontSize.NORMAL to ImageSize.SMALL,
+      FontSize.LARGE to ImageSize.MEDIUM,
+      FontSize.EXTRA_LARGE to ImageSize.LARGE,
+  )
+  private val qrImageSizePxByImageSize = mapOf(
+      ImageSize.SMALL to 300,
+      ImageSize.MEDIUM to 360,
+      ImageSize.LARGE to 420,
+  )
 
   fun build(escpos: EscPos, data: TicketData, config: Config?) {
     template.elements.forEach { element ->
@@ -41,12 +51,8 @@ class TicketFactory(private val template: TicketTemplate) {
         ElementType.QRCODE -> {
           val qrContent = if (content.isNotBlank()) content else (data.invoice ?: "")
           if (qrContent.isNotBlank()) {
-            val sizePx =
-                when (element.style?.fontSize ?: FontSize.NORMAL) {
-                  FontSize.NORMAL -> 300
-                  FontSize.LARGE -> 360
-                  FontSize.EXTRA_LARGE -> 420
-                }
+            val imageSize = qrImageSizeByFontSize[element.style?.fontSize ?: FontSize.NORMAL] ?: ImageSize.SMALL
+            val sizePx = qrImageSizePxByImageSize[imageSize] ?: 300
             logger.info("Printing QR image: sizePx=$sizePx, contentLength=${qrContent.length}")
             try {
               val hints = EnumMap<EncodeHintType, Any>(EncodeHintType::class.java)

@@ -10,6 +10,22 @@ import * as configurationsProvider from "@providers/configurations/configuration
 
 import { Settings } from "../Settings";
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  const Select = ({ label, value, onChange, children }) => (
+    <label>
+      {label}
+      <select aria-label={label} value={value || ""} onChange={onChange}>
+        {children}
+      </select>
+    </label>
+  );
+  const SelectItem = ({ value, children }) => (
+    <option value={value ?? ""}>{children}</option>
+  );
+  return { ...actual, Select, SelectItem };
+});
+
 function renderSettings() {
   return render(
     <I18nProvider>
@@ -354,19 +370,12 @@ describe("Settings page", () => {
     });
 
     it("calls updateCurrency when currency is changed", async () => {
-      const user = userEvent.setup();
-
       await act(async () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
-      await user.click(currencySelect);
-
-      await waitFor(() => {
-        const eurOption = screen.getByText(/EUR/);
-        expect(eurOption).toBeInTheDocument();
-      });
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      expect(currencySelect).toBeInTheDocument();
     });
 
     it("does not update currency when empty value is selected", async () => {
@@ -382,29 +391,20 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
       expect(currencySelect).toBeInTheDocument();
     });
 
     it("calls updateCurrency when a valid currency is selected", async () => {
-      const user = userEvent.setup();
-
       await act(async () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
-      await user.click(currencySelect);
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      fireEvent.change(currencySelect, { target: { value: "EUR" } });
 
-      await waitFor(async () => {
-        const options = screen.queryAllByRole("option");
-        if (options.length > 0) {
-          const eurOption = options.find((opt) => opt.textContent?.includes("EUR"));
-          if (eurOption) {
-            await user.click(eurOption);
-            expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: expect.any(String) });
-          }
-        }
+      await waitFor(() => {
+        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
       });
     });
 
@@ -413,17 +413,12 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      const selectElement = document.querySelector("select");
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      fireEvent.change(currencySelect, { target: { value: "EUR" } });
 
-      if (selectElement) {
-        await act(async () => {
-          fireEvent.change(selectElement, { target: { value: "EUR" } });
-        });
-
-        await waitFor(() => {
-          expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-        });
-      }
+      await waitFor(() => {
+        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
+      });
     });
   });
 

@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
 
+import { TicketTemplatesModal } from "../TicketTemplate/TicketTemplatesModal";
+
 import { PrinterAddForm } from "./PrinterAddForm";
 import { PrinterConfigRow } from "./PrinterConfigRow";
-import { TicketTemplatesModal } from "./TicketTemplatesModal";
 
 export function PrinterSettingsCard({
   availablePrinters,

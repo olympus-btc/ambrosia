@@ -55,6 +55,9 @@ enum class Justification { LEFT, CENTER, RIGHT }
 enum class FontSize { NORMAL, LARGE, EXTRA_LARGE }
 
 @Serializable
+enum class ImageSize { SMALL, MEDIUM, LARGE }
+
+@Serializable
 data class TicketTemplateRequest(
     val name: String,
     val elements: List<TicketElementCreateRequest>

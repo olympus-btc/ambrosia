@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { TemplatePreview } from "../TemplatePreview";
+import { TemplatePreview } from "../TicketTemplate/TemplatePreview";
 
 const t = (key) => key;
 

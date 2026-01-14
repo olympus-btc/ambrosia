@@ -19,7 +19,7 @@ import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
-import { PrinterSettingsCard } from "./PrinterSettingsCard";
+import { PrinterSettingsCard } from "./PrinterSettings/PrinterSettingsCard";
 
 export function Settings() {
   const { config, updateConfig } = useConfigurations();
@@ -203,7 +203,7 @@ export function Settings() {
                     onChange={handleCurrencyChange}
                   >
                     {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code}>
+                      <SelectItem key={currency.code} value={currency.code}>
                         {`${currency.code}  -  ${currency.name}`}
                       </SelectItem>
                     ))}

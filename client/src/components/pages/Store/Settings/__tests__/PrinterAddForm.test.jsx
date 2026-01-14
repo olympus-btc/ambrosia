@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { PrinterAddForm } from "../PrinterAddForm";
+import { PrinterAddForm } from "../PrinterSettings/PrinterAddForm";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, isDisabled, children, ...props }) => (

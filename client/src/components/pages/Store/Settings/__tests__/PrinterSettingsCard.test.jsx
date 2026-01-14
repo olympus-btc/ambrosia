@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import { PrinterSettingsCard } from "../PrinterSettingsCard";
+import { PrinterSettingsCard } from "../PrinterSettings/PrinterSettingsCard";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -15,7 +15,7 @@ jest.mock("@heroui/react", () => ({
 
 let lastAddProps = null;
 
-jest.mock("../PrinterAddForm", () => ({
+jest.mock("../PrinterSettings/PrinterAddForm", () => ({
   PrinterAddForm: (props) => {
     lastAddProps = props;
     return (
@@ -26,7 +26,7 @@ jest.mock("../PrinterAddForm", () => ({
   },
 }));
 
-jest.mock("../PrinterConfigRow", () => ({
+jest.mock("../PrinterSettings/PrinterConfigRow", () => ({
   PrinterConfigRow: ({
     config,
     onTemplateChange,
@@ -56,7 +56,7 @@ jest.mock("../PrinterConfigRow", () => ({
   ),
 }));
 
-jest.mock("../TicketTemplatesModal", () => ({
+jest.mock("../TicketTemplate/TicketTemplatesModal", () => ({
   TicketTemplatesModal: ({ isOpen }) => (isOpen ? <div>templates-modal</div> : null),
 }));
 

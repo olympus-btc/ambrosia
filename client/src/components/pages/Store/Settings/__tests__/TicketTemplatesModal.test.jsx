@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
-import { TicketTemplatesModal } from "../TicketTemplatesModal";
+import { TicketTemplatesModal } from "../TicketTemplate/TicketTemplatesModal";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
