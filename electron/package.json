@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "dev": "electron .",
+    "dev:splash": "cross-env SPLASH_ONLY=true electron .",
     "dev:inspect": "electron --inspect=5858 .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -54,6 +55,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "splash.html",
       "package.json",
       "services/**/*",
       "utils/**/*"

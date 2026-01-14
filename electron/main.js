@@ -23,7 +23,32 @@ if (!gotTheLock) {
 
 // Global state
 let mainWindow = null;
+let splashWindow = null;
 let serviceManager = null;
+
+// Splash Screen Creation
+function createSplashScreen() {
+  splashWindow = new BrowserWindow({
+    width: 500,
+    height: 350,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+
+  return splashWindow;
+}
 
 // Main Window Creation
 function createWindow(url) {
@@ -45,7 +70,18 @@ function createWindow(url) {
   mainWindow.loadURL(url);
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    // Close splash and show main window
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.webContents.send('splash:close');
+      setTimeout(() => {
+        if (splashWindow && !splashWindow.isDestroyed()) {
+          splashWindow.close();
+        }
+        mainWindow.show();
+      }, 800);
+    } else {
+      mainWindow.show();
+    }
   });
 
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
@@ -70,6 +106,11 @@ function createWindow(url) {
 // Handle global errors
 async function handleStartupError(error) {
   console.error('[Electron] Startup Error:', error);
+
+  // Close splash window if it exists
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+  }
 
   const response = await dialog.showMessageBox({
     type: 'error',
@@ -127,19 +168,83 @@ app.whenReady().then(async () => {
   try {
     console.log('[Electron] Initializing Ambrosia POS...');
 
+    // Show splash screen immediately
+    createSplashScreen();
+
+    // SPLASH ONLY MODE: For design/testing purposes
+    if (process.env.SPLASH_ONLY === 'true') {
+      console.log('[Electron] SPLASH ONLY MODE: Showing splash for design purposes');
+      console.log('[Electron] Edit splash.html and reload the window to see changes');
+      console.log('[Electron] Press Ctrl+R in the splash window to reload');
+
+      // Enable DevTools for splash window in splash-only mode
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.openDevTools();
+      }
+
+      return; // Exit here, don't start services
+    }
+
     serviceManager = new ServiceManager();
+
+    // Helper to update splash progress
+    const updateSplash = (service, progress, message) => {
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash:update', { service, progress, message });
+      }
+    };
+
+    const completeSplashStep = (service) => {
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash:complete', { service });
+      }
+    };
+
+    // Track service startup progress
+    updateSplash(null, 0, 'Initializing...');
 
     serviceManager.on('service:started', ({ service, port }) => {
       console.log(`[Electron] Service started: ${service} on port ${port}`);
+
+      // Update progress based on service
+      let progress = 0;
+      let message = '';
+
+      if (service === 'phoenixd') {
+        progress = 33;
+        message = 'Lightning Network ready';
+        completeSplashStep('phoenixd');
+        updateSplash('backend', progress, 'Starting Backend...');
+      } else if (service === 'backend') {
+        progress = 66;
+        message = 'Backend server ready';
+        completeSplashStep('backend');
+        updateSplash('nextjs', progress, 'Starting Frontend...');
+      } else if (service === 'nextjs') {
+        progress = 100;
+        message = 'Frontend ready';
+        completeSplashStep('nextjs');
+      }
+
+      updateSplash(null, progress, message);
     });
 
     serviceManager.on('service:error', ({ service, error }) => {
       console.error(`[Electron] Service error: ${service}`, error);
+      updateSplash(null, null, `Error starting ${service || 'service'}`);
     });
 
     serviceManager.on('all:started', () => {
       console.log('[Electron] All services are running');
     });
+
+    // Start with initial message
+    if (serviceManager.isDevMode()) {
+      updateSplash(null, 33, 'Development mode');
+      updateSplash('nextjs', 66, 'Starting Frontend...');
+    } else {
+      updateSplash('phoenixd', 10, 'Starting Lightning Network...');
+    }
 
     const url = await serviceManager.startAll();
 
@@ -147,6 +252,10 @@ app.whenReady().then(async () => {
 
     console.log('[Electron] Application initialized successfully');
   } catch (error) {
+    // Close splash on error
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+    }
     await handleStartupError(error);
   }
 });

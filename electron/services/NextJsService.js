@@ -59,12 +59,14 @@ class NextJsService {
 
       console.log(`[NextJsService] Backend configuration: ${backendHost}:${backendPort}`);
 
-      // Verify server.js exists
-      const serverJsPath = path.join(cwd, 'server.js');
-      if (!fs.existsSync(serverJsPath)) {
-        throw new Error(`server.js not found at: ${serverJsPath}`);
+      // Verify server.js exists (only in production mode)
+      if (!isDev) {
+        const serverJsPath = path.join(cwd, 'server.js');
+        if (!fs.existsSync(serverJsPath)) {
+          throw new Error(`server.js not found at: ${serverJsPath}`);
+        }
+        console.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
       }
-      console.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
 
       // Pass environment variables directly to Next.js (no .env file needed)
       const env = {
