@@ -109,7 +109,7 @@ async def login_user(
     return response
 
 
-async def create_test_role(admin_client: AmbrosiaHttpClient, role_name: str) -> str:
+async def create_role(admin_client: AmbrosiaHttpClient, role_name: str) -> str:
     """Create a new role using the admin client.
 
     Args:
@@ -140,7 +140,7 @@ async def grant_permissions(
     assert_status_code(response, 200, f"Failed to grant permissions to role {role_id}")
 
 
-async def create_test_user(
+async def create_user(
     admin_client: AmbrosiaHttpClient, name: str, pin: str, role_id: str
 ) -> str:
     """Create a new user using the admin client.

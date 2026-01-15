@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 
 from ambrosia.auth_utils import (
-    create_test_role,
-    create_test_user,
+    create_role,
+    create_user,
     grant_permissions,
     login_user,
 )
@@ -198,7 +198,7 @@ async def client_factory(server_url: str, admin_client):
         user_pin = "1234"
 
         # Create role
-        role_id = await create_test_role(admin_client, role_name)
+        role_id = await create_role(admin_client, role_name)
         roles.append(role_id)
 
         # Assign permissions if requested
@@ -206,7 +206,7 @@ async def client_factory(server_url: str, admin_client):
             await grant_permissions(admin_client, role_id, permissions)
 
         # Create user with that role
-        user_id = await create_test_user(admin_client, user_name, user_pin, role_id)
+        user_id = await create_user(admin_client, user_name, user_pin, role_id)
         users.append(user_id)
 
         # Create client and login

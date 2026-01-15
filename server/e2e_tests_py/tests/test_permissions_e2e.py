@@ -1,7 +1,9 @@
 """Test cases for dynamic permission system using client_factory."""
 
 import pytest
+
 from ambrosia.api_utils import assert_status_code
+
 
 @pytest.mark.asyncio
 async def test_user_with_read_permission_can_read_but_not_write(client_factory):
@@ -12,7 +14,9 @@ async def test_user_with_read_permission_can_read_but_not_write(client_factory):
     # 1. Should be able to read (GET)
     response = await viewer_client.get("/orders")
     # 200 OK or 204 No Content are both success
-    assert response.status_code in [200, 204], f"Expected read success, got {response.status_code}"
+    assert response.status_code in [200, 204], (
+        f"Expected read success, got {response.status_code}"
+    )
 
     # 2. Should NOT be able to create (POST) - Expecting 403 Forbidden
     dummy_order = {
@@ -20,10 +24,13 @@ async def test_user_with_read_permission_can_read_but_not_write(client_factory):
         "waiter": "some-waiter",
         "status": "pending",
         "total": 100.0,
-        "created_at": "2023-01-01T00:00:00Z"
+        "created_at": "2023-01-01T00:00:00Z",
     }
     response = await viewer_client.post("/orders", json=dummy_order)
-    assert_status_code(response, 403, "User without create permission should be forbidden")
+    assert_status_code(
+        response, 403, "User without create permission should be forbidden"
+    )
+
 
 @pytest.mark.asyncio
 async def test_user_with_full_permissions_can_create(client_factory):
@@ -35,5 +42,5 @@ async def test_user_with_full_permissions_can_create(client_factory):
     # Even if it returns 400 (Bad Request) due to invalid data, it means permission check PASSED
     dummy_order = {}
     response = await creator_client.post("/orders", json=dummy_order)
-    
+
     assert response.status_code != 403, "User with permission should not be forbidden"
