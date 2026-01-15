@@ -44,6 +44,12 @@ jest.mock("../../../hooks/useTickets", () => ({
   }),
 }));
 
+jest.mock("../../../hooks/usePrinter", () => ({
+  usePrinters: () => ({
+    printTicket: jest.fn(() => Promise.resolve()),
+  }),
+}));
+
 describe("useCartPayment", () => {
   beforeEach(() => {
     mockPaymentMethods = [

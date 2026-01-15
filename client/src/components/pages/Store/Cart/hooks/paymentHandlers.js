@@ -41,6 +41,7 @@ export function buildHandlePay({
   createTicket,
   createPayment,
   linkPaymentToTicket,
+  printCustomerReceipt,
 }) {
   return async function handlePay({
     items = [],
@@ -105,6 +106,18 @@ export function buildHandlePay({
         return;
       }
 
+      if (methodName.includes("cash") || methodName.includes("efectivo")) {
+        setCashPaymentConfig({
+          amountDue: amounts.amountFiat,
+          displayTotal: amounts.displayTotal,
+          items,
+          amounts,
+          selectedPaymentMethod,
+          currencyId,
+        });
+        return;
+      }
+
       const { paymentResult, orderPayload, orderId } = await processBasePayment(
         {
           items,
@@ -123,17 +136,6 @@ export function buildHandlePay({
         },
       );
 
-      if (methodName.includes("cash") || methodName.includes("efectivo")) {
-        setCashPaymentConfig({
-          amountDue: amounts.amountFiat,
-          displayTotal: amounts.displayTotal,
-          paymentResult,
-          orderPayload,
-          orderId,
-        });
-        return;
-      }
-
       if (orderId) {
         await updateOrder(orderId, {
           ...orderPayload,
@@ -141,6 +143,12 @@ export function buildHandlePay({
           status: "paid",
         });
       }
+
+      await printCustomerReceipt?.({
+        items,
+        totalCents: amounts.total,
+        ticketId: paymentResult?.ticketId,
+      });
 
       addToast({
         color: "success",
@@ -157,11 +165,16 @@ export function buildHandlePay({
   };
 }
 
-export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
+export function buildHandleBtcInvoiceReady({
+  setBtcPaymentConfig,
+}) {
   return (data) => {
     setBtcPaymentConfig((prev) => {
       if (!prev) return prev;
-      return { ...prev, invoiceData: data };
+      return {
+        ...prev,
+        invoiceData: data,
+      };
     });
   };
 }
@@ -183,6 +196,7 @@ export function buildHandleBtcComplete({
   t,
   user,
   setBtcPaymentConfig,
+  printCustomerReceipt,
 }) {
   return async (data) => {
     if (!btcPaymentConfig) return;
@@ -211,6 +225,13 @@ export function buildHandleBtcComplete({
       }
 
       await linkPaymentToTicket(paymentResponse.id, ticketId);
+
+      await printCustomerReceipt?.({
+        items: btcPaymentConfig.items,
+        totalCents: btcPaymentConfig.total,
+        ticketId,
+        invoice: data?.invoice?.serialized || "",
+      });
 
       onPay?.({
         items: btcPaymentConfig.items,
@@ -246,27 +267,59 @@ export function buildHandleBtcComplete({
 export function buildHandleCashComplete({
   cashPaymentConfig,
   dispatch,
+  processBasePayment,
+  buildOrderPayload,
+  buildTicketPayload,
+  createOrder,
+  createTicket,
+  buildPaymentPayload,
+  createPayment,
+  linkPaymentToTicket,
   updateOrder,
   onPay,
   onResetCart,
   notifyError,
   t,
   setCashPaymentConfig,
+  printCustomerReceipt,
+  user,
 }) {
   return async ({ cashReceived, change }) => {
     if (!cashPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      if (cashPaymentConfig.orderId) {
-        await updateOrder(cashPaymentConfig.orderId, {
-          ...cashPaymentConfig.orderPayload,
-          id: cashPaymentConfig.orderId,
+      const { paymentResult, orderPayload, orderId } = await processBasePayment({
+        items: cashPaymentConfig.items || [],
+        amounts: cashPaymentConfig.amounts,
+        selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
+        currencyId: cashPaymentConfig.currencyId,
+        user,
+        buildOrderPayload,
+        buildTicketPayload,
+        createOrder,
+        createTicket,
+        buildPaymentPayload,
+        createPayment,
+        linkPaymentToTicket,
+        t,
+      });
+
+      if (orderId) {
+        await updateOrder(orderId, {
+          ...orderPayload,
+          id: orderId,
           status: "paid",
         });
       }
 
+      await printCustomerReceipt?.({
+        items: paymentResult?.items,
+        totalCents: paymentResult?.total,
+        ticketId: paymentResult?.ticketId,
+      });
+
       onPay?.({
-        ...cashPaymentConfig.paymentResult,
+        ...paymentResult,
         cashReceived,
         change,
       });
