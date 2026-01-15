@@ -154,7 +154,7 @@ async def create_test_user(
     Returns:
         The ID of the newly created user
     """
-    user_data = {"name": name, "pin": pin, "role_id": role_id}
+    user_data = {"name": name, "pin": pin, "role": role_id}
     response = await admin_client.post("/users", json=user_data)
     assert_status_code(response, 201, f"Failed to create user '{name}'")
     return response.json()["id"]
