@@ -42,7 +42,7 @@ export default function PinLoginNew() {
   useEffect(() => {
     async function getUsersFromService() {
       try {
-        const users = await getUsers();
+        const users = await getUsers({ silentAuth: true });
 
         const employeesWithRoleName = users.map((user) => {
           return {
