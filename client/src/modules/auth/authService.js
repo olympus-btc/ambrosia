@@ -44,8 +44,8 @@ export async function deleteRole(roleId) {
   });
 }
 
-export async function getUsers() {
-  const users = await apiClient("/users");
+export async function getUsers({ silentAuth = false } = {}) {
+  const users = await apiClient("/users", { silentAuth });
   return users ? users : [];
 }
 

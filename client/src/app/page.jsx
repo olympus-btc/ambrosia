@@ -18,7 +18,14 @@ export default function HomePage() {
   const hasRequestedConfigRef = useRef(false);
 
   useEffect(() => {
-    if (isLoading || isConfigLoading) return;
+    if (isLoading) return;
+
+    if (!isAuth) {
+      router.replace("/auth");
+      return;
+    }
+
+    if (isConfigLoading) return;
 
     if (isAuth && !businessType && !hasRequestedConfigRef.current) {
       hasRequestedConfigRef.current = true;
@@ -33,7 +40,10 @@ export default function HomePage() {
   return (
     <LoadingCard
       message={
-        isLoading || isConfigLoading || (isAuth && !businessType && !hasRequestedConfigRef.current)
+        isLoading ||
+        (isAuth &&
+          (isConfigLoading ||
+            (!businessType && !hasRequestedConfigRef.current)))
           ? "Verificando autenticación y configuración..."
           : "Redirigiendo..."
       }
