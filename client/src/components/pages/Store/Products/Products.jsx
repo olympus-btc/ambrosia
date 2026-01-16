@@ -88,7 +88,7 @@ export function Products() {
           {t("addProduct")}
         </Button>
       </header>
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <ProductsTable
           products={products}
           categories={categories}
