@@ -48,8 +48,8 @@ export function StoreLayout({ children }) {
   const logoSrc = storedAssetUrl(config?.businessLogoUrl);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-primary-500 relative">
+    <div className="flex h-screen overflow-hidden">
+      <aside className="w-64 bg-primary-500 flex flex-col">
         <div className="flex flex-col items-center p-4 border-b border-green-300">
           <Link href="/">
             <Image
@@ -63,7 +63,7 @@ export function StoreLayout({ children }) {
           <p className=" text-slate-100 text-center mt-4">{config?.businessName ? config.businessName : ""}</p>
         </div>
 
-        <nav className="p-4">
+        <nav className="p-4 flex-1 overflow-y-auto">
           <ul className="space-y-2">
             {isAuth && availableNavigation.map((item, index) => (
               <NavBarButton
@@ -76,7 +76,7 @@ export function StoreLayout({ children }) {
             ))}
           </ul>
         </nav>
-        <div className="mt-auto p-4 border-t border-green-300 text-sm absolute bottom-0 w-full">
+        <div className="mt-auto p-4 border-t border-green-300 text-sm">
           <Link
             href="/auth"
             onClick={() => logout()}
@@ -88,7 +88,7 @@ export function StoreLayout({ children }) {
         </div>
       </aside>
 
-      <main className="flex-1 gradient-fresh p-6">{children}</main>
+      <main className="flex-1 gradient-fresh p-6 overflow-y-auto">{children}</main>
     </div>
   );
 }
