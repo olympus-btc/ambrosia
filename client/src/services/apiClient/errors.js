@@ -42,7 +42,6 @@ export async function handleHttpError(
     throw new Error("UNAUTHORIZED");
   }
 
-  // 403: Prohibido (sin permisos) -> NO cerrar sesión; navegar a /unauthorized
   if (status === 403) {
     if (isAuthEndpoint) {
       const msg =
