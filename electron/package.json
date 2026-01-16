@@ -90,7 +90,8 @@
     "linux": {
       "target": [
         "deb",
-        "rpm"
+        "rpm",
+        "tar.gz"
       ],
       "category": "Office",
       "icon": "build/icon.png",
