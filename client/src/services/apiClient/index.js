@@ -1,5 +1,4 @@
 "use client";
-import { addToast } from "@heroui/react";
 import { DEFAULT_TIMEOUT, API_BASE_URL } from "./constants";
 import { handleTokenRefresh } from "./auth";
 import { handleHttpError } from "./errors";
@@ -15,7 +14,6 @@ export async function apiClient(
     timeout = DEFAULT_TIMEOUT,
     skipRefresh = false,
     silentAuth = false,
-    notShowError = true,
   } = {},
 ) {
   const controller = new AbortController();
@@ -57,7 +55,9 @@ export async function apiClient(
       if (refreshed) {
         response = await makeRequest();
       } else {
-        throw new Error("AUTH_EXPIRED");
+        const authExpiredError = new Error("AUTH_EXPIRED");
+        authExpiredError.code = "AUTH_EXPIRED";
+        throw authExpiredError;
       }
     }
 
@@ -72,29 +72,10 @@ export async function apiClient(
     clearTimeout(timeoutId);
 
     if (error.name === "AbortError") {
-      const timeoutError = new Error("Timeout exceeded");
+      const timeoutError = new Error("TIMEOUT");
       timeoutError.code = "TIMEOUT";
 
-      addToast({
-        title: "Connection Error",
-        description: "The request took too long",
-        color: "danger",
-      });
-
       throw timeoutError;
-    }
-
-    const isLoginEndpoint = endpoint.startsWith("/auth/login");
-    const isSilentError = ["AUTH_EXPIRED", "UNAUTHORIZED", "TIMEOUT"].includes(
-      error.message,
-    );
-
-    if (!isLoginEndpoint && !isSilentError && !notShowError) {
-      addToast({
-        title: "Error",
-        description: error.message || "Connection Error",
-        color: "danger",
-      });
     }
 
     throw error;

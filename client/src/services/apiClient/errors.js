@@ -1,4 +1,3 @@
-import { addToast } from "@heroui/react";
 import { dispatchAuthEvent } from "./events";
 import { performLogout } from "./auth";
 
@@ -12,79 +11,81 @@ export async function handleHttpError(
 
   if (status === 401) {
     if (isAuthEndpoint) {
-      const msg =
-        typeof data === "string"
-          ? data
-          : data?.message || "Invalid Credentials";
-      const error = new Error(msg);
-      error.status = status;
-      throw error;
+      throw createApiError({
+        status,
+        code: data?.code || status,
+        data,
+      });
     }
 
     if (typeof window !== "undefined" && endpoint.startsWith("/wallet")) {
       dispatchAuthEvent("wallet:unauthorized");
-      throw new Error("UNAUTHORIZED");
+      throw createApiError({
+        status,
+        code: data?.code || status,
+        data,
+      });
     }
 
     if (silentAuth) {
-      throw new Error("UNAUTHORIZED");
+      throw createApiError({
+        status,
+        code: data?.code || status,
+        data,
+      });
     }
 
     await performLogout();
     dispatchAuthEvent("auth:expired");
-
-    addToast({
-      color: "danger",
-      title: "Authentication Error",
-      description: "Not authenticated",
+    throw createApiError({
+      status,
+      code: data?.code || status,
+      data,
     });
-
-    throw new Error("UNAUTHORIZED");
   }
 
   if (status === 403) {
     if (isAuthEndpoint) {
-      const msg =
-        typeof data === "string" ? data : data?.message || "Not authorized";
-      const error = new Error(msg);
-      error.status = status;
-      throw error;
+      throw createApiError({
+        status,
+        code: data?.code || status,
+        data,
+      });
     }
 
     if (typeof window !== "undefined" && endpoint.startsWith("/wallet")) {
       dispatchAuthEvent("wallet:unauthorized");
-      throw new Error("UNAUTHORIZED");
+      throw createApiError({
+        status,
+        code: data?.code || status,
+        data,
+      });
     }
 
     if (!silentAuth) {
       dispatchAuthEvent("auth:forbidden");
-      addToast({
-        color: "warning",
-        title: "Access Denied",
-        description: "Not authorized",
-      });
     }
 
-    throw new Error("UNAUTHORIZED");
+    throw createApiError({
+      status,
+      code: data?.code || status,
+      data,
+    });
   }
 
-  const errorMsg = extractErrorMessage(data, status);
-  throw new Error(errorMsg);
+  throw createApiError({
+    status,
+    code: data?.code || status,
+    data,
+  });
 }
 
-function extractErrorMessage(data, status) {
-  if (typeof data === "string") return data;
-  if (data?.message) return data.message;
-  if (data?.error)
-    return typeof data.error === "string" ? data.error : data.error.message;
-
-  const statusMessages = {
-    400: "Bad Request",
-    404: "Not Found",
-    500: "Internal server error",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-  };
-
-  return statusMessages[status] || `Error ${status}`;
+function createApiError({ status, code, data }) {
+  const resolvedCode = code ?? status;
+  const errorMessage = String(resolvedCode);
+  const error = new Error(errorMessage);
+  error.status = status ?? null;
+  error.code = resolvedCode;
+  error.data = data;
+  return error;
 }
