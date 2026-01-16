@@ -85,7 +85,7 @@ export function Users() {
           {t("addUser")}
         </Button>
       </header>
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <UsersTable
           users={users}
           onEditUser={handleEditUser}
