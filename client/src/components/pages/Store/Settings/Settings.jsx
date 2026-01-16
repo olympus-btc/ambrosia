@@ -241,18 +241,14 @@ export function Settings() {
         </div>
       </div>
 
-      {editSettingsShowModal &&
-        (
-          <EditSettingsModal
-            data={data}
-            setData={setData}
-            onChange={handleDataChange}
-            onSubmit={handleEditSumbit}
-            editSettingsShowModal={editSettingsShowModal}
-            setEditSettingsShowModal={setEditSettingsShowModal}
-          />
-        )
-      }
+      <EditSettingsModal
+        data={data}
+        setData={setData}
+        onChange={handleDataChange}
+        onSubmit={handleEditSumbit}
+        editSettingsShowModal={editSettingsShowModal}
+        setEditSettingsShowModal={setEditSettingsShowModal}
+      />
     </StoreLayout>
   );
 }
