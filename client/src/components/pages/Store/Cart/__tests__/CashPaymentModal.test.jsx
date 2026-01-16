@@ -1,8 +1,7 @@
 "use client";
 
-import { act } from "react";
-
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { CashPaymentModal } from "../CashPaymentModal";
 
@@ -18,6 +17,23 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   }),
 }));
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return {
+    ...actual,
+    NumberInput: ({ label, value, onValueChange, minValue, startContent, size, ...props }) => (
+      <input
+        type="number"
+        aria-label={label}
+        value={value}
+        onChange={(e) => onValueChange?.(parseFloat(e.target.value) || 0)}
+        min={minValue}
+        {...props}
+      />
+    ),
+  };
+});
+
 describe("CashPaymentModal", () => {
   const baseProps = {
     isOpen: true,
@@ -28,33 +44,31 @@ describe("CashPaymentModal", () => {
   };
 
   it("renders title and total", () => {
-    act(() => {
-      render(<CashPaymentModal {...baseProps} />);
-    });
+    render(<CashPaymentModal {...baseProps} />);
     expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText("$10.00")).toBeInTheDocument();
   });
 
-  it("shows error when cash is insufficient", () => {
-    act(() => {
-      render(<CashPaymentModal {...baseProps} />);
-    });
+  it("shows error when cash is insufficient", async () => {
+    const user = userEvent.setup();
+    render(<CashPaymentModal {...baseProps} />);
+
     const input = screen.getByLabelText("receivedLabel");
     fireEvent.change(input, { target: { value: "5" } });
-    fireEvent.click(screen.getByText("confirm"));
-    expect(
-      screen.getByText("errors.insufficient"),
-    ).toBeInTheDocument();
+    await user.click(screen.getByText("confirm"));
+
+    expect(screen.getByText("errors.insufficient")).toBeInTheDocument();
   });
 
-  it("calls onComplete with cashReceived and change when sufficient", () => {
+  it("calls onComplete with cashReceived and change when sufficient", async () => {
+    const user = userEvent.setup();
     const onComplete = jest.fn();
-    act(() => {
-      render(<CashPaymentModal {...baseProps} onComplete={onComplete} />);
-    });
+    render(<CashPaymentModal {...baseProps} onComplete={onComplete} />);
+
     const input = screen.getByLabelText("receivedLabel");
     fireEvent.change(input, { target: { value: "15" } });
-    fireEvent.click(screen.getByText("confirm"));
+    await user.click(screen.getByText("confirm"));
+
     expect(onComplete).toHaveBeenCalledWith({
       cashReceived: 15,
       change: 5,

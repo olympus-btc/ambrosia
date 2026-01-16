@@ -1,9 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 
 import {
   Button,
-  Input,
+  NumberInput,
   Modal,
   ModalBody,
   ModalContent,
@@ -24,22 +24,19 @@ export function CashPaymentModal({
 }) {
   const t = useTranslations("cart.paymentModal.cash");
   const { formatAmount } = useCurrency();
-  const [cashReceived, setCashReceived] = useState("");
+  const [cashReceived, setCashReceived] = useState(0);
   const [error, setError] = useState("");
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
-      setCashReceived("");
+      setCashReceived(0);
       setError("");
     }
   }
 
-  const numericReceived = useMemo(() => {
-    const value = parseFloat(cashReceived);
-    return Number.isFinite(value) ? value : 0;
-  }, [cashReceived]);
+  const numericReceived = cashReceived || 0;
 
   const change = useMemo(() => numericReceived - (amountDue || 0), [numericReceived, amountDue]);
   const hasEnoughCash = change >= 0;
@@ -59,43 +56,44 @@ export function CashPaymentModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
-      <ModalContent className="bg-gradient-to-b from-white to-green-50">
+      <ModalContent>
         <ModalHeader className="flex flex-col">
-          <span className="text-base font-semibold text-green-900">
-            {t("title")}
-          </span>
+          {t("title")}
           <span className="text-sm text-gray-600">
             {t("subtitle")}
           </span>
         </ModalHeader>
         <ModalBody className="space-y-4">
-          <div className="bg-white border border-green-100 rounded-xl p-4 shadow-sm">
+          <div className="border-b pb-3 mb-3">
             <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{t("totalLabel")}</p>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-semibold text-green-900">
+              <p className="text-xl font-semibold text-green-900">
                 {formattedTotal}
               </p>
-              <Chip color="success" variant="flat" className="text-xs">
+              <Chip
+                className="bg-green-200 text-xs text-green-800 border border-green-300"
+              >
                 {t("cash")}
               </Chip>
             </div>
           </div>
 
-          <Input
-            type="number"
+          <NumberInput
             label={t("receivedLabel")}
-            placeholder="0.00"
             value={cashReceived}
             onValueChange={(value) => {
               setCashReceived(value);
               setError("");
             }}
-            min={0}
-            step="0.01"
+            minValue={0}
+            step={0.10}
             size="lg"
+            startContent={
+              <span className="text-default-400 text-small">$</span>
+            }
           />
 
-          <div className="bg-white rounded-lg border p-3 flex justify-between items-center shadow-sm">
+          <div className="bg-white rounded-xl border border-gray-400 p-3 flex justify-between items-center shadow-sm">
             <span className="text-sm text-gray-600">{t("changeLabel")}</span>
             <span className={`text-lg font-semibold ${hasEnoughCash ? "text-green-700" : "text-red-600"}`}>
               {formattedChange}
@@ -104,13 +102,19 @@ export function CashPaymentModal({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
         </ModalBody>
-        <ModalFooter className="flex gap-2">
-          <Button variant="flat" onPress={onClose}>
+        <ModalFooter className="flex justify-between">
+          <Button
+            variant="bordered"
+            type="button"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onPress={onClose}
+          >
             {t("cancel")}
           </Button>
           <Button
-            color="success"
-            isDisabled={!cashReceived}
+            color="primary"
+            className="bg-green-800"
+            isDisabled={cashReceived <= 0}
             onPress={handleConfirm}
           >
             {t("confirm")}
