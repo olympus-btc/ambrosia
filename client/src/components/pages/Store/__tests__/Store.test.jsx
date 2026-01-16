@@ -1,11 +1,13 @@
 import { render, screen, act } from "@testing-library/react";
-import { I18nProvider } from "@/i18n/I18nProvider";
-import { Store } from "../Store";
+
 import * as useModulesHook from "@/hooks/useModules";
+import { I18nProvider } from "@/i18n/I18nProvider";
 import * as configurationsProvider from "@/providers/configurations/configurationsProvider";
-import * as useUsersHook from "../hooks/useUsers";
-import * as useProductsHook from "../hooks/useProducts";
+
 import * as useOrdersHook from "../hooks/useOrders";
+import * as useProductsHook from "../hooks/useProducts";
+import * as useUsersHook from "../hooks/useUsers";
+import { Store } from "../Store";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store"),
@@ -117,7 +119,7 @@ describe("Store Dashboard", () => {
     return render(
       <I18nProvider>
         <Store />
-      </I18nProvider>
+      </I18nProvider>,
     );
   }
 

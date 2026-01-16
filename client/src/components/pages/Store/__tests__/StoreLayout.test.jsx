@@ -1,8 +1,10 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { I18nProvider } from "../../../../i18n/I18nProvider";
+
+import * as useModulesHook from "@hooks/useModules";
+import { I18nProvider } from "@i18n/I18nProvider";
+import * as configurationsProvider from "@providers/configurations/configurationsProvider";
+
 import { StoreLayout } from "../StoreLayout";
-import * as useModulesHook from "../../../../hooks/useModules";
-import * as configurationsProvider from "../../../../providers/configurations/configurationsProvider";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store"),
@@ -94,7 +96,7 @@ describe("StoreLayout", () => {
     return render(
       <I18nProvider>
         <StoreLayout>{children}</StoreLayout>
-      </I18nProvider>
+      </I18nProvider>,
     );
   }
 
@@ -275,7 +277,7 @@ describe("StoreLayout", () => {
       const { container } = renderStoreLayout();
       const sidebar = container.querySelector("aside");
 
-      expect(sidebar).toHaveClass("w-64", "bg-primary-500", "flex", "flex-col");
+      expect(sidebar).toHaveClass("w-48", "lg:w-64", "bg-primary-500", "flex", "flex-col");
     });
 
     it("renders main content area", () => {
@@ -293,7 +295,7 @@ describe("StoreLayout", () => {
     });
 
     it("positions logout button at bottom of sidebar", () => {
-      const { container } = renderStoreLayout();
+      renderStoreLayout();
       const logoutContainer = screen.getByText("logout").closest("div");
 
       expect(logoutContainer).toHaveClass(
@@ -383,7 +385,7 @@ describe("StoreLayout", () => {
       const { container } = renderStoreLayout();
       const sidebar = container.querySelector("aside");
 
-      expect(sidebar).toHaveClass("w-64");
+      expect(sidebar).toHaveClass("w-48", "lg:w-64", "bg-primary-500", "flex", "flex-col");
     });
 
     it("navigation items have proper spacing", () => {
