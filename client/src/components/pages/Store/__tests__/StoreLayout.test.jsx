@@ -275,7 +275,7 @@ describe("StoreLayout", () => {
       const { container } = renderStoreLayout();
       const sidebar = container.querySelector("aside");
 
-      expect(sidebar).toHaveClass("w-64", "bg-primary-500", "relative");
+      expect(sidebar).toHaveClass("w-64", "bg-primary-500", "flex", "flex-col");
     });
 
     it("renders main content area", () => {
@@ -296,7 +296,13 @@ describe("StoreLayout", () => {
       const { container } = renderStoreLayout();
       const logoutContainer = screen.getByText("logout").closest("div");
 
-      expect(logoutContainer).toHaveClass("absolute", "bottom-0", "w-full");
+      expect(logoutContainer).toHaveClass(
+        "mt-auto",
+        "p-4",
+        "border-t",
+        "border-green-300",
+        "text-sm",
+      );
     });
 
     it("has proper border styling on sidebar sections", () => {
