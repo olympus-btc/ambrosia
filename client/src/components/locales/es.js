@@ -30,6 +30,16 @@ const componentsEs = {
     downloadFromGitHub: "Descargar desde GitHub",
     dismiss: "Cerrar",
   },
+  shifts: {
+    requiredOpenShiftTitle: "Abrir Turno Requerido",
+    requiredOpenShiftMessage: "Para continuar, abre un turno registrando el efectivo inicial en caja.",
+    initialAmount: "Cantidad inicial en caja",
+    initialAmountLabel: "Monto",
+    openingShift: "Abriendo Turno",
+    openShiftButton: "Abrir Turno",
+    invalidAmount: "Debes ingresar una cantidad válida para abrir el turno",
+    cancel: "Cancelar",
+  },
 };
 
 export default componentsEs;

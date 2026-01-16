@@ -1,32 +1,33 @@
 "use client";
+
 import { useState } from "react";
+
+import { useRouter } from "next/navigation";
+
+import { Button, NumberInput } from "@heroui/react";
+import { useTranslations } from "next-intl";
+
 import { useTurn } from "../../modules/cashier/useTurn";
 
-export default function OpenTurnForm({ onOpened, submitLabel = "🔓 Abrir Turno" }) {
-  const [initialAmount, setInitialAmount] = useState("1");
+export default function OpenTurnForm({ onOpened }) {
+  const [initialAmount, setInitialAmount] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { updateTurn, openShift } = useTurn();
+  const router = useRouter();
 
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
-    if (/^\d*\.?\d*$/.test(value)) {
-      setInitialAmount(value);
-    }
+  const t = useTranslations("shifts");
+
+  const handleAmountChange = (value) => {
+    setInitialAmount(value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!initialAmount || initialAmount === "0" || initialAmount === "0.00") {
-      setError("Debes ingresar una cantidad válida para abrir el turno");
-      return;
-    }
-
-    const amount = parseFloat(initialAmount);
-    if (isNaN(amount) || amount < 0) {
-      setError("Ingresa una cantidad válida");
+    if (!initialAmount || initialAmount < 1) {
+      setError(t("invalidAmount"));
       return;
     }
 
@@ -51,33 +52,39 @@ export default function OpenTurnForm({ onOpened, submitLabel = "🔓 Abrir Turno
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
-        <div className="flex flex-col gap-3">
-          <label className="text-lg font-semibold text-center">
-            Cantidad inicial en caja
-          </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold">
-              $
-            </span>
-            <input
-              type="text"
-              value={initialAmount}
-              onChange={handleAmountChange}
-              placeholder="0.00"
-              className="text-2xl p-4 pl-12 rounded-xl w-full text-center font-bold border-2 border-gray-200 focus:border-green-500 focus:outline-none"
-              required
-              disabled={isLoading}
-            />
-          </div>
+        <NumberInput
+          label={t("initialAmount")}
+          isRequired
+          isDisabled={isLoading}
+          startContent={
+            <span className="text-default-400 text-small">$</span>
+          }
+          minValue={1}
+          value={initialAmount}
+          onValueChange={handleAmountChange}
+          step={0.1}
+        />
+
+        <div className="flex justify-between">
+          <Button
+            variant="bordered"
+            type="button"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onPress={() => router.back()}
+          >
+            {t("cancel")}
+          </Button>
+
+          <Button
+            color="primary"
+            className="bg-green-800"
+            type="submit"
+            isLoading={isLoading}
+          >
+            {isLoading ? t("openingShift") : t("openShiftButton")}
+          </Button>
         </div>
 
-        <button
-          type="submit"
-          className="bg-green-500 text-white text-2xl py-4 rounded-xl hover:bg-green-600 transition-colors font-bold disabled:bg-gray-400 disabled:cursor-not-allowed"
-          disabled={isLoading}
-        >
-          {isLoading ? "Abriendo turno..." : submitLabel}
-        </button>
       </form>
     </div>
   );

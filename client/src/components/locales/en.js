@@ -30,6 +30,16 @@ const componentsEn = {
     downloadFromGitHub: "Download from GitHub",
     dismiss: "Dismiss",
   },
+  shifts: {
+    requiredOpenShiftTitle: "Open Shift Required",
+    requiredOpenShiftMessage: "To continue, please open a shift by entering the starting amount of cash.",
+    initialAmount: "Starting amount in cash register",
+    initialAmountLabel: "Amount",
+    openingShift: "Opening Shift",
+    openShiftButton: "Open Shift",
+    invalidAmount: "Please enter a valid amount to open the shift",
+    cancel: "Cancel",
+  },
 };
 
 export default componentsEn;
