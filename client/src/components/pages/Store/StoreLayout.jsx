@@ -1,28 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Package, ShoppingCart, Settings, LogOut } from 'lucide-react';
+
+import { LogOut } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useModules } from "@hooks/useModules";
+
 import ambrosia from "../../../../public/ambrosia.svg";
 import { useConfigurations } from "../../../providers/configurations/configurationsProvider";
-import { useModules } from "../../../hooks/useModules";
-import * as LucideIcons from "lucide-react"
 import { storedAssetUrl } from "../../utils/storedAssetUrl";
 
 function Icon({ name, className = "w-5 h-5" }) {
-  const formatIconName = (iconName) => {
-    return iconName
+  const formatIconName = (iconName) => (
+    iconName
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join("");
-  };
+      .join("")
+  );
   const formattedName = formatIconName(name);
   const IconComponent = LucideIcons[formattedName] || LucideIcons.FileText;
   return <IconComponent className={className} />;
 }
-
 
 function NavBarButton({ text, icon, href, isActive }) {
   return (
@@ -33,8 +35,8 @@ function NavBarButton({ text, icon, href, isActive }) {
         : "text-slate-100"
         }`}
     >
-      <Icon name={icon} className="w-6 h-6" />
-      <span className="pl-2">{text}</span>
+      <Icon name={icon} className="w-4 h-4 lg:w-6 lg:h-6" />
+      <span className="pl-2 text-lg lg:text-2xl">{text}</span>
     </Link>
   );
 }
@@ -49,7 +51,7 @@ export function StoreLayout({ children }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <aside className="w-64 bg-primary-500 flex flex-col">
+      <aside className="w-48 lg:w-64 bg-primary-500 flex flex-col">
         <div className="flex flex-col items-center p-4 border-b border-green-300">
           <Link href="/">
             <Image
@@ -82,8 +84,8 @@ export function StoreLayout({ children }) {
             onClick={() => logout()}
             className="flex text-2xl items-center space-x-2 p-2 rounded-md transition-colors text-slate-100 hover:bg-green-300 hover:text-green-800"
           >
-            <LogOut className="w-7 h-7" />
-            <span className="pl-2">{t("logout")}</span>
+            <LogOut className="w-4 h-4 lg:w-7 lg:h-7" />
+            <span className="pl-2 text-lg lg:text-2xl">{t("logout")}</span>
           </Link>
         </div>
       </aside>
