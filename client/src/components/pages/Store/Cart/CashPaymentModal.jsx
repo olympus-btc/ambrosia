@@ -55,7 +55,15 @@ export function CashPaymentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      backdrop="blur"
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+      }}
+    >
       <ModalContent>
         <ModalHeader className="flex flex-col">
           {t("title")}
