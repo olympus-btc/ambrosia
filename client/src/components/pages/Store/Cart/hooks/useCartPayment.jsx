@@ -60,8 +60,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const hasCustomerPrinter = useMemo(() => {
     if (!Array.isArray(printerConfigs)) return false;
     return printerConfigs.some(
-      (config) =>
-        config?.printerType === "CUSTOMER" && config?.enabled !== false,
+      (config) => config?.printerType === "CUSTOMER" && config?.enabled !== false,
     );
   }, [printerConfigs]);
 
