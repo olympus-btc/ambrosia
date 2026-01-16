@@ -21,6 +21,7 @@ export function PrinterSettingsCard({
   updatePrinterConfig,
   deletePrinterConfig,
   setDefaultPrinterConfig,
+  onTemplatesRefresh,
   t,
 }) {
   const [printerType, setPrinterType] = useState("KITCHEN");
@@ -71,6 +72,11 @@ export function PrinterSettingsCard({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTemplatesClose = () => {
+    setTemplatesModalOpen(false);
+    onTemplatesRefresh?.();
   };
 
   return (
@@ -163,7 +169,7 @@ export function PrinterSettingsCard({
       {templatesModalOpen && (
         <TicketTemplatesModal
           isOpen={templatesModalOpen}
-          onClose={() => setTemplatesModalOpen(false)}
+          onClose={handleTemplatesClose}
         />
       )}
     </>

@@ -56,7 +56,7 @@ export function PrinterConfigRow({
         </Select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 lg:min-w-[240px]">
         <Switch
           size="sm"
           isSelected={config.isDefault}

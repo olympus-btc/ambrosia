@@ -34,7 +34,7 @@ export function Settings() {
     deletePrinterConfig,
     setDefaultPrinterConfig,
   } = usePrinters();
-  const { templates, loading: loadingTemplates } = useTemplates();
+  const { templates, loading: loadingTemplates, refetch: refetchTemplates } = useTemplates();
   const [data, setData] = useState(config);
   const [editSettingsShowModal, setEditSettingsShowModal] = useState(false);
   const t = useTranslations("settings");
@@ -178,6 +178,7 @@ export function Settings() {
             updatePrinterConfig={updatePrinterConfig}
             deletePrinterConfig={deletePrinterConfig}
             setDefaultPrinterConfig={setDefaultPrinterConfig}
+            onTemplatesRefresh={refetchTemplates}
             t={t}
           />
 

@@ -37,7 +37,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const t = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
-  const { printTicket } = usePrinters();
+  const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
   const { paymentMethods } = usePaymentMethods();
   const { createOrder, updateOrder } = useOrders();
   const { createPayment, linkPaymentToTicket, getPaymentCurrencyById } = usePayments();
@@ -57,8 +57,16 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}), [paymentMethods]);
 
+  const hasCustomerPrinter = useMemo(() => {
+    if (!Array.isArray(printerConfigs)) return false;
+    return printerConfigs.some(
+      (config) => config?.printerType === "CUSTOMER" && config?.enabled !== false,
+    );
+  }, [printerConfigs]);
+
   const printCustomerReceipt = useCallback(
     async ({ items, totalCents, ticketId, invoice }) => {
+      if (loadingConfigs || !hasCustomerPrinter) return;
       const ticketData = {
         ticketId: ticketId?.toString() || "",
         tableName: t("receipt.tableName"),
@@ -88,7 +96,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
         });
       }
     },
-    [printTicket, t],
+    [hasCustomerPrinter, loadingConfigs, printTicket, t],
   );
 
   const handlePay = useMemo(

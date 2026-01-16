@@ -34,7 +34,7 @@ export function PrinterAddForm({
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[160px_1fr_1fr_auto] lg:items-end">
+      <div className="grid gap-4 lg:grid-cols-3 lg:items-end">
         <Select
           label={t("cardPrinters.typeLabel")}
           value={printerType}
@@ -81,7 +81,7 @@ export function PrinterAddForm({
             ))}
         </Select>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 lg:col-span-3 lg:justify-end">
           <Switch
             size="sm"
             isSelected={isDefault}
