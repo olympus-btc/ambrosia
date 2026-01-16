@@ -47,6 +47,8 @@ jest.mock("../../../hooks/useTickets", () => ({
 jest.mock("../../../hooks/usePrinter", () => ({
   usePrinters: () => ({
     printTicket: jest.fn(() => Promise.resolve()),
+    printerConfigs: [{ id: "cfg-1", printerType: "CUSTOMER", enabled: true }],
+    loadingConfigs: false,
   }),
 }));
 
