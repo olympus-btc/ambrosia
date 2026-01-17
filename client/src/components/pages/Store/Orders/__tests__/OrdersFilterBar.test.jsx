@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { OrdersFilterBar } from "../OrdersFilterBar";
 
 jest.mock("@heroui/react", () => {
-  const React = require("react");
   const actual = jest.requireActual("@heroui/react");
   const Input = ({ placeholder, value, onChange }) => (
     <input placeholder={placeholder} value={value} onChange={onChange} />
@@ -20,40 +19,21 @@ jest.mock("@heroui/react", () => {
   const SelectItem = ({ value, children }) => (
     <option value={value}>{children}</option>
   );
-  const Tabs = ({ selectedKey, onSelectionChange, children }) => (
-    <div>
-      {React.Children.map(children, (child) => React.cloneElement(child, {
-        selectedKey,
-        onSelectionChange,
-        tabKey: child.key,
-      }),
-      )}
-    </div>
-  );
-  const Tab = ({ title, tabKey, onSelectionChange }) => (
-    <button type="button" onClick={() => onSelectionChange?.(tabKey)}>
-      {title}
-    </button>
-  );
 
-  return { ...actual, Input, Select, SelectItem, Tabs, Tab };
+  return { ...actual, Input, Select, SelectItem };
 });
 
 describe("OrdersFilterBar", () => {
-  it("triggers search, rows per page, and filter callbacks", () => {
+  it("triggers search and rows per page callbacks", () => {
     const onSearchChange = jest.fn();
     const onRowsPerPageChange = jest.fn();
-    const onFilterChange = jest.fn();
 
     render(
       <OrdersFilterBar
-        filter="paid"
         searchTerm=""
         rowsPerPage={10}
-        paidCount={4}
         onSearchChange={onSearchChange}
         onRowsPerPageChange={onRowsPerPageChange}
-        onFilterChange={onFilterChange}
       />,
     );
 
@@ -66,9 +46,5 @@ describe("OrdersFilterBar", () => {
       target: { value: "5" },
     });
     expect(onRowsPerPageChange).toHaveBeenCalledWith("5");
-
-    fireEvent.click(screen.getByText("filter.tabPaid"));
-    expect(onFilterChange).toHaveBeenCalledWith("paid");
-    expect(screen.getByText("4")).toBeInTheDocument();
   });
 });

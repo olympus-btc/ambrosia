@@ -1,17 +1,14 @@
 "use client";
 
-import { Input, Select, SelectItem, Tabs, Tab } from "@heroui/react";
-import { CheckCircle, Search } from "lucide-react";
+import { Input, Select, SelectItem } from "@heroui/react";
+import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function OrdersFilterBar({
-  filter,
   searchTerm,
   rowsPerPage,
-  paidCount,
   onSearchChange,
   onRowsPerPageChange,
-  onFilterChange,
 }) {
   const t = useTranslations("orders");
   return (
@@ -41,33 +38,6 @@ export function OrdersFilterBar({
           ))}
         </Select>
       </div>
-
-      <Tabs
-        selectedKey={filter}
-        onSelectionChange={onFilterChange}
-        variant="underlined"
-        classNames={{
-          tabList: "gap-6 w-full relative rounded-none p-0",
-          cursor: "w-full bg-forest",
-          tab: "max-w-fit px-6 py-3 h-12",
-          tabContent: "group-data-[selected=true]:text-forest",
-        }}
-      >
-        <Tab
-          key="paid"
-          title={
-            (
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>{t("filter.tabPaid")}</span>
-                <div className="bg-green-100 text-green-800 rounded-full px-2 py-0.5 text-xs font-medium">
-                  {paidCount}
-                </div>
-              </div>
-            )
-          }
-        />
-      </Tabs>
     </div>
   );
 }
