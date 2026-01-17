@@ -10,7 +10,6 @@ import {
   CardHeader,
   Pagination,
 } from "@heroui/react";
-import { Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -25,7 +24,6 @@ import { OrdersTable } from "./OrdersTable";
 export default function StoreOrders() {
   const t = useTranslations("orders");
   const router = useRouter();
-  const [filter, setFilter] = useState("paid");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -33,7 +31,6 @@ export default function StoreOrders() {
   const [showDetails, setShowDetails] = useState(false);
   const { orders } = useOrders();
   const { formatAmount } = useCurrency();
-  const paidCount = orders.filter((order) => order.status === "paid").length;
 
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
@@ -63,13 +60,11 @@ export default function StoreOrders() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <Card shadow="none" className="mb-6 shadow-lg bg-white rounded-lg">
+      <Card shadow="none" className="mb-6 shadow-lg bg-white rounded-lg p-4 lg:p-8">
         <CardBody>
           <OrdersFilterBar
-            filter={filter}
             searchTerm={searchTerm}
             rowsPerPage={rowsPerPage}
-            paidCount={paidCount}
             onSearchChange={(value) => {
               setSearchTerm(value);
               setPage(1);
@@ -83,16 +78,15 @@ export default function StoreOrders() {
         </CardBody>
       </Card>
 
-      <Card shadow="none" className="shadow-lg bg-white rounded-lg">
+      <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <CardHeader>
-          <h3 className="text-lg font-bold text-deep flex items-center">
-            <Filter className="w-5 h-5 mr-2" />
+          <h3 className="text-lg font-semibold text-green-900">
             {t("header.paid", { count: filteredOrders.length })}
           </h3>
         </CardHeader>
         <CardBody>
           {filteredOrders.length > 0 ? (
-            <div className="space-y-4">
+            <div className="w-full overflow-x-auto">
               <OrdersTable
                 orders={paginatedOrders}
                 formatAmount={formatAmount}
@@ -113,7 +107,7 @@ export default function StoreOrders() {
               )}
             </div>
           ) : (
-            <EmptyOrdersState filter={filter} searchTerm={searchTerm} />
+            <EmptyOrdersState filter="paid" searchTerm={searchTerm} />
           )}
         </CardBody>
       </Card>
