@@ -12,19 +12,20 @@ from pathlib import Path
 
 import pytest
 
-from ambrosia.http_client import AmbrosiaHttpClient
-
-# Import fixtures from test_server to make them available to tests
-# These are pytest fixtures that will be used by tests and other fixtures
-from ambrosia.test_server import (  # noqa: F401
-    manage_server_lifecycle,
-    server_url,
-    test_server,
+from ambrosia.auth_utils import (
+    create_role,
+    create_user,
+    grant_permissions,
+    login_user,
 )
+from ambrosia.http_client import AmbrosiaHttpClient
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+# Load fixtures from test_server module (avoids circular imports and F811 errors)
+pytest_plugins = ["ambrosia.test_server"]
 
 # Configure logging for tests
 logging.basicConfig(
@@ -65,7 +66,7 @@ os.environ.setdefault("LOG_LEVEL", "INFO")
 
 
 @pytest.fixture(scope="session", autouse=True)
-def initialize_database(manage_server_lifecycle, server_url: str):  # noqa: F811
+def initialize_database(manage_server_lifecycle, server_url: str):
     """Ensure the database is initialized with the default user before any tests run.
 
     This fixture runs once per test session after the server starts but before any tests.
@@ -93,11 +94,11 @@ def initialize_database(manage_server_lifecycle, server_url: str):  # noqa: F811
                 "Attempting to initialize database with default user for tests..."
             )
             setup_data = {
-                "businessType": "restaurant",
+                "businessType": "store",
                 "userName": "cooluser1",
                 "userPassword": "password123",
                 "userPin": "0000",
-                "businessName": "Test Restaurant",
+                "businessName": "Test Store",
                 "businessAddress": "123 Test St",
                 "businessPhone": "1234567890",
                 "businessEmail": "test@example.com",
@@ -151,3 +152,86 @@ def initialize_database(manage_server_lifecycle, server_url: str):  # noqa: F811
     yield
 
     # Teardown (if needed) would go here
+
+
+@pytest.fixture
+async def admin_client(server_url: str):
+    """Fixture that provides an authenticated admin client.
+
+    This fixture creates a new AmbrosiaHttpClient, performs login with
+    default admin credentials, and yields the authenticated client.
+    The client is automatically closed after the test.
+    """
+    async with AmbrosiaHttpClient(server_url) as client:
+        await login_user(client)
+        yield client
+
+
+@pytest.fixture
+async def public_client(server_url: str):
+    """Fixture that provides an unauthenticated client.
+
+    The client is automatically closed after the test.
+    """
+    async with AmbrosiaHttpClient(server_url) as client:
+        yield client
+
+
+@pytest.fixture
+async def client_factory(server_url: str, admin_client):
+    """Factory to create authenticated clients with specific permissions.
+
+    This fixture returns an async function that creates a temporary user
+    and role, assigns the requested permissions, logs in, and returns
+    the client. Resources are automatically cleaned up after the test.
+    """
+    users = []
+    roles = []
+    clients = []
+
+    async def _factory(permissions: list[str] = None):
+        import uuid
+
+        uid = str(uuid.uuid4())[:8]
+        role_name = f"role_{uid}"
+        user_name = f"user_{uid}"
+        user_pin = "1234"
+
+        # Create role
+        role_id = await create_role(admin_client, role_name)
+        roles.append(role_id)
+
+        # Assign permissions if requested
+        if permissions:
+            await grant_permissions(admin_client, role_id, permissions)
+
+        # Create user with that role
+        user_id = await create_user(admin_client, user_name, user_pin, role_id)
+        users.append(user_id)
+
+        # Create client and login
+        client = AmbrosiaHttpClient(server_url)
+        await client.__aenter__()
+        await login_user(client, {"name": user_name, "pin": user_pin})
+        clients.append(client)
+
+        return client
+
+    yield _factory
+
+    # Cleanup in reverse order
+    for client in clients:
+        await client.__aexit__(None, None, None)
+
+    # We use admin_client for cleanup. Note: admin_client fixture handles its own close.
+    for user_id in users:
+        try:
+            await admin_client.delete(f"/users/{user_id}")
+        except Exception as e:
+            logger.warning(f"Failed to cleanup user {user_id}: {e}")
+
+    for role_id in roles:
+        try:
+            await admin_client.delete(f"/roles/{role_id}")
+        except Exception as e:
+            logger.warning(f"Failed to cleanup role {role_id}: {e}")

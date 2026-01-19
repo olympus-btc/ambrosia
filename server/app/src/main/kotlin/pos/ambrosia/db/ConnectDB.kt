@@ -1,5 +1,6 @@
 package pos.ambrosia.db
 
+import pos.ambrosia.datadir
 import io.ktor.server.application.*
 import java.sql.Connection
 import java.sql.DriverManager
@@ -15,7 +16,6 @@ object DatabaseConnection {
   }
 
   private fun createConnection(): Connection {
-    val datadir = Path(Path(System.getProperty("user.home")), ".Ambrosia-POS")
     // load the SQLite datapath from the config file
     val DBPath = Path(datadir, "ambrosia.db").toString()
     return try {
