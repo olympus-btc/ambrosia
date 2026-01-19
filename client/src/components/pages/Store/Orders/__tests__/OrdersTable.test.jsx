@@ -68,7 +68,7 @@ describe("OrdersTable", () => {
       />,
     );
 
-    expect(screen.getByText("abcd1234...")).toBeInTheDocument();
+    expect(screen.getByText("abcd1234efgh")).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("details.noPayment")).toBeInTheDocument();
     expect(screen.getAllByText("formatted-date")).toHaveLength(2);

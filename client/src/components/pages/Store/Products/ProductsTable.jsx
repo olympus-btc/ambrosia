@@ -29,29 +29,29 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
   , [categories]);
 
   return (
-    <section>
-      <Table removeWrapper>
+    <section className="w-full overflow-x-auto">
+      <Table className="min-w-[700px]" removeWrapper>
         <TableHeader>
-          <TableColumn className="py-2 px-3">{t("image")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("name")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("description")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("category")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("sku")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("price")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("stock")}</TableColumn>
-          <TableColumn className="py-2 px-3 text-right">{t("actions")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-20">{t("image")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[50px]">{t("name")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[50px]">{t("description")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[100px]">{t("category")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-20">{t("sku")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
           {products.map((product) => (
             <TableRow key={product.sku}>
               <TableCell>
-                <Image src={storedAssetUrl(product?.image_url)} width={75} alt={product.name} />
+                <Image src={storedAssetUrl(product?.image_url)} width={60} alt={product.name} />
               </TableCell>
-              <TableCell>{product.name}</TableCell>
               <TableCell>
-                <div className="truncate w-48">
-                  {product.description}
-                </div>
+                <span className="block max-w-[120px] truncate">{product.name}</span>
+              </TableCell>
+              <TableCell>
+                <span className="block max-w-[50px] truncate">{product.description}</span>
               </TableCell>
               <TableCell>
                 <Chip
@@ -60,8 +60,12 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                   {categoryNameById[String(product.category_id)] ?? product.category_id}
                 </Chip>
               </TableCell>
-              <TableCell>{product.SKU}</TableCell>
-              <TableCell>{formatAmount(product.price_cents)}</TableCell>
+              <TableCell>
+                <span className="whitespace-nowrap">{product.SKU}</span>
+              </TableCell>
+              <TableCell>
+                <span className="whitespace-nowrap">{formatAmount(product.price_cents)}</span>
+              </TableCell>
               <TableCell>
                 <Chip
                   className="bg-green-200 text-xs text-green-800 border border-green-300"
@@ -69,24 +73,26 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                   {product.quantity}
                 </Chip>
               </TableCell>
-              <TableCell>
-                <div className="flex justify-end space-x-4 py-2 px-3">
+              <TableCell className="py-2 px-3">
+                <div className="flex justify-end gap-2">
                   <Button
                     aria-label="Edit Product"
                     isIconOnly
+                    size="sm"
                     className="text-xs text-white bg-blue-500"
                     onPress={() => onEditProduct(product)}
                   >
-                    <Pencil />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     aria-label="Delete Product"
                     isIconOnly
+                    size="sm"
                     color="danger"
                     className="text-xs text-white"
                     onPress={() => onDeleteProduct(product)}
                   >
-                    <Trash />
+                    <Trash className="w-4 h-4" />
                   </Button>
                 </div>
               </TableCell>

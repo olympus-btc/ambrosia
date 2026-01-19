@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import {
   Modal,
@@ -28,6 +29,7 @@ export default function WalletGuard({
   onAuthorized,
 }) {
   const { user } = useContext(AuthContext);
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [showPassword, setShowPassword] = useState(false)
   const [password, setPassword] = useState("");
@@ -133,6 +135,9 @@ export default function WalletGuard({
         isDismissable={false}
         hideCloseButton
         backdrop="blur"
+        classNames={{
+          backdrop: "backdrop-blur-xs bg-white/10",
+        }}
       >
         <ModalContent className="rounded-lg">
           <ModalHeader>{title}</ModalHeader>
@@ -162,7 +167,7 @@ export default function WalletGuard({
               variant="bordered"
               type="button"
               className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onPress={() => setIsOpen(false)}
+              onPress={() => router.back()}
             >
               {cancelText}
             </Button>

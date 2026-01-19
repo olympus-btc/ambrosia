@@ -50,6 +50,19 @@ export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceA
     <div className="p-6 space-y-6">
       <div className="space-y-4">
         <NumberInput
+          classNames={{
+            label: "text-sm font-semibold text-deep",
+            input: "text-base bg-white",
+            innerWrapper: "bg-white",
+            inputWrapper: [
+              "bg-white",
+              "hover:!bg-white",
+              "group-data-[hover=true]:!bg-white",
+              "group-data-[focus=true]:bg-white",
+              "border-1",
+              "border-green-600",
+            ],
+          }}
           label={t("payments.receive.invoiceAmountLabel")}
           placeholder="1000"
           minValue={0}
@@ -58,13 +71,7 @@ export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceA
             setInvoiceAmount(value === null ? "" : value);
             setInvalidNumberInput(false);
           }}
-          variant="bordered"
-          size="lg"
           startContent={<Bitcoin className="w-5 h-5 text-gray-400 pb-0.5" />}
-          classNames={{
-            input: "text-base",
-            label: "text-sm font-semibold text-deep",
-          }}
           disabled={loading}
           isInvalid={invalidNumberInput}
           errorMessage={invalidNumberInput ? t("payments.receive.invoiceAmountError") : ""}
@@ -74,11 +81,18 @@ export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceA
           placeholder={t("payments.receive.invoiceDescriptionPlaceholder")}
           value={invoiceDesc}
           onChange={(e) => setInvoiceDesc(e.target.value)}
-          variant="bordered"
-          size="lg"
           classNames={{
-            input: "text-base",
             label: "text-sm font-semibold text-deep",
+            input: "text-base bg-white",
+            innerWrapper: "bg-white",
+            inputWrapper: [
+              "bg-white",
+              "hover:!bg-white",
+              "group-data-[hover=true]:!bg-white",
+              "group-data-[focus=true]:bg-white",
+              "border-1",
+              "border-green-600",
+            ],
           }}
           disabled={loading}
         />

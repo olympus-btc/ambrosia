@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/react";
-import { Eye, Users, Calendar } from "lucide-react";
+import { Eye, Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import formatDate from "@/lib/formatDate";
@@ -12,29 +12,25 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
   const t = useTranslations("orders");
   return (
     <Table
-      aria-label="OrdersTable"
-      classNames={{
-        wrapper: "min-h-[400px]",
-      }}
+      removeWrapper
     >
       <TableHeader>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.id")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.user")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.status")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.paymentMethod")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.total")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.date")}</TableColumn>
-        <TableColumn className="bg-gray-50 text-forest font-semibold">{t("table.actions")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[120px]">{t("table.id")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.user")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.status")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.paymentMethod")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.total")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.date")}</TableColumn>
+        <TableColumn className="py-2 px-3">{t("table.actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {orders.map((order) => (
           <TableRow key={order.id} className="hover:bg-gray-50">
             <TableCell>
-              <span className="font-mono text-sm text-gray-700">{order.id.substring(0, 8)}...</span>
+              <span className="block max-w-20 truncate">{order.id}</span>
             </TableCell>
             <TableCell>
               <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-gray-400" />
                 <span className="font-medium text-deep">
                   {order.waiter || t("details.unassigned")}
                 </span>
@@ -48,8 +44,8 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
                 {order.payment_method || t("details.noPayment")}
               </span>
             </TableCell>
-            <TableCell>{formatAmount(order.total * 100)}</TableCell>
-            <TableCell>
+            <TableCell className="whitespace-nowrap">{formatAmount(order.total * 100)}</TableCell>
+            <TableCell className="whitespace-nowrap">
               <div className="flex items-center space-x-1 text-sm text-gray-500">
                 <Calendar className="w-3 h-3" />
                 <span>{formatDate(order.created_at)}</span>

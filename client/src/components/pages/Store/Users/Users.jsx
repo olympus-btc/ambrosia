@@ -85,49 +85,46 @@ export function Users() {
           {t("addUser")}
         </Button>
       </header>
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <UsersTable
           users={users}
           onEditUser={handleEditUser}
           onDeleteUser={handleDeleteUser}
         />
       </div>
-      {addUsersShowModal && (
-        <AddUsersModal
-          data={data}
-          setData={setData}
-          roles={roles}
-          addUser={addUser}
-          onChange={handleDataChange}
-          addUsersShowModal={addUsersShowModal}
-          setAddUsersShowModal={setAddUsersShowModal}
-        />
-      )}
-      {editUsersShowModal && (
-        <EditUsersModal
-          data={data}
-          setData={setData}
-          roles={roles}
-          user={selectedUser}
-          updateUser={updateUser}
-          onChange={handleDataChange}
-          editUsersShowModal={editUsersShowModal}
-          setEditUsersShowModal={setEditUsersShowModal}
-        />
-      )}
-      {deleteUsersShowModal && (
-        <DeleteUsersModal
-          user={userToDelete}
-          deleteUsersShowModal={deleteUsersShowModal}
-          setDeleteUsersShowModal={setDeleteUsersShowModal}
-          onConfirm={async () => {
-            if (userToDelete?.id) {
-              await deleteUser(userToDelete.id);
-            }
-            setDeleteUsersShowModal(false);
-          }}
-        />
-      )}
+
+      <AddUsersModal
+        data={data}
+        setData={setData}
+        roles={roles}
+        addUser={addUser}
+        onChange={handleDataChange}
+        addUsersShowModal={addUsersShowModal}
+        setAddUsersShowModal={setAddUsersShowModal}
+      />
+
+      <EditUsersModal
+        data={data}
+        setData={setData}
+        roles={roles}
+        user={selectedUser}
+        updateUser={updateUser}
+        onChange={handleDataChange}
+        editUsersShowModal={editUsersShowModal}
+        setEditUsersShowModal={setEditUsersShowModal}
+      />
+
+      <DeleteUsersModal
+        user={userToDelete}
+        deleteUsersShowModal={deleteUsersShowModal}
+        setDeleteUsersShowModal={setDeleteUsersShowModal}
+        onConfirm={async () => {
+          if (userToDelete?.id) {
+            await deleteUser(userToDelete.id);
+          }
+          setDeleteUsersShowModal(false);
+        }}
+      />
     </StoreLayout>
   );
 }

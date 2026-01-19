@@ -24,7 +24,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("../OrdersFilterBar", () => ({
-  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange, paidCount }) => (
+  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange }) => (
     <div>
       <button type="button" onClick={() => onSearchChange("order-1")}>
         search-match
@@ -35,7 +35,6 @@ jest.mock("../OrdersFilterBar", () => ({
       <button type="button" onClick={() => onRowsPerPageChange("1")}>
         rows-1
       </button>
-      <span>paid-count-{paidCount}</span>
     </div>
   ),
 }));
@@ -101,7 +100,6 @@ describe("StoreOrders", () => {
   it("filters by search term and shows empty state", () => {
     render(<StoreOrders />);
 
-    expect(screen.getByText("paid-count-2")).toBeInTheDocument();
     expect(screen.getByText("order-1")).toBeInTheDocument();
     expect(screen.getByText("order-2")).toBeInTheDocument();
 

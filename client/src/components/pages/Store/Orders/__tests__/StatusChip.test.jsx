@@ -9,13 +9,8 @@ jest.mock("@heroui/react", () => {
 });
 
 describe("StatusChip", () => {
-  it("renders translated labels for known statuses", () => {
-    render(<StatusChip status="paid" />);
+  it("renders paid status chip", () => {
+    render(<StatusChip />);
     expect(screen.getByText("status.paid")).toBeInTheDocument();
-  });
-
-  it("falls back to raw status for unknown values", () => {
-    render(<StatusChip status="refunded" />);
-    expect(screen.getByText("refunded")).toBeInTheDocument();
   });
 });

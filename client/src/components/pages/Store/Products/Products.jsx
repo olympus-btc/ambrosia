@@ -88,7 +88,7 @@ export function Products() {
           {t("addProduct")}
         </Button>
       </header>
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <ProductsTable
           products={products}
           categories={categories}
@@ -97,50 +97,44 @@ export function Products() {
         />
       </div>
 
-      {addProductsShowModal && (
-        <AddProductsModal
-          addProductsShowModal={addProductsShowModal}
-          setAddProductsShowModal={setAddProductsShowModal}
-          data={data}
-          setData={setData}
-          addProduct={addProduct}
-          isUploading={isUploading}
-          categories={categories}
-          categoriesLoading={categoriesLoading}
-          createCategory={createCategory}
-          onChange={handleDataChange}
-          onProductCreated={handleRefreshData}
-        />
-      )}
+      <AddProductsModal
+        addProductsShowModal={addProductsShowModal}
+        setAddProductsShowModal={setAddProductsShowModal}
+        data={data}
+        setData={setData}
+        addProduct={addProduct}
+        isUploading={isUploading}
+        categories={categories}
+        categoriesLoading={categoriesLoading}
+        createCategory={createCategory}
+        onChange={handleDataChange}
+        onProductCreated={handleRefreshData}
+      />
 
-      {editProductsShowModal && (
-        <EditProductsModal
-          data={data}
-          setData={setData}
-          product={selectedProduct}
-          onChange={handleDataChange}
-          updateProduct={updateProduct}
-          isUploading={isUploading}
-          onProductUpdated={handleRefreshData}
-          categories={categories}
-          categoriesLoading={categoriesLoading}
-          createCategory={createCategory}
-          editProductsShowModal={editProductsShowModal}
-          setEditProductsShowModal={setEditProductsShowModal}
-        />
-      )}
+      <EditProductsModal
+        data={data}
+        setData={setData}
+        product={selectedProduct}
+        onChange={handleDataChange}
+        updateProduct={updateProduct}
+        isUploading={isUploading}
+        onProductUpdated={handleRefreshData}
+        categories={categories}
+        categoriesLoading={categoriesLoading}
+        createCategory={createCategory}
+        editProductsShowModal={editProductsShowModal}
+        setEditProductsShowModal={setEditProductsShowModal}
+      />
 
-      {deleteProductsShowModal && (
-        <DeleteProductsModal
-          product={productToDelete}
-          deleteProductsShowModal={deleteProductsShowModal}
-          setDeleteProductsShowModal={setDeleteProductsShowModal}
-          onConfirm={() => {
-            setDeleteProductsShowModal(false);
-            deleteProduct(productToDelete);
-          }}
-        />
-      )}
+      <DeleteProductsModal
+        product={productToDelete}
+        deleteProductsShowModal={deleteProductsShowModal}
+        setDeleteProductsShowModal={setDeleteProductsShowModal}
+        onConfirm={() => {
+          setDeleteProductsShowModal(false);
+          deleteProduct(productToDelete);
+        }}
+      />
     </StoreLayout>
   );
 }

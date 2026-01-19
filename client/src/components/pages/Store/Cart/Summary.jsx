@@ -166,7 +166,6 @@ export function Summary({
       </Card>
 
       <BitcoinPaymentModal
-        key={btcPaymentConfig ? `btc-${btcPaymentConfig.paymentId}` : "closed"}
         isOpen={!!btcPaymentConfig}
         amountFiat={btcPaymentConfig?.amountFiat}
         currencyAcronym={btcPaymentConfig?.currencyAcronym}
