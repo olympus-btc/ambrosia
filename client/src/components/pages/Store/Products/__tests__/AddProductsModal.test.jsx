@@ -260,6 +260,8 @@ describe("AddProductsModal", () => {
       productSKU: "",
       productPrice: "",
       productStock: "",
+      productMinStock: "",
+      productMaxStock: "",
       productImage: null,
       productImageUrl: "",
     });

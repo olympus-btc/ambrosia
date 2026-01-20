@@ -41,6 +41,8 @@ export function useProducts() {
       ? Math.round(priceNumber * 100)
       : 0;
     const quantityNumber = Number(product.productStock ?? 0);
+    const minStockNumber = Number(product.productMinStock ?? 0);
+    const maxStockNumber = Number(product.productMaxStock ?? 0);
 
     await apiClient("/products", {
       method: "POST",
@@ -52,6 +54,8 @@ export function useProducts() {
         cost_cents: priceCents,
         category_id: product.productCategory,
         quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
+        min_stock_threshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
+        max_stock_threshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
         price_cents: priceCents,
       },
       notShowError: false,
@@ -74,6 +78,8 @@ export function useProducts() {
       ? Math.round(priceNumber * 100)
       : 0;
     const quantityNumber = Number(product.productStock ?? 0);
+    const minStockNumber = Number(product.productMinStock ?? 0);
+    const maxStockNumber = Number(product.productMaxStock ?? 0);
 
     await apiClient(`/products/${product.productId}`, {
       method: "PUT",
@@ -86,6 +92,8 @@ export function useProducts() {
         cost_cents: priceCents,
         category_id: product.productCategory,
         quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
+        min_stock_threshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
+        max_stock_threshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
         price_cents: priceCents,
       },
       notShowError: false,

@@ -1,4 +1,5 @@
 "use client";
+import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCategories } from "../hooks/useCategories";
@@ -18,7 +19,7 @@ export function Cart() {
     discount,
     resetCartState,
   } = usePersistentCart();
-  const { products } = useProducts();
+  const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
 
   const {
@@ -35,12 +36,38 @@ export function Cart() {
     clearCashPaymentConfig,
   } = useCartPayment({
     onResetCart: resetCartState,
+    onPay: refetchProducts,
   });
 
+  const getAvailableQuantity = (productId) => {
+    const product = products.find((item) => item.id === productId);
+    if (!product) return null;
+    return Number(product.quantity) || 0;
+  };
+
   const addProduct = (product) => {
+    const availableQuantity = getAvailableQuantity(product.id);
+    if (availableQuantity !== null && availableQuantity <= 0) {
+      addToast({
+        color: "danger",
+        description: t("errors.outOfStock"),
+      });
+      return;
+    }
+
     const itemExist = cart.find((item) => item.id === product.id);
 
     if (itemExist) {
+      if (
+        availableQuantity !== null
+        && itemExist.quantity + 1 > availableQuantity
+      ) {
+        addToast({
+          color: "danger",
+          description: t("errors.outOfStock"),
+        });
+        return;
+      }
       setCart(
         cart.map((item) => (item.id === product.id
           ? {
@@ -67,6 +94,24 @@ export function Cart() {
 
   const updateQuantity = (id, quantity) => {
     if (!Number.isFinite(quantity)) {
+      return;
+    }
+    const availableQuantity = getAvailableQuantity(id);
+    if (availableQuantity !== null && quantity > availableQuantity) {
+      addToast({
+        color: "danger",
+        description: t("errors.outOfStock"),
+      });
+      setCart(
+        cart.map((item) => (item.id === id
+          ? {
+              ...item,
+              quantity: availableQuantity,
+              subtotal: availableQuantity * item.price,
+            }
+          : item),
+        ),
+      );
       return;
     }
     if (quantity <= 0) {

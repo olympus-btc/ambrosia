@@ -26,6 +26,7 @@ export function buildHandlePay({
   setBtcPaymentConfig,
   setCashPaymentConfig,
   processBasePayment,
+  decrementProductStock = async () => {},
   updateOrder,
   onResetCart,
   onPay,
@@ -144,6 +145,13 @@ export function buildHandlePay({
         });
       }
 
+      try {
+        await decrementProductStock(items);
+      } catch (err) {
+        console.error("Error updating stock:", err);
+        notifyError(t("errors.stockUpdate"));
+      }
+
       await printCustomerReceipt?.({
         items,
         totalCents: amounts.total,
@@ -190,6 +198,7 @@ export function buildHandleBtcComplete({
   buildPaymentPayload,
   createPayment,
   linkPaymentToTicket,
+  decrementProductStock = async () => {},
   onPay,
   onResetCart,
   notifyError,
@@ -225,6 +234,13 @@ export function buildHandleBtcComplete({
       }
 
       await linkPaymentToTicket(paymentResponse.id, ticketId);
+
+      try {
+        await decrementProductStock(btcPaymentConfig.items);
+      } catch (err) {
+        console.error("Error updating stock:", err);
+        notifyError(t("errors.stockUpdate"));
+      }
 
       await printCustomerReceipt?.({
         items: btcPaymentConfig.items,
@@ -276,6 +292,7 @@ export function buildHandleCashComplete({
   createPayment,
   linkPaymentToTicket,
   updateOrder,
+  decrementProductStock = async () => {},
   onPay,
   onResetCart,
   notifyError,
@@ -310,6 +327,13 @@ export function buildHandleCashComplete({
           id: orderId,
           status: "paid",
         });
+      }
+
+      try {
+        await decrementProductStock(paymentResult?.items || []);
+      } catch (err) {
+        console.error("Error updating stock:", err);
+        notifyError(t("errors.stockUpdate"));
       }
 
       await printCustomerReceipt?.({

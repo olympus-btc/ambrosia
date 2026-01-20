@@ -53,6 +53,8 @@ export function AddProductsModal({
         productSKU: "",
         productPrice: "",
         productStock: "",
+        productMinStock: "",
+        productMaxStock: "",
         productImage: null,
         productImageUrl: "",
       });
@@ -190,6 +192,34 @@ export function AddProductsModal({
                 onValueChange={(value) => {
                   const numeric = value === null ? "" : Number(value);
                   onChange({ productStock: numeric });
+                }}
+                min={0}
+                step={1}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <NumberInput
+                label={t("modal.productMinStockLabel")}
+                placeholder={t("modal.productMinStockPlaceholder")}
+                minValue={0}
+                value={data.productMinStock}
+                onValueChange={(value) => {
+                  const numeric = value === null ? "" : Number(value);
+                  onChange({ productMinStock: numeric });
+                }}
+                min={0}
+                step={1}
+              />
+
+              <NumberInput
+                label={t("modal.productMaxStockLabel")}
+                placeholder={t("modal.productMaxStockPlaceholder")}
+                minValue={0}
+                value={data.productMaxStock}
+                onValueChange={(value) => {
+                  const numeric = value === null ? "" : Number(value);
+                  onChange({ productMaxStock: numeric });
                 }}
                 min={0}
                 step={1}

@@ -1,0 +1,2 @@
+ALTER TABLE products ADD COLUMN min_stock_threshold INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN max_stock_threshold INTEGER NOT NULL DEFAULT 0;

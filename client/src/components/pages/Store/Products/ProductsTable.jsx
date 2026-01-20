@@ -21,12 +21,29 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 export function ProductsTable({ products, categories = [], onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
   const { formatAmount } = useCurrency();
+  const lowStockBuffer = 1.5;
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
     const categoryId = String(category.id);
     map[categoryId] = category.name;
     return map;
   }, {})
   , [categories]);
+  const stockStatus = (product) => {
+    const min = Number(product.min_stock_threshold ?? 0);
+    const max = Number(product.max_stock_threshold ?? 0);
+    const quantity = Number(product.quantity ?? 0);
+
+    if (quantity <= 0) {
+      return "out";
+    }
+    if (max > 0 && quantity >= max) {
+      return "over";
+    }
+    if (min > 0 && quantity <= min * lowStockBuffer) {
+      return "low";
+    }
+    return "ok";
+  };
 
   return (
     <section className="w-full overflow-x-auto">
@@ -39,6 +56,7 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
           <TableColumn className="py-2 px-3 w-20">{t("sku")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
@@ -68,9 +86,32 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
               </TableCell>
               <TableCell>
                 <Chip
-                  className="bg-green-200 text-xs text-green-800 border border-green-300"
+                  className={
+                    stockStatus(product) === "out"
+                      ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                      : stockStatus(product) === "low"
+                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+                        : stockStatus(product) === "over"
+                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
+                          : "bg-green-200 text-xs text-green-800 border border-green-300"
+                  }
                 >
                   {product.quantity}
+                </Chip>
+              </TableCell>
+              <TableCell>
+                <Chip
+                  className={
+                    stockStatus(product) === "out"
+                      ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                      : stockStatus(product) === "low"
+                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+                        : stockStatus(product) === "over"
+                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
+                  }
+                >
+                  {t(`status.${stockStatus(product)}`)}
                 </Chip>
               </TableCell>
               <TableCell className="py-2 px-3">

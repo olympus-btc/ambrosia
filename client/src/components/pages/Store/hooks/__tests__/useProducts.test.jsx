@@ -103,6 +103,8 @@ describe("useProducts", () => {
         productPrice: 10.5,
         productCategory: 7,
         productStock: 3,
+        productMinStock: 0,
+        productMaxStock: 0,
       });
     });
 
@@ -117,6 +119,8 @@ describe("useProducts", () => {
         cost_cents: 1050,
         category_id: 7,
         quantity: 3,
+        min_stock_threshold: 0,
+        max_stock_threshold: 0,
         price_cents: 1050,
       },
       notShowError: false,
@@ -146,6 +150,8 @@ describe("useProducts", () => {
         productPrice: "4.25",
         productCategory: 2,
         productStock: 1,
+        productMinStock: 0,
+        productMaxStock: 0,
       });
     });
 
@@ -161,6 +167,8 @@ describe("useProducts", () => {
         cost_cents: 425,
         category_id: 2,
         quantity: 1,
+        min_stock_threshold: 0,
+        max_stock_threshold: 0,
         price_cents: 425,
       },
       notShowError: false,
@@ -192,6 +200,8 @@ describe("useProducts", () => {
         productPrice: 3.5,
         productCategory: 4,
         productStock: 8,
+        productMinStock: 0,
+        productMaxStock: 0,
       });
     });
 
@@ -207,6 +217,8 @@ describe("useProducts", () => {
         cost_cents: 350,
         category_id: 4,
         quantity: 8,
+        min_stock_threshold: 0,
+        max_stock_threshold: 0,
         price_cents: 350,
       },
       notShowError: false,
