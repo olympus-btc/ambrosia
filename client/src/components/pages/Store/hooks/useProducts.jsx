@@ -30,9 +30,9 @@ export function useProducts() {
   }, []);
 
   const addProduct = async (product) => {
-    let uploadedUrl = product.productImage || null;
-    if (product.storeImage instanceof File) {
-      const uploads = await upload([product.storeImage]);
+    let uploadedUrl = product.productImageUrl || null;
+    if (product.productImage instanceof File) {
+      const uploads = await upload([product.productImage]);
       uploadedUrl = uploads?.[0]?.url || uploads?.[0]?.path || null;
     }
 
@@ -61,10 +61,12 @@ export function useProducts() {
   };
 
   const updateProduct = async (product) => {
-    let uploadedUrl = product.productImage || null;
-    if (product.storeImage instanceof File) {
-      const uploads = await upload([product.storeImage]);
+    let uploadedUrl = product.productImageUrl || null;
+    if (product.productImage instanceof File) {
+      const uploads = await upload([product.productImage]);
       uploadedUrl = uploads?.[0]?.url || uploads?.[0]?.path || null;
+    } else if (product.productImageRemoved) {
+      uploadedUrl = null;
     }
 
     const priceNumber = Number(product.productPrice ?? 0);

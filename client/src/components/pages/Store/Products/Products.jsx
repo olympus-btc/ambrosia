@@ -25,8 +25,8 @@ export function Products() {
     productSKU: "",
     productPrice: "",
     productStock: "",
-    productImage: "",
-    storeImage: null,
+    productImage: null,
+    productImageUrl: "",
   });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -53,8 +53,8 @@ export function Products() {
       productSKU: product.SKU,
       productPrice: product.price_cents ? product.price_cents / 100 : "",
       productStock: product.quantity,
-      productImage: product.image_url,
-      storeImage: null,
+      productImage: null,
+      productImageUrl: product.image_url,
     });
 
     setEditProductsShowModal(true);

@@ -51,7 +51,6 @@ const baseData = {
   productPrice: 10,
   productStock: 5,
   productImage: "",
-  storeImage: null,
 };
 
 const mockFileReader = (result = "data:image/png;base64,test") => {
@@ -135,16 +134,16 @@ describe("EditProductsModal", () => {
     const file = new File(["content"], "photo.png", { type: "image/png" });
 
     fireEvent.change(fileInput, { target: { files: [file] } });
-    expect(onChange).toHaveBeenCalledWith({ storeImage: file, productImage: "" });
-    expect(await screen.findByAltText("Product preview")).toBeInTheDocument();
+    expect(onChange).toHaveBeenCalledWith({ productImage: file, productImageRemoved: false });
+    expect(await screen.findByAltText("Image preview")).toBeInTheDocument();
 
-    const removeButton = document.querySelector("button.bg-destructive");
+    const removeButton = document.querySelector("button.bg-red-400");
     expect(removeButton).not.toBeNull();
     fireEvent.click(removeButton);
 
     const lastCall = onChange.mock.calls.at(-1)?.[0];
-    expect(lastCall).toEqual({ storeImage: null, productImage: "" });
-    expect(screen.queryByAltText("Product preview")).not.toBeInTheDocument();
+    expect(lastCall).toEqual({ productImage: null, productImageRemoved: true });
+    expect(screen.queryByAltText("Image preview")).not.toBeInTheDocument();
     restore();
   });
 
@@ -181,8 +180,9 @@ describe("EditProductsModal", () => {
       productSKU: "",
       productPrice: "",
       productStock: "",
-      productImage: "",
-      storeImage: null,
+      productImage: null,
+      productImageUrl: "",
+      productImageRemoved: false,
     });
   });
 
@@ -233,8 +233,9 @@ describe("EditProductsModal", () => {
       productSKU: "",
       productPrice: "",
       productStock: "",
-      productImage: "",
-      storeImage: null,
+      productImage: null,
+      productImageUrl: "",
+      productImageRemoved: false,
     });
     expect(setEditProductsShowModal).toHaveBeenCalledWith(false);
   });

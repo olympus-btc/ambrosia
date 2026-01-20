@@ -4,9 +4,10 @@ import { useState, useMemo } from "react";
 
 import Image from "next/image";
 
-import { Button, Card, CardBody, CardFooter, CardHeader, Select, SelectItem } from "@heroui/react";
+import { Button, Card, CardBody, CardFooter, CardHeader, Select, SelectItem, addToast } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
 
+import { useUpload } from "@components/hooks/useUpload";
 import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
@@ -40,6 +41,7 @@ export function Settings() {
   const t = useTranslations("settings");
   const locale = useLocale();
   const { currency, updateCurrency } = useCurrency();
+  const { upload } = useUpload();
 
   const handleDataChange = (newData) => {
     setData((prev) => ({ ...prev, ...newData }));
@@ -49,10 +51,39 @@ export function Settings() {
 
   const CURRENCIES = useMemo(() => (locale === "en" ? CURRENCIES_EN : CURRENCIES_ES), [locale]);
 
-  const handleEditSumbit = (e) => {
+  const handleEditSumbit = async (e) => {
     e.preventDefault();
-    updateConfig(data);
-    setEditSettingsShowModal(false);
+    try {
+      let logoUrl = data.businessLogoUrl;
+
+      if (data.businessLogo instanceof File) {
+        const [uploaded] = await upload([data.businessLogo]);
+        logoUrl = uploaded?.url ?? uploaded?.path;
+      } else if (data.businessLogoRemoved) {
+        logoUrl = null;
+      }
+
+      const updatedData = {
+        ...data,
+        businessLogoUrl: logoUrl,
+        businessLogo: undefined,
+        businessLogoRemoved: undefined,
+      };
+
+      await updateConfig(updatedData);
+      setData(updatedData);
+      setEditSettingsShowModal(false);
+      addToast({
+        title: t("modal.updateSuccess"),
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description: error.message,
+        color: "danger",
+      });
+    }
   };
 
   const handleCurrencyChange = (e) => {
@@ -140,9 +171,12 @@ export function Settings() {
                     (
                       <Image
                         src={srcLogo}
-                        width={200}
+                        width={400}
                         height={0}
                         alt="Logo"
+                        className="
+                          bg-[conic-gradient(#aaa_90deg,#eee_90deg_180deg,#aaa_180deg_270deg,#eee_270deg)]
+                          bg-size-[20px_20px] max-w-full h-auto rounded-lg border border-border p-2                        "
                       />
 
                     )

@@ -1,38 +1,19 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 
-import { Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Image } from "@heroui/react";
-import { Upload, X } from "lucide-react";
+import { Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
+import { ImageUploader } from "@components/shared/ImageUploader";
 
 export function EditSettingsModal({ data, setData, onChange, onSubmit, editSettingsShowModal, setEditSettingsShowModal }) {
   const t = useTranslations("settings");
   const [rfcError, setRfcError] = useState("");
-  const fileInputRef = useRef(null);
 
   const handleOnCloseModal = () => {
     setData(data);
     setEditSettingsShowModal(false);
-  };
-
-  const [imagePreview, setImagePreview] = useState(data.businessLogoUrl);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    onChange({ storeImage: file, productImage: "" });
-
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    onChange({ storeImage: null, productImage: "" });
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const validateRFC = (value) => {
@@ -111,50 +92,13 @@ export function EditSettingsModal({ data, setData, onChange, onSubmit, editSetti
               }}
             />
 
-            <div>
-              <p className="text-xs font-semibold text-green-900 mb-4">
-                {t("modal.logo")}
-              </p>
-              {imagePreview ? (
-                <div className="relative w-32 h-32 rounded-lg border border-border overflow-hidden bg-muted">
-                  <Image
-                    src={imagePreview}
-                    alt="Logo preview"
-                    className="w-full h-full object-cover"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute top-1 right-1 p-0.5 bg-red-400 rounded-full z-10 hover:opacity-100 opacity-90 cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full p-8 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center cursor-pointer"
-                >
-                  <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">
-                    {t("modal.logoUpload")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("modal.logoUploadMessage")}
-                  </p>
-                </button>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </div>
+            <ImageUploader
+              title={t("modal.logo")}
+              uploadText={t("modal.logoUpload")}
+              uploadDescription={t("modal.logoUploadMessage")}
+              onChange={(file) => onChange({ ...data, businessLogo: file, businessLogoRemoved: file === null })}
+              value={data.businessLogoRemoved ? null : (data.businessLogo || data.businessLogoUrl)}
+            />
 
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
