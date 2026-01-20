@@ -458,8 +458,8 @@ describe("EditSettingsModal", () => {
         await waitFor(() => {
           expect(mockOnChange).toHaveBeenCalledWith(
             expect.objectContaining({
-              storeImage: file,
-              productImage: "",
+              businessLogo: file,
+              businessLogoRemoved: false,
             }),
           );
         });
