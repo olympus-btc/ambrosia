@@ -1,41 +1,41 @@
 #!/bin/bash
 
-# Script de build para Ambrosia POS Electron
+# Build script for Ambrosia POS Electron
 
 set -e
 
-echo "🏗️  Building Ambrosia POS para producción..."
+echo "🏗️  Building Ambrosia POS for production..."
 
-# Colores
+# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# 1. Instalar dependencias
-echo "📦 Instalando dependencias..."
+# 1. Install dependencies
+echo "📦 Installing dependencies..."
 npm install
 
 cd ../client
 npm install
 cd ../electron
 
-# 2. Build del cliente Next.js
-echo -e "${YELLOW}📦 Building cliente Next.js...${NC}"
+# 2. Build Next.js client
+echo -e "${YELLOW}📦 Building Next.js client...${NC}"
 cd ../client
 npm run build:electron
 cd ../electron
 
-# 3. Verificar que .next existe
+# 3. Verify that .next exists
 if [ ! -d "../client/.next" ]; then
-    echo "❌ Error: Build de Next.js falló"
+    echo "❌ Error: Next.js build failed"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Build de Next.js completado${NC}"
+echo -e "${GREEN}✅ Next.js build completed${NC}"
 
-# 4. Build de Electron
-echo -e "${YELLOW}📦 Building aplicación Electron...${NC}"
+# 4. Build Electron
+echo -e "${YELLOW}📦 Building Electron application...${NC}"
 npm run build
 
-echo -e "${GREEN}✅ Build completado!${NC}"
-echo -e "${GREEN}   Archivos disponibles en: electron/dist/${NC}"
+echo -e "${GREEN}✅ Build completed!${NC}"
+echo -e "${GREEN}   Files available at: electron/dist/${NC}"

@@ -1,8 +1,8 @@
 # Environment variables
 .env
 .DS_Store
+
 # AI generated files
 CLAUDE.md
 GEMINI.md
 Claude.md
-CLAUDE.md

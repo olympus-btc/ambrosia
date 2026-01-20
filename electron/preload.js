@@ -1,8 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Exponer APIs de forma segura al renderer
+// Expose APIs securely to the renderer
 contextBridge.exposeInMainWorld('electron', {
-  // API de información del sistema
+  // System information API
   platform: process.platform,
   versions: {
     node: process.versions.node,
@@ -10,10 +10,10 @@ contextBridge.exposeInMainWorld('electron', {
     electron: process.versions.electron,
   },
 
-  // API para comunicación con main process (futuro)
+  // API for communication with main process (future)
   ipc: {
     send: (channel, ...args) => {
-      // Whitelist de canales permitidos
+      // Whitelist of allowed channels
       const validChannels = ['ping', 'restart-server'];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, ...args);
@@ -40,4 +40,4 @@ contextBridge.exposeInMainWorld('electron', {
   },
 });
 
-console.log('[Preload] Electron APIs expuestas correctamente');
+console.log('[Preload] Electron APIs exposed successfully');

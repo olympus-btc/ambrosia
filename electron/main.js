@@ -12,7 +12,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
-    // Si alguien intenta abrir una segunda instancia, enfocamos la ventana existente
+    // If someone tries to open a second instance, focus the existing window
     console.log('[Electron] Second instance detected, focusing existing window');
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -294,7 +294,7 @@ app.on('window-all-closed', async () => {
 // Crash handler
 process.on('uncaughtException', (error) => {
   console.error('[Electron] Uncaught Exception:', error);
-  dialog.showErrorBox('Error Inesperado', error.message || error.toString());
+  dialog.showErrorBox('Unexpected Error', error.message || error.toString());
 });
 
 process.on('unhandledRejection', (reason, promise) => {

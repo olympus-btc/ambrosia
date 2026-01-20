@@ -1,10 +1,10 @@
 # Ambrosia POS - Electron Desktop Application
 
-Aplicación de escritorio completa y autónoma para Ambrosia POS construida con Electron.
+Complete and standalone desktop application for Ambrosia POS built with Electron.
 
-## Arquitectura
+## Architecture
 
-Ambrosia POS Electron es una **aplicación standalone completa** que integra todo el stack:
+Ambrosia POS Electron is a **complete standalone application** that integrates the entire stack:
 
 ```
 Electron Main Process
@@ -12,66 +12,66 @@ Electron Main Process
 │   ├── PhoenixdService → phoenixd daemon (Bitcoin/Lightning)
 │   ├── BackendService  → Kotlin/Ktor API server
 │   └── NextJsService   → Next.js web server
-├── ConfigurationBootstrap (auto-config con BIP39)
+├── ConfigurationBootstrap (auto-config with BIP39)
 ├── Port Allocator (dynamic port assignment)
-├── Health Checks (wait-on con reintentos)
+├── Health Checks (wait-on with retries)
 └── BrowserWindow → http://localhost:[DYNAMIC_PORT]
 
 Renderer Process
 ├── Next.js App Router (React 19)
-├── API calls → Backend interno (127.0.0.1:[BACKEND_PORT])
-└── Interfaz completa del POS
+├── API calls → Internal Backend (127.0.0.1:[BACKEND_PORT])
+└── Complete POS interface
 ```
 
-### Dos Modos de Operación
+### Two Operation Modes
 
-**Desarrollo** (`NODE_ENV=development` o `!app.isPackaged`):
-- Solo inicia **Next.js** en puerto 3000
-- Asume phoenixd (9740) y backend (9154) externos
-- DevTools habilitado automáticamente
-- Ideal para desarrollo del frontend
+**Development** (`NODE_ENV=development` or `!app.isPackaged`):
+- Only starts **Next.js** on port 3000
+- Assumes external phoenixd (9740) and backend (9154)
+- DevTools automatically enabled
+- Ideal for frontend development
 
-**Producción** (app empaquetado):
-- Inicia secuencialmente: **Phoenixd → Backend → Next.js**
-- Puertos dinámicos (evita conflictos)
-- Aplicación completamente autónoma
-- No requiere servicios externos
+**Production** (packaged app):
+- Starts sequentially: **Phoenixd → Backend → Next.js**
+- Dynamic ports (avoids conflicts)
+- Completely standalone application
+- No external services required
 
-## Requisitos Previos
+## Prerequisites
 
-- **Node.js 18+** y npm
-- **Java Runtime** (incluido en el bundle de producción)
-- Solo para desarrollo: Backend corriendo externamente en 9154
+- **Node.js 18+** and npm
+- **Java Runtime** (included in production bundle)
+- For development only: Backend running externally on 9154
 
-## Instalación de Dependencias
+## Installing Dependencies
 
 ```bash
-# Desde la carpeta electron/
+# From the electron/ folder
 npm install
 
-# Instalar dependencias del cliente
+# Install client dependencies
 cd ../client
 npm install
 cd ../electron
 ```
 
-## Desarrollo
+## Development
 
-### Prerequisitos para Desarrollo
+### Development Prerequisites
 
-Antes de ejecutar Electron en modo desarrollo, asegúrate de tener:
+Before running Electron in development mode, make sure you have:
 
-1. **Backend corriendo**:
+1. **Backend running**:
    ```bash
    cd server && ./gradlew run
    ```
 
-2. **Phoenixd corriendo** (opcional, solo si necesitas pagos):
+2. **Phoenixd running** (optional, only if you need payments):
    ```bash
-   # Ver documentación de phoenixd
+   # See phoenixd documentation
    ```
 
-### Usando el Script de Desarrollo
+### Using the Development Script
 
 **macOS/Linux:**
 ```bash
@@ -83,44 +83,44 @@ Antes de ejecutar Electron en modo desarrollo, asegúrate de tener:
 scripts\dev.bat
 ```
 
-### Usando npm directamente
+### Using npm directly
 
 ```bash
 npm run dev
 ```
 
-### Usando Make (desde la raíz del proyecto)
+### Using Make (from project root)
 
 ```bash
 make electron-dev
 ```
 
-### ¿Qué sucede al ejecutar en modo desarrollo?
+### What happens when running in development mode?
 
-1. **ServiceManager detecta modo desarrollo**
-2. **Solo inicia Next.js** en puerto 3000
-3. Asume backend externo en `http://localhost:9154`
-4. Asume phoenixd externo en `http://localhost:9740`
-5. Crea BrowserWindow y carga `http://localhost:3000`
-6. Habilita DevTools automáticamente
-7. Hot reload de Next.js funcionando
+1. **ServiceManager detects development mode**
+2. **Only starts Next.js** on port 3000
+3. Assumes external backend at `http://localhost:9154`
+4. Assumes external phoenixd at `http://localhost:9740`
+5. Creates BrowserWindow and loads `http://localhost:3000`
+6. Automatically enables DevTools
+7. Next.js hot reload working
 
-## Build para Producción
+## Production Build
 
-### Build Completo
+### Complete Build
 
 ```bash
-# Usando el script
+# Using the script
 ./scripts/build.sh
 
-# O usando npm
+# Or using npm
 npm run build
 
-# O usando Make
+# Or using Make
 make electron-build
 ```
 
-### Build por Plataforma
+### Build by Platform
 
 ```bash
 # macOS
@@ -139,18 +139,18 @@ npm run dist:linux:arm64         # ARM64
 make electron-build-linux
 ```
 
-### Salida del Build
+### Build Output
 
-Los instaladores se generan en `electron/dist/`:
+Installers are generated in `electron/dist/`:
 - **macOS**: `Ambrosia POS-1.0.0.dmg`, `Ambrosia POS-1.0.0-mac.zip`
 - **Windows**: `Ambrosia POS Setup 1.0.0.exe`, portable `.exe`
 - **Linux**:
   - `.deb` (Debian/Ubuntu/Mint/Pop!_OS): `ambrosia-pos-electron_1.0.0_amd64.deb`, `ambrosia-pos-electron_1.0.0_arm64.deb`
   - `.rpm` (Fedora/RHEL/CentOS/openSUSE): `ambrosia-pos-electron-1.0.0.x86_64.rpm`, `ambrosia-pos-electron-1.0.0.aarch64.rpm`
 
-### Instalación en Linux
+### Linux Installation
 
-#### Debian/Ubuntu y derivados
+#### Debian/Ubuntu and derivatives
 
 ```bash
 # x64
@@ -160,7 +160,7 @@ sudo apt install ./ambrosia-pos-electron_1.0.0_amd64.deb
 sudo apt install ./ambrosia-pos-electron_1.0.0_arm64.deb
 ```
 
-#### Fedora/RHEL/CentOS y derivados
+#### Fedora/RHEL/CentOS and derivatives
 
 ```bash
 # x64
@@ -170,77 +170,77 @@ sudo dnf install ambrosia-pos-electron-1.0.0.x86_64.rpm
 sudo dnf install ambrosia-pos-electron-1.0.0.aarch64.rpm
 ```
 
-**Características:**
-- Incluye todas las dependencias automáticamente
-- GTK 3 forzado (compatible con sistemas GTK 4)
-- RPM incluye `libxcrypt-compat` para compatibilidad con Fedora
-- Instala en `/opt/AmbrosiaPos/`
+**Features:**
+- Includes all dependencies automatically
+- GTK 3 forced (compatible with GTK 4 systems)
+- RPM includes `libxcrypt-compat` for Fedora compatibility
+- Installs to `/opt/AmbrosiaPos/`
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 electron/
-├── main.js                          # Proceso principal de Electron
-├── preload.js                       # Script de preload (APIs seguras)
-├── package.json                     # Configuración y dependencias
-├── services/                        # Gestión de servicios embebidos
-│   ├── ServiceManager.js            # Orquestador principal
-│   ├── PhoenixdService.js           # Gestión de phoenixd
-│   ├── BackendService.js            # Gestión del backend Kotlin
-│   ├── NextJsService.js             # Gestión de Next.js
-│   └── ConfigurationBootstrap.js    # Generación automática de configs
-├── utils/                           # Utilidades
-│   ├── portAllocator.js             # Asignación dinámica de puertos
-│   ├── healthCheck.js               # Health checks con reintentos
-│   └── resourcePaths.js             # Rutas de recursos y detección de modo
-├── build/                           # Assets para electron-builder
-│   ├── icon.icns                    # Icono macOS
-│   ├── icon.ico                     # Icono Windows
-│   ├── icon.png                     # Icono Linux
+├── main.js                          # Electron main process
+├── preload.js                       # Preload script (secure APIs)
+├── package.json                     # Configuration and dependencies
+├── services/                        # Embedded services management
+│   ├── ServiceManager.js            # Main orchestrator
+│   ├── PhoenixdService.js           # Phoenixd management
+│   ├── BackendService.js            # Kotlin backend management
+│   ├── NextJsService.js             # Next.js management
+│   └── ConfigurationBootstrap.js    # Automatic config generation
+├── utils/                           # Utilities
+│   ├── portAllocator.js             # Dynamic port assignment
+│   ├── healthCheck.js               # Health checks with retries
+│   └── resourcePaths.js             # Resource paths and mode detection
+├── build/                           # Assets for electron-builder
+│   ├── icon.icns                    # macOS icon
+│   ├── icon.ico                     # Windows icon
+│   ├── icon.png                     # Linux icon
 │   ├── entitlements.mac.plist
-│   └── ICONS_README.md              # Instrucciones para generar iconos
-├── scripts/                         # Scripts de desarrollo y build
-│   ├── dev.sh                       # Script de desarrollo (Unix)
-│   ├── dev.bat                      # Script de desarrollo (Windows)
-│   ├── build.sh                     # Script de build
-│   ├── prepare-resources-wrapper.js # Preparación de recursos para build
-│   └── clean-build.js               # Limpieza de builds
-├── resources/                       # Recursos embebidos (generado en build)
-│   ├── phoenixd/                    # Binarios de phoenixd por plataforma
-│   ├── backend/                     # JAR del backend + JRE
-│   └── client/                      # Build standalone de Next.js
-└── dist/                            # Salida de electron-builder (generado)
+│   └── ICONS_README.md              # Instructions for generating icons
+├── scripts/                         # Development and build scripts
+│   ├── dev.sh                       # Development script (Unix)
+│   ├── dev.bat                      # Development script (Windows)
+│   ├── build.sh                     # Build script
+│   ├── prepare-resources-wrapper.js # Resource preparation for build
+│   └── clean-build.js               # Build cleanup
+├── resources/                       # Embedded resources (generated during build)
+│   ├── phoenixd/                    # Phoenixd binaries per platform
+│   ├── backend/                     # Backend JAR + JRE
+│   └── client/                      # Next.js standalone build
+└── dist/                            # electron-builder output (generated)
 ```
 
-## Configuración
+## Configuration
 
-### Generación Automática de Configuración
+### Automatic Configuration Generation
 
-La aplicación genera automáticamente toda la configuración necesaria en el primer arranque:
+The application automatically generates all necessary configuration on first startup:
 
-**Archivos generados**:
+**Generated files**:
 ```
 ~/.Ambrosia-POS/
-├── ambrosia.conf              # Configuración del backend
-├── ambrosia.db                # Base de datos SQLite
+├── ambrosia.conf              # Backend configuration
+├── ambrosia.db                # SQLite database
 ├── phoenix/
-│   └── phoenix.conf           # Configuración de phoenixd
+│   └── phoenix.conf           # Phoenixd configuration
 └── logs/
     ├── phoenixd-YYYY-MM-DD.log
     ├── backend-YYYY-MM-DD.log
     └── nextjs-YYYY-MM-DD.log
 ```
 
-**ambrosia.conf** (generado automáticamente):
+**ambrosia.conf** (automatically generated):
 ```properties
 http-bind-ip=127.0.0.1
-http-bind-port=9154  # Dinámico en producción
+http-bind-port=9154  # Dynamic in production
 secret=<BIP39 12-word mnemonic>  # 132 bits entropy
 secret-hash=<SHA256 hash>
 phoenixd-url=http://localhost:9740
 ```
 
-**phoenix.conf** (generado automáticamente):
+**phoenix.conf** (automatically generated):
 ```properties
 http-password=<random 64 hex chars>
 http-password-limited-access=<random 64 hex chars>
@@ -250,71 +250,71 @@ auto-liquidity=off
 max-mining-fee-sat-vb=5000
 ```
 
-### Seguridad de Secretos
+### Secret Security
 
-- **BIP39 Mnemonic**: Usa estándar BIP39 para secretos (128 bits de entropía + 4 bits checksum)
-- **Validación**: Checksums incluidos para detección de errores
-- **Compatibilidad**: Compatible con wallets Bitcoin estándar
+- **BIP39 Mnemonic**: Uses BIP39 standard for secrets (128 bits of entropy + 4 bits checksum)
+- **Validation**: Checksums included for error detection
+- **Compatibility**: Compatible with standard Bitcoin wallets
 
 ### Electron Builder
 
-La configuración está en `package.json` bajo la clave `build`. Personalizar:
-- `appId`: Identificador de la aplicación
-- `productName`: Nombre visible
-- `mac/win/linux`: Configuración por plataforma
+Configuration is in `package.json` under the `build` key. Customize:
+- `appId`: Application identifier
+- `productName`: Visible name
+- `mac/win/linux`: Per-platform configuration
 
 ## Troubleshooting
 
-### Error: Aplicación no inicia (Modo Producción)
+### Error: Application doesn't start (Production Mode)
 
-**Causa**: Phoenixd o Backend fallan al iniciar.
+**Cause**: Phoenixd or Backend fail to start.
 
-**Solución**:
-1. Revisar logs en `~/.Ambrosia-POS/logs/`
-2. Verificar que puertos dinámicos estén disponibles
-3. Verificar permisos de ejecución en binarios
-4. En el diálogo de error, seleccionar "Logs" para ver detalles
+**Solution**:
+1. Check logs in `~/.Ambrosia-POS/logs/`
+2. Verify dynamic ports are available
+3. Verify execution permissions on binaries
+4. In the error dialog, select "Logs" to see details
 
-### Error: Backend no encontrado (Modo Desarrollo)
+### Error: Backend not found (Development Mode)
 
-**Causa**: Backend externo no está corriendo.
+**Cause**: External backend is not running.
 
-**Solución**:
+**Solution**:
 ```bash
 cd ../server
 ./gradlew run
 ```
 
-### Error: Puerto 3000 en uso (Modo Desarrollo)
+### Error: Port 3000 in use (Development Mode)
 
-**Causa**: Otro proceso usa el puerto 3000.
+**Cause**: Another process is using port 3000.
 
-**Solución**:
+**Solution**:
 ```bash
-# Encontrar y detener el proceso
+# Find and stop the process
 lsof -i :3000
 kill <PID>
 ```
 
-### Error: Servicios no se detienen correctamente
+### Error: Services don't stop correctly
 
-**Causa**: Procesos zombies de phoenixd/backend/nextjs.
+**Cause**: Zombie processes from phoenixd/backend/nextjs.
 
-**Solución**:
+**Solution**:
 ```bash
-# Matar todos los procesos relacionados
+# Kill all related processes
 pkill -f phoenixd
 pkill -f "java.*ambrosia"
 pkill -f "node.*next"
 ```
 
-### Error: Build falla
+### Error: Build fails
 
-**Causa**: Dependencias faltantes o build de Next.js incompleto.
+**Cause**: Missing dependencies or incomplete Next.js build.
 
-**Solución**:
+**Solution**:
 ```bash
-# Limpiar y reconstruir todo
+# Clean and rebuild everything
 cd ../client
 rm -rf .next node_modules
 npm install
@@ -327,73 +327,73 @@ npm run build
 
 ### Error: Health check timeout
 
-**Causa**: Servicio tarda mucho en iniciar o falla silenciosamente.
+**Cause**: Service takes too long to start or fails silently.
 
-**Solución**:
-1. Revisar logs del servicio específico en `~/.Ambrosia-POS/logs/`
-2. Verificar que el servicio anterior en la cadena inició correctamente
-3. Incrementar timeout en `utils/healthCheck.js` si es necesario
+**Solution**:
+1. Check logs for the specific service in `~/.Ambrosia-POS/logs/`
+2. Verify that the previous service in the chain started correctly
+3. Increase timeout in `utils/healthCheck.js` if necessary
 
-### Problemas Específicos de Linux
+### Linux-Specific Issues
 
 #### Error: GTK 2/3 symbols detected
 
-**Síntomas**:
+**Symptoms**:
 ```
 Gtk-ERROR **: GTK 2/3 symbols detected. Using GTK 2/3 and GTK 4 in the same process is not supported
 Trace/breakpoint trap
 ```
 
-**Causa**: Sistema tiene GTK 4 pero Electron intenta cargar múltiples versiones de GTK.
+**Cause**: System has GTK 4 but Electron tries to load multiple GTK versions.
 
-**Solución**: Los paquetes `.deb` y `.rpm` incluyen automáticamente un wrapper que fuerza GTK 3. Si instalaste manualmente, ejecuta:
+**Solution**: The `.deb` and `.rpm` packages automatically include a wrapper that forces GTK 3. If you installed manually, run:
 ```bash
 /opt/AmbrosiaPos/ambrosia-pos-electron --gtk-version=3
 ```
 
 #### Error: libcrypt.so.1 not found (Fedora/RHEL)
 
-**Síntomas**:
+**Symptoms**:
 ```
 error while loading shared libraries: libcrypt.so.1: cannot open shared object file
 ```
 
-**Causa**: Fedora/RHEL migraron a libcrypt.so.2 pero phoenixd requiere libcrypt.so.1.
+**Cause**: Fedora/RHEL migrated to libcrypt.so.2 but phoenixd requires libcrypt.so.1.
 
-**Solución**: Los paquetes `.rpm` incluyen automáticamente la dependencia `libxcrypt-compat`. Si instalaste manualmente:
+**Solution**: The `.rpm` packages automatically include the `libxcrypt-compat` dependency. If you installed manually:
 ```bash
 sudo dnf install libxcrypt-compat
 ```
 
-#### Dependencias para Build en Ubuntu/Debian
+#### Build Dependencies for Ubuntu/Debian
 
-Para construir paquetes `.rpm` desde Ubuntu/Debian:
+To build `.rpm` packages from Ubuntu/Debian:
 ```bash
 sudo apt install rpm
 ```
 
-### Ver Logs de Servicios
+### Viewing Service Logs
 
-Los logs se guardan por fecha en `~/.Ambrosia-POS/logs/`:
+Logs are saved by date in `~/.Ambrosia-POS/logs/`:
 ```bash
-# Ver logs en tiempo real
+# View logs in real-time
 tail -f ~/.Ambrosia-POS/logs/phoenixd-$(date +%Y-%m-%d).log
 tail -f ~/.Ambrosia-POS/logs/backend-$(date +%Y-%m-%d).log
 tail -f ~/.Ambrosia-POS/logs/nextjs-$(date +%Y-%m-%d).log
 ```
 
-### Reinstalación Completa
+### Complete Reinstallation
 
-Si todo lo demás falla:
+If all else fails:
 ```bash
-# 1. Limpiar configuración existente (CUIDADO: borra la base de datos)
+# 1. Clean existing configuration (WARNING: deletes the database)
 rm -rf ~/.Ambrosia-POS
 
-# 2. Limpiar builds
+# 2. Clean builds
 cd electron
 npm run clean
 
-# 3. Reconstruir todo
+# 3. Rebuild everything
 cd ../client
 npm install
 npm run build:electron
@@ -402,170 +402,170 @@ npm install
 npm run build
 ```
 
-## Iconos de la Aplicación
+## Application Icons
 
-Los iconos deben estar en `build/`:
+Icons should be in `build/`:
 - `icon.icns` - macOS (512x512+)
-- `icon.ico` - Windows (múltiples tamaños)
+- `icon.ico` - Windows (multiple sizes)
 - `icon.png` - Linux (512x512)
 
-Ver `build/ICONS_README.md` para instrucciones sobre cómo generar los iconos.
+See `build/ICONS_README.md` for instructions on how to generate icons.
 
-## Seguridad
+## Security
 
-La aplicación implementa las siguientes medidas de seguridad:
+The application implements the following security measures:
 
-- ✅ `contextIsolation: true` - Aislamiento de contexto
-- ✅ `nodeIntegration: false` - Node.js deshabilitado en renderer
-- ✅ `sandbox: true` - Sandbox habilitado
-- ✅ Preload script con whitelist de canales IPC
-- ✅ Validación de configuración del backend
+- ✅ `contextIsolation: true` - Context isolation
+- ✅ `nodeIntegration: false` - Node.js disabled in renderer
+- ✅ `sandbox: true` - Sandbox enabled
+- ✅ Preload script with IPC channel whitelist
+- ✅ Backend configuration validation
 
-## Características
+## Features
 
-### Modo Desarrollo
-- DevTools habilitados automáticamente
-- Hot reload de Next.js
-- Puerto fijo (3000)
-- Logging detallado
+### Development Mode
+- DevTools automatically enabled
+- Next.js hot reload
+- Fixed port (3000)
+- Detailed logging
 
-### Modo Producción
-- Bundle optimizado con `output: 'standalone'`
-- Puerto dinámico (evita conflictos)
-- Shutdown limpio del servidor Next.js
-- Manejo robusto de errores con diálogos informativos
+### Production Mode
+- Optimized bundle with `output: 'standalone'`
+- Dynamic port (avoids conflicts)
+- Clean Next.js server shutdown
+- Robust error handling with informative dialogs
 
-### Soporte Multi-Plataforma Linux
-- **Formatos de distribución**: `.deb` y `.rpm` para máxima compatibilidad
-- **Distribuciones soportadas**:
+### Linux Multi-Platform Support
+- **Distribution formats**: `.deb` and `.rpm` for maximum compatibility
+- **Supported distributions**:
   - Debian, Ubuntu, Linux Mint, Pop!_OS (`.deb`)
   - Fedora, RHEL, CentOS, openSUSE (`.rpm`)
-- **Arquitecturas**: x64 (amd64/x86_64) y ARM64 (arm64/aarch64)
-- **Compatibilidad GTK**: Wrapper automático fuerza GTK 3 (compatible con GTK 4)
-- **Dependencias incluidas**: RPM incluye `libxcrypt-compat` para Fedora/RHEL
-- **Instalación completa**: phoenixd, backend Kotlin y frontend Next.js bundled
+- **Architectures**: x64 (amd64/x86_64) and ARM64 (arm64/aarch64)
+- **GTK Compatibility**: Automatic wrapper forces GTK 3 (compatible with GTK 4)
+- **Dependencies included**: RPM includes `libxcrypt-compat` for Fedora/RHEL
+- **Complete installation**: phoenixd, Kotlin backend and Next.js frontend bundled
 
-## Comandos Disponibles
+## Available Commands
 
 ```bash
-# Desarrollo
-npm run dev              # Iniciar en modo desarrollo
-npm run dev:inspect      # Con inspector de Node.js
+# Development
+npm run dev              # Start in development mode
+npm run dev:inspect      # With Node.js inspector
 
 # Build
-npm run build            # Build completo
-npm run build:client     # Solo build del cliente Next.js
-npm run pack             # Empaquetar sin crear instalador
-npm run dist             # Crear instalador para plataforma actual
-npm run dist:mac:arm64   # Instalador macOS ARM64
-npm run dist:mac:x64     # Instalador macOS x64
-npm run dist:win:x64     # Instalador Windows x64
-npm run dist:win:arm64   # Instalador Windows ARM64
-npm run dist:linux:x64   # Instalador Linux x64 (.deb + .rpm)
-npm run dist:linux:arm64 # Instalador Linux ARM64 (.deb + .rpm)
+npm run build            # Complete build
+npm run build:client     # Only Next.js client build
+npm run pack             # Package without creating installer
+npm run dist             # Create installer for current platform
+npm run dist:mac:arm64   # macOS ARM64 installer
+npm run dist:mac:x64     # macOS x64 installer
+npm run dist:win:x64     # Windows x64 installer
+npm run dist:win:arm64   # Windows ARM64 installer
+npm run dist:linux:x64   # Linux x64 installer (.deb + .rpm)
+npm run dist:linux:arm64 # Linux ARM64 installer (.deb + .rpm)
 ```
 
-## Notas de Implementación
+## Implementation Notes
 
-### Arquitectura de Servicios
+### Services Architecture
 
-Cada servicio (`PhoenixdService`, `BackendService`, `NextJsService`) implementa:
-- `start(port, config)` - Inicia el servicio con configuración
-- `stop()` - Detiene el servicio de forma limpia
-- `getStatus()` - Retorna estado actual (`starting`, `running`, `stopped`, `error`)
-- `getPort()` - Retorna puerto asignado
+Each service (`PhoenixdService`, `BackendService`, `NextJsService`) implements:
+- `start(port, config)` - Starts the service with configuration
+- `stop()` - Stops the service cleanly
+- `getStatus()` - Returns current state (`starting`, `running`, `stopped`, `error`)
+- `getPort()` - Returns assigned port
 
-### Gestión del Ciclo de Vida
+### Lifecycle Management
 
-Cada servicio gestiona su proceso hijo:
+Each service manages its child process:
 1. **Startup**:
-   - Spawn con `cross-spawn`
-   - Redirección de stdout/stderr a logs
-   - Health check con reintentos
+   - Spawn with `cross-spawn`
+   - Redirect stdout/stderr to logs
+   - Health check with retries
 2. **Runtime**:
-   - Logging continuo a archivos diarios
-   - Monitoreo de estado del proceso
+   - Continuous logging to daily files
+   - Process state monitoring
 3. **Shutdown**:
-   - `tree-kill` con SIGTERM (graceful)
-   - Timeout de 5-10s
-   - Fallback a SIGKILL si es necesario
+   - `tree-kill` with SIGTERM (graceful)
+   - 5-10s timeout
+   - Fallback to SIGKILL if necessary
 
-### ServiceManager - Orquestación
+### ServiceManager - Orchestration
 
-El `ServiceManager` coordina el inicio/parada de todos los servicios:
+The `ServiceManager` coordinates the start/stop of all services:
 ```javascript
 async startAll() {
-  // Modo desarrollo: solo Next.js
-  // Modo producción: Phoenixd → Backend → Next.js (secuencial)
+  // Development mode: only Next.js
+  // Production mode: Phoenixd → Backend → Next.js (sequential)
 
-  // Emite eventos:
+  // Emits events:
   // - 'service:started' → { service, port }
   // - 'service:error' → { service, error }
   // - 'all:started'
 }
 ```
 
-### IPC Handlers Disponibles
+### Available IPC Handlers
 
-El renderer puede comunicarse con los servicios:
+The renderer can communicate with services:
 ```javascript
-// Obtener estado de todos los servicios
+// Get status of all services
 window.electron.invoke('services:get-statuses')
 // → { statuses: {...}, ports: {...}, devMode: boolean }
 
-// Reiniciar un servicio específico
+// Restart a specific service
 window.electron.invoke('services:restart', 'backend')
 // → { success: true } | { success: false, error: "..." }
 
-// Obtener directorio de logs
+// Get logs directory
 window.electron.invoke('services:get-logs')
 // → { logsDir: "/path/to/logs" }
 ```
 
-### Detección de Entorno
+### Environment Detection
 
-La aplicación detecta automáticamente si está en desarrollo o producción:
+The application automatically detects if it's in development or production:
 ```javascript
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 ```
 
-### Rutas de Recursos
+### Resource Paths
 
-Gestión inteligente de rutas según el modo:
-- **Desarrollo**:
+Smart path management based on mode:
+- **Development**:
   - Client: `path.join(__dirname, '..', 'client')`
-  - Backend JAR: Asume externo
-  - Phoenixd: Asume externo
-- **Producción**:
+  - Backend JAR: Assumes external
+  - Phoenixd: Assumes external
+- **Production**:
   - Client: `path.join(process.resourcesPath, 'client')`
   - Backend JAR: `path.join(process.resourcesPath, 'backend', 'ambrosia.jar')`
   - Phoenixd: `path.join(process.resourcesPath, 'phoenixd', 'bin', 'phoenixd')`
   - JRE: `path.join(process.resourcesPath, 'jre', platform-arch, 'bin', 'java')`
 
-### Soporte Multi-Plataforma
+### Multi-Platform Support
 
-Gestión específica por plataforma:
-- **macOS**: Binarios nativos (ARM64 y x64)
-- **Windows x64**: Binarios nativos
-- **Windows ARM64**: Phoenixd JVM + JRE x64 (emulación), Backend con JRE ARM64
-- **Linux x64**: Binarios nativos
-- **Linux ARM64**: Phoenixd nativo ARM64, Backend con JRE ARM64
+Platform-specific management:
+- **macOS**: Native binaries (ARM64 and x64)
+- **Windows x64**: Native binaries
+- **Windows ARM64**: Phoenixd JVM + x64 JRE (emulation), Backend with ARM64 JRE
+- **Linux x64**: Native binaries
+- **Linux ARM64**: Native ARM64 Phoenixd, Backend with ARM64 JRE
 
-### Prevención de Instancias Múltiples
+### Multiple Instance Prevention
 
 ```javascript
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) app.quit();
-// Si segunda instancia se intenta abrir, enfoca la primera
+// If second instance tries to open, focus the first one
 ```
 
-## Recursos
+## Resources
 
 - [Electron Documentation](https://www.electronjs.org/docs)
 - [electron-builder](https://www.electron.build/)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Ambrosia POS Repository](https://github.com/olympus-btc/ambrosia)
 
-## Licencia
+## License
 
-MIT - Ver LICENSE en la raíz del proyecto
+MIT - See LICENSE in the project root
