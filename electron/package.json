@@ -1,7 +1,7 @@
 {
-  "name": "ambrosia-pos-electron",
-  "version": "1.0.0",
-  "description": "Ambrosia-POS Desktop Application",
+  "name": "ambrosia-app",
+  "version": "0.5.0",
+  "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
     "dev": "electron .",
@@ -43,7 +43,7 @@
   },
   "build": {
     "appId": "com.olympus-btc.ambrosia-pos",
-    "productName": "AmbrosiaPos",
+    "productName": "AmbrosiaPoS",
     "directories": {
       "output": "dist",
       "buildResources": "build"
