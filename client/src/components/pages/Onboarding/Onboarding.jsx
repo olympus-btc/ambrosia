@@ -95,15 +95,14 @@ export function Onboarding() {
       }
 
       let logoUrl = null;
-      if (data.storeLogo) {
-        const [uploaded] = await upload([data.storeLogo]);
+      if (data.businessLogo) {
+        const [uploaded] = await upload([data.businessLogo]);
         logoUrl = uploaded?.url ?? uploaded?.path;
       }
 
       await submitInitialSetup({
         ...data,
         businessLogoUrl: logoUrl,
-        storeLogo: undefined,
         businessLogo: undefined,
       });
       addToast({

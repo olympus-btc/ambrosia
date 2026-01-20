@@ -83,14 +83,21 @@ export function WizardSummary({ data, onEdit }) {
                   <p className="font-semibold text-foreground">{data.businessCurrency}</p>
                 </div>
               </div>
-              {data.storeLogo && (
+              {data.businessLogo && (
                 <div className="mt-3">
                   <p className="text-xs text-muted-foreground mb-2">Logo</p>
-                  <Image
-                    src={URL.createObjectURL(data.storeLogo) || "/placeholder.svg"}
-                    alt="Store logo"
-                    className="w-16 h-16 object-cover rounded border border-border"
-                  />
+                  <div
+                    className="
+                      bg-[conic-gradient(#aaa_90deg,#eee_90deg_180deg,#aaa_180deg_270deg,#eee_270deg)]
+                      bg-size-[20px_20px] rounded border border-border p-2
+                    "
+                  >
+                    <Image
+                      src={URL.createObjectURL(data.businessLogo)}
+                      alt="Business logo"
+                      className="w-32 h-32 object-contain"
+                    />
+                  </div>
                 </div>
               )}
             </div>
