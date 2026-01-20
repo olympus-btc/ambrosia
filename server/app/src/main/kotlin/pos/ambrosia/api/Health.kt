@@ -5,6 +5,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
 
+fun Application.configureHealth() {
+  routing { route("/api") { healthRoutes() } }
+}
+
 fun Route.healthRoutes() {
   route("/health") {
     get {

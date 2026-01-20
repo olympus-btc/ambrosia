@@ -26,8 +26,5 @@ fun Application.configureRouting() {
         call.respond(baseCurrency)
       }
     }
-    route("/api") {
-      healthRoutes()
-    }
   }
 }
