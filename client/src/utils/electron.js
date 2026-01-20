@@ -1,14 +1,14 @@
 /**
- * Detecta si la aplicación está corriendo en Electron
+ * Detects if the application is running in Electron
  */
 export function isElectron() {
-  // Verificar si window.electron existe (expuesto por preload)
-  if (typeof window !== 'undefined' && window.electron) {
+  // Check if window.electron exists (exposed by preload)
+  if (typeof window !== "undefined" && window.electron) {
     return true;
   }
 
-  // Verificar variable de entorno
-  if (process.env.NEXT_PUBLIC_ELECTRON === 'true') {
+  // Check environment variable
+  if (process.env.NEXT_PUBLIC_ELECTRON === "true") {
     return true;
   }
 
@@ -16,17 +16,17 @@ export function isElectron() {
 }
 
 /**
- * Obtiene la API de Electron si está disponible
+ * Gets the Electron API if available
  */
 export function getElectronAPI() {
-  if (typeof window !== 'undefined' && window.electron) {
+  if (typeof window !== "undefined" && window.electron) {
     return window.electron;
   }
   return null;
 }
 
 /**
- * Obtiene información de la plataforma
+ * Gets platform information
  */
 export function getPlatform() {
   const electronAPI = getElectronAPI();
@@ -34,19 +34,19 @@ export function getPlatform() {
     return electronAPI.platform;
   }
 
-  // Fallback para navegador
-  if (typeof window !== 'undefined') {
+  // Browser fallback
+  if (typeof window !== "undefined") {
     const userAgent = window.navigator.userAgent;
-    if (userAgent.includes('Mac')) return 'darwin';
-    if (userAgent.includes('Win')) return 'win32';
-    if (userAgent.includes('Linux')) return 'linux';
+    if (userAgent.includes("Mac")) return "darwin";
+    if (userAgent.includes("Win")) return "win32";
+    if (userAgent.includes("Linux")) return "linux";
   }
 
-  return 'unknown';
+  return "unknown";
 }
 
 /**
- * Obtiene versiones de Electron/Chrome/Node
+ * Gets Electron/Chrome/Node versions
  */
 export function getVersions() {
   const electronAPI = getElectronAPI();
@@ -57,22 +57,22 @@ export function getVersions() {
 }
 
 /**
- * Verifica si la plataforma es macOS
+ * Checks if the platform is macOS
  */
 export function isMac() {
-  return getPlatform() === 'darwin';
+  return getPlatform() === "darwin";
 }
 
 /**
- * Verifica si la plataforma es Windows
+ * Checks if the platform is Windows
  */
 export function isWindows() {
-  return getPlatform() === 'win32';
+  return getPlatform() === "win32";
 }
 
 /**
- * Verifica si la plataforma es Linux
+ * Checks if the platform is Linux
  */
 export function isLinux() {
-  return getPlatform() === 'linux';
+  return getPlatform() === "linux";
 }

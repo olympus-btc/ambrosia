@@ -1,26 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Crea bundle optimizado con deps minificadas para Electron
-  output: 'standalone',
+  // Creates optimized bundle with minified deps for Electron
+  output: "standalone",
 
-  // Configuración de imágenes para Electron
+  // Image configuration for Electron
   images: {
-    unoptimized: true, // Necesario para Electron
+    unoptimized: true, // Required for Electron
   },
 
-  // Deshabilitar telemetría
+  // Disable telemetry
   telemetry: false,
 
-  // Configuración de headers (mantener CORS para desarrollo)
+  // Headers configuration (keep CORS for development)
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: "/api/:path*",
         headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,DELETE,OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
         ],
       },
     ];
