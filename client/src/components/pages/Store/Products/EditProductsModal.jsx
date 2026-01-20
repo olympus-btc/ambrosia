@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 import {
   Button,
@@ -13,12 +13,11 @@ import {
   ModalFooter,
   Select,
   SelectItem,
-  Image,
 } from "@heroui/react";
-import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { ImageUploader } from "@components/shared/ImageUploader";
 
 export function EditProductsModal({
   data,
@@ -35,28 +34,9 @@ export function EditProductsModal({
 }) {
   const t = useTranslations("products");
   const { currency } = useCurrency();
-  const fileInputRef = useRef(null);
-  const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    onChange({ storeImage: file, productImage: "" });
-
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    onChange({ storeImage: null, productImage: "" });
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,8 +61,9 @@ export function EditProductsModal({
       productSKU: "",
       productPrice: "",
       productStock: "",
-      productImage: "",
-      storeImage: null,
+      productImage: null,
+      productImageUrl: "",
+      productImageRemoved: false,
     });
 
     setEditProductsShowModal(false);
@@ -219,47 +200,13 @@ export function EditProductsModal({
               />
             </div>
 
-            <div>
-              {imagePreview ? (
-                <div className="relative w-32 h-32 rounded-lg border border-border overflow-hidden bg-muted">
-                  <Image
-                    src={imagePreview}
-                    alt="Product preview"
-                    className="w-full h-full object-cover"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded hover:opacity-90"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full p-8 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center cursor-pointer"
-                >
-                  <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">
-                    {t("modal.productImageUpload")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("modal.productImageUploadMessage")}
-                  </p>
-                </button>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </div>
+            <ImageUploader
+              title=""
+              uploadText={t("modal.productImageUpload")}
+              uploadDescription={t("modal.productImageUploadMessage")}
+              onChange={(file) => onChange({ productImage: file, productImageRemoved: file === null })}
+              value={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
+            />
 
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
