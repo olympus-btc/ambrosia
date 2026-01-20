@@ -37,9 +37,9 @@ pytest
 
 ## Desktop Application (Electron)
 
-Ambrosia POS también está disponible como aplicación de escritorio multiplataforma.
+Ambrosia POS is also available as a cross-platform desktop application.
 
-### Desarrollo
+### Development
 
 ```bash
 cd electron
@@ -54,7 +54,7 @@ cd electron
 npm run build
 ```
 
-Ver [electron/README.md](electron/README.md) para instrucciones detalladas.
+See [electron/README.md](electron/README.md) for detailed instructions.
 
 ---
 
