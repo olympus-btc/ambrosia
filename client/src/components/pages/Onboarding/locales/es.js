@@ -13,7 +13,7 @@ const onboardingEs = {
     subtitle: "Selecciona el tipo de negocio para personalizar tu experiencia.",
     businessType: {
       store: "Tienda",
-      restaurant: "Restaurante",
+      restaurant: "Restaurante (Próximamente)",
     },
     descriptions: {
       store:

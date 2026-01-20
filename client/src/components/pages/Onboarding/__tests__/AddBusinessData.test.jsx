@@ -14,7 +14,7 @@ describe("Step 3 Business Details", () => {
     businessEmail: "",
     businessRFC: "",
     businessCurrency: "MXN",
-    storeLogo: null,
+    businessLogo: null,
   };
 
   function remderBusinessDetails(data = defaultData) {
@@ -71,7 +71,9 @@ describe("Step 3 Business Details", () => {
 
     fireEvent.change(fileInput, { target: { files: [mockFile] } });
 
-    expect(mockChange).toHaveBeenCalledWith({ storeLogo: mockFile });
+    expect(mockChange).toHaveBeenCalledWith(
+      expect.objectContaining({ businessLogo: mockFile }),
+    );
 
     await waitFor(() => {
       expect(container.querySelector("img")).toBeInTheDocument();
@@ -83,7 +85,7 @@ describe("Step 3 Business Details", () => {
     rerender(
       <I18nProvider>
         <BusinessDetailsStep
-          data={{ ...defaultData, storeLogo: new File(["x"], "logo.png") }}
+          data={{ ...defaultData, businessLogo: new File(["x"], "logo.png") }}
           onChange={mockChange}
         />
       </I18nProvider>,
@@ -92,7 +94,9 @@ describe("Step 3 Business Details", () => {
     const removeButton = container.querySelector("button.bg-destructive");
     if (removeButton) {
       fireEvent.click(removeButton);
-      expect(mockChange).toHaveBeenCalledWith({ storeLogo: null });
+      expect(mockChange).toHaveBeenCalledWith(
+        expect.objectContaining({ businessLogo: null }),
+      );
     }
   });
 });
