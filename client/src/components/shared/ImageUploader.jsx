@@ -54,7 +54,7 @@ export function ImageUploader({ title, uploadText, uploadDescription, onChange, 
             relative w-32 h-32 rounded-lg border-2 border-border overflow-hidden
           "
         >
-          <Image src={imagePreview || "/placeholder.svg"} alt="Logo preview" className="w-full h-full object-contain" />
+          <Image src={imagePreview || "/placeholder.svg"} alt="Image preview" className="w-full h-full object-contain" />
           <button
             type="button"
             onClick={handleRemoveImage}
