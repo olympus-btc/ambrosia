@@ -61,8 +61,8 @@ export function EditProductsModal({
       productSKU: "",
       productPrice: "",
       productStock: "",
-      productMinStock: "",
-      productMaxStock: "",
+      productMinStock: 0,
+      productMaxStock: 0,
       productImage: null,
       productImageUrl: "",
       productImageRemoved: false,
@@ -209,7 +209,7 @@ export function EditProductsModal({
                 minValue={0}
                 value={data.productMinStock}
                 onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
+                  const numeric = value === null ? 0 : Number(value);
                   onChange({ productMinStock: numeric });
                 }}
                 min={0}
@@ -222,7 +222,7 @@ export function EditProductsModal({
                 minValue={0}
                 value={data.productMaxStock}
                 onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
+                  const numeric = value === null ? 0 : Number(value);
                   onChange({ productMaxStock: numeric });
                 }}
                 min={0}

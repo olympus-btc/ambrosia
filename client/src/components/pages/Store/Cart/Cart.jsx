@@ -41,13 +41,12 @@ export function Cart() {
 
   const getAvailableQuantity = (productId) => {
     const product = products.find((item) => item.id === productId);
-    if (!product) return null;
-    return Number(product.quantity) || 0;
+    return Number(product?.quantity) || 0;
   };
 
   const addProduct = (product) => {
     const availableQuantity = getAvailableQuantity(product.id);
-    if (availableQuantity !== null && availableQuantity <= 0) {
+    if (availableQuantity <= 0) {
       addToast({
         color: "danger",
         description: t("errors.outOfStock"),
@@ -58,10 +57,7 @@ export function Cart() {
     const itemExist = cart.find((item) => item.id === product.id);
 
     if (itemExist) {
-      if (
-        availableQuantity !== null
-        && itemExist.quantity + 1 > availableQuantity
-      ) {
+      if (itemExist.quantity + 1 > availableQuantity) {
         addToast({
           color: "danger",
           description: t("errors.outOfStock"),
@@ -97,7 +93,7 @@ export function Cart() {
       return;
     }
     const availableQuantity = getAvailableQuantity(id);
-    if (availableQuantity !== null && quantity > availableQuantity) {
+    if (quantity > availableQuantity) {
       addToast({
         color: "danger",
         description: t("errors.outOfStock"),

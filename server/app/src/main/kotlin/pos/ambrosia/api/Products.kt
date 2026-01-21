@@ -76,7 +76,7 @@ fun Route.products(service: ProductService) {
         mapOf("id" to id, "message" to "Product updated successfully")
       )
     }
-    post("/adjust-stock") {
+    post("/stock") {
       try {
         val adjustments = call.receive<List<ProductStockAdjustment>>()
         if (adjustments.isEmpty()) {
