@@ -251,7 +251,8 @@ const storeEn = {
     templates: {
       title: "Ticket templates",
       listTitle: "Templates",
-      newTemplate: "New",
+      selectPlaceholder: "Select a template",
+      addTemplate: "Add",
       nameLabel: "Template name",
       elementsTitle: "Elements",
       addElement: "Add element",

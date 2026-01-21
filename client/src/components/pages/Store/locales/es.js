@@ -252,7 +252,8 @@ const storeEs = {
     templates: {
       title: "Plantillas de ticket",
       listTitle: "Plantillas",
-      newTemplate: "Nuevo",
+      selectPlaceholder: "Selecciona una plantilla",
+      addTemplate: "Agregar",
       nameLabel: "Nombre de la plantilla",
       elementsTitle: "Elementos",
       addElement: "Agregar elemento",

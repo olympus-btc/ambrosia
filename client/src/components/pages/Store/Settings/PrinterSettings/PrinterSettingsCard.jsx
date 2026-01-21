@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Card, CardBody, CardHeader } from "@heroui/react";
 
 import { TicketTemplatesModal } from "../TicketTemplate/TicketTemplatesModal";
 
@@ -92,9 +92,6 @@ export function PrinterSettingsCard({
                 {t("cardPrinters.subtitle")}
               </p>
             </div>
-            <Button variant="bordered" onPress={() => setTemplatesModalOpen(true)}>
-              {t("cardPrinters.manageTemplates")}
-            </Button>
           </div>
         </CardHeader>
 

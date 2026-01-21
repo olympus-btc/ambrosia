@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { addToast, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl";
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
 
-import { TemplateList } from "./TemplateList";
 import { TemplatePreview } from "./TemplatePreview";
 import { createElement, DEFAULT_STYLE } from "./ticketTemplateDefaults";
 import { sampleTicket } from "./ticketTemplateSampleData";
@@ -18,12 +17,10 @@ import { useTicketTemplatePreviewElements } from "./useTicketTemplatePreviewElem
 
 const PRINTER_TYPES = ["KITCHEN", "CUSTOMER", "BAR"];
 
-export function TicketTemplatesModal({ isOpen, onClose }) {
+export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }) {
   const t = useTranslations("settings");
   const {
     templates,
-    loading,
-    error,
     createTemplate,
     updateTemplate,
     deleteTemplate,
@@ -39,6 +36,24 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
   const [printerType, setPrinterType] = useState("KITCHEN");
 
   const previewElements = useTicketTemplatePreviewElements(elements);
+
+  useEffect(() => {
+    if (isOpen && initialTemplate) {
+      setSelectedId(initialTemplate.id);
+      setName(initialTemplate.name);
+      const mappedElements = (initialTemplate.elements || []).map((element) => ({
+        localId: element.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: element.type,
+        value: element.value,
+        style: element.style || DEFAULT_STYLE,
+      }));
+      setElements(mappedElements.length ? mappedElements : [createElement()]);
+    } else if (isOpen && !initialTemplate) {
+      setSelectedId("");
+      setName("");
+      setElements([createElement()]);
+    }
+  }, [isOpen, initialTemplate]);
 
   const resetForm = () => {
     setSelectedId("");
@@ -57,19 +72,6 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
       updated.splice(nextIndex, 0, moved);
       return updated;
     });
-  };
-
-  const loadTemplate = (template) => {
-    if (!template) return;
-    setSelectedId(template.id);
-    setName(template.name);
-    const mappedElements = (template.elements || []).map((element) => ({
-      localId: element.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      type: element.type,
-      value: element.value,
-      style: element.style || DEFAULT_STYLE,
-    }));
-    setElements(mappedElements.length ? mappedElements : [createElement()]);
   };
 
   const handleSave = async () => {
@@ -137,49 +139,46 @@ export function TicketTemplatesModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="full" scrollBehavior="inside">
+    <Modal
+      className="min-h-[665px]"
+      size="5xl"
+      isOpen={isOpen}
+      onOpenChange={onClose}
+      scrollBehavior="inside"
+    >
       <ModalContent>
         <ModalHeader>{t("templates.title")}</ModalHeader>
         <ModalBody>
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <TemplateList
-              templates={templates}
-              selectedId={selectedId}
-              loading={loading}
-              error={error}
-              onSelect={loadTemplate}
-              onNew={resetForm}
+          <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
+            <TicketTemplatesEditor
+              name={name}
+              onNameChange={(e) => setName(e.target.value)}
+              elements={elements}
+              onElementChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)),
+              )
+              }
+              onElementAdd={() => setElements((prev) => [...prev, createElement()])}
+              onElementMove={moveElement}
+              onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
               t={t}
             />
 
-            <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
-              <TicketTemplatesEditor
-                name={name}
-                onNameChange={(e) => setName(e.target.value)}
-                elements={elements}
-                onElementChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)),
-                )
-                }
-                onElementAdd={() => setElements((prev) => [...prev, createElement()])}
-                onElementMove={moveElement}
-                onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
-                t={t}
-              />
-
-              <TemplatePreview previewElements={previewElements} t={t} />
-            </div>
+            <TemplatePreview
+              previewElements={previewElements}
+              printerType={printerType}
+              onPrinterTypeChange={(e) => setPrinterType(e.target.value)}
+              printerTypes={PRINTER_TYPES}
+              onPrintTest={handlePrintTest}
+              printing={printing}
+              templateExists={templateExists}
+              t={t}
+            />
           </div>
         </ModalBody>
         <TicketTemplatesFooter
           selectedId={selectedId}
           deleting={deleting}
           onDelete={handleDelete}
-          printerType={printerType}
-          onPrinterTypeChange={(e) => setPrinterType(e.target.value)}
-          printerTypes={PRINTER_TYPES}
-          onPrintTest={handlePrintTest}
-          printing={printing}
-          templateExists={templateExists}
           onClose={onClose}
           onSave={handleSave}
           saving={saving}
