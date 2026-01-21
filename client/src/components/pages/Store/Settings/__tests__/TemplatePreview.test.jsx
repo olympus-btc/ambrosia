@@ -55,7 +55,7 @@ describe("TemplatePreview", () => {
   });
 
   it("shows printing state when printing", () => {
-    render(<TemplatePreview {...defaultProps} printing={true} />);
+    render(<TemplatePreview {...defaultProps} printing />);
     expect(screen.getByText("templates.printing")).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe("TemplatePreview", () => {
   });
 
   it("enables print button when template exists", () => {
-    render(<TemplatePreview {...defaultProps} templateExists={true} />);
+    render(<TemplatePreview {...defaultProps} templateExists />);
     const button = screen.getByText("templates.printTest");
     expect(button).not.toBeDisabled();
   });
