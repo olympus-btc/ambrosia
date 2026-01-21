@@ -5,8 +5,8 @@
   <img src="client/public/ambrosia.svg" alt="Ambrosia Logo" width="300"/>
 </p>
 
-<h1 align="center"> Ambrosia the system for the sovereign individual.
-</h1>
+<h3 align="center"> Ambrosia the system for the sovereign individual.
+</h3>
 
 **Status: In Development**
 
