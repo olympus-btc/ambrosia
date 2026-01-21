@@ -51,37 +51,3 @@ To uninstall Ambrosia POS and Phoenixd, run the following script:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/master/scripts/uninstall.sh | bash
 ```
-
-## Development Scripts
-
-### Server (Backend - Kotlin/Gradle)
-
-To run the server in development mode, go to the `server/` directory and run:
-
-```sh
-./gradlew run
-```
-
-### Client (Frontend - React/Electron)
-
-Inside the `client/` directory, you can use the following scripts:
-
-- **Install dependencies:**
-  ```sh
-  npm install
-  ```
-
-- **Start in development mode:**
-  ```sh
-  npm run dev
-  ```
-
-- **Build for production:**
-  ```sh
-  npm run build
-  ```
-
-- **Start in production mode (after building):**
-  ```sh
-  npm start
-  ```

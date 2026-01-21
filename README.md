@@ -5,12 +5,18 @@
   <img src="client/public/ambrosia.svg" alt="Ambrosia Logo" width="300"/>
 </p>
 
+<h1 align="center"> Ambrosia the system for the sovereign individual.
+</h1>
+
 **Status: In Development**
+
 > [!NOTE]
 > The project is under continuous development and is subject to change.
 >
 
-This repository contains the documentation and project details for a restaurant and retail point of sale (POS) system, with a frontend developed in React, and a backend in Kotlin. The main files and their contents are described below:
+Ambrosia is designed specifically for small businesses, it is a tool to unplug from the fiat matrix and conduct commerce entirely on your own terms.
+
+Ambrosia is an open-source, local-first, and subscription-free Point of Sale (POS) system. It provides a self-sovereign stack by integrating business management tools directly with a self-custodial Lightning Network node (Phoenixd), ensuring full data ownership and eliminating reliance on third-party custodians or payment processors.
 
 ## Project Proposal
 
@@ -19,43 +25,6 @@ This repository contains the documentation and project details for a restaurant 
 ## Installation
 
 To install Ambrosia, refer to the [Installation Guide](doc/installation.md) where you will find all available options and detailed instructions for setting up the system.
-
-## Project Structure
-
-*   `client/` - Frontend application (Next.js/React).
-*   `server/` - Backend application (Kotlin/Ktor).
-*   `electron/` - Desktop wrapper (Electron).
-*   `doc/` - Project documentation.
-*   `scripts/` - Utility and installation scripts.
-
-## Testing
-
-The project includes end-to-end (E2E) tests for the server API. For detailed instructions on setting up the environment and running the tests, please refer to the [E2E Tests README](server/e2e_tests_py/README.md).
-
----
-
-## Desktop Application (Electron)
-
-Ambrosia POS is also available as a cross-platform desktop application.
-
-### Development
-
-```bash
-cd electron
-npm install
-npm run dev
-```
-
-### Build
-
-```bash
-cd electron
-npm run build
-```
-
-See [electron/README.md](electron/README.md) for detailed instructions.
-
----
 
 ## Want to contribute?
 
