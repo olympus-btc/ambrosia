@@ -25,6 +25,8 @@ export function Products() {
     productSKU: "",
     productPrice: "",
     productStock: "",
+    productMinStock: 0,
+    productMaxStock: 0,
     productImage: null,
     productImageUrl: "",
   });
@@ -53,6 +55,8 @@ export function Products() {
       productSKU: product.SKU,
       productPrice: product.price_cents ? product.price_cents / 100 : "",
       productStock: product.quantity,
+      productMinStock: product.min_stock_threshold ?? 0,
+      productMaxStock: product.max_stock_threshold ?? 0,
       productImage: null,
       productImageUrl: product.image_url,
     });

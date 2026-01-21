@@ -327,7 +327,15 @@ data class Product(
   val cost_cents: Int,
   val category_id: String,
   val quantity: Int,
+  val min_stock_threshold: Int,
+  val max_stock_threshold: Int,
   val price_cents: Int,
+)
+
+@Serializable
+data class ProductStockAdjustment(
+  val product_id: String,
+  val quantity: Int,
 )
 
 @Serializable data class CategoryItem(

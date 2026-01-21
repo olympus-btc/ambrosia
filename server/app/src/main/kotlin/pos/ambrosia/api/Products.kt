@@ -8,7 +8,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.sql.Connection
 import pos.ambrosia.db.DatabaseConnection
+import pos.ambrosia.logger
 import pos.ambrosia.models.Product
+import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
 import pos.ambrosia.utils.authorizePermission
 
@@ -73,6 +75,24 @@ fun Route.products(service: ProductService) {
         HttpStatusCode.OK,
         mapOf("id" to id, "message" to "Product updated successfully")
       )
+    }
+    post("/stock") {
+      try {
+        val adjustments = call.receive<List<ProductStockAdjustment>>()
+        if (adjustments.isEmpty()) {
+          call.respond(HttpStatusCode.BadRequest, "No stock adjustments provided")
+          return@post
+        }
+        val ok = service.adjustStock(adjustments)
+        if (!ok) {
+          call.respond(HttpStatusCode.BadRequest, "Invalid or insufficient stock")
+          return@post
+        }
+        call.respond(HttpStatusCode.OK, mapOf("message" to "Stock adjusted successfully"))
+      } catch (e: Exception) {
+        logger.error("Error adjusting product stock: ${e.message}")
+        call.respond(HttpStatusCode.BadRequest, "Invalid stock adjustment data")
+      }
     }
   }
   authorizePermission("products_delete") {

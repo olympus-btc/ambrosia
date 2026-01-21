@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/modules/auth/useAuth";
+import { apiClient } from "@/services/apiClient";
 
 import { useOrders } from "../../hooks/useOrders";
 import { usePayments } from "../../hooks/usePayments";
@@ -53,6 +54,21 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const clearPaymentError = useCallback(() => dispatch({ type: "clearError" }), []);
 
   const notifyError = useMemo(() => createErrorNotifier(dispatch), [dispatch]);
+
+  const decrementProductStock = useCallback(async (items) => {
+    const adjustments = (items || [])
+      .map((item) => ({
+        product_id: String(item?.id ?? ""),
+        quantity: Number(item?.quantity) || 0,
+      }))
+      .filter((adjustment) => adjustment.product_id && adjustment.quantity > 0);
+    if (!adjustments.length) return;
+    await apiClient("/products/stock", {
+      method: "POST",
+      body: adjustments,
+      notShowError: false,
+    });
+  }, []);
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}), [paymentMethods]);
@@ -109,6 +125,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setBtcPaymentConfig,
       setCashPaymentConfig,
       processBasePayment,
+      decrementProductStock,
       updateOrder,
       onResetCart,
       onPay,
@@ -125,11 +142,13 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createPayment,
       linkPaymentToTicket,
       printCustomerReceipt,
+      decrementProductStock,
     }),
     [
       currency,
       formatAmount,
       getPaymentCurrencyById,
+      decrementProductStock,
       notifyError,
       onPay,
       onResetCart,
@@ -164,6 +183,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       buildPaymentPayload,
       createPayment,
       linkPaymentToTicket,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -179,6 +199,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createTicket,
       createPayment,
       linkPaymentToTicket,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -205,6 +226,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createPayment,
       linkPaymentToTicket,
       updateOrder,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -226,6 +248,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createTicket,
       createPayment,
       linkPaymentToTicket,
+      decrementProductStock,
       user,
     ],
   );

@@ -7,18 +7,18 @@ import pos.ambrosia.models.Product
 class ProductService(private val connection: Connection) {
   companion object {
     private const val ADD_PRODUCT =
-        "INSERT INTO products (id, SKU, name, description, image_url, cost_cents, category_id, quantity, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO products (id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     private const val GET_PRODUCTS =
-        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, price_cents FROM products WHERE is_deleted = 0"
+        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE is_deleted = 0"
     private const val GET_PRODUCT_BY_ID =
-        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, price_cents FROM products WHERE id = ? AND is_deleted = 0"
+        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE id = ? AND is_deleted = 0"
     private const val GET_PRODUCT_BY_SKU =
-        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
+        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
     private const val UPDATE_PRODUCT =
-        "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, category_id = ?, quantity = ?, price_cents = ? WHERE id = ?"
+        "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, category_id = ?, quantity = ?, min_stock_threshold = ?, max_stock_threshold = ?, price_cents = ? WHERE id = ?"
     private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1 WHERE id = ?"
     private const val GET_PRODUCTS_BY_CATEGORY =
-        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, price_cents FROM products WHERE category_id = ? AND is_deleted = 0"
+        "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE category_id = ? AND is_deleted = 0"
   }
 
   private fun map(result: java.sql.ResultSet): Product {
@@ -31,6 +31,8 @@ class ProductService(private val connection: Connection) {
         cost_cents = result.getInt("cost_cents"),
         category_id = result.getString("category_id"),
         quantity = result.getInt("quantity"),
+        min_stock_threshold = result.getInt("min_stock_threshold"),
+        max_stock_threshold = result.getInt("max_stock_threshold"),
         price_cents = result.getInt("price_cents")
     )
   }
@@ -41,6 +43,9 @@ class ProductService(private val connection: Connection) {
     if (p.cost_cents < 0) return false
     if (p.price_cents < 0) return false
     if (p.quantity < 0) return false
+    if (p.min_stock_threshold < 0) return false
+    if (p.max_stock_threshold < 0) return false
+    if (p.max_stock_threshold > 0 && p.min_stock_threshold > p.max_stock_threshold) return false
     if (p.category_id.isBlank()) return false
     return true
   }
@@ -59,7 +64,9 @@ class ProductService(private val connection: Connection) {
     st.setInt(6, product.cost_cents)
     st.setString(7, product.category_id)
     st.setInt(8, product.quantity)
-    st.setInt(9, product.price_cents)
+    st.setInt(9, product.min_stock_threshold)
+    st.setInt(10, product.max_stock_threshold)
+    st.setInt(11, product.price_cents)
     val rows = st.executeUpdate()
     return if (rows > 0) {
       logger.info("Product created: $id")
@@ -113,8 +120,10 @@ class ProductService(private val connection: Connection) {
     st.setInt(5, product.cost_cents)
     st.setString(6, product.category_id)
     st.setInt(7, product.quantity)
-    st.setInt(8, product.price_cents)
-    st.setString(9, product.id)
+    st.setInt(8, product.min_stock_threshold)
+    st.setInt(9, product.max_stock_threshold)
+    st.setInt(10, product.price_cents)
+    st.setString(11, product.id)
     val rows = st.executeUpdate()
     if (rows > 0) logger.info("Product updated: ${product.id}")
     return rows > 0
@@ -126,5 +135,37 @@ class ProductService(private val connection: Connection) {
     val rows = st.executeUpdate()
     if (rows > 0) logger.info("Product deleted: $id")
     return rows > 0
+  }
+
+  suspend fun adjustStock(adjustments: List<pos.ambrosia.models.ProductStockAdjustment>): Boolean {
+    if (adjustments.isEmpty()) return true
+    if (adjustments.any { it.product_id.isBlank() || it.quantity < 0 }) return false
+
+    val previousAutoCommit = connection.autoCommit
+    connection.autoCommit = false
+    try {
+      val statement =
+          connection.prepareStatement(
+              "UPDATE products SET quantity = quantity - ? WHERE id = ? AND is_deleted = 0 AND quantity >= ?"
+          )
+      for (adjustment in adjustments) {
+        if (adjustment.quantity == 0) continue
+        statement.setInt(1, adjustment.quantity)
+        statement.setString(2, adjustment.product_id)
+        statement.setInt(3, adjustment.quantity)
+        val rows = statement.executeUpdate()
+        if (rows == 0) {
+          connection.rollback()
+          return false
+        }
+      }
+      connection.commit()
+      return true
+    } catch (e: Exception) {
+      connection.rollback()
+      throw e
+    } finally {
+      connection.autoCommit = previousAutoCommit
+    }
   }
 }

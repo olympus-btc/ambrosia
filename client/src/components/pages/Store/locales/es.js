@@ -60,6 +60,15 @@ const storeEs = {
     sku: "SKU",
     price: "Precio",
     stock: "Almacen",
+    minStock: "Min",
+    maxStock: "Max",
+    stockStatus: "Estado",
+    status: {
+      ok: "Normal",
+      low: "Bajo (reponer pronto)",
+      over: "Exceso",
+      out: "Agotado",
+    },
     actions: "Acciones",
     modal: {
       titleAdd: "Agregar Producto",
@@ -79,6 +88,10 @@ const storeEs = {
       productPricePlaceholder: "0.00",
       productStockLabel: "En Almacen",
       productStockPlaceholder: "0",
+      productMinStockLabel: "Stock minimo",
+      productMinStockPlaceholder: "0",
+      productMaxStockLabel: "Stock maximo",
+      productMaxStockPlaceholder: "0",
       productImage: "Imagen del Producto",
       productImageUpload: "Sube una Imagen",
       productImageUploadMessage: "PNG, JPG o GIF (máx. 5MB)",
@@ -134,6 +147,7 @@ const storeEs = {
         btcComplete: "Error al completar el pago BTC",
         cashComplete: "Error al completar el pago en efectivo",
         printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
+        stockUpdate: "Pago completado pero no se pudo actualizar el inventario.",
       },
       success: {
         paid: "Pago registrado correctamente",
@@ -143,6 +157,9 @@ const storeEs = {
       receipt: {
         tableName: "Caja",
       },
+    },
+    errors: {
+      outOfStock: "No hay stock suficiente para este producto.",
     },
     paymentModal: {
       bitcoin: {
