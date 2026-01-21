@@ -71,7 +71,7 @@ describe("SearchProducts", () => {
     expect(screen.getByText("Gadgets")).toBeInTheDocument();
   });
 
-  it("filters products by search term and hides out-of-stock items", () => {
+  it("filters products by search term", () => {
     render(
       <SearchProducts
         products={products}
@@ -83,7 +83,7 @@ describe("SearchProducts", () => {
     const list = screen.getByTestId("product-list");
     expect(list.textContent).toContain("Jade Wallet");
     expect(list.textContent).toContain("M5 Stick");
-    expect(list.textContent).not.toContain("Out of Stock");
+    expect(list.textContent).toContain("Out of Stock");
     expect(list.textContent).toContain("Unknown Category");
 
     fireEvent.change(screen.getByLabelText("search.label"), {

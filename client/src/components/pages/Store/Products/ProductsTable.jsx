@@ -28,10 +28,20 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
     return map;
   }, {})
   , [categories]);
+  const normalizeNumber = (value, fallback = 0) => {
+    const numeric = Number(value ?? fallback);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
   const stockStatus = (product) => {
-    const min = Number(product.min_stock_threshold ?? 0);
-    const max = Number(product.max_stock_threshold ?? 0);
-    const quantity = Number(product.quantity ?? 0);
+    const min = normalizeNumber(
+      product.min_stock_threshold ?? product.productMinStock,
+    );
+    const max = normalizeNumber(
+      product.max_stock_threshold ?? product.productMaxStock,
+    );
+    const quantity = normalizeNumber(
+      product.quantity ?? product.productStock,
+    );
 
     if (quantity <= 0) {
       return "out";
@@ -60,85 +70,88 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
           <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.sku}>
-              <TableCell>
-                <Image src={storedAssetUrl(product?.image_url)} width={60} alt={product.name} />
-              </TableCell>
-              <TableCell>
-                <span className="block max-w-[120px] truncate">{product.name}</span>
-              </TableCell>
-              <TableCell>
-                <span className="block max-w-[50px] truncate">{product.description}</span>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className="bg-green-200 text-xs text-green-800 border border-green-300"
-                >
-                  {categoryNameById[String(product.category_id)] ?? product.category_id}
-                </Chip>
-              </TableCell>
-              <TableCell>
-                <span className="whitespace-nowrap">{product.SKU}</span>
-              </TableCell>
-              <TableCell>
-                <span className="whitespace-nowrap">{formatAmount(product.price_cents)}</span>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    stockStatus(product) === "out"
-                      ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
-                      : stockStatus(product) === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : stockStatus(product) === "over"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                          : "bg-green-200 text-xs text-green-800 border border-green-300"
-                  }
-                >
-                  {product.quantity}
-                </Chip>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    stockStatus(product) === "out"
-                      ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
-                      : stockStatus(product) === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : stockStatus(product) === "over"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                          : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
-                  }
-                >
-                  {t(`status.${stockStatus(product)}`)}
-                </Chip>
-              </TableCell>
-              <TableCell className="py-2 px-3">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    aria-label="Edit Product"
-                    isIconOnly
-                    size="sm"
-                    className="text-xs text-white bg-blue-500"
-                    onPress={() => onEditProduct(product)}
+          {products.map((product) => {
+            const status = stockStatus(product);
+            return (
+              <TableRow key={product.sku}>
+                <TableCell>
+                  <Image src={storedAssetUrl(product?.image_url)} width={60} alt={product.name} />
+                </TableCell>
+                <TableCell>
+                  <span className="block max-w-[120px] truncate">{product.name}</span>
+                </TableCell>
+                <TableCell>
+                  <span className="block max-w-[50px] truncate">{product.description}</span>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    className="bg-green-200 text-xs text-green-800 border border-green-300"
                   >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    aria-label="Delete Product"
-                    isIconOnly
-                    size="sm"
-                    color="danger"
-                    className="text-xs text-white"
-                    onPress={() => onDeleteProduct(product)}
+                    {categoryNameById[String(product.category_id)] ?? product.category_id}
+                  </Chip>
+                </TableCell>
+                <TableCell>
+                  <span className="whitespace-nowrap">{product.SKU}</span>
+                </TableCell>
+                <TableCell>
+                  <span className="whitespace-nowrap">{formatAmount(product.price_cents)}</span>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    className={
+                      status === "out"
+                        ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                        : status === "low"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+                          : status === "over"
+                            ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
+                            : "bg-green-200 text-xs text-green-800 border border-green-300"
+                    }
                   >
-                    <Trash className="w-4 h-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                    {normalizeNumber(product.quantity ?? product.productStock)}
+                  </Chip>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    className={
+                      status === "out"
+                        ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                        : status === "low"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+                          : status === "over"
+                            ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
+                            : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
+                    }
+                  >
+                    {t(`status.${status}`)}
+                  </Chip>
+                </TableCell>
+                <TableCell className="py-2 px-3">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      aria-label="Edit Product"
+                      isIconOnly
+                      size="sm"
+                      className="text-xs text-white bg-blue-500"
+                      onPress={() => onEditProduct(product)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      aria-label="Delete Product"
+                      isIconOnly
+                      size="sm"
+                      color="danger"
+                      className="text-xs text-white"
+                      onPress={() => onDeleteProduct(product)}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </section>
