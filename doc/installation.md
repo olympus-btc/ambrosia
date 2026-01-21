@@ -1,20 +1,44 @@
 # Installation Guide - Ambrosia
+
+> [!TIP]
+> This section is for more technical people; if you want a single-click install, please check our latest release and install the distribution for your OS: [ambrosia-releases](https://github.com/olympus-btc/ambrosia/releases/latest).
+
 ## Installation (Docker)
 
-for more details about the docker installation see [ambrosia-tutorial](https://olympus-btc.github.io/ambrosia-tutorial/)
+For more details about the Docker installation, see [ambrosia-tutorial](https://olympus-btc.github.io/ambrosia-tutorial/).
 ```bash
 docker-compose up -d --wait && docker-compose restart
 ```
 
 ## Installation (Native)
 
-Before proceeding with the native installation, please ensure you have installed all the necessary [Project Dependencies](dependencies.md), such as Node.js, Gradle, and JDK 21.
+> [!WARNING]  
+> Before proceeding with the native installation, please ensure you have installed all the necessary [Project Dependencies](dependencies.md), such as Node.js, Gradle, and JRE/JDK 21.
+
+**Single command (recommended):**
 
 ```bash
-wget -q https://raw.githubusercontent.com/olympus-btc/ambrosia/master/scripts/install.sh
+curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.0-alpha/scripts/install.sh | bash -s -- --yes
+```
+
+**Alternative methods:**
+
+If you prefer to review the script before running it, you can manually download and inspect it first
+
+*Download the script and make it executable:*
+
+```bash
+wget -q https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.0-alpha/scripts/install.sh
 chmod +x install.sh
+```
+
+*Run the script:*
+
+```bash
 ./install.sh
 ```
+
+This unified installation script automates the deployment of the complete Ambrosia ecosystem, including the Phoenixd Lightning node, the backend Server, and the frontend Client. It handles dependency verification, secure binary downloads with GPG validation, environment configuration (PATH updates), and the optional creation of systemd services for each component to ensure a seamless background operation.
 
 The phoenixd installation script installs phoenixd automatically. The script downloads phoenixd v0.7.1, verifies the package integrity using GPG and checksums, installs it in `/usr/local/bin`, and optionally configures a systemd service for automatic startup.
 
