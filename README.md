@@ -20,18 +20,17 @@ This repository contains the documentation and project details for a restaurant 
 
 To install Ambrosia, refer to the [Installation Guide](doc/installation.md) where you will find all available options and detailed instructions for setting up the system.
 
+## Project Structure
+
+*   `client/` - Frontend application (Next.js/React).
+*   `server/` - Backend application (Kotlin/Ktor).
+*   `electron/` - Desktop wrapper (Electron).
+*   `doc/` - Project documentation.
+*   `scripts/` - Utility and installation scripts.
+
 ## Testing
 
-The project includes end-to-end (E2E) tests for the server API. For detailed information on running the tests, see the [E2E Tests README](server/e2e_tests_py/README.md).
-
-### Quick Start
-
-```bash
-cd server/e2e_tests_py
-uv venv && source .venv/bin/activate
-uv pip install -e .
-pytest
-```
+The project includes end-to-end (E2E) tests for the server API. For detailed instructions on setting up the environment and running the tests, please refer to the [E2E Tests README](server/e2e_tests_py/README.md).
 
 ---
 
