@@ -47,12 +47,16 @@ chmod +x install.sh
 This unified installation script automates the deployment of the complete Ambrosia ecosystem, including the Phoenixd Lightning node, the backend Server, and the frontend Client. It handles dependency verification, secure binary downloads with GPG validation, environment configuration (PATH updates), and the optional creation of systemd services for each component to ensure a seamless background operation.
 
 > [!NOTE]  
-> If you do not use the systemd services, you will need to manually start the backend and frontend by running the following commands in your terminal:
+> If you do not use the systemd services, you will need to manually start the backend and frontend by running the following commands in your terminal as separate processes:
 > ```bash
 > ambrosia
-> ambrosia-client
 > ```
-
+>
+> and 
+>
+>```bash
+> ambrosia-client
+>```
 The Phoenixd installation script installs Phoenixd automatically. The script downloads Phoenixd v0.7.1, verifies the package integrity using GPG and checksums, installs it in `/usr/local/bin`, and optionally configures a systemd service for automatic startup.
 
 Check [Mastering Phoenixd](https://btcgdl.github.io/Mastering-phoenixd/) for more details.
