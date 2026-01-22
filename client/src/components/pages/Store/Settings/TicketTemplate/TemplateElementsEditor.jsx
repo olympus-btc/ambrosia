@@ -11,7 +11,7 @@ export function TemplateElementsEditor({ elements, onChange, onAdd, onMove, onRe
         <h3 className="text-lg font-semibold text-green-900">
           {t("templates.elementsTitle")}
         </h3>
-        <Button variant="bordered" onPress={onAdd}>
+        <Button color="primary" onPress={onAdd}>
           {t("templates.addElement")}
         </Button>
       </div>

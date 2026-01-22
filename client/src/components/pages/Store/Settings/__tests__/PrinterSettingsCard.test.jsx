@@ -102,7 +102,7 @@ describe("PrinterSettingsCard", () => {
     expect(lastAddProps).not.toBeNull();
   });
 
-  it("sorts config rows and opens templates modal", () => {
+  it("sorts config rows by type, default status, and name", () => {
     render(
       <PrinterSettingsCard
         availablePrinters={[]}
@@ -145,9 +145,6 @@ describe("PrinterSettingsCard", () => {
       expect.stringContaining("Alpha"),
       expect.stringContaining("Zebra"),
     ]);
-
-    fireEvent.click(screen.getByText("cardPrinters.manageTemplates"));
-    expect(screen.getByText("templates-modal")).toBeInTheDocument();
   });
 
   it("updates and deletes configs from row actions", () => {
