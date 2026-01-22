@@ -66,7 +66,6 @@ const storeEs = {
     status: {
       ok: "Normal",
       low: "Bajo (reponer pronto)",
-      over: "Exceso",
       out: "Agotado",
     },
     actions: "Acciones",
@@ -147,7 +146,6 @@ const storeEs = {
         btcComplete: "Error al completar el pago BTC",
         cashComplete: "Error al completar el pago en efectivo",
         printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
-        stockUpdate: "Pago completado pero no se pudo actualizar el inventario.",
       },
       success: {
         paid: "Pago registrado correctamente",
@@ -227,8 +225,6 @@ const storeEs = {
       addButton: "Agregar",
       manageTemplates: "Administrar plantillas",
       addTitle: "Agregar impresora",
-      addDescription:
-        "Elige el tipo, la impresora del sistema y asigna una plantilla.",
       listTitle: "Impresoras configuradas",
       listHint: "Cada impresora puede tener su template y estado default.",
       defaultLabel: "Impresora por defecto",
@@ -252,7 +248,8 @@ const storeEs = {
     templates: {
       title: "Plantillas de ticket",
       listTitle: "Plantillas",
-      newTemplate: "Nuevo",
+      selectPlaceholder: "Selecciona una plantilla",
+      addTemplate: "Agregar",
       nameLabel: "Nombre de la plantilla",
       elementsTitle: "Elementos",
       addElement: "Agregar elemento",

@@ -15,7 +15,7 @@ export function TicketTemplatesEditor({
   t,
 }) {
   return (
-    <div className="flex min-w-0 flex-[2] flex-col gap-4">
+    <div className="flex min-w-0 flex-2 flex-col gap-4">
       <Input
         label={t("templates.nameLabel")}
         value={name}

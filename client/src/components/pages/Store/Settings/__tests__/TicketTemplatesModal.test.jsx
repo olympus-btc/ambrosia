@@ -62,35 +62,35 @@ describe("TicketTemplatesModal", () => {
     jest.clearAllMocks();
   });
 
-  it("loads a template, renders preview, and updates it", async () => {
+  it("loads a template from initialTemplate prop, renders preview, and updates it", async () => {
     const updateTemplate = jest.fn().mockResolvedValue(true);
-    useTemplates.mockReturnValue({
-      templates: [
+    const initialTemplate = {
+      id: "tpl-1",
+      name: "Kitchen",
+      elements: [
         {
-          id: "tpl-1",
-          name: "Kitchen",
-          elements: [
-            {
-              id: "e-1",
-              type: "TEXT",
-              value: "{{config.businessName}}",
-              style: { bold: true, justification: "CENTER", fontSize: "LARGE" },
-            },
-            {
-              id: "e-2",
-              type: "TABLE_ROW",
-              value: "",
-              style: { bold: false, justification: "LEFT", fontSize: "NORMAL" },
-            },
-            {
-              id: "e-3",
-              type: "QRCODE",
-              value: "",
-              style: { bold: false, justification: "LEFT", fontSize: "NORMAL" },
-            },
-          ],
+          id: "e-1",
+          type: "TEXT",
+          value: "{{config.businessName}}",
+          style: { bold: true, justification: "CENTER", fontSize: "LARGE" },
+        },
+        {
+          id: "e-2",
+          type: "TABLE_ROW",
+          value: "",
+          style: { bold: false, justification: "LEFT", fontSize: "NORMAL" },
+        },
+        {
+          id: "e-3",
+          type: "QRCODE",
+          value: "",
+          style: { bold: false, justification: "LEFT", fontSize: "NORMAL" },
         },
       ],
+    };
+
+    useTemplates.mockReturnValue({
+      templates: [initialTemplate],
       loading: false,
       error: null,
       createTemplate: jest.fn(),
@@ -100,9 +100,13 @@ describe("TicketTemplatesModal", () => {
 
     usePrinters.mockReturnValue({ printTicket: jest.fn() });
 
-    render(<TicketTemplatesModal isOpen onClose={jest.fn()} />);
-
-    fireEvent.click(screen.getByText("Kitchen"));
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={initialTemplate}
+      />,
+    );
 
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("Kitchen");
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
@@ -181,18 +185,18 @@ describe("TicketTemplatesModal", () => {
   });
 
   it("edits elements, moves them, and changes printer type", async () => {
-    useTemplates.mockReturnValue({
-      templates: [
-        {
-          id: "tpl-3",
-          name: "Breaks",
-          elements: [
-            { id: "sep-1", type: "SEPARATOR", value: "", style: {} },
-            { id: "br-1", type: "LINE_BREAK", value: "", style: {} },
-            { id: "txt-1", type: "TEXT", value: "Hello", style: {} },
-          ],
-        },
+    const initialTemplate = {
+      id: "tpl-3",
+      name: "Breaks",
+      elements: [
+        { id: "sep-1", type: "SEPARATOR", value: "", style: {} },
+        { id: "br-1", type: "LINE_BREAK", value: "", style: {} },
+        { id: "txt-1", type: "TEXT", value: "Hello", style: {} },
       ],
+    };
+
+    useTemplates.mockReturnValue({
+      templates: [initialTemplate],
       loading: false,
       error: null,
       createTemplate: jest.fn(),
@@ -203,10 +207,12 @@ describe("TicketTemplatesModal", () => {
     usePrinters.mockReturnValue({ printTicket: jest.fn() });
 
     const { container } = render(
-      <TicketTemplatesModal isOpen onClose={jest.fn()} />,
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={initialTemplate}
+      />,
     );
-
-    fireEvent.click(screen.getByText("Breaks"));
 
     expect(container.querySelector(".border-dashed")).not.toBeNull();
     expect(container.querySelector(".h-3")).not.toBeNull();
@@ -228,5 +234,23 @@ describe("TicketTemplatesModal", () => {
     });
 
     expect(screen.getByText("cardPrinters.types.BAR")).toBeInTheDocument();
+  });
+
+  it("opens with empty form when no initialTemplate is provided", () => {
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+    });
+
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(<TicketTemplatesModal isOpen onClose={jest.fn()} />);
+
+    expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("");
+    expect(screen.getByText("templates.saveNew")).toBeInTheDocument();
   });
 });

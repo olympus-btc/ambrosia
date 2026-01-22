@@ -8,12 +8,23 @@ jest.mock("@heroui/react", () => ({
       {children}
     </button>
   ),
+  Select: ({ children, label, placeholder, onChange, isLoading, ...props }) => (
+    <div>
+      <label>{label}</label>
+      {isLoading && <span>loading...</span>}
+      <select onChange={onChange} data-testid="template-select" {...props}>
+        <option value="">{placeholder}</option>
+        {children}
+      </select>
+    </div>
+  ),
+  SelectItem: ({ children, value }) => <option value={value}>{children}</option>,
 }));
 
 const t = (key) => key;
 
 describe("TemplateList", () => {
-  it("shows loading, error, and empty states", () => {
+  it("shows loading state and error message", () => {
     const { rerender } = render(
       <TemplateList
         templates={[]}
@@ -26,7 +37,7 @@ describe("TemplateList", () => {
       />,
     );
 
-    expect(screen.getByText("templates.loading")).toBeInTheDocument();
+    expect(screen.getByText("loading...")).toBeInTheDocument();
 
     rerender(
       <TemplateList
@@ -41,7 +52,6 @@ describe("TemplateList", () => {
     );
 
     expect(screen.getByText("templates.error")).toBeInTheDocument();
-    expect(screen.getByText("templates.empty")).toBeInTheDocument();
   });
 
   it("selects a template and creates a new one", () => {
@@ -63,10 +73,28 @@ describe("TemplateList", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("templates.newTemplate"));
+    fireEvent.click(screen.getByText("templates.addTemplate"));
     expect(onNew).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText("Alt"));
+    const select = screen.getByTestId("template-select");
+    fireEvent.change(select, { target: { value: "t-2" } });
     expect(onSelect).toHaveBeenCalledWith({ id: "t-2", name: "Alt" });
+  });
+
+  it("shows select label and placeholder", () => {
+    render(
+      <TemplateList
+        templates={[]}
+        selectedId=""
+        loading={false}
+        error={null}
+        onSelect={jest.fn()}
+        onNew={jest.fn()}
+        t={t}
+      />,
+    );
+
+    expect(screen.getByText("templates.listTitle")).toBeInTheDocument();
+    expect(screen.getByText("templates.selectPlaceholder")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,6 @@
 "use client";
+import { useCallback, useEffect, useRef } from "react";
+
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
@@ -13,6 +15,7 @@ import { Summary } from "./Summary";
 
 export function Cart() {
   const t = useTranslations("cart");
+  const outOfStockTimeoutRef = useRef(null);
   const {
     cart,
     setCart,
@@ -39,6 +42,24 @@ export function Cart() {
     onPay: refetchProducts,
   });
 
+  const notifyOutOfStock = useCallback(() => {
+    if (outOfStockTimeoutRef.current) {
+      clearTimeout(outOfStockTimeoutRef.current);
+    }
+    outOfStockTimeoutRef.current = setTimeout(() => {
+      addToast({
+        color: "danger",
+        description: t("errors.outOfStock"),
+      });
+    }, 250);
+  }, [t]);
+
+  useEffect(() => () => {
+    if (outOfStockTimeoutRef.current) {
+      clearTimeout(outOfStockTimeoutRef.current);
+    }
+  }, []);
+
   const getAvailableQuantity = (productId) => {
     const product = products.find((item) => item.id === productId);
     return Number(product?.quantity) || 0;
@@ -47,10 +68,7 @@ export function Cart() {
   const addProduct = (product) => {
     const availableQuantity = getAvailableQuantity(product.id);
     if (availableQuantity <= 0) {
-      addToast({
-        color: "danger",
-        description: t("errors.outOfStock"),
-      });
+      notifyOutOfStock();
       return;
     }
 
@@ -58,10 +76,7 @@ export function Cart() {
 
     if (itemExist) {
       if (itemExist.quantity + 1 > availableQuantity) {
-        addToast({
-          color: "danger",
-          description: t("errors.outOfStock"),
-        });
+        notifyOutOfStock();
         return;
       }
       setCart(
@@ -94,10 +109,7 @@ export function Cart() {
     }
     const availableQuantity = getAvailableQuantity(id);
     if (quantity > availableQuantity) {
-      addToast({
-        color: "danger",
-        description: t("errors.outOfStock"),
-      });
+      notifyOutOfStock();
       setCart(
         cart.map((item) => (item.id === id
           ? {

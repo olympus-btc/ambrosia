@@ -132,7 +132,7 @@ async function ensureConfigurations(ports) {
       'webhook-secret': webhookSecret,
       webhook: `http://127.0.0.1:${ports.backend}/webhook/phoenixd`,
       'auto-liquidity': 'off',
-      'max-mining-fee-sat-vb': '5000',
+      'max-mining-fee': '5000',
     };
 
     writeConfig(phoenixConfigPath, phoenixConfig);

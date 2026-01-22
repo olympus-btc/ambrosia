@@ -66,7 +66,6 @@ const storeEn = {
     status: {
       ok: "Normal",
       low: "Low (restock soon)",
-      over: "Excess",
       out: "Out of stock",
     },
     actions: "Actions",
@@ -147,7 +146,6 @@ const storeEn = {
         btcComplete: "Error completing the BTC payment",
         cashComplete: "Error completing the cash payment",
         printCustomer: "Ticket printed failed. Check printer settings.",
-        stockUpdate: "Payment completed but stock update failed.",
       },
       success: {
         paid: "Payment registered successfully",
@@ -227,7 +225,6 @@ const storeEn = {
       addButton: "Add",
       manageTemplates: "Manage templates",
       addTitle: "Add printer",
-      addDescription: "Choose a type, select the system printer, and attach a template.",
       listTitle: "Configured printers",
       listHint: "Each printer can have its own template and default status.",
       defaultLabel: "Default printer",
@@ -251,7 +248,8 @@ const storeEn = {
     templates: {
       title: "Ticket templates",
       listTitle: "Templates",
-      newTemplate: "New",
+      selectPlaceholder: "Select a template",
+      addTemplate: "Add",
       nameLabel: "Template name",
       elementsTitle: "Elements",
       addElement: "Add element",
