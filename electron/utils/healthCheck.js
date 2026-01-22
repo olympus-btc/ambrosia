@@ -222,7 +222,7 @@ async function isBackendRunning(port) {
   const url = `http://localhost:${port}/`;
 
   return new Promise((resolve) => {
-    const req = http.get(url, (res) => {
+    const req = http.get(url, () => {
       // Any HTTP response means the server is running
       // (even 404, 401, 500, etc.)
       resolve(true);
