@@ -6,7 +6,8 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 export function ProductList({ products, onAddProduct, categories }) {
   const t = useTranslations("cart");
   const { formatAmount } = useCurrency();
-  const lowStockBuffer = 1.5;
+  const defaultMinStock = 5;
+  const defaultMaxStock = 11;
 
   const getCategoryName = (categoryId) => {
     const category = categories.find((category) => category.id === categoryId);
@@ -17,19 +18,20 @@ export function ProductList({ products, onAddProduct, categories }) {
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
   };
+  const normalizeThreshold = (value, fallback) => {
+    const numeric = normalizeNumber(value, fallback);
+    return numeric > 0 ? numeric : fallback;
+  };
 
   const stockStatus = (product) => {
-    const min = normalizeNumber(product.min_stock_threshold);
-    const max = normalizeNumber(product.max_stock_threshold);
+    const min = normalizeThreshold(product.min_stock_threshold, defaultMinStock);
+    const max = normalizeThreshold(product.max_stock_threshold, defaultMaxStock);
     const quantity = normalizeNumber(product.quantity);
 
-    if (quantity <= 0) {
+    if (quantity <= min) {
       return "out";
     }
-    if (max > 0 && quantity >= max) {
-      return "over";
-    }
-    if (min > 0 && quantity <= min * lowStockBuffer) {
+    if (quantity < max) {
       return "low";
     }
     return "ok";
@@ -62,15 +64,13 @@ export function ProductList({ products, onAddProduct, categories }) {
                 size="sm"
                 className={
                   status === "out"
-                    ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                    ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
                     : status === "low"
                       ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                      : status === "over"
-                        ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                        : "bg-green-200 text-xs text-green-800 border border-green-300"
+                      : "bg-green-200 text-xs text-green-800 border border-green-300"
                 }
               >
-                {product.quantity} {t("card.stock")}
+                {normalizeNumber(product.quantity)} {t("card.stock")}
               </Chip>
               <Button
                 color="primary"

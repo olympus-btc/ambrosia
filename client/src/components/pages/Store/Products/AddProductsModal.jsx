@@ -198,34 +198,6 @@ export function AddProductsModal({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <NumberInput
-                label={t("modal.productMinStockLabel")}
-                placeholder={t("modal.productMinStockPlaceholder")}
-                minValue={0}
-                value={data.productMinStock}
-                onValueChange={(value) => {
-                  const numeric = value === null ? 0 : Number(value);
-                  onChange({ productMinStock: numeric });
-                }}
-                min={0}
-                step={1}
-              />
-
-              <NumberInput
-                label={t("modal.productMaxStockLabel")}
-                placeholder={t("modal.productMaxStockPlaceholder")}
-                minValue={0}
-                value={data.productMaxStock}
-                onValueChange={(value) => {
-                  const numeric = value === null ? 0 : Number(value);
-                  onChange({ productMaxStock: numeric });
-                }}
-                min={0}
-                step={1}
-              />
-            </div>
-
             <ImageUploader
               title=""
               uploadText={t("modal.productImageUpload")}

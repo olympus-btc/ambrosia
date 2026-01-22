@@ -21,7 +21,8 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 export function ProductsTable({ products, categories = [], onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
   const { formatAmount } = useCurrency();
-  const lowStockBuffer = 1.5;
+  const defaultMinStock = 5;
+  const defaultMaxStock = 11;
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
     const categoryId = String(category.id);
     map[categoryId] = category.name;
@@ -32,24 +33,27 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
   };
+  const normalizeThreshold = (value, fallback) => {
+    const numeric = normalizeNumber(value, fallback);
+    return numeric > 0 ? numeric : fallback;
+  };
   const stockStatus = (product) => {
-    const min = normalizeNumber(
+    const min = normalizeThreshold(
       product.min_stock_threshold ?? product.productMinStock,
+      defaultMinStock,
     );
-    const max = normalizeNumber(
+    const max = normalizeThreshold(
       product.max_stock_threshold ?? product.productMaxStock,
+      defaultMaxStock,
     );
     const quantity = normalizeNumber(
       product.quantity ?? product.productStock,
     );
 
-    if (quantity <= 0) {
+    if (quantity <= min) {
       return "out";
     }
-    if (max > 0 && quantity >= max) {
-      return "over";
-    }
-    if (min > 0 && quantity <= min * lowStockBuffer) {
+    if (quantity < max) {
       return "low";
     }
     return "ok";
@@ -100,12 +104,10 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                   <Chip
                     className={
                       status === "out"
-                        ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                        ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
                         : status === "low"
                           ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                          : status === "over"
-                            ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                            : "bg-green-200 text-xs text-green-800 border border-green-300"
+                          : "bg-green-200 text-xs text-green-800 border border-green-300"
                     }
                   >
                     {normalizeNumber(product.quantity ?? product.productStock)}
@@ -115,12 +117,10 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                   <Chip
                     className={
                       status === "out"
-                        ? "bg-zinc-200 text-zinc-700 border border-zinc-300 text-xs"
+                        ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
                         : status === "low"
                           ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                          : status === "over"
-                            ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                            : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
                     }
                   >
                     {t(`status.${status}`)}

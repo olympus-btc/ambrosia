@@ -66,7 +66,6 @@ const storeEs = {
     status: {
       ok: "Normal",
       low: "Bajo (reponer pronto)",
-      over: "Exceso",
       out: "Agotado",
     },
     actions: "Acciones",
@@ -147,7 +146,8 @@ const storeEs = {
         btcComplete: "Error al completar el pago BTC",
         cashComplete: "Error al completar el pago en efectivo",
         printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
-        stockUpdate: "Pago completado pero no se pudo actualizar el inventario.",
+        stockUpdate:
+          "Pago completado pero no se pudo actualizar el inventario.",
       },
       success: {
         paid: "Pago registrado correctamente",

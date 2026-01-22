@@ -66,7 +66,6 @@ const storeEn = {
     status: {
       ok: "Normal",
       low: "Low (restock soon)",
-      over: "Excess",
       out: "Out of stock",
     },
     actions: "Actions",
@@ -227,7 +226,8 @@ const storeEn = {
       addButton: "Add",
       manageTemplates: "Manage templates",
       addTitle: "Add printer",
-      addDescription: "Choose a type, select the system printer, and attach a template.",
+      addDescription:
+        "Choose a type, select the system printer, and attach a template.",
       listTitle: "Configured printers",
       listHint: "Each printer can have its own template and default status.",
       defaultLabel: "Default printer",
