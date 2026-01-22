@@ -20,7 +20,7 @@ export function SearchProducts({ products, onAddProduct, categories }) {
       || product.SKU.toLowerCase().includes(search.toLowerCase())
       || categoryName.toLowerCase().includes(search.toLowerCase());
     const categoryMatch = !categoryFilter || product.category_id === categoryFilter;
-    return searchMatch && categoryMatch && product.quantity > 0;
+    return searchMatch && categoryMatch;
   });
 
   return (
