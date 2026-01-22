@@ -382,7 +382,7 @@ fun Route.orders(orderService: OrderService) {
     }
   }
 
-  authorizePermission("oders_delete") {
+  authorizePermission("orders_delete") {
     delete("/{id}") {
       val id = call.parameters["id"]
       if (id.isNullOrEmpty()) {
