@@ -292,7 +292,7 @@ EOF
         sudo systemctl daemon-reload
         sudo systemctl enable ambrosia
         sudo systemctl start ambrosia
-        echo "   ✅ Ambrosia systemd service configured."
+        echo "✅ Ambrosia systemd service configured."
     fi
 }
 
