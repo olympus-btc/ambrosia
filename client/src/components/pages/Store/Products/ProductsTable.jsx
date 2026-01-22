@@ -21,7 +21,6 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 export function ProductsTable({ products, categories = [], onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
   const { formatAmount } = useCurrency();
-  const defaultMinStock = 5;
   const defaultMaxStock = 11;
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
     const categoryId = String(category.id);
@@ -34,7 +33,6 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
     return Number.isFinite(numeric) ? numeric : fallback;
   };
   const stockStatus = (product) => {
-    const min = defaultMinStock;
     const max = defaultMaxStock;
     const quantity = normalizeNumber(
       product.quantity ?? product.productStock,

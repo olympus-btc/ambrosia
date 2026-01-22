@@ -6,7 +6,6 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 export function ProductList({ products, onAddProduct, categories }) {
   const t = useTranslations("cart");
   const { formatAmount } = useCurrency();
-  const defaultMinStock = 5;
   const defaultMaxStock = 11;
 
   const getCategoryName = (categoryId) => {
@@ -20,7 +19,6 @@ export function ProductList({ products, onAddProduct, categories }) {
   };
 
   const stockStatus = (product) => {
-    const min = defaultMinStock;
     const max = defaultMaxStock;
     const quantity = normalizeNumber(product.quantity);
 
