@@ -381,7 +381,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "ambrosia-client"
     sudo systemctl restart "ambrosia-client"
-    echo "   ✅ Client systemd service configured."
+    echo "✅ Client systemd service configured."
 }
 
 # --- Main execution flow ---
