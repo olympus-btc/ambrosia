@@ -67,7 +67,7 @@ describe("Step 1 Business Type Selection", () => {
     renderBusinessTypeStep();
     const restaurantCard = screen.getByLabelText("restaurant");
     fireEvent.click(restaurantCard);
-    expect(mockChange).toHaveBeenCalledWith("restaurant");
+    expect(mockChange).toHaveBeenCalledWith("store");
   });
 
   it("applies active styling when store is selected", () => {

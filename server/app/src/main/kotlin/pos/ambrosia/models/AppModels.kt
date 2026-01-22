@@ -270,6 +270,35 @@ enum class PrinterType {
   BAR
 }
 
+@Serializable
+data class PrinterConfig(
+  val id: String,
+  val printerType: PrinterType,
+  val printerName: String,
+  val templateName: String? = null,
+  val isDefault: Boolean = false,
+  val enabled: Boolean = true,
+  val createdAt: String? = null,
+)
+
+@Serializable
+data class PrinterConfigCreateRequest(
+  val printerType: PrinterType,
+  val printerName: String,
+  val templateName: String? = null,
+  val isDefault: Boolean = false,
+  val enabled: Boolean = true,
+)
+
+@Serializable
+data class PrinterConfigUpdateRequest(
+  val printerType: PrinterType? = null,
+  val printerName: String? = null,
+  val templateName: String? = null,
+  val isDefault: Boolean? = null,
+  val enabled: Boolean? = null,
+)
+
 @Serializable data class SetPrinterRequest(
   val printerType: PrinterType,
   val printerName: String,
@@ -298,7 +327,15 @@ data class Product(
   val cost_cents: Int,
   val category_id: String,
   val quantity: Int,
+  val min_stock_threshold: Int,
+  val max_stock_threshold: Int,
   val price_cents: Int,
+)
+
+@Serializable
+data class ProductStockAdjustment(
+  val product_id: String,
+  val quantity: Int,
 )
 
 @Serializable data class CategoryItem(

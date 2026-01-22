@@ -148,7 +148,7 @@ describe("EditSettingsModal", () => {
         renderModal({ data: mockData });
       });
 
-      const logoPreview = screen.getByAltText("Logo preview");
+      const logoPreview = screen.getByAltText("Image preview");
       expect(logoPreview).toBeInTheDocument();
       expect(logoPreview).toHaveAttribute("src", "http://localhost:9154/api/assets/logo.png");
     });
@@ -159,7 +159,7 @@ describe("EditSettingsModal", () => {
       });
 
       expect(screen.getByText("modal.logoUpload")).toBeInTheDocument();
-      expect(screen.queryByAltText("Logo preview")).not.toBeInTheDocument();
+      expect(screen.queryByAltText("Image preview")).not.toBeInTheDocument();
     });
   });
 
@@ -256,7 +256,7 @@ describe("EditSettingsModal", () => {
         renderModal({ data: mockData });
       });
 
-      const logoPreview = screen.getByAltText("Logo preview");
+      const logoPreview = screen.getByAltText("Image preview");
       expect(logoPreview).toBeInTheDocument();
 
       const buttons = screen.getAllByRole("button");
@@ -458,8 +458,8 @@ describe("EditSettingsModal", () => {
         await waitFor(() => {
           expect(mockOnChange).toHaveBeenCalledWith(
             expect.objectContaining({
-              storeImage: file,
-              productImage: "",
+              businessLogo: file,
+              businessLogoRemoved: false,
             }),
           );
         });
@@ -477,7 +477,7 @@ describe("EditSettingsModal", () => {
         renderModal({ data: mockData });
       });
 
-      const logoPreview = screen.getByAltText("Logo preview");
+      const logoPreview = screen.getByAltText("Image preview");
       expect(logoPreview).toBeInTheDocument();
 
       const buttons = screen.getAllByRole("button");

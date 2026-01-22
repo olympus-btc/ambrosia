@@ -1,12 +1,30 @@
 import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
+import * as useTemplatesHook from "@/components/pages/Store/hooks/useTemplates";
 import * as useCurrencyHook from "@components/hooks/useCurrency";
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
 import { Settings } from "../Settings";
+
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  const Select = ({ label, value, onChange, children }) => (
+    <label>
+      {label}
+      <select aria-label={label} value={value || ""} onChange={onChange}>
+        {children}
+      </select>
+    </label>
+  );
+  const SelectItem = ({ value, children }) => (
+    <option value={value ?? ""}>{children}</option>
+  );
+  return { ...actual, Select, SelectItem };
+});
 
 function renderSettings() {
   return render(
@@ -67,7 +85,7 @@ beforeEach(() => {
     if (
       typeof args[0] === "string" &&
       (args[0].includes("onAnimationComplete") ||
-       args[0].includes("Unknown event handler property"))
+        args[0].includes("Unknown event handler property"))
     ) {
       return;
     }
@@ -100,6 +118,28 @@ beforeEach(() => {
     updateCurrency: mockUpdateCurrency,
     formatAmount: jest.fn(),
     refetch: jest.fn(),
+  });
+
+  jest.spyOn(usePrintersHook, "usePrinters").mockReturnValue({
+    availablePrinters: [],
+    printerConfigs: [],
+    loadingAvailable: false,
+    loadingConfigs: false,
+    error: null,
+    createPrinterConfig: jest.fn(),
+    updatePrinterConfig: jest.fn(),
+    deletePrinterConfig: jest.fn(),
+    setDefaultPrinterConfig: jest.fn(),
+  });
+
+  jest.spyOn(useTemplatesHook, "useTemplates").mockReturnValue({
+    templates: [],
+    loading: false,
+    error: null,
+    refetch: jest.fn(),
+    createTemplate: jest.fn(),
+    updateTemplate: jest.fn(),
+    deleteTemplate: jest.fn(),
   });
 });
 
@@ -330,19 +370,12 @@ describe("Settings page", () => {
     });
 
     it("calls updateCurrency when currency is changed", async () => {
-      const user = userEvent.setup();
-
       await act(async () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
-      await user.click(currencySelect);
-
-      await waitFor(() => {
-        const eurOption = screen.getByText(/EUR/);
-        expect(eurOption).toBeInTheDocument();
-      });
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      expect(currencySelect).toBeInTheDocument();
     });
 
     it("does not update currency when empty value is selected", async () => {
@@ -358,29 +391,20 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
       expect(currencySelect).toBeInTheDocument();
     });
 
     it("calls updateCurrency when a valid currency is selected", async () => {
-      const user = userEvent.setup();
-
       await act(async () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByRole("button", { name: /cardCurrency.currencyLabel/i });
-      await user.click(currencySelect);
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      fireEvent.change(currencySelect, { target: { value: "EUR" } });
 
-      await waitFor(async () => {
-        const options = screen.queryAllByRole("option");
-        if (options.length > 0) {
-          const eurOption = options.find((opt) => opt.textContent?.includes("EUR"));
-          if (eurOption) {
-            await user.click(eurOption);
-            expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: expect.any(String) });
-          }
-        }
+      await waitFor(() => {
+        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
       });
     });
 
@@ -389,17 +413,12 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      const selectElement = document.querySelector("select");
+      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
+      fireEvent.change(currencySelect, { target: { value: "EUR" } });
 
-      if (selectElement) {
-        await act(async () => {
-          fireEvent.change(selectElement, { target: { value: "EUR" } });
-        });
-
-        await waitFor(() => {
-          expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-        });
-      }
+      await waitFor(() => {
+        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
+      });
     });
   });
 

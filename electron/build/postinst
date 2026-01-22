@@ -1,0 +1,35 @@
+#!/bin/bash
+# Post-installation script for Ambrosia POS Electron (.deb and .rpm packages)
+# This script sets up the chrome-sandbox permissions and creates a GTK 3 wrapper
+
+set -e
+
+# Set correct ownership and permissions for chrome-sandbox
+if [ -f "/opt/AmbrosiaPoS/chrome-sandbox" ]; then
+    chown root:root "/opt/AmbrosiaPoS/chrome-sandbox"
+    chmod 4755 "/opt/AmbrosiaPoS/chrome-sandbox"
+fi
+
+# Create GTK 3 wrapper to fix GTK 2/3/4 conflict
+# Using direct paths to avoid electron-builder macro conflicts
+if [ -f "/opt/AmbrosiaPoS/ambrosia-app" ] && [ ! -f "/opt/AmbrosiaPoS/ambrosia-app.bin" ]; then
+    # Rename original binary
+    mv "/opt/AmbrosiaPoS/ambrosia-app" "/opt/AmbrosiaPoS/ambrosia-app.bin"
+
+    # Create wrapper script
+    cat > "/opt/AmbrosiaPoS/ambrosia-app" << 'WRAPPER_EOF'
+#!/bin/bash
+# GTK 3 wrapper for Ambrosia POS
+# Forces GTK 3 to avoid conflicts with GTK 4
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$SCRIPT_DIR/ambrosia-app.bin" --gtk-version=3 "$@"
+WRAPPER_EOF
+
+    # Make wrapper executable
+    chmod +x "/opt/AmbrosiaPoS/ambrosia-app"
+
+    echo "Created GTK 3 wrapper for Ambrosia POS"
+fi
+
+exit 0

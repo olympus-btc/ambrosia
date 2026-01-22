@@ -45,7 +45,11 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="bordered" onPress={onClose}>
+          <Button
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="bordered"
+            onPress={onClose}
+          >
             {t("details.close")}
           </Button>
         </ModalFooter>
@@ -58,7 +62,7 @@ function DetailRow({ label, value }) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-gray-500">{label}</span>
-      <span className="font-semibold break-words text-right">{value}</span>
+      <span className="font-semibold wrap-break-words text-right">{value}</span>
     </div>
   );
 }

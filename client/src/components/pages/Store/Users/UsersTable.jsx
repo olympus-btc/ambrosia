@@ -17,21 +17,24 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
   const t = useTranslations("users");
 
   return (
-    <section>
-      <Table removeWrapper>
+    <section className="w-full overflow-x-auto">
+      <Table
+        className="min-w-[400px]"
+        removeWrapper
+      >
         <TableHeader>
-          <TableColumn className="py-2 px-3">{t("name")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("role")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("email")}</TableColumn>
-          <TableColumn className="py-2 px-3">{t("phone")}</TableColumn>
-          <TableColumn className="py-2 px-3 text-right">{t("actions")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[120px]">{t("name")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-20">{t("role")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[150px]">{t("email")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[100px]">{t("phone")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
             <TableRow
               key={user.id}
             >
-              <TableCell>{user.name}</TableCell>
+              <TableCell className="max-w-[120px] truncate">{user.name}</TableCell>
               <TableCell>
                 <Chip
                   className="bg-green-200 text-xs text-green-800 border border-green-300"
@@ -39,26 +42,30 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
                   {user.role}
                 </Chip>
               </TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.phone}</TableCell>
-              <TableCell className="flex justify-end space-x-4 py-2 px-3">
-                <Button
-                  aria-label="Edit User"
-                  isIconOnly
-                  className="text-xs text-white bg-blue-500"
-                  onPress={() => onEditUser(user)}
-                >
-                  <Pencil />
-                </Button>
-                <Button
-                  aria-label="Delete User"
-                  isIconOnly
-                  color="danger"
-                  className="text-xs text-white"
-                  onPress={() => onDeleteUser(user)}
-                >
-                  <Trash />
-                </Button>
+              <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
+              <TableCell className="max-w-[100px] truncate">{user.phone}</TableCell>
+              <TableCell className="py-2 px-3">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    aria-label="Edit User"
+                    isIconOnly
+                    size="sm"
+                    className="text-xs text-white bg-blue-500"
+                    onPress={() => onEditUser(user)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    aria-label="Delete User"
+                    isIconOnly
+                    size="sm"
+                    color="danger"
+                    className="text-xs text-white"
+                    onPress={() => onDeleteUser(user)}
+                  >
+                    <Trash className="w-4 h-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

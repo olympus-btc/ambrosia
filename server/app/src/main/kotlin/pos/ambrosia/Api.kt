@@ -127,5 +127,6 @@ class Api() {
     configureInitialSetup()
     configurePhoenixWebhook()
     configurePaymentWebsocket()
+    configureHealth()
   }
 }

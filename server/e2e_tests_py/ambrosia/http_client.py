@@ -81,6 +81,42 @@ class AmbrosiaHttpClient:
 
         return response
 
+    async def put(self, url: str, **kwargs) -> httpx.Response:
+        """Make a PUT request.
+
+        Args:
+            url: URL to request (can be relative to base_url)
+            **kwargs: Additional arguments for httpx
+
+        Returns:
+            httpx.Response object
+        """
+        full_url = self._build_url(url)
+
+        logger.debug(f"PUT {full_url}")
+        response = await self._client.put(full_url, **kwargs)
+        logger.debug(f"Response: {response.status_code}")
+
+        return response
+
+    async def delete(self, url: str, **kwargs) -> httpx.Response:
+        """Make a DELETE request.
+
+        Args:
+            url: URL to request (can be relative to base_url)
+            **kwargs: Additional arguments for httpx
+
+        Returns:
+            httpx.Response object
+        """
+        full_url = self._build_url(url)
+
+        logger.debug(f"DELETE {full_url}")
+        response = await self._client.delete(full_url, **kwargs)
+        logger.debug(f"Response: {response.status_code}")
+
+        return response
+
     def _build_url(self, url: str) -> str:
         """Build full URL from relative URL."""
         if url.startswith("http"):

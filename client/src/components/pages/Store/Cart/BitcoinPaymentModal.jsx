@@ -89,7 +89,15 @@ export function BitcoinPaymentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      size="lg"
+      backdrop="blur"
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+      }}
+    >
       <ModalContent>
         <ModalHeader className="flex flex-col">
           <span className="text-base font-semibold text-green-900">

@@ -1,9 +1,10 @@
 "use client";
-import { useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 
-import { Image, Input, Select, SelectItem } from "@heroui/react";
-import { Upload, X } from "lucide-react";
+import { Input, Select, SelectItem } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
+
+import { ImageUploader } from "@components/shared/ImageUploader";
 
 import { CURRENCIES_EN } from "./utils/currencies_en";
 import { CURRENCIES_ES } from "./utils/currencies_es";
@@ -11,10 +12,7 @@ import { CURRENCIES_ES } from "./utils/currencies_es";
 export function BusinessDetailsStep({ data, onChange }) {
   const t = useTranslations();
   const locale = useLocale();
-
   const [rfcError, setRfcError] = useState("");
-  const [logoPreview, setLogoPreview] = useState(null);
-  const fileInputRef = useRef(null);
 
   const CURRENCIES = useMemo(() => (locale === "en" ? CURRENCIES_EN : CURRENCIES_ES), [locale]);
 
@@ -31,27 +29,6 @@ export function BusinessDetailsStep({ data, onChange }) {
     }
 
     onChange({ ...data, businessRFC: upperValue });
-  };
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onChange({ storeLogo: file });
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveLogo = () => {
-    onChange({ storeLogo: null });
-    setLogoPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
   return (
@@ -123,32 +100,14 @@ export function BusinessDetailsStep({ data, onChange }) {
           ))}
         </Select>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            {data.businessType === "store" ? t("step3.fields.businessLogoLabelStore") : t("step3.fields.businessLogoLabelRestaurant")}
-          </label>
-          {logoPreview ? (
-            <div className="relative w-32 h-32 rounded-lg border-2 border-border overflow-hidden bg-muted">
-              <Image src={logoPreview || "/placeholder.svg"} alt="Logo preview" className="w-full h-full object-cover" />
-              <button
-                onClick={handleRemoveLogo}
-                className="absolute top-1 right-1 p-0.5  rounded-full hover:opacity-100 z-10 bg-red-400 opacity-90 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full p-8 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center cursor-pointer"
-            >
-              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium text-foreground">{t("step3.fields.businessLogoUpload")}</p>
-              <p className="text-xs text-muted-foreground">{t("step3.fields.businessLogoUploadMessage")}</p>
-            </button>
-          )}
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
-        </div>
+        <ImageUploader
+          title={data.businessType === "store" ? t("step3.fields.businessLogoLabelStore") : t("step3.fields.businessLogoLabelRestaurant")}
+          uploadText={t("step3.fields.businessLogoUpload")}
+          uploadDescription={t("step3.fields.businessLogoUploadMessage")}
+          onChange={(file) => onChange({ ...data, businessLogo: file })}
+          value={data.businessLogo}
+        />
+
       </div>
     </div>
   );

@@ -1,13 +1,16 @@
 "use client";
 import { useCallback, useMemo, useReducer, useState } from "react";
 
+import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/modules/auth/useAuth";
+import { apiClient } from "@/services/apiClient";
 
 import { useOrders } from "../../hooks/useOrders";
 import { usePayments } from "../../hooks/usePayments";
+import { usePrinters } from "../../hooks/usePrinter";
 import { useTickets } from "../../hooks/useTickets";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
@@ -35,6 +38,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const t = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
+  const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
   const { paymentMethods } = usePaymentMethods();
   const { createOrder, updateOrder } = useOrders();
   const { createPayment, linkPaymentToTicket, getPaymentCurrencyById } = usePayments();
@@ -51,8 +55,65 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
 
   const notifyError = useMemo(() => createErrorNotifier(dispatch), [dispatch]);
 
+  const decrementProductStock = useCallback(async (items) => {
+    const adjustments = (items || [])
+      .map((item) => ({
+        product_id: String(item?.id ?? ""),
+        quantity: Number(item?.quantity) || 0,
+      }))
+      .filter((adjustment) => adjustment.product_id && adjustment.quantity > 0);
+    if (!adjustments.length) return;
+    await apiClient("/products/stock", {
+      method: "POST",
+      body: adjustments,
+      notShowError: false,
+    });
+  }, []);
+
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}), [paymentMethods]);
+
+  const hasCustomerPrinter = useMemo(() => {
+    if (!Array.isArray(printerConfigs)) return false;
+    return printerConfigs.some(
+      (config) => config?.printerType === "CUSTOMER" && config?.enabled !== false,
+    );
+  }, [printerConfigs]);
+
+  const printCustomerReceipt = useCallback(
+    async ({ items, totalCents, ticketId, invoice }) => {
+      if (loadingConfigs || !hasCustomerPrinter) return;
+      const ticketData = {
+        ticketId: ticketId?.toString() || "",
+        tableName: t("receipt.tableName"),
+        roomName: "",
+        date: new Date().toISOString(),
+        items: (items || []).map((item) => ({
+          quantity: Number(item.quantity) || 1,
+          name: item.name || "",
+          price: Number(item.price) / 100,
+          comments: [],
+        })),
+        total: Number(totalCents) / 100,
+        invoice: invoice || null,
+      };
+      try {
+        await printTicket({
+          templateName: null,
+          ticketData,
+          printerType: "CUSTOMER",
+          broadcast: false,
+        });
+      } catch (err) {
+        console.error("Error printing customer ticket:", err);
+        addToast({
+          color: "warning",
+          description: t("errors.printCustomer"),
+        });
+      }
+    },
+    [hasCustomerPrinter, loadingConfigs, printTicket, t],
+  );
 
   const handlePay = useMemo(
     () => buildHandlePay({
@@ -64,6 +125,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setBtcPaymentConfig,
       setCashPaymentConfig,
       processBasePayment,
+      decrementProductStock,
       updateOrder,
       onResetCart,
       onPay,
@@ -79,11 +141,14 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createTicket,
       createPayment,
       linkPaymentToTicket,
+      printCustomerReceipt,
+      decrementProductStock,
     }),
     [
       currency,
       formatAmount,
       getPaymentCurrencyById,
+      decrementProductStock,
       notifyError,
       onPay,
       onResetCart,
@@ -95,11 +160,14 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createTicket,
       createPayment,
       linkPaymentToTicket,
+      printCustomerReceipt,
     ],
   );
 
   const handleBtcInvoiceReady = useMemo(
-    () => buildHandleBtcInvoiceReady({ setBtcPaymentConfig }),
+    () => buildHandleBtcInvoiceReady({
+      setBtcPaymentConfig,
+    }),
     [],
   );
 
@@ -115,12 +183,14 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       buildPaymentPayload,
       createPayment,
       linkPaymentToTicket,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
       t,
       user,
       setBtcPaymentConfig,
+      printCustomerReceipt,
     }),
     [
       btcPaymentConfig,
@@ -129,11 +199,13 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       createTicket,
       createPayment,
       linkPaymentToTicket,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
       t,
       user,
+      printCustomerReceipt,
     ],
   );
 
@@ -145,14 +217,40 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleCashComplete({
       cashPaymentConfig,
       dispatch,
+      processBasePayment,
+      buildOrderPayload,
+      buildTicketPayload,
+      createOrder,
+      createTicket,
+      buildPaymentPayload,
+      createPayment,
+      linkPaymentToTicket,
       updateOrder,
+      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
       t,
       setCashPaymentConfig,
+      printCustomerReceipt,
+      user,
     }),
-    [cashPaymentConfig, dispatch, notifyError, onPay, onResetCart, t, updateOrder],
+    [
+      cashPaymentConfig,
+      dispatch,
+      notifyError,
+      onPay,
+      onResetCart,
+      printCustomerReceipt,
+      t,
+      updateOrder,
+      createOrder,
+      createTicket,
+      createPayment,
+      linkPaymentToTicket,
+      decrementProductStock,
+      user,
+    ],
   );
 
   const clearCashPaymentConfig = useCallback(() => {

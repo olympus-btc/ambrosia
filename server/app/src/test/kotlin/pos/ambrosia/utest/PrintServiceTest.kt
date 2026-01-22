@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.mockito.kotlin.*
 import pos.ambrosia.models.*
+import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.PrintService
 import pos.ambrosia.services.TicketTemplateService
 import java.io.IOException
@@ -14,7 +15,8 @@ import kotlin.test.assertTrue
 class PrintServiceTest {
 
     private val ticketTemplateService: TicketTemplateService = mock()
-    private val printService = PrintService(ticketTemplateService)
+    private val printerConfigService: PrinterConfigService = mock()
+    private val printService = PrintService(ticketTemplateService, printerConfigService)
 
     @Test
     fun `getAvailablePrinters should return array without crashing`() {
@@ -36,8 +38,17 @@ class PrintServiceTest {
         )
 
         runBlocking {
+            doReturn(null).whenever(printerConfigService).getDefaultByType(PrinterType.KITCHEN)
             assertFailsWith<IOException> {
-                printService.printTicket(ticketData, "Default", PrinterType.KITCHEN, null)
+                printService.printTicket(
+                    ticketData,
+                    "Default",
+                    PrinterType.KITCHEN,
+                    null,
+                    null,
+                    false,
+                    false
+                )
             }
         }
     }
@@ -54,6 +65,8 @@ class PrintServiceTest {
             total = 100.00
         )
 
-        whenever(runBlocking { ticketTemplateService.getTemplateByName("NonExistent") }).thenReturn(null)
+        runBlocking {
+            whenever(ticketTemplateService.getTemplateByName("NonExistent")).thenReturn(null)
+        }
     }
 }

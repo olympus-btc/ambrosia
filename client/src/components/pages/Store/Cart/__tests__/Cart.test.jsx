@@ -51,7 +51,11 @@ jest.mock("../hooks/usePersistentCart", () => ({
 
 jest.mock("../../hooks/useProducts", () => ({
   useProducts: () => ({
-    products: [],
+    products: [
+      { id: 1, quantity: 5 },
+      { id: 2, quantity: 5 },
+    ],
+    refetch: jest.fn(),
   }),
 }));
 

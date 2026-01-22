@@ -107,3 +107,54 @@ async def login_user(
     if expected_status is not None:
         assert_status_code(response, expected_status)
     return response
+
+
+async def create_role(admin_client: AmbrosiaHttpClient, role_name: str) -> str:
+    """Create a new role using the admin client.
+
+    Args:
+        admin_client: An authenticated admin client
+        role_name: Name of the role to create
+
+    Returns:
+        The ID of the newly created role
+    """
+    role_data = {"role": role_name}
+    response = await admin_client.post("/roles", json=role_data)
+    assert_status_code(response, 201, f"Failed to create role '{role_name}'")
+    return response.json()["id"]
+
+
+async def grant_permissions(
+    admin_client: AmbrosiaHttpClient, role_id: str, permissions: list[str]
+) -> None:
+    """Grant specific permissions to a role.
+
+    Args:
+        admin_client: An authenticated admin client
+        role_id: The ID of the role
+        permissions: List of permission names (e.g., ['users_read', 'orders_create'])
+    """
+    payload = {"permissions": permissions}
+    response = await admin_client.put(f"/roles/{role_id}/permissions", json=payload)
+    assert_status_code(response, 200, f"Failed to grant permissions to role {role_id}")
+
+
+async def create_user(
+    admin_client: AmbrosiaHttpClient, name: str, pin: str, role_id: str
+) -> str:
+    """Create a new user using the admin client.
+
+    Args:
+        admin_client: An authenticated admin client
+        name: User name
+        pin: User PIN
+        role_id: Role ID to assign to the user
+
+    Returns:
+        The ID of the newly created user
+    """
+    user_data = {"name": name, "pin": pin, "role": role_id}
+    response = await admin_client.post("/users", json=user_data)
+    assert_status_code(response, 201, f"Failed to create user '{name}'")
+    return response.json()["id"]

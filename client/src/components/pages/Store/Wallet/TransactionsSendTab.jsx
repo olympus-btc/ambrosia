@@ -85,6 +85,19 @@ export function TransactionsSendTab({ loading, setLoading, setError }) {
     <div className="p-6 space-y-6">
       <div className="space-y-4">
         <Input
+          classNames={{
+            label: "text-sm font-semibold text-deep",
+            input: "text-base bg-white",
+            innerWrapper: "bg-white",
+            inputWrapper: [
+              "bg-white",
+              "hover:!bg-white",
+              "group-data-[hover=true]:!bg-white",
+              "group-data-[focus=true]:bg-white",
+              "border-1",
+              "border-yellow-400",
+            ],
+          }}
           label={t("payments.send.payInvoiceLabel")}
           placeholder="lnbc1..."
           value={payInvoice}
@@ -93,13 +106,7 @@ export function TransactionsSendTab({ loading, setLoading, setError }) {
             setInvalidInvoice(false);
             setError("");
           }}
-          variant="bordered"
-          size="lg"
-          startContent={<Zap className="w-4 h-4 text-gray-400" />}
-          classNames={{
-            input: "text-base",
-            label: "text-sm font-semibold text-deep",
-          }}
+          startContent={<Zap className="w-5 h-5 text-gray-400" />}
           disabled={loading}
           isInvalid={invalidInvoice}
           errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}

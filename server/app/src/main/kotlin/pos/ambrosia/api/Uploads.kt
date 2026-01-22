@@ -12,12 +12,13 @@ import io.ktor.server.plugins.origin
 import io.ktor.server.auth.jwt.*
 import java.nio.file.Path
 import java.nio.file.Paths
+import pos.ambrosia.datadir
 import pos.ambrosia.services.UploadService
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.services.ConfigService
 
 fun Application.configureUploads() {
-  val uploadRoot: Path = Paths.get(System.getProperty("user.home"), ".Ambrosia-POS", "uploads")
+  val uploadRoot: Path = Paths.get(datadir.toString(), "uploads")
   val uploadService = UploadService(uploadRoot)
   val connection = DatabaseConnection.getConnection()
   val configService = ConfigService(connection)

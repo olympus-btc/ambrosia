@@ -17,7 +17,7 @@ describe("Step 4 Summary", () => {
     businessEmail: "tienda@correo.com",
     businessRFC: "RFC123456ABC",
     businessCurrency: "MXN",
-    storeLogo: null,
+    businessLogo: null,
   };
 
   beforeEach(() => {
@@ -67,13 +67,13 @@ describe("Step 4 Summary", () => {
 
   it("renders the store logo if provided", async () => {
     const file = new File(["fake"], "logo.png", { type: "image/png" });
-    const dataWithLogo = { ...baseData, storeLogo: file };
+    const dataWithLogo = { ...baseData, businessLogo: file };
 
     await act(async () => {
       render(<WizardSummary data={dataWithLogo} onEdit={mockOnEdit} />);
     });
 
-    const logo = screen.getByAltText("Store logo");
+    const logo = screen.getByAltText("Business logo");
     expect(logo).toBeInTheDocument();
     expect(logo).toHaveAttribute("src", "blob:mock-url");
   });

@@ -1,16 +1,119 @@
 {
-  "name": "electron",
-  "version": "1.0.0",
-  "description": "Ambrosia-POS-Electron",
+  "name": "ambrosia-app",
+  "version": "0.5.0",
+  "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
-    
+    "dev": "electron .",
+    "dev:splash": "cross-env SPLASH_ONLY=true electron .",
+    "dev:inspect": "electron --inspect=5858 .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build:prepare": "node scripts/prepare-resources-wrapper.js",
+    "build": "npm run build:prepare && electron-builder",
+    "pack": "npm run build:prepare && electron-builder --dir",
+    "dist": "npm run build:prepare && electron-builder",
+    "clean": "node scripts/clean-build.js",
+    "dist:mac:arm64": "npm run clean && cross-env TARGET_PLATFORM=macos-arm64 npm run build:prepare && electron-builder --mac --arm64",
+    "dist:mac:x64": "npm run clean && cross-env TARGET_PLATFORM=macos-x64 npm run build:prepare && electron-builder --mac --x64",
+    "dist:win:x64": "npm run clean && cross-env TARGET_PLATFORM=win-x64 npm run build:prepare && electron-builder --win --x64",
+    "dist:win:arm64": "npm run clean && cross-env TARGET_PLATFORM=win-arm64 npm run build:prepare && electron-builder --win --arm64",
+    "dist:linux:x64": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux --x64",
+    "dist:linux:arm64": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux --arm64",
+    "postinstall": "electron-builder install-app-deps"
   },
-  "author": "BTC-GDL",
+  "author": "olympus-btc",
+  "homepage": "https://github.com/olympus-btc/ambrosia",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^36.1.0"
+    "@eslint/js": "^9.39.2",
+    "cross-env": "^10.1.0",
+    "electron": "^36.1.0",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1"
+  },
+  "dependencies": {
+    "bip39": "^3.1.0",
+    "cross-spawn": "^7.0.6",
+    "find-free-port": "^2.0.0",
+    "tree-kill": "^1.2.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.olympus-btc.ambrosia-pos",
+    "productName": "AmbrosiaPoS",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "asarUnpack": [
+      "services/**/*",
+      "utils/**/*"
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "splash.html",
+      "package.json",
+      "services/**/*",
+      "utils/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "rpm",
+        "tar.gz"
+      ],
+      "category": "Office",
+      "icon": "build/icon.png",
+      "maintainer": "Ivan Robles <contact@ivanrobles.pro>"
+    },
+    "deb": {
+      "afterInstall": "build/postinst"
+    },
+    "rpm": {
+      "depends": [
+        "libxcrypt-compat"
+      ],
+      "afterInstall": "build/postinst",
+      "fpm": [
+        "--rpm-posttrans=build/postinst"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

@@ -5,8 +5,8 @@ services:
     restart: unless-stopped
     networks:
       - default
-    expose:
-      - "9740"
+    ports:
+      - "9740:9740"
     volumes:
       - phoenixd_datadir:/phoenix/.phoenix 
 

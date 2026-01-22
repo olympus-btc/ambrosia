@@ -59,7 +59,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1", acronym: "MXN" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { btc: { id: "btc", name: "BTC" } },
       getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
       setBtcPaymentConfig,
@@ -74,7 +74,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -100,7 +100,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({
         amountFiat: 1,
         currencyAcronym: "usd",
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         items: [{ id: 1 }],
         selectedPaymentMethod: "btc",
       }),
@@ -116,16 +116,12 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { cash: { id: "cash", name: "Cash" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
       setCashPaymentConfig,
-      processBasePayment: jest.fn(() => Promise.resolve({
-        paymentResult: { id: "pay-1" },
-        orderPayload: { id: "order-1" },
-        orderId: "order-1",
-      })),
+      processBasePayment: jest.fn(),
       updateOrder: jest.fn(),
       onResetCart: jest.fn(),
       onPay: jest.fn(),
@@ -135,7 +131,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -160,10 +156,10 @@ describe("paymentHandlers", () => {
     expect(setCashPaymentConfig).toHaveBeenCalledWith(
       expect.objectContaining({
         amountDue: 1,
-        displayTotal: "fmt-100",
-        paymentResult: { id: "pay-1" },
-        orderPayload: { id: "order-1" },
-        orderId: "order-1",
+        displayTotal: 100,
+        items: [{ id: 1 }],
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       }),
     );
     expect(dispatch).toHaveBeenCalledWith({ type: "start" });
@@ -179,7 +175,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { card: { id: "card", name: "Card" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
@@ -198,7 +194,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -241,7 +237,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       t,
       currency: { id: "cur-1" },
-      formatAmount: jest.fn(() => "fmt-100"),
+      formatAmount: jest.fn(() => 100),
       paymentMethodMap: { card: { id: "card", name: "Card" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
@@ -258,7 +254,7 @@ describe("paymentHandlers", () => {
       ensureCartReady: jest.fn(),
       normalizeAmounts: jest.fn(() => ({
         amountFiat: 1,
-        displayTotal: "fmt-100",
+        displayTotal: 100,
         subtotal: 100,
         discount: 0,
         discountAmount: 0,
@@ -408,6 +404,11 @@ describe("paymentHandlers", () => {
 
   it("completes cash payment flow", async () => {
     const dispatch = jest.fn();
+    const processBasePayment = jest.fn(() => Promise.resolve({
+      paymentResult: { paymentId: "pay-1", items: [{ id: 1 }], total: 100, ticketId: "ticket-1" },
+      orderPayload: { id: "order-1" },
+      orderId: "order-1",
+    }));
     const updateOrder = jest.fn(() => Promise.resolve());
     const onPay = jest.fn();
     const onResetCart = jest.fn();
@@ -415,30 +416,51 @@ describe("paymentHandlers", () => {
 
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
-        orderId: "order-1",
-        orderPayload: { id: "order-1" },
-        paymentResult: { paymentId: "pay-1" },
+        amountDue: 1,
+        displayTotal: 100,
+        items: [{ id: 1 }],
+        amounts: {
+          amountFiat: 1,
+          displayTotal: 100,
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       },
       dispatch,
+      processBasePayment,
+      buildOrderPayload: jest.fn(),
+      buildTicketPayload: jest.fn(),
+      createOrder: jest.fn(),
+      createTicket: jest.fn(),
+      buildPaymentPayload: jest.fn(),
+      createPayment: jest.fn(),
+      linkPaymentToTicket: jest.fn(),
       updateOrder,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
       t,
       setCashPaymentConfig,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { user_id: "u1" },
     });
 
     await handler({ cashReceived: 10, change: 2 });
 
+    expect(processBasePayment).toHaveBeenCalled();
     expect(updateOrder).toHaveBeenCalledWith("order-1", {
       id: "order-1",
       status: "paid",
     });
-    expect(onPay).toHaveBeenCalledWith({
+    expect(onPay).toHaveBeenCalledWith(expect.objectContaining({
       paymentId: "pay-1",
       cashReceived: 10,
       change: 2,
-    });
+    }));
     expect(onResetCart).toHaveBeenCalled();
     expect(setCashPaymentConfig).toHaveBeenCalledWith(null);
     expect(addToast).toHaveBeenCalledWith({
@@ -453,17 +475,41 @@ describe("paymentHandlers", () => {
 
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
-        orderId: "order-1",
-        orderPayload: { id: "order-1" },
-        paymentResult: { paymentId: "pay-1" },
+        amountDue: 1,
+        displayTotal: 100,
+        items: [{ id: 1 }],
+        amounts: {
+          amountFiat: 1,
+          displayTotal: 100,
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "cash",
+        currencyId: "cur-1",
       },
       dispatch: jest.fn(),
+      processBasePayment: jest.fn(() => Promise.resolve({
+        paymentResult: { paymentId: "pay-1" },
+        orderPayload: { id: "order-1" },
+        orderId: "order-1",
+      })),
+      buildOrderPayload: jest.fn(),
+      buildTicketPayload: jest.fn(),
+      createOrder: jest.fn(),
+      createTicket: jest.fn(),
+      buildPaymentPayload: jest.fn(),
+      createPayment: jest.fn(),
+      linkPaymentToTicket: jest.fn(),
       updateOrder: jest.fn(() => Promise.reject(new Error("fail"))),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
       t,
       setCashPaymentConfig,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { user_id: "u1" },
     });
 
     await handler({ cashReceived: 10, change: 2 });

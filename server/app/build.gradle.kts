@@ -1,4 +1,4 @@
-version = "0.4.0-alpha"
+version = "0.5.0-alpha"
 
 plugins {
   alias(libs.plugins.kotlin.jvm)
@@ -38,6 +38,7 @@ dependencies {
   implementation("io.ktor:ktor-client-content-negotiation:$ktor-version")
   implementation("io.ktor:ktor-server-websockets:$ktor-version")
   implementation("com.github.anastaciocintra:escpos-coffee:4.1.0")
+  implementation("com.google.zxing:core:3.5.3")
 
   implementation("io.ktor:ktor-network-tls-certificates:$ktor-version")
 
