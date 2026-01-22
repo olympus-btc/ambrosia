@@ -223,6 +223,8 @@ const storeEs = {
       templateLabel: "Plantilla",
       templateNone: "Sin plantilla",
       addButton: "Agregar",
+      addDescription:
+        "Elige el tipo, la impresora del sistema y asigna una plantilla.",
       manageTemplates: "Administrar plantillas",
       addTitle: "Agregar impresora",
       listTitle: "Impresoras configuradas",
