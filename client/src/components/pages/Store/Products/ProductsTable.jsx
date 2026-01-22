@@ -33,24 +33,14 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
   };
-  const normalizeThreshold = (value, fallback) => {
-    const numeric = normalizeNumber(value, fallback);
-    return numeric > 0 ? numeric : fallback;
-  };
   const stockStatus = (product) => {
-    const min = normalizeThreshold(
-      product.min_stock_threshold ?? product.productMinStock,
-      defaultMinStock,
-    );
-    const max = normalizeThreshold(
-      product.max_stock_threshold ?? product.productMaxStock,
-      defaultMaxStock,
-    );
+    const min = defaultMinStock;
+    const max = defaultMaxStock;
     const quantity = normalizeNumber(
       product.quantity ?? product.productStock,
     );
 
-    if (quantity <= min) {
+    if (quantity <= 0) {
       return "out";
     }
     if (quantity < max) {

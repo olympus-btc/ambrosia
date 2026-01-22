@@ -18,17 +18,13 @@ export function ProductList({ products, onAddProduct, categories }) {
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
   };
-  const normalizeThreshold = (value, fallback) => {
-    const numeric = normalizeNumber(value, fallback);
-    return numeric > 0 ? numeric : fallback;
-  };
 
   const stockStatus = (product) => {
-    const min = normalizeThreshold(product.min_stock_threshold, defaultMinStock);
-    const max = normalizeThreshold(product.max_stock_threshold, defaultMaxStock);
+    const min = defaultMinStock;
+    const max = defaultMaxStock;
     const quantity = normalizeNumber(product.quantity);
 
-    if (quantity <= min) {
+    if (quantity <= 0) {
       return "out";
     }
     if (quantity < max) {
