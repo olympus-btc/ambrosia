@@ -28,4 +28,4 @@ To install Ambrosia, refer to the [Installation Guide](doc/installation.md) wher
 
 ## Want to contribute?
 
-Check out the [Contribution Guide](Contributing.md) to learn how you can help and be part of the future of POS systems for restaurants.
+Check out the [Contribution Guide](Contributing.md) to learn how you can help empower the **pleb merchant** and accelerate the adoption of Bitcoin as a medium of exchange.
