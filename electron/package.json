@@ -44,6 +44,7 @@
   "build": {
     "appId": "com.olympus-btc.ambrosia-pos",
     "productName": "AmbrosiaPoS",
+    "afterPack": "./scripts/afterPack.js",
     "directories": {
       "output": "dist",
       "buildResources": "build"
