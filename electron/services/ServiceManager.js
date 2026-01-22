@@ -1,6 +1,7 @@
 const { EventEmitter } = require('events');
 
-const { allocatePorts } = require('../utils/portAllocator');
+const { isPhoenixdRunning, isBackendRunning } = require('../utils/healthCheck');
+const { allocatePorts, DEFAULT_PORTS } = require('../utils/portAllocator');
 const { isDevelopment } = require('../utils/resourcePaths');
 
 const BackendService = require('./BackendService');
@@ -17,6 +18,11 @@ class ServiceManager extends EventEmitter {
     this.nextjsService = new NextJsService();
     this.ports = null;
     this.configs = null;
+    // Track which services are external (not managed by us)
+    this.externalServices = {
+      phoenixd: false,
+      backend: false,
+    };
   }
 
   async startAll() {
@@ -48,18 +54,39 @@ class ServiceManager extends EventEmitter {
 
       console.log('[ServiceManager] Production mode: starting all bundled services');
 
-      console.log('[ServiceManager] Step 1: Starting Phoenixd...');
-      await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
+      // Step 1: Check if phoenixd is already running on default port
+      console.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
+      const phoenixdAlreadyRunning = await isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
+
+      if (phoenixdAlreadyRunning) {
+        console.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
+        this.ports.phoenixd = DEFAULT_PORTS.phoenixd;
+        this.externalServices.phoenixd = true;
+      } else {
+        console.log('[ServiceManager] Starting Phoenixd...');
+        await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
+      }
       this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd });
 
-      console.log('[ServiceManager] Step 2: Starting Backend...');
-      await this.backendService.start(this.ports.backend, {
-        phoenixdPort: this.ports.phoenixd,
-        phoenixPassword: phoenixConfig['http-password'],
-        webhookSecret: phoenixConfig['webhook-secret'],
-      });
+      // Step 2: Check if backend is already running on default port
+      console.log('[ServiceManager] Step 2: Checking for existing Backend...');
+      const backendAlreadyRunning = await isBackendRunning(DEFAULT_PORTS.backend);
+
+      if (backendAlreadyRunning) {
+        console.log(`[ServiceManager] Backend already running on port ${DEFAULT_PORTS.backend}, reusing...`);
+        this.ports.backend = DEFAULT_PORTS.backend;
+        this.externalServices.backend = true;
+      } else {
+        console.log('[ServiceManager] Starting Backend...');
+        await this.backendService.start(this.ports.backend, {
+          phoenixdPort: this.ports.phoenixd,
+          phoenixPassword: phoenixConfig['http-password'],
+          webhookSecret: phoenixConfig['webhook-secret'],
+        });
+      }
       this.emit('service:started', { service: 'backend', port: this.ports.backend });
 
+      // Step 3: Start Next.js (always start our own)
       console.log('[ServiceManager] Step 3: Starting Next.js...');
       const result = await this.nextjsService.start(this.ports.nextjs, {
         host: '127.0.0.1',
@@ -90,18 +117,28 @@ class ServiceManager extends EventEmitter {
     }
 
     if (!this.devMode) {
-      try {
-        console.log('[ServiceManager] Stopping Backend...');
-        await this.backendService.stop();
-      } catch (error) {
-        console.error('[ServiceManager] Error stopping Backend:', error);
+      // Only stop backend if we started it (not external)
+      if (!this.externalServices.backend) {
+        try {
+          console.log('[ServiceManager] Stopping Backend...');
+          await this.backendService.stop();
+        } catch (error) {
+          console.error('[ServiceManager] Error stopping Backend:', error);
+        }
+      } else {
+        console.log('[ServiceManager] Backend is external, not stopping');
       }
 
-      try {
-        console.log('[ServiceManager] Stopping Phoenixd...');
-        await this.phoenixdService.stop();
-      } catch (error) {
-        console.error('[ServiceManager] Error stopping Phoenixd:', error);
+      // Only stop phoenixd if we started it (not external)
+      if (!this.externalServices.phoenixd) {
+        try {
+          console.log('[ServiceManager] Stopping Phoenixd...');
+          await this.phoenixdService.stop();
+        } catch (error) {
+          console.error('[ServiceManager] Error stopping Phoenixd:', error);
+        }
+      } else {
+        console.log('[ServiceManager] Phoenixd is external, not stopping');
       }
     }
 
