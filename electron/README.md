@@ -247,7 +247,7 @@ http-password-limited-access=<random 64 hex chars>
 webhook-secret=<random 64 hex chars>
 webhook=http://127.0.0.1:9154/webhook/phoenixd
 auto-liquidity=off
-max-mining-fee-sat-vb=5000
+max-mining-fee=5000
 ```
 
 ### Secret Security
