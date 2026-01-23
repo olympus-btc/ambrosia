@@ -65,6 +65,7 @@ const onboardingEn = {
       businessRFCMessage: "13 character format (letters and numbers)",
       businessRFCInvalid: "Invalid RFC format",
       businessCurrency: "Currency",
+      businessCurrencyError: "Please select a currency",
       businessLogoLabelStore: "Store logo (optional)",
       businessLogoLabelRestaurant: "Restaurant logo",
       businessLogoUpload: "Upload your logo",

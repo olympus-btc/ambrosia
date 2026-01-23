@@ -73,6 +73,7 @@ export function EditProductsModal({
 
   return (
     <Modal
+      className="[@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       isOpen={editProductsShowModal}
       onOpenChange={handleOnCloseModal}
       backdrop="blur"
