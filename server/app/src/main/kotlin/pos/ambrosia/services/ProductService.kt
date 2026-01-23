@@ -16,7 +16,7 @@ class ProductService(private val connection: Connection) {
         "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
     private const val UPDATE_PRODUCT =
         "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, category_id = ?, quantity = ?, min_stock_threshold = ?, max_stock_threshold = ?, price_cents = ? WHERE id = ?"
-    private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1 WHERE id = ?"
+    private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1, SKU = ? WHERE id = ?"
     private const val GET_PRODUCTS_BY_CATEGORY =
         "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE category_id = ? AND is_deleted = 0"
   }
@@ -131,10 +131,15 @@ class ProductService(private val connection: Connection) {
 
   suspend fun deleteProduct(id: String): Boolean {
     val st = connection.prepareStatement(DELETE_PRODUCT)
-    st.setString(1, id)
+    st.setString(1, deletedSku(id))
+    st.setString(2, id)
     val rows = st.executeUpdate()
     if (rows > 0) logger.info("Product deleted: $id")
     return rows > 0
+  }
+
+  private fun deletedSku(id: String): String {
+    return "DELETED-$id"
   }
 
   suspend fun adjustStock(adjustments: List<pos.ambrosia.models.ProductStockAdjustment>): Boolean {
