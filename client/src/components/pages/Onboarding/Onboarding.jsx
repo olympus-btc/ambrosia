@@ -146,7 +146,7 @@ export function Onboarding() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           {step === 1 && (
             <BusinessTypeStep
               value={data.businessType}
@@ -213,7 +213,7 @@ export function Onboarding() {
                 isDisabled={
                   (step === 1 && !data.businessType) ||
                   (step === 2 && (!data.userName || !data.userPassword || !isPasswordStrong(data.userPassword) || !isPinValid(data.userPin))) ||
-                  (step === 3 && (!data.businessName))
+                  (step === 3 && (!data.businessName || !data.businessCurrency))
                 }
                 className="gradient-forest text-white"
               >

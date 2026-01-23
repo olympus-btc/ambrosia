@@ -66,6 +66,7 @@ const onboardingEs = {
       businessRFCMessage: "Formato: 13 caracteres (letras y números)",
       businessRFCInvalid: "RFC inválido",
       businessCurrency: "Moneda",
+      businessCurrencyError: "Por favor selecciona una moneda",
       businessLogoLabelStore: "Logo de la tienda (opcional)",
       businessLogoLabelRestaurant: "Logo del restaurante",
       businessLogoUpload: "Sube tu logo",
