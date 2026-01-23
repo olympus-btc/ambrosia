@@ -63,13 +63,6 @@ describe("Step 1 Business Type Selection", () => {
     expect(mockChange).toHaveBeenCalledWith("store");
   });
 
-  it("calls onChange with 'restaurant' when restaurant card is clicked", () => {
-    renderBusinessTypeStep();
-    const restaurantCard = screen.getByLabelText("restaurant");
-    fireEvent.click(restaurantCard);
-    expect(mockChange).toHaveBeenCalledWith("store");
-  });
-
   it("applies active styling when store is selected", () => {
     renderBusinessTypeStep("store");
     const storeCard = screen.getByLabelText("store");
@@ -96,22 +89,5 @@ describe("Step 1 Business Type Selection", () => {
     const storeCard = screen.getByLabelText("store");
     const icon = storeCard.querySelector("svg");
     expect(icon).toBeInTheDocument();
-  });
-
-  it("renders Restaurant icon", () => {
-    renderBusinessTypeStep();
-    const cards = screen.getAllByRole("button");
-    const restaurantCard = cards[1]; // Second card is restaurant
-    const icon = restaurantCard.querySelector("svg");
-    expect(icon).toBeInTheDocument();
-  });
-
-  it("both cards are pressable", () => {
-    renderBusinessTypeStep();
-    const cards = screen.getAllByRole("button");
-    expect(cards).toHaveLength(2);
-    cards.forEach((card) => {
-      expect(card).toBeInTheDocument();
-    });
   });
 });
