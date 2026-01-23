@@ -22,7 +22,6 @@ import pos.ambrosia.logger
 fun Application.configureInitialSetup() {
   val connection: Connection = DatabaseConnection.getConnection()
   routing {
-    route("/inital-setup") { initialSetupRoutes(connection) }
     route("/initial-setup") { initialSetupRoutes(connection) }
   }
 }
