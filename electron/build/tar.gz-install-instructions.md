@@ -9,38 +9,38 @@ This tar.gz archive is provided for advanced users on Linux distributions that d
 ### 1. Extract the archive
 
 ```bash
-tar -xzf ambrosia-pos-electron-*.tar.gz
+tar -xzf ambrosia-app-*.tar.gz
 ```
 
 ### 2. Move to a permanent location (optional)
 
 **System-wide install:**
 ```bash
-sudo mv ambrosia-pos-electron-* /opt/ambrosia-pos
+sudo mv ambrosia-app-* /opt/AmbrosiaPoS
 ```
 
 **User-only install:**
 ```bash
-mv ambrosia-pos-electron-* ~/.local/share/ambrosia-pos
+mv ambrosia-app-* ~/.local/share/AmbrosiaPoS
 ```
 
 ### 3. Run the application
 
 ```bash
-cd /opt/ambrosia-pos  # or your chosen location
-./ambrosia-pos-electron
+cd /opt/AmbrosiaPoS  # or your chosen location
+./ambrosia-app
 ```
 
 ### 4. Create a desktop shortcut (optional)
 
-Create a file at `~/.local/share/applications/ambrosia-pos.desktop`:
+Create a file at `~/.local/share/applications/ambrosia-app.desktop`:
 
 ```ini
 [Desktop Entry]
 Name=Ambrosia POS
 Comment=Restaurant and Retail POS with Bitcoin Lightning
-Exec=/opt/ambrosia-pos/ambrosia-pos-electron
-Icon=/opt/ambrosia-pos/resources/app/build/icon.png
+Exec=/opt/AmbrosiaPoS/ambrosia-app
+Icon=/opt/AmbrosiaPoS/resources/app/build/icon.png
 Terminal=false
 Type=Application
 Categories=Office;Finance;
@@ -71,7 +71,7 @@ Consider creating an AUR package for easier installation and updates. Base your 
 ### 1. Remove application directory
 
 ```bash
-sudo rm -rf /opt/ambrosia-pos
+sudo rm -rf /opt/AmbrosiaPoS
 ```
 
 ### 2. Remove user data (optional)
@@ -84,7 +84,7 @@ rm -rf ~/.phoenix
 ### 3. Remove desktop entry (if created)
 
 ```bash
-rm ~/.local/share/applications/ambrosia-pos.desktop
+rm ~/.local/share/applications/ambrosia-app.desktop
 ```
 
 ## Support

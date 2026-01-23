@@ -27,6 +27,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "appdmg": "^0.6.6",
     "cross-env": "^10.1.0",
     "electron": "^36.1.0",
     "electron-builder": "^26.5.0",
@@ -45,6 +46,7 @@
     "appId": "com.olympus-btc.ambrosia-pos",
     "productName": "AmbrosiaPoS",
     "afterPack": "./scripts/afterPack.js",
+    "afterAllArtifactBuild": "./scripts/afterDmg.js",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -115,6 +117,27 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "dmg": {
+      "icon": "build/icon.icns",
+      "iconSize": 80,
+      "window": {
+        "width": 660,
+        "height": 450
+      },
+      "contents": [
+        {
+          "x": 180,
+          "y": 200,
+          "type": "file"
+        },
+        {
+          "x": 480,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     }
   }
 }
