@@ -140,7 +140,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
 
   return (
     <Modal
-      className="min-h-[665px]"
+      className="min-h-[600px][@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       size="5xl"
       isOpen={isOpen}
       onOpenChange={onClose}
