@@ -21,6 +21,10 @@ export default function HomePage() {
     if (isLoading) return;
 
     if (!isAuth) {
+      if (typeof window !== "undefined") {
+        window.location.replace("/auth");
+        return;
+      }
       router.replace("/auth");
       return;
     }
