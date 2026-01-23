@@ -21,27 +21,23 @@ export default async function proxy(request) {
   let needsBusinessType = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
-    const urls = [
-      new URL("/api/initial-setup", request.url),
-      new URL("/api/inital-setup", request.url),
-    ];
+    const url = new URL("/api/initial-setup", request.url);
+
     let evaluated = false;
-    for (const url of urls) {
-      const res = await fetch(url, { headers });
-      if (res.status === 409) {
-        setupIncomplete = false;
-        evaluated = true;
-        break;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        initialized = data?.initialized;
-        needsBusinessType = data?.needsBusinessType === true;
-        setupIncomplete = initialized === false || needsBusinessType;
-        evaluated = true;
-        break;
-      }
+
+    const res = await fetch(url, { headers });
+    if (res.status === 409) {
+      setupIncomplete = false;
+      evaluated = true;
     }
+    if (res.ok) {
+      const data = await res.json();
+      initialized = data?.initialized;
+      needsBusinessType = data?.needsBusinessType === true;
+      setupIncomplete = initialized === false || needsBusinessType;
+      evaluated = true;
+    }
+    
     if (!evaluated) {
       setupIncomplete = false;
     }
