@@ -2,7 +2,7 @@
 
 import { Button, Select, SelectItem, Switch } from "@heroui/react";
 
-const PRINTER_TYPES = ["KITCHEN", "CUSTOMER", "BAR"];
+const PRINTER_TYPES = ["CUSTOMER"];
 
 export function PrinterAddForm({
   printerType,

@@ -91,7 +91,7 @@ describe("PrinterSettingsCard", () => {
     fireEvent.click(screen.getByText("add-form-submit"));
 
     await waitFor(() => expect(createPrinterConfig).toHaveBeenCalledWith({
-      printerType: "KITCHEN",
+      printerType: "CUSTOMER",
       printerName: "Printer A",
       templateName: "Template A",
       isDefault: false,
