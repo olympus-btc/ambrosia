@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+
 import { apiClient } from "@/services/apiClient";
 
 export function useOrders() {
@@ -32,8 +33,7 @@ export function useOrders() {
           body: orderBody,
         });
         if (created?.id) {
-          setOrders((prev) =>
-            Array.isArray(prev) ? [...prev, created] : [created],
+          setOrders((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
           );
         }
         return created;
@@ -55,10 +55,9 @@ export function useOrders() {
           body: orderBody,
         });
         if (updated?.id) {
-          setOrders((prev) =>
-            Array.isArray(prev)
-              ? prev.map((o) => (o.id === orderId ? updated : o))
-              : [updated],
+          setOrders((prev) => (Array.isArray(prev)
+            ? prev.map((o) => (o.id === orderId ? updated : o))
+            : [updated]),
           );
         }
         return updated;

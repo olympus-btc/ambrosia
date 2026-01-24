@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/services/apiClient';
+import { useState, useEffect, useCallback } from "react";
+
+import { apiClient } from "@/services/apiClient";
 
 export function useRoles() {
   const [roles, setRoles] = useState([]);
@@ -27,17 +28,15 @@ export function useRoles() {
     try {
       const updateRoleResponse = await apiClient(`/roles/${user.userId}`, {
         method: "PUT",
-        body: role
+        body: role,
       });
 
       await fetchRoles();
       return updateRoleResponse;
-
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
-
+  };
 
   useEffect(() => {
     fetchRoles();

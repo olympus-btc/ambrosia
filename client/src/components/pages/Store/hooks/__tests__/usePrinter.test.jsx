@@ -1,4 +1,5 @@
 import { act, useEffect } from "react";
+
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { apiClient } from "@/services/apiClient";
@@ -80,8 +81,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("loading-configs")).toHaveTextContent("no");
     expect(screen.getByTestId("available-count")).toHaveTextContent("1");
@@ -94,8 +94,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("available-count")).toHaveTextContent("0");
     expect(screen.getByTestId("config-count")).toHaveTextContent("0");
@@ -107,8 +106,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("error")).toHaveTextContent("yes");
   });
@@ -120,8 +118,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("config-count")).toHaveTextContent("0"),
+    await waitFor(() => expect(screen.getByTestId("config-count")).toHaveTextContent("0"),
     );
 
     await act(async () => {
@@ -147,8 +144,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("first-config-name")).toHaveTextContent("Old"),
+    await waitFor(() => expect(screen.getByTestId("first-config-name")).toHaveTextContent("Old"),
     );
 
     await act(async () => {
@@ -172,8 +168,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("config-count")).toHaveTextContent("2"),
+    await waitFor(() => expect(screen.getByTestId("config-count")).toHaveTextContent("2"),
     );
 
     await act(async () => {
@@ -196,8 +191,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("default-kitchen")).toHaveTextContent("cfg-1"),
+    await waitFor(() => expect(screen.getByTestId("default-kitchen")).toHaveTextContent("cfg-1"),
     );
 
     await act(async () => {
@@ -216,8 +210,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-configs")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-configs")).toHaveTextContent("no"),
     );
 
     await expect(handlers.setDefaultPrinterByName()).rejects.toThrow(
@@ -232,8 +225,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
 
     await act(async () => {
@@ -255,8 +247,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-configs")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-configs")).toHaveTextContent("no"),
     );
 
     await act(async () => {
@@ -276,8 +267,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
 
     await expect(handlers.updatePrinterConfig()).rejects.toThrow(
@@ -288,8 +278,7 @@ describe("usePrinters", () => {
       handlers.updatePrinterConfig("cfg-1", { printerName: "X" }),
     ).rejects.toThrow("update-fail");
 
-    await waitFor(() =>
-      expect(screen.getByTestId("error")).toHaveTextContent("yes"),
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"),
     );
   });
 
@@ -303,8 +292,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
 
     await expect(handlers.deletePrinterConfig()).rejects.toThrow(
@@ -325,8 +313,7 @@ describe("usePrinters", () => {
       "print-fail",
     );
 
-    await waitFor(() =>
-      expect(screen.getByTestId("error")).toHaveTextContent("yes"),
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"),
     );
   });
 
@@ -337,16 +324,14 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading-available")).toHaveTextContent("no"),
     );
 
     await expect(
       handlers.setDefaultPrinterByName("KITCHEN", "Printer A"),
     ).rejects.toThrow("set-name-fail");
 
-    await waitFor(() =>
-      expect(screen.getByTestId("error")).toHaveTextContent("yes"),
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"),
     );
   });
 
@@ -359,8 +344,7 @@ describe("usePrinters", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("default-kitchen")).toHaveTextContent("cfg-1"),
+    await waitFor(() => expect(screen.getByTestId("default-kitchen")).toHaveTextContent("cfg-1"),
     );
 
     await act(async () => {

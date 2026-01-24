@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+
 import { apiClient } from "@/services/apiClient";
 
 export function useTemplates() {
@@ -32,10 +33,9 @@ export function useTemplates() {
         body: templateBody,
       });
       if (created?.id) {
-        setTemplates((prev) =>
-          Array.isArray(prev)
-            ? [...prev, { ...templateBody, id: created.id }]
-            : [{ ...templateBody, id: created.id }],
+        setTemplates((prev) => (Array.isArray(prev)
+          ? [...prev, { ...templateBody, id: created.id }]
+          : [{ ...templateBody, id: created.id }]),
         );
       }
       return created;
@@ -53,12 +53,10 @@ export function useTemplates() {
         method: "PUT",
         body: templateBody,
       });
-      setTemplates((prev) =>
-        Array.isArray(prev)
-          ? prev.map((template) =>
-              template.id === templateId ? { ...template, ...templateBody } : template,
-            )
-          : prev,
+      setTemplates((prev) => (Array.isArray(prev)
+        ? prev.map((template) => (template.id === templateId ? { ...template, ...templateBody } : template),
+        )
+        : prev),
       );
       return true;
     } catch (err) {
@@ -72,8 +70,7 @@ export function useTemplates() {
     if (!templateId) throw new Error("templateId is required");
     try {
       await apiClient(`/templates/${templateId}`, { method: "DELETE" });
-      setTemplates((prev) =>
-        Array.isArray(prev) ? prev.filter((template) => template.id !== templateId) : prev,
+      setTemplates((prev) => (Array.isArray(prev) ? prev.filter((template) => template.id !== templateId) : prev),
       );
       return true;
     } catch (err) {

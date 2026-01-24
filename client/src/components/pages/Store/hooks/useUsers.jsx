@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/services/apiClient';
+import { useState, useEffect, useCallback } from "react";
+
+import { apiClient } from "@/services/apiClient";
 
 export function useUsers() {
   const [users, setUsers] = useState([]);
@@ -25,16 +26,15 @@ export function useUsers() {
 
   const updateUser = async (user) => {
     try {
-      console.log(user)
       const body = {
         name: user.userName,
         role_id: user.userRole,
         email: user.userEmail,
         phone: user.userPhone,
-      }
+      };
 
       if (user.userPin && user.userPin.trim().length > 0) {
-        body.pin = user.userPin
+        body.pin = user.userPin;
       }
 
       const updateUserResponse = await apiClient(`/users/${user.userId}`, {
@@ -44,11 +44,10 @@ export function useUsers() {
 
       await fetchUsers();
       return updateUserResponse;
-
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const addUser = async (user) => {
     try {
@@ -66,9 +65,9 @@ export function useUsers() {
       await fetchUsers();
       return addUserResponse;
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const deleteUser = async (userId) => {
     try {
@@ -79,10 +78,9 @@ export function useUsers() {
       await fetchUsers();
       return deleteUserResponse;
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
-
+  };
 
   useEffect(() => {
     fetchUsers();

@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/services/apiClient';
+import { useState, useEffect, useCallback } from "react";
+
+import { apiClient } from "@/services/apiClient";
 
 export function usePrinters() {
   const [loadingAvailable, setLoadingAvailable] = useState(true);
@@ -55,10 +56,9 @@ export function usePrinters() {
         body: configBody,
       });
       if (created?.id) {
-        setPrinterConfigs((prev) =>
-          Array.isArray(prev)
-            ? [...prev, { ...configBody, id: created.id }]
-            : [{ ...configBody, id: created.id }],
+        setPrinterConfigs((prev) => (Array.isArray(prev)
+          ? [...prev, { ...configBody, id: created.id }]
+          : [{ ...configBody, id: created.id }]),
         );
       }
       return created;
@@ -76,12 +76,10 @@ export function usePrinters() {
         method: "PUT",
         body: configBody,
       });
-      setPrinterConfigs((prev) =>
-        Array.isArray(prev)
-          ? prev.map((config) =>
-              config.id === configId ? { ...config, ...configBody } : config,
-            )
-          : prev,
+      setPrinterConfigs((prev) => (Array.isArray(prev)
+        ? prev.map((config) => (config.id === configId ? { ...config, ...configBody } : config),
+        )
+        : prev),
       );
       return true;
     } catch (err) {
@@ -95,8 +93,7 @@ export function usePrinters() {
     if (!configId) throw new Error("configId is required");
     try {
       await apiClient(`/printers/configs/${configId}`, { method: "DELETE" });
-      setPrinterConfigs((prev) =>
-        Array.isArray(prev) ? prev.filter((config) => config.id !== configId) : prev,
+      setPrinterConfigs((prev) => (Array.isArray(prev) ? prev.filter((config) => config.id !== configId) : prev),
       );
       return true;
     } catch (err) {
@@ -114,10 +111,9 @@ export function usePrinters() {
         if (!Array.isArray(prev)) return prev;
         const target = prev.find((config) => config.id === configId);
         if (!target) return prev;
-        return prev.map((config) =>
-          config.printerType === target.printerType
-            ? { ...config, isDefault: config.id === configId }
-            : config,
+        return prev.map((config) => (config.printerType === target.printerType
+          ? { ...config, isDefault: config.id === configId }
+          : config),
         );
       });
       return true;

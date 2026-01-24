@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+
 import { apiClient } from "@/services/apiClient";
 
 export function useTickets() {
@@ -33,8 +34,7 @@ export function useTickets() {
           body: ticketBody,
         });
         if (created?.id) {
-          setTickets((prev) =>
-            Array.isArray(prev) ? [...prev, created] : [created],
+          setTickets((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
           );
         }
         return created;
