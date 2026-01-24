@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>DMG Background - Ambrosia POS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 660px;
+      height: 450px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    }
+
+    .container {
+      width: 660px;
+      height: 450px;
+      background: linear-gradient(145deg, #0d1117 0%, #1a2332 50%, #0f172a 100%);
+      /* background: linear-gradient(180deg, #0a0e14 0%, #0d1117 40%, #080b10 100%); */
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Subtle radial overlay */
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        radial-gradient(circle at 20% 80%, rgba(62, 180, 137, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .logo-section {
+      margin-top: 50px;
+      z-index: 1;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 8px;
+      z-index: 1;
+    }
+
+    /* Arrow centered between icon positions */
+    .arrow {
+      position: absolute;
+      top: 230px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    .arrow svg {
+      width: 60px;
+      height: 30px;
+    }
+
+    /* Instruction text */
+    .instruction {
+      position: absolute;
+      bottom: 60px;
+      font-size: 14px;
+      color: #e2e8f0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .instruction .drag-text {
+      color: #3EB489;
+      font-weight: 600;
+    }
+
+    /* Bitcoin accent */
+    .btc-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #f7931a;
+      opacity: 0.6;
+    }
+
+    .btc-badge svg {
+      width: 12px;
+      height: 12px;
+      fill: #f7931a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-section">
+      <img src="../../client/public/ambrosia.svg" alt="Ambrosia Logo" width="300">
+    </div>
+    <div class="subtitle">The system for the sovereign individual.</div>
+
+    <div class="arrow">
+      <svg viewBox="0 0 60 30" fill="none">
+        <defs>
+          <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#3EB489;stop-opacity:0.6" />
+            <stop offset="100%" style="stop-color:#90EE90;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <path d="M5 15 H45 M38 7 L50 15 L38 23" stroke="url(#arrowGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="instruction">
+      <span class="drag-text">Drag</span> to install
+    </div>
+  </div>
+</body>
+</html>
