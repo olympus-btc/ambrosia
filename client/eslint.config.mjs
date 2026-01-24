@@ -21,7 +21,6 @@ const eslintConfig = [
       "src/components/auth/**",
       "src/components/dashboard/**",
       "src/components/navigation/**",
-      "src/components/pages/Store/hooks/**",
       "src/components/locales/**",
       "src/i18n/**",
       "src/components/spaces/**",

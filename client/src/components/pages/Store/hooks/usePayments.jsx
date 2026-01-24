@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+
 import { apiClient } from "@/services/apiClient";
 
 export function usePayments() {
@@ -34,8 +35,7 @@ export function usePayments() {
           body: paymentBody,
         });
         if (created?.id) {
-          setPayments((prev) =>
-            Array.isArray(prev) ? [...prev, created] : [created],
+          setPayments((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
           );
         }
         return created;
@@ -77,10 +77,9 @@ export function usePayments() {
           },
         });
         if (linked?.payment_id && linked?.ticket_id) {
-          setTicketPayments((prev) =>
-            Array.isArray(prev)
-              ? [...prev, { payment_id: paymentId, ticket_id: ticketId }]
-              : [{ payment_id: paymentId, ticket_id: ticketId }],
+          setTicketPayments((prev) => (Array.isArray(prev)
+            ? [...prev, { payment_id: paymentId, ticket_id: ticketId }]
+            : [{ payment_id: paymentId, ticket_id: ticketId }]),
           );
         }
         return linked;

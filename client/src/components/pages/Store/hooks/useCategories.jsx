@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/services/apiClient';
+import { useState, useEffect, useCallback } from "react";
+
+import { apiClient } from "@/services/apiClient";
 
 export function useCategories(type = "product") {
   const [categories, setCategories] = useState([]);
