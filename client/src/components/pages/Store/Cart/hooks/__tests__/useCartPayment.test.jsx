@@ -122,6 +122,40 @@ describe("useCartPayment", () => {
     expect(result.current.cashPaymentConfig).toBeNull();
   });
 
+  it("handles card payment config and clearing", async () => {
+    mockPaymentMethods = [
+      { id: "credit", name: "Credit Card" },
+    ];
+    const { result } = renderHook(() => useCartPayment());
+
+    await act(async () => {
+      await result.current.handlePay({
+        items: [{ id: 1, subtotal: 100 }],
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+        selectedPaymentMethod: "credit",
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.cardPaymentConfig).toEqual(
+        expect.objectContaining({
+          amountDue: 1,
+          displayTotal: "fmt-100",
+          methodLabel: "Credit Card",
+        }),
+      );
+    });
+
+    act(() => {
+      result.current.clearCardPaymentConfig();
+    });
+
+    expect(result.current.cardPaymentConfig).toBeNull();
+  });
+
   it("handles missing payment methods without crashing", () => {
     mockPaymentMethods = undefined;
     const { result } = renderHook(() => useCartPayment());

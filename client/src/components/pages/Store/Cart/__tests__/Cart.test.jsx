@@ -78,6 +78,9 @@ jest.mock("../hooks/useCartPayment", () => ({
     cashPaymentConfig: null,
     handleCashComplete: jest.fn(),
     clearCashPaymentConfig: jest.fn(),
+    cardPaymentConfig: null,
+    handleCardComplete: jest.fn(),
+    clearCardPaymentConfig: jest.fn(),
   }),
 }));
 
