@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+
 import { addToast } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/services/apiClient";
 
@@ -20,7 +21,6 @@ export function useUsers() {
       } else {
         setUsers(res);
       }
-    } catch (err) {
     } finally {
       setLoading(false);
     }
