@@ -32,3 +32,9 @@ class WalletOnlyException(message: String = "Wallet access required") : Security
 class PermissionDeniedException(message: String = "Permission required") : SecurityException(message)
 
 class PrintTicketException(message: String = "Error processing print job") : RuntimeException(message)
+
+class DuplicateUserNameException(message: String = "User name already exists") :
+        IllegalStateException(message)
+
+class LastUserDeletionException(message: String = "Cannot delete the last user") :
+        IllegalStateException(message)

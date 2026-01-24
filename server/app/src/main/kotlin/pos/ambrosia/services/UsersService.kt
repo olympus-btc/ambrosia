@@ -5,6 +5,8 @@ import pos.ambrosia.logger
 import pos.ambrosia.models.AuthResponse
 import pos.ambrosia.models.UpdateUserRequest
 import pos.ambrosia.models.User
+import pos.ambrosia.utils.DuplicateUserNameException
+import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.SecurePinProcessor
 import java.sql.Connection
 
@@ -47,7 +49,17 @@ class UsersService(
             UPDATE users SET name = ?, pin = ?, refresh_token = ?, role_id = ?, email = ?, phone = ? WHERE id = ?
         """
 
-    private const val DELETE_USER = "UPDATE users SET is_deleted = 1 WHERE id = ?"
+    private const val DELETE_USER = "UPDATE users SET is_deleted = 1, name = ? WHERE id = ?"
+
+    private const val CHECK_USER_NAME_EXISTS =
+      """
+            SELECT 1 FROM users WHERE name = ? AND is_deleted = 0 LIMIT 1
+        """
+
+    private const val COUNT_ACTIVE_USERS =
+      """
+            SELECT COUNT(*) FROM users WHERE is_deleted = 0
+        """
 
     private const val CHECK_ROLE_EXISTS =
       """
@@ -62,10 +74,27 @@ class UsersService(
     return resultSet.next()
   }
 
+  private fun userNameExists(name: String): Boolean {
+    val statement = connection.prepareStatement(CHECK_USER_NAME_EXISTS)
+    statement.setString(1, name)
+    val resultSet = statement.executeQuery()
+    return resultSet.next()
+  }
+
+  private fun activeUserCount(): Long {
+    val statement = connection.prepareStatement(COUNT_ACTIVE_USERS)
+    val resultSet = statement.executeQuery()
+    return if (resultSet.next()) resultSet.getLong(1) else 0L
+  }
+
   suspend fun addUser(user: User): String? {
     if (user.role == null || !roleExists(user.role)) {
       logger.error("Role does not exist: ${user.role}")
       return null
+    }
+
+    if (userNameExists(user.name)) {
+      throw DuplicateUserNameException()
     }
 
     val generatedId =
@@ -84,7 +113,15 @@ class UsersService(
     statement.setString(6, user.email)
     statement.setString(7, user.phone)
 
-    val rowsAffected = statement.executeUpdate()
+    val rowsAffected =
+      try {
+        statement.executeUpdate()
+      } catch (e: java.sql.SQLException) {
+        if (e.message?.contains("UNIQUE constraint failed: users.name") == true) {
+          throw DuplicateUserNameException()
+        }
+        throw e
+      }
 
     return if (rowsAffected > 0) {
       logger.info("User created successfully with ID: $generatedId")
@@ -212,9 +249,17 @@ class UsersService(
   }
 
   suspend fun deleteUser(id: String): Boolean {
+    if (activeUserCount() <= 1) {
+      throw LastUserDeletionException()
+    }
     val statement = connection.prepareStatement(DELETE_USER)
-    statement.setString(1, id)
+    statement.setString(1, deletedName(id))
+    statement.setString(2, id)
     val rowsDeleted = statement.executeUpdate()
     return rowsDeleted > 0
+  }
+
+  private fun deletedName(id: String): String {
+    return "DELETED-$id"
   }
 }
