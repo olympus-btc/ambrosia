@@ -146,6 +146,12 @@ async function performTokenRefresh() {
 
 async function handleHttpError(status, endpoint, data, silentAuth = false) {
   const isAuthEndpoint = endpoint.startsWith("/auth");
+  const buildError = (message) => {
+    const error = new Error(message);
+    error.status = status;
+    error.endpoint = endpoint;
+    return error;
+  };
 
   // 401: No autenticado -> intentar refresh (ya hecho antes) o cerrar sesión
   if (status === 401) {
@@ -154,18 +160,16 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
         typeof data === "string"
           ? data
           : data?.message || "Invalid Credentials";
-      const error = new Error(msg);
-      error.status = status;
-      throw error;
+      throw buildError(msg);
     }
 
     if (typeof window !== "undefined" && endpoint.startsWith("/wallet")) {
       dispatchAuthEvent("wallet:unauthorized");
-      throw new Error("UNAUTHORIZED");
+      throw buildError("UNAUTHORIZED");
     }
 
     if (silentAuth) {
-      throw new Error("UNAUTHORIZED");
+      throw buildError("UNAUTHORIZED");
     }
 
     await performLogout();
@@ -177,7 +181,7 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
       description: "Not authenticated",
     });
 
-    throw new Error("UNAUTHORIZED");
+    throw buildError("UNAUTHORIZED");
   }
 
   // 403: Prohibido (sin permisos) -> NO cerrar sesión; navegar a /unauthorized
@@ -192,7 +196,7 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
 
     if (typeof window !== "undefined" && endpoint.startsWith("/wallet")) {
       dispatchAuthEvent("wallet:unauthorized");
-      throw new Error("UNAUTHORIZED");
+      throw buildError("UNAUTHORIZED");
     }
 
     if (!silentAuth) {
@@ -204,11 +208,11 @@ async function handleHttpError(status, endpoint, data, silentAuth = false) {
       });
     }
 
-    throw new Error("UNAUTHORIZED");
+    throw buildError("UNAUTHORIZED");
   }
 
   const errorMsg = extractErrorMessage(data, status);
-  throw new Error(errorMsg);
+  throw buildError(errorMsg);
 }
 
 function extractErrorMessage(data, status) {

@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import { addToast } from "@heroui/react";
 
 import { apiClient } from "@/services/apiClient";
 
 export function useUsers() {
+  const t = useTranslations("users");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
   const fetchUsers = useCallback(async () => {
@@ -18,7 +21,6 @@ export function useUsers() {
         setUsers(res);
       }
     } catch (err) {
-      console.error("Error fetching users:", err);
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,19 @@ export function useUsers() {
       await fetchUsers();
       return updateUserResponse;
     } catch (error) {
-      console.error(error);
+      if (error?.status === 409) {
+        addToast({
+          title: t("toasts.duplicateNameTitle"),
+          description: t("toasts.duplicateNameDescription"),
+          color: "danger",
+        });
+      } else {
+        addToast({
+          title: t("toasts.genericErrorTitle"),
+          description: t("toasts.genericErrorDescription"),
+          color: "danger",
+        });
+      }
     }
   };
 
@@ -65,7 +79,19 @@ export function useUsers() {
       await fetchUsers();
       return addUserResponse;
     } catch (error) {
-      console.error(error);
+      if (error?.status === 409) {
+        addToast({
+          title: t("toasts.duplicateNameTitle"),
+          description: t("toasts.duplicateNameDescription"),
+          color: "danger",
+        });
+      } else {
+        addToast({
+          title: t("toasts.genericErrorTitle"),
+          description: t("toasts.genericErrorDescription"),
+          color: "danger",
+        });
+      }
     }
   };
 
@@ -78,7 +104,19 @@ export function useUsers() {
       await fetchUsers();
       return deleteUserResponse;
     } catch (error) {
-      console.error(error);
+      if (error?.status === 409) {
+        addToast({
+          title: t("toasts.lastUserTitle"),
+          description: t("toasts.lastUserDescription"),
+          color: "warning",
+        });
+      } else {
+        addToast({
+          title: t("toasts.genericErrorTitle"),
+          description: t("toasts.genericErrorDescription"),
+          color: "danger",
+        });
+      }
     }
   };
 

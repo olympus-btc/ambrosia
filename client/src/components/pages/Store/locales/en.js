@@ -48,6 +48,14 @@ const storeEn = {
       cancelButton: "Cancel",
       deleteButton: "Delete",
     },
+    toasts: {
+      duplicateNameTitle: "Duplicate name",
+      duplicateNameDescription: "A user with that name already exists.",
+      genericErrorTitle: "Error",
+      genericErrorDescription: "Could not complete the operation.",
+      lastUserTitle: "Not allowed",
+      lastUserDescription: "You cannot delete the only existing user.",
+    },
   },
   products: {
     title: "Products",
