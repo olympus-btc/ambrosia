@@ -53,7 +53,7 @@ describe("PrinterAddForm", () => {
 
     render(
       <PrinterAddForm
-        printerType="KITCHEN"
+        printerType="CUSTOMER"
         printerName=""
         templateName=""
         isDefault={false}
@@ -74,9 +74,9 @@ describe("PrinterAddForm", () => {
     );
 
     fireEvent.change(screen.getByLabelText("cardPrinters.typeLabel"), {
-      target: { value: "BAR" },
+      target: { value: "CUSTOMER" },
     });
-    expect(onPrinterTypeChange).toHaveBeenCalledWith("BAR");
+    expect(onPrinterTypeChange).toHaveBeenCalledWith("CUSTOMER");
 
     fireEvent.change(screen.getByLabelText("cardPrinters.nameLabel"), {
       target: { value: "Printer A" },
@@ -103,7 +103,7 @@ describe("PrinterAddForm", () => {
 
     render(
       <PrinterAddForm
-        printerType="KITCHEN"
+        printerType="CUSTOMER"
         printerName="Printer A"
         templateName="Template A"
         isDefault={false}

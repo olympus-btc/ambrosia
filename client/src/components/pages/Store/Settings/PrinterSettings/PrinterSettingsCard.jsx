@@ -24,7 +24,7 @@ export function PrinterSettingsCard({
   onTemplatesRefresh,
   t,
 }) {
-  const [printerType, setPrinterType] = useState("KITCHEN");
+  const [printerType, setPrinterType] = useState("CUSTOMER");
   const [printerName, setPrinterName] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [isDefault, setIsDefault] = useState(false);

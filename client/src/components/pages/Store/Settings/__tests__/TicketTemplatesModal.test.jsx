@@ -149,7 +149,7 @@ describe("TicketTemplatesModal", () => {
     await waitFor(() => expect(printTicket).toHaveBeenCalledWith(
       expect.objectContaining({
         templateName: "Menu",
-        printerType: "KITCHEN",
+        printerType: "CUSTOMER",
         broadcast: false,
         forceTemplateName: true,
       }),
@@ -230,10 +230,10 @@ describe("TicketTemplatesModal", () => {
     fireEvent.click(screen.getByText("templates.addElement"));
 
     fireEvent.change(screen.getByLabelText("templates.printTypeLabel"), {
-      target: { value: "BAR" },
+      target: { value: "CUSTOMER" },
     });
 
-    expect(screen.getByText("cardPrinters.types.BAR")).toBeInTheDocument();
+    expect(screen.getByText("cardPrinters.types.CUSTOMER")).toBeInTheDocument();
   });
 
   it("opens with empty form when no initialTemplate is provided", () => {
