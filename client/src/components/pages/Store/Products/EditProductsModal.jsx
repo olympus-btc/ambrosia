@@ -193,6 +193,7 @@ export function EditProductsModal({
                 isRequired
                 errorMessage={t("modal.errorMsgInputFieldEmpty")}
                 minValue={0}
+                maxValue={1000000}
                 value={data.productStock}
                 onValueChange={(value) => {
                   const numeric = value === null ? "" : Number(value);

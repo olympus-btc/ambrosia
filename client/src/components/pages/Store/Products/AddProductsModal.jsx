@@ -186,8 +186,9 @@ export function AddProductsModal({
               <NumberInput
                 label={t("modal.productStockLabel")}
                 placeholder={t("modal.productStockPlaceholder")}
+                defaultValue={1}
                 minValue={0}
-                value={data.productStock}
+                maxValue={1000000}
                 isRequired
                 errorMessage={t("modal.errorMsgInputFieldEmpty")}
                 onValueChange={(value) => {
