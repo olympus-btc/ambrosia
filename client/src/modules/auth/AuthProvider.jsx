@@ -1,9 +1,9 @@
 "use client";
 import { createContext, useEffect, useState } from "react";
 import { loginFromService, logoutFromService } from "./authService";
-import { apiClient } from "../../services/apiClient";
+import { apiClient } from "@/services/apiClient";
 import { useRouter } from "next/navigation";
-import { CART_STORAGE_KEY } from "../../components/pages/Store/Cart/hooks/usePersistentCart";
+import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
 
 export const AuthContext = createContext();
 
