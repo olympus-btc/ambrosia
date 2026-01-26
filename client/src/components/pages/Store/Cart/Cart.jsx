@@ -37,6 +37,9 @@ export function Cart() {
     cashPaymentConfig,
     handleCashComplete,
     clearCashPaymentConfig,
+    cardPaymentConfig,
+    handleCardComplete,
+    clearCardPaymentConfig,
   } = useCartPayment({
     onResetCart: resetCartState,
     onPay: refetchProducts,
@@ -173,6 +176,9 @@ export function Cart() {
           cashPaymentConfig={cashPaymentConfig}
           onCashComplete={handleCashComplete}
           onCloseCashPayment={clearCashPaymentConfig}
+          cardPaymentConfig={cardPaymentConfig}
+          onCardComplete={handleCardComplete}
+          onCloseCardPayment={clearCardPaymentConfig}
         />
       </div>
     </StoreLayout>

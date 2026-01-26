@@ -27,6 +27,7 @@ import {
   buildHandleBtcInvoiceReady,
   buildHandleBtcComplete,
   buildHandleCashComplete,
+  buildHandleCardComplete,
 } from "./paymentHandlers";
 import {
   initialPaymentState,
@@ -50,6 +51,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   );
   const [btcPaymentConfig, setBtcPaymentConfig] = useState(null);
   const [cashPaymentConfig, setCashPaymentConfig] = useState(null);
+  const [cardPaymentConfig, setCardPaymentConfig] = useState(null);
 
   const clearPaymentError = useCallback(() => dispatch({ type: "clearError" }), []);
 
@@ -124,6 +126,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       getPaymentCurrencyById,
       setBtcPaymentConfig,
       setCashPaymentConfig,
+      setCardPaymentConfig,
       processBasePayment,
       decrementProductStock,
       updateOrder,
@@ -257,6 +260,50 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     setCashPaymentConfig(null);
   }, []);
 
+  const handleCardComplete = useMemo(
+    () => buildHandleCardComplete({
+      cardPaymentConfig,
+      dispatch,
+      processBasePayment,
+      buildOrderPayload,
+      buildTicketPayload,
+      createOrder,
+      createTicket,
+      buildPaymentPayload,
+      createPayment,
+      linkPaymentToTicket,
+      updateOrder,
+      decrementProductStock,
+      onPay,
+      onResetCart,
+      notifyError,
+      t,
+      setCardPaymentConfig,
+      printCustomerReceipt,
+      user,
+    }),
+    [
+      cardPaymentConfig,
+      dispatch,
+      notifyError,
+      onPay,
+      onResetCart,
+      printCustomerReceipt,
+      t,
+      updateOrder,
+      createOrder,
+      createTicket,
+      createPayment,
+      linkPaymentToTicket,
+      decrementProductStock,
+      user,
+    ],
+  );
+
+  const clearCardPaymentConfig = useCallback(() => {
+    setCardPaymentConfig(null);
+  }, []);
+
   return {
     handlePay,
     isPaying,
@@ -269,5 +316,8 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     cashPaymentConfig,
     handleCashComplete,
     clearCashPaymentConfig,
+    cardPaymentConfig,
+    handleCardComplete,
+    clearCardPaymentConfig,
   };
 }

@@ -153,12 +153,14 @@ const storeEn = {
         process: "Error processing the payment",
         btcComplete: "Error completing the BTC payment",
         cashComplete: "Error completing the cash payment",
+        cardComplete: "Error completing the card payment",
         printCustomer: "Ticket printed failed. Check printer settings.",
       },
       success: {
         paid: "Payment registered successfully",
         btcPaid: "Bitcoin payment marked as completed",
         cashPaid: "Cash payment registered successfully",
+        cardPaid: "Card payment registered successfully",
       },
       receipt: {
         tableName: "Counter",
@@ -198,6 +200,15 @@ const storeEn = {
         errors: {
           insufficient: "Cash received is insufficient.",
         },
+      },
+      card: {
+        title: "Card Payment",
+        subtitle: "Confirm the card payment to complete the sale.",
+        totalLabel: "Total due",
+        methodLabel: "Payment method",
+        defaultMethod: "Card",
+        cancel: "Cancel",
+        confirm: "Confirm payment",
       },
     },
   },

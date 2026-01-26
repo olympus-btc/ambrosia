@@ -51,6 +51,10 @@ jest.mock("../CashPaymentModal", () => ({
   CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
 }));
 
+jest.mock("../CardPaymentModal", () => ({
+  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
+}));
+
 const cartItems = [
   {
     id: 1,
@@ -176,10 +180,12 @@ describe("Summary", () => {
         onClearPaymentError={jest.fn()}
         btcPaymentConfig={{ paymentId: "btc-1" }}
         cashPaymentConfig={{ paymentId: "cash-1" }}
+        cardPaymentConfig={{ paymentId: "card-1" }}
       />,
     );
 
     expect(screen.getByText("btc-modal")).toBeInTheDocument();
     expect(screen.getByText("cash-modal")).toBeInTheDocument();
+    expect(screen.getByText("card-modal")).toBeInTheDocument();
   });
 });

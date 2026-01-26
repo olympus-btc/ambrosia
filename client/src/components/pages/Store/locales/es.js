@@ -153,12 +153,14 @@ const storeEs = {
         process: "Error al procesar el pago",
         btcComplete: "Error al completar el pago BTC",
         cashComplete: "Error al completar el pago en efectivo",
+        cardComplete: "Error al completar el pago con tarjeta",
         printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
       },
       success: {
         paid: "Pago registrado correctamente",
         btcPaid: "Pago con Bitcoin marcado como completado",
         cashPaid: "Pago en efectivo registrado correctamente",
+        cardPaid: "Pago con tarjeta registrado correctamente",
       },
       receipt: {
         tableName: "Caja",
@@ -198,6 +200,15 @@ const storeEs = {
         errors: {
           insufficient: "El efectivo recibido es insuficiente.",
         },
+      },
+      card: {
+        title: "Pago con tarjeta",
+        subtitle: "Confirma el pago con tarjeta para completar la venta.",
+        totalLabel: "Total a cobrar",
+        methodLabel: "Método de pago",
+        defaultMethod: "Tarjeta",
+        cancel: "Cancelar",
+        confirm: "Confirmar pago",
       },
     },
   },
