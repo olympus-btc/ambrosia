@@ -2,7 +2,6 @@
 FROM node:22-slim AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm i
 COPY . .
 RUN sed -i 's/\r$//' package-client.sh
 RUN chmod +x package-client.sh
