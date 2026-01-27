@@ -1,4 +1,4 @@
-version = "0.5.0-alpha"
+version = "0.5.1-alpha"
 
 plugins {
   alias(libs.plugins.kotlin.jvm)
