@@ -29,6 +29,11 @@ async function afterPack(context) {
   console.log(`\n🔐 Re-signing macOS app bundle: ${appPath}`);
 
   try {
+    // Fix permissions on JRE files (classes.jsa and others may be read-only)
+    const resourcesPath = path.join(appPath, 'Contents', 'Resources');
+    console.log(`   Fixing file permissions...`);
+    execSync(`chmod -R u+w '${resourcesPath}'`, { stdio: 'inherit' });
+
     // Re-sign the entire app bundle with ad-hoc signature
     const signCommand = `codesign --force --deep --sign - --entitlements '${entitlementsPath}' '${appPath}'`;
 

@@ -27,10 +27,9 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "appdmg": "^0.6.6",
     "cross-env": "^10.1.0",
     "electron": "^36.1.0",
-    "electron-builder": "^26.5.0",
+    "electron-builder": "^26.4.0",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.23.1"
@@ -46,7 +45,6 @@
     "appId": "com.olympus-btc.ambrosia-pos",
     "productName": "AmbrosiaPoS",
     "afterPack": "./scripts/afterPack.js",
-    "afterAllArtifactBuild": "./scripts/afterDmg.js",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -119,6 +117,7 @@
       "createStartMenuShortcut": true
     },
     "dmg": {
+      "background": "build/background.png",
       "icon": "build/icon.icns",
       "iconSize": 80,
       "window": {
@@ -128,12 +127,12 @@
       "contents": [
         {
           "x": 180,
-          "y": 200,
+          "y": 240,
           "type": "file"
         },
         {
           "x": 480,
-          "y": 200,
+          "y": 240,
           "type": "link",
           "path": "/Applications"
         }
