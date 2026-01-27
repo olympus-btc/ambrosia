@@ -52,7 +52,7 @@ export function AddProductsModal({
         productCategory: "",
         productSKU: "",
         productPrice: "",
-        productStock: "",
+        productStock: 1,
         productMinStock: 0,
         productMaxStock: 0,
         productImage: null,
@@ -186,7 +186,7 @@ export function AddProductsModal({
               <NumberInput
                 label={t("modal.productStockLabel")}
                 placeholder={t("modal.productStockPlaceholder")}
-                defaultValue={1}
+                value={data.productStock}
                 minValue={0}
                 maxValue={1000000}
                 isRequired
