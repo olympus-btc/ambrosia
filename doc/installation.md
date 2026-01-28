@@ -19,12 +19,12 @@ docker-compose up -d --wait && docker-compose restart
 
 *Automatic installation (includes systemd services):*
 ```bash
-curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.0-alpha/scripts/install.sh | bash -s -- --yes
+curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.1-alpha/scripts/install.sh | bash -s -- --yes
 ```
 
 *Automatic installation (without systemd services):*
 ```bash
-curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.0-alpha/scripts/install.sh | bash -s -- --yes --no-service
+curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.1-alpha/scripts/install.sh | bash -s -- --yes --no-service
 ```
 
 **Alternative methods:**
@@ -34,7 +34,7 @@ If you prefer to review the script before running it, or if you want an **intera
 *Download the script and make it executable:*
 
 ```bash
-wget -q https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.0-alpha/scripts/install.sh
+wget -q https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/v0.5.1-alpha/scripts/install.sh
 chmod +x install.sh
 ```
 
