@@ -23,9 +23,9 @@ const t = (key) => key;
 
 const defaultProps = {
   previewElements: [],
-  printerType: "KITCHEN",
+  printerType: "CUSTOMER",
   onPrinterTypeChange: jest.fn(),
-  printerTypes: ["KITCHEN", "CUSTOMER", "BAR"],
+  printerTypes: ["CUSTOMER"],
   onPrintTest: jest.fn(),
   printing: false,
   templateExists: false,

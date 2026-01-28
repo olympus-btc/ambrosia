@@ -17,6 +17,8 @@ import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.DuplicateUserNameException
+import pos.ambrosia.utils.LastUserDeletionException
 
 fun Application.Handler() {
   install(StatusPages) {
@@ -38,6 +40,14 @@ fun Application.Handler() {
     exception<InvalidTokenException> { call, cause ->
       logger.warn("Invalid token: ${cause.message}")
       call.respond(HttpStatusCode.Unauthorized, Message("Invalid token"))
+    }
+    exception<DuplicateUserNameException> { call, cause ->
+      logger.warn("Duplicate user name: ${cause.message}")
+      call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
+    }
+    exception<LastUserDeletionException> { call, cause ->
+      logger.warn("Attempt to delete last user: ${cause.message}")
+      call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
     }
     exception<Exception> { call, cause ->
       logger.error("Unhandled exception: ${cause.message}")

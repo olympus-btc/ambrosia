@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 
 import { BitcoinPaymentModal } from "./BitcoinPaymentModal";
+import { CardPaymentModal } from "./CardPaymentModal";
 import { CashPaymentModal } from "./CashPaymentModal";
 import { usePaymentMethods } from "./hooks/usePaymentMethod";
 
@@ -25,6 +26,9 @@ export function Summary({
   cashPaymentConfig,
   onCashComplete,
   onCloseCashPayment,
+  cardPaymentConfig,
+  onCardComplete,
+  onCloseCardPayment,
   onClearPaymentError,
 }) {
   const t = useTranslations("cart");
@@ -183,6 +187,15 @@ export function Summary({
         displayTotal={cashPaymentConfig?.displayTotal}
         onClose={onCloseCashPayment}
         onComplete={onCashComplete}
+      />
+
+      <CardPaymentModal
+        isOpen={!!cardPaymentConfig}
+        amountDue={cardPaymentConfig?.amountDue}
+        displayTotal={cardPaymentConfig?.displayTotal}
+        methodLabel={cardPaymentConfig?.methodLabel}
+        onClose={onCloseCardPayment}
+        onComplete={onCardComplete}
       />
     </div>
   );

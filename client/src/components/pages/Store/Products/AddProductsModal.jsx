@@ -52,7 +52,7 @@ export function AddProductsModal({
         productCategory: "",
         productSKU: "",
         productPrice: "",
-        productStock: "",
+        productStock: 1,
         productMinStock: 0,
         productMaxStock: 0,
         productImage: null,
@@ -81,6 +81,7 @@ export function AddProductsModal({
 
   return (
     <Modal
+      className="[@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       isOpen={addProductsShowModal}
       onOpenChange={setAddProductsShowModal}
       backdrop="blur"
@@ -185,8 +186,9 @@ export function AddProductsModal({
               <NumberInput
                 label={t("modal.productStockLabel")}
                 placeholder={t("modal.productStockPlaceholder")}
-                minValue={0}
                 value={data.productStock}
+                minValue={0}
+                maxValue={1000000}
                 isRequired
                 errorMessage={t("modal.errorMsgInputFieldEmpty")}
                 onValueChange={(value) => {

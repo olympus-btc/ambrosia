@@ -33,6 +33,7 @@ export function EditSettingsModal({ data, setData, onChange, onSubmit, editSetti
 
   return (
     <Modal
+      className="[@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       isOpen={editSettingsShowModal}
       onOpenChange={handleOnCloseModal}
       backdrop="blur"

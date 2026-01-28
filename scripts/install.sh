@@ -224,7 +224,7 @@ EOF
 
 # --- Ambrosia Server Installation Logic ---
 
-AMBROSIA_TAG="0.5.0-alpha"
+AMBROSIA_TAG="0.5.1-alpha"
 AMBROSIA_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${AMBROSIA_TAG}"
 AMBROSIA_INSTALL_DIR="$HOME/.local/ambrosia"
 AMBROSIA_BIN_DIR="$HOME/.local/bin"
@@ -298,7 +298,7 @@ EOF
 
 # --- Client Installation ---
 
-CLIENT_TAG="0.5.0-alpha"
+CLIENT_TAG="0.5.1-alpha"
 CLIENT_DIST_FILE="ambrosia-client-${CLIENT_TAG}.tar.gz"
 CLIENT_DIST_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${CLIENT_TAG}/${CLIENT_DIST_FILE}"
 CLIENT_INSTALL_DIR="$HOME/.local/ambrosia/client"
@@ -381,7 +381,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "ambrosia-client"
     sudo systemctl restart "ambrosia-client"
-    echo "   ✅ Client systemd service configured."
+    echo "✅ Client systemd service configured."
 }
 
 # --- Main execution flow ---

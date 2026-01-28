@@ -326,6 +326,8 @@ class ProductServiceTest {
             val service = ProductService(mockConnection) // Arrange
             val result = service.deleteProduct("p-1") // Act
             assertTrue(result) // Assert
+            verify(deleteStatement).setString(1, "DELETED-p-1") // Assert
+            verify(deleteStatement).setString(2, "p-1") // Assert
         }
     }
 
@@ -338,6 +340,8 @@ class ProductServiceTest {
             val service = ProductService(mockConnection) // Arrange
             val result = service.deleteProduct("not-found") // Act
             assertFalse(result) // Assert
+            verify(deleteStatement).setString(1, "DELETED-not-found") // Assert
+            verify(deleteStatement).setString(2, "not-found") // Assert
         }
     }
 

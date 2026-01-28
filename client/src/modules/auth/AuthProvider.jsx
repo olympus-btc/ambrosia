@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 import { createContext, useEffect, useState } from "react";
 import { loginFromService, logoutFromService } from "./authService";
-import { apiClient } from "../../services/apiClient";
+import { apiClient } from "@/services/apiClient";
 import { useRouter } from "next/navigation";
+import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
 
 export const AuthContext = createContext();
 
@@ -13,6 +14,15 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const router = useRouter();
+
+  const clearCartStorage = () => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+    } catch (error) {
+      console.error("Error clearing cart storage on logout", error);
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -50,6 +60,7 @@ export function AuthProvider({ children }) {
   }
   const logout = async () => {
     await logoutFromService();
+    clearCartStorage();
     setUser(null);
     setPermissions(null)
     setIsAuth(false);
@@ -59,6 +70,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     fetchUser();
     const handleExpired = () => {
+      clearCartStorage();
       setUser(null)
       setPermissions(null)
       setIsAuth(false);
@@ -66,7 +78,6 @@ export function AuthProvider({ children }) {
       router.push("/auth")
     };
     const handleForbidden = () => {
-      // No cerramos sesión; solo redirigimos a unauthorized
       router.push("/unauthorized");
     };
 

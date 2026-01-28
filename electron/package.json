@@ -1,6 +1,6 @@
 {
   "name": "ambrosia-app",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
@@ -29,7 +29,7 @@
     "@eslint/js": "^9.39.2",
     "cross-env": "^10.1.0",
     "electron": "^36.1.0",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.4.0",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.23.1"
@@ -44,6 +44,7 @@
   "build": {
     "appId": "com.olympus-btc.ambrosia-pos",
     "productName": "AmbrosiaPoS",
+    "afterPack": "./scripts/afterPack.js",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -114,6 +115,28 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "dmg": {
+      "background": "build/background.png",
+      "icon": "build/icon.icns",
+      "iconSize": 80,
+      "window": {
+        "width": 660,
+        "height": 450
+      },
+      "contents": [
+        {
+          "x": 180,
+          "y": 240,
+          "type": "file"
+        },
+        {
+          "x": 480,
+          "y": 240,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     }
   }
 }

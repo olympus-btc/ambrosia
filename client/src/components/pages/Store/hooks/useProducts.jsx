@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/services/apiClient';
+import { useState, useEffect, useCallback } from "react";
+
 import { useUpload } from "@/components/hooks/useUpload";
+import { apiClient } from "@/services/apiClient";
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
@@ -110,7 +111,6 @@ export function useProducts() {
 
     await fetchProducts();
   };
-
 
   useEffect(() => {
     fetchProducts();

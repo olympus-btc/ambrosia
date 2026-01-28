@@ -54,9 +54,9 @@ function createSplashScreen() {
 function createWindow(url) {
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 768,
+    height: 800,
     minWidth: 1024,
-    minHeight: 768,
+    minHeight: 650,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

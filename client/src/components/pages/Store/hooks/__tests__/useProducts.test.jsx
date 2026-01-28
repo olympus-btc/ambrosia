@@ -1,8 +1,9 @@
 import { act, useEffect } from "react";
+
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { apiClient } from "@/services/apiClient";
 import { useUpload } from "@/components/hooks/useUpload";
+import { apiClient } from "@/services/apiClient";
 
 import { useProducts } from "../useProducts";
 

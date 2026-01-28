@@ -1,4 +1,5 @@
 import { act, useEffect } from "react";
+
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { apiClient } from "@/services/apiClient";
@@ -47,8 +48,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("count")).toHaveTextContent("1");
     expect(screen.getByTestId("first-name")).toHaveTextContent("Default");
@@ -59,8 +59,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
@@ -70,8 +69,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"),
     );
     expect(screen.getByTestId("error")).toHaveTextContent("yes");
   });
@@ -82,8 +80,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("count")).toHaveTextContent("0"),
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"),
     );
 
     await act(async () => {
@@ -103,8 +100,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("first-name")).toHaveTextContent("Old"),
+    await waitFor(() => expect(screen.getByTestId("first-name")).toHaveTextContent("Old"),
     );
 
     await act(async () => {
@@ -127,8 +123,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("count")).toHaveTextContent("2"),
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("2"),
     );
 
     await act(async () => {
@@ -146,8 +141,7 @@ describe("useTemplates", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() =>
-      expect(screen.getByTestId("loading")).toHaveTextContent("no"),
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"),
     );
 
     await expect(handlers.updateTemplate()).rejects.toThrow(

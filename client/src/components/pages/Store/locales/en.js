@@ -48,6 +48,14 @@ const storeEn = {
       cancelButton: "Cancel",
       deleteButton: "Delete",
     },
+    toasts: {
+      duplicateNameTitle: "Duplicate name",
+      duplicateNameDescription: "A user with that name already exists.",
+      genericErrorTitle: "Error",
+      genericErrorDescription: "Could not complete the operation.",
+      lastUserTitle: "Not allowed",
+      lastUserDescription: "You cannot delete the only existing user.",
+    },
   },
   products: {
     title: "Products",
@@ -145,12 +153,14 @@ const storeEn = {
         process: "Error processing the payment",
         btcComplete: "Error completing the BTC payment",
         cashComplete: "Error completing the cash payment",
+        cardComplete: "Error completing the card payment",
         printCustomer: "Ticket printed failed. Check printer settings.",
       },
       success: {
         paid: "Payment registered successfully",
         btcPaid: "Bitcoin payment marked as completed",
         cashPaid: "Cash payment registered successfully",
+        cardPaid: "Card payment registered successfully",
       },
       receipt: {
         tableName: "Counter",
@@ -191,6 +201,15 @@ const storeEn = {
           insufficient: "Cash received is insufficient.",
         },
       },
+      card: {
+        title: "Card Payment",
+        subtitle: "Confirm the card payment to complete the sale.",
+        totalLabel: "Total due",
+        methodLabel: "Payment method",
+        defaultMethod: "Card",
+        cancel: "Cancel",
+        confirm: "Confirm payment",
+      },
     },
   },
   settings: {
@@ -225,6 +244,8 @@ const storeEn = {
       addButton: "Add",
       manageTemplates: "Manage templates",
       addTitle: "Add printer",
+      addDescription:
+        "Choose a type, select the system printer, and attach a template.",
       listTitle: "Configured printers",
       listHint: "Each printer can have its own template and default status.",
       defaultLabel: "Default printer",

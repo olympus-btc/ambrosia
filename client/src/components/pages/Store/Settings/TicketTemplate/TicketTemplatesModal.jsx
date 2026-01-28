@@ -15,7 +15,7 @@ import { TicketTemplatesEditor } from "./TicketTemplatesEditor";
 import { TicketTemplatesFooter } from "./TicketTemplatesFooter";
 import { useTicketTemplatePreviewElements } from "./useTicketTemplatePreviewElements";
 
-const PRINTER_TYPES = ["KITCHEN", "CUSTOMER", "BAR"];
+const PRINTER_TYPES = ["CUSTOMER"];
 
 export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }) {
   const t = useTranslations("settings");
@@ -33,7 +33,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [printerType, setPrinterType] = useState("KITCHEN");
+  const [printerType, setPrinterType] = useState("CUSTOMER");
 
   const previewElements = useTicketTemplatePreviewElements(elements);
 
@@ -140,7 +140,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
 
   return (
     <Modal
-      className="min-h-[665px]"
+      className="min-h-[600px][@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       size="5xl"
       isOpen={isOpen}
       onOpenChange={onClose}

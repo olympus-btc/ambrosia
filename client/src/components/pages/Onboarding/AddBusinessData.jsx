@@ -91,6 +91,8 @@ export function BusinessDetailsStep({ data, onChange }) {
           label={t("step3.fields.businessCurrency")}
           defaultSelectedKeys={[data.businessCurrency]}
           value={data.businessCurrency}
+          isInvalid={!data.businessCurrency}
+          errorMessage={t("step3.fields.businessCurrencyError")}
           onChange={(e) => onChange({ ...data, businessCurrency: e.target.value })}
         >
           {CURRENCIES.map((currency) => (
