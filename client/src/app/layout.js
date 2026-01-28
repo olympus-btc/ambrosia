@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Ambrosia-POS",
-  description: "Made by olympus-btc",
+  title: "Ambrosia PoS",
+  description: "The system for the sovereign individual.",
 };
 
 export default function RootLayout({ children }) {
