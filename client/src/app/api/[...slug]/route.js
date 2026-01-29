@@ -1,6 +1,6 @@
-const apiUrl =
-  process.env.NEXT_PUBLIC_API_URL ||
-  `http://${process.env.HOST}:${process.env.NEXT_PUBLIC_PORT_API}`;
+import { API_URL } from "@/config/api";
+
+const apiUrl = API_URL;
 
 export async function GET(request, { params }) {
   const resolvedParams = await params;
