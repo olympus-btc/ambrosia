@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "clean": "rimraf .next node_modules dist",
     "dev": "next dev",
     "dev:electron": "cross-env NEXT_PUBLIC_ELECTRON=true next dev -p 3000",
     "build": "next build",
