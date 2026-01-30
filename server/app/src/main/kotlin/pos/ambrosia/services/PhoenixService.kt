@@ -219,6 +219,29 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
     }
   }
 
+  /** Close a channel and send funds to an on-chain address */
+  suspend fun closeChannel(request: CloseChannelRequest): String {
+    try {
+      val response: HttpResponse =
+        httpClient.submitForm(
+          url = "$phoenixdUrl/closechannel",
+          formParameters =
+            Parameters.build {
+              append("channelId", request.channelId)
+              append("address", request.address)
+              append("feerateSatByte", request.feerateSatByte.toString())
+            }
+        )
+      if (response.status.value != 200) {
+        throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
+      }
+
+      return response.bodyAsText()
+    } catch (e: Exception) {
+      throw PhoenixServiceException("Failed to close channel on Phoenix: ${e.message}")
+    }
+  }
+
   /** List incoming payments from Phoenix */
   suspend fun listIncomingPayments(
     from: Long = 0,

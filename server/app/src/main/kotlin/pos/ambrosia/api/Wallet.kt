@@ -17,6 +17,7 @@ import pos.ambrosia.models.Phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.Phoenix.PayInvoiceRequest
 import pos.ambrosia.models.Phoenix.PayOfferRequest
 import pos.ambrosia.models.Phoenix.PayOnchainRequest
+import pos.ambrosia.models.Phoenix.CloseChannelRequest
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.TokenService
@@ -108,7 +109,11 @@ fun Route.wallet(phoenixService: PhoenixService, tokenService: TokenService, aut
       val result = phoenixService.bumpOnchainFees(feerateSatByte)
       call.respond(HttpStatusCode.OK, result)
     }
-
+    post("/closechannel") {
+      val request = call.receive<CloseChannelRequest>()
+      val result = phoenixService.closeChannel(request)
+      call.respond(HttpStatusCode.OK, result)
+    }
     // Payments endpoints
     route("/payments") {
       // List incoming payments

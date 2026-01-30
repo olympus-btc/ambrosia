@@ -96,3 +96,6 @@ data class PayOfferRequest(
 
 @Serializable
 data class PayOnchainRequest(val amountSat: Long, val address: String, val feerateSatByte: Long)
+
+@Serializable
+data class CloseChannelRequest(val channelId: String, val address: String, val feerateSatByte: Long)

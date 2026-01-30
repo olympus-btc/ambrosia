@@ -725,6 +725,61 @@ class PhoenixServiceTest {
     }
 
     @Test
+    fun `closeChannel returns txId string on success`() {
+        // Arrange
+        val mockStringResponse = "txId12345"
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = mockStringResponse,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "text/plain")
+            )
+        }
+        val mockHttpClient = HttpClient(mockEngine)
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request = pos.ambrosia.models.Phoenix.CloseChannelRequest(channelId = "channelId", address = "address", feerateSatByte = 10)
+        val response = runBlocking { phoenixService.closeChannel(request) }
+
+        // Assert
+        assertEquals("txId12345", response)
+    }
+
+    @Test
+    fun `closeChannel throws PhoenixServiceException on non-200 response`() {
+        // Arrange
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = ByteReadChannel(""),
+                status = HttpStatusCode.InternalServerError
+            )
+        }
+        val mockHttpClient = HttpClient(mockEngine)
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act & Assert
+        val request = pos.ambrosia.models.Phoenix.CloseChannelRequest(channelId = "channelId", address = "address", feerateSatByte = 10)
+        assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+            runBlocking { phoenixService.closeChannel(request) }
+        }
+    }
+
+    @Test
     fun `listIncomingPayments returns List of IncomingPayment on success`() {
         // Arrange
         val mockJsonResponse = """
