@@ -112,29 +112,11 @@ class Ambrosia : CliktCommand() {
   override fun run() {
     echo(green("Running Ambrosia POS Server v$AppVersion"))
     logger.info("Using data directory: $datadir")
-    Flyway.configure().dataSource("jdbc:sqlite:${datadir}/ambrosia.db", null , null)
-      .mixed(true).load().migrate()
+    
+    runDatabaseMigrations()
+    
     try {
-      val keyStoreFile = File(datadir.toString(), "keystore.jks")
-
-      val privateKeyPassword = options.secret
-      val storePassword = SeedGenerator.generateSecureSeed(
-        seedInput = options.secret
-      )
-
-      if (!keyStoreFile.exists()) {
-          val keyStore = buildKeyStore {
-              certificate("ambrosia") {
-                  password = privateKeyPassword
-                  domains = listOf("localhost", "127.0.0.1", "0.0.0.0")
-              }
-          }
-
-          keyStore.saveToFile(keyStoreFile, storePassword)
-
-          echo(yellow("Generated self-signed certificate using server secret"))
-      }
-
+      val (keyStore, storePassword, privateKeyPassword) = ensureKeyStore()
 
       val server =
         embeddedServer(
@@ -157,10 +139,6 @@ class Ambrosia : CliktCommand() {
               port = options.httpBindPort
               host = options.httpBindIp
             }
-            val keyStore = KeyStore.getInstance("JKS").apply {
-                load(keyStoreFile.inputStream(), storePassword.toCharArray())
-            }
-
             sslConnector(
                 keyStore = keyStore,
                 keyAlias = "ambrosia",
@@ -179,6 +157,38 @@ class Ambrosia : CliktCommand() {
       echo("Error starting server: ${e.message}", err = true)
       throw e
     }
+  }
+
+  private fun runDatabaseMigrations() {
+    Flyway.configure().dataSource("jdbc:sqlite:${datadir}/ambrosia.db", null , null)
+      .mixed(true).load().migrate()
+  }
+
+  private data class KeyStoreInfo(val keyStore: KeyStore, val storePassword: String, val privateKeyPassword: String)
+
+  private fun ensureKeyStore(): KeyStoreInfo {
+      val keyStoreFile = File(datadir.toString(), "keystore.jks")
+      val privateKeyPassword = options.secret
+      val storePassword = SeedGenerator.generateSecureSeed(
+          seedInput = options.secret
+      )
+
+      if (!keyStoreFile.exists()) {
+          val keyStore = buildKeyStore {
+              certificate("ambrosia") {
+                  password = privateKeyPassword
+                  domains = listOf("localhost", "127.0.0.1", "0.0.0.0")
+              }
+          }
+          keyStore.saveToFile(keyStoreFile, storePassword)
+          echo(yellow("Generated self-signed certificate using server secret"))
+      }
+
+      val keyStore = KeyStore.getInstance("JKS").apply {
+          load(keyStoreFile.inputStream(), storePassword.toCharArray())
+      }
+
+      return KeyStoreInfo(keyStore, storePassword, privateKeyPassword)
   }
 
   private fun defaultWebhookUrl(httpBindIp: String, httpBindPort: Int): String {
