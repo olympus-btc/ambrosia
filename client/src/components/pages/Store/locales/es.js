@@ -8,6 +8,7 @@ const storeEs = {
     logout: "Cerrar sesión",
     cart: "Caja",
     orders: "Ordenes",
+    btcmap: "BTC Map",
   },
   dashboard: {
     title: "Panel de control",
@@ -480,6 +481,13 @@ const storeEs = {
       unassigned: "Sin asignar",
       noPayment: "Pago no registrado",
     },
+  },
+  btcmap: {
+    title: "BTC Map",
+    description: "Encuentra lugares que aceptan Bitcoin",
+    addDescription: "Contribuye a la comunidad añadiendo un lugar",
+    addButton: "Añade tu negocio",
+    backButton: "Volver al mapa",
   },
 };
 

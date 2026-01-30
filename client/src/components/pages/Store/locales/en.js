@@ -8,6 +8,7 @@ const storeEn = {
     logout: "Log Out",
     cart: "Cart",
     orders: "Orders",
+    btcmap: "BTC Map",
   },
   dashboard: {
     title: "Dashboard",
@@ -477,6 +478,13 @@ const storeEn = {
       unassigned: "Unassigned",
       noPayment: "Payment not registered",
     },
+  },
+  btcmap: {
+    title: "BTC Map",
+    description: "Find places that accept Bitcoin",
+    addDescription: "Contribute to the community by adding a place",
+    addButton: "Add your business",
+    backButton: "Back to map",
   },
 };
 
