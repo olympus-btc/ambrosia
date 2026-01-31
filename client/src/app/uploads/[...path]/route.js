@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-const upstream =
-  process.env.NEXT_PUBLIC_API_URL ||
-  `http://${process.env.HOST || "127.0.0.1"}:${process.env.NEXT_PUBLIC_PORT_API || "9154"}`;
+import { API_URL } from "@/config/api";
+
+const upstream = API_URL;
 
 export async function GET(request, { params }) {
   const resolvedParams = await params;

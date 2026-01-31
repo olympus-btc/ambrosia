@@ -10,7 +10,6 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "generate-env.cjs",
       "src/app/**",
       "src/hooks/**",
       "src/lib/**",
