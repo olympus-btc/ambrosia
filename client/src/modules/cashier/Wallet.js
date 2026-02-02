@@ -1,5 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { getWsUrl } from "@/config/api";
+
 import WalletGuard from "../../components/auth/WalletGuard";
 import {
   createInvoice,
@@ -125,23 +128,10 @@ function WalletInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const resolveWsUrl = () => {
-      const envWs = process.env.NEXT_PUBLIC_WS_URL;
-      if (envWs) return envWs;
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (apiUrl) return `${apiUrl.replace(/^http/i, "ws")}/ws/payments`;
-
-      const host = window.location.hostname;
-      const port = process.env.NEXT_PUBLIC_PORT_API || window.location.port || "9154";
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      return `${protocol}://${host}${port ? `:${port}` : ""}/ws/payments`;
-    };
-
     let ws;
     let shouldReconnect = true;
     const connect = () => {
-      const url = resolveWsUrl();
+      const url = getWsUrl();
       ws = new WebSocket(url);
 
       ws.onopen = () => {

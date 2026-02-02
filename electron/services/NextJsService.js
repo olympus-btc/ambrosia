@@ -56,8 +56,9 @@ class NextJsService {
       // Use backend config passed as parameter (with fallback to defaults)
       const backendHost = backendConfig.host || '127.0.0.1';
       const backendPort = backendConfig.port || '9154';
+      const apiUrl = `http://${backendHost}:${backendPort}`;
 
-      console.log(`[NextJsService] Backend configuration: ${backendHost}:${backendPort}`);
+      console.log(`[NextJsService] Backend configuration: ${apiUrl}`);
 
       // Verify server.js exists (only in production mode)
       if (!isDev) {
@@ -73,16 +74,14 @@ class NextJsService {
         ...process.env,
         PORT: port.toString(),
         HOSTNAME: '0.0.0.0', // Listen on all interfaces (IPv4)
-        HOST: backendHost,
-        NEXT_PUBLIC_PORT_API: backendPort.toString(),
+        NEXT_PUBLIC_API_URL: apiUrl,
         NEXT_PUBLIC_ELECTRON: 'true',
       };
 
       console.log(`[NextJsService] Environment variables:`, {
         PORT: env.PORT,
         HOSTNAME: env.HOSTNAME,
-        HOST: env.HOST,
-        NEXT_PUBLIC_PORT_API: env.NEXT_PUBLIC_PORT_API,
+        NEXT_PUBLIC_API_URL: env.NEXT_PUBLIC_API_URL,
         NEXT_PUBLIC_ELECTRON: env.NEXT_PUBLIC_ELECTRON,
       });
 

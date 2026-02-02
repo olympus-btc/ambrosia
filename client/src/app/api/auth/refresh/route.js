@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 
 import jwt from "jsonwebtoken";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  `http://${process.env.HOST}:${process.env.NEXT_PUBLIC_PORT_API}`;
+import { API_URL } from "@/config/api";
+
+const API_BASE_URL = API_URL;
 
 const isSecureRequest = (request) => {
   const forwardedProto = request.headers.get("x-forwarded-proto");
