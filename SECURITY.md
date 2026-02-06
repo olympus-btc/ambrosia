@@ -8,7 +8,7 @@ Ambrosia POS is currently in an active development phase. We greatly appreciate 
 
 At this moment, due to the early stage of the project, we ask that you report any security vulnerabilities privately via email to:
 
-**jordi77alva@gmail.com**
+**contact@ambrosiapay.com**
 
 We are committed to investigating all reports and will do our best to address any issues promptly.
 
