@@ -17,9 +17,9 @@ export function useOrders() {
       const ordersData = await ordersResponse.json();
       const ordersList = Array.isArray(ordersData) ? ordersData : [];
       setOrders(ordersList);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError(err);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(error);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -42,10 +42,10 @@ export function useOrders() {
           );
         }
         return createdDataOrder;
-      } catch (err) {
-        console.error("Error creating order:", err);
-        setError(err);
-        throw err;
+      } catch (error) {
+        console.error("Error creating order:", error);
+        setError(error);
+        throw error;
       }
     },
     [],
@@ -72,10 +72,10 @@ export function useOrders() {
           );
         }
         return updatedDataOrder;
-      } catch (err) {
-        console.error("Error updating order:", err);
-        setError(err);
-        throw err;
+      } catch (error) {
+        console.error("Error updating order:", error);
+        setError(error);
+        throw error;
       }
     },
     [],

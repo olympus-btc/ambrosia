@@ -21,9 +21,9 @@ export function useCategories(type = "product") {
       } else {
         setCategories([]);
       }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(err);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
