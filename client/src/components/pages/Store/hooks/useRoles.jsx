@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
 
 export function useRoles() {
   const [roles, setRoles] = useState([]);
@@ -11,14 +11,17 @@ export function useRoles() {
     setError(null);
 
     try {
-      const res = await apiClient("/roles");
-      if (res === null) {
+      const roles = await httpClient("/roles");
+
+      const rolesData = await roles.json();
+
+      if (rolesData === null) {
         setRoles([]);
       } else {
-        setRoles(res);
+        setRoles(rolesData);
       }
-    } catch (err) {
-      console.error("Error fetching roles:", err);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
     } finally {
       setLoading(false);
     }
@@ -26,9 +29,12 @@ export function useRoles() {
 
   const updateRoles = async (role) => {
     try {
-      const updateRoleResponse = await apiClient(`/roles/${user.userId}`, {
+      const updateRoleResponse = await httpClient(`/roles/${user.userId}`, {
         method: "PUT",
-        body: role,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(role),
       });
 
       await fetchRoles();
