@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
 
 export function useOrders() {
   const [orders, setOrders] = useState([]);
@@ -13,8 +13,9 @@ export function useOrders() {
     setError(null);
 
     try {
-      const ordersResponse = await apiClient("/orders/with-payments");
-      const ordersList = Array.isArray(ordersResponse) ? ordersResponse : [];
+      const ordersResponse = await httpClient("/orders/with-payments");
+      const ordersData = await ordersResponse.json();
+      const ordersList = Array.isArray(ordersData) ? ordersData : [];
       setOrders(ordersList);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -28,15 +29,19 @@ export function useOrders() {
   const createOrder = useCallback(
     async (orderBody) => {
       try {
-        const created = await apiClient("/orders", {
+        const createOrder = await httpClient("/orders", {
           method: "POST",
-          body: orderBody,
+          body: JSON.stringify(orderBody),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        if (created?.id) {
-          setOrders((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+        const createdDataOrder = await createOrder.json();
+        if (createdDataOrder?.id) {
+          setOrders((prev) => (Array.isArray(prev) ? [...prev, createdDataOrder] : [createdDataOrder]),
           );
         }
-        return created;
+        return createdDataOrder;
       } catch (err) {
         console.error("Error creating order:", err);
         setError(err);
@@ -50,17 +55,23 @@ export function useOrders() {
     async (orderId, orderBody) => {
       if (!orderId) throw new Error("orderId is required");
       try {
-        const updated = await apiClient(`/orders/${orderId}`, {
+        const updateOrder = await httpClient(`/orders/${orderId}`, {
           method: "PUT",
-          body: orderBody,
+          body: JSON.stringify(orderBody),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        if (updated?.id) {
+
+        const updatedDataOrder = updateOrder.json();
+
+        if (updatedDataOrder?.id) {
           setOrders((prev) => (Array.isArray(prev)
-            ? prev.map((o) => (o.id === orderId ? updated : o))
-            : [updated]),
+            ? prev.map((o) => (o.id === orderId ? updatedDataOrder : o))
+            : [updatedDataOrder]),
           );
         }
-        return updated;
+        return updatedDataOrder;
       } catch (err) {
         console.error("Error updating order:", err);
         setError(err);
