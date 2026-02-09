@@ -35,16 +35,19 @@ export function usePayments() {
       try {
         const createPayment = await httpClient("/payments", {
           method: "POST",
-          body: paymentBody,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(paymentBody),
         });
 
         const createdDataPayment = await createPayment.json();
 
         if (createdDataPayment?.id) {
-          setPayments((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+          setPayments((prev) => (Array.isArray(prev) ? [...prev, createdDataPayment] : [createdDataPayment]),
           );
         }
-        return created;
+        return createdDataPayment;
       } catch (error) {
         console.error("Error creating payment:", error);
         setError(error);
@@ -81,10 +84,10 @@ export function usePayments() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: {
+          body: JSON.stringify({
             payment_id: paymentId,
             ticket_id: ticketId,
-          },
+          }),
         });
 
         const linkedPayment = await linkPayment.json();
