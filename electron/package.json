@@ -1,6 +1,6 @@
 {
-  "name": "ambrosia-app",
-  "version": "0.5.1",
+  "name": "ambrosia-pos",
+  "version": "0.5.1-alpha",
   "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
@@ -72,9 +72,9 @@
     ],
     "mac": {
       "category": "public.app-category.business",
+      "artifactName": "ambrosia-pos-${version}-${arch}.${ext}",
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ],
       "icon": "build/icon.icns",
       "hardenedRuntime": true,
@@ -94,14 +94,17 @@
         "rpm",
         "tar.gz"
       ],
+      "artifactName": "ambrosia-pos-${version}-${arch}.${ext}",
       "category": "Office",
       "icon": "build/icon.png",
       "maintainer": "Ivan Robles <contact@ivanrobles.pro>"
     },
     "deb": {
+      "artifactName": "ambrosia-pos_${version}_${arch}.${ext}",
       "afterInstall": "build/postinst"
     },
     "rpm": {
+      "artifactName": "ambrosia-pos-${version}.${arch}.${ext}",
       "depends": [
         "libxcrypt-compat"
       ],
@@ -111,6 +114,7 @@
       ]
     },
     "nsis": {
+      "artifactName": "ambrosia-pos-${version}-${arch}-setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
