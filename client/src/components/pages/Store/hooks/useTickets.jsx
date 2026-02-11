@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
 
 export function useTickets() {
   const [tickets, setTickets] = useState([]);
@@ -12,15 +12,18 @@ export function useTickets() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/tickets");
-      if (Array.isArray(res)) {
-        setTickets(res);
+      const tickets = await httpClient("/tickets");
+
+      const ticketsData = await tickets.json();
+
+      if (Array.isArray(ticketsData)) {
+        setTickets(ticketsData);
       } else {
         setTickets([]);
       }
-    } catch (err) {
-      console.error("Error fetching tickets:", err);
-      setError(err);
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -29,19 +32,25 @@ export function useTickets() {
   const createTicket = useCallback(
     async (ticketBody) => {
       try {
-        const created = await apiClient("/tickets", {
+        const createTicket = await httpClient("/tickets", {
           method: "POST",
-          body: ticketBody,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(ticketBody),
         });
-        if (created?.id) {
-          setTickets((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+
+        const createdDataTicket = createTicket.json();
+
+        if (createdDataTicket?.id) {
+          setTickets((prev) => (Array.isArray(prev) ? [...prev, createdDataTicket] : [createdDataTicket]),
           );
         }
-        return created;
-      } catch (err) {
-        console.error("Error creating ticket:", err);
-        setError(err);
-        throw err;
+        return createdDataTicket;
+      } catch (error) {
+        console.error("Error creating ticket:", error);
+        setError(error);
+        throw error;
       }
     },
     [],
