@@ -4,6 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.ktor)
   alias(libs.plugins.kotlin.plugin.serialization)
+  id("com.ncorti.ktfmt.gradle") version "0.25.0"
   application
 }
 
