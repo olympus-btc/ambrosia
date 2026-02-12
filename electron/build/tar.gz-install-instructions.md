@@ -9,37 +9,37 @@ This tar.gz archive is provided for advanced users on Linux distributions that d
 ### 1. Extract the archive
 
 ```bash
-tar -xzf ambrosia-app-*.tar.gz
+tar -xzf ambrosia-pos-*.tar.gz
 ```
 
 ### 2. Move to a permanent location (optional)
 
 **System-wide install:**
 ```bash
-sudo mv ambrosia-app-* /opt/AmbrosiaPoS
+sudo mv ambrosia-pos-* /opt/AmbrosiaPoS
 ```
 
 **User-only install:**
 ```bash
-mv ambrosia-app-* ~/.local/share/AmbrosiaPoS
+mv ambrosia-pos-* ~/.local/share/AmbrosiaPoS
 ```
 
 ### 3. Run the application
 
 ```bash
 cd /opt/AmbrosiaPoS  # or your chosen location
-./ambrosia-app
+./ambrosia-pos
 ```
 
 ### 4. Create a desktop shortcut (optional)
 
-Create a file at `~/.local/share/applications/ambrosia-app.desktop`:
+Create a file at `~/.local/share/applications/ambrosia-pos.desktop`:
 
 ```ini
 [Desktop Entry]
 Name=Ambrosia POS
 Comment=Restaurant and Retail POS with Bitcoin Lightning
-Exec=/opt/AmbrosiaPoS/ambrosia-app
+Exec=/opt/AmbrosiaPoS/ambrosia-pos
 Icon=/opt/AmbrosiaPoS/resources/app/build/icon.png
 Terminal=false
 Type=Application
@@ -84,7 +84,7 @@ rm -rf ~/.phoenix
 ### 3. Remove desktop entry (if created)
 
 ```bash
-rm ~/.local/share/applications/ambrosia-app.desktop
+rm ~/.local/share/applications/ambrosia-pos.desktop
 ```
 
 ## Support
