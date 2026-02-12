@@ -185,49 +185,50 @@ export function Onboarding() {
 
           <Divider className="my-8 bg-gray-400" />
 
-          <div className="flex justify-between">
-            {!needsBusinessType && (
+          <div className="flex w-full">
+            {(!needsBusinessType && step !== 1) && (
               <Button
                 variant="bordered"
                 onPress={handlePrevious}
-                isDisabled={step === 1}
-                className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
               >
                 {t("buttons.back")}
               </Button>
             )}
 
-            {needsBusinessType ? (
-              <Button
-                color="primary"
-                onPress={handleComplete}
-                isDisabled={!data.businessType}
-                className="gradient-forest text-white"
-              >
-                {t("buttons.finish")}
-              </Button>
-            ) : step < 4 ? (
-              <Button
-                color="primary"
-                onPress={handleNext}
-                isDisabled={
-                  (step === 1 && !data.businessType) ||
-                  (step === 2 && (!data.userName || !data.userPassword || !isPasswordStrong(data.userPassword) || !isPinValid(data.userPin))) ||
-                  (step === 3 && (!data.businessName || !data.businessCurrency))
-                }
-                className="gradient-forest text-white"
-              >
-                {t("buttons.next")}
-              </Button>
-            ) : (
-              <Button
-                color="primary"
-                onPress={handleComplete}
-                className="gradient-forest text-white"
-              >
-                {t("buttons.finish")}
-              </Button>
-            )}
+            <div className="ml-auto">
+              {needsBusinessType ? (
+                <Button
+                  color="primary"
+                  onPress={handleComplete}
+                  isDisabled={!data.businessType}
+                  className="gradient-forest text-white"
+                >
+                  {t("buttons.finish")}
+                </Button>
+              ) : step < 4 ? (
+                <Button
+                  color="primary"
+                  onPress={handleNext}
+                  isDisabled={
+                    (step === 1 && !data.businessType) ||
+                    (step === 2 && (!data.userName || !data.userPassword || !isPasswordStrong(data.userPassword) || !isPinValid(data.userPin))) ||
+                    (step === 3 && (!data.businessName || !data.businessCurrency))
+                  }
+                  className="gradient-forest text-white"
+                >
+                  {t("buttons.next")}
+                </Button>
+              ) : (
+                <Button
+                  color="primary"
+                  onPress={handleComplete}
+                  className="gradient-forest text-white"
+                >
+                  {t("buttons.finish")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

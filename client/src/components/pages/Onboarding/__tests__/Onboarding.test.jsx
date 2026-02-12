@@ -86,7 +86,7 @@ describe("Onboarding Wizard", () => {
     await act(async () => {
       renderOnboarding();
     });
-    expect(screen.getByText("buttons.back")).toBeDisabled();
+    expect(screen.queryByText("buttons.back")).not.toBeInTheDocument();
   });
 
   it("disables the Next button if Pin not added", async () => {
