@@ -4,7 +4,6 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.ktor)
   alias(libs.plugins.kotlin.plugin.serialization)
-  id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
   application
 }
 
@@ -85,8 +84,4 @@ java {
 
 application {
   mainClass = "pos.ambrosia.AmbrosiaKt"
-}
-
-ktlint {
-    version.set("1.8.0")
 }
