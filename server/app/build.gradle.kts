@@ -1,13 +1,10 @@
-import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
-import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
-
 version = "0.5.1-alpha"
 
 plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.ktor)
   alias(libs.plugins.kotlin.plugin.serialization)
-  id("com.ncorti.ktfmt.gradle") version "0.25.0"
+  id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
   application
 }
 
@@ -90,20 +87,6 @@ application {
   mainClass = "pos.ambrosia.AmbrosiaKt"
 }
 
-ktfmt {
-  // Options: googleStyle() (default), kotlinLangStyle(), or facebookStyle()
-  kotlinLangStyle()
-  
-  tasks.withType<KtfmtCheckTask>().configureEach {
-    exclude("**/api/**")
-    exclude("**/config/**")
-    exclude("**/db/**")
-    exclude("**/models/**")
-    exclude("**/services/**")
-    exclude("**/util/**")
-    exclude("**/utest/**")
-    exclude("**/Ambrosia.kt")
-    exclude("**/Api.kt")
-    exclude("**/build.gradle.kts")
-  }
+ktlint {
+    version.set("1.8.0")
 }
