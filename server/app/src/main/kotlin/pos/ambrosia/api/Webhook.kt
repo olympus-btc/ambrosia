@@ -8,24 +8,12 @@ import io.ktor.server.routing.*
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.logger
 
 private const val SIGNATURE_HEADER = "X-Phoenix-Signature"
 private val json = Json { ignoreUnknownKeys = true }
-
-@Serializable
-data class PhoenixWebhookPayload(
-  val type: String,
-  val timestamp: Long? = null,
-  val amountSat: Long? = null,
-  val paymentHash: String? = null,
-  val externalId: String? = null,
-  val payerNote: String? = null,
-  val payerKey: String? = null
-)
 
 fun Application.configurePhoenixWebhook() {
   routing { phoenixWebhook() }
@@ -58,7 +46,7 @@ fun Route.phoenixWebhook() {
     }
 
     val payload =
-      runCatching { json.decodeFromString<PhoenixWebhookPayload>(rawBody) }
+      runCatching { json.decodeFromString<PaymentNotification>(rawBody) }
         .getOrElse {
           logger.warn("Invalid Phoenix webhook payload: ${it.message}")
           call.respond(HttpStatusCode.BadRequest, "Invalid payload")
@@ -69,7 +57,7 @@ fun Route.phoenixWebhook() {
       "Phoenix webhook received: type=${payload.type}, paymentHash=${payload.paymentHash}, amountSat=${payload.amountSat}, externalId=${payload.externalId}"
     )
 
-    PhoenixWebhookNotifier.broadcast(payload)
+    PaymentNotifier.broadcast(payload)
 
     call.respond(HttpStatusCode.Accepted, mapOf("status" to "ok"))
   }

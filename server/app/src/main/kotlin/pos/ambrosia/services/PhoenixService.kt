@@ -18,7 +18,7 @@ import pos.ambrosia.utils.*
 import io.ktor.server.application.ApplicationEnvironment
 
 /** Service for interacting with Phoenix Lightning node */
-class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpClient) {
+class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpClient) : LightningBackend {
   private val config = app.config
   private val phoenixdUrl = config.property("phoenixd-url").getString()
   private val phoenixdPassword = config.property("phoenixd-password").getString()
@@ -47,7 +47,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   )
 
   /** Get node information from Phoenix */
-  suspend fun getNodeInfo(): NodeInfo {
+  override suspend fun getNodeInfo(): NodeInfo {
     try {
       val response: HttpResponse = httpClient.get("$phoenixdUrl/getinfo")
       if (response.status.value != 200) {
@@ -65,7 +65,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Get balance information from Phoenix */
-  suspend fun getBalance(): PhoenixBalance {
+  override suspend fun getBalance(): PhoenixBalance {
     try {
       val response: HttpResponse = httpClient.get("$phoenixdUrl/getbalance")
       if (response.status.value != 200) {
@@ -81,12 +81,12 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Get seed from Phoenix */
-  suspend fun getSeed(): String {
+  override suspend fun getSeed(): String {
     return AppConfig.loadPhoenixSeed()
   }
 
   /** Create a new Bolt11 invoice on Phoenix */
-  suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
+  override suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -112,7 +112,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Create a new Bolt12 offer on Phoenix */
-  suspend fun createOffer(request: CreateOffer): String {
+  override suspend fun createOffer(request: CreateOffer): String {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -134,7 +134,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Pay a Bolt11 invoice on Phoenix */
-  suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse {
+  override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -155,7 +155,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Pay a Bolt12 offer on Phoenix */
-  suspend fun payOffer(request: PayOfferRequest): PaymentResponse {
+  override suspend fun payOffer(request: PayOfferRequest): PaymentResponse {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -177,7 +177,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Pay Onchain transaction on Phoenix */
-  suspend fun payOnchain(request: PayOnchainRequest): PaymentResponse {
+  override suspend fun payOnchain(request: PayOnchainRequest): PaymentResponse {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -199,7 +199,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Bump the fee of all pending onchain transactions */
-  suspend fun bumpOnchainFees(feerateSatByte: Int): String {
+  override suspend fun bumpOnchainFees(feerateSatByte: Int): String {
     try {
       val response: HttpResponse =
       httpClient.submitForm(
@@ -220,13 +220,13 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** List incoming payments from Phoenix */
-  suspend fun listIncomingPayments(
-    from: Long = 0,
-    to: Long? = null,
-    limit: Int = 20,
-    offset: Int = 0,
-    all: Boolean = false,
-    externalId: String? = null
+  override suspend fun listIncomingPayments(
+    from: Long,
+    to: Long?,
+    limit: Int,
+    offset: Int,
+    all: Boolean,
+    externalId: String?
   ): List<IncomingPayment> {
     try {
       val response: HttpResponse =
@@ -249,7 +249,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Get a specific incoming payment by payment hash */
-  suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
+  override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
     try {
       val response: HttpResponse = httpClient.get("$phoenixdUrl/payments/incoming/$paymentHash")
       if (response.status.value != 200) {
@@ -263,12 +263,12 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** List outgoing payments from Phoenix */
-  suspend fun listOutgoingPayments(
-    from: Long = 0,
-    to: Long? = null,
-    limit: Int = 20,
-    offset: Int = 0,
-    all: Boolean = false
+  override suspend fun listOutgoingPayments(
+    from: Long,
+    to: Long?,
+    limit: Int,
+    offset: Int,
+    all: Boolean
   ): List<OutgoingPayment> {
     try {
       val response: HttpResponse =
@@ -290,7 +290,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Get a specific outgoing payment by payment ID */
-  suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment {
+  override suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment {
     try {
       val response: HttpResponse = httpClient.get("$phoenixdUrl/payments/outgoing/$paymentId")
       if (response.status.value != 200) {
@@ -304,7 +304,7 @@ class PhoenixService(app: ApplicationEnvironment, private val httpClient: HttpCl
   }
 
   /** Get a specific outgoing payment by payment hash */
-  suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment {
+  override suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment {
     try {
       val response: HttpResponse =
       httpClient.get("$phoenixdUrl/payments/outgoingbyhash/$paymentHash")

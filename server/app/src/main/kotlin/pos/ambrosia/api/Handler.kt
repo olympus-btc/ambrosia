@@ -19,6 +19,9 @@ import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.UnauthorizedApiException
 import pos.ambrosia.utils.DuplicateUserNameException
 import pos.ambrosia.utils.LastUserDeletionException
+import pos.ambrosia.utils.NwcConnectionException
+import pos.ambrosia.utils.NwcServiceException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 
 fun Application.Handler() {
   install(StatusPages) {
@@ -86,6 +89,18 @@ fun Application.Handler() {
     exception<PhoenixServiceException> { call, cause ->
       logger.error("Phoenix service error: ${cause.message}")
       call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
+    }
+    exception<NwcConnectionException> { call, cause ->
+      logger.error("NWC relay connection error: ${cause.message}")
+      call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet relay is unavailable"))
+    }
+    exception<NwcServiceException> { call, cause ->
+      logger.error("NWC service error: ${cause.message}")
+      call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet service error"))
+    }
+    exception<UnsupportedBackendOperationException> { call, cause ->
+      logger.warn("Unsupported backend operation: ${cause.message}")
+      call.respond(HttpStatusCode.NotImplemented, Message(cause.message ?: "Operation not supported by current Lightning backend"))
     }
   }
 }
