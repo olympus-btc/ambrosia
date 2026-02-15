@@ -78,6 +78,8 @@ class Ambrosia : CliktCommand() {
         }
         seed
       }
+    val nwcUri by
+      option("--nwc-uri", help = "NWC connection URI (nostr+walletconnect://pubkey?relay=...&secret=...)")
     val phoenixdUrl by
       option("--phoenixd-url", help = "phoenixd API url, eg http://phoenixd:9740").defaultLazy {
         val value = "http://localhost:9740" // Default value
@@ -88,6 +90,7 @@ class Ambrosia : CliktCommand() {
       }
     val phoenixdPassword by
       option("--phoenixd-password", help = "http-password for phoenixd API").defaultLazy {
+        if (nwcUri != null) return@defaultLazy ""
         AppConfig.loadConfig()
         val value = AppConfig.getPhoenixProperty("http-password") ?: throw Exception("phoenixd http-password on found in phoenix.conf, please provide it with --phoenixd-password or in the phoenix.conf file")
         value
@@ -96,6 +99,7 @@ class Ambrosia : CliktCommand() {
       option("--jwt-access-token-expiration", help = "Access token expiration in seconds (default: 60)").default("60")
     val phoenixdWebhookSecret by
       option("--phoenixd-webhook-secret", help = "webhook-secret for phoenixd webhooks").defaultLazy {
+        if (nwcUri != null) return@defaultLazy ""
         AppConfig.loadConfig()
         val existing = AppConfig.getPhoenixProperty("webhook-secret")
         existing ?: throw Exception("phoenixd webhook-secret not found in phoenix.conf, please provide it with --phoenixd-webhook-secret or set webhook-secret in phoenix.conf")
@@ -150,6 +154,7 @@ class Ambrosia : CliktCommand() {
                   put("phoenixd-url", options.phoenixdUrl)
                   put("phoenixd-password", options.phoenixdPassword)
                   put("phoenix.webhook-secret", options.phoenixdWebhookSecret)
+                  options.nwcUri?.let { put("nwc-uri", it) }
                 }
             },
           configure = {
@@ -173,7 +178,11 @@ class Ambrosia : CliktCommand() {
           },
           module = { Api().run { module() } }
         )
-      ensurePhoenixWebhookConfigured(options.phoenixdWebhookUrl)
+      if (options.nwcUri == null) {
+        ensurePhoenixWebhookConfigured(options.phoenixdWebhookUrl)
+      } else {
+        logger.info("NWC mode active, skipping Phoenix webhook configuration")
+      }
       server.start(wait = true)
     } catch (e: Exception) {
       echo("Error starting server: ${e.message}", err = true)

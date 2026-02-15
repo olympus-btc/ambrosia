@@ -33,6 +33,16 @@ class PermissionDeniedException(message: String = "Permission required") : Secur
 
 class PrintTicketException(message: String = "Error processing print job") : RuntimeException(message)
 
+// NWC (Nostr Wallet Connect) exceptions
+class NwcConnectionException(message: String = "Unable to connect to NWC relay") :
+        RuntimeException(message)
+
+class NwcServiceException(message: String = "NWC wallet service error") :
+        RuntimeException(message)
+
+class UnsupportedBackendOperationException(message: String = "Operation not supported by current Lightning backend") :
+        RuntimeException(message)
+
 class DuplicateUserNameException(message: String = "User name already exists") :
         IllegalStateException(message)
 
