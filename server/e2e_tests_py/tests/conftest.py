@@ -118,7 +118,7 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 try:
                     error_data = setup_response.json()
                     error_message = error_data.get("message", "")
-                    if "UNIQUE constraint failed: users.name" in error_message:
+                    if "UNIQUE constraint failed: users.name" in error_message or "already exists" in error_message.lower():
                         logger.info(
                             "✓ User already exists in database, continuing with tests"
                         )
