@@ -2,7 +2,7 @@
 const config = {
   testEnvironment: "jsdom",
   moduleFileExtensions: ["js", "jsx", "ts", "tsx"],
-  testPathIgnorePatterns: ["/node_modules/", "/.next/", "__tests__/__mocks__/"],
+  testPathIgnorePatterns: ["/node_modules/", "/.next/", "__tests__/__mocks__/", "/e2e/"],
   setupFiles: [
     "<rootDir>/__tests__/__mocks__/next/fetch.js",
     "<rootDir>/__tests__/__mocks__/globals.js",
