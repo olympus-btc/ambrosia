@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/auth.js";
+import { test, expect } from "./fixtures/auth";
 
 test.describe("Cart & Checkout", () => {
   test("add product to cart", async ({ authenticatedPage: page }) => {
