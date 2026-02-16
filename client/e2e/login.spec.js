@@ -24,7 +24,7 @@ test.describe("Login", () => {
 
     // Click first real employee
     const option = page
-      .locator('[data-key]')
+      .locator("[data-key]")
       .filter({ hasNotText: "No hay" })
       .first();
     await expect(option).toBeVisible({ timeout: 5000 });
@@ -59,7 +59,7 @@ test.describe("Login", () => {
     await userSelect.click();
 
     const option = page
-      .locator('[data-key]')
+      .locator("[data-key]")
       .filter({ hasNotText: "No hay" })
       .first();
     await expect(option).toBeVisible({ timeout: 5000 });

@@ -40,6 +40,7 @@ export const test = base.extend({
       timeout: 15000,
     });
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });

@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/auth.js";
+import { test, expect } from "./fixtures/auth";
 
 test.describe("Products", () => {
   test("product list displays after login", async ({ authenticatedPage: page }) => {
