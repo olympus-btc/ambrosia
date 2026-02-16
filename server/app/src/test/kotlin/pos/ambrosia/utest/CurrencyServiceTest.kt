@@ -92,7 +92,7 @@ class CurrencyServiceTest {
     @Test
     fun `setBaseCurrencyById returns true on success`() {
         val upsertSt: PreparedStatement = mock()
-        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency")) ).thenReturn(upsertSt)
+        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency"))).thenReturn(upsertSt)
         whenever(upsertSt.executeUpdate()).thenReturn(1)
 
         val service = CurrencyService(conn)
@@ -102,7 +102,7 @@ class CurrencyServiceTest {
     @Test
     fun `setBaseCurrencyById returns false when update fails`() {
         val upsertSt: PreparedStatement = mock()
-        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency")) ).thenReturn(upsertSt)
+        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency"))).thenReturn(upsertSt)
         whenever(upsertSt.executeUpdate()).thenReturn(0)
 
         val service = CurrencyService(conn)
@@ -138,4 +138,3 @@ class CurrencyServiceTest {
         assertFalse(service.setBaseCurrencyByAcronym("ZZZ"))
     }
 }
-

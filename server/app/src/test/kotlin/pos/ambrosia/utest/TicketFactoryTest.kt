@@ -9,41 +9,44 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TicketFactoryTest {
-
     @Test
     fun `build should process a simple text element`() {
         // Arrange
         val mockEscpos: EscPos = mock()
-        val template = TicketTemplate(
-            id = "template-1",
-            name = "Test Template",
-            elements = listOf(
-                TicketElement(
-                    id = "elem-1",
-                    templateId = "template-1",
-                    order = 0,
-                    type = ElementType.TEXT,
-                    value = "Welcome to {{config.businessName}}"
-                )
+        val template =
+            TicketTemplate(
+                id = "template-1",
+                name = "Test Template",
+                elements =
+                    listOf(
+                        TicketElement(
+                            id = "elem-1",
+                            templateId = "template-1",
+                            order = 0,
+                            type = ElementType.TEXT,
+                            value = "Welcome to {{config.businessName}}",
+                        ),
+                    ),
             )
-        )
-        val ticketData = TicketData(
-            ticketId = "123",
-            tableName = "Table 1",
-            roomName = "Main Room",
-            date = "2025-10-31",
-            items = emptyList(),
-            total = 0.0
-        )
-        val config = Config(
-            businessType = "restaurant",
-            businessName = "Ambrosia",
-            businessAddress = null,
-            businessPhone = null,
-            businessEmail = null,
-            businessTaxId = null,
-            businessLogoUrl = null
-        )
+        val ticketData =
+            TicketData(
+                ticketId = "123",
+                tableName = "Table 1",
+                roomName = "Main Room",
+                date = "2025-10-31",
+                items = emptyList(),
+                total = 0.0,
+            )
+        val config =
+            Config(
+                businessType = "restaurant",
+                businessName = "Ambrosia",
+                businessAddress = null,
+                businessPhone = null,
+                businessEmail = null,
+                businessTaxId = null,
+                businessLogoUrl = null,
+            )
 
         val ticketFactory = TicketFactory(template)
 
@@ -59,40 +62,45 @@ class TicketFactoryTest {
         // Arrange
         val mockEscpos: EscPos = mock()
         val stringCaptor = argumentCaptor<String>()
-        val template = TicketTemplate(
-            id = "template-2",
-            name = "Table Row Template",
-            elements = listOf(
-                TicketElement(
-                    id = "elem-2",
-                    templateId = "template-2",
-                    order = 0,
-                    type = ElementType.TABLE_ROW,
-                    value = "", // Value is ignored for TABLE_ROW
-                    style = ElementStyle(bold = false, justification = Justification.LEFT, fontSize = FontSize.NORMAL)
-                )
+        val template =
+            TicketTemplate(
+                id = "template-2",
+                name = "Table Row Template",
+                elements =
+                    listOf(
+                        TicketElement(
+                            id = "elem-2",
+                            templateId = "template-2",
+                            order = 0,
+                            type = ElementType.TABLE_ROW,
+                            value = "", // Value is ignored for TABLE_ROW
+                            style = ElementStyle(bold = false, justification = Justification.LEFT, fontSize = FontSize.NORMAL),
+                        ),
+                    ),
             )
-        )
-        val ticketData = TicketData(
-            ticketId = "456",
-            tableName = "Table 2",
-            roomName = "Patio",
-            date = "2025-10-31",
-            items = listOf(
-                TicketDataItem(quantity = 1, name = "Burger", price = 12.50, comments = listOf("No pickles", "Well done")),
-                TicketDataItem(quantity = 2, name = "Fries", price = 3.00)
-            ),
-            total = 18.50
-        )
-        val config = Config(
-            businessType = "restaurant",
-            businessName = "Ambrosia",
-            businessAddress = null,
-            businessPhone = null,
-            businessEmail = null,
-            businessTaxId = null,
-            businessLogoUrl = null
-        )
+        val ticketData =
+            TicketData(
+                ticketId = "456",
+                tableName = "Table 2",
+                roomName = "Patio",
+                date = "2025-10-31",
+                items =
+                    listOf(
+                        TicketDataItem(quantity = 1, name = "Burger", price = 12.50, comments = listOf("No pickles", "Well done")),
+                        TicketDataItem(quantity = 2, name = "Fries", price = 3.00),
+                    ),
+                total = 18.50,
+            )
+        val config =
+            Config(
+                businessType = "restaurant",
+                businessName = "Ambrosia",
+                businessAddress = null,
+                businessPhone = null,
+                businessEmail = null,
+                businessTaxId = null,
+                businessLogoUrl = null,
+            )
 
         val ticketFactory = TicketFactory(template)
 
@@ -115,36 +123,40 @@ class TicketFactoryTest {
     fun `build should process separator element`() {
         // Arrange
         val mockEscpos: EscPos = mock()
-        val template = TicketTemplate(
-            id = "template-3",
-            name = "Separator Template",
-            elements = listOf(
-                TicketElement(
-                    id = "elem-3",
-                    templateId = "template-3",
-                    order = 0,
-                    type = ElementType.SEPARATOR,
-                    value = "-"
-                )
+        val template =
+            TicketTemplate(
+                id = "template-3",
+                name = "Separator Template",
+                elements =
+                    listOf(
+                        TicketElement(
+                            id = "elem-3",
+                            templateId = "template-3",
+                            order = 0,
+                            type = ElementType.SEPARATOR,
+                            value = "-",
+                        ),
+                    ),
             )
-        )
-        val ticketData = TicketData(
-            ticketId = "789",
-            tableName = "Table 3",
-            roomName = "Bar",
-            date = "2025-10-31",
-            items = emptyList(),
-            total = 0.0
-        )
-        val config = Config(
-            businessType = "restaurant",
-            businessName = "Ambrosia",
-            businessAddress = null,
-            businessPhone = null,
-            businessEmail = null,
-            businessTaxId = null,
-            businessLogoUrl = null
-        )
+        val ticketData =
+            TicketData(
+                ticketId = "789",
+                tableName = "Table 3",
+                roomName = "Bar",
+                date = "2025-10-31",
+                items = emptyList(),
+                total = 0.0,
+            )
+        val config =
+            Config(
+                businessType = "restaurant",
+                businessName = "Ambrosia",
+                businessAddress = null,
+                businessPhone = null,
+                businessEmail = null,
+                businessTaxId = null,
+                businessLogoUrl = null,
+            )
 
         val ticketFactory = TicketFactory(template)
 
@@ -159,36 +171,40 @@ class TicketFactoryTest {
     fun `build should process table header element`() {
         // Arrange
         val mockEscpos: EscPos = mock()
-        val template = TicketTemplate(
-            id = "template-4",
-            name = "Table Header Template",
-            elements = listOf(
-                TicketElement(
-                    id = "elem-4",
-                    templateId = "template-4",
-                    order = 0,
-                    type = ElementType.TABLE_HEADER,
-                    value = "Item             Qty     Price"
-                )
+        val template =
+            TicketTemplate(
+                id = "template-4",
+                name = "Table Header Template",
+                elements =
+                    listOf(
+                        TicketElement(
+                            id = "elem-4",
+                            templateId = "template-4",
+                            order = 0,
+                            type = ElementType.TABLE_HEADER,
+                            value = "Item             Qty     Price",
+                        ),
+                    ),
             )
-        )
-        val ticketData = TicketData(
-            ticketId = "101",
-            tableName = "Table 4",
-            roomName = "Kitchen",
-            date = "2025-10-31",
-            items = emptyList(),
-            total = 0.0
-        )
-        val config = Config(
-            businessType = "restaurant",
-            businessName = "Ambrosia",
-            businessAddress = null,
-            businessPhone = null,
-            businessEmail = null,
-            businessTaxId = null,
-            businessLogoUrl = null
-        )
+        val ticketData =
+            TicketData(
+                ticketId = "101",
+                tableName = "Table 4",
+                roomName = "Kitchen",
+                date = "2025-10-31",
+                items = emptyList(),
+                total = 0.0,
+            )
+        val config =
+            Config(
+                businessType = "restaurant",
+                businessName = "Ambrosia",
+                businessAddress = null,
+                businessPhone = null,
+                businessEmail = null,
+                businessTaxId = null,
+                businessLogoUrl = null,
+            )
 
         val ticketFactory = TicketFactory(template)
 

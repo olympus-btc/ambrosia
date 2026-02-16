@@ -246,7 +246,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns false if ID is null`() {
         runBlocking {
-            val ticket = Ticket(id = null, order_id = "order-1", user_id = "user-1", ticket_date = "date-1", status = 1, total_amount = 100.0, notes = "note-1") // Arrange
+            val ticket =
+                Ticket(
+                    id = null,
+                    order_id = "order-1",
+                    user_id = "user-1",
+                    ticket_date = "date-1",
+                    status = 1,
+                    total_amount = 100.0,
+                    notes = "note-1",
+                ) // Arrange
             val service = TicketService(mockConnection) // Arrange
             val result = service.updateTicket(ticket) // Act
             assertFalse(result) // Assert
@@ -257,7 +266,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns false if order does not exist`() {
         runBlocking {
-            val ticket = Ticket(id = "ticket-1", order_id = "non-existent-order", user_id = "user-1", ticket_date = "date-1", status = 1, total_amount = 100.0, notes = "note-1") // Arrange
+            val ticket =
+                Ticket(
+                    id = "ticket-1",
+                    order_id = "non-existent-order",
+                    user_id = "user-1",
+                    ticket_date = "date-1",
+                    status = 1,
+                    total_amount = 100.0,
+                    notes = "note-1",
+                ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -270,7 +288,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns false if user does not exist`() {
         runBlocking {
-            val ticket = Ticket(id = "ticket-1", order_id = "order-1", user_id = "non-existent-user", ticket_date = "date-1", status = 1, total_amount = 100.0, notes = "note-1") // Arrange
+            val ticket =
+                Ticket(
+                    id = "ticket-1",
+                    order_id = "order-1",
+                    user_id = "non-existent-user",
+                    ticket_date = "date-1",
+                    status = 1,
+                    total_amount = 100.0,
+                    notes = "note-1",
+                ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
@@ -290,7 +317,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns false if status is invalid`() {
         runBlocking {
-            val ticket = Ticket(id = "ticket-1", order_id = "order-1", user_id = "user-1", ticket_date = "date-1", status = 2, total_amount = 100.0, notes = "note-1") // Arrange
+            val ticket =
+                Ticket(
+                    id = "ticket-1",
+                    order_id = "order-1",
+                    user_id = "user-1",
+                    ticket_date = "date-1",
+                    status = 2,
+                    total_amount = 100.0,
+                    notes = "note-1",
+                ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
@@ -310,7 +346,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns true on success`() {
         runBlocking {
-            val ticket = Ticket(id = "ticket-1", order_id = "order-1", user_id = "user-1", ticket_date = "date-1", status = 1, total_amount = 150.0, notes = "updated note") // Arrange
+            val ticket =
+                Ticket(
+                    id = "ticket-1",
+                    order_id = "order-1",
+                    user_id = "user-1",
+                    ticket_date = "date-1",
+                    status = 1,
+                    total_amount = 150.0,
+                    notes = "updated note",
+                ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
@@ -333,7 +378,16 @@ class TicketServiceTest {
     @Test
     fun `updateTicket returns false when database update fails`() {
         runBlocking {
-            val ticket = Ticket(id = "ticket-1", order_id = "order-1", user_id = "user-1", ticket_date = "date-1", status = 1, total_amount = 150.0, notes = "updated note") // Arrange
+            val ticket =
+                Ticket(
+                    id = "ticket-1",
+                    order_id = "order-1",
+                    user_id = "user-1",
+                    ticket_date = "date-1",
+                    status = 1,
+                    total_amount = 150.0,
+                    notes = "updated note",
+                ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange

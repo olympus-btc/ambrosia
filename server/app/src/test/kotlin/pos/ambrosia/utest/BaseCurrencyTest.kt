@@ -27,7 +27,7 @@ class BaseCurrencyTest {
         whenever(mockResultSet.getString("country_code")).thenReturn("US")
 
         val service = BaseCurrencyService(mockConnection) // Arrange
-        val result = service.getBaseCurrency()  // Act
+        val result = service.getBaseCurrency() // Act
 
         assertNotNull(result)
         assertEquals(expectedCurrencyId, result.currency_id) // Assert

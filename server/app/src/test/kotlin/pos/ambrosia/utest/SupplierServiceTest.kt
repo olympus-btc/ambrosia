@@ -158,7 +158,9 @@ class SupplierServiceTest {
             val supplierToUpdate = Supplier(id = "sup-1", name = "New Valid Name", "", "", "", "") // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?"))).thenReturn(nameCheckStatement) // Arrange
+            whenever(
+                mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?")),
+            ).thenReturn(nameCheckStatement) // Arrange
             whenever(mockConnection.prepareStatement(contains("UPDATE suppliers"))).thenReturn(updateStatement) // Arrange
             val nameCheckResultSet: ResultSet = mock() // Arrange
             whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
@@ -176,7 +178,9 @@ class SupplierServiceTest {
             val supplierToUpdate = Supplier(id = "sup-1", name = "New Valid Name", "", "", "", "") // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?"))).thenReturn(nameCheckStatement) // Arrange
+            whenever(
+                mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?")),
+            ).thenReturn(nameCheckStatement) // Arrange
             whenever(mockConnection.prepareStatement(contains("UPDATE suppliers"))).thenReturn(updateStatement) // Arrange
             val nameCheckResultSet: ResultSet = mock() // Arrange
             whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange

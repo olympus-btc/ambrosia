@@ -27,6 +27,10 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./server/gradlew
 
-      - name: Run Linter with Gradle
+      - name: Run Tests Linter with Gradle
         working-directory: server
-        run: ./gradlew ktlintCheck
+        run: ./gradlew :app:ktlintMainSourceSetCheck
+
+      - name: Run Main Linter with Gradle
+        working-directory: server
+        run: ./gradlew :app:ktlintTestSourceSetCheck
