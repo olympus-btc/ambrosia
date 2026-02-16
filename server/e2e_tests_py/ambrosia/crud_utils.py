@@ -213,4 +213,6 @@ async def get_currencies(client: AmbrosiaHttpClient) -> list:
         return []
     assert_status_code(response, 200, "Failed to get currencies")
     data = response.json()
-    return data if isinstance(data, list) else data.get("currencies", data.get("data", []))
+    return (
+        data if isinstance(data, list) else data.get("currencies", data.get("data", []))
+    )

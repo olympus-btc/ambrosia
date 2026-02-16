@@ -116,9 +116,10 @@ class TestOrdersCRUD:
             pytest.skip(
                 f"Server rejected dish addition ({add_resp.text}) — may be a serialization issue"
             )
-        assert add_resp.status_code in [200, 201], (
-            f"Failed to add dish to order: {add_resp.status_code} {add_resp.text}"
-        )
+        assert add_resp.status_code in [
+            200,
+            201,
+        ], f"Failed to add dish to order: {add_resp.status_code} {add_resp.text}"
 
 
 class TestOrdersLifecycle:
@@ -134,9 +135,7 @@ class TestOrdersLifecycle:
 
         # Update status to closed
         update_payload = _order_payload(user_id, status="closed")
-        update_resp = await admin_client.put(
-            f"/orders/{order_id}", json=update_payload
-        )
+        update_resp = await admin_client.put(f"/orders/{order_id}", json=update_payload)
         assert update_resp.status_code == 200
 
     @pytest.mark.asyncio
