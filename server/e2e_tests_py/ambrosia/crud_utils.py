@@ -71,7 +71,7 @@ async def create_product(
     }
 
     response = await client.post("/products", json=payload)
-    assert_status_code(response, 201, f"Failed to create product")
+    assert_status_code(response, 201, "Failed to create product")
     return response.json()
 
 
