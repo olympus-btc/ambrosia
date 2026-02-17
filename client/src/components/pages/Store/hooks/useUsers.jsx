@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
 
 export function useUsers() {
   const t = useTranslations("users");
@@ -15,11 +15,14 @@ export function useUsers() {
     setError(null);
 
     try {
-      const res = await apiClient("/users");
-      if (res === null) {
+      const users = await httpClient("/users");
+
+      const usersData = await users.json();
+
+      if (usersData === null) {
         setUsers([]);
       } else {
-        setUsers(res);
+        setUsers(usersData);
       }
     } finally {
       setLoading(false);
@@ -39,13 +42,19 @@ export function useUsers() {
         body.pin = user.userPin;
       }
 
-      const updateUserResponse = await apiClient(`/users/${user.userId}`, {
+      const updateUser = await apiClient(`/users/${user.userId}`, {
         method: "PUT",
-        body,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       });
 
       await fetchUsers();
-      return updateUserResponse;
+
+      const updatedDataUser = updateUser.json();
+
+      return updatedDataUser;
     } catch (error) {
       if (error?.status === 409) {
         addToast({
@@ -65,15 +74,18 @@ export function useUsers() {
 
   const addUser = async (user) => {
     try {
-      const addUserResponse = await apiClient(`/users`, {
+      const addUserResponse = await httpClient(`/users`, {
         method: "POST",
-        body: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           name: user.userName,
           pin: user.userPin,
           role: user.userRole,
           email: user.userEmail,
           phone: user.userPhone,
-        },
+        }),
       });
 
       await fetchUsers();
@@ -97,7 +109,7 @@ export function useUsers() {
 
   const deleteUser = async (userId) => {
     try {
-      const deleteUserResponse = await apiClient(`/users/${userId}`, {
+      const deleteUserResponse = await httpClient(`/users/${userId}`, {
         method: "DELETE",
       });
 
