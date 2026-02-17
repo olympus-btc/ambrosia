@@ -1,77 +1,106 @@
-import { apiClient } from "../../services/apiClient";
+import { httpClient } from "../../lib/http/httpClient";
+import { parseJsonResponse } from "../../lib/http/parseJsonResponse";
 
 export async function loginFromService({ name, pin }) {
-  return await apiClient("/auth/login", {
+  const response = await httpClient("/auth/login", {
     method: "POST",
-    body: { name, pin },
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, pin }),
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function RefreshToken() {
-  return await apiClient("/auth/refresh", {
+  const response = await httpClient("/auth/refresh", {
     method: "POST",
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function logoutFromService() {
-  return await apiClient("/auth/logout", {
+  const response = await httpClient("/auth/logout", {
     method: "POST",
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function getRoles() {
-  const roles = await apiClient("/roles");
-  return roles ? roles : [];
+  const response = await httpClient("/roles");
+  const roles = await parseJsonResponse(response, []);
+  return roles ?? [];
 }
 
 export async function addRole(role) {
-  return await apiClient("/roles", {
+  const response = await httpClient("/roles", {
     method: "POST",
-    body: role,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(role),
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function updateRole(role) {
-  return await apiClient(`/roles/${role.id}`, {
+  const response = await httpClient(`/roles/${role.id}`, {
     method: "PUT",
-    body: role,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(role),
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function deleteRole(roleId) {
-  return await apiClient(`/roles/${roleId}`, {
+  const response = await httpClient(`/roles/${roleId}`, {
     method: "DELETE",
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function getUsers({ silentAuth = false } = {}) {
-  const users = await apiClient("/users", { silentAuth });
-  return users ? users : [];
+  void silentAuth;
+  const response = await httpClient("/users");
+  const users = await parseJsonResponse(response, []);
+  return users ?? [];
 }
 
 export async function addUser(user) {
-  return await apiClient("/users", {
+  const response = await httpClient("/users", {
     method: "POST",
-    body: { ...user, pin: user.pin.toString() },
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...user, pin: user.pin.toString() }),
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function updateUser(user) {
-  return await apiClient(`/users/${user.id}`, {
+  const response = await httpClient(`/users/${user.id}`, {
     method: "PUT",
-    body: { ...user, pin: user.pin.toString() },
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...user, pin: user.pin.toString() }),
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function deleteUser(userId) {
-  return await apiClient(`/users/${userId}`, {
+  const response = await httpClient(`/users/${userId}`, {
     method: "DELETE",
   });
+  return await parseJsonResponse(response, null);
 }
 
 export async function getRoleName(roleId) {
-  const role = await apiClient(`/roles/${roleId}`);
-  return role ? role.role : null;
+  const response = await httpClient(`/roles/${roleId}`);
+  const role = await parseJsonResponse(response, null);
+  return role?.role ?? null;
 }
 
 export const getCookieValue = (name) => {
