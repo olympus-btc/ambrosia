@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useTemplates() {
   const [templates, setTemplates] = useState([]);
@@ -13,8 +14,7 @@ export function useTemplates() {
     setError(null);
     try {
       const templates = await httpClient("/templates");
-
-      const templatesData = await templates.json();
+      const templatesData = await parseJsonResponse(templates, []);
 
       if (Array.isArray(templatesData)) {
         setTemplates(templatesData);
@@ -39,7 +39,7 @@ export function useTemplates() {
         body: JSON.stringify(templateBody),
       });
 
-      const createdDataTemplate = await createTemplate.json();
+      const createdDataTemplate = await parseJsonResponse(createTemplate, null);
 
       if (createdDataTemplate?.id) {
         setTemplates((prev) => (Array.isArray(prev)

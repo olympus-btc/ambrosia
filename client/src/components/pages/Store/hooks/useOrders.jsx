@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useOrders() {
   const [orders, setOrders] = useState([]);
@@ -14,7 +15,7 @@ export function useOrders() {
 
     try {
       const ordersResponse = await httpClient("/orders/with-payments");
-      const ordersData = await ordersResponse.json();
+      const ordersData = await parseJsonResponse(ordersResponse, []);
       const ordersList = Array.isArray(ordersData) ? ordersData : [];
       setOrders(ordersList);
     } catch (error) {
@@ -36,7 +37,7 @@ export function useOrders() {
             "Content-Type": "application/json",
           },
         });
-        const createdDataOrder = await createOrder.json();
+        const createdDataOrder = await parseJsonResponse(createOrder, null);
         if (createdDataOrder?.id) {
           setOrders((prev) => (Array.isArray(prev) ? [...prev, createdDataOrder] : [createdDataOrder]),
           );
@@ -63,7 +64,7 @@ export function useOrders() {
           },
         });
 
-        const updatedDataOrder = updateOrder.json();
+        const updatedDataOrder = await parseJsonResponse(updateOrder, null);
 
         if (updatedDataOrder?.id) {
           setOrders((prev) => (Array.isArray(prev)

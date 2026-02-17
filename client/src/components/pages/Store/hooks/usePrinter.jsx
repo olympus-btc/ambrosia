@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function usePrinters() {
   const [loadingAvailable, setLoadingAvailable] = useState(true);
@@ -16,8 +17,7 @@ export function usePrinters() {
 
     try {
       const printers = await httpClient("/printers/available");
-
-      const printersData = await printers.json();
+      const printersData = await parseJsonResponse(printers, []);
 
       if (Array.isArray(printersData)) {
         setAvailablePrinters(printersData);
@@ -38,8 +38,7 @@ export function usePrinters() {
 
     try {
       const printerConfigs = await httpClient("/printers/configs");
-
-      const printerDataConfigs = await printerConfigs.json();
+      const printerDataConfigs = await parseJsonResponse(printerConfigs, []);
 
       if (Array.isArray(printerDataConfigs)) {
         setPrinterConfigs(printerDataConfigs);
@@ -64,7 +63,7 @@ export function usePrinters() {
         body: JSON.stringify(configBody),
       });
 
-      const createdPrinterDataConfig = await createPrinterConfig.json();
+      const createdPrinterDataConfig = await parseJsonResponse(createPrinterConfig, null);
 
       if (createdPrinterDataConfig?.id) {
         setPrinterConfigs((prev) => (Array.isArray(prev)

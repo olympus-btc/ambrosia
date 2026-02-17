@@ -5,6 +5,7 @@ import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useUsers() {
   const t = useTranslations("users");
@@ -16,8 +17,7 @@ export function useUsers() {
 
     try {
       const users = await httpClient("/users");
-
-      const usersData = await users.json();
+      const usersData = await parseJsonResponse(users, []);
 
       if (usersData === null) {
         setUsers([]);
@@ -52,7 +52,7 @@ export function useUsers() {
 
       await fetchUsers();
 
-      const updatedDataUser = updateUser.json();
+      const updatedDataUser = await parseJsonResponse(updateUser, null);
 
       return updatedDataUser;
     } catch (error) {

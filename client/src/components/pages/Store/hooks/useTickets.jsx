@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useTickets() {
   const [tickets, setTickets] = useState([]);
@@ -13,8 +14,7 @@ export function useTickets() {
     setError(null);
     try {
       const tickets = await httpClient("/tickets");
-
-      const ticketsData = await tickets.json();
+      const ticketsData = await parseJsonResponse(tickets, []);
 
       if (Array.isArray(ticketsData)) {
         setTickets(ticketsData);
@@ -40,7 +40,7 @@ export function useTickets() {
           body: JSON.stringify(ticketBody),
         });
 
-        const createdDataTicket = createTicket.json();
+        const createdDataTicket = await parseJsonResponse(createTicket, null);
 
         if (createdDataTicket?.id) {
           setTickets((prev) => (Array.isArray(prev) ? [...prev, createdDataTicket] : [createdDataTicket]),

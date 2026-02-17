@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
@@ -15,12 +16,11 @@ export function useProducts() {
     setError(null);
 
     try {
-      const products = await httpClient("/products");
+      const response = await httpClient("/products");
+      const productsData = await parseJsonResponse(response, []);
 
-      const producstData = await products.json();
-
-      if (Array.isArray(producstData)) {
-        setProducts(producstData);
+      if (Array.isArray(productsData)) {
+        setProducts(productsData);
       } else {
         setProducts([]);
       }

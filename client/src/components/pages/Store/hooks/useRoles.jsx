@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useRoles() {
   const [roles, setRoles] = useState([]);
@@ -12,8 +13,7 @@ export function useRoles() {
 
     try {
       const roles = await httpClient("/roles");
-
-      const rolesData = await roles.json();
+      const rolesData = await parseJsonResponse(roles, []);
 
       if (rolesData === null) {
         setRoles([]);

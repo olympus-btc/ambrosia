@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { httpClient } from "../../../../lib/http/httpClient";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useCategories(type = "product") {
   const [categories, setCategories] = useState([]);
@@ -14,7 +15,7 @@ export function useCategories(type = "product") {
 
     try {
       const response = await httpClient(`/categories?type=${type}`);
-      const data = await response.json();
+      const data = await parseJsonResponse(response, []);
 
       if (Array.isArray(data)) {
         setCategories(data);

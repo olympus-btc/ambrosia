@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function usePayments() {
   const [payments, setPayments] = useState([]);
@@ -14,8 +15,7 @@ export function usePayments() {
     setError(null);
     try {
       const payments = await httpClient("/payments");
-
-      const paymentsData = await payments.json();
+      const paymentsData = await parseJsonResponse(payments, []);
 
       if (Array.isArray(paymentsData)) {
         setPayments(paymentsData);
@@ -41,7 +41,7 @@ export function usePayments() {
           body: JSON.stringify(paymentBody),
         });
 
-        const createdDataPayment = await createPayment.json();
+        const createdDataPayment = await parseJsonResponse(createPayment, null);
 
         if (createdDataPayment?.id) {
           setPayments((prev) => (Array.isArray(prev) ? [...prev, createdDataPayment] : [createdDataPayment]),
@@ -62,7 +62,7 @@ export function usePayments() {
       if (!currencyId) return null;
       try {
         const paymentCurrencyById = await httpClient(`/payments/currencies/${currencyId}`);
-        return await paymentCurrencyById.json();
+        return await parseJsonResponse(paymentCurrencyById, null);
       } catch (error) {
         console.error("Error fetching payment currency:", error);
         setError(error);
@@ -90,7 +90,7 @@ export function usePayments() {
           }),
         });
 
-        const linkedPayment = await linkPayment.json();
+        const linkedPayment = await parseJsonResponse(linkPayment, null);
 
         if (linkedPayment?.payment_id && linkPayment?.ticket_id) {
           setTicketPayments((prev) => (Array.isArray(prev)
