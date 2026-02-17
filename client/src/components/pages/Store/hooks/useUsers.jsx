@@ -42,7 +42,7 @@ export function useUsers() {
         body.pin = user.userPin;
       }
 
-      const updateUser = await apiClient(`/users/${user.userId}`, {
+      const updateUser = await httpClient(`/users/${user.userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
