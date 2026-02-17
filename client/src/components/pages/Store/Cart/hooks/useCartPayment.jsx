@@ -67,6 +67,9 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     if (!adjustments.length) return;
     await httpClient("/products/stock", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(adjustments),
     });
   }, []);
