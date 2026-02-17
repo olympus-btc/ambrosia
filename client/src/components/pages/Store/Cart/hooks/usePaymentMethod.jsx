@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function usePaymentMethods() {
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -13,10 +14,12 @@ export function usePaymentMethods() {
     setError(null);
 
     try {
-      const res = await apiClient("/payments/methods");
+      const paymentMethodsResponse = await httpClient("/payments/methods");
 
-      if (Array.isArray(res)) {
-        const sorted = [...res].sort((a, b) => {
+      const paymentMethodsData = await parseJsonResponse(paymentMethodsResponse, []);
+
+      if (Array.isArray(paymentMethodsData)) {
+        const sorted = [...paymentMethodsData].sort((a, b) => {
           const nameA = a?.name || "";
           const nameB = b?.name || "";
           return nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
@@ -25,9 +28,9 @@ export function usePaymentMethods() {
       } else {
         setPaymentMethods([]);
       }
-    } catch (err) {
-      console.error("Error fetching payment methods:", err);
-      setError(err);
+    } catch (error) {
+      console.error("Error fetching payment methods:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
