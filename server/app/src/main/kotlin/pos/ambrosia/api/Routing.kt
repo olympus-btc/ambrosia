@@ -1,10 +1,11 @@
 package pos.ambrosia.api
 
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.plugins.swagger.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.application.Application
+import io.ktor.server.plugins.swagger.swaggerUI
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.services.BaseCurrencyService
 import java.sql.Connection

@@ -1,6 +1,6 @@
 package pos.ambrosia.api
 
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -9,7 +9,8 @@ import io.ktor.server.http.content.*
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import pos.ambrosia.datadir
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.services.ConfigService

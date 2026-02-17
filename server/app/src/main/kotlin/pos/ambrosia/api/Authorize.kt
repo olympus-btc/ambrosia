@@ -2,7 +2,8 @@ package pos.ambrosia.api
 
 import com.auth0.jwt.*
 import com.auth0.jwt.algorithms.*
-import io.ktor.http.*
+import io.ktor.http.Cookie
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -10,7 +11,10 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import io.ktor.util.date.*
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
