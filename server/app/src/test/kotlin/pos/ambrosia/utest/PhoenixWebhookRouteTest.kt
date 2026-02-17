@@ -1,13 +1,17 @@
 package pos.ambrosia.utest
 
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.config.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.testing.*
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.install
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.testing.testApplication
 import pos.ambrosia.api.calculatePhoenixSignature
 import pos.ambrosia.api.configurePhoenixWebhook
 import kotlin.test.Test

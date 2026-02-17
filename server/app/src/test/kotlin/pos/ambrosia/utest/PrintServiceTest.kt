@@ -2,8 +2,11 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import org.mockito.kotlin.*
-import pos.ambrosia.models.*
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import pos.ambrosia.models.PrinterType
+import pos.ambrosia.models.TicketData
 import pos.ambrosia.services.PrintService
 import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.TicketTemplateService

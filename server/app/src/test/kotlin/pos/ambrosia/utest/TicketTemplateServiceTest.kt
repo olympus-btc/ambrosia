@@ -2,8 +2,15 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import org.mockito.kotlin.*
-import pos.ambrosia.models.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import pos.ambrosia.models.ElementStyle
+import pos.ambrosia.models.ElementType
+import pos.ambrosia.models.TicketElementCreateRequest
+import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
 import java.sql.Connection
 import java.sql.PreparedStatement

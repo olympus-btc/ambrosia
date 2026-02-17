@@ -82,7 +82,7 @@ fun Route.users(
                 return@get
             }
 
-            val perms = permissionsService.getByRole(userInfo.role_id)
+            val perms = permissionsService.getByRole(userInfo.roleId)
             if (perms.isEmpty()) {
                 logger.info("The user doesn't have a permissions")
                 call.respond(HttpStatusCode.Forbidden)
@@ -96,7 +96,7 @@ fun Route.users(
                     email = userInfo.email,
                     phone = userInfo.phone,
                     role = userInfo.role,
-                    role_id = userInfo.role,
+                    roleId = userInfo.role,
                     isAdmin = userInfo.isAdmin,
                 )
 
@@ -129,7 +129,7 @@ fun Route.users(
             if (
                 updatedUser.name == null &&
                 updatedUser.pin == null &&
-                updatedUser.role_id == null &&
+                updatedUser.roleId == null &&
                 updatedUser.email == null &&
                 updatedUser.phone == null &&
                 updatedUser.refreshToken == null

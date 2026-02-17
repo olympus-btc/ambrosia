@@ -29,7 +29,7 @@ class Api {
     fun Application.module() {
         AppConfig.loadConfig() // Load the configuration
         val config = environment.config // Configure the application
-        Handler() // Install exception handlers
+        handler() // Install exception handlers
         install(ContentNegotiation) { json() }
         install(CORS) {
             allowCredentials = true

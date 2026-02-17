@@ -2,8 +2,21 @@ package pos.ambrosia.utest
 
 import com.github.anastaciocintra.escpos.EscPos
 import com.github.anastaciocintra.escpos.Style
-import org.mockito.kotlin.*
-import pos.ambrosia.models.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import pos.ambrosia.models.Config
+import pos.ambrosia.models.ElementStyle
+import pos.ambrosia.models.ElementType
+import pos.ambrosia.models.FontSize
+import pos.ambrosia.models.Justification
+import pos.ambrosia.models.TicketData
+import pos.ambrosia.models.TicketDataItem
+import pos.ambrosia.models.TicketElement
+import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.services.TicketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals

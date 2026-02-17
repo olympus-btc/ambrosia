@@ -50,7 +50,7 @@ class AuthService(
                     id = userIdString,
                     name = resultSet.getString("name"),
                     role = resultSet.getString("role"),
-                    role_id = resultSet.getString("role_id"),
+                    roleId = resultSet.getString("role_id"),
                     isAdmin = resultSet.getBoolean("isAdmin"),
                     email = resultSet.getString("email"),
                     phone = resultSet.getString("phone"),

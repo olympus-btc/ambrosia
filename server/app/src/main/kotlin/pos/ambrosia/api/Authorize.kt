@@ -52,7 +52,7 @@ fun Route.auth(
         val accessTokenResponse = tokenService.generateAccessToken(userInfo)
         val refreshTokenResponse = tokenService.generateRefreshToken(userInfo)
 
-        val perms = permissionsService.getByRole(userInfo.role_id)
+        val perms = permissionsService.getByRole(userInfo.roleId)
         if (perms.isEmpty()) {
             logger.info("The user doesn't have a permissions")
             call.respond(HttpStatusCode.Forbidden)
@@ -86,7 +86,7 @@ fun Route.auth(
                 user_id = userInfo.id,
                 name = userInfo.name,
                 role = userInfo.role,
-                role_id = userInfo.role_id,
+                roleId = userInfo.roleId,
                 isAdmin = userInfo.isAdmin,
                 email = userInfo.email,
                 phone = userInfo.phone,
