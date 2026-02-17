@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 
 import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useUpload() {
   const [isUploading, setUploading] = useState(false);
@@ -17,8 +18,8 @@ export function useUpload() {
         body: formData,
       });
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      const data = await res.json();
-      return data.uploads;
+      const data = await parseJsonResponse(res, { uploads: [] });
+      return data.uploads ?? [];
     } catch (e) {
       setError(e);
       throw e;
