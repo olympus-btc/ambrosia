@@ -1,21 +1,20 @@
 package pos.ambrosia.api
 
-import com.auth0.jwt.*
-import com.auth0.jwt.algorithms.*
 import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
-import io.ktor.server.request.*
-import io.ktor.server.response.*
+import io.ktor.server.request.header
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.ktor.util.date.*
+import io.ktor.util.date.GMTDate
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.AuthRequest
@@ -25,9 +24,9 @@ import pos.ambrosia.models.UserResponse
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
-import pos.ambrosia.utils.*
+import pos.ambrosia.utils.InvalidCredentialsException
+import pos.ambrosia.utils.InvalidTokenException
 import java.sql.Connection
-import java.util.*
 
 fun Application.configureAuth() {
     val connection: Connection = DatabaseConnection.getConnection()
