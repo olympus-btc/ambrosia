@@ -2,13 +2,22 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Order
 import pos.ambrosia.services.OrderService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class OrderServiceTest {
     private val mockConnection: Connection = mock()
@@ -345,7 +354,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns false if ID is null`() {
         runBlocking {
-            val order = Order(id = null, user_id = "user-1", table_id = "table-1", waiter = "waiter-1", status = "open", total = 100.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = null,
+                    user_id = "user-1",
+                    table_id = "table-1",
+                    waiter = "waiter-1",
+                    status = "open",
+                    total = 100.0,
+                    created_at = "date-1",
+                ) // Arrange
             val service = OrderService(mockConnection) // Arrange
             val result = service.updateOrder(order) // Act
             assertFalse(result) // Assert
@@ -356,7 +374,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns false if user does not exist`() {
         runBlocking {
-            val order = Order(id = "order-1", user_id = "non-existent-user", table_id = "table-1", waiter = "waiter-1", status = "open", total = 100.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = "order-1",
+                    user_id = "non-existent-user",
+                    table_id = "table-1",
+                    waiter = "waiter-1",
+                    status = "open",
+                    total = 100.0,
+                    created_at = "date-1",
+                ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -369,7 +396,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns false if table does not exist`() {
         runBlocking {
-            val order = Order(id = "order-1", user_id = "user-1", table_id = "non-existent-table", waiter = "waiter-1", status = "open", total = 100.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = "order-1",
+                    user_id = "user-1",
+                    table_id = "non-existent-table",
+                    waiter = "waiter-1",
+                    status = "open",
+                    total = 100.0,
+                    created_at = "date-1",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val tableCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
@@ -389,7 +425,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns false if status is invalid`() {
         runBlocking {
-            val order = Order(id = "order-1", user_id = "user-1", table_id = "table-1", waiter = "waiter-1", status = "invalid-status", total = 100.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = "order-1",
+                    user_id = "user-1",
+                    table_id = "table-1",
+                    waiter = "waiter-1",
+                    status = "invalid-status",
+                    total = 100.0,
+                    created_at = "date-1",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val tableCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
@@ -409,7 +454,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns true on success`() {
         runBlocking {
-            val order = Order(id = "order-1", user_id = "user-1", table_id = "table-1", waiter = "waiter-1", status = "open", total = 150.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = "order-1",
+                    user_id = "user-1",
+                    table_id = "table-1",
+                    waiter = "waiter-1",
+                    status = "open",
+                    total = 150.0,
+                    created_at = "date-1",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val tableCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
@@ -432,7 +486,16 @@ class OrderServiceTest {
     @Test
     fun `updateOrder returns false when database update fails`() {
         runBlocking {
-            val order = Order(id = "order-1", user_id = "user-1", table_id = "table-1", waiter = "waiter-1", status = "open", total = 150.0, created_at = "date-1") // Arrange
+            val order =
+                Order(
+                    id = "order-1",
+                    user_id = "user-1",
+                    table_id = "table-1",
+                    waiter = "waiter-1",
+                    status = "open",
+                    total = 150.0,
+                    created_at = "date-1",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val tableCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange

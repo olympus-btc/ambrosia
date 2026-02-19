@@ -1,12 +1,16 @@
 package pos.ambrosia.utest
 
 import org.mockito.Mockito.anyString
-import org.mockito.kotlin.*
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import pos.ambrosia.services.BaseCurrencyService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class BaseCurrencyTest {
     private val mockConnection: Connection = mock()
@@ -27,7 +31,7 @@ class BaseCurrencyTest {
         whenever(mockResultSet.getString("country_code")).thenReturn("US")
 
         val service = BaseCurrencyService(mockConnection) // Arrange
-        val result = service.getBaseCurrency()  // Act
+        val result = service.getBaseCurrency() // Act
 
         assertNotNull(result)
         assertEquals(expectedCurrencyId, result.currency_id) // Assert

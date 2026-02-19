@@ -2,13 +2,20 @@ package pos.ambrosia.utest
 
 import io.ktor.server.application.ApplicationEnvironment
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Permission
 import pos.ambrosia.services.PermissionsService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class PermissionsServiceTest {
     private val env: ApplicationEnvironment = mock()

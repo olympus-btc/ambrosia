@@ -3,13 +3,22 @@ package pos.ambrosia.utest
 import io.ktor.server.application.ApplicationEnvironment
 import kotlinx.coroutines.runBlocking
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ShiftServiceTest {
     private val mockConnection: Connection = mock()
@@ -32,7 +41,7 @@ class ShiftServiceTest {
             val result = service.getShifts() // Act
             assertEquals(2, result.size) // Assert
             assertEquals("shift-1", result[0].id) // Assert
-        }       
+        }
     }
 
     @Test
@@ -50,7 +59,8 @@ class ShiftServiceTest {
     @Test
     fun `getShiftById returns shift when found`() {
         runBlocking {
-            val expectedShift = Shift(id = "shift-1", user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note1") // Arrange
+            val expectedShift =
+                Shift(id = "shift-1", user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note1")
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
@@ -104,7 +114,15 @@ class ShiftServiceTest {
     @Test
     fun `addShift returns null if user does not exist`() {
         runBlocking {
-            val newShift = Shift(id = null, user_id = "non-existent-user", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1") // Arrange
+            val newShift =
+                Shift(
+                    id = null,
+                    user_id = "non-existent-user",
+                    shift_date = "date-1",
+                    start_time = "7am",
+                    end_time = "2pm",
+                    notes = "note-1",
+                ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange: Simulate user not found
@@ -118,7 +136,8 @@ class ShiftServiceTest {
     @Test
     fun `addShift returns new ID on success`() {
         runBlocking {
-            val newShift = Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1") // Arrange
+            val newShift =
+                Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1")
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val addShiftStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("SELECT id FROM users"))).thenReturn(userCheckStatement) // Arrange
@@ -137,7 +156,8 @@ class ShiftServiceTest {
     @Test
     fun `addShift returns null when database insert fails`() {
         runBlocking {
-            val newShift = Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1") // Arrange
+            val newShift =
+                Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1")
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val addShiftStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("SELECT id FROM users"))).thenReturn(userCheckStatement) // Arrange
@@ -155,7 +175,8 @@ class ShiftServiceTest {
     @Test
     fun `updateShift returns false if ID is null`() {
         runBlocking {
-            val shiftWithNullId = Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1") // Arrange
+            val shiftWithNullId =
+                Shift(id = null, user_id = "user-1", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1")
             val service = ShiftService(mockConnection) // Arrange
             val result = service.updateShift(shiftWithNullId) // Act
             assertFalse(result) // Assert
@@ -166,7 +187,15 @@ class ShiftServiceTest {
     @Test
     fun `updateShift returns false if user does not exist`() {
         runBlocking {
-            val shiftToUpdate = Shift(id = "shift-1", user_id = "non-existent-user", shift_date = "date-1", start_time = "7am", end_time = "2pm", notes = "note-1") // Arrange
+            val shiftToUpdate =
+                Shift(
+                    id = "shift-1",
+                    user_id = "non-existent-user",
+                    shift_date = "date-1",
+                    start_time = "7am",
+                    end_time = "2pm",
+                    notes = "note-1",
+                ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange: Simulate user not found
@@ -179,7 +208,15 @@ class ShiftServiceTest {
     @Test
     fun `updateShift returns true on success`() {
         runBlocking {
-            val shiftToUpdate = Shift(id = "shift-1", user_id = "user-1", shift_date = "date-1", start_time = "8am", end_time = "3pm", notes = "updated note") // Arrange
+            val shiftToUpdate =
+                Shift(
+                    id = "shift-1",
+                    user_id = "user-1",
+                    shift_date = "date-1",
+                    start_time = "8am",
+                    end_time = "3pm",
+                    notes = "updated note",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val updateShiftStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("SELECT id FROM users"))).thenReturn(userCheckStatement) // Arrange
@@ -197,7 +234,15 @@ class ShiftServiceTest {
     @Test
     fun `updateShift returns false when database update fails`() {
         runBlocking {
-            val shiftToUpdate = Shift(id = "shift-1", user_id = "user-1", shift_date = "date-1", start_time = "8am", end_time = "3pm", notes = "updated note") // Arrange
+            val shiftToUpdate =
+                Shift(
+                    id = "shift-1",
+                    user_id = "user-1",
+                    shift_date = "date-1",
+                    start_time = "8am",
+                    end_time = "3pm",
+                    notes = "updated note",
+                ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
             val updateShiftStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("SELECT id FROM users"))).thenReturn(userCheckStatement) // Arrange

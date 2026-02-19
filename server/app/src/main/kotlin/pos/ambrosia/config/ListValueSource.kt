@@ -9,11 +9,13 @@ class ListValueSource(
     private val values: List<Pair<String, String>>,
     private val getKey: (Context, Option) -> String = ValueSource.getKey(joinSubcommands = "."),
 ) : ValueSource {
-    override fun getValues(context: Context, option: Option): List<ValueSource.Invocation> {
-        return values
+    override fun getValues(
+        context: Context,
+        option: Option,
+    ): List<ValueSource.Invocation> =
+        values
             .filter { it.first == (option.valueSourceKey ?: getKey(context, option)) }
             .map { ValueSource.Invocation.value(it.second) }
-    }
 
     companion object {
         fun fromFile(confFile: Path): ListValueSource {

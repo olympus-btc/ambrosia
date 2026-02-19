@@ -1,13 +1,20 @@
 package pos.ambrosia.utest
 
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Currency
 import pos.ambrosia.services.CurrencyService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class CurrencyServiceTest {
     private val conn: Connection = mock()
@@ -92,7 +99,7 @@ class CurrencyServiceTest {
     @Test
     fun `setBaseCurrencyById returns true on success`() {
         val upsertSt: PreparedStatement = mock()
-        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency")) ).thenReturn(upsertSt)
+        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency"))).thenReturn(upsertSt)
         whenever(upsertSt.executeUpdate()).thenReturn(1)
 
         val service = CurrencyService(conn)
@@ -102,7 +109,7 @@ class CurrencyServiceTest {
     @Test
     fun `setBaseCurrencyById returns false when update fails`() {
         val upsertSt: PreparedStatement = mock()
-        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency")) ).thenReturn(upsertSt)
+        whenever(conn.prepareStatement(contains("INSERT OR REPLACE INTO base_currency"))).thenReturn(upsertSt)
         whenever(upsertSt.executeUpdate()).thenReturn(0)
 
         val service = CurrencyService(conn)
@@ -138,4 +145,3 @@ class CurrencyServiceTest {
         assertFalse(service.setBaseCurrencyByAcronym("ZZZ"))
     }
 }
-

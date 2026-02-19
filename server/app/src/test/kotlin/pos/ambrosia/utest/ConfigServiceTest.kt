@@ -1,13 +1,19 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Config
 import pos.ambrosia.services.ConfigService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ConfigServiceTest {
     private val mockConnection: Connection = mock()
@@ -38,39 +44,43 @@ class ConfigServiceTest {
     }
 
     @Test
-    fun `getConfig returns config when found`() = runBlocking {
-        val expectedConfig = Config(1, "restaurant", "Test Cafe", "123 Lane", "555", "a@b.com", "T123", null, true) // Arrange
-        setupGetConfigMock(expectedConfig) // Arrange
-        val service = ConfigService(mockConnection) // Arrange
-        val result = service.getConfig() // Act
-        assertEquals(expectedConfig, result) // Assert
-    }
+    fun `getConfig returns config when found`() =
+        runBlocking {
+            val expectedConfig = Config(1, "restaurant", "Test Cafe", "123 Lane", "555", "a@b.com", "T123", null, true) // Arrange
+            setupGetConfigMock(expectedConfig) // Arrange
+            val service = ConfigService(mockConnection) // Arrange
+            val result = service.getConfig() // Act
+            assertEquals(expectedConfig, result) // Assert
+        }
 
     @Test
-    fun `getConfig returns null when not found`() = runBlocking {
-        setupGetConfigToReturnNull() // Arrange
-        val service = ConfigService(mockConnection) // Arrange
-        val result = service.getConfig() // Act
-        assertNull(result) // Assert
-    }
+    fun `getConfig returns null when not found`() =
+        runBlocking {
+            setupGetConfigToReturnNull() // Arrange
+            val service = ConfigService(mockConnection) // Arrange
+            val result = service.getConfig() // Act
+            assertNull(result) // Assert
+        }
 
     @Test
-    fun `updateConfig returns true on success`() = runBlocking {
-        val configToUpdate = Config(1, "restaurant", "New Name", "", "", "", "", null) // Arrange
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-        val service = ConfigService(mockConnection) // Arrange
-        val result = service.updateConfig(configToUpdate) // Act
-        assertTrue(result) // Assert
-    }
+    fun `updateConfig returns true on success`() =
+        runBlocking {
+            val configToUpdate = Config(1, "restaurant", "New Name", "", "", "", "", null) // Arrange
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ConfigService(mockConnection) // Arrange
+            val result = service.updateConfig(configToUpdate) // Act
+            assertTrue(result) // Assert
+        }
 
     @Test
-    fun `updateConfig returns false when database update fails`() = runBlocking {
-        val configToUpdate = Config(1, "restaurant", "New Name", "", "", "", "", null) // Arrange
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
-        val service = ConfigService(mockConnection) // Arrange
-        val result = service.updateConfig(configToUpdate) // Act
-        assertFalse(result) // Assert
-    }
+    fun `updateConfig returns false when database update fails`() =
+        runBlocking {
+            val configToUpdate = Config(1, "restaurant", "New Name", "", "", "", "", null) // Arrange
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
+            val service = ConfigService(mockConnection) // Arrange
+            val result = service.updateConfig(configToUpdate) // Act
+            assertFalse(result) // Assert
+        }
 }

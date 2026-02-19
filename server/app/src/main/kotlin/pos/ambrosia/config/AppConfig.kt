@@ -1,13 +1,13 @@
 package pos.ambrosia.config
 
+import kotlinx.io.files.Path
+import pos.ambrosia.datadir
+import pos.ambrosia.logger
+import pos.ambrosia.phoenixDatadir
+import pos.ambrosia.userHome
 import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
-import pos.ambrosia.logger
-import kotlinx.io.files.Path
-import pos.ambrosia.datadir
-import pos.ambrosia.phoenixDatadir
-import pos.ambrosia.userHome
 
 /**
  * Application configuration manager.
@@ -15,7 +15,6 @@ import pos.ambrosia.userHome
  */
 
 object AppConfig {
-
     private val properties = Properties()
     private val phoenixProperties = Properties()
     private const val PHOENIX_SEED_PATH = ".phoenix/seed.dat"
@@ -53,13 +52,14 @@ object AppConfig {
         return seed
     }
 
-
     @Deprecated("Use app environment properties instead")
-    fun getProperty(key: String, defaultValue: String? = null): String? {
-        return properties.getProperty(key) ?: defaultValue
-    }
-    
-    fun getPhoenixProperty(key: String, defaultValue: String? = null): String? {
-        return phoenixProperties.getProperty(key) ?: defaultValue
-    }
+    fun getProperty(
+        key: String,
+        defaultValue: String? = null,
+    ): String? = properties.getProperty(key) ?: defaultValue
+
+    fun getPhoenixProperty(
+        key: String,
+        defaultValue: String? = null,
+    ): String? = phoenixProperties.getProperty(key) ?: defaultValue
 }
