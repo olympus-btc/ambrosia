@@ -37,11 +37,19 @@
   "dependencies": {
     "bip39": "^3.1.0",
     "cross-spawn": "^7.0.6",
+    "electron-updater": "^6.3.9",
     "find-free-port": "^2.0.0",
     "tree-kill": "^1.2.2",
     "wait-on": "^8.0.1"
   },
   "build": {
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "olympus-btc",
+        "repo": "ambrosia"
+      }
+    ],
     "appId": "com.olympus-btc.ambrosia-pos",
     "productName": "AmbrosiaPoS",
     "afterPack": "./scripts/afterPack.js",
@@ -74,7 +82,8 @@
       "category": "public.app-category.business",
       "artifactName": "ambrosia-pos-${version}-${arch}.${ext}",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "icon": "build/icon.icns",
       "hardenedRuntime": true,
