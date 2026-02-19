@@ -1,7 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
-import ModuleNavigation from "../components/ModuleNavigation";
+import ModuleNavigation from "@components/ModuleNavigation";
+import UpdateBanner from "@components/UpdateBanner";
 import Providers from "./providers";
 
 const geistSans = Geist({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          <UpdateBanner />
           <div className="">
             <ModuleNavigation show="none">{children}</ModuleNavigation>
           </div>
