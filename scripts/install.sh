@@ -71,7 +71,7 @@ print_header() {
 
 # --- Phoenixd Installation Logic ---
 
-PHOENIXD_TAG="0.7.1"
+PHOENIXD_TAG="0.7.2"
 PHOENIXD_RELEASE_BASE_URL="https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_TAG}"
 PHOENIXD_INSTALL_DIR="/usr/local/bin"
 PHOENIXD_OS=""
