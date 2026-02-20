@@ -1,6 +1,7 @@
 package pos.ambrosia.models.phoenix
 
 import kotlinx.serialization.Serializable
+import java.sql.Timestamp
 
 @Serializable data class PhoenixBalance(
     val balanceSat: Long,
@@ -115,4 +116,10 @@ data class CloseChannelRequest(
     val channelId: String,
     val address: String,
     val feerateSatByte: Long,
+)
+
+@Serializable
+data class CsvExport(
+    val from: String,
+    val to: String,
 )

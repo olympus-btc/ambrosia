@@ -10,6 +10,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
@@ -21,6 +22,7 @@ import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceResponse
 import pos.ambrosia.models.phoenix.CreateOffer
+import pos.ambrosia.models.phoenix.CsvExport
 import pos.ambrosia.models.phoenix.IncomingPayment
 import pos.ambrosia.models.phoenix.NodeInfo
 import pos.ambrosia.models.phoenix.OutgoingPayment
@@ -357,6 +359,30 @@ class PhoenixService(
         } catch (e: Exception) {
             throw PhoenixServiceException(
                 "Failed to get outgoing payment by hash on Phoenix: ${e.message}",
+            )
+        }
+    }
+
+    /** Export CSV data from Phoenix */
+    suspend fun csvExport(request: CsvExport): String {
+        try {
+            val response: HttpResponse =
+                httpClient.submitForm(
+                    url = "$phoenixdUrl/export",
+                    formParameters =
+                        Parameters.build {
+                            append("from", request.from.toString())
+                            append("to", request.to.toString())
+                        },
+                )
+            if (response.status.value != 200) {
+                throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
+            }
+
+            return response.bodyAsText()
+        } catch (e: Exception) {
+            throw PhoenixServiceException(
+                "Failed to export CSV from Phoenix: ${e.message}",
             )
         }
     }
