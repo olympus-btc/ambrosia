@@ -1351,4 +1351,65 @@ class PhoenixServiceTest {
             runBlocking { phoenixService.getOutgoingPaymentByHash("hash-hash") }
         }
     }
+
+    @Test
+    fun `csvExport returns csv file path string on success`() {
+        // Arrange
+        val mockStringResponse = "payment history has been exported to .phoenix/exports/export-1729249806.csv"
+        val mockEngine =
+            MockEngine { request ->
+                respond(
+                    content = mockStringResponse,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "text/plain"),
+                )
+            }
+        val mockHttpClient = HttpClient(mockEngine)
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .CsvExport(from = "1735689600000", to = "1738096846309")
+        val response = runBlocking { phoenixService.csvExport(request) }
+
+        // Assert
+        assertEquals("payment history has been exported to .phoenix/exports/export-1729249806.csv", response)
+    }
+
+    @Test
+    fun `csvExport throws PhoenixServiceException on non-200 response`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { request ->
+                respond(
+                    content = ByteReadChannel(""),
+                    status = HttpStatusCode.InternalServerError,
+                )
+            }
+        val mockHttpClient = HttpClient(mockEngine)
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act & Assert
+        val request =
+            pos.ambrosia.models.phoenix
+                .CsvExport(from = "1735689600000", to = "1738096846309")
+        assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+            runBlocking { phoenixService.csvExport(request) }
+        }
+    }
 }

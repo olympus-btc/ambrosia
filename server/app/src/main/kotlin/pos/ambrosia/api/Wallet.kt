@@ -20,6 +20,7 @@ import pos.ambrosia.models.RolePassword
 import pos.ambrosia.models.WalletAuthResponse
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
+import pos.ambrosia.models.phoenix.CsvExport
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
@@ -124,6 +125,12 @@ fun Route.wallet(
             val result = phoenixService.closeChannel(request)
             call.respond(HttpStatusCode.OK, result)
         }
+        post("/export") {
+            val request = call.receive<CsvExport>()
+            val result = phoenixService.csvExport(request)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
         // Payments endpoints
         route("/payments") {
             // List incoming payments
