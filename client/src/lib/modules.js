@@ -249,6 +249,14 @@ export const modules = {
         default: false,
       },
       {
+        path: "/store/btcmap",
+        component: "MapEmbed",
+        requiresAuth: true,
+        requiresAdmin: false,
+        types: ["store"],
+        default: false,
+      },
+      {
         path: "/store/settings",
         component: "Settings",
         requiresAuth: true,
@@ -286,6 +294,12 @@ export const modules = {
         path: "/store/wallet",
         label: "wallet",
         icon: "wallet",
+        showInNavbar: true,
+      },
+      {
+        path: "/store/btcmap",
+        label: "btcmap",
+        icon: "map",
         showInNavbar: true,
       },
       {

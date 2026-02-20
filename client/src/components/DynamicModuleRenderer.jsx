@@ -31,6 +31,16 @@ export default function DynamicModuleRenderer({
             mod.default || mod[componentFile] || mod[`${componentFile}Page`];
           if (Comp) return Comp;
         } catch (error) {
+          // Si no se encuentra en components/pages, intentamos buscarlo en modules/btcmap
+          // como caso especial para la integración de BTC Map dentro del módulo store
+          if (componentFile === "MapEmbed") {
+            try {
+              const btcMapMod = await import("../modules/btcmap/MapEmbed");
+              return btcMapMod.default || btcMapMod.MapEmbed;
+            } catch (innerError) {
+              console.error("Error loading MapEmbed from modules:", innerError);
+            }
+          }
           console.error(error)
         }
 
