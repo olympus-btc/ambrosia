@@ -1,7 +1,8 @@
 const path = require('path');
 
-const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
 
+const AutoUpdater = require('./services/AutoUpdater');
 const ServiceManager = require('./services/ServiceManager');
 
 // To prevent multiple instances of the application
@@ -25,6 +26,23 @@ if (!gotTheLock) {
 let mainWindow = null;
 let splashWindow = null;
 let serviceManager = null;
+let autoUpdaterService = null;
+let updateMenuItem = null;
+
+function updateMenuItemState({ label, enabled, click }) {
+  if (!updateMenuItem) return;
+  updateMenuItem.label = label;
+  updateMenuItem.enabled = enabled;
+  if (click) {
+    updateMenuItem.click = click;
+  } else {
+    updateMenuItem.click = () => {
+      if (autoUpdaterService) {
+        autoUpdaterService.checkForUpdatesManual();
+      }
+    };
+  }
+}
 
 // Splash Screen Creation
 function createSplashScreen() {
@@ -131,6 +149,105 @@ async function handleStartupError(error) {
     setTimeout(() => app.quit(), 500);
   } else {
     app.quit();
+  }
+}
+
+// Application Menu
+function createAppMenu() {
+  const isMac = process.platform === 'darwin';
+
+  const updateItem = {
+    label: 'Check for Updates...',
+    click: () => {
+      if (autoUpdaterService) {
+        autoUpdaterService.checkForUpdatesManual();
+      }
+    },
+  };
+
+  const template = [
+    ...(isMac
+      ? [{
+          label: app.name,
+          submenu: [
+            { role: 'about' },
+            updateItem,
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' },
+          ],
+        }]
+      : []),
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac
+          ? [{ type: 'separator' }, { role: 'front' }]
+          : [{ role: 'close' }]),
+      ],
+    },
+    ...(!isMac
+      ? [{
+          label: 'Help',
+          submenu: [
+            updateItem,
+            { type: 'separator' },
+            {
+              label: 'About Ambrosia POS',
+              click: () => {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'About Ambrosia POS',
+                  message: `Ambrosia POS v${app.getVersion()}`,
+                  buttons: ['OK'],
+                });
+              },
+            },
+          ],
+        }]
+      : []),
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
+  // Store reference to update menu item for dynamic updates
+  if (isMac) {
+    updateMenuItem = menu.items[0].submenu.items[1];
+  } else {
+    const helpMenu = menu.items[menu.items.length - 1];
+    updateMenuItem = helpMenu.submenu.items[0];
   }
 }
 
@@ -250,6 +367,17 @@ app.whenReady().then(async () => {
 
     createWindow(url);
 
+    createAppMenu();
+
+    // Start auto-update checks (production only)
+    if (app.isPackaged) {
+      autoUpdaterService = new AutoUpdater(mainWindow, {
+        onMenuUpdate: updateMenuItemState,
+        releaseUrl: 'https://github.com/olympus-btc/ambrosia/releases',
+      });
+      autoUpdaterService.startPeriodicChecks();
+    }
+
     console.log('[Electron] Application initialized successfully');
   } catch (error) {
     // Close splash on error
@@ -272,6 +400,10 @@ app.on('activate', () => {
 
 // Clean shutdown
 app.on('before-quit', async (event) => {
+  if (autoUpdaterService) {
+    autoUpdaterService.destroy();
+    autoUpdaterService = null;
+  }
   if (serviceManager) {
     event.preventDefault();
     console.log('[Electron] Shutting down services...');
@@ -282,6 +414,10 @@ app.on('before-quit', async (event) => {
 });
 
 app.on('window-all-closed', async () => {
+  if (autoUpdaterService) {
+    autoUpdaterService.destroy();
+    autoUpdaterService = null;
+  }
   if (serviceManager) {
     await serviceManager.stopAll();
     serviceManager = null;

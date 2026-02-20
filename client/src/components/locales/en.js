@@ -23,6 +23,13 @@ const componentsEn = {
       secondMessage: "Access granted as",
     },
   },
+  updateBanner: {
+    readyToInstall: "Version {version} is ready to install.",
+    newVersionAvailable: "A new version ({version}) is available.",
+    restartAndUpdate: "Restart & Update",
+    downloadFromGitHub: "Download from GitHub",
+    dismiss: "Dismiss",
+  },
 };
 
 export default componentsEn;

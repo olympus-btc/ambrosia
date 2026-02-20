@@ -90,6 +90,7 @@ jobs:
             electron/dist/*.rpm
             electron/dist/*.tar.gz
             electron/dist/*.blockmap
+            electron/dist/*.yml
           if-no-files-found: error
 
   release:
