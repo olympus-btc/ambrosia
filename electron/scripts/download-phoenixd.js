@@ -5,7 +5,7 @@ const path = require('path');
 
 const { getBuildPlatform } = require('./platform-utils');
 
-const PHOENIXD_VERSION = '0.7.1';
+const PHOENIXD_VERSION = '0.7.2';
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'phoenixd');
 
 // Phoenixd GitHub release URLs

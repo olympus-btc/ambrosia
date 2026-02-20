@@ -96,11 +96,11 @@ class TokenService(
             // Obtener la información del usuario desde la base de datos usando el refresh token
             val sql =
                 """
-      SELECT u.id, u.name, r.role, r.isAdmin, u.role_id, u.email, u.phone
-      FROM users u
-      JOIN roles r ON u.role_id = r.id
-      WHERE u.refresh_token = ? AND u.is_deleted = 0
-      """
+                    SELECT u.id, u.name, r.role, r.isAdmin, u.role_id, u.email, u.phone
+                    FROM users u
+                    JOIN roles r ON u.role_id = r.id
+                    WHERE u.refresh_token = ? AND u.is_deleted = 0
+                """
 
             connection.prepareStatement(sql).use { statement ->
                 statement.setString(1, refreshToken)
