@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -16,12 +17,7 @@ export function usePayments() {
     try {
       const payments = await httpClient("/payments");
       const paymentsData = await parseJsonResponse(payments, []);
-
-      if (Array.isArray(paymentsData)) {
-        setPayments(paymentsData);
-      } else {
-        setPayments([]);
-      }
+      setPayments(toArray(paymentsData));
     } catch (error) {
       console.error("Error fetching payments:", error);
       setError(error);

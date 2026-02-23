@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -18,12 +19,7 @@ export function usePrinters() {
     try {
       const printers = await httpClient("/printers/available");
       const printersData = await parseJsonResponse(printers, []);
-
-      if (Array.isArray(printersData)) {
-        setAvailablePrinters(printersData);
-      } else {
-        setAvailablePrinters([]);
-      }
+      setAvailablePrinters(toArray(printersData));
     } catch (error) {
       console.error("Error fetching printers:", error);
       setError(error);
@@ -39,12 +35,7 @@ export function usePrinters() {
     try {
       const printerConfigs = await httpClient("/printers/configs");
       const printerDataConfigs = await parseJsonResponse(printerConfigs, []);
-
-      if (Array.isArray(printerDataConfigs)) {
-        setPrinterConfigs(printerDataConfigs);
-      } else {
-        setPrinterConfigs([]);
-      }
+      setPrinterConfigs(toArray(printerDataConfigs));
     } catch (error) {
       console.error("Error fetching printer configs:", error);
       setError(error);

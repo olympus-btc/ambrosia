@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -16,8 +17,7 @@ export function useOrders() {
     try {
       const ordersResponse = await httpClient("/orders/with-payments");
       const ordersData = await parseJsonResponse(ordersResponse, []);
-      const ordersList = Array.isArray(ordersData) ? ordersData : [];
-      setOrders(ordersList);
+      setOrders(toArray(ordersData));
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError(error);

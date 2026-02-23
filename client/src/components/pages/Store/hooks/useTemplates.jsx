@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -15,12 +16,7 @@ export function useTemplates() {
     try {
       const templates = await httpClient("/templates");
       const templatesData = await parseJsonResponse(templates, []);
-
-      if (Array.isArray(templatesData)) {
-        setTemplates(templatesData);
-      } else {
-        setTemplates([]);
-      }
+      setTemplates(toArray(templatesData));
     } catch (error) {
       console.error("Error fetching templates:", error);
       setError(error);

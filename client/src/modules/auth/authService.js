@@ -1,5 +1,5 @@
-import { httpClient } from "../../lib/http/httpClient";
-import { parseJsonResponse } from "../../lib/http/parseJsonResponse";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export async function loginFromService({ name, pin }) {
   const response = await httpClient("/auth/login", {
@@ -9,6 +9,9 @@ export async function loginFromService({ name, pin }) {
     },
     body: JSON.stringify({ name, pin }),
   });
+  if (!response.ok) {
+    return;
+  }
   return await parseJsonResponse(response, null);
 }
 

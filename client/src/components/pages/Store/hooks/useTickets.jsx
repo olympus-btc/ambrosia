@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -15,12 +16,7 @@ export function useTickets() {
     try {
       const tickets = await httpClient("/tickets");
       const ticketsData = await parseJsonResponse(tickets, []);
-
-      if (Array.isArray(ticketsData)) {
-        setTickets(ticketsData);
-      } else {
-        setTickets([]);
-      }
+      setTickets(toArray(ticketsData));
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setError(error);

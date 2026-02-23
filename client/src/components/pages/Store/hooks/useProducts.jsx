@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -18,12 +19,7 @@ export function useProducts() {
     try {
       const response = await httpClient("/products");
       const productsData = await parseJsonResponse(response, []);
-
-      if (Array.isArray(productsData)) {
-        setProducts(productsData);
-      } else {
-        setProducts([]);
-      }
+      setProducts(toArray(productsData));
     } catch (error) {
       console.error("Error fetching products:", error);
       setError(error);

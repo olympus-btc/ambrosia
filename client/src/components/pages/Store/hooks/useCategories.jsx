@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -16,12 +17,7 @@ export function useCategories(type = "product") {
     try {
       const response = await httpClient(`/categories?type=${type}`);
       const data = await parseJsonResponse(response, []);
-
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else {
-        setCategories([]);
-      }
+      setCategories(toArray(data));
     } catch (error) {
       console.error("Error fetching categories:", error);
       setError(error);

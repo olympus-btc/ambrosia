@@ -41,29 +41,27 @@ function parseCurrencyData(base) {
 export function useCurrency() {
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
 
-  const fetchCurrency = useCallback(async () => {
+  const fetchCurrency = useCallback(async ({ isCancelled } = {}) => {
     try {
       const response = await httpClient("/base-currency");
       const base = await parseJsonResponse(response, null);
-      setCurrency(parseCurrencyData(base));
+      if (!isCancelled?.()) setCurrency(parseCurrencyData(base));
     } catch {
-      setCurrency(DEFAULT_CURRENCY);
+      if (!isCancelled?.()) setCurrency(DEFAULT_CURRENCY);
     }
   }, []);
 
   useEffect(() => {
-    const loadCurrency = async () => {
-      try {
-        const response = await httpClient("/base-currency");
-        const base = await parseJsonResponse(response, null);
-        setCurrency(parseCurrencyData(base));
-      } catch {
-        setCurrency(DEFAULT_CURRENCY);
-      }
-    };
+    let cancelled = false;
 
-    loadCurrency();
-  }, []);
+    (async () => {
+      await fetchCurrency({ isCancelled: () => cancelled });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchCurrency]);
 
   const formatAmount = useCallback(
     (cents) => {
