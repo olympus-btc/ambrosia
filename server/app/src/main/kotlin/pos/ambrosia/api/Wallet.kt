@@ -86,20 +86,6 @@ fun Route.wallet(
         }
     }
     authenticate("auth-jwt-wallet") {
-        // Get wallet/node info
-        get("/getinfo") {
-            val nodeInfo = phoenixService.getNodeInfo()
-            call.respond(HttpStatusCode.OK, nodeInfo)
-        }
-        // Get wallet balance
-        get("/getbalance") {
-            val balance = phoenixService.getBalance()
-            call.respond(HttpStatusCode.OK, balance)
-        }
-        get("/seed") {
-            val seed = phoenixService.getSeed()
-            call.respond(HttpStatusCode.OK, seed)
-        }
         post("/payinvoice") {
             val request = call.receive<PayInvoiceRequest>()
             val result = phoenixService.payInvoice(request)
@@ -120,15 +106,29 @@ fun Route.wallet(
             val result = phoenixService.bumpOnchainFees(feerateSatByte)
             call.respond(HttpStatusCode.OK, result)
         }
+        post("/export") {
+            val request = call.receive<CsvExport>()
+            val result = phoenixService.csvExport(request)
+            call.respond(HttpStatusCode.OK, result)
+        }
+        // Get wallet/node info
+        get("/getinfo") {
+            val nodeInfo = phoenixService.getNodeInfo()
+            call.respond(HttpStatusCode.OK, nodeInfo)
+        }
+        // Get wallet balance
+        get("/getbalance") {
+            val balance = phoenixService.getBalance()
+            call.respond(HttpStatusCode.OK, balance)
+        }
         post("/closechannel") {
             val request = call.receive<CloseChannelRequest>()
             val result = phoenixService.closeChannel(request)
             call.respond(HttpStatusCode.OK, result)
         }
-        post("/export") {
-            val request = call.receive<CsvExport>()
-            val result = phoenixService.csvExport(request)
-            call.respond(HttpStatusCode.OK, result)
+        get("/seed") {
+            val seed = phoenixService.getSeed()
+            call.respond(HttpStatusCode.OK, seed)
         }
 
         // Payments endpoints
