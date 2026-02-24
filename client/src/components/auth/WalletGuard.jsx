@@ -1,8 +1,9 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+
 import {
   Modal,
   ModalContent,
@@ -13,11 +14,18 @@ import {
   Button,
   Form,
 } from "@heroui/react";
-import { AuthContext } from "../../modules/auth/AuthProvider";
+import { driver } from "driver.js";
+import { Eye, EyeOff } from "lucide-react";
+import { useTranslations } from "next-intl";
+
 import {
   loginWallet,
   logoutWallet,
 } from "../../modules/cashier/cashierService";
+
+import "driver.js/dist/driver.css";
+
+const WALLET_GUARD_TOUR_KEY = "ambrosia:tour:wallet-guard";
 
 export default function WalletGuard({
   children,
@@ -28,10 +36,10 @@ export default function WalletGuard({
   cancelText = "Cancelar",
   onAuthorized,
 }) {
-  const { user } = useContext(AuthContext);
   const router = useRouter();
+  const tTour = useTranslations("walletTour");
   const [isOpen, setIsOpen] = useState(true);
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [authorized, setAuthorized] = useState(false);
@@ -40,18 +48,27 @@ export default function WalletGuard({
   const fallbackExpiryMs = 8 * 60 * 60 * 1000; // 8h
   const expiryBufferMs = 30 * 1000; // small buffer to re-auth before server expiry
 
-  useEffect(() => {
-    return () => {
-      // Ensure wallet token is cleared when leaving the page
-      logoutWallet().catch(() => {});
-      try {
-        localStorage.removeItem(expiryKey);
-      } catch (_) {}
-      if (expiryTimeoutRef.current) {
-        clearTimeout(expiryTimeoutRef.current);
-        expiryTimeoutRef.current = null;
-      }
-    };
+  const scheduleExpiry = useCallback((expiresAtMs) => {
+    try {
+      localStorage.setItem(expiryKey, String(expiresAtMs));
+      if (expiryTimeoutRef.current) clearTimeout(expiryTimeoutRef.current);
+      const msRemaining = Math.max(0, expiresAtMs - Date.now() - expiryBufferMs);
+      expiryTimeoutRef.current = setTimeout(() => {
+        setAuthorized(false);
+        setIsOpen(true);
+      }, msRemaining);
+    } catch {}
+  }, [expiryBufferMs, expiryKey]);
+
+  useEffect(() => () => {
+    logoutWallet().catch(() => {});
+    try {
+      localStorage.removeItem(expiryKey);
+    } catch {}
+    if (expiryTimeoutRef.current) {
+      clearTimeout(expiryTimeoutRef.current);
+      expiryTimeoutRef.current = null;
+    }
   }, []);
 
   // Restore wallet session if cookie/localStorage still valid
@@ -64,8 +81,8 @@ export default function WalletGuard({
         setIsOpen(false);
         scheduleExpiry(storedExpiry);
       }
-    } catch (_) {}
-  }, []);
+    } catch {}
+  }, [scheduleExpiry]);
 
   // React to unauthorized wallet API responses
   useEffect(() => {
@@ -74,7 +91,7 @@ export default function WalletGuard({
       setIsOpen(true);
       try {
         localStorage.removeItem(expiryKey);
-      } catch (_) {}
+      } catch {}
       if (expiryTimeoutRef.current) {
         clearTimeout(expiryTimeoutRef.current);
         expiryTimeoutRef.current = null;
@@ -90,18 +107,60 @@ export default function WalletGuard({
     };
   }, []);
 
-  // Do not proactively call wallet endpoints here; children handle their own data fetching
-  const scheduleExpiry = (expiresAtMs) => {
-    try {
-      localStorage.setItem(expiryKey, String(expiresAtMs));
-      if (expiryTimeoutRef.current) clearTimeout(expiryTimeoutRef.current);
-      const msRemaining = Math.max(0, expiresAtMs - Date.now() - expiryBufferMs);
-      expiryTimeoutRef.current = setTimeout(() => {
-        setAuthorized(false);
-        setIsOpen(true);
-      }, msRemaining);
-    } catch (_) {}
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!localStorage.getItem(WALLET_GUARD_TOUR_KEY)) return;
+
+    const timer = setTimeout(() => {
+      const updateAnchorPosition = () => {
+        const formEl = document.getElementById("wallet-guard-form");
+        const dialogEl = formEl?.closest('[role="dialog"]') ?? document.querySelector('[role="dialog"]');
+        const anchor = document.getElementById("wallet-guard-anchor");
+        if (dialogEl && anchor) {
+          const rect = dialogEl.getBoundingClientRect();
+          anchor.style.top = `${rect.top}px`;
+          anchor.style.left = `${rect.left + rect.width / 2}px`;
+          anchor.style.transform = "translateX(-50%)";
+        }
+      };
+
+      updateAnchorPosition();
+      const resize = { handler: null };
+
+      const driverObj = driver({
+        allowClose: true,
+        overlayOpacity: 0,
+        steps: [
+          {
+            element: "#wallet-guard-anchor",
+            popover: {
+              title: tTour("guardTitle"),
+              description: tTour("guardDescription"),
+              side: "top",
+              align: "center",
+              nextBtnText: tTour("guardButton"),
+              showButtons: ["next"],
+            },
+          },
+        ],
+        onDestroyStarted: () => {
+          window.removeEventListener("resize", resize.handler);
+          localStorage.removeItem(WALLET_GUARD_TOUR_KEY);
+          driverObj.destroy();
+        },
+      });
+
+      resize.handler = () => {
+        updateAnchorPosition();
+        driverObj.refresh();
+      };
+      window.addEventListener("resize", resize.handler);
+
+      driverObj.drive();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, tTour]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,7 +179,7 @@ export default function WalletGuard({
           : Date.now() + fallbackExpiryMs;
       scheduleExpiry(expiresAt);
       if (onAuthorized) onAuthorized();
-    } catch (_) {
+    } catch {
       // apiClient already shows a toast on error
     } finally {
       setSubmitting(false);
@@ -130,6 +189,7 @@ export default function WalletGuard({
 
   return (
     <>
+      <div id="wallet-guard-anchor" className="pointer-events-none fixed h-px w-px opacity-0" />
       <Modal
         isOpen={isOpen}
         isDismissable={false}
@@ -143,23 +203,25 @@ export default function WalletGuard({
           <ModalHeader>{title}</ModalHeader>
           <ModalBody>
             <Form onSubmit={handleSubmit} id="wallet-guard-form">
-              <Input
-                label={passwordLabel}
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                isDisabled={submitting}
-                endContent={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                }
-                autoFocus
-              />
+              <div id="wallet-guard-password" className="w-full">
+                <Input
+                  label={passwordLabel}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  isDisabled={submitting}
+                  endContent={(
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                )}
+                  autoFocus
+                />
+              </div>
             </Form>
           </ModalBody>
           <ModalFooter>
