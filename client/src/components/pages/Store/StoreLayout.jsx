@@ -63,13 +63,10 @@ export function StoreLayout({ children }) {
 
   useEffect(() => {
     if (!pathname.startsWith("/store/wallet")) return;
-    localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
-    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
     if (driverRef.current) {
       driverRef.current.destroy();
       driverRef.current = null;
     }
-
     document.querySelectorAll(".driver-overlay, .driver-popover").forEach((el) => {
       el.style.opacity = "0";
       el.style.pointerEvents = "none";
@@ -107,6 +104,10 @@ export function StoreLayout({ children }) {
             side: "right",
             align: "center",
             showButtons: ["close"],
+          },
+          onHighlighted: () => {
+            localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+            localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
           },
         },
       ],
