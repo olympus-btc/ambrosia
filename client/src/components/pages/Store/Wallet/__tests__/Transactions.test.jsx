@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { driver } from "driver.js";
 
 import { I18nProvider } from "@i18n/I18nProvider";
 
@@ -281,5 +282,107 @@ describe("Transactions Component", () => {
         expect(screen.getByTestId("send-tab")).toBeInTheDocument();
       });
     });
+  });
+});
+
+const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
+
+describe("Transactions — driver.js tour", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    localStorage.clear();
+  });
+
+  it("does not start the tour when WALLET_RECEIVE_TOUR_KEY is absent from localStorage", async () => {
+    jest.useFakeTimers();
+
+    await act(async () => {
+      renderTransactions();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    expect(driver).not.toHaveBeenCalled();
+  });
+
+  it("calls driver() and drive() when WALLET_RECEIVE_TOUR_KEY is set", async () => {
+    jest.useFakeTimers();
+    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+
+    await act(async () => {
+      renderTransactions();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    expect(driver).toHaveBeenCalledTimes(1);
+    expect(driver.mock.results[0].value.drive).toHaveBeenCalledTimes(1);
+  });
+
+  it("configures the tour with 3 steps targeting the receive form elements", async () => {
+    jest.useFakeTimers();
+    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+
+    await act(async () => {
+      renderTransactions();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    const { steps } = driver.mock.calls[0][0];
+    expect(steps).toHaveLength(3);
+    expect(steps[0].element).toBe("#wallet-receive-amount");
+    expect(steps[1].element).toBe("#wallet-receive-description");
+    expect(steps[2].element).toBe("#wallet-receive-button");
+  });
+
+  it("clears WALLET_RECEIVE_TOUR_KEY from localStorage when onDestroyStarted fires", async () => {
+    jest.useFakeTimers();
+    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+
+    await act(async () => {
+      renderTransactions();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    const { onDestroyStarted } = driver.mock.calls[0][0];
+    act(() => {
+      onDestroyStarted();
+    });
+
+    expect(localStorage.getItem(WALLET_RECEIVE_TOUR_KEY)).toBeNull();
+  });
+
+  it("cancels the pending timer on unmount before driver is initialized", async () => {
+    jest.useFakeTimers();
+    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+
+    let unmount;
+    await act(async () => {
+      ({ unmount } = renderTransactions());
+    });
+
+    act(() => {
+      unmount();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    expect(driver).not.toHaveBeenCalled();
   });
 });

@@ -49,73 +49,79 @@ export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceA
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-4">
-        <NumberInput
-          classNames={{
-            label: "text-sm font-semibold text-deep",
-            input: "text-base bg-white",
-            innerWrapper: "bg-white",
-            inputWrapper: [
-              "bg-white",
-              "hover:!bg-white",
-              "group-data-[hover=true]:!bg-white",
-              "group-data-[focus=true]:bg-white",
-              "border-1",
-              "border-green-600",
-            ],
-          }}
-          label={t("payments.receive.invoiceAmountLabel")}
-          placeholder="1000"
-          minValue={0}
-          value={invoiceAmount}
-          onValueChange={(value) => {
-            setInvoiceAmount(value === null ? "" : value);
-            setInvalidNumberInput(false);
-          }}
-          startContent={<Bitcoin className="w-5 h-5 text-gray-400 pb-0.5" />}
-          disabled={loading}
-          isInvalid={invalidNumberInput}
-          errorMessage={invalidNumberInput ? t("payments.receive.invoiceAmountError") : ""}
-        />
-        <Input
-          label={t("payments.receive.invoiceDescriptionLabel")}
-          placeholder={t("payments.receive.invoiceDescriptionPlaceholder")}
-          value={invoiceDesc}
-          onChange={(e) => setInvoiceDesc(e.target.value)}
-          classNames={{
-            label: "text-sm font-semibold text-deep",
-            input: "text-base bg-white",
-            innerWrapper: "bg-white",
-            inputWrapper: [
-              "bg-white",
-              "hover:!bg-white",
-              "group-data-[hover=true]:!bg-white",
-              "group-data-[focus=true]:bg-white",
-              "border-1",
-              "border-green-600",
-            ],
-          }}
-          disabled={loading}
-        />
-        <Button
-          onPress={handleCreateInvoice}
-          variant="solid"
-          color="primary"
-          size="lg"
-          disabled={loading}
-          className="w-full gradient-forest text-white"
-        >
-          {loading ? (
-            <div className="flex items-center space-x-2">
-              <Spinner size="sm" color="white" />
-              <span>{t("payments.receive.invoiceLightningLoading")}</span>
-            </div>
-          ) : (
-            <>
-              <QrCode className="w-4 h-4 mr-2" />
-              {t("payments.receive.invoiceLightningButton")}
-            </>
-          )}
-        </Button>
+        <div id="wallet-receive-amount">
+          <NumberInput
+            classNames={{
+              label: "text-sm font-semibold text-deep",
+              input: "text-base bg-white",
+              innerWrapper: "bg-white",
+              inputWrapper: [
+                "bg-white",
+                "hover:!bg-white",
+                "group-data-[hover=true]:!bg-white",
+                "group-data-[focus=true]:bg-white",
+                "border-1",
+                "border-green-600",
+              ],
+            }}
+            label={t("payments.receive.invoiceAmountLabel")}
+            placeholder="1000"
+            minValue={0}
+            value={invoiceAmount}
+            onValueChange={(value) => {
+              setInvoiceAmount(value === null ? "" : value);
+              setInvalidNumberInput(false);
+            }}
+            startContent={<Bitcoin className="w-5 h-5 text-gray-400 pb-0.5" />}
+            disabled={loading}
+            isInvalid={invalidNumberInput}
+            errorMessage={invalidNumberInput ? t("payments.receive.invoiceAmountError") : ""}
+          />
+        </div>
+        <div id="wallet-receive-description">
+          <Input
+            label={t("payments.receive.invoiceDescriptionLabel")}
+            placeholder={t("payments.receive.invoiceDescriptionPlaceholder")}
+            value={invoiceDesc}
+            onChange={(e) => setInvoiceDesc(e.target.value)}
+            classNames={{
+              label: "text-sm font-semibold text-deep",
+              input: "text-base bg-white",
+              innerWrapper: "bg-white",
+              inputWrapper: [
+                "bg-white",
+                "hover:!bg-white",
+                "group-data-[hover=true]:!bg-white",
+                "group-data-[focus=true]:bg-white",
+                "border-1",
+                "border-green-600",
+              ],
+            }}
+            disabled={loading}
+          />
+        </div>
+        <div id="wallet-receive-button">
+          <Button
+            onPress={handleCreateInvoice}
+            variant="solid"
+            color="primary"
+            size="lg"
+            disabled={loading}
+            className="w-full gradient-forest text-white"
+          >
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Spinner size="sm" color="white" />
+                <span>{t("payments.receive.invoiceLightningLoading")}</span>
+              </div>
+            ) : (
+              <>
+                <QrCode className="w-4 h-4 mr-2" />
+                {t("payments.receive.invoiceLightningButton")}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
