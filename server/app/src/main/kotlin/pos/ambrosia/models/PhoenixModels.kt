@@ -3,6 +3,7 @@ package pos.ambrosia.models.phoenix
 import kotlinx.serialization.Serializable
 import java.sql.Timestamp
 
+//region Payments
 @Serializable
 data class CreateInvoiceRequest(
     val description: String,
@@ -92,7 +93,9 @@ data class CsvExport(
     val from: String,
     val to: String,
 )
+//endregion
 
+//region Node Management
 @Serializable
 data class NodeInfo(
     val nodeId: String,
@@ -123,3 +126,4 @@ data class CloseChannelRequest(
     val address: String,
     val feerateSatByte: Long,
 )
+//endregion

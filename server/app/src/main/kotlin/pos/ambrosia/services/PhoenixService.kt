@@ -68,6 +68,7 @@ class PhoenixService(
         },
     )
 
+    //region Payments
     /** Create a new Bolt11 invoice on Phoenix */
     suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
         try {
@@ -326,7 +327,9 @@ class PhoenixService(
             )
         }
     }
+    //endregion
 
+    //region Node Management
     /** Get node information from Phoenix */
     suspend fun getNodeInfo(): NodeInfo {
         try {
@@ -383,7 +386,8 @@ class PhoenixService(
             throw PhoenixServiceException("Failed to close channel on Phoenix: ${e.message}")
         }
     }
-
+    //endregion
+    
     /** Get seed from Phoenix */
     suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()
 }
