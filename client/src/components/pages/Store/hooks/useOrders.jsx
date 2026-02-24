@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useOrders() {
   const [orders, setOrders] = useState([]);
@@ -13,12 +15,12 @@ export function useOrders() {
     setError(null);
 
     try {
-      const ordersResponse = await apiClient("/orders/with-payments");
-      const ordersList = Array.isArray(ordersResponse) ? ordersResponse : [];
-      setOrders(ordersList);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError(err);
+      const ordersResponse = await httpClient("/orders/with-payments");
+      const ordersData = await parseJsonResponse(ordersResponse, []);
+      setOrders(toArray(ordersData));
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(error);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -28,19 +30,23 @@ export function useOrders() {
   const createOrder = useCallback(
     async (orderBody) => {
       try {
-        const created = await apiClient("/orders", {
+        const createOrder = await httpClient("/orders", {
           method: "POST",
-          body: orderBody,
+          body: JSON.stringify(orderBody),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        if (created?.id) {
-          setOrders((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+        const createdDataOrder = await parseJsonResponse(createOrder, null);
+        if (createdDataOrder?.id) {
+          setOrders((prev) => (Array.isArray(prev) ? [...prev, createdDataOrder] : [createdDataOrder]),
           );
         }
-        return created;
-      } catch (err) {
-        console.error("Error creating order:", err);
-        setError(err);
-        throw err;
+        return createdDataOrder;
+      } catch (error) {
+        console.error("Error creating order:", error);
+        setError(error);
+        throw error;
       }
     },
     [],
@@ -50,21 +56,27 @@ export function useOrders() {
     async (orderId, orderBody) => {
       if (!orderId) throw new Error("orderId is required");
       try {
-        const updated = await apiClient(`/orders/${orderId}`, {
+        const updateOrder = await httpClient(`/orders/${orderId}`, {
           method: "PUT",
-          body: orderBody,
+          body: JSON.stringify(orderBody),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        if (updated?.id) {
+
+        const updatedDataOrder = await parseJsonResponse(updateOrder, null);
+
+        if (updatedDataOrder?.id) {
           setOrders((prev) => (Array.isArray(prev)
-            ? prev.map((o) => (o.id === orderId ? updated : o))
-            : [updated]),
+            ? prev.map((o) => (o.id === orderId ? updatedDataOrder : o))
+            : [updatedDataOrder]),
           );
         }
-        return updated;
-      } catch (err) {
-        console.error("Error updating order:", err);
-        setError(err);
-        throw err;
+        return updatedDataOrder;
+      } catch (error) {
+        console.error("Error updating order:", error);
+        setError(error);
+        throw error;
       }
     },
     [],

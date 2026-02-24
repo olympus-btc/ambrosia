@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
@@ -15,16 +17,12 @@ export function useProducts() {
     setError(null);
 
     try {
-      const res = await apiClient("/products");
-
-      if (Array.isArray(res)) {
-        setProducts(res);
-      } else {
-        setProducts([]);
-      }
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError(err);
+      const response = await httpClient("/products");
+      const productsData = await parseJsonResponse(response, []);
+      setProducts(toArray(productsData));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -45,9 +43,12 @@ export function useProducts() {
     const minStockNumber = Number(product.productMinStock ?? 0);
     const maxStockNumber = Number(product.productMaxStock ?? 0);
 
-    await apiClient("/products", {
+    await httpClient("/products", {
       method: "POST",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         SKU: product.productSKU,
         name: product.productName,
         description: product.productDescription || null,
@@ -58,7 +59,7 @@ export function useProducts() {
         min_stock_threshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
         max_stock_threshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
         price_cents: priceCents,
-      },
+      }),
       notShowError: false,
     });
 
@@ -82,9 +83,12 @@ export function useProducts() {
     const minStockNumber = Number(product.productMinStock ?? 0);
     const maxStockNumber = Number(product.productMaxStock ?? 0);
 
-    await apiClient(`/products/${product.productId}`, {
+    await httpClient(`/products/${product.productId}`, {
       method: "PUT",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         id: product.productId,
         SKU: product.productSKU,
         name: product.productName,
@@ -96,7 +100,7 @@ export function useProducts() {
         min_stock_threshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
         max_stock_threshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
         price_cents: priceCents,
-      },
+      }),
       notShowError: false,
     });
 
@@ -104,7 +108,7 @@ export function useProducts() {
   };
 
   const deleteProduct = async (product) => {
-    await apiClient(`/products/${product.id}`, {
+    await httpClient(`/products/${product.id}`, {
       method: "DELETE",
       notShowError: false,
     });

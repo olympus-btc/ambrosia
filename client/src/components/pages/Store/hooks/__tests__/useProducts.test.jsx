@@ -3,12 +3,17 @@ import { act, useEffect } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { useUpload } from "@/components/hooks/useUpload";
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 import { useProducts } from "../useProducts";
 
-jest.mock("@/services/apiClient", () => ({
-  apiClient: jest.fn(),
+jest.mock("@/lib/http/httpClient", () => ({
+  httpClient: jest.fn(),
+}));
+
+jest.mock("@/lib/http/parseJsonResponse", () => ({
+  parseJsonResponse: jest.fn(),
 }));
 
 jest.mock("@/components/hooks/useUpload", () => ({
@@ -51,7 +56,8 @@ describe("useProducts", () => {
 
   it("loads products on mount", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    apiClient.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
 
     render(<TestComponent />);
 
@@ -62,7 +68,8 @@ describe("useProducts", () => {
 
   it("sets empty products when apiClient returns non-array", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    apiClient.mockResolvedValueOnce({ data: [] });
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce({ data: [] });
 
     render(<TestComponent />);
 
@@ -72,7 +79,7 @@ describe("useProducts", () => {
 
   it("sets error when fetching products fails", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    apiClient.mockRejectedValueOnce(new Error("fetch-fail"));
+    httpClient.mockRejectedValueOnce(new Error("fetch-fail"));
 
     render(<TestComponent />);
 
@@ -84,9 +91,9 @@ describe("useProducts", () => {
     const upload = jest.fn().mockResolvedValue([{ url: "https://img.test/item.png" }]);
     useUpload.mockReturnValue({ upload, isUploading: false });
 
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ ok: true });
-    apiClient.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
 
@@ -110,9 +117,12 @@ describe("useProducts", () => {
     });
 
     expect(upload).toHaveBeenCalledWith([imageFile]);
-    expect(apiClient).toHaveBeenCalledWith("/products", {
+    expect(httpClient).toHaveBeenCalledWith("/products", {
       method: "POST",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         SKU: "SKU-1",
         name: "Cafe",
         description: "Caliente",
@@ -123,7 +133,7 @@ describe("useProducts", () => {
         min_stock_threshold: 0,
         max_stock_threshold: 0,
         price_cents: 1050,
-      },
+      }),
       notShowError: false,
     });
   });
@@ -132,9 +142,9 @@ describe("useProducts", () => {
     const upload = jest.fn();
     useUpload.mockReturnValue({ upload, isUploading: false });
 
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ ok: true });
-    apiClient.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
 
@@ -157,9 +167,12 @@ describe("useProducts", () => {
     });
 
     expect(upload).not.toHaveBeenCalled();
-    expect(apiClient).toHaveBeenCalledWith("/products/22", {
+    expect(httpClient).toHaveBeenCalledWith("/products/22", {
       method: "PUT",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         id: 22,
         SKU: "SKU-22",
         name: "Te",
@@ -171,7 +184,7 @@ describe("useProducts", () => {
         min_stock_threshold: 0,
         max_stock_threshold: 0,
         price_cents: 425,
-      },
+      }),
       notShowError: false,
     });
   });
@@ -180,9 +193,9 @@ describe("useProducts", () => {
     const upload = jest.fn().mockResolvedValue([{ path: "/files/tea.png" }]);
     useUpload.mockReturnValue({ upload, isUploading: false });
 
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ ok: true });
-    apiClient.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
 
@@ -207,9 +220,12 @@ describe("useProducts", () => {
     });
 
     expect(upload).toHaveBeenCalledWith([imageFile]);
-    expect(apiClient).toHaveBeenCalledWith("/products/30", {
+    expect(httpClient).toHaveBeenCalledWith("/products/30", {
       method: "PUT",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         id: 30,
         SKU: "SKU-30",
         name: "Te Verde",
@@ -221,7 +237,7 @@ describe("useProducts", () => {
         min_stock_threshold: 0,
         max_stock_threshold: 0,
         price_cents: 350,
-      },
+      }),
       notShowError: false,
     });
   });
@@ -229,9 +245,9 @@ describe("useProducts", () => {
   it("deletes a product and refetches", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
 
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ ok: true });
-    apiClient.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
 
@@ -241,7 +257,7 @@ describe("useProducts", () => {
       await handlers.deleteProduct({ id: 44 });
     });
 
-    expect(apiClient).toHaveBeenCalledWith("/products/44", {
+    expect(httpClient).toHaveBeenCalledWith("/products/44", {
       method: "DELETE",
       notShowError: false,
     });

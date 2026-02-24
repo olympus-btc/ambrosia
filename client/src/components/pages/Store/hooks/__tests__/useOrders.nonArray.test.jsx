@@ -3,7 +3,8 @@ import * as React from "react";
 
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 import { useOrders } from "../useOrders";
 
@@ -34,8 +35,12 @@ jest.mock("react", () => {
   };
 });
 
-jest.mock("@/services/apiClient", () => ({
-  apiClient: jest.fn(),
+jest.mock("@/lib/http/httpClient", () => ({
+  httpClient: jest.fn(),
+}));
+
+jest.mock("@/lib/http/parseJsonResponse", () => ({
+  parseJsonResponse: jest.fn(),
 }));
 
 const handlers = {};
@@ -59,8 +64,9 @@ describe("useOrders with non-array previous state", () => {
   });
 
   it("uses fallback array when createOrder runs with non-array previous state", async () => {
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ id: 5, status: "new" });
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: 5, status: "new" });
 
     render(<TestComponent />);
 
@@ -74,8 +80,9 @@ describe("useOrders with non-array previous state", () => {
   });
 
   it("uses fallback array when updateOrder runs with non-array previous state", async () => {
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ id: 3, status: "paid" });
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: 3, status: "paid" });
 
     render(<TestComponent />);
 

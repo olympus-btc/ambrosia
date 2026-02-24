@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useCategories(type = "product") {
   const [categories, setCategories] = useState([]);
@@ -13,16 +15,12 @@ export function useCategories(type = "product") {
     setError(null);
 
     try {
-      const res = await apiClient(`/categories?type=${type}`);
-
-      if (Array.isArray(res)) {
-        setCategories(res);
-      } else {
-        setCategories([]);
-      }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(err);
+      const response = await httpClient(`/categories?type=${type}`);
+      const data = await parseJsonResponse(response, []);
+      setCategories(toArray(data));
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -30,9 +28,12 @@ export function useCategories(type = "product") {
 
   const createCategory = useCallback(
     async (name) => {
-      const response = await apiClient("/categories", {
+      const response = await httpClient("/categories", {
         method: "POST",
-        body: { name, type },
+        body: JSON.stringify({ name, type }),
+        headers: {
+          "Content-Type": "application/json",
+        },
         notShowError: false,
       });
 

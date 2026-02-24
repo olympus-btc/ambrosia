@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Progress, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 import { useUpload } from "@components/hooks/useUpload";
 import { getInitialSetupStatus, submitInitialSetup } from "@services/initialSetupService";
 
@@ -38,9 +39,10 @@ export function Onboarding() {
     const loadStatus = async () => {
       try {
         const status = await getInitialSetupStatus();
+        const statusData = await parseJsonResponse(status, null);
         if (!isMounted) return;
-        setSetupStatus(status);
-        if (status?.needsBusinessType) {
+        setSetupStatus(statusData);
+        if (statusData?.needsBusinessType) {
           setData((prev) => ({ ...prev, businessType: "" }));
         }
       } catch {

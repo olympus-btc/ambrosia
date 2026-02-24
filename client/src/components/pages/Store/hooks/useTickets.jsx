@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export function useTickets() {
   const [tickets, setTickets] = useState([]);
@@ -12,15 +14,12 @@ export function useTickets() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/tickets");
-      if (Array.isArray(res)) {
-        setTickets(res);
-      } else {
-        setTickets([]);
-      }
-    } catch (err) {
-      console.error("Error fetching tickets:", err);
-      setError(err);
+      const tickets = await httpClient("/tickets");
+      const ticketsData = await parseJsonResponse(tickets, []);
+      setTickets(toArray(ticketsData));
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -29,19 +28,25 @@ export function useTickets() {
   const createTicket = useCallback(
     async (ticketBody) => {
       try {
-        const created = await apiClient("/tickets", {
+        const createTicket = await httpClient("/tickets", {
           method: "POST",
-          body: ticketBody,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(ticketBody),
         });
-        if (created?.id) {
-          setTickets((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+
+        const createdDataTicket = await parseJsonResponse(createTicket, null);
+
+        if (createdDataTicket?.id) {
+          setTickets((prev) => (Array.isArray(prev) ? [...prev, createdDataTicket] : [createdDataTicket]),
           );
         }
-        return created;
-      } catch (err) {
-        console.error("Error creating ticket:", err);
-        setError(err);
-        throw err;
+        return createdDataTicket;
+      } catch (error) {
+        console.error("Error creating ticket:", error);
+        setError(error);
+        throw error;
       }
     },
     [],

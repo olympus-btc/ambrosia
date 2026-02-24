@@ -23,8 +23,8 @@ jest.mock("lucide-react", () => ({
   Languages: () => <div>Languages Icon</div>,
 }));
 
-jest.mock("@/services/apiClient", () => ({
-  apiClient: jest.fn(() => Promise.resolve({})),
+jest.mock("@/lib/http/httpClient", () => ({
+  httpClient: jest.fn(() => Promise.resolve({})),
 }));
 
 const localStorageMock = {

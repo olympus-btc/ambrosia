@@ -1,10 +1,10 @@
 "use client";
 import { createContext, useEffect, useState } from "react";
 import { loginFromService, logoutFromService } from "./authService";
-import { apiClient } from "@/services/apiClient";
 import { useRouter } from "next/navigation";
 import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
-
+import { httpClient } from "../../lib/http/httpClient";
+import { parseJsonResponse } from "../../lib/http/parseJsonResponse";
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -28,12 +28,12 @@ export function AuthProvider({ children }) {
     try {
       setIsLoading(true)
 
-      const data = await apiClient("/users/me", { silentAuth: true })
+      const response = await httpClient("/users/me");
+      const data = await parseJsonResponse(response, null);
 
-      setPermissions(data.perms);
-      setUser(data.user);
-      setIsAuth(true)
-      console.log(data.user)
+      setPermissions(data?.perms ?? null);
+      setUser(data?.user ?? null);
+      setIsAuth(Boolean(data?.user));
     } catch (error) {
       setUser(null)
       setPermissions(null)
@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
     if (!isAuth) return;
 
     const revalidate = () => {
-      apiClient("/users/me", { silentAuth: false }).catch(() => { });
+      httpClient("/users/me").catch(() => { });
     };
 
     const onFocus = () => revalidate();
