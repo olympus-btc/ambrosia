@@ -68,42 +68,7 @@ class PhoenixService(
         },
     )
 
-    /** Get node information from Phoenix */
-    suspend fun getNodeInfo(): NodeInfo {
-        try {
-            val response: HttpResponse = httpClient.get("$phoenixdUrl/getinfo")
-            if (response.status.value != 200) {
-                throw PhoenixNodeInfoException(
-                    "Phoenix node returned status code: ${response.status.value}",
-                )
-            }
-
-            return response.body<NodeInfo>()
-        } catch (e: PhoenixNodeInfoException) {
-            throw e
-        } catch (e: Exception) {
-            throw PhoenixConnectionException("Failed to connect to Phoenix node: ${e.message}")
-        }
-    }
-
-    /** Get balance information from Phoenix */
-    suspend fun getBalance(): PhoenixBalance {
-        try {
-            val response: HttpResponse = httpClient.get("$phoenixdUrl/getbalance")
-            if (response.status.value != 200) {
-                throw PhoenixBalanceException("Phoenix node returned status code: ${response.status.value}")
-            }
-
-            return response.body<PhoenixBalance>()
-        } catch (e: PhoenixBalanceException) {
-            throw e
-        } catch (e: Exception) {
-            throw PhoenixConnectionException("Failed to connect to Phoenix node: ${e.message}")
-        }
-    }
-
-    /** Get seed from Phoenix */
-    suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()
+    //region Payments
 
     /** Create a new Bolt11 invoice on Phoenix */
     suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
@@ -239,29 +204,6 @@ class PhoenixService(
         }
     }
 
-    /** Close a channel and send funds to an on-chain address */
-    suspend fun closeChannel(request: CloseChannelRequest): String {
-        try {
-            val response: HttpResponse =
-                httpClient.submitForm(
-                    url = "$phoenixdUrl/closechannel",
-                    formParameters =
-                        Parameters.build {
-                            append("channelId", request.channelId)
-                            append("address", request.address)
-                            append("feerateSatByte", request.feerateSatByte.toString())
-                        },
-                )
-            if (response.status.value != 200) {
-                throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
-            }
-
-            return response.bodyAsText()
-        } catch (e: Exception) {
-            throw PhoenixServiceException("Failed to close channel on Phoenix: ${e.message}")
-        }
-    }
-
     /** List incoming payments from Phoenix */
     suspend fun listIncomingPayments(
         from: Long = 0,
@@ -386,4 +328,68 @@ class PhoenixService(
             )
         }
     }
+    //endregion
+
+    //region Node Management
+
+    /** Get node information from Phoenix */
+    suspend fun getNodeInfo(): NodeInfo {
+        try {
+            val response: HttpResponse = httpClient.get("$phoenixdUrl/getinfo")
+            if (response.status.value != 200) {
+                throw PhoenixNodeInfoException(
+                    "Phoenix node returned status code: ${response.status.value}",
+                )
+            }
+
+            return response.body<NodeInfo>()
+        } catch (e: PhoenixNodeInfoException) {
+            throw e
+        } catch (e: Exception) {
+            throw PhoenixConnectionException("Failed to connect to Phoenix node: ${e.message}")
+        }
+    }
+
+    /** Get balance information from Phoenix */
+    suspend fun getBalance(): PhoenixBalance {
+        try {
+            val response: HttpResponse = httpClient.get("$phoenixdUrl/getbalance")
+            if (response.status.value != 200) {
+                throw PhoenixBalanceException("Phoenix node returned status code: ${response.status.value}")
+            }
+
+            return response.body<PhoenixBalance>()
+        } catch (e: PhoenixBalanceException) {
+            throw e
+        } catch (e: Exception) {
+            throw PhoenixConnectionException("Failed to connect to Phoenix node: ${e.message}")
+        }
+    }
+
+    /** Close a channel and send funds to an on-chain address */
+    suspend fun closeChannel(request: CloseChannelRequest): String {
+        try {
+            val response: HttpResponse =
+                httpClient.submitForm(
+                    url = "$phoenixdUrl/closechannel",
+                    formParameters =
+                        Parameters.build {
+                            append("channelId", request.channelId)
+                            append("address", request.address)
+                            append("feerateSatByte", request.feerateSatByte.toString())
+                        },
+                )
+            if (response.status.value != 200) {
+                throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
+            }
+
+            return response.bodyAsText()
+        } catch (e: Exception) {
+            throw PhoenixServiceException("Failed to close channel on Phoenix: ${e.message}")
+        }
+    }
+    //endregion
+
+    /** Get seed from Phoenix */
+    suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()
 }

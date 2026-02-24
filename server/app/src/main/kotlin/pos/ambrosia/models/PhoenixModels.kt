@@ -3,30 +3,7 @@ package pos.ambrosia.models.phoenix
 import kotlinx.serialization.Serializable
 import java.sql.Timestamp
 
-@Serializable data class PhoenixBalance(
-    val balanceSat: Long,
-    val feeCreditSat: Long,
-)
-
-@Serializable
-data class NodeInfo(
-    val nodeId: String,
-    val channels: List<Channel>,
-    val chain: String,
-    val blockHeight: Int?,
-    val version: String,
-)
-
-@Serializable
-data class Channel(
-    val state: String,
-    val channelId: String,
-    val balanceSat: Long,
-    val inboundLiquiditySat: Long,
-    val capacitySat: Long,
-    val fundingTxId: String,
-)
-
+//region Payments
 @Serializable
 data class CreateInvoiceRequest(
     val description: String,
@@ -42,6 +19,11 @@ data class CreateInvoiceResponse(
     val serialized: String,
 )
 
+@Serializable data class CreateOffer(
+    val description: String? = null,
+    val amountSat: Long? = null,
+)
+
 @Serializable data class PayInvoiceRequest(
     val amountSat: Long? = null,
     val invoice: String,
@@ -54,6 +36,20 @@ data class PaymentResponse(
     val paymentId: String,
     val paymentHash: String,
     val paymentPreimage: String,
+)
+
+@Serializable
+data class PayOfferRequest(
+    val amountSat: Long? = null,
+    val offer: String,
+    val message: String? = null,
+)
+
+@Serializable
+data class PayOnchainRequest(
+    val amountSat: Long,
+    val address: String,
+    val feerateSatByte: Long,
 )
 
 @Serializable
@@ -92,23 +88,36 @@ data class OutgoingPayment(
     val createdAt: Long,
 )
 
-@Serializable data class CreateOffer(
-    val description: String? = null,
-    val amountSat: Long? = null,
+@Serializable
+data class CsvExport(
+    val from: String,
+    val to: String,
+)
+//endregion
+
+//region Node Management
+@Serializable
+data class NodeInfo(
+    val nodeId: String,
+    val channels: List<Channel>,
+    val chain: String,
+    val blockHeight: Int?,
+    val version: String,
+)
+
+@Serializable data class PhoenixBalance(
+    val balanceSat: Long,
+    val feeCreditSat: Long,
 )
 
 @Serializable
-data class PayOfferRequest(
-    val amountSat: Long? = null,
-    val offer: String,
-    val message: String? = null,
-)
-
-@Serializable
-data class PayOnchainRequest(
-    val amountSat: Long,
-    val address: String,
-    val feerateSatByte: Long,
+data class Channel(
+    val state: String,
+    val channelId: String,
+    val balanceSat: Long,
+    val inboundLiquiditySat: Long,
+    val capacitySat: Long,
+    val fundingTxId: String,
 )
 
 @Serializable
@@ -117,9 +126,4 @@ data class CloseChannelRequest(
     val address: String,
     val feerateSatByte: Long,
 )
-
-@Serializable
-data class CsvExport(
-    val from: String,
-    val to: String,
-)
+//endregion
