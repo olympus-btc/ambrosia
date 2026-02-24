@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { driver } from "driver.js";
 import { LogOut } from "lucide-react";
@@ -48,22 +48,45 @@ function NavBarButton({ text, icon, href, isActive, id }) {
 }
 
 const WALLET_TOUR_KEY = "ambrosia:tour:wallet-channel";
+const WALLET_GUARD_TOUR_KEY = "ambrosia:tour:wallet-guard";
+const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
 
 export function StoreLayout({ children }) {
   const pathname = usePathname();
-  const router = useRouter();
   const t = useTranslations("navbar");
   const tTour = useTranslations("walletTour");
   const { config } = useConfigurations();
   const { availableNavigation, isAuth, logout } = useModules();
   const logoSrc = storedAssetUrl(config?.businessLogoUrl);
-  const tourShownRef = useRef(false);
+  const driverRef = useRef(null);
+  const tourStartedRef = useRef(false);
 
   useEffect(() => {
-    if (!isAuth || tourShownRef.current) return;
+    if (!pathname.startsWith("/store/wallet")) return;
+    localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+    localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+    if (driverRef.current) {
+      driverRef.current.destroy();
+      driverRef.current = null;
+    }
+
+    document.querySelectorAll(".driver-overlay, .driver-popover").forEach((el) => {
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+    });
+    document.body.classList.remove("driver-active");
+    document.documentElement.classList.remove("driver-active");
+  }, [pathname]);
+
+  const tourTitle = tTour("title");
+  const tourDescription = tTour.raw("description");
+  const tourClickWallet = tTour("clickWallet");
+
+  useEffect(() => {
+    if (!isAuth || tourStartedRef.current) return;
     if (localStorage.getItem(WALLET_TOUR_KEY)) return;
 
-    tourShownRef.current = true;
+    tourStartedRef.current = true;
     localStorage.setItem(WALLET_TOUR_KEY, "true");
 
     const driverObj = driver({
@@ -71,26 +94,27 @@ export function StoreLayout({ children }) {
       overlayOpacity: 0.5,
       steps: [
         {
+          popover: {
+            title: tourTitle,
+            description: tourDescription,
+            showButtons: ["next"],
+          },
+        },
+        {
           element: "#nav-wallet",
           popover: {
-            title: tTour("title"),
-            description: tTour.raw("description"),
+            description: tourClickWallet,
             side: "right",
             align: "center",
-            nextBtnText: tTour("nextButton"),
+            showButtons: ["close"],
           },
         },
       ],
-      onNextClick: () => {
-        driverObj.destroy();
-        localStorage.setItem("ambrosia:tour:wallet-guard", "true");
-        localStorage.setItem("ambrosia:tour:wallet-receive", "true");
-        router.push("/store/wallet");
-      },
     });
 
+    driverRef.current = driverObj;
     driverObj.drive();
-  }, [isAuth, router, tTour]);
+  }, [isAuth, tourTitle, tourDescription, tourClickWallet]);
 
   return (
     <div className="flex h-screen overflow-hidden">
