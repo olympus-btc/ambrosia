@@ -32,6 +32,8 @@ class PhoenixServiceTest {
             on { config } doReturn mockConfig
         }
 
+    //region Payments
+
     @Test
     fun `createInvoice returns CreateInvoiceResponse on success`() {
         // Arrange
@@ -1158,7 +1160,9 @@ class PhoenixServiceTest {
             runBlocking { phoenixService.csvExport(request) }
         }
     }
+    //endregion
 
+    //region Node Management
     @Test
     fun `getNodeInfo returns NodeInfo on success`() {
         // Arrange: Define the successful JSON response
@@ -1412,4 +1416,5 @@ class PhoenixServiceTest {
             runBlocking { phoenixService.closeChannel(request) }
         }
     }
+    //endregion
 }
