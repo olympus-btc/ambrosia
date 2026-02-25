@@ -45,8 +45,8 @@ export default function WalletGuard({
   const [authorized, setAuthorized] = useState(false);
   const expiryKey = "walletAccessExpiry";
   const expiryTimeoutRef = useRef(null);
-  const fallbackExpiryMs = 8 * 60 * 60 * 1000; // 8h
-  const expiryBufferMs = 30 * 1000; // small buffer to re-auth before server expiry
+  const fallbackExpiryMs = 8 * 60 * 60 * 1000;
+  const expiryBufferMs = 30 * 1000;
 
   const scheduleExpiry = useCallback((expiresAtMs) => {
     try {
@@ -71,7 +71,6 @@ export default function WalletGuard({
     }
   }, []);
 
-  // Restore wallet session if cookie/localStorage still valid
   useEffect(() => {
     try {
       const storedExpiry = Number(localStorage.getItem(expiryKey));
@@ -84,7 +83,6 @@ export default function WalletGuard({
     } catch {}
   }, [scheduleExpiry]);
 
-  // React to unauthorized wallet API responses
   useEffect(() => {
     const handler = () => {
       setAuthorized(false);
@@ -168,20 +166,17 @@ export default function WalletGuard({
     setSubmitting(true);
     try {
       const result = await loginWallet(password);
-      // Allow Set-Cookie to persist before enabling children
       await new Promise((r) => setTimeout(r, 150));
       setAuthorized(true);
       setIsOpen(false);
-      // Track client-side expiry using server-provided timestamp or fallback
       const expiresAt =
         typeof result?.walletTokenExpiresAt === "number"
           ? result.walletTokenExpiresAt
           : Date.now() + fallbackExpiryMs;
       scheduleExpiry(expiresAt);
       if (onAuthorized) onAuthorized();
-    } catch {
-      // apiClient already shows a toast on error
-    } finally {
+    } catch {}
+    finally {
       setSubmitting(false);
       setPassword("");
     }

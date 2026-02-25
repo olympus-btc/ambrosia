@@ -108,8 +108,6 @@ describe("WalletGuard — driver.js tour", () => {
   it("does not start the tour when the modal is closed (session restored from localStorage)", async () => {
     jest.useFakeTimers();
 
-    // A future expiry causes the restore effect to set isOpen=false,
-    // which cancels the 300ms tour timer before it fires.
     localStorageMock.setItem("walletAccessExpiry", String(Date.now() + 60 * 60 * 1000));
     localStorageMock.setItem(WALLET_GUARD_TOUR_KEY, "true");
 
@@ -202,12 +200,10 @@ describe("WalletGuard — driver.js tour", () => {
       ({ unmount } = renderWalletGuard());
     });
 
-    // Unmount before the 300ms timer fires
     act(() => {
       unmount();
     });
 
-    // Advancing timers after unmount must not invoke driver
     act(() => {
       jest.advanceTimersByTime(400);
     });
