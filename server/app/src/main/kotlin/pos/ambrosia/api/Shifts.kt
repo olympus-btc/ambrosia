@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -25,13 +26,15 @@ fun Application.configureShifts() {
 }
 
 fun Route.shifts(shiftService: ShiftService) {
-    get("") {
-        val shifts = shiftService.getShifts()
-        if (shifts.isEmpty()) {
-            call.respond(HttpStatusCode.NoContent, "No shifts found")
-            return@get
+    authenticate("auth-jwt") {
+        get("") {
+            val shifts = shiftService.getShifts()
+            if (shifts.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No shifts found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, shifts)
         }
-        call.respond(HttpStatusCode.OK, shifts)
     }
     authorizePermission("shifts_read") {
         get("/{id}") {

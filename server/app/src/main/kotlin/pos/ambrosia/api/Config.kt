@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -22,13 +23,15 @@ fun Application.configureConfig() {
 }
 
 fun Route.config(configService: ConfigService) {
-    get("") {
-        val config = configService.getConfig()
-        if (config == null) {
-            call.respond(HttpStatusCode.NotFound, "Config not found")
-            return@get
+    authenticate("auth-jwt") {
+        get("") {
+            val config = configService.getConfig()
+            if (config == null) {
+                call.respond(HttpStatusCode.NotFound, "Config not found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, config)
         }
-        call.respond(HttpStatusCode.OK, config)
     }
     authorizePermission("settings_update") {
         put("") {

@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -32,20 +33,22 @@ fun Route.roles(
     roleService: RolesService,
     permissionsService: PermissionsService,
 ) {
-    get("/{id}") {
-        val id = call.parameters["id"]
-        if (id == null) {
-            call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-            return@get
-        }
+    authenticate("auth-jwt") {
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@get
+            }
 
-        val role = roleService.getRoleById(id)
-        if (role == null) {
-            call.respond(HttpStatusCode.NotFound, "Role not found")
-            return@get
-        }
+            val role = roleService.getRoleById(id)
+            if (role == null) {
+                call.respond(HttpStatusCode.NotFound, "Role not found")
+                return@get
+            }
 
-        call.respond(HttpStatusCode.OK, role)
+            call.respond(HttpStatusCode.OK, role)
+        }
     }
     authorizePermission("roles_read") {
         get("") {

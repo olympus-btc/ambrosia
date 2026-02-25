@@ -37,31 +37,32 @@ fun Route.users(
     tokenService: TokenService,
     permissionsService: PermissionsService,
 ) {
-    get("") {
-        val users = userService.getUsers()
-        if (users.isEmpty()) {
-            call.respond(HttpStatusCode.NoContent, "No users found")
-            return@get
-        }
-        call.respond(HttpStatusCode.OK, users)
-    }
-    get("/{id}") {
-        val id = call.parameters["id"]
-        if (id == null) {
-            call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-            return@get
-        }
-
-        val user = userService.getUserById(id)
-        if (user == null) {
-            call.respond(HttpStatusCode.NotFound, "User not found")
-            return@get
-        }
-
-        call.respond(HttpStatusCode.OK, user)
-    }
-
     authenticate("auth-jwt") {
+        get("") {
+            val users = userService.getUsers()
+            if (users.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No users found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, users)
+        }
+
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@get
+            }
+
+            val user = userService.getUserById(id)
+            if (user == null) {
+                call.respond(HttpStatusCode.NotFound, "User not found")
+                return@get
+            }
+
+            call.respond(HttpStatusCode.OK, user)
+        }
+
         get("/me") {
             val refreshToken =
                 call.request.cookies["refreshToken"]
