@@ -309,4 +309,24 @@ describe("TransactionsReceiveTab Component", () => {
       expect(descInput).toHaveAttribute("placeholder", "payments.receive.invoiceDescriptionPlaceholder");
     });
   });
+
+  describe("driver.js tour anchor elements", () => {
+    it("renders #wallet-receive-amount element for tour step 1", () => {
+      renderReceiveTab();
+
+      expect(document.getElementById("wallet-receive-amount")).toBeInTheDocument();
+    });
+
+    it("renders #wallet-receive-description element for tour step 2", () => {
+      renderReceiveTab();
+
+      expect(document.getElementById("wallet-receive-description")).toBeInTheDocument();
+    });
+
+    it("renders #wallet-receive-button element for tour step 3", () => {
+      renderReceiveTab();
+
+      expect(document.getElementById("wallet-receive-button")).toBeInTheDocument();
+    });
+  });
 });

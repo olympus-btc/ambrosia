@@ -20,7 +20,7 @@ const eslintConfig = [
       "src/providers/**",
       "src/services/**",
       "src/proxy.js",
-      "src/components/auth/**",
+      "src/components/auth/ProtectedRoute.js",
       "src/components/dashboard/**",
       "src/components/navigation/**",
       "src/components/locales/**",
