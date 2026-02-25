@@ -66,10 +66,6 @@ export default async function proxy(request) {
     }
   }
 
-  if (isAuthRoute && refreshToken) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   let businessType = null;
   let shouldClearBusinessTypeCookie = false;
   try {

@@ -35,9 +35,15 @@ export default function PinLoginNew() {
       avatar: "MG",
     },
   ]);
-  const { login } = useAuth();
+  const router = useRouter();
+  const { login, isAuth, isLoading: isAuthLoading } = useAuth();
   const { config } = useConfigurations();
 
+  useEffect(() => {
+    if (!isAuthLoading && isAuth) {
+      router.replace("/");
+    }
+  }, [isAuth, isAuthLoading, router]);
 
   useEffect(() => {
     async function getUsersFromService() {
@@ -107,7 +113,7 @@ export default function PinLoginNew() {
       });
       setPin("");
       setSelectedUser("");
-      window.location.reload();
+      window.location.replace("/");
     } catch (error) {
       setError(t("errorMessages.incorrectPin"));
       setPin("");

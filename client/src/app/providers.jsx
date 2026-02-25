@@ -1,9 +1,11 @@
 "use client";
 
+import { HeroUIProvider, ToastProvider } from "@heroui/react";
+
+import { I18nProvider } from "../i18n/I18nProvider";
 import { AuthProvider } from "../modules/auth/AuthProvider";
 import { TurnProvider } from "../modules/cashier/useTurn";
-import { HeroUIProvider, ToastProvider } from "@heroui/react";
-import { I18nProvider } from "../i18n/I18nProvider";
+
 import { ConfigurationsProvider } from "./../providers/configurations/configurationsProvider";
 
 export default function Providers({ children }) {
