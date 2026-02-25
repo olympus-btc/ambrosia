@@ -65,8 +65,7 @@ export async function deleteRole(roleId) {
 }
 
 export async function getUsers({ silentAuth = false } = {}) {
-  void silentAuth;
-  const response = await httpClient("/users");
+  const response = await httpClient("/users", { skipRefresh: silentAuth });
   const users = await parseJsonResponse(response, []);
   return users ?? [];
 }

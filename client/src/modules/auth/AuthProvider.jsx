@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
     try {
       setIsLoading(true)
 
-      const response = await httpClient("/users/me");
+      const response = await httpClient("/users/me", { skipRefresh: true });
       const data = await parseJsonResponse(response, null);
 
       setPermissions(data?.perms ?? null);

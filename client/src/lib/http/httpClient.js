@@ -18,12 +18,13 @@ export async function httpClient(endpoint, options = {}) {
 
     if (refreshResponse.status === 401) {
       window.dispatchEvent(new Event("auth:expired"));
+      return response;
     }
     return await httpWrapper(endpoint, httpOptions);
   }
 
-  if (response.status === 401) window.dispatchEvent(new Event("auth:expired"));
-  if (response.status === 403)
+  if (response.status === 401 && !skipRefresh) window.dispatchEvent(new Event("auth:expired"));
+  if (response.status === 403 && !skipRefresh)
     window.dispatchEvent(new Event("auth:forbidden"));
 
   return response;

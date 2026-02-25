@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useRef } from "react";
+
+import { useContext, useEffect, useRef } from "react";
+
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
-import { AuthContext } from "../modules/auth/AuthProvider";
-import { getHomeRoute } from "../lib/getHomeRoute";
+
 import LoadingCard from "../components/LoadingCard";
+import { getHomeRoute } from "../lib/getHomeRoute";
+import { AuthContext } from "../modules/auth/AuthProvider";
 import { useConfigurations } from "../providers/configurations/configurationsProvider";
 
 export default function HomePage() {
@@ -21,11 +23,7 @@ export default function HomePage() {
     if (isLoading) return;
 
     if (!isAuth) {
-      if (typeof window !== "undefined") {
-        window.location.replace("/auth");
-        return;
-      }
-      router.replace("/auth");
+      window.location.replace("/auth");
       return;
     }
 
@@ -41,16 +39,5 @@ export default function HomePage() {
     router.replace(homeRoute);
   }, [user, isAuth, isLoading, isConfigLoading, router, businessType, refreshConfig]);
 
-  return (
-    <LoadingCard
-      message={
-        isLoading ||
-        (isAuth &&
-          (isConfigLoading ||
-            (!businessType && !hasRequestedConfigRef.current)))
-          ? "Verificando autenticación y configuración..."
-          : "Redirigiendo..."
-      }
-    />
-  );
+  return <LoadingCard />;
 }
