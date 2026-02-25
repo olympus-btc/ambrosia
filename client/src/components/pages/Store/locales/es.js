@@ -355,6 +355,17 @@ const storeEs = {
       logoUploadMessage: "PNG, JPG o GIF (máx. 5MB)",
       updateSuccess: "Informacion de la tienda guardada exitosamente",
     },
+    cardTours: {
+      title: "Tutoriales",
+      subtitle: "Reinicia un tutorial para volver a verlo.",
+      seen: "Visto",
+      pending: "Pendiente",
+      replayButton: "Repetir",
+      walletTour: {
+        name: "Canal de Lightning",
+        description: "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
+      },
+    },
   },
   wallet: {
     title: "Wallet",
