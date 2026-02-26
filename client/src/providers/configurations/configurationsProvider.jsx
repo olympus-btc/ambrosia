@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { apiClient } from "../../services/apiClient";
-import { useUpload } from "../../components/hooks/useUpload";
+import { httpClient } from "@/lib/http/httpClient"
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse"
+import { useUpload } from "@/components/hooks/useUpload";
 
 export const ConfigurationsContext = createContext();
 
@@ -31,12 +32,14 @@ export function ConfigurationsProvider({ children }) {
   const fetchConfig = async () => {
     try {
       setIsLoading(true);
-      const data = await apiClient("/config", {
+      const configResponse = await httpClient("/config", {
         skipRefresh: true,
-        silentAuth: true,
       });
-      setConfig(data);
-    } catch (err) {
+
+      const configData = await parseJsonResponse(configResponse);
+
+      setConfig(configData);
+    } catch (error) {
       setConfig(null);
     } finally {
       setIsLoading(false);
@@ -64,12 +67,15 @@ export function ConfigurationsProvider({ children }) {
 
 
     try {
-      const updateConfigResponse = await apiClient(`/config`, {
+      const updateConfigResponse = await httpClient(`/config`, {
         method: "PUT",
-        body: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           ...configDataToSend,
           ...(logoUrl && { businessLogoUrl: logoUrl }),
-        },
+        }),
       });
 
       await fetchConfig();
