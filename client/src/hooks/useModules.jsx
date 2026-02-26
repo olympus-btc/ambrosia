@@ -1,9 +1,10 @@
 "use client";
 import { useMemo } from "react";
 
-import { getAvailableModules, getAvailableNavigation, hasAccessToRoute } from "@lib/modules";
-import { useAuth } from "@modules/auth/useAuth";
-import { useConfigurations } from "@providers/configurations/configurationsProvider";
+import { useAuth } from "@/hooks/auth/useAuth";
+
+import { getAvailableModules, getAvailableNavigation, hasAccessToRoute } from "../lib/modules";
+import { useConfigurations } from "../providers/configurations/configurationsProvider";
 
 export function useModules() {
   const { isAuth, user, permissions, logout, isLoading } = useAuth();

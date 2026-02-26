@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import LoadingCard from "@/components/LoadingCard";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { getHomeRoute } from "@/lib/getHomeRoute";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 

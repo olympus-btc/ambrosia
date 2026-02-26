@@ -19,10 +19,10 @@ import {
 import { Delete, LogIn, Users, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { useConfigurations } from "../../providers/configurations/configurationsProvider";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import { getUsers } from "./authService";
-import { useAuth } from "./useAuth";
 
 export default function PinLoginNew() {
   const t = useTranslations("pinLogin");

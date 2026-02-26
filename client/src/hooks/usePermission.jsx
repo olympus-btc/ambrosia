@@ -1,5 +1,5 @@
 "use client";
-import { useAuth } from "@modules/auth/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export function usePermission(requirement) {
   const { permissions } = useAuth();

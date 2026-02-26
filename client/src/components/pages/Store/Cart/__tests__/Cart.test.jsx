@@ -2,7 +2,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 
 import * as useModulesHook from "@/hooks/useModules";
 import { I18nProvider } from "@/i18n/I18nProvider";
-import * as useAuthHook from "@/modules/auth/useAuth";
+import * as useAuthHook from "@/hooks/auth/useAuth";
 import * as configurationsProvider from "@/providers/configurations/configurationsProvider";
 
 import { Cart } from "../Cart";

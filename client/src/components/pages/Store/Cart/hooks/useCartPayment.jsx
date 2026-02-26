@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { httpClient } from "@/lib/http/httpClient";
-import { useAuth } from "@/modules/auth/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 import { useOrders } from "../../hooks/useOrders";
 import { usePayments } from "../../hooks/usePayments";
