@@ -19,6 +19,7 @@ import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
 import pos.ambrosia.models.OrderWithDishesRequest
 import pos.ambrosia.services.OrderService
+import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
 
@@ -55,17 +56,11 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val order = orderService.getOrderById(id)
-                if (order == null) {
-                    call.respond(HttpStatusCode.NotFound, "Order not found")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, order)
-            } catch (e: Exception) {
-                logger.error("Error retrieving order: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving order")
+            val order = orderService.getOrderById(id)
+            if (order == null) {
+                throw ResourceNotFoundException("Order $id not found")
             }
+            call.respond(HttpStatusCode.OK, order)
         }
 
         // Get complete order with dishes
@@ -76,20 +71,15 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val order = orderService.getOrderById(id)
-                if (order == null) {
-                    call.respond(HttpStatusCode.NotFound, "Order not found")
-                    return@get
-                }
-                val dishes = orderService.getOrderDishes(id)
-                val completeOrder = CompleteOrder(order, dishes)
-                call.respond(HttpStatusCode.OK, completeOrder)
-            } catch (e: Exception) {
-                logger.error("Error retrieving complete order: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving complete order")
+            val order = orderService.getOrderById(id)
+            if (order == null) {
+                throw ResourceNotFoundException("Order $id not found")
             }
+            val dishes = orderService.getOrderDishes(id)
+            val completeOrder = CompleteOrder(order, dishes)
+            call.respond(HttpStatusCode.OK, completeOrder)
         }
+
         get("/{id}/dishes") {
             val orderId = call.parameters["id"]
             if (orderId.isNullOrEmpty()) {
@@ -97,17 +87,12 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val dishes = orderService.getOrderDishes(orderId)
-                if (dishes.isEmpty()) {
-                    call.respond(HttpStatusCode.NoContent, "No dishes found for this order")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, dishes)
-            } catch (e: Exception) {
-                logger.error("Error retrieving order dishes: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving order dishes")
+            val dishes = orderService.getOrderDishes(orderId)
+            if (dishes.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No dishes found for this order")
+                return@get
             }
+            call.respond(HttpStatusCode.OK, dishes)
         }
         // Filter endpoints
         get("/user/{userId}") {
@@ -117,17 +102,12 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val orders = orderService.getOrdersByUserId(userId)
-                if (orders.isEmpty()) {
-                    call.respond(HttpStatusCode.NoContent, "No orders found for user")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, orders)
-            } catch (e: Exception) {
-                logger.error("Error retrieving orders by user: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving orders")
+            val orders = orderService.getOrdersByUserId(userId)
+            if (orders.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No orders found for user")
+                return@get
             }
+            call.respond(HttpStatusCode.OK, orders)
         }
 
         get("/table/{tableId}") {
@@ -137,17 +117,12 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val orders = orderService.getOrdersByTableId(tableId)
-                if (orders.isEmpty()) {
-                    call.respond(HttpStatusCode.NoContent, "No orders found for table")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, orders)
-            } catch (e: Exception) {
-                logger.error("Error retrieving orders by table: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving orders")
+            val orders = orderService.getOrdersByTableId(tableId)
+            if (orders.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No orders found for table")
+                return@get
             }
+            call.respond(HttpStatusCode.OK, orders)
         }
 
         get("/status/{status}") {
@@ -157,17 +132,12 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val orders = orderService.getOrdersByStatus(status)
-                if (orders.isEmpty()) {
-                    call.respond(HttpStatusCode.NoContent, "No orders found with status: $status")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, orders)
-            } catch (e: Exception) {
-                logger.error("Error retrieving orders by status: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving orders")
+            val orders = orderService.getOrdersByStatus(status)
+            if (orders.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No orders found with status: $status")
+                return@get
             }
+            call.respond(HttpStatusCode.OK, orders)
         }
 
         get("/date-range") {
@@ -179,17 +149,12 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val orders = orderService.getOrdersByDateRange(startDate, endDate)
-                if (orders.isEmpty()) {
-                    call.respond(HttpStatusCode.NoContent, "No orders found in date range")
-                    return@get
-                }
-                call.respond(HttpStatusCode.OK, orders)
-            } catch (e: Exception) {
-                logger.error("Error retrieving orders by date range: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving orders")
+            val orders = orderService.getOrdersByDateRange(startDate, endDate)
+            if (orders.isEmpty()) {
+                call.respond(HttpStatusCode.NoContent, "No orders found in date range")
+                return@get
             }
+            call.respond(HttpStatusCode.OK, orders)
         }
 
         get("/total-sales/{date}") {
@@ -199,13 +164,8 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            try {
-                val totalSales = orderService.getTotalSalesByDate(date)
-                call.respond(HttpStatusCode.OK, mapOf("date" to date, "total_sales" to totalSales))
-            } catch (e: Exception) {
-                logger.error("Error retrieving total sales: ${e.message}")
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving total sales")
-            }
+            val totalSales = orderService.getTotalSalesByDate(date)
+            call.respond(HttpStatusCode.OK, mapOf("date" to date, "total_sales" to totalSales))
         }
     }
 
