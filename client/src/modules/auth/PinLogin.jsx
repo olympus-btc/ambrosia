@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
-import { getUsers } from "./authService";
-import { Delete, LogIn, Users, Trash2 } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   addToast,
   Avatar,
@@ -16,9 +16,13 @@ import {
   Select,
   SelectItem,
 } from "@heroui/react";
-import { useAuth } from "./useAuth";
-import { useRouter } from "next/navigation";
+import { Delete, LogIn, Users, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+
 import { useConfigurations } from "../../providers/configurations/configurationsProvider";
+
+import { getUsers } from "./authService";
+import { useAuth } from "./useAuth";
 
 export default function PinLoginNew() {
   const t = useTranslations("pinLogin");
@@ -50,23 +54,20 @@ export default function PinLoginNew() {
       try {
         const users = await getUsers({ silentAuth: true });
 
-        const employeesWithRoleName = users.map((user) => {
-          return {
-            ...user,
-            role: t("roleName"), //TODO Update with RoleName
-            avatar: user.name.slice(0, 2),
-          };
-        });
+        const employeesWithRoleName = users.map((user) => ({
+          ...user,
+          role: t("roleName"), //TODO Update with RoleName
+          avatar: user.name.slice(0, 2),
+        }));
 
         setEmployees(employeesWithRoleName);
-        console.log(users);
-      } catch (error) {
+      } catch {
       } finally {
         setIsLoading(false);
       }
     }
     getUsersFromService();
-  }, []);
+  }, [t]);
 
   const handleNumberClick = (number) => {
     if (pin.length < 4) {
@@ -114,7 +115,7 @@ export default function PinLoginNew() {
       setPin("");
       setSelectedUser("");
       window.location.replace("/");
-    } catch (error) {
+    } catch {
       setError(t("errorMessages.incorrectPin"));
       setPin("");
     } finally {
@@ -135,7 +136,7 @@ export default function PinLoginNew() {
         <CardHeader className="text-center space-y-3 pb-4 flex flex-col items-center justify-center">
           <div className="flex flex-col items-center justify-center">
             <div className="mx-auto w-16 h-16 bg-mint rounded-full flex items-center justify-center shadow-lg">
-              <Image className="w-8 h-8 text-forest" src={config?.businessLogoUrl} />
+              <Image className="w-8 h-8 text-forest" src={config?.businessLogoUrl} alt={config?.businessName || ""} />
             </div>
             <div className="flex flex-col items-center justify-center">
               <h1 className="text-2xl font-bold text-deep">
@@ -184,30 +185,28 @@ export default function PinLoginNew() {
                   ],
                 },
               }}
-              renderValue={(items) => {
-                return items.map((item) => {
-                  const employee = employees.find((emp) => emp.id === item.key);
-                  if (!employee) return null;
+              renderValue={(items) => items.map((item) => {
+                const employee = employees.find((emp) => emp.id === item.key);
+                if (!employee) return null;
 
-                  return (
-                    <div key={item.key} className="flex items-center gap-3">
-                      <Avatar
-                        className="flex-shrink-0 bg-mint text-forest font-bold"
-                        size="sm"
-                        name={employee.avatar}
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-deep font-semibold">
-                          {employee.name}
-                        </span>
-                        <span className="text-forest text-sm">
-                          {employee.role}
-                        </span>
-                      </div>
+                return (
+                  <div key={item.key} className="flex items-center gap-3">
+                    <Avatar
+                      className="flex-shrink-0 bg-mint text-forest font-bold"
+                      size="sm"
+                      name={employee.avatar}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-deep font-semibold">
+                        {employee.name}
+                      </span>
+                      <span className="text-forest text-sm">
+                        {employee.role}
+                      </span>
                     </div>
-                  );
-                });
-              }}
+                  </div>
+                );
+              })}
             >
               {employees.map((employee) => (
                 <SelectItem
@@ -312,7 +311,7 @@ export default function PinLoginNew() {
           >
             {isLoading ? (
               <div className="flex items-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3" />
                 {t("loading")}
               </div>
             ) : (

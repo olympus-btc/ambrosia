@@ -1,18 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getRoles, addRole, updateRole, deleteRole } from "./authService";
-import {
-  ChefHat,
-  Shield,
-  Eye,
-  EyeOff,
-  Plus,
-  Edit,
-  Trash2,
-  User,
-  Lock,
-  Home,
-} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -27,9 +17,21 @@ import {
   ModalBody,
   ModalFooter,
   Divider,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  ChefHat,
+  Shield,
+  Eye,
+  EyeOff,
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  Lock,
+  Home,
+} from "lucide-react";
+
+import { getRoles, addRole, updateRole, deleteRole } from "./authService";
 
 export default function Roles() {
   const router = useRouter();
@@ -87,9 +89,7 @@ export default function Roles() {
           variant: "solid",
           color: "success",
         });
-        console.log("Rol actualizado correctamente", editing, form);
       } else {
-        console.log("Creando rol", form);
         await addRole(form);
         addToast({
           title: "Éxito",
@@ -117,7 +117,6 @@ export default function Roles() {
   };
 
   const startEdit = (role) => {
-    console.log("Editando rol", role);
     setForm({
       role: role.role,
       password: "",
@@ -143,7 +142,6 @@ export default function Roles() {
     setError("");
     setIsLoading(true);
     try {
-      console.log("Eliminando rol", deleteId);
       await deleteRole(deleteId);
       const response = await getRoles();
       setRoles(response);
@@ -321,7 +319,7 @@ export default function Roles() {
                         startContent={
                           <Lock className="w-4 h-4 text-gray-400" />
                         }
-                        endContent={
+                        endContent={(
                           <Button
                             variant="ghost"
                             size="sm"
@@ -335,7 +333,7 @@ export default function Roles() {
                               <Eye className="w-4 h-4 text-gray-400" />
                             )}
                           </Button>
-                        }
+                        )}
                         classNames={{
                           input: "text-base",
                           label: "text-sm font-semibold text-deep",
@@ -354,7 +352,7 @@ export default function Roles() {
                       variant="bordered"
                       size="lg"
                       startContent={<Lock className="w-4 h-4 text-gray-400" />}
-                      endContent={
+                      endContent={(
                         <Button
                           variant="ghost"
                           size="sm"
@@ -368,7 +366,7 @@ export default function Roles() {
                             <Eye className="w-4 h-4 text-gray-400" />
                           )}
                         </Button>
-                      }
+                      )}
                       classNames={{
                         input: "text-base",
                         label: "text-sm font-semibold text-deep",
