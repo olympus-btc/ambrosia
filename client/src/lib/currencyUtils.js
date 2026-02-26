@@ -1,27 +1,28 @@
 import { useState, useEffect } from "react";
+
 import { getBaseCurrency, getPaymentCurrencies } from "../modules/orders/ordersService";
 
 // Cache para evitar múltiples llamadas a la API
 let currencyCache = {
   baseCurrency: null,
   currencies: null,
-  lastFetch: null
+  lastFetch: null,
 };
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 export async function getSystemCurrency() {
   const now = Date.now();
-  
+
   // Si tenemos cache válido, lo usamos
-  if (currencyCache.baseCurrency && 
-      currencyCache.currencies && 
+  if (currencyCache.baseCurrency &&
+      currencyCache.currencies &&
       currencyCache.lastFetch &&
       (now - currencyCache.lastFetch) < CACHE_DURATION) {
     return {
       baseCurrencyId: currencyCache.baseCurrency.currency_id,
       currencies: currencyCache.currencies,
-      baseCurrency: currencyCache.currencies.find(c => c.id === currencyCache.baseCurrency.currency_id)
+      baseCurrency: currencyCache.currencies.find((c) => c.id === currencyCache.baseCurrency.currency_id),
     };
   }
 
@@ -29,22 +30,22 @@ export async function getSystemCurrency() {
     // Obtener moneda base y todas las monedas en paralelo
     const [baseCurrencyResponse, currenciesResponse] = await Promise.all([
       getBaseCurrency(),
-      getPaymentCurrencies()
+      getPaymentCurrencies(),
     ]);
 
     // Actualizar cache
     currencyCache = {
       baseCurrency: baseCurrencyResponse,
       currencies: currenciesResponse,
-      lastFetch: now
+      lastFetch: now,
     };
 
-    const baseCurrency = currenciesResponse.find(c => c.id === baseCurrencyResponse.currency_id);
+    const baseCurrency = currenciesResponse.find((c) => c.id === baseCurrencyResponse.currency_id);
 
     return {
       baseCurrencyId: baseCurrencyResponse.currency_id,
       currencies: currenciesResponse,
-      baseCurrency: baseCurrency
+      baseCurrency,
     };
   } catch (error) {
     console.error("Error obteniendo información de moneda:", error);
@@ -52,7 +53,7 @@ export async function getSystemCurrency() {
     return {
       baseCurrencyId: null,
       currencies: [],
-      baseCurrency: { acronym: "MXN" }
+      baseCurrency: { acronym: "MXN" },
     };
   }
 }
@@ -60,7 +61,7 @@ export async function getSystemCurrency() {
 export async function formatCurrency(amount, currencyAcronym = null) {
   try {
     let currency = currencyAcronym;
-    
+
     if (!currency) {
       const systemCurrency = await getSystemCurrency();
       currency = systemCurrency.baseCurrency?.acronym || "MXN";
@@ -68,10 +69,10 @@ export async function formatCurrency(amount, currencyAcronym = null) {
 
     // Mapear algunos acrónimos a códigos ISO estándar
     const currencyMap = {
-      "EUR": "EUR",
-      "USD": "USD", 
-      "MXN": "MXN",
-      "BTC": "BTC", // Para Bitcoin usaremos formato especial
+      EUR: "EUR",
+      USD: "USD",
+      MXN: "MXN",
+      BTC: "BTC", // Para Bitcoin usaremos formato especial
     };
 
     const mappedCurrency = currencyMap[currency] || currency;
@@ -80,7 +81,7 @@ export async function formatCurrency(amount, currencyAcronym = null) {
     if (currency === "BTC") {
       return `₿ ${new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 8,
-        maximumFractionDigits: 8
+        maximumFractionDigits: 8,
       }).format(amount)}`;
     }
 
@@ -89,7 +90,6 @@ export async function formatCurrency(amount, currencyAcronym = null) {
       style: "currency",
       currency: mappedCurrency,
     }).format(amount);
-    
   } catch (error) {
     console.error("Error formateando moneda:", error);
     // Fallback básico
@@ -121,14 +121,12 @@ export function useCurrency() {
     fetchCurrency();
   }, []);
 
-  const formatAmount = async (amount, currencyAcronym = null) => {
-    return await formatCurrency(amount, currencyAcronym || systemCurrency?.baseCurrency?.acronym);
-  };
+  const formatAmount = async (amount, currencyAcronym = null) => await formatCurrency(amount, currencyAcronym || systemCurrency?.baseCurrency?.acronym);
 
   return {
     systemCurrency,
     loading,
     error,
-    formatAmount
+    formatAmount,
   };
 }

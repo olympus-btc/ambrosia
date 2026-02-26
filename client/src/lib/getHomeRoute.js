@@ -1,11 +1,10 @@
-import { modules, matchesBusiness } from "./modules";
 import { homeRoutesByUserType, homeRoutePriority } from "./homeRoutes";
+import { modules, matchesBusiness } from "./modules";
 
 function firstRouteForModule(moduleKey, businessType = null) {
   const mod = modules[moduleKey];
   if (!mod || !mod.enabled) return null;
-  const route = (mod.routes || []).find((r) =>
-    matchesBusiness(r, businessType),
+  const route = (mod.routes || []).find((r) => matchesBusiness(r, businessType),
   );
   return route ? route.path : null;
 }
@@ -13,8 +12,7 @@ function firstRouteForModule(moduleKey, businessType = null) {
 function fallbackAnyRoute(businessType = null) {
   for (const [mod] of Object.entries(modules)) {
     if (!mod.enabled) continue;
-    const route = (mod.routes || []).find((r) =>
-      matchesBusiness(r, businessType),
+    const route = (mod.routes || []).find((r) => matchesBusiness(r, businessType),
     );
     if (route) return route.path;
   }
@@ -65,9 +63,6 @@ export function getHomeRoute(user = null, businessType = null) {
     } else if (modules[entry.module]?.enabled) {
       const path = firstRouteForModule(entry.module, businessType);
       if (path) {
-        console.log(
-          `🏠 Ruta home para ${user.isAdmin ? "admin" : "usuario"}: ${path}`,
-        );
         return path;
       }
     }
