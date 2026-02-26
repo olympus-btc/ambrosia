@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+
+import { useRouter } from "next/navigation";
+
 import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { ChefHat, Lock, Home } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 const UnauthorizedPage = () => {
   const router = useRouter();
@@ -36,13 +38,13 @@ const UnauthorizedPage = () => {
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
               <Lock className="w-10 h-10 text-red-500" />
             </div>
-            
+
             <div className="text-center space-y-2">
               <h2 className="text-xl font-semibold text-deep">
                 Sin Permisos de Acceso
               </h2>
               <p className="text-forest text-base leading-relaxed">
-                No tienes los permisos necesarios para acceder a esta página. 
+                No tienes los permisos necesarios para acceder a esta página.
                 Por favor, contacta al administrador del sistema.
               </p>
             </div>
