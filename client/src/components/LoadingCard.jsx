@@ -2,11 +2,10 @@
 import { Card, CardBody, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-
 export default function LoadingCard({
   size = "lg",
   color = "success",
-  fullScreen = true
+  fullScreen = true,
 }) {
   const t = useTranslations("loadingCard");
 

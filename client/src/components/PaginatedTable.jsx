@@ -36,10 +36,8 @@ const PaginatedTable = ({
 
   // Funciones de navegación
   const goToFirstPage = () => setCurrentPage(1);
-  const goToPreviousPage = () =>
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const goToNextPage = () =>
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const goToLastPage = () => setCurrentPage(totalPages);
   const goToPage = (page) => setCurrentPage(page);
 
@@ -229,7 +227,7 @@ const PaginatedTable = ({
                         disabled={currentPage === 1}
                         className="inline-flex items-center px-2 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <i className="bi bi-chevron-double-left"></i>
+                        <i className="bi bi-chevron-double-left" />
                       </button>
 
                       {/* Botón página anterior */}
@@ -238,7 +236,7 @@ const PaginatedTable = ({
                         disabled={currentPage === 1}
                         className="inline-flex items-center px-2 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <i className="bi bi-chevron-left"></i>
+                        <i className="bi bi-chevron-left" />
                       </button>
 
                       {/* Números de página */}
@@ -271,7 +269,7 @@ const PaginatedTable = ({
                         disabled={currentPage === totalPages}
                         className="inline-flex items-center px-2 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <i className="bi bi-chevron-right"></i>
+                        <i className="bi bi-chevron-right" />
                       </button>
 
                       {/* Botón última página */}
@@ -280,7 +278,7 @@ const PaginatedTable = ({
                         disabled={currentPage === totalPages}
                         className="inline-flex items-center px-2 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <i className="bi bi-chevron-double-right"></i>
+                        <i className="bi bi-chevron-double-right" />
                       </button>
                     </div>
                   </div>

@@ -1,7 +1,9 @@
 "use client";
-import { useContext, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthContext } from '../../modules/auth/AuthProvider';
+import { useContext, useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+
+import { AuthContext } from "../../modules/auth/AuthProvider";
 
 export function ProtectedRoute({ children, requiredRoles = [] }) {
   const { isAuthenticated, isLoading, user } = useContext(AuthContext);
@@ -9,19 +11,18 @@ export function ProtectedRoute({ children, requiredRoles = [] }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth');
+      router.push("/auth");
     }
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && requiredRoles.length > 0) {
       const userRoles = user?.roles || [];
-      const hasRequiredRole = requiredRoles.some(role => 
-        userRoles.includes(role)
+      const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role),
       );
-      
+
       if (!hasRequiredRole) {
-        router.push('/unauthorized');
+        router.push("/unauthorized");
       }
     }
   }, [isAuthenticated, isLoading, user, requiredRoles, router]);
@@ -29,7 +30,7 @@ export function ProtectedRoute({ children, requiredRoles = [] }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900" />
       </div>
     );
   }
@@ -40,10 +41,9 @@ export function ProtectedRoute({ children, requiredRoles = [] }) {
 
   if (requiredRoles.length > 0) {
     const userRoles = user?.roles || [];
-    const hasRequiredRole = requiredRoles.some(role => 
-      userRoles.includes(role)
+    const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role),
     );
-    
+
     if (!hasRequiredRole) {
       return null; // El useEffect ya redirige
     }

@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { CreditCard, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 
 const ConfirmationPopup = ({
   isOpen,
@@ -94,7 +93,7 @@ const ConfirmationPopup = ({
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Procesando...</span>
                 </div>
               ) : (
