@@ -41,16 +41,21 @@ class BackendService {
         `--http-bind-ip=127.0.0.1`,
         `--http-bind-port=${port}`,
         `--phoenixd-url=http://localhost:${config.phoenixdPort}`,
-        `--phoenixd-password=${config.phoenixPassword}`,
-        `--phoenixd-webhook-secret=${config.webhookSecret}`,
       ];
 
+      // Secrets passed as env vars to avoid exposure in `ps aux` and log files
+      const env = {
+        ...process.env,
+        PHOENIXD_PASSWORD: config.phoenixPassword,
+        PHOENIXD_WEBHOOK_SECRET: config.webhookSecret,
+      };
+
       console.log(`[BackendService] Starting backend at port ${port}...`);
-      console.log(`[BackendService] Command: ${javaPath} ${args.join(' ')}`);
 
       this.process = spawn(javaPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
+        env,
       });
 
       this.process.stdout.on('data', (data) => {
