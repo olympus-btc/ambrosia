@@ -3,12 +3,12 @@
 import { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-import { authReducer, initialAuthState } from "@/lib/auth/authReducer";
+import { authReducer, initialAuthState } from "@/reducers/auth/authReducer";
 import { authenticateUser, getCurrentSession, logoutSession } from "@/lib/auth/authSession";
 import { subscribeAuthEvents } from "@/lib/auth/authEvents";
 import { clearAuthLocalState } from "@/lib/auth/authLocalState";
-import { useAuthRevalidation } from "@/lib/auth/useAuthRevalidation";
-import { redirectToAuth, redirectToUnauthorized } from "@/lib/auth/authNavigator";
+import { useAuthRevalidation } from "@/hooks/auth/useAuthRevalidation";
+import { redirectTo } from "@/lib/auth/authRedirect";
 
 export const AuthContext = createContext();
 
@@ -21,7 +21,9 @@ export function AuthProvider({ children }) {
   const refreshSession = useCallback(async () => {
     if (isFetchingRef.current) return null;
     isFetchingRef.current = true;
-    dispatch({ type: "INIT_START" });
+    if (!state.isAuth) {
+      dispatch({ type: "INIT_START" });
+    }
     try {
       const session = await getCurrentSession();
       if (isMountedRef.current) {
@@ -36,7 +38,7 @@ export function AuthProvider({ children }) {
     } finally {
       isFetchingRef.current = false;
     }
-  }, []);
+  }, [state.isAuth]);
 
   const login = useCallback(async ({ name, pin }) => {
     const session = await authenticateUser({ name, pin });
@@ -66,11 +68,11 @@ export function AuthProvider({ children }) {
       onExpired: () => {
         clearAuthLocalState();
         dispatch({ type: "EXPIRED" });
-        redirectToAuth(router);
+        redirectTo(router, "/auth");
       },
       onForbidden: () => {
         dispatch({ type: "FORBIDDEN" });
-        redirectToUnauthorized(router);
+        redirectTo(router, "/unauthorized");
       },
     });
 
