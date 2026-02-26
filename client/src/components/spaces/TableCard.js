@@ -1,23 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+
+import { useRouter } from "next/navigation";
+
+import { Sofa } from "lucide-react";
+
 import { createOrder } from "../../modules/orders/ordersService";
 import { updateTable } from "../../modules/spaces/spacesService";
 import ConfirmationPopup from "../ConfirmationPopup";
-import { useRouter } from "next/navigation";
-import { Sofa } from "lucide-react";
 
 export default function TableCard({ tableData }) {
   const router = useRouter();
-  const [bgColor, setBgColor] = useState("");
+  const bgColor = useMemo(() => {
+    if (tableData.status === "available") return "bg-green-500";
+    if (tableData.status === "occupied") return "bg-red-500";
+    return "";
+  }, [tableData.status]);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (tableData.status === "available") {
-      setBgColor("bg-green-500");
-    } else if (tableData.status === "occupied") {
-      setBgColor("bg-red-500");
-    }
-  }, [tableData]);
 
   async function tableClicked() {
     if (tableData.status === "available") {
@@ -30,9 +29,8 @@ export default function TableCard({ tableData }) {
   async function handleConfirm() {
     const orderResponse = await createOrder(tableData.id);
     if (orderResponse.id) {
-      tableData.order_id = orderResponse.id;
-      tableData.status = "occupied";
-      await updateTable(tableData);
+      const updatedTable = { ...tableData, order_id: orderResponse.id, status: "occupied" };
+      await updateTable(updatedTable);
     }
     router.push(`/modify-order/${orderResponse.id}`);
   }

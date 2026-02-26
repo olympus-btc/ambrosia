@@ -131,7 +131,7 @@ class BitcoinPriceService {
    * @returns {string} Satoshis formateados
    */
   formatSatoshis(satoshis) {
-    return new Intl.NumberFormat("en-US").format(satoshis) + " sats";
+    return `${new Intl.NumberFormat("en-US").format(satoshis)} sats`;
   }
 
   /**

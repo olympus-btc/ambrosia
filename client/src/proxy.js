@@ -16,33 +16,19 @@ export default async function proxy(request) {
     return NextResponse.next();
   }
 
-  let setupIncomplete = false;
   let initialized = null;
   let needsBusinessType = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
     const url = new URL("/api/initial-setup", request.url);
 
-    let evaluated = false;
-
     const res = await fetch(url, { headers });
-    if (res.status === 409) {
-      setupIncomplete = false;
-      evaluated = true;
-    }
     if (res.ok) {
       const data = await res.json();
       initialized = data?.initialized;
       needsBusinessType = data?.needsBusinessType === true;
-      setupIncomplete = initialized === false || needsBusinessType;
-      evaluated = true;
-    }
-    
-    if (!evaluated) {
-      setupIncomplete = false;
     }
   } catch (error) {
-    setupIncomplete = false;
     console.error(error);
   }
 
@@ -82,7 +68,7 @@ export default async function proxy(request) {
       }
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 
   const next = NextResponse.next();

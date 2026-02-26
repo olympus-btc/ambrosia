@@ -1,4 +1,5 @@
 import { httpWrapper } from "./httpWrapper";
+
 export async function httpClient(endpoint, options = {}) {
   const { skipRefresh = false, ...httpOptions } = options;
 

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Check, X, Cookie, DollarSign } from "lucide-react";
+
 import {
   Card,
   CardBody,
@@ -16,6 +16,7 @@ import {
   ModalFooter,
   Divider,
 } from "@heroui/react";
+import { Plus, Edit, Trash2, Check, X, Cookie, DollarSign } from "lucide-react";
 
 export default function DishManager({
   dishes,
@@ -144,8 +145,7 @@ export default function DishManager({
             <div className="md:col-span-2">
               <Input
                 value={newDish.name}
-                onChange={(e) =>
-                  setNewDish({ ...newDish, name: e.target.value })
+                onChange={(e) => setNewDish({ ...newDish, name: e.target.value })
                 }
                 placeholder="Nombre del platillo"
                 label="Nombre"
@@ -162,8 +162,7 @@ export default function DishManager({
             <div>
               <Input
                 value={newDish.price}
-                onChange={(e) =>
-                  setNewDish({ ...newDish, price: e.target.value })
+                onChange={(e) => setNewDish({ ...newDish, price: e.target.value })
                 }
                 placeholder="0.00"
                 label="Precio"
@@ -253,11 +252,10 @@ export default function DishManager({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <Input
                             value={editingDish.name}
-                            onChange={(e) =>
-                              setEditingDish({
-                                ...editingDish,
-                                name: e.target.value,
-                              })
+                            onChange={(e) => setEditingDish({
+                              ...editingDish,
+                              name: e.target.value,
+                            })
                             }
                             placeholder="Nombre del platillo"
                             variant="bordered"
@@ -267,11 +265,10 @@ export default function DishManager({
                           />
                           <Input
                             value={editingDish.price}
-                            onChange={(e) =>
-                              setEditingDish({
-                                ...editingDish,
-                                price: e.target.value,
-                              })
+                            onChange={(e) => setEditingDish({
+                              ...editingDish,
+                              price: e.target.value,
+                            })
                             }
                             placeholder="Precio"
                             type="number"

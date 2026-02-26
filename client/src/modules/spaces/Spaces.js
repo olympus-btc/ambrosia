@@ -1,17 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getRooms, addRoom, updateRoom, deleteRoom } from "./spacesService";
-import {
-  Building,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Home,
-  Table,
-  Users,
-  MapPin,
-} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -28,10 +19,22 @@ import {
   Divider,
   Tabs,
   Tab,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  Building,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Home,
+  Table,
+  Users,
+  MapPin,
+} from "lucide-react";
+
 import TableAdmin from "../../components/spaces/TableAdmin";
+
+import { getRooms, addRoom, updateRoom, deleteRoom } from "./spacesService";
 
 export default function Spaces() {
   const router = useRouter();
@@ -90,7 +93,6 @@ export default function Spaces() {
         ...roomForm,
         capacity: roomForm.capacity ? parseInt(roomForm.capacity) : null,
       };
-      console.log(roomData.name);
       await addRoom({ name: roomData.name });
       await fetchRooms();
       setShowRoomModal(false);
@@ -296,7 +298,7 @@ export default function Spaces() {
             >
               <Tab
                 key="rooms"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <Building className="w-4 h-4" />
                     <span>Salas</span>
@@ -304,11 +306,11 @@ export default function Spaces() {
                       {rooms.length}
                     </div>
                   </div>
-                }
+                )}
               />
               <Tab
                 key="tables"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <Table className="w-4 h-4" />
                     <span>Mesas</span>
@@ -318,7 +320,7 @@ export default function Spaces() {
                       </div>
                     )}
                   </div>
-                }
+                )}
               />
             </Tabs>
           </CardBody>
@@ -517,8 +519,7 @@ export default function Spaces() {
                   label="Nombre de la Sala"
                   placeholder="Ej: Salón Principal, Terraza, VIP"
                   value={roomForm.name}
-                  onChange={(e) =>
-                    setRoomForm({ ...roomForm, name: e.target.value })
+                  onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })
                   }
                   variant="bordered"
                   size="lg"
@@ -533,8 +534,7 @@ export default function Spaces() {
                   label="Descripción (opcional)"
                   placeholder="Descripción de la sala..."
                   value={roomForm.description}
-                  onChange={(e) =>
-                    setRoomForm({ ...roomForm, description: e.target.value })
+                  onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })
                   }
                   variant="bordered"
                   size="lg"
@@ -548,8 +548,7 @@ export default function Spaces() {
                   placeholder="Número de personas"
                   type="number"
                   value={roomForm.capacity}
-                  onChange={(e) =>
-                    setRoomForm({ ...roomForm, capacity: e.target.value })
+                  onChange={(e) => setRoomForm({ ...roomForm, capacity: e.target.value })
                   }
                   variant="bordered"
                   size="lg"

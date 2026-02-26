@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function RoomForm({ onSubmit, initialData, onCancel }) {
-  const [nombre, setNombre] = useState("");
+  const [nombre, setNombre] = useState(initialData?.nombre || "");
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (initialData) {
-      setNombre(initialData.nombre);
-    } else {
-      setNombre("");
-    }
-  }, [initialData]);
+  if (prevInitialData !== initialData) {
+    setPrevInitialData(initialData);
+    setNombre(initialData?.nombre || "");
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

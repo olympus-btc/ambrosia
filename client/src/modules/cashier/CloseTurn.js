@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
+
+import { useRouter } from "next/navigation";
+
 import { closeTurn } from "./cashierService";
 import { useTurn } from "./useTurn";
-import { useRouter } from "next/navigation";
 
 export default function CloseTurn() {
   const [finalAmount, setFinalAmount] = useState("");

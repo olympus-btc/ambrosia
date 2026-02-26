@@ -58,7 +58,7 @@ export async function createOrder(tableId = null) {
     if (tableId) body.table_id = tableId;
     return await apiClient("/orders", {
       method: "POST",
-      body: body,
+      body,
     });
   } else {
   }
@@ -71,12 +71,11 @@ export async function addDishToOrder(pedidoId, dishId, dishPrice) {
       {
         dish_id: dishId,
         price_at_order: dishPrice,
-        notes: null
-      }
+        notes: null,
+      },
     ],
   });
 }
-
 
 export async function removeDishToOrder(pedidoId, dish) {
   return await apiClient(`/orders/${pedidoId}/dishes/${dish}`, {
@@ -149,7 +148,7 @@ export async function updateOrderDish(orderId, dishId, orderDish) {
 
 export async function sendOrderDishes(orderId, dishIds) {
   return await apiClient(`/orders/${orderId}/dishes/send`, {
-    method: "PUT", 
+    method: "PUT",
     body: { dishIds },
   });
 }

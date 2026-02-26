@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Check, X, Tags } from "lucide-react";
+
 import {
   Card,
   CardBody,
@@ -13,6 +13,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/react";
+import { Plus, Edit, Trash2, Check, X, Tags } from "lucide-react";
 
 export default function CategoryManager({
   categories,

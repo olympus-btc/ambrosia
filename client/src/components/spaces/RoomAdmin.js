@@ -1,15 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import RoomList from "./RoomList";
-import RoomForm from "./RoomForm";
-import TableAdmin from "./TableAdmin";
-import LoadingCard from "../LoadingCard";
+
 import {
   getRooms,
   addRoom,
   updateRoom,
   deleteRoom,
 } from "../../modules/spaces/spacesService";
+import LoadingCard from "../LoadingCard";
+
+import RoomForm from "./RoomForm";
+import RoomList from "./RoomList";
+import TableAdmin from "./TableAdmin";
 
 export default function RoomAdmin() {
   const [rooms, setRooms] = useState([]);

@@ -1,7 +1,9 @@
 "use client";
-import { useTurn } from "./useTurn";
 import { useEffect } from "react";
+
 import { usePathname, useRouter } from "next/navigation";
+
+import { useTurn } from "./useTurn";
 
 const notProtectedRoutes = ["/", "/open-turn", "/close-turn"];
 

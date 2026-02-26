@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+
 import dynamic from "next/dynamic";
+
 import LoadingCard from "./LoadingCard";
 
 export default function DynamicModuleRenderer({
@@ -13,15 +15,14 @@ export default function DynamicModuleRenderer({
 }) {
   const Component = React.useMemo(() => {
     const loaderMap = {
-      modules: () =>
-        import(`../modules/${componentPath}/${componentFile}`).then((mod) => {
-          const Comp = mod.default || mod[componentFile];
-          if (!Comp)
-            throw new Error(
+      modules: () => import(`../modules/${componentPath}/${componentFile}`).then((mod) => {
+        const Comp = mod.default || mod[componentFile];
+        if (!Comp)
+          throw new Error(
               `DynamicModuleRenderer: component export not found for "${componentBase}/${componentPath}/${componentFile}"`,
-            );
-          return Comp;
-        }),
+          );
+        return Comp;
+      }),
       "components/pages": async () => {
         try {
           const mod = await import(
@@ -31,7 +32,7 @@ export default function DynamicModuleRenderer({
             mod.default || mod[componentFile] || mod[`${componentFile}Page`];
           if (Comp) return Comp;
         } catch (error) {
-          console.error(error)
+          console.error(error);
         }
 
         try {
@@ -44,7 +45,7 @@ export default function DynamicModuleRenderer({
             modNested[componentFile];
           if (CompNested) return CompNested;
         } catch (error) {
-          console.error(error)
+          console.error(error);
           try {
             const modIndex = await import(
               `./pages/${componentPath}/${componentFile}/index`
@@ -54,8 +55,9 @@ export default function DynamicModuleRenderer({
               modIndex[`${componentFile}Page`] ||
               modIndex[componentFile];
             if (CompIndex) return CompIndex;
-          } catch (error) { }
-          console.error(error)
+          } catch (error) {
+            console.error(error);
+          }
         }
 
         throw new Error(

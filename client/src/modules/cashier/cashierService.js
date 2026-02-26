@@ -131,10 +131,6 @@ export async function generateReportFromData(
     const paymentMethodName = paymentMethods.find(
       (method) => method.id === payment.method_id,
     ).name;
-    console.log(paymentMethodName);
-
-    console.log(payment);
-
     const ticketInfo = {
       amount: ticket.total_amount,
       paymentMethod: paymentMethodName,

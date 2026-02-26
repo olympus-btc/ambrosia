@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { httpClient } from "@/lib/http/httpClient"
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse"
+
 import { useUpload } from "@/components/hooks/useUpload";
+import { httpClient } from "@/lib/http/httpClient";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export const ConfigurationsContext = createContext();
 
@@ -39,7 +40,7 @@ export function ConfigurationsProvider({ children }) {
       const configData = await parseJsonResponse(configResponse);
 
       setConfig(configData);
-    } catch (error) {
+    } catch {
       setConfig(null);
     } finally {
       setIsLoading(false);
@@ -49,9 +50,6 @@ export function ConfigurationsProvider({ children }) {
   useEffect(() => {
     fetchConfig();
   }, []);
-
-
-
 
   const updateConfig = async (data) => {
     let logoUrl = null;
@@ -64,7 +62,6 @@ export function ConfigurationsProvider({ children }) {
     delete configDataToSend.storeImage;
     delete configDataToSend.productImage;
     delete configDataToSend.businessCurrency;
-
 
     try {
       const updateConfigResponse = await httpClient(`/config`, {
@@ -81,9 +78,9 @@ export function ConfigurationsProvider({ children }) {
       await fetchConfig();
       return updateConfigResponse;
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const value = {
     config,

@@ -377,7 +377,6 @@ export function getNavigationItems(
   const navItems = [];
   const permNames = new Set((permissions || []).map((p) => p.name));
 
-  console.log(permNames);
   Object.entries(modules).forEach(([moduleKey, config]) => {
     if (!config.enabled) return;
 

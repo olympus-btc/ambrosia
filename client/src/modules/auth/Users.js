@@ -1,25 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  getUsers,
-  addUser,
-  updateUser,
-  deleteUser,
-  getRoles,
-} from "./authService";
-import {
-  ChefHat,
-  Users as UsersIcon,
-  Eye,
-  EyeOff,
-  Plus,
-  Edit,
-  Trash2,
-  User,
-  Hash,
-  Shield,
-  Home,
-} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -35,9 +18,28 @@ import {
   ModalBody,
   ModalFooter,
   Divider,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  ChefHat,
+  Users as UsersIcon,
+  Eye,
+  EyeOff,
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  Hash,
+  Shield,
+  Home,
+} from "lucide-react";
+
+import {
+  getUsers,
+  addUser,
+  updateUser,
+  deleteUser,
+  getRoles,
+} from "./authService";
 
 export default function Users() {
   const router = useRouter();
@@ -373,7 +375,7 @@ export default function Users() {
                     size="lg"
                     maxLength={4}
                     startContent={<Hash className="w-4 h-4 text-gray-400" />}
-                    endContent={
+                    endContent={(
                       <Button
                         variant="ghost"
                         size="sm"
@@ -387,7 +389,7 @@ export default function Users() {
                           <Eye className="w-4 h-4 text-gray-400" />
                         )}
                       </Button>
-                    }
+                    )}
                     classNames={{
                       input: "text-base",
                       label: "text-sm font-semibold text-deep",
