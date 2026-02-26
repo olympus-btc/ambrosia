@@ -1,14 +1,15 @@
 "use client";
 
 import { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+
 import { useRouter } from "next/navigation";
 
-import { authReducer, initialAuthState } from "@/reducers/auth/authReducer";
-import { authenticateUser, getCurrentSession, logoutSession } from "@/lib/auth/authSession";
+import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
+import { useAuthRevalidation } from "@/hooks/auth/useAuthRevalidation";
 import { subscribeAuthEvents } from "@/lib/auth/authEvents";
 import { clearAuthLocalState } from "@/lib/auth/authLocalState";
-import { useAuthRevalidation } from "@/hooks/auth/useAuthRevalidation";
-import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
+import { authenticateUser, getCurrentSession, logoutSession } from "@/lib/auth/authSession";
+import { authReducer, initialAuthState } from "@/reducers/auth/authReducer";
 
 export const AuthContext = createContext();
 
