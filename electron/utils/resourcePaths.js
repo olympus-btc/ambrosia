@@ -1,3 +1,4 @@
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
@@ -43,8 +44,14 @@ function getJavaPath() {
 
 function getBackendJarPath() {
   if (isDevelopment()) {
-    const devJarPath = path.join(__dirname, '..', '..', 'server', 'app', 'build', 'libs', 'ambrosia-0.3.0-alpha.jar');
-    return devJarPath;
+    const libsDir = path.join(__dirname, '..', '..', 'server', 'app', 'build', 'libs');
+    const jars = fs.readdirSync(libsDir).filter(
+      (f) => f.startsWith('ambrosia-') && f.endsWith('.jar'),
+    );
+    if (jars.length === 0) {
+      throw new Error(`No backend JAR found in ${libsDir}. Run: cd server && ./gradlew jar`);
+    }
+    return path.join(libsDir, jars[0]);
   }
 
   const jarPath = path.join(getBasePath(), 'backend', 'ambrosia.jar');
