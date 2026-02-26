@@ -15,7 +15,7 @@ class PhoenixdService {
     this.logStream = null;
   }
 
-  async start(port, config) {
+  async start(port) {
     if (this.process) {
       throw new Error('Phoenixd service is already running');
     }
