@@ -2,7 +2,7 @@ import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export async function getCurrentSession() {
-  const response = await httpClient("/users/me", { skipRefresh: true });
+  const response = await httpClient("/users/me");
   const data = await parseJsonResponse(response, null);
 
   if (!response.ok) {
