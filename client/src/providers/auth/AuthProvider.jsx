@@ -8,7 +8,7 @@ import { authenticateUser, getCurrentSession, logoutSession } from "@/lib/auth/a
 import { subscribeAuthEvents } from "@/lib/auth/authEvents";
 import { clearAuthLocalState } from "@/lib/auth/authLocalState";
 import { useAuthRevalidation } from "@/hooks/auth/useAuthRevalidation";
-import { redirectTo } from "@/lib/auth/authRedirect";
+import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
 
 export const AuthContext = createContext();
 
@@ -18,10 +18,10 @@ export function AuthProvider({ children }) {
   const isMountedRef = useRef(false);
   const isFetchingRef = useRef(false);
 
-  const refreshSession = useCallback(async () => {
+  const refreshSession = useCallback(async ({ silent = false } = {}) => {
     if (isFetchingRef.current) return null;
     isFetchingRef.current = true;
-    if (!state.isAuth) {
+    if (!silent) {
       dispatch({ type: "INIT_START" });
     }
     try {
@@ -32,13 +32,13 @@ export function AuthProvider({ children }) {
       return session;
     } catch (error) {
       if (isMountedRef.current) {
-        dispatch({ type: "INIT_ERROR", error });
+        dispatch({ type: "INIT_ERROR", payload: error });
       }
       return null;
     } finally {
       isFetchingRef.current = false;
     }
-  }, [state.isAuth]);
+  }, []);
 
   const login = useCallback(async ({ name, pin }) => {
     const session = await authenticateUser({ name, pin });
@@ -50,7 +50,9 @@ export function AuthProvider({ children }) {
     try {
       await logoutSession();
     } finally {
-      clearAuthLocalState();
+      clearAuthLocalState(() => {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+      });
       dispatch({ type: "LOGOUT" });
     }
   }, []);
@@ -66,13 +68,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = subscribeAuthEvents({
       onExpired: () => {
-        clearAuthLocalState();
+        clearAuthLocalState(() => {
+          window.localStorage.removeItem(CART_STORAGE_KEY);
+        });
         dispatch({ type: "EXPIRED" });
-        redirectTo(router, "/auth");
+        router.push("/auth");
       },
       onForbidden: () => {
         dispatch({ type: "FORBIDDEN" });
-        redirectTo(router, "/unauthorized");
+        router.push("/unauthorized");
       },
     });
 

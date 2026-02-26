@@ -5,9 +5,9 @@ export function useAuthRevalidation(isAuth, revalidate) {
     if (!isAuth) return;
     if (typeof window === "undefined") return;
 
-    const onFocus = () => revalidate();
+    const onFocus = () => revalidate({ silent: true });
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") revalidate();
+      if (document.visibilityState === "visible") revalidate({ silent: true });
     };
 
     window.addEventListener("focus", onFocus);

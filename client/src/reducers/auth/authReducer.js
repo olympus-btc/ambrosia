@@ -26,7 +26,7 @@ function authReducer(state, action) {
         permissions: null,
         isAuth: false,
         isLoading: false,
-        error: action.error || null,
+        error: action.payload || null,
       };
     case "LOGIN_SUCCESS":
       return {

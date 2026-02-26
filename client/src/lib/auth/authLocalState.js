@@ -1,9 +1,7 @@
-import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
-
-export function clearAuthLocalState() {
+export function clearAuthLocalState(onClear) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(CART_STORAGE_KEY);
+    onClear?.();
   } catch (error) {
     console.error("Error clearing storage on logout", error);
   }
