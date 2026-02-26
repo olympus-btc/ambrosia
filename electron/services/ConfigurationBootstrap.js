@@ -79,7 +79,7 @@ function readConfig(configPath) {
 
 function writeConfig(configPath, config) {
   const lines = Object.entries(config).map(([key, value]) => `${key}=${value}`);
-  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, 'utf-8');
+  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
   console.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
