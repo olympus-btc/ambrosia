@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { useAuth } from "../auth/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 import { getTurnOpen } from "./cashierService";
 

@@ -6,7 +6,7 @@ import { useCartPayment } from "../useCartPayment";
 
 let mockPaymentMethods;
 
-jest.mock("@/modules/auth/useAuth", () => ({
+jest.mock("@/hooks/auth/useAuth", () => ({
   useAuth: () => ({ user: { user_id: "u1", name: "Tester" } }),
 }));
 

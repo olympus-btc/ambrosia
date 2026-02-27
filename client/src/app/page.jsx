@@ -1,17 +1,17 @@
 "use client";
 
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { useRouter } from "next/navigation";
 
-import LoadingCard from "../components/LoadingCard";
-import { getHomeRoute } from "../lib/getHomeRoute";
-import { AuthContext } from "../modules/auth/AuthProvider";
-import { useConfigurations } from "../providers/configurations/configurationsProvider";
+import LoadingCard from "@/components/LoadingCard";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { getHomeRoute } from "@/lib/getHomeRoute";
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoading, isAuth } = useContext(AuthContext);
+  const { user, isLoading, isAuth } = useAuth();
   const {
     businessType,
     isLoading: isConfigLoading,

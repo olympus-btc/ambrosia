@@ -1,8 +1,8 @@
 import { render, screen, act } from "@testing-library/react";
 
+import { AuthContext } from "@/providers/auth/AuthProvider";
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
-import { AuthContext } from "@modules/auth/AuthProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
 import { Wallet } from "../Wallet";
