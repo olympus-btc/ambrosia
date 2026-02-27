@@ -69,7 +69,6 @@ import { QRCode } from "react-qr-code";
 import ConfirmationPopup from "../../components/ConfirmationPopup";
 import LoadingCard from "../../components/LoadingCard";
 import VirtualKeyboard from "../../components/VirtualKeyboard";
-import { apiClient } from "../../services/apiClient";
 import BitcoinPriceService from "../../services/bitcoinPriceService";
 import { createInvoice } from "../cashier/cashierService";
 import { getCategories, getDishes } from "../dishes/dishesService";

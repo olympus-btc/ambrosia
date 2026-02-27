@@ -1,5 +1,3 @@
-﻿import { apiClient } from "../../services/apiClient";
-
 export async function getRooms() {
   return await apiClient("/spaces");
 }

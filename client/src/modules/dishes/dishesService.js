@@ -1,5 +1,3 @@
-﻿import { apiClient } from "../../services/apiClient";
-
 export async function getDishes() {
   const dishes = await apiClient("/dishes");
   return dishes ? dishes : [];

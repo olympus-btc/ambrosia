@@ -34,27 +34,6 @@ export const modules = {
       },
     ],
   },
-  dishes: {
-    enabled: true,
-    name: "Platillos",
-    routes: [
-      {
-        path: "/restaurant/dishes",
-        component: "Dishes",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/dishes/dishesService"),
-    navItems: [
-      {
-        path: "/restaurant/dishes",
-        label: "Platillos",
-        icon: "salad",
-        showInNavbar: true,
-      },
-    ],
-  },
   cashier: {
     enabled: true,
     name: "Wallet",
@@ -102,95 +81,7 @@ export const modules = {
         path: "/reports",
         label: "Reportes",
         icon: "chart-line",
-        showInNavbar: false, // Oculto del navbar pero accesible por URL
-      },
-    ],
-  },
-  orders: {
-    enabled: true,
-    name: "Ordenes",
-    routes: [
-      {
-        path: "/restaurant/all-orders",
-        component: "Orders",
-        requiresAuth: true,
-        requiresAdmin: false,
-        default: true,
-      },
-      {
-        path: "/restaurant/modify-order/:pedidoId",
-        component: "EditOrder",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-    ],
-    services: () => import("../modules/orders/ordersService"),
-    navItems: [
-      {
-        path: "/restaurant/all-orders",
-        label: "Ordenes",
-        icon: "clipboard-clock",
-        showInNavbar: true,
-      },
-    ],
-  },
-  spaces: {
-    enabled: true,
-    name: "Salas",
-    routes: [
-      {
-        path: "/restaurant/rooms",
-        component: "Rooms",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/restaurant/tables/:roomId",
-        component: "Tables",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/restaurant/spaces",
-        component: "Spaces",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/spaces/spacesService"),
-    navItems: [
-      {
-        path: "/restaurant/rooms",
-        label: "Ver Salas",
-        icon: "building",
         showInNavbar: false,
-      },
-      {
-        path: "/restaurant/spaces",
-        label: "Administrar Espacios",
-        icon: "door-open",
-        showInNavbar: true,
-      },
-    ],
-  },
-  "color-test": {
-    enabled: false,
-    name: "Color Test",
-    routes: [
-      {
-        path: "/color-test",
-        component: "ColorTest",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/spaces/spacesService"),
-    navItems: [
-      {
-        path: "/color-test",
-        label: "Ver colores",
-        icon: "building",
-        showInNavbar: true,
       },
     ],
   },

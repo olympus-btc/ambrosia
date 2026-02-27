@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useUsers() {
   const t = useTranslations("users");

@@ -1,5 +1,5 @@
-import { httpClient } from "../../lib/http/httpClient";
-import { parseJsonResponse } from "../../lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
 import { getPaymentByTicketId } from "../orders/ordersService";
 
 export const loginWallet = async (password) => {

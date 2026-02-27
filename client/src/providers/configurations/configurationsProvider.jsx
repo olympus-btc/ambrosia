@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export const ConfigurationsContext = createContext();
 

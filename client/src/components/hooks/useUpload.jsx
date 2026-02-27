@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useUpload() {
   const [isUploading, setUploading] = useState(false);
