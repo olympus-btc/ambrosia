@@ -1,5 +1,4 @@
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export async function loginFromService({ name, pin }) {
   const response = await httpClient("/auth/login", {

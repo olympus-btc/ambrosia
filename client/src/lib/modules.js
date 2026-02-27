@@ -34,7 +34,7 @@ export const modules = {
       },
     ],
   },
-  dishes: {
+  /* dishes: {
     enabled: true,
     name: "Platillos",
     routes: [
@@ -55,6 +55,7 @@ export const modules = {
       },
     ],
   },
+  */
   cashier: {
     enabled: true,
     name: "Wallet",
@@ -106,7 +107,7 @@ export const modules = {
       },
     ],
   },
-  orders: {
+  /*orders: {
     enabled: true,
     name: "Ordenes",
     routes: [
@@ -194,6 +195,7 @@ export const modules = {
       },
     ],
   },
+*/
   store: {
     enabled: true,
     name: "Store",

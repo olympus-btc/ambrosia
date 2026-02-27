@@ -23,7 +23,7 @@ jest.mock("lucide-react", () => ({
   Languages: () => <div>Languages Icon</div>,
 }));
 
-jest.mock("@/lib/http/httpClient", () => ({
+jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(() => Promise.resolve({})),
 }));
 

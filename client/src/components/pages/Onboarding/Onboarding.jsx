@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Progress, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { parseJsonResponse } from "@/lib/http";
 import { useUpload } from "@components/hooks/useUpload";
 import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { getInitialSetupStatus, submitInitialSetup } from "@services/initialSetupService";

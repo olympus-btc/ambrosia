@@ -1,4 +1,4 @@
-import { httpClient } from "@/lib/http/httpClient";
+import { httpClient } from "@/lib/http";
 
 export async function getInitialSetupStatus() {
   return await httpClient("/initial-setup", {

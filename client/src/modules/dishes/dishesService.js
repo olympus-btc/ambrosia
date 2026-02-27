@@ -1,4 +1,4 @@
-﻿import { apiClient } from "../../services/apiClient";
+//import { apiClient } from "../../services/apiClient";
 
 export async function getDishes() {
   const dishes = await apiClient("/dishes");
