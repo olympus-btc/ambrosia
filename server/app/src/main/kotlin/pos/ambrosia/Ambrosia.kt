@@ -96,7 +96,11 @@ class Ambrosia : CliktCommand() {
                 value
             }
         val phoenixdPassword by
-            option("--phoenixd-password", help = "http-password for phoenixd API", envvar = "PHOENIXD_PASSWORD",).defaultLazy {
+            option(
+                "--phoenixd-password",
+                help = "http-password for phoenixd API",
+                envvar = "PHOENIXD_PASSWORD",
+            ).defaultLazy {
                 AppConfig.loadConfig()
                 val value =
                     AppConfig.getPhoenixProperty("http-password")
@@ -108,7 +112,11 @@ class Ambrosia : CliktCommand() {
         val jwtAccessTokenExpirationSeconds by
             option("--jwt-access-token-expiration", help = "Access token expiration in seconds (default: 60)").default("60")
         val phoenixdWebhookSecret by
-            option("--phoenixd-webhook-secret", help = "webhook-secret for phoenixd webhooks", envvar = "PHOENIXD_WEBHOOK_SECRET",).defaultLazy {
+            option(
+                "--phoenixd-webhook-secret",
+                help = "webhook-secret for phoenixd webhooks",
+                envvar = "PHOENIXD_WEBHOOK_SECRET",
+            ).defaultLazy {
                 AppConfig.loadConfig()
                 val existing = AppConfig.getPhoenixProperty("webhook-secret")
                 existing
@@ -119,7 +127,11 @@ class Ambrosia : CliktCommand() {
         val docker by
             option("--docker", help = "Running in a Docker container", envvar = "IS_DOCKER").flag()
         val phoenixdWebhookUrl by
-            option("--phoenixd-webhook", help = "webhook URL to register in phoenix.conf (webhook=<url>)", envvar = "PHOENIXD_WEBHOOK_URL").defaultLazy {
+            option(
+                "--phoenixd-webhook",
+                help = "webhook URL to register in phoenix.conf (webhook=<url>)",
+                envvar = "PHOENIXD_WEBHOOK_URL",
+            ).defaultLazy {
                 val host =
                     when {
                         docker -> "ambrosia"
