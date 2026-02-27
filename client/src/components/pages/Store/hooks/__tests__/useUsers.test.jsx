@@ -8,9 +8,6 @@ import { useUsers } from "../useUsers";
 
 jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
-}));
-
-jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 

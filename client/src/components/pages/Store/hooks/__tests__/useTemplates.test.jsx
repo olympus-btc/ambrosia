@@ -8,9 +8,6 @@ import { useTemplates } from "../useTemplates";
 
 jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
-}));
-
-jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
