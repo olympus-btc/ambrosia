@@ -2,7 +2,7 @@ import { render, act } from "@testing-library/react";
 import { driver } from "driver.js";
 
 import WalletGuard from "@components/auth/WalletGuard";
-import * as cashierService from "@modules/cashier/cashierService";
+import * as walletService from "@/services/walletService";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ back: jest.fn() }),
@@ -46,8 +46,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   localStorageMock.clear();
 
-  jest.spyOn(cashierService, "logoutWallet").mockResolvedValue({});
-  jest.spyOn(cashierService, "loginWallet").mockResolvedValue({
+  jest.spyOn(walletService, "logoutWallet").mockResolvedValue({});
+  jest.spyOn(walletService, "loginWallet").mockResolvedValue({
     walletTokenExpiresAt: Date.now() + 8 * 60 * 60 * 1000,
   });
 });

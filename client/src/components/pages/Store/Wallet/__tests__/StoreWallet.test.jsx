@@ -5,7 +5,7 @@ import { AuthContext } from "@/providers/auth/AuthProvider";
 import * as useModulesHook from "@hooks/useModules";
 import * as usePaymentWebsocketHook from "@hooks/usePaymentWebsocket";
 import { I18nProvider } from "@i18n/I18nProvider";
-import * as cashierService from "@modules/cashier/cashierService";
+import * as walletService from "@/services/walletService";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
 import { StoreWallet } from "../StoreWallet";
@@ -155,16 +155,16 @@ beforeEach(() => {
     updateConfig: mockUpdateConfig,
   });
 
-  jest.spyOn(cashierService, "loginWallet").mockResolvedValue(mockWalletLoginResponse);
-  jest.spyOn(cashierService, "logoutWallet").mockResolvedValue({});
-  jest.spyOn(cashierService, "getInfo").mockResolvedValue(mockNodeInfo);
-  jest.spyOn(cashierService, "getIncomingTransactions").mockResolvedValue(mockIncomingTransactions);
-  jest.spyOn(cashierService, "getOutgoingTransactions").mockResolvedValue(mockOutgoingTransactions);
-  jest.spyOn(cashierService, "createInvoice").mockResolvedValue({
+  jest.spyOn(walletService, "loginWallet").mockResolvedValue(mockWalletLoginResponse);
+  jest.spyOn(walletService, "logoutWallet").mockResolvedValue({});
+  jest.spyOn(walletService, "getInfo").mockResolvedValue(mockNodeInfo);
+  jest.spyOn(walletService, "getIncomingTransactions").mockResolvedValue(mockIncomingTransactions);
+  jest.spyOn(walletService, "getOutgoingTransactions").mockResolvedValue(mockOutgoingTransactions);
+  jest.spyOn(walletService, "createInvoice").mockResolvedValue({
     serialized: "lnbc1000n1...",
     paymentHash: "mock-payment-hash",
   });
-  jest.spyOn(cashierService, "payInvoiceFromService").mockResolvedValue({
+  jest.spyOn(walletService, "payInvoiceFromService").mockResolvedValue({
     recipientAmountSat: 1000,
     routingFeeSat: 5,
     paymentHash: "mock-payment-hash",
@@ -208,11 +208,11 @@ describe("StoreWallet Component", () => {
       });
 
       await waitFor(() => {
-        expect(cashierService.loginWallet).toHaveBeenCalledWith("password123");
+        expect(walletService.loginWallet).toHaveBeenCalledWith("password123");
       });
 
       await waitFor(() => {
-        expect(cashierService.getInfo).toHaveBeenCalled();
+        expect(walletService.getInfo).toHaveBeenCalled();
       });
     });
 
@@ -252,7 +252,7 @@ describe("StoreWallet Component", () => {
       });
 
       await waitFor(() => {
-        expect(cashierService.getInfo).toHaveBeenCalled();
+        expect(walletService.getInfo).toHaveBeenCalled();
       });
     }
 
@@ -268,13 +268,13 @@ describe("StoreWallet Component", () => {
       await authenticateAndWait();
 
       await waitFor(() => {
-        expect(cashierService.getIncomingTransactions).toHaveBeenCalled();
-        expect(cashierService.getOutgoingTransactions).toHaveBeenCalled();
+        expect(walletService.getIncomingTransactions).toHaveBeenCalled();
+        expect(walletService.getOutgoingTransactions).toHaveBeenCalled();
       });
     });
 
     it("shows loading state before node info is fetched", async () => {
-      jest.spyOn(cashierService, "getInfo").mockImplementation(
+      jest.spyOn(walletService, "getInfo").mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(mockNodeInfo), 100)),
       );
 
@@ -298,7 +298,7 @@ describe("StoreWallet Component", () => {
 
   describe("Error Handling", () => {
     it("handles phoenixd connection error gracefully", async () => {
-      jest.spyOn(cashierService, "getInfo").mockRejectedValue(new Error("Connection failed"));
+      jest.spyOn(walletService, "getInfo").mockRejectedValue(new Error("Connection failed"));
 
       await act(async () => {
         renderStoreWallet();
@@ -313,12 +313,12 @@ describe("StoreWallet Component", () => {
       });
 
       await waitFor(() => {
-        expect(cashierService.getInfo).toHaveBeenCalled();
+        expect(walletService.getInfo).toHaveBeenCalled();
       });
     });
 
     it("handles transaction fetch error", async () => {
-      jest.spyOn(cashierService, "getIncomingTransactions").mockRejectedValue(
+      jest.spyOn(walletService, "getIncomingTransactions").mockRejectedValue(
         new Error("Failed to fetch"),
       );
 
@@ -335,7 +335,7 @@ describe("StoreWallet Component", () => {
       });
 
       await waitFor(() => {
-        expect(cashierService.getIncomingTransactions).toHaveBeenCalled();
+        expect(walletService.getIncomingTransactions).toHaveBeenCalled();
       });
     });
   });

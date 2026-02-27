@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-import { createInvoice } from "@/modules/cashier/cashierService";
+import { createInvoice } from "@/services/walletService";
 import BitcoinPriceService from "@/services/bitcoinPriceService";
 
 const priceService = new BitcoinPriceService();

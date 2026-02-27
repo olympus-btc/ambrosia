@@ -21,7 +21,7 @@ import { useTranslations } from "next-intl";
 import {
   loginWallet,
   logoutWallet,
-} from "../../modules/cashier/cashierService";
+} from "@/services/walletService";
 
 import "driver.js/dist/driver.css";
 

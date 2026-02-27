@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { I18nProvider } from "@i18n/I18nProvider";
-import * as cashierService from "@modules/cashier/cashierService";
+import * as walletService from "@/services/walletService";
 
 import { TransactionsSendTab } from "../TransactionsSendTab";
 
@@ -51,7 +51,7 @@ beforeEach(() => {
   };
 
   jest.clearAllMocks();
-  jest.spyOn(cashierService, "payInvoiceFromService").mockResolvedValue({
+  jest.spyOn(walletService, "payInvoiceFromService").mockResolvedValue({
     recipientAmountSat: 1000,
     routingFeeSat: 5,
     paymentHash: "mock-payment-hash-123",
@@ -124,7 +124,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test");
       });
     });
 
@@ -138,7 +138,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("lntb1000n1pj9h8uqpp5test");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lntb1000n1pj9h8uqpp5test");
       });
     });
 
@@ -152,7 +152,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("lnbcrt1000n1pj9h8uqpp5test");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbcrt1000n1pj9h8uqpp5test");
       });
     });
 
@@ -229,7 +229,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test");
       });
     });
 
@@ -319,7 +319,7 @@ describe("TransactionsSendTab Component", () => {
 
     it("handles API error gracefully", async () => {
       const setError = jest.fn();
-      jest.spyOn(cashierService, "payInvoiceFromService").mockRejectedValue(new Error("API Error"));
+      jest.spyOn(walletService, "payInvoiceFromService").mockRejectedValue(new Error("API Error"));
 
       renderSendTab({ setError });
 
@@ -368,7 +368,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("LNBC1000N1PJ9H8UQPP5TEST");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("LNBC1000N1PJ9H8UQPP5TEST");
       });
     });
 
@@ -382,7 +382,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("LnBc1000N1pj9h8uqpp5test");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("LnBc1000N1pj9h8uqpp5test");
       });
     });
   });
@@ -398,7 +398,7 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.payInvoiceFromService).toHaveBeenCalledWith("  lnbc1000n1pj9h8uqpp5test  ");
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("  lnbc1000n1pj9h8uqpp5test  ");
       });
     });
 

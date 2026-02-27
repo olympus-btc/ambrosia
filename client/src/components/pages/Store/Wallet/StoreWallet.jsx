@@ -16,7 +16,7 @@ import {
   getIncomingTransactions,
   getInfo,
   getOutgoingTransactions,
-} from "@modules/cashier/cashierService";
+} from "@/services/walletService";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
 import { InvoiceModal } from "./InvoiceModal";
