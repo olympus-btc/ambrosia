@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.defaultLazy
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.mordant.rendering.TextColors.green
@@ -72,21 +73,17 @@ class Ambrosia : CliktCommand() {
             }
         val httpBindPort by
             option("--http-bind-port", help = "Bind port for the http api").int().defaultLazy {
-                val value = 9154 // Dinnerefault value
+                val value = 9154 // Default value
                 SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
                     it.writeString("\nhttp-bind-port=$value")
                 }
                 value
             }
         val secret by
-            option("--secret", help = "Secret key for the server").defaultLazy {
+            option("--secret", help = "Secret key for the server", envvar = "AMBROSIA_SECRET").defaultLazy {
                 val seed = SeedGenerator.generateSeed() // Generate a new seed
                 SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
                     it.writeString("\nsecret=$seed")
-                }
-                val hash = SeedGenerator.generateSecureSeed(seedInput = seed)
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nsecret-hash=$hash")
                 }
                 seed
             }
@@ -99,7 +96,7 @@ class Ambrosia : CliktCommand() {
                 value
             }
         val phoenixdPassword by
-            option("--phoenixd-password", help = "http-password for phoenixd API").defaultLazy {
+            option("--phoenixd-password", help = "http-password for phoenixd API", envvar = "PHOENIXD_PASSWORD",).defaultLazy {
                 AppConfig.loadConfig()
                 val value =
                     AppConfig.getPhoenixProperty("http-password")
@@ -111,7 +108,7 @@ class Ambrosia : CliktCommand() {
         val jwtAccessTokenExpirationSeconds by
             option("--jwt-access-token-expiration", help = "Access token expiration in seconds (default: 60)").default("60")
         val phoenixdWebhookSecret by
-            option("--phoenixd-webhook-secret", help = "webhook-secret for phoenixd webhooks").defaultLazy {
+            option("--phoenixd-webhook-secret", help = "webhook-secret for phoenixd webhooks", envvar = "PHOENIXD_WEBHOOK_SECRET",).defaultLazy {
                 AppConfig.loadConfig()
                 val existing = AppConfig.getPhoenixProperty("webhook-secret")
                 existing
@@ -119,11 +116,18 @@ class Ambrosia : CliktCommand() {
                         "phoenixd webhook-secret not found in phoenix.conf, please provide it with --phoenixd-webhook-secret or set webhook-secret in phoenix.conf",
                     )
             }
+        val docker by
+            option("--docker", help = "Running in a Docker container", envvar = "IS_DOCKER").flag()
         val phoenixdWebhookUrl by
-            option(
-                "--phoenixd-webhook",
-                help = "webhook URL to register in phoenix.conf (webhook=<url>)",
-            ).defaultLazy { this@Ambrosia.defaultWebhookUrl(httpBindIp, httpBindPort) }
+            option("--phoenixd-webhook", help = "webhook URL to register in phoenix.conf (webhook=<url>)", envvar = "PHOENIXD_WEBHOOK_URL").defaultLazy {
+                val host =
+                    when {
+                        docker -> "ambrosia"
+                        httpBindIp == "0.0.0.0" || httpBindIp == "::" -> "127.0.0.1"
+                        else -> httpBindIp
+                    }
+                "http://$host:$httpBindPort/webhook/phoenixd"
+            }
     }
 
     private val options by DaemonOptions()
@@ -219,27 +223,6 @@ class Ambrosia : CliktCommand() {
             }
 
         return KeyStoreInfo(keyStore, storePassword, privateKeyPassword)
-    }
-
-    private fun defaultWebhookUrl(
-        httpBindIp: String,
-        httpBindPort: Int,
-    ): String {
-        val envHost = System.getenv("PHOENIXD_WEBHOOK_HOST")?.takeIf { it.isNotBlank() }
-        val resolvedHost =
-            envHost
-                ?: when (httpBindIp) {
-                    "0.0.0.0", "::" -> "ambrosia"
-                    else -> httpBindIp
-                }
-
-        if (envHost == null && (httpBindIp == "0.0.0.0" || httpBindIp == "::")) {
-            logger.info(
-                "Using default webhook host 'ambrosia' because http-bind-ip is $httpBindIp; override with PHOENIXD_WEBHOOK_HOST or --phoenixd-webhook if needed",
-            )
-        }
-
-        return "http://$resolvedHost:$httpBindPort/webhook/phoenixd"
     }
 
     private fun ensurePhoenixWebhookConfigured(url: String) {
