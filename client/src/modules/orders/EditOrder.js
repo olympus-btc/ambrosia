@@ -70,7 +70,7 @@ import ConfirmationPopup from "../../components/ConfirmationPopup";
 import LoadingCard from "../../components/LoadingCard";
 import VirtualKeyboard from "../../components/VirtualKeyboard";
 import BitcoinPriceService from "../../services/bitcoinPriceService";
-import { createInvoice } from "../cashier/cashierService";
+import { createInvoice } from "@/services/walletService";
 import { getCategories, getDishes } from "../dishes/dishesService";
 
 import {

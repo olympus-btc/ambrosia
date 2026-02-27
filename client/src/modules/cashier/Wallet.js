@@ -48,7 +48,7 @@ import {
   getInfo,
   getOutgoingTransactions,
   payInvoiceFromService,
-} from "./cashierService";
+} from "@/services/walletService";
 
 function WalletInner() {
   const router = useRouter();
