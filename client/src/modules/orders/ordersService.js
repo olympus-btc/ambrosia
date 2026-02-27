@@ -41,12 +41,10 @@ export async function getOrderById(orderId) {
 }
 
 export async function createOrder(tableId = null) {
-  //localStorage.setItem('userId', "");
   if (!localStorage.getItem("userId")) {
     throw new Error("No hay usuario logeado");
   }
   const response = await getUserById(localStorage.getItem("userId"));
-  //const response = {id: localStorage.getItem('userId'), name: "JordyArreglaLaDBConnection"};
   if (response) {
     const body = {
       user_id: response.id,
@@ -87,41 +85,6 @@ export async function getDishesByOrder(orderId) {
   const dishes = await apiClient(`/orders/${orderId}/dishes`);
   return dishes ? dishes : [];
 }
-
-/*export async function createOrder(pin, tableId = null) {
-    try {
-        const pinValidation = await validatePin(pin);
-        if (!pinValidation.authorized) {
-            throw new Error(pinValidation.error);
-        }
-
-        const orderId = Date.now();
-
-        const newOrder = {
-            id: Number(`${orderId}`),
-            userId: pinValidation.userId,
-            dishes: [],
-            estado: 'abierto',
-            createdAt: new Date().toISOString(),
-        };
-
-        const orderResponse = await addOrder(newOrder);
-
-        if (tableId) {
-            const tables = (await getTables()).data;
-            const table = tables.find((t) => t.id === Number(tableId));
-            if (!table) throw new Error('Mesa no encontrada');
-            if (table.estado !== 'libre') throw new Error('La mesa no está libre');
-            await updateTable(Number(tableId), { pedidoId: Number(`${orderResponse.id}`), estado: 'ocupada' });
-            console.log(orderId);
-        }
-
-        console.log(orderResponse);
-        return { data: orderResponse };
-    } catch (error) {
-        throw new Error(error.message || 'Error al crear el pedido');
-    }
-}*/
 
 export async function updateOrder(order) {
   return await apiClient(`/orders/${order.id}`, {
