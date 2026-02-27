@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 const DEFAULT_CURRENCY = {
   id: null,

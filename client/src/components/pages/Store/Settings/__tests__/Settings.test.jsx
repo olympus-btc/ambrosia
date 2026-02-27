@@ -151,13 +151,14 @@ afterEach(() => {
 
 describe("Settings page", () => {
   describe("Rendering", () => {
-    it("renders store info, currency, and languages cards", async () => {
+    it("renders store info, currency, languages, and tutorials cards", async () => {
       await act(async () => {
         renderSettings();
       });
       expect(screen.getByText("cardInfo.title")).toBeInTheDocument();
       expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
       expect(screen.getByText("cardLanguage.title")).toBeInTheDocument();
+      expect(screen.getByText("cardTours.title")).toBeInTheDocument();
     });
 
     it("renders business name", async () => {

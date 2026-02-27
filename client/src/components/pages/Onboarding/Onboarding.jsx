@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { Button, Progress, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { parseJsonResponse } from "@/lib/http";
 import { useUpload } from "@components/hooks/useUpload";
+import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { getInitialSetupStatus, submitInitialSetup } from "@services/initialSetupService";
 
 import { BusinessDetailsStep } from "./AddBusinessData";
@@ -126,7 +127,11 @@ export function Onboarding() {
   const progressValue = totalSteps === 1 ? 100 : ((step - 1) / (totalSteps - 1)) * 100;
 
   return (
-    <div className="flex items-start justify-center min-h-screen gradient-fresh px-4 pb-4 pt-16">
+    <div className="flex flex-col items-center justify-start min-h-screen gradient-fresh px-4 pb-4 pt-4">
+      <div className="flex justify-end w-full max-w-2xl mt-4 mb-8">
+        <LanguageSwitcher />
+      </div>
+
       <div className="w-full max-w-2xl">
 
         {!needsBusinessType && (

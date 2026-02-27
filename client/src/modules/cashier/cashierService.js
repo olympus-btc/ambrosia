@@ -1,5 +1,5 @@
-import { httpClient } from "../../lib/http/httpClient";
-import { parseJsonResponse } from "../../lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
 import { getPaymentByTicketId } from "../orders/ordersService";
 
 export const loginWallet = async (password) => {
@@ -131,10 +131,6 @@ export async function generateReportFromData(
     const paymentMethodName = paymentMethods.find(
       (method) => method.id === payment.method_id,
     ).name;
-    console.log(paymentMethodName);
-
-    console.log(payment);
-
     const ticketInfo = {
       amount: ticket.total_amount,
       paymentMethod: paymentMethodName,

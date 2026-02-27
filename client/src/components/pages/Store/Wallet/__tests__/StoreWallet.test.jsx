@@ -1,10 +1,10 @@
 import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { AuthContext } from "@/providers/auth/AuthProvider";
 import * as useModulesHook from "@hooks/useModules";
 import * as usePaymentWebsocketHook from "@hooks/usePaymentWebsocket";
 import { I18nProvider } from "@i18n/I18nProvider";
-import { AuthContext } from "@modules/auth/AuthProvider";
 import * as cashierService from "@modules/cashier/cashierService";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 

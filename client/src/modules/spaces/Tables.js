@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getTablesByRoomId } from "./spacesService";
-import { ChefHat, Coffee, Users, ArrowLeft } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -9,11 +10,12 @@ import {
   Button,
   Badge,
   Spinner,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
+  addToast } from "@heroui/react";
+import { ChefHat, Coffee, Users, ArrowLeft } from "lucide-react";
+
 import { createOrder } from "../orders/ordersService";
-import { updateTable } from "./spacesService";
-import { addToast } from "@heroui/react";
+
+import { getTablesByRoomId, updateTable } from "./spacesService";
 
 export default function Tables({ dynamicParams }) {
   const roomId = dynamicParams?.roomId;
@@ -62,10 +64,9 @@ export default function Tables({ dynamicParams }) {
         const orderResponse = await createOrder(table.id);
         if (orderResponse.id) {
           // Actualizar estado local
-          const updatedTables = tables.map((t) =>
-            t.id === table.id
-              ? { ...t, status: "occupied", order_id: orderResponse.id }
-              : t,
+          const updatedTables = tables.map((t) => (t.id === table.id
+            ? { ...t, status: "occupied", order_id: orderResponse.id }
+            : t),
           );
           setTables(updatedTables);
 
@@ -85,7 +86,7 @@ export default function Tables({ dynamicParams }) {
           router.push(`/modify-order/${orderResponse.id}?isNew=true`);
         }
       } catch (error) {
-        console.error(error.message)
+        console.error(error.message);
         addToast({
           title: "Error",
           description: "No se pudo abrir la mesa",

@@ -3,8 +3,7 @@ import * as React from "react";
 
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { useOrders } from "../useOrders";
 
@@ -35,11 +34,8 @@ jest.mock("react", () => {
   };
 });
 
-jest.mock("@/lib/http/httpClient", () => ({
+jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
-}));
-
-jest.mock("@/lib/http/parseJsonResponse", () => ({
   parseJsonResponse: jest.fn(),
 }));
 

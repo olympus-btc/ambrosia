@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { modules } from "../lib/modules";
+
+import { modules } from "@lib/modules";
 
 export function useServices(moduleKey) {
   const [services, setServices] = useState(null);

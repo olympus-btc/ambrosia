@@ -1,19 +1,24 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
+
+import { useAuth } from "@/hooks/auth/useAuth";
+
 import { getTurnOpen } from "./cashierService";
 
 const TurnContext = createContext();
 
 export function TurnProvider({ children }) {
   const [openTurn, setOpenTurn] = useState(null);
+  const { isAuth } = useAuth();
 
   useEffect(() => {
+    if (!isAuth) return;
     const handleOpenTurn = async () => {
       const data = await getTurnOpen();
       setOpenTurn(data);
     };
     handleOpenTurn();
-  }, []);
+  }, [isAuth]);
 
   const updateTurn = (newTurnData) => {
     setOpenTurn(newTurnData);

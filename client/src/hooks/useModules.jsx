@@ -1,40 +1,28 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useAuth } from "./../modules/auth/useAuth.js"
-import { getAvailableModules, getAvailableNavigation, hasAccessToRoute } from '../lib/modules';
+import { useMemo } from "react";
+
+import { useAuth } from "@/hooks/auth/useAuth";
+
+import { getAvailableModules, getAvailableNavigation, hasAccessToRoute } from "../lib/modules";
 import { useConfigurations } from "../providers/configurations/configurationsProvider";
 
 export function useModules() {
   const { isAuth, user, permissions, logout, isLoading } = useAuth();
-  const [availableModules, setAvailableModules] = useState({});
-  const [availableNavigation, setAvailableNavigation] = useState([]);
 
   const isAdmin = user?.isAdmin || false;
   const { businessType } = useConfigurations();
 
-  useEffect(() => {
-    if (!isLoading) {
-      const modules = getAvailableModules(
-        isAuth,
-        isAdmin,
-        permissions,
-        businessType,
-      );
-      const navigation = getAvailableNavigation(
-        isAuth,
-        isAdmin,
-        permissions,
-        businessType,
-      );
-
-      setAvailableModules(modules);
-      setAvailableNavigation(navigation);
-    }
+  const availableModules = useMemo(() => {
+    if (isLoading) return {};
+    return getAvailableModules(isAuth, isAdmin, permissions, businessType);
   }, [isAuth, isAdmin, isLoading, permissions, businessType]);
 
-  const checkRouteAccess = (pathname) => {
-    return hasAccessToRoute(pathname, isAuth, isAdmin, permissions, businessType);
-  };
+  const availableNavigation = useMemo(() => {
+    if (isLoading) return [];
+    return getAvailableNavigation(isAuth, isAdmin, permissions, businessType);
+  }, [isAuth, isAdmin, isLoading, permissions, businessType]);
+
+  const checkRouteAccess = (pathname) => hasAccessToRoute(pathname, isAuth, isAdmin, permissions, businessType);
 
   return {
     availableModules,
@@ -44,6 +32,6 @@ export function useModules() {
     isAdmin,
     isLoading,
     user,
-    logout
+    logout,
   };
 }

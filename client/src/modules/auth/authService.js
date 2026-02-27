@@ -1,5 +1,4 @@
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export async function loginFromService({ name, pin }) {
   const response = await httpClient("/auth/login", {
@@ -65,8 +64,7 @@ export async function deleteRole(roleId) {
 }
 
 export async function getUsers({ silentAuth = false } = {}) {
-  void silentAuth;
-  const response = await httpClient("/users");
+  const response = await httpClient("/users", { skipRefresh: silentAuth });
   const users = await parseJsonResponse(response, []);
   return users ?? [];
 }
@@ -107,6 +105,6 @@ export async function getRoleName(roleId) {
 }
 
 export const getCookieValue = (name) => {
-  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
   return match ? match[2] : null;
 };

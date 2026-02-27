@@ -3,8 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
-import { httpClient } from "@/lib/http/httpClient";
-import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useProducts() {
   const [products, setProducts] = useState([]);

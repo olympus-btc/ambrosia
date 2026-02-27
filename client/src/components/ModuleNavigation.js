@@ -1,21 +1,22 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+
+import * as LucideIcons from "lucide-react";
+
 import { useModules } from "../hooks/useModules";
 import { getHomeRoute } from "../lib/getHomeRoute";
-import LoadingCard from "./LoadingCard";
-import * as LucideIcons from "lucide-react";
 import { useConfigurations } from "../providers/configurations/configurationsProvider";
+
+import LoadingCard from "./LoadingCard";
 
 // Componente para iconos Lucide React dinámico
 function Icon({ name, className = "w-5 h-5" }) {
   // Convertir nombres con guiones a PascalCase
-  const formatIconName = (iconName) => {
-    return iconName
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join("");
-  };
+  const formatIconName = (iconName) => iconName
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
   const formattedName = formatIconName(name);
   const IconComponent = LucideIcons[formattedName] || LucideIcons.FileText;
   return <IconComponent className={className} />;

@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 
@@ -158,6 +159,62 @@ describe("Onboarding Wizard", () => {
       fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
     });
     expect(nextButton).not.toBeDisabled();
+  });
+
+  describe("LanguageSwitcher", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("renders the language switcher button", async () => {
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      expect(screen.getByText("Cambiar a Español")).toBeInTheDocument();
+    });
+
+    it("switches from English to Spanish when clicked", async () => {
+      const user = userEvent.setup();
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      const switcher = screen.getByText("Cambiar a Español");
+      await user.click(switcher);
+
+      await waitFor(() => {
+        expect(screen.getByText("Switch to English")).toBeInTheDocument();
+      });
+    });
+
+    it("switches back to English when clicked again", async () => {
+      const user = userEvent.setup();
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      await user.click(screen.getByText("Cambiar a Español"));
+      await waitFor(() => screen.getByText("Switch to English"));
+
+      await user.click(screen.getByText("Switch to English"));
+      await waitFor(() => {
+        expect(screen.getByText("Cambiar a Español")).toBeInTheDocument();
+      });
+    });
+
+    it("persists locale selection in localStorage", async () => {
+      const user = userEvent.setup();
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      await user.click(screen.getByText("Cambiar a Español"));
+
+      await waitFor(() => {
+        expect(localStorage.getItem("locale")).toBe("es");
+      });
+    });
   });
 
   it("Not disables the Next button if RFC are invalid in step 3", async () => {

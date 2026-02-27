@@ -36,7 +36,7 @@ export function usePaymentWebsocket() {
 
       ws.onopen = () => {
         setConnected(true);
-        console.info("WS payments conectado", url);
+        console.warn("WS payments conectado", url);
       };
 
       ws.onmessage = (event) => {

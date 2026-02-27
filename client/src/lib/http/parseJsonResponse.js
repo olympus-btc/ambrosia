@@ -9,7 +9,7 @@ export async function parseJsonResponse(response, fallbackValue = null) {
   try {
     const parsedBody = JSON.parse(rawBody);
     return parsedBody;
-  } catch (parseError) {
+  } catch {
     return fallbackValue;
   }
 }

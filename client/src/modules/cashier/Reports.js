@@ -1,13 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  getOrders,
-  getPaymentMethods,
-  getPayments,
-  getTickets,
-} from "../orders/ordersService";
-import { generateReportFromData } from "./cashierService";
+
 import { useRouter } from "next/navigation";
+
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Input,
+  Spinner,
+  Divider,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  addToast } from "@heroui/react";
 import {
   BarChart3,
   Calendar,
@@ -24,21 +33,15 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Input,
-  Spinner,
-  Divider,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/react";
-import { addToast } from "@heroui/react";
+  getOrders,
+  getPaymentMethods,
+  getPayments,
+  getTickets,
+} from "../orders/ordersService";
+
+import { generateReportFromData } from "./cashierService";
 
 export default function Reports() {
   const router = useRouter();
@@ -68,12 +71,10 @@ export default function Reports() {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  const formatCurrency = (amount) => new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 
   const handleGenerateReport = async () => {
     setLoading(true);

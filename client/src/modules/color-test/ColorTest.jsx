@@ -1,16 +1,14 @@
 "use client";
-import { 
-  Button, 
-  Card, 
-  CardBody, 
+import {
+  Button,
+  Card,
+  CardBody,
   CardHeader,
   Input,
-  Select,
-  SelectItem,
   Chip,
   Progress,
   Switch,
-  Checkbox
+  Checkbox,
 } from "@heroui/react";
 
 export default function ColorTest() {
@@ -21,7 +19,7 @@ export default function ColorTest() {
           <h2 className="text-2xl font-bold">Test de Colores HeroUI</h2>
         </CardHeader>
         <CardBody className="space-y-4">
-          
+
           {/* Botones */}
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">Botones</h3>

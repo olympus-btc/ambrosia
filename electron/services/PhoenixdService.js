@@ -15,7 +15,7 @@ class PhoenixdService {
     this.logStream = null;
   }
 
-  async start(port, config) {
+  async start(port) {
     if (this.process) {
       throw new Error('Phoenixd service is already running');
     }
@@ -35,31 +35,14 @@ class PhoenixdService {
       const logFile = path.join(logsDir, `phoenixd-${new Date().toISOString().split('T')[0]}.log`);
       this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
+      // Only pass args that are not already in phoenix.conf (secrets stay in config file)
       const args = [
         '--agree-to-terms-of-service',
         `--http-bind-ip=127.0.0.1`,
         `--http-bind-port=${port}`,
       ];
 
-      // Add optional config parameters
-      if (config['http-password']) {
-        args.push(`--http-password=${config['http-password']}`);
-      }
-      if (config['http-password-limited-access']) {
-        args.push(`--http-password-limited-access=${config['http-password-limited-access']}`);
-      }
-      if (config.webhook) {
-        args.push(`--webhook=${config.webhook}`);
-      }
-      if (config['webhook-secret']) {
-        args.push(`--webhook-secret=${config['webhook-secret']}`);
-      }
-      if (config['auto-liquidity']) {
-        args.push(`--auto-liquidity=${config['auto-liquidity']}`);
-      }
-
       console.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
-      console.log(`[PhoenixdService] Command: ${phoenixdPath} ${args.join(' ')}`);
 
       // Set JAVA_HOME for phoenixd when using JVM version
       // Windows ARM64 uses JVM version and needs x64 JRE

@@ -1,22 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import {
-  addTable,
-  updateTable,
-  deleteTable,
-  getTablesByRoomId,
-} from "../../modules/spaces/spacesService";
-import {
-  Table as TableIcon,
-  Plus,
-  Edit,
-  Trash2,
-  Users,
-  Coffee,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
+
 import {
   Card,
   CardBody,
@@ -31,8 +15,25 @@ import {
   ModalFooter,
   Chip,
   Divider,
-} from "@heroui/react";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  Table as TableIcon,
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  Coffee,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+} from "lucide-react";
+
+import {
+  addTable,
+  updateTable,
+  deleteTable,
+  getTablesByRoomId,
+} from "../../modules/spaces/spacesService";
 
 export default function TableAdmin({ room }) {
   const [tables, setTables] = useState([]);
@@ -133,7 +134,6 @@ export default function TableAdmin({ room }) {
         // ...tableForm,
         // capacity: tableForm.capacity ? parseInt(tableForm.capacity) : null,
       };
-      console.log(tableData);
       await updateTable(tableData);
       await fetchTables();
       setShowTableModal(false);
@@ -437,8 +437,7 @@ export default function TableAdmin({ room }) {
                 label="Nombre de la Mesa"
                 placeholder="Ej: Mesa 1, Mesa VIP, Mesa Terraza"
                 value={tableForm.name}
-                onChange={(e) =>
-                  setTableForm({ ...tableForm, name: e.target.value })
+                onChange={(e) => setTableForm({ ...tableForm, name: e.target.value })
                 }
                 variant="bordered"
                 size="lg"

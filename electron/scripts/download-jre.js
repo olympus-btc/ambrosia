@@ -5,39 +5,50 @@ const https = require('https');
 const path = require('path');
 
 const { getBuildPlatform } = require('./platform-utils');
+const { verifySha256, fetchAdoptiumChecksum } = require('./verify-checksum');
 
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'jre');
+
+// Adoptium assets API base — returns JSON with checksum and binary metadata
+// https://api.adoptium.net/v3/assets/latest/{version}/{jvm_impl}?architecture=...&image_type=jre&os=...&vendor=eclipse
+const ADOPTIUM_ASSETS = 'https://api.adoptium.net/v3/assets/latest/21/hotspot';
 
 // Adoptium Temurin JRE download URLs
 const ALL_JRE_DOWNLOADS = {
   'macos-x64': {
     platform: 'macos-x64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/mac/x64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=mac&project=jdk&vendor=eclipse`,
     filename: 'jre-macos-x64.tar.gz',
   },
   'macos-arm64': {
     platform: 'macos-arm64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/mac/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=mac&project=jdk&vendor=eclipse`,
     filename: 'jre-macos-arm64.tar.gz',
   },
   'win-x64': {
     platform: 'win-x64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=windows&project=jdk&vendor=eclipse`,
     filename: 'jre-win-x64.zip',
   },
   'win-arm64': {
     platform: 'win-arm64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=windows&project=jdk&vendor=eclipse`,
     filename: 'jre-win-arm64.zip',
   },
   'linux-x64': {
     platform: 'linux-x64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=linux&project=jdk&vendor=eclipse`,
     filename: 'jre-linux-x64.tar.gz',
   },
   'linux-arm64': {
     platform: 'linux-arm64',
     url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=linux&project=jdk&vendor=eclipse`,
     filename: 'jre-linux-arm64.tar.gz',
   },
 };
@@ -204,7 +215,7 @@ function extractArchive(archivePath, platform, destDir) {
   }
 }
 
-async function downloadAndExtractJRE(platform, url, filename) {
+async function downloadAndExtractJRE(platform, url, checksumApiUrl, filename) {
   const platformDir = path.join(RESOURCES_DIR, platform);
   const downloadPath = path.join(RESOURCES_DIR, filename);
 
@@ -224,6 +235,16 @@ async function downloadAndExtractJRE(platform, url, filename) {
 
     // Download
     await downloadFile(url, downloadPath);
+
+    // Verify integrity using Adoptium's assets API (returns JSON with checksum field)
+    try {
+      console.log(`Fetching checksum from Adoptium API: ${checksumApiUrl}`);
+      const expectedHash = await fetchAdoptiumChecksum(checksumApiUrl);
+      await verifySha256(downloadPath, expectedHash);
+    } catch (checksumError) {
+      fs.unlinkSync(downloadPath);
+      throw new Error(`Integrity check failed: ${checksumError.message}`);
+    }
 
     // Extract
     extractArchive(downloadPath, platform, platformDir);
@@ -257,7 +278,7 @@ async function main() {
 
   for (const jre of JRE_DOWNLOADS) {
     try {
-      await downloadAndExtractJRE(jre.platform, jre.url, jre.filename);
+      await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
     } catch (error) {
       console.error(`Failed to download JRE for ${jre.platform}:`, error);
       process.exit(1);

@@ -146,8 +146,6 @@
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
-
     const statusText = document.getElementById('status-text');
     const progressBar = document.getElementById('progress-bar');
     const spinner = document.getElementById('spinner');
@@ -158,10 +156,8 @@
       nextjs: document.getElementById('step-nextjs')
     };
 
-    let currentProgress = 0;
-
     // Listen for progress updates from main process
-    ipcRenderer.on('splash:update', (event, data) => {
+    window.splashBridge.on('splash:update', (data) => {
       const { service, progress, message } = data;
 
       if (message) {
@@ -169,12 +165,10 @@
       }
 
       if (progress !== undefined) {
-        currentProgress = progress;
         progressBar.style.width = `${progress}%`;
       }
 
       if (service) {
-        // Mark current step as active
         Object.values(steps).forEach(step => step.classList.remove('active'));
         if (steps[service]) {
           steps[service].classList.add('active');
@@ -182,8 +176,8 @@
       }
     });
 
-    // Listen for completion
-    ipcRenderer.on('splash:complete', (event, data) => {
+    // Listen for step completion
+    window.splashBridge.on('splash:complete', (data) => {
       const { service } = data;
 
       if (service && steps[service]) {
@@ -193,18 +187,16 @@
     });
 
     // Listen for close signal
-    ipcRenderer.on('splash:close', () => {
+    window.splashBridge.on('splash:close', () => {
       statusText.textContent = 'Ready!';
       spinner.style.display = 'none';
       progressBar.style.width = '100%';
 
-      // Mark all as completed
       Object.values(steps).forEach(step => {
         step.classList.remove('active');
         step.classList.add('completed');
       });
 
-      // Fade out and close
       setTimeout(() => {
         document.body.classList.add('fade-out');
       }, 300);

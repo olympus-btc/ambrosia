@@ -23,6 +23,7 @@ import { EditSettingsModal } from "./EditSettingsModal";
 import { PrinterSettingsCard } from "./PrinterSettings/PrinterSettingsCard";
 import { TemplateList } from "./TicketTemplate/TemplateList";
 import { TicketTemplatesModal } from "./TicketTemplate/TicketTemplatesModal";
+import { TutorialsCard } from "./Tutorials/TutorialsCard";
 
 export function Settings() {
   const { config, updateConfig } = useConfigurations();
@@ -314,6 +315,10 @@ export function Settings() {
               </div>
             </CardBody>
           </Card>
+        </div>
+
+        <div className="flex flex-col lg:w-[47%] h-full">
+          <TutorialsCard t={t} />
         </div>
       </div>
 

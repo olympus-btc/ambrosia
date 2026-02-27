@@ -4,9 +4,14 @@ const https = require('https');
 const path = require('path');
 
 const { getBuildPlatform } = require('./platform-utils');
+const { verifySha256, fetchSha256SumsChecksum } = require('./verify-checksum');
 
 const NODE_VERSION = 'v20.11.0'; // LTS version compatible with Next.js 16
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'node');
+
+// Node.js publishes SHASUMS256.txt per release with all platform hashes.
+// When bumping NODE_VERSION, no hash changes needed — fetched at build time.
+const SHASUMS_URL = `https://nodejs.org/dist/${NODE_VERSION}/SHASUMS256.txt`;
 
 const ALL_DOWNLOADS = {
   'macos-x64': {
@@ -139,6 +144,16 @@ async function main() {
 
     // Download
     await downloadFile(download.url, archivePath);
+
+    // Verify integrity using Node.js official SHASUMS256.txt
+    try {
+      console.log(`Fetching checksums from: ${SHASUMS_URL}`);
+      const expectedHash = await fetchSha256SumsChecksum(SHASUMS_URL, download.filename);
+      await verifySha256(archivePath, expectedHash);
+    } catch (checksumError) {
+      fs.unlinkSync(archivePath);
+      throw new Error(`Integrity check failed: ${checksumError.message}`);
+    }
 
     // Create platform directory
     if (!fs.existsSync(platformDir)) {
