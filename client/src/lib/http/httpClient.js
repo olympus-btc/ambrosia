@@ -24,7 +24,10 @@ export async function httpClient(endpoint, options = {}) {
     return await httpWrapper(endpoint, httpOptions);
   }
 
-  if (response.status === 401 && !skipRefresh) window.dispatchEvent(new Event("auth:expired"));
+  if (response.status === 401 && !skipRefresh) {
+    const event = endpoint.startsWith("/wallet") ? "wallet:unauthorized" : "auth:expired";
+    window.dispatchEvent(new Event(event));
+  }
   if (response.status === 403 && !skipRefresh)
     window.dispatchEvent(new Event("auth:forbidden"));
 
