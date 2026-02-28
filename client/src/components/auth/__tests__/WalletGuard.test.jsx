@@ -1,8 +1,8 @@
 import { render, act } from "@testing-library/react";
 import { driver } from "driver.js";
 
-import WalletGuard from "@components/auth/WalletGuard";
 import * as walletService from "@/services/walletService";
+import WalletGuard from "@components/auth/WalletGuard";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ back: jest.fn() }),

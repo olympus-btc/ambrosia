@@ -39,9 +39,6 @@ import {
 import { QRCode } from "react-qr-code";
 
 import { getWsUrl } from "@/config/api";
-
-import WalletGuard from "../../components/auth/WalletGuard";
-
 import {
   createInvoice,
   getIncomingTransactions,
@@ -49,6 +46,8 @@ import {
   getOutgoingTransactions,
   payInvoiceFromService,
 } from "@/services/walletService";
+
+import WalletGuard from "../../components/auth/WalletGuard";
 
 function WalletInner() {
   const router = useRouter();

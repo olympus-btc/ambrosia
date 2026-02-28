@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { I18nProvider } from "@i18n/I18nProvider";
 import * as walletService from "@/services/walletService";
+import { I18nProvider } from "@i18n/I18nProvider";
 
 import { TransactionsSendTab } from "../TransactionsSendTab";
 

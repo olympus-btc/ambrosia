@@ -35,6 +35,7 @@ export default function WalletGuard({
   confirmText = "Entrar",
   cancelText = "Cancelar",
   onAuthorized,
+  onCancel,
 }) {
   const router = useRouter();
   const tTour = useTranslations("walletTour");
@@ -224,7 +225,7 @@ export default function WalletGuard({
               variant="bordered"
               type="button"
               className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onPress={() => router.back()}
+              onPress={() => (onCancel ? onCancel() : router.back())}
             >
               {cancelText}
             </Button>
