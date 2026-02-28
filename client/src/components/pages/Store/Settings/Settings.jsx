@@ -21,6 +21,7 @@ import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
 import { PrinterSettingsCard } from "./PrinterSettings/PrinterSettingsCard";
+import { SeedCard } from "./Seed/SeedCard";
 import { TemplateList } from "./TicketTemplate/TemplateList";
 import { TicketTemplatesModal } from "./TicketTemplate/TicketTemplatesModal";
 import { TutorialsCard } from "./Tutorials/TutorialsCard";
@@ -315,6 +316,10 @@ export function Settings() {
               </div>
             </CardBody>
           </Card>
+        </div>
+
+        <div className="flex flex-col lg:w-[47%] h-full">
+          <SeedCard />
         </div>
 
         <div className="flex flex-col lg:w-[47%] h-full">

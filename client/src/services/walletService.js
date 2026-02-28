@@ -61,6 +61,5 @@ export async function getOutgoingTransactions() {
 
 export async function getSeed() {
   const response = await httpClient("/wallet/seed");
-  if (!response || response.status !== 200) return null;
-  return await response.text();
+  return await parseJsonResponse(response, null);
 }
