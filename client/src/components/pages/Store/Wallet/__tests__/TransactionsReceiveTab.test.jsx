@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import * as walletService from "@/services/walletService";
 import { I18nProvider } from "@i18n/I18nProvider";
-import * as cashierService from "@modules/cashier/cashierService";
 
 import { TransactionsReceiveTab } from "../TransactionsReceiveTab";
 
@@ -56,7 +56,7 @@ beforeEach(() => {
   };
 
   jest.clearAllMocks();
-  jest.spyOn(cashierService, "createInvoice").mockResolvedValue({
+  jest.spyOn(walletService, "createInvoice").mockResolvedValue({
     serialized: "lnbc1000n1...",
     paymentHash: "mock-payment-hash",
   });
@@ -127,7 +127,7 @@ describe("TransactionsReceiveTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.createInvoice).toHaveBeenCalledWith(1000, "");
+        expect(walletService.createInvoice).toHaveBeenCalledWith(1000, "");
       });
     });
 
@@ -187,7 +187,7 @@ describe("TransactionsReceiveTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.createInvoice).toHaveBeenCalledWith(5000, "Test payment");
+        expect(walletService.createInvoice).toHaveBeenCalledWith(5000, "Test payment");
       });
     });
 
@@ -240,7 +240,7 @@ describe("TransactionsReceiveTab Component", () => {
 
     it("handles API error gracefully", async () => {
       const setError = jest.fn();
-      jest.spyOn(cashierService, "createInvoice").mockRejectedValue(new Error("API Error"));
+      jest.spyOn(walletService, "createInvoice").mockRejectedValue(new Error("API Error"));
 
       renderReceiveTab({ setError });
 
@@ -298,7 +298,7 @@ describe("TransactionsReceiveTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(cashierService.createInvoice).toHaveBeenCalledWith(1000, "");
+        expect(walletService.createInvoice).toHaveBeenCalledWith(1000, "");
       });
     });
 
