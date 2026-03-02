@@ -12,7 +12,7 @@ jest.mock("@/services/bitcoinPriceService", () => jest.fn().mockImplementation((
 })),
 );
 
-jest.mock("@/modules/cashier/cashierService", () => ({
+jest.mock("@/services/walletService", () => ({
   createInvoice: (...args) => mockCreateInvoice(...args),
 }));
 

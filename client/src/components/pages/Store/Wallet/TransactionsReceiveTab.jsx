@@ -6,7 +6,7 @@ import { addToast, Button, Input, NumberInput, Spinner } from "@heroui/react";
 import { Bitcoin, QrCode } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { createInvoice } from "@modules/cashier/cashierService";
+import { createInvoice } from "@/services/walletService";
 
 export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceActions }) {
   const t = useTranslations("wallet");

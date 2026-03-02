@@ -15,7 +15,7 @@ import {
 import { CheckCircle, Copy, Send, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { payInvoiceFromService } from "@modules/cashier/cashierService";
+import { payInvoiceFromService } from "@/services/walletService";
 
 import { copyToClipboard, formatSats } from "./utils/formatters";
 
