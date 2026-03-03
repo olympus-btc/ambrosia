@@ -1,96 +1,11 @@
 import { apiClient } from "../../services/apiClient";
 import { getPaymentByTicketId } from "../orders/ordersService";
 
-export const loginWallet = async (password) => {
-  return await apiClient("/wallet/auth", {
-    method: "POST",
-    body: {
-      password: password,
-    },
-  });
-};
-
-function formatDateOnly(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function formatTimeOnly(date = new Date()) {
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mm = String(date.getMinutes()).padStart(2, "0");
-  const ss = String(date.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
-}
-
-export async function getTurnOpen() {
-  const res = await apiClient("/shifts/open", { silentAuth: true }).catch(() => "");
-  if (!res || (typeof res === "string" && res.trim() === "")) return null;
-  return res?.id || null;
-}
-
-export async function openTurn(userId) {
-  if (!userId) {
-    return false;
-  }
-  const payload = {
-    user_id: userId,
-    shift_date: formatDateOnly(new Date()),
-    start_time: formatTimeOnly(new Date()),
-    notes: "",
-  };
-  const response = await apiClient("/shifts", {
-    method: "POST",
-    body: payload,
-  });
-  return response?.id || null;
-}
-
-export async function closeTurn(openTurnId) {
-  if (!openTurnId) throw new Error("Turn not found");
-  return await apiClient(`/shifts/${openTurnId}/close`, { method: "POST" });
-}
-
 export async function getReport(startDate, endDate) {
   return await apiClient(
     `/get-report?startDate=${startDate}&endDate=${endDate}`,
   );
 }
-
-export async function getInfo() {
-  return await apiClient("/wallet/getinfo");
-}
-
-export async function createInvoice(invoiceAmount, invoiceDesc) {
-  return await apiClient("/wallet/createinvoice", {
-    method: "POST",
-    body: {
-      description: invoiceDesc,
-      amountSat: parseInt(invoiceAmount),
-    },
-  });
-}
-
-export async function payInvoiceFromService(invoice) {
-  return await apiClient("/wallet/payinvoice", {
-    method: "POST",
-    body: { invoice: invoice.trim() },
-  });
-}
-
-export async function getIncomingTransactions() {
-  const transactions = await apiClient("/wallet/payments/incoming");
-  return transactions ? transactions : [];
-}
-export async function getOutgoingTransactions() {
-  const transactions = await apiClient("/wallet/payments/outgoing");
-  return transactions ? transactions : [];
-}
-
-export const logoutWallet = async () => {
-  return await apiClient("/wallet/logout", { method: "POST" });
-};
 
 export async function generateReportFromData(
   startDate,
@@ -118,9 +33,6 @@ export async function generateReportFromData(
     const paymentMethodName = paymentMethods.find(
       (method) => method.id === payment.method_id,
     ).name;
-    console.log(paymentMethodName);
-
-    console.log(payment);
 
     const ticketInfo = {
       amount: ticket.total_amount,

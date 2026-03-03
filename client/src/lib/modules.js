@@ -39,18 +39,6 @@ export const modules = {
     name: "Wallet",
     routes: [
       {
-        path: "/open-turn",
-        component: "OpenTurn",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/close-turn",
-        component: "CloseTurn",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
         path: "/reports",
         component: "Reports",
         requiresAuth: true,
@@ -65,18 +53,6 @@ export const modules = {
     ],
     services: () => import("../modules/cashier/cashierService"),
     navItems: [
-      {
-        path: "/open-turn",
-        label: "Abrir Turno",
-        icon: "play-circle",
-        showInNavbar: false,
-      },
-      {
-        path: "/close-turn",
-        label: "Cerrar Turno",
-        icon: "pause-circle",
-        showInNavbar: false,
-      },
       {
         path: "/reports",
         label: "Reportes",

@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 import { apiClient } from "../../services/apiClient";
 
->>>>>>> e240c60 (Solve shift bug in userId)
 export async function getAllOrders() {
   const response = await apiClient("/orders");
   return response ? response : [];

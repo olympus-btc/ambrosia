@@ -42,7 +42,6 @@ export default function PinLoginNew() {
   const router = useRouter();
   const { login, isAuth, isLoading: isAuthLoading } = useAuth();
   const { config } = useConfigurations();
-  const router = useRouter();
 
   useEffect(() => {
     if (!isAuthLoading && isAuth) {
@@ -116,7 +115,7 @@ export default function PinLoginNew() {
       setPin("");
       setSelectedUser("");
       router.push("/");
-    } catch (error) {
+    } catch {
       setError(t("errorMessages.incorrectPin"));
       setPin("");
     } finally {
