@@ -13,6 +13,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
+import pos.ambrosia.models.CloseShiftRequest
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.authorizePermission
@@ -108,7 +109,8 @@ fun Route.shifts(shiftService: ShiftService) {
         return@post
       }
 
-      val closed = shiftService.closeShift(id)
+      val request = try { call.receive<CloseShiftRequest>() } catch (_: Exception) { CloseShiftRequest() }
+      val closed = shiftService.closeShift(id, request.final_amount)
       if (!closed) {
         call.respond(HttpStatusCode.NotFound, "Shift not found or already closed")
         return@post
