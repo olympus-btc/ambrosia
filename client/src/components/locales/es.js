@@ -39,6 +39,7 @@ const componentsEs = {
     openShiftButton: "Abrir Turno",
     invalidAmount: "Debes ingresar una cantidad válida para abrir el turno",
     cancel: "Cancelar",
+    openShiftError: "Error al abrir el turno",
   },
 };
 

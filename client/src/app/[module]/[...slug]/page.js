@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import DynamicModuleRenderer from "@/components/DynamicModuleRenderer";
-import RequireOpenTurn from "@/components/guards/RequireOpenTurn";
+import RequireOpenTurn from "@/components/turn/RequireOpenTurn";
 import { findRouteConfig, matchesBusiness } from "@/lib/modules";
 
 export const dynamic = "force-dynamic";

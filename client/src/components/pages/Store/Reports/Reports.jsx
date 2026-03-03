@@ -1,25 +1,32 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { TrendingUp, DollarSign, Receipt, PieChart, Lock, AlertCircle, Calendar } from "lucide-react";
+
 import { Card, CardBody, CardHeader, addToast } from "@heroui/react";
+import { TrendingUp, DollarSign, Receipt, PieChart, Lock, AlertCircle, Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useCurrency } from "@/components/hooks/useCurrency";
+import { useTurn } from "@/hooks/turn/useTurn";
+
 import { StoreLayout } from "../StoreLayout";
-import { ReportsHeader } from "./components/ReportsHeader";
+
+import { CloseTurnModal } from "./components/CloseTurnModal";
 import { DateRangeCard } from "./components/DateRangeCard";
-import { SummaryStat } from "./components/SummaryStat";
 import { DayReport } from "./components/DayReport";
 import { ReportSkeleton } from "./components/ReportSkeleton";
-import { CloseTurnModal } from "./components/CloseTurnModal";
-import { useCurrency } from "@/components/hooks/useCurrency";
+import { SummaryStat } from "./components/SummaryStat";
 import { useReports } from "./hooks/useReports";
-import { useTurn } from "@/modules/cashier/useTurn";
 
-const todayISO = () => new Date().toISOString().split("T")[0];
+const toLocalISO = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const todayISO = () => toLocalISO(new Date());
 
 export default function Reports() {
-  const router = useRouter();
   const [startDate, setStartDate] = useState(todayISO());
   const [endDate, setEndDate] = useState(todayISO());
   const [reportData, setReportData] = useState(null);
@@ -27,7 +34,7 @@ export default function Reports() {
   const [error, setError] = useState("");
   const [showCloseTurnModal, setShowCloseTurnModal] = useState(false);
   const { formatAmount, loading: currencyLoading } = useCurrency();
-  const { loading: reportsLoading, error: reportsError, loadData, generateReportFromData } = useReports();
+  const { loading: reportsLoading, error: reportsError, generateReportFromData } = useReports();
   const displayError = error || reportsError;
   const { closeShift } = useTurn();
   const [closingTurn, setClosingTurn] = useState(false);
@@ -99,11 +106,6 @@ export default function Reports() {
     }
   }, [endDate, generateReportFromData, showError, startDate, t, validateRange]);
 
-  const fetchData = useCallback(async () => {
-    setError("");
-    await loadData();
-  }, [loadData]);
-
   useEffect(() => {
     if (!reportsLoading) {
       generateReport();
@@ -115,13 +117,12 @@ export default function Reports() {
     const start = new Date();
     start.setDate(start.getDate() - days);
 
-    setStartDate(start.toISOString().split("T")[0]);
-    setEndDate(end.toISOString().split("T")[0]);
+    setStartDate(toLocalISO(start));
+    setEndDate(toLocalISO(end));
   };
 
   const totalTickets = useMemo(
-    () =>
-      reportData?.reports?.reduce((total, day) => total + day.tickets.length, 0) || 0,
+    () => reportData?.reports?.reduce((total, day) => total + day.tickets.length, 0) || 0,
     [reportData],
   );
 

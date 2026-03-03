@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button, NumberInput } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { useTurn } from "../../modules/cashier/useTurn";
+import { useTurn } from "@/hooks/turn/useTurn";
 
 export default function OpenTurnForm({ onOpened }) {
   const [initialAmount, setInitialAmount] = useState(1);
@@ -36,8 +36,8 @@ export default function OpenTurnForm({ onOpened }) {
       const id = await openShift();
       updateTurn(id);
       onOpened?.(id);
-    } catch (err) {
-      setError(err.message || "Error al abrir el turno");
+    } catch {
+      setError(t("openShiftError"));
     } finally {
       setIsLoading(false);
     }

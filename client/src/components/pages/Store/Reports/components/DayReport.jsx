@@ -1,8 +1,9 @@
 "use client";
 import { Card, CardBody, CardHeader, Divider } from "@heroui/react";
 import { Calendar, Receipt, Users } from "lucide-react";
-import { PaymentBadge } from "./PaymentBadge";
 import { useTranslations } from "next-intl";
+
+import { PaymentBadge } from "./PaymentBadge";
 
 export function DayReport({ report, formatCurrency }) {
   const t = useTranslations("reports");
@@ -42,19 +43,19 @@ export function DayReport({ report, formatCurrency }) {
                     <CardBody className="p-3">
                       <div className="flex justify-between items-center">
                         <div>
-                        <p className="font-bold text-deep">
-                          {formatCurrency(ticket.amount)}
-                        </p>
-                        <div className="flex items-center space-x-1 text-sm text-forest">
-                          <Users className="w-3 h-3" />
-                          <span>
-                            {t("breakdown.by")} {ticket.userName}
-                          </span>
+                          <p className="font-bold text-deep">
+                            {formatCurrency(ticket.amount)}
+                          </p>
+                          <div className="flex items-center space-x-1 text-sm text-forest">
+                            <Users className="w-3 h-3" />
+                            <span>
+                              {t("breakdown.by")} {ticket.userName}
+                            </span>
+                          </div>
                         </div>
+                        <PaymentBadge method={ticket.paymentMethod} />
                       </div>
-                      <PaymentBadge method={ticket.paymentMethod} />
-                    </div>
-                  </CardBody>
+                    </CardBody>
                   </Card>
                 ))}
               </div>

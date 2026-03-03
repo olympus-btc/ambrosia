@@ -3,8 +3,9 @@
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { useTurn } from "../../modules/cashier/useTurn";
-import OpenTurnForm from "../cashier/OpenTurnForm";
+import { useTurn } from "@/hooks/turn/useTurn";
+
+import OpenTurnForm from "../turn/OpenTurnForm";
 
 export default function RequireOpenTurn({ children }) {
   const { openTurn, loading } = useTurn();

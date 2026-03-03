@@ -39,6 +39,7 @@ const componentsEn = {
     openShiftButton: "Open Shift",
     invalidAmount: "Please enter a valid amount to open the shift",
     cancel: "Cancel",
+    openShiftError: "Error opening the shift",
   },
 };
 
