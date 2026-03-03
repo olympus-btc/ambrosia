@@ -5,10 +5,10 @@ export async function getTurnOpen() {
   if (response.status === 204) return null;
   if (!response.ok) throw new Error(`Failed to get open shift: ${response.status}`);
   const shift = await parseJsonResponse(response, null);
-  return shift?.id ?? null;
+  return shift ?? null;
 }
 
-export async function openTurn(userId) {
+export async function openTurn(userId, initialAmount = 0) {
   const now = new Date();
   const shiftDate = now.toISOString().split("T")[0];
   const startTime = now.toTimeString().split(" ")[0];
@@ -23,14 +23,18 @@ export async function openTurn(userId) {
       shift_date: shiftDate,
       start_time: startTime,
       notes: "",
+      initial_amount: initialAmount,
     }),
   });
   return await parseJsonResponse(response, null);
 }
 
-export async function closeTurn(openTurnId) {
+export async function closeTurn(openTurnId, finalAmount = null) {
+  const body = finalAmount !== null ? JSON.stringify({ final_amount: finalAmount }) : "{}";
   const response = await httpClient(`/shifts/${openTurnId}/close`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
   });
   if (!response.ok) throw new Error(`Close failed: ${response.status}`);
   return await parseJsonResponse(response, null);

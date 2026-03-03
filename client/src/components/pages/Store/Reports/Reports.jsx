@@ -7,11 +7,12 @@ import { TrendingUp, DollarSign, Receipt, PieChart, Lock, AlertCircle, Calendar 
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { CloseTurnModal } from "@/components/turn/CloseTurnModal";
+import { useShiftTickets } from "@/hooks/turn/useShiftTickets";
 import { useTurn } from "@/hooks/turn/useTurn";
 
 import { StoreLayout } from "../StoreLayout";
 
-import { CloseTurnModal } from "./components/CloseTurnModal";
 import { DateRangeCard } from "./components/DateRangeCard";
 import { DayReport } from "./components/DayReport";
 import { ReportSkeleton } from "./components/ReportSkeleton";
@@ -36,7 +37,8 @@ export default function Reports() {
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const { loading: reportsLoading, error: reportsError, generateReportFromData } = useReports();
   const displayError = error || reportsError;
-  const { closeShift } = useTurn();
+  const { closeShift, openShiftData } = useTurn();
+  const { totalBalance: shiftBalance } = useShiftTickets(openShiftData);
   const [closingTurn, setClosingTurn] = useState(false);
   const t = useTranslations("reports");
 
@@ -241,7 +243,7 @@ export default function Reports() {
                   <div className="flex items-center gap-2 text-green-800">
                     <DollarSign className="w-4 h-4" />
                     <span className="text-sm font-semibold">
-                      {t("close.balanceLabel")} {reportData ? formatCurrency(reportData.totalBalance) : "--"}
+                      {t("close.balanceLabel")} {formatCurrency(shiftBalance)}
                     </span>
                   </div>
                 </CardBody>
@@ -260,10 +262,10 @@ export default function Reports() {
         <CloseTurnModal
           isOpen={showCloseTurnModal}
           onClose={() => setShowCloseTurnModal(false)}
-          onConfirm={async () => {
+          onConfirm={async (finalAmount) => {
             setClosingTurn(true);
             try {
-              const closed = await closeShift();
+              const closed = await closeShift(finalAmount);
               if (!closed) {
                 showError(t("statuses.closeError"));
                 return;
@@ -282,7 +284,7 @@ export default function Reports() {
               setClosingTurn(false);
             }
           }}
-          reportData={reportData}
+          shiftData={openShiftData}
           formatCurrency={formatCurrency}
           confirmLoading={closingTurn}
         />

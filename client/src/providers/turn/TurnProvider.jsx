@@ -8,6 +8,7 @@ export const TurnContext = createContext();
 
 export function TurnProvider({ children }) {
   const [openTurnId, setOpenTurnId] = useState(null);
+  const [openShiftData, setOpenShiftData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
@@ -15,12 +16,14 @@ export function TurnProvider({ children }) {
   const loadOpenTurn = useCallback(async () => {
     try {
       setError(null);
-      const id = await getTurnOpen();
-      setOpenTurnId(id);
-      return id;
+      const shift = await getTurnOpen();
+      setOpenTurnId(shift?.id ?? null);
+      setOpenShiftData(shift);
+      return shift?.id ?? null;
     } catch (err) {
       setError(err?.message || "Error al obtener turno");
       setOpenTurnId(null);
+      setOpenShiftData(null);
       return null;
     } finally {
       setLoading(false);
@@ -40,23 +43,29 @@ export function TurnProvider({ children }) {
     return await loadOpenTurn();
   }, [loadOpenTurn]);
 
-  const openShift = useCallback(async () => {
-    const result = await openTurn(user?.id || user?.user_id);
+  const openShift = useCallback(async (initialAmount = 0) => {
+    const result = await openTurn(user?.id || user?.user_id, initialAmount);
     const id = result?.id ?? null;
     setOpenTurnId(id);
+    if (id) {
+      const shift = await getTurnOpen();
+      setOpenShiftData(shift);
+    }
     return id;
   }, [user]);
 
-  const closeShift = useCallback(async () => {
+  const closeShift = useCallback(async (finalAmount = null) => {
     if (!openTurnId) return false;
-    await closeTurn(openTurnId);
+    await closeTurn(openTurnId, finalAmount);
     setOpenTurnId(null);
+    setOpenShiftData(null);
     return true;
   }, [openTurnId]);
 
   const value = useMemo(
     () => ({
       openTurn: openTurnId,
+      openShiftData,
       loading,
       error,
       setOpenTurn: setOpenTurnId,
@@ -65,7 +74,7 @@ export function TurnProvider({ children }) {
       openShift,
       closeShift,
     }),
-    [openTurnId, loading, error, updateTurn, refreshTurn, openShift, closeShift],
+    [openTurnId, openShiftData, loading, error, updateTurn, refreshTurn, openShift, closeShift],
   );
 
   return (

@@ -33,7 +33,7 @@ export default function OpenTurnForm({ onOpened }) {
 
     setIsLoading(true);
     try {
-      const id = await openShift();
+      const id = await openShift(initialAmount);
       updateTurn(id);
       onOpened?.(id);
     } catch {
