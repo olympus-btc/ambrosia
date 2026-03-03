@@ -191,127 +191,32 @@ class ShiftService(
       return false
     }
 
-    suspend fun getShifts(): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts")
-        return shifts
+    val statement = connection.prepareStatement(UPDATE_SHIFT)
+    statement.setString(1, shift.user_id)
+    statement.setString(2, shift.shift_date)
+    statement.setString(3, shift.start_time)
+    statement.setString(4, shift.end_time)
+    statement.setString(5, shift.notes)
+    statement.setString(6, shift.id)
+
+    val rowsUpdated = statement.executeUpdate()
+    if (rowsUpdated > 0) {
+      logger.info("Shift updated successfully: ${shift.id}")
+    } else {
+      logger.error("Failed to update shift: ${shift.id}")
     }
+    return rowsUpdated > 0
+  }
 
-    suspend fun getShiftById(id: String): Shift? {
-        val statement = connection.prepareStatement(GET_SHIFT_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Shift(
-                id = resultSet.getString("id"),
-                user_id = resultSet.getString("user_id"),
-                shift_date = resultSet.getString("shift_date"),
-                start_time = resultSet.getString("start_time"),
-                end_time = resultSet.getString("end_time"),
-                notes = resultSet.getString("notes"),
-            )
-        } else {
-            logger.warn("Shift not found with ID: $id")
-            null
-        }
-    }
+  suspend fun deleteShift(id: String): Boolean {
+    val statement = connection.prepareStatement(DELETE_SHIFT)
+    statement.setString(1, id)
+    val rowsDeleted = statement.executeUpdate()
 
-    suspend fun getShiftsByUser(userId: String): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS_BY_USER)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts for user: $userId")
-        return shifts
-    }
-
-    suspend fun getShiftsByDate(date: String): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS_BY_DATE)
-        statement.setString(1, date)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts for date: $date")
-        return shifts
-    }
-
-    suspend fun updateShift(shift: Shift): Boolean {
-        if (shift.id == null) {
-            logger.error("Cannot update shift: ID is null")
-            return false
-        }
-
-        // Verificar que el usuario existe
-        if (!userExists(shift.user_id)) {
-            logger.error("User does not exist: ${shift.user_id}")
-            return false
-        }
-
-        val statement = connection.prepareStatement(UPDATE_SHIFT)
-        statement.setString(1, shift.user_id)
-        statement.setString(2, shift.shift_date)
-        statement.setString(3, shift.start_time)
-        statement.setString(4, shift.end_time)
-        statement.setString(5, shift.notes)
-        statement.setString(6, shift.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Shift updated successfully: ${shift.id}")
-        } else {
-            logger.error("Failed to update shift: ${shift.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteShift(id: String): Boolean {
-        val statement = connection.prepareStatement(DELETE_SHIFT)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Shift soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete shift: $id")
-        }
-        return rowsDeleted > 0
+    if (rowsDeleted > 0) {
+      logger.info("Shift soft-deleted successfully: $id")
+    } else {
+      logger.error("Failed to delete shift: $id")
     }
     return rowsDeleted > 0
   }

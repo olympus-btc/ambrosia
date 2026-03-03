@@ -61,7 +61,6 @@ fun Route.shifts(shiftService: ShiftService) {
             call.respond(HttpStatusCode.OK, shift)
         }
     }
-  }
   authorizePermission("shifts_create") {
     post("") {
       val open = shiftService.getOpenShift(null)
