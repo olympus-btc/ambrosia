@@ -30,7 +30,7 @@ fun Route.products(service: ProductService) {
         get("") {
             val items = service.getProducts()
             if (items.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No products found")
+                call.respond(HttpStatusCode.OK, "No products found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, items)
@@ -105,7 +105,7 @@ fun Route.products(service: ProductService) {
                     )
             service.deleteProduct(id)
             call.respond(
-                HttpStatusCode.NoContent,
+                HttpStatusCode.OK,
                 mapOf("id" to id, "message" to "Product deleted successfully"),
             )
         }

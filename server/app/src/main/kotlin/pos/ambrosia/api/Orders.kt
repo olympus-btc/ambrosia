@@ -34,7 +34,7 @@ fun Route.orders(orderService: OrderService) {
         get("") {
             val orders = orderService.getOrders()
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found")
+                call.respond(HttpStatusCode.OK, "No orders found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
@@ -43,7 +43,7 @@ fun Route.orders(orderService: OrderService) {
         get("/with-payments") {
             val orders = orderService.getOrdersWithPayments()
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found")
+                call.respond(HttpStatusCode.OK, "No orders found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
@@ -90,7 +90,7 @@ fun Route.orders(orderService: OrderService) {
 
             val dishes = orderService.getOrderDishes(orderId)
             if (dishes.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No dishes found for this order")
+                call.respond(HttpStatusCode.OK, "No dishes found for this order")
                 return@get
             }
             call.respond(HttpStatusCode.OK, dishes)
@@ -105,8 +105,12 @@ fun Route.orders(orderService: OrderService) {
             }
 
             val orders = orderService.getOrdersByUserId(userId)
+            if (orders == null) {
+                call.respond(HttpStatusCode.OK, "User not found")
+                return@get
+            }
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found for user")
+                call.respond(HttpStatusCode.OK, "No orders found for user")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
@@ -120,8 +124,12 @@ fun Route.orders(orderService: OrderService) {
             }
 
             val orders = orderService.getOrdersByTableId(tableId)
+            if (orders == null) {
+                call.respond(HttpStatusCode.OK, "Table not found")
+                return@get
+            }
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found for table")
+                call.respond(HttpStatusCode.OK, "No orders found for table")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
@@ -135,8 +143,12 @@ fun Route.orders(orderService: OrderService) {
             }
 
             val orders = orderService.getOrdersByStatus(status)
+            if (orders == null) {
+                call.respond(HttpStatusCode.OK, "Invalid order status")
+                return@get
+            }
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found with status: $status")
+                call.respond(HttpStatusCode.OK, "No orders found with status: $status")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
@@ -152,7 +164,7 @@ fun Route.orders(orderService: OrderService) {
 
             val orders = orderService.getOrdersByDateRange(startDate, endDate)
             if (orders.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No orders found in date range")
+                call.respond(HttpStatusCode.OK, "No orders found in date range")
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)

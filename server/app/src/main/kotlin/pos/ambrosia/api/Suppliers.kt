@@ -29,7 +29,7 @@ fun Route.suppliers(supplierService: SupplierService) {
         get("") {
             val suppliers = supplierService.getSuppliers()
             if (suppliers.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No suppliers found")
+                call.respond(HttpStatusCode.OK, "No suppliers found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, suppliers)

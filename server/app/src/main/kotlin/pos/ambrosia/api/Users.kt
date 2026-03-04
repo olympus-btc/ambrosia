@@ -40,7 +40,7 @@ fun Route.users(
     get("") {
         val users = userService.getUsers()
         if (users.isEmpty()) {
-            call.respond(HttpStatusCode.NoContent, "No users found")
+            call.respond(HttpStatusCode.OK, "No users found")
             return@get
         }
         call.respond(HttpStatusCode.OK, users)
@@ -85,7 +85,7 @@ fun Route.users(
                 return@get
             }
 
-            val perms = permissionsService.getByRole(userInfo.roleId)
+            val perms = permissionsService.getByRole(userInfo.roleId) ?: emptyList()
             if (perms.isEmpty()) {
                 logger.info("The user doesn't have a permissions")
                 call.respond(HttpStatusCode.Forbidden)
@@ -167,7 +167,7 @@ fun Route.users(
             }
 
             call.respond(
-                HttpStatusCode.NoContent,
+                HttpStatusCode.OK,
                 mapOf("id" to id, "message" to "User deleted successfully"),
             )
         }

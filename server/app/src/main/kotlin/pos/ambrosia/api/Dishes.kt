@@ -29,7 +29,7 @@ fun Route.dishes(dishService: DishService) {
         get("") {
             val dishes = dishService.getDishes()
             if (dishes.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No dishes found")
+                call.respond(HttpStatusCode.OK, "No dishes found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, dishes)
@@ -90,7 +90,7 @@ fun Route.dishes(dishService: DishService) {
 
             dishService.deleteDish(id)
             call.respond(
-                HttpStatusCode.NoContent,
+                HttpStatusCode.OK,
                 mapOf("id" to id, "message" to "Dish deleted successfully"),
             )
         }

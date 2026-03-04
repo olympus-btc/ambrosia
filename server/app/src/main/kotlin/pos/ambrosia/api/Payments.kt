@@ -34,7 +34,7 @@ fun Route.payments(
         get("") {
             val payments = paymentService.getPayments()
             if (payments.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No payments found")
+                call.respond(HttpStatusCode.OK, "No payments found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, payments)
@@ -57,7 +57,7 @@ fun Route.payments(
         get("/methods") {
             val paymentMethods = paymentService.getPaymentMethods()
             if (paymentMethods.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No payment methods found")
+                call.respond(HttpStatusCode.OK, "No payment methods found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, paymentMethods)
@@ -80,7 +80,7 @@ fun Route.payments(
         get("/currencies") {
             val currencies = paymentService.getCurrencies()
             if (currencies.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No currencies found")
+                call.respond(HttpStatusCode.OK, "No currencies found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, currencies)
@@ -108,8 +108,12 @@ fun Route.payments(
             }
 
             val payments = ticketPaymentService.getTicketPaymentsByTicket(ticketId)
+            if (payments == null) {
+                call.respond(HttpStatusCode.OK, "Ticket not found")
+                return@get
+            }
             if (payments.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No payments found for this ticket")
+                call.respond(HttpStatusCode.OK, "No payments found for this ticket")
                 return@get
             }
             call.respond(HttpStatusCode.OK, payments)
@@ -123,8 +127,12 @@ fun Route.payments(
             }
 
             val tickets = ticketPaymentService.getTicketPaymentsByPayment(paymentId)
+            if (tickets == null) {
+                call.respond(HttpStatusCode.OK, "Payment not found")
+                return@get
+            }
             if (tickets.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No tickets found for this payment")
+                call.respond(HttpStatusCode.OK, "No tickets found for this payment")
                 return@get
             }
             call.respond(HttpStatusCode.OK, tickets)

@@ -29,7 +29,7 @@ fun Route.tables(tableService: TableService) {
         get("") {
             val tables = tableService.getTables()
             if (tables.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No tables found")
+                call.respond(HttpStatusCode.OK, "No tables found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, tables)
@@ -42,8 +42,12 @@ fun Route.tables(tableService: TableService) {
             }
 
             val tables = tableService.getTablesBySpace(spaceId = id)
+            if (tables == null) {
+                call.respond(HttpStatusCode.OK, "Space not found")
+                return@get
+            }
             if (tables.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No tables found for space ID: $id")
+                call.respond(HttpStatusCode.OK, "No tables found for space ID: $id")
                 return@get
             }
             call.respond(HttpStatusCode.OK, tables)
