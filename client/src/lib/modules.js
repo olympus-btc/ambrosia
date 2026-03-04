@@ -113,13 +113,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
-        permissions: [
-          "users_read",
-          "roles_read",
-          "roles_create",
-          "roles_update",
-          "permissions_read",
-        ],
+        permissions: ["users_read"],
         default: false,
       },
       {

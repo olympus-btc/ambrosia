@@ -2,14 +2,17 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
+import { usePermission } from "@/hooks/usePermission";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useRoles() {
   const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const canRead = usePermission({ allOf: ["roles_read"] });
+  const [loading, setLoading] = useState(canRead);
   const [error, setError] = useState(null);
 
   const fetchRoles = useCallback(async () => {
+    if (!canRead) return;
     setLoading(true);
     setError(null);
 
@@ -22,7 +25,7 @@ export function useRoles() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canRead]);
 
   const updateRole = useCallback(async (roleId, role) => {
     try {

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
 import { useRoles } from "@/components/pages/Store/hooks/useRoles";
+import { RequirePermission } from "@/hooks/usePermission";
 import { buildPermissionSet } from "@/lib/modules";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
@@ -120,14 +121,17 @@ export function Roles() {
             {t("roles.header.subtitle")}
           </p>
         </div>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={() => setShowModal(true)}
-          isDisabled={loadingPerms}
-        >
-          {t("roles.actions.new")}
-        </Button>
+        <RequirePermission allOf={["roles_create"]}>
+          <Button
+            color="primary"
+            className="bg-green-800"
+            startContent={<ShieldPlus className="w-5 h-5" />}
+            onPress={() => setShowModal(true)}
+            isDisabled={loadingPerms}
+          >
+            {t("roles.actions.new")}
+          </Button>
+        </RequirePermission>
       </header>
 
       <div className="grid gap-4">
@@ -171,14 +175,16 @@ export function Roles() {
                           {t("roles.labels.standardChip")}
                         </Chip>
                       )}
-                      <Button
-                        variant="light"
-                        size="sm"
-                        startContent={<Pencil className="w-4 h-4" />}
-                        onPress={() => openEditModal(role)}
-                      >
-                        {t("roles.actions.edit")}
-                      </Button>
+                      <RequirePermission allOf={["roles_update"]}>
+                        <Button
+                          variant="light"
+                          size="sm"
+                          startContent={<Pencil className="w-4 h-4" />}
+                          onPress={() => openEditModal(role)}
+                        >
+                          {t("roles.actions.edit")}
+                        </Button>
+                      </RequirePermission>
                     </div>
                   </div>
                 ))}
