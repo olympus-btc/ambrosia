@@ -1,16 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { Button, Card, CardBody, CardHeader, Chip, Divider } from "@heroui/react";
 import { Pencil, ShieldPlus } from "lucide-react";
-import { StoreLayout } from "../StoreLayout";
-import { useRoles } from "../hooks/useRoles";
-import { usePermissions } from "../hooks/usePermissions";
+import { useTranslations } from "next-intl";
+
+import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
+import { useRoles } from "@/components/pages/Store/hooks/useRoles";
+import { buildPermissionSet } from "@/lib/modules";
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
+
 import { CreateRoleModal } from "./CreateRoleModal";
 import { EditRoleModal } from "./EditRoleModal";
-import { permissionCatalog } from "./permissionCatalog";
-import { useTranslations } from "next-intl";
-import { useConfigurations } from "../../../../providers/configurations/configurationsProvider";
+import { permissionCatalog } from "./utils/permissionCatalog";
 
 export function Roles() {
   const {
@@ -35,14 +38,12 @@ export function Roles() {
     permissions: [],
   });
 
-  const permSet = useMemo(() => new Set((permissions || []).map((p) => p.name)), [permissions]);
-  const filteredCatalog = useMemo(() => {
-    return permissionCatalog.filter((perm) => {
-      if (!permSet.has(perm.key)) return false;
-      if (!businessType) return true;
-      return perm.business === "both" || perm.business === businessType;
-    });
-  }, [permSet, businessType]);
+  const permSet = useMemo(() => buildPermissionSet(permissions), [permissions]);
+  const filteredCatalog = useMemo(() => permissionCatalog.filter((perm) => {
+    if (!permSet.has(perm.key)) return false;
+    if (!businessType) return true;
+    return perm.business === "both" || perm.business === businessType;
+  }), [permSet, businessType]);
 
   const togglePermission = (name) => {
     setForm((prev) => {
@@ -109,12 +110,12 @@ export function Roles() {
   };
 
   return (
-    <StoreLayout>
+    <div>
       <header className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-semibold text-green-900">
+          <h2 className="text-4xl font-semibold text-green-900">
             {t("roles.header.title")}
-          </h1>
+          </h2>
           <p className="text-gray-800 mt-2">
             {t("roles.header.subtitle")}
           </p>
@@ -122,7 +123,6 @@ export function Roles() {
         <Button
           color="primary"
           className="bg-green-800"
-          startContent={<ShieldPlus className="w-5 h-5" />}
           onPress={() => setShowModal(true)}
           isDisabled={loadingPerms}
         >
@@ -130,8 +130,8 @@ export function Roles() {
         </Button>
       </header>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="md:col-span-2">
+      <div className="grid gap-4">
+        <Card>
           <CardHeader className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold text-foreground">
@@ -143,7 +143,7 @@ export function Roles() {
             </div>
           </CardHeader>
           <Divider />
-          <CardBody>
+          <CardBody className="p-4 lg:p-6">
             {loadingRoles ? (
               <p className="text-default-500">{t("roles.state.loading")}</p>
             ) : roles.length === 0 ? (
@@ -153,21 +153,21 @@ export function Roles() {
                 {roles.map((role) => (
                   <div
                     key={role.id}
-                    className="flex items-center justify-between rounded-lg border border-default-200 px-4 py-3 bg-white"
+                    className="flex items-center justify-between rounded-xl border border-default-200 px-5 py-4 bg-default-50 hover:bg-default-100 transition-colors"
                   >
-                    <div>
+                    <div className="flex flex-col gap-0.5">
                       <p className="font-semibold text-foreground">{role.role}</p>
                       <p className="text-sm text-default-500">
                         {role.isAdmin ? t("roles.labels.admin") : t("roles.labels.standard")}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {role.isAdmin ? (
-                        <Chip color="success" variant="flat">
+                        <Chip color="success" variant="flat" size="sm">
                           {t("roles.labels.adminChip")}
                         </Chip>
                       ) : (
-                        <Chip color="default" variant="flat">
+                        <Chip color="default" variant="flat" size="sm">
                           {t("roles.labels.standardChip")}
                         </Chip>
                       )}
@@ -181,35 +181,6 @@ export function Roles() {
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div>
-              <h3 className="text-xl font-semibold text-foreground">
-                {t("roles.permissions.title")}
-              </h3>
-              <p className="text-sm text-default-500">
-                {t("roles.permissions.subtitle")}
-              </p>
-            </div>
-          </CardHeader>
-          <Divider />
-          <CardBody className="space-y-3">
-            {loadingPerms ? (
-              <p className="text-default-500">{t("roles.state.loadingPerms")}</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {filteredCatalog.map((perm) => (
-                  <Chip key={perm.key} variant="flat" color="primary">
-                    {t(`roles.permissions.items.${perm.key}.label`, {
-                      defaultValue: perm.key,
-                    })}
-                  </Chip>
                 ))}
               </div>
             )}
@@ -248,6 +219,6 @@ export function Roles() {
           businessType={businessType}
         />
       )}
-    </StoreLayout>
+    </div>
   );
 }

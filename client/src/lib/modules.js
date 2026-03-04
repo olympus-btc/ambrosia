@@ -1,3 +1,7 @@
+export function buildPermissionSet(permissions = []) {
+  return new Set((permissions || []).map((p) => p.name));
+}
+
 export const modules = {
   auth: {
     enabled: true,
@@ -109,7 +113,13 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
-        permissions: ["users_read"],
+        permissions: [
+          "users_read",
+          "roles_read",
+          "roles_create",
+          "roles_update",
+          "permissions_read",
+        ],
         default: false,
       },
       {
@@ -157,20 +167,6 @@ export const modules = {
         types: ["store"],
         default: false,
       },
-      {
-        path: "/store/roles",
-        component: "Roles",
-        requiresAuth: true,
-        requiresAdmin: false,
-        permissions: [
-          "roles_read",
-          "roles_create",
-          "roles_update",
-          "permissions_read",
-        ],
-        types: ["store"],
-        default: false,
-      },
     ],
     navItems: [
       {
@@ -207,12 +203,6 @@ export const modules = {
         path: "/store/settings",
         label: "settings",
         icon: "settings",
-        showInNavbar: true,
-      },
-      {
-        path: "/store/roles",
-        label: "roles",
-        icon: "user-cog",
         showInNavbar: true,
       },
     ],
@@ -296,7 +286,7 @@ export function getNavigationItems(
   businessType = null,
 ) {
   const navItems = [];
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
 
   Object.entries(modules).forEach(([moduleKey, config]) => {
     if (!config.enabled) return;
@@ -332,7 +322,7 @@ export function getAvailableModules(
   permissions = [],
   businessType = null,
 ) {
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const availableModules = {};
 
   Object.entries(modules).forEach(([moduleKey, moduleConfig]) => {
@@ -422,7 +412,7 @@ export function hasAccessToRoute(
   if (!routeConfig) return false;
   if (!matchesBusiness(routeConfig.route || {}, businessType)) return false;
 
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const route = routeConfig.route;
 
   if (!route.requiresAuth) return true;

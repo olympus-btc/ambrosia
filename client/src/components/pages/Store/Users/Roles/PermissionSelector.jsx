@@ -1,6 +1,7 @@
 "use client";
-import { Checkbox, Chip, Divider } from "@heroui/react";
 import { useMemo } from "react";
+
+import { Checkbox, Chip, Divider } from "@heroui/react";
 
 export function PermissionSelector({
   catalog = [],
@@ -11,30 +12,30 @@ export function PermissionSelector({
 }) {
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  const grouped = useMemo(() => {
-    return catalog.reduce((acc, perm) => {
-      const groupKey = perm.group || "other";
-      if (!acc[groupKey]) acc[groupKey] = [];
-      acc[groupKey].push(perm);
-      return acc;
-    }, {});
-  }, [catalog]);
+  const grouped = useMemo(() => catalog.reduce((acc, perm) => {
+    const groupKey = perm.group || "other";
+    if (!acc[groupKey]) acc[groupKey] = [];
+    acc[groupKey].push(perm);
+    return acc;
+  }, {}), [catalog]);
 
   return (
     <div className="space-y-4">
+      {businessType && (
+        <div className="flex justify-end">
+          <Chip size="sm" variant="flat">
+            {businessType === "store"
+              ? t("roles.permissions.scope.store")
+              : t("roles.permissions.scope.restaurant")}
+          </Chip>
+        </div>
+      )}
       {Object.entries(grouped).map(([groupKey, perms]) => (
         <div key={groupKey} className="border border-default-200 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-default-700">
               {t(`roles.permissions.groups.${groupKey}`, { defaultValue: groupKey })}
             </p>
-            {businessType && (
-              <Chip size="sm" variant="flat">
-                {businessType === "store"
-                  ? t("roles.permissions.scope.store")
-                  : t("roles.permissions.scope.restaurant")}
-              </Chip>
-            )}
           </div>
           <Divider className="mb-3" />
           <div className="grid md:grid-cols-2 gap-2">

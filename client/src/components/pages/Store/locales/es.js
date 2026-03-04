@@ -92,6 +92,34 @@ const storeEs = {
       password: "Contraseña para acciones críticas (opcional)",
       passwordPlaceholder: "Opcional",
       isAdmin: "Con privilegios de administrador",
+      templateLegend: "Elige una plantilla de rol para comenzar, o usa el modo avanzado para configurarlo manualmente.",
+      advanced: "Modo avanzado",
+    },
+    templates: {
+      cashier: {
+        name: "Cajero",
+        description: "Procesa ventas y cobros.",
+      },
+      seller: {
+        name: "Vendedor",
+        description: "Consulta productos y crea órdenes.",
+      },
+      manager: {
+        name: "Gerente",
+        description: "Acceso operativo completo.",
+      },
+      admin: {
+        name: "Administrador",
+        description: "Acceso total al sistema.",
+      },
+      waiter: {
+        name: "Mesero",
+        description: "Toma órdenes y gestiona mesas.",
+      },
+      supervisor: {
+        name: "Supervisor",
+        description: "Supervisa operaciones y personal.",
+      },
     },
     edit: {
       title: "Editar rol",

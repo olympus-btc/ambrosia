@@ -12,6 +12,7 @@ import { useUsers } from "./../hooks/useUsers";
 import { AddUsersModal } from "./AddUsersModal";
 import { DeleteUsersModal } from "./DeleteUsersModal";
 import { EditUsersModal } from "./EditUsersModal";
+import { Roles } from "./Roles";
 import { UsersTable } from "./UsersTable";
 
 export function Users() {
@@ -91,6 +92,9 @@ export function Users() {
           onEditUser={handleEditUser}
           onDeleteUser={handleDeleteUser}
         />
+      </div>
+      <div className="mt-8">
+        <Roles />
       </div>
 
       <AddUsersModal

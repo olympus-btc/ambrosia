@@ -10,9 +10,10 @@ import {
   Checkbox,
   Spinner,
 } from "@heroui/react";
+
 import { PermissionSelector } from "./PermissionSelector";
 
-export function CreateRoleModal({
+export function EditRoleModal({
   isOpen,
   onClose,
   onSubmit,
@@ -20,7 +21,8 @@ export function CreateRoleModal({
   setForm,
   permissionOptions = [],
   togglePermission,
-  creating = false,
+  updating = false,
+  roleName = "",
   t,
   businessType = null,
 }) {
@@ -35,30 +37,30 @@ export function CreateRoleModal({
       scrollBehavior="inside"
     >
       <ModalContent className="max-h-[85vh]">
-        <ModalHeader>{t("roles.create.title")}</ModalHeader>
+        <ModalHeader>
+          {t("roles.edit.title")} {roleName ? `(${roleName})` : ""}
+        </ModalHeader>
         <ModalBody className="max-h-[70vh] overflow-y-auto space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <Input
-              label={t("roles.create.roleName")}
+              label={t("roles.edit.roleName")}
               placeholder="Ej. Cajero"
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               isRequired
             />
             <Input
-              label={t("roles.create.password")}
-              placeholder={t("roles.create.passwordPlaceholder")}
+              label={t("roles.edit.password")}
+              placeholder={t("roles.edit.passwordPlaceholder")}
               type="password"
               value={form.password}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, password: e.target.value }))
-              }
+              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
             />
             <Checkbox
               isSelected={form.isAdmin}
               onValueChange={(v) => setForm((prev) => ({ ...prev, isAdmin: v }))}
             >
-              {t("roles.create.isAdmin")}
+              {t("roles.edit.isAdmin")}
             </Checkbox>
           </div>
 
@@ -85,7 +87,11 @@ export function CreateRoleModal({
             onPress={onSubmit}
             isDisabled={!form.name.trim()}
           >
-            {creating ? <Spinner color="white" size="sm" /> : t("roles.actions.create")}
+            {updating ? (
+              <Spinner color="white" size="sm" />
+            ) : (
+              t("roles.actions.save")
+            )}
           </Button>
         </ModalFooter>
       </ModalContent>

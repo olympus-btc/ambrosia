@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { apiClient } from "@/services/apiClient";
+
+import { toArray } from "@/components/utils/array";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function usePermissions() {
   const [permissions, setPermissions] = useState([]);
@@ -11,11 +13,13 @@ export function usePermissions() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/permissions");
-      setPermissions(Array.isArray(res) ? res : []);
-    } catch (err) {
-      console.error("Error fetching permissions:", err);
-      setError(err);
+      const permissionsRequest = await httpClient("/permissions");
+
+      const permissionsData = await parseJsonResponse(permissionsRequest);
+      setPermissions(toArray(permissionsData));
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }

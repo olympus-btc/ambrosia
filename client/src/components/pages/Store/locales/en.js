@@ -92,6 +92,34 @@ const storeEn = {
       password: "Password for critical actions (optional)",
       passwordPlaceholder: "Optional",
       isAdmin: "With admin privileges",
+      templateLegend: "Choose a role template to get started, or use advanced mode to configure it manually.",
+      advanced: "Advanced mode",
+    },
+    templates: {
+      cashier: {
+        name: "Cashier",
+        description: "Process sales and payments.",
+      },
+      seller: {
+        name: "Seller",
+        description: "Browse products and create orders.",
+      },
+      manager: {
+        name: "Manager",
+        description: "Full operational access.",
+      },
+      admin: {
+        name: "Administrator",
+        description: "Full system access.",
+      },
+      waiter: {
+        name: "Waiter",
+        description: "Take orders and manage tables.",
+      },
+      supervisor: {
+        name: "Supervisor",
+        description: "Oversee operations and staff.",
+      },
     },
     edit: {
       title: "Edit role",

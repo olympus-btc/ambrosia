@@ -14,14 +14,9 @@ export function useRoles() {
     setError(null);
 
     try {
-      const roles = await httpClient("/roles");
-      const rolesData = await parseJsonResponse(roles, []);
-
-      if (rolesData === null) {
-        setRoles([]);
-      } else {
-        setRoles(rolesData);
-      }
+      const rolesRequest = await httpClient("/roles");
+      const rolesData = await parseJsonResponse(rolesRequest, []);
+      setRoles(rolesData);
     } catch (error) {
       console.error("Error fetching roles:", error);
     } finally {
@@ -29,21 +24,21 @@ export function useRoles() {
     }
   }, []);
 
-  const updateRoles = useCallback(async (role) => {
+  const updateRole = useCallback(async (roleId, role) => {
     try {
-      const updateRoleResponse = await httpClient(`/roles/${user.userId}`, {
+      const updateRoleRequest = await httpClient(`/roles/${roleId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(role),
       });
-      await fetchRoles();
-      return updateRoleResponse;
+      return updateRoleRequest;
     } catch (error) {
-      console.error(error);
+      console.error("Error updating role:", error);
+      throw error;
     }
-  }, [fetchRoles]);
+  }, []);
 
   const assignPermissions = useCallback(async (roleId, permissions = []) => {
     if (!roleId) return;
@@ -66,14 +61,14 @@ export function useRoles() {
       try {
         const roleRequestBody = { role: name, isAdmin };
         if (password) roleRequestBody.password = password;
-        const createRole = await httpClient("/roles", {
+        const createRoleRequest = await httpClient("/roles", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(roleRequestBody),
         });
-        const createdRoleData = await parseJsonResponse(createRole, []);
+        const createdRoleData = await parseJsonResponse(createRoleRequest, []);
         const createdRoleId = createdRoleData?.id || createdRoleData?.roleId;
         if (permissions.length > 0) {
           await assignPermissions(createdRoleId, permissions);
@@ -91,7 +86,7 @@ export function useRoles() {
   const updateRoleWithPermissions = useCallback(
     async (roleId, { name, isAdmin = false, password, permissions = [] }) => {
       if (!roleId) return;
-      await updateRoles(roleId, {
+      await updateRole(roleId, {
         role: name,
         isAdmin,
         ...(password ? { password } : {}),
@@ -99,7 +94,7 @@ export function useRoles() {
       await assignPermissions(roleId, permissions);
       await fetchRoles();
     },
-    [assignPermissions, fetchRoles, updateRoles],
+    [assignPermissions, fetchRoles, updateRole],
   );
 
   const getRolePermissions = useCallback(async (roleId) => {
@@ -119,13 +114,13 @@ export function useRoles() {
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
   return {
     roles,
     createRole,
     assignPermissions,
     updateRoleWithPermissions,
     getRolePermissions,
-    updateRoles,
     loading,
     error,
     refetch: fetchRoles,
