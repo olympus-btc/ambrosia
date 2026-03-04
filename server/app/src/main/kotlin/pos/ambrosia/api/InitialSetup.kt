@@ -141,7 +141,6 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                 throw IllegalStateException("Failed to set base currency")
             }
 
-            connection.autoCommit = false
             connection.commit()
             call.respond(HttpStatusCode.Created, mapOf("message" to "Initial setup completed", "userId" to userId, "roleId" to roleId))
         } catch (e: Exception) {
