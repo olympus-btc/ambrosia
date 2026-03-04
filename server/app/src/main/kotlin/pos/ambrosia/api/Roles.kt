@@ -32,22 +32,22 @@ fun Route.roles(
   roleService: RolesService,
   permissionsService: PermissionsService,
 ) {
-  get("/{id}") {
-    val id = call.parameters["id"]
-    if (id == null) {
-      call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-      return@get
-    }
-
-    val role = roleService.getRoleById(id)
-    if (role == null) {
-      call.respond(HttpStatusCode.NotFound, "Role not found")
-      return@get
-    }
-
-    call.respond(HttpStatusCode.OK, role)
-  }
   authorizePermission("roles_read") {
+    get("/{id}") {
+      val id = call.parameters["id"]
+      if (id == null) {
+        call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+        return@get
+      }
+
+      val role = roleService.getRoleById(id)
+      if (role == null) {
+        call.respond(HttpStatusCode.NotFound, "Role not found")
+        return@get
+      }
+
+      call.respond(HttpStatusCode.OK, role)
+    }
     get("") {
       val roles = roleService.getRoles()
       if (roles.isEmpty()) {
