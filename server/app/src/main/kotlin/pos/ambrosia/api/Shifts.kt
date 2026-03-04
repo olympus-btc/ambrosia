@@ -110,7 +110,7 @@ fun Route.shifts(shiftService: ShiftService) {
       }
 
       val request = try { call.receive<CloseShiftRequest>() } catch (_: Exception) { CloseShiftRequest() }
-      val closed = shiftService.closeShift(id, request.final_amount)
+      val closed = shiftService.closeShift(id, request.final_amount, request.difference)
       if (!closed) {
         call.respond(HttpStatusCode.NotFound, "Shift not found or already closed")
         return@post

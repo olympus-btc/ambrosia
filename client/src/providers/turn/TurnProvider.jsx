@@ -54,9 +54,9 @@ export function TurnProvider({ children }) {
     return id;
   }, [user]);
 
-  const closeShift = useCallback(async (finalAmount = null) => {
+  const closeShift = useCallback(async (finalAmount = null, difference = null) => {
     if (!openTurnId) return false;
-    await closeTurn(openTurnId, finalAmount);
+    await closeTurn(openTurnId, finalAmount, difference);
     setOpenTurnId(null);
     setOpenShiftData(null);
     return true;

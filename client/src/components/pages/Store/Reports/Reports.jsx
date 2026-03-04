@@ -262,10 +262,10 @@ export default function Reports() {
         <CloseTurnModal
           isOpen={showCloseTurnModal}
           onClose={() => setShowCloseTurnModal(false)}
-          onConfirm={async (finalAmount) => {
+          onConfirm={async (finalAmount, difference) => {
             setClosingTurn(true);
             try {
-              const closed = await closeShift(finalAmount);
+              const closed = await closeShift(finalAmount, difference);
               if (!closed) {
                 showError(t("statuses.closeError"));
                 return;

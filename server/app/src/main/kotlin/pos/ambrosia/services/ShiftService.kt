@@ -13,23 +13,23 @@ class ShiftService(
     private const val ADD_SHIFT =
       "INSERT INTO shifts (id, user_id, shift_date, start_time, end_time, notes, initial_amount) VALUES (?, ?, ?, ?, ?, ?, ?)"
     private const val GET_SHIFTS =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE is_deleted = 0"
     private const val GET_SHIFT_BY_ID =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE id = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE id = ? AND is_deleted = 0"
     private const val UPDATE_SHIFT =
       "UPDATE shifts SET user_id = ?, shift_date = ?, start_time = ?, end_time = ?, notes = ? WHERE id = ?"
     private const val DELETE_SHIFT = "UPDATE shifts SET is_deleted = 1 WHERE id = ?"
     private const val CHECK_USER_EXISTS = "SELECT id FROM users WHERE id = ? AND is_deleted = 0"
     private const val GET_SHIFTS_BY_USER =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE user_id = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE user_id = ? AND is_deleted = 0"
     private const val GET_SHIFTS_BY_DATE =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE shift_date = ? AND is_deleted = 0"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE shift_date = ? AND is_deleted = 0"
     private const val GET_OPEN_SHIFT =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
     private const val GET_OPEN_SHIFT_BY_USER =
-      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount FROM shifts WHERE user_id = ? AND end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
+      "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE user_id = ? AND end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
     private const val CLOSE_SHIFT =
-      "UPDATE shifts SET end_time = ?, final_amount = ? WHERE id = ? AND is_deleted = 0 AND end_time IS NULL"
+      "UPDATE shifts SET end_time = ?, final_amount = ?, difference = ? WHERE id = ? AND is_deleted = 0 AND end_time IS NULL"
   }
 
   private fun userExists(userId: String): Boolean {
@@ -82,6 +82,8 @@ class ShiftService(
     while (resultSet.next()) {
       val finalAmt = resultSet.getDouble("final_amount")
       val isFinalNull = resultSet.wasNull()
+      val diffAmt = resultSet.getDouble("difference")
+      val isDiffNull = resultSet.wasNull()
       val shift =
         Shift(
           id = resultSet.getString("id"),
@@ -92,6 +94,7 @@ class ShiftService(
           notes = resultSet.getString("notes"),
           initial_amount = resultSet.getDouble("initial_amount"),
           final_amount = if (isFinalNull) null else finalAmt,
+          difference = if (isDiffNull) null else diffAmt,
         )
       shifts.add(shift)
     }
@@ -106,6 +109,8 @@ class ShiftService(
     return if (resultSet.next()) {
       val finalAmt = resultSet.getDouble("final_amount")
       val isFinalNull = resultSet.wasNull()
+      val diffAmt = resultSet.getDouble("difference")
+      val isDiffNull = resultSet.wasNull()
       Shift(
         id = resultSet.getString("id"),
         user_id = resultSet.getString("user_id"),
@@ -115,6 +120,7 @@ class ShiftService(
         notes = resultSet.getString("notes"),
         initial_amount = resultSet.getDouble("initial_amount"),
         final_amount = if (isFinalNull) null else finalAmt,
+        difference = if (isDiffNull) null else diffAmt,
       )
     } else {
       logger.warn("Shift not found with ID: $id")
@@ -130,6 +136,8 @@ class ShiftService(
     while (resultSet.next()) {
       val finalAmt = resultSet.getDouble("final_amount")
       val isFinalNull = resultSet.wasNull()
+      val diffAmt = resultSet.getDouble("difference")
+      val isDiffNull = resultSet.wasNull()
       val shift =
         Shift(
           id = resultSet.getString("id"),
@@ -140,6 +148,7 @@ class ShiftService(
           notes = resultSet.getString("notes"),
           initial_amount = resultSet.getDouble("initial_amount"),
           final_amount = if (isFinalNull) null else finalAmt,
+          difference = if (isDiffNull) null else diffAmt,
         )
       shifts.add(shift)
     }
@@ -155,6 +164,8 @@ class ShiftService(
     while (resultSet.next()) {
       val finalAmt = resultSet.getDouble("final_amount")
       val isFinalNull = resultSet.wasNull()
+      val diffAmt = resultSet.getDouble("difference")
+      val isDiffNull = resultSet.wasNull()
       val shift =
         Shift(
           id = resultSet.getString("id"),
@@ -165,6 +176,7 @@ class ShiftService(
           notes = resultSet.getString("notes"),
           initial_amount = resultSet.getDouble("initial_amount"),
           final_amount = if (isFinalNull) null else finalAmt,
+          difference = if (isDiffNull) null else diffAmt,
         )
       shifts.add(shift)
     }
@@ -186,6 +198,8 @@ class ShiftService(
     return if (resultSet.next()) {
       val finalAmt = resultSet.getDouble("final_amount")
       val isFinalNull = resultSet.wasNull()
+      val diffAmt = resultSet.getDouble("difference")
+      val isDiffNull = resultSet.wasNull()
       Shift(
         id = resultSet.getString("id"),
         user_id = resultSet.getString("user_id"),
@@ -195,6 +209,7 @@ class ShiftService(
         notes = resultSet.getString("notes"),
         initial_amount = resultSet.getDouble("initial_amount"),
         final_amount = if (isFinalNull) null else finalAmt,
+        difference = if (isDiffNull) null else diffAmt,
       )
     } else {
       null
@@ -242,7 +257,7 @@ class ShiftService(
     return rowsDeleted > 0
   }
 
-  suspend fun closeShift(id: String, finalAmount: Double? = null): Boolean {
+  suspend fun closeShift(id: String, finalAmount: Double? = null, difference: Double? = null): Boolean {
     val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
     val statement = connection.prepareStatement(CLOSE_SHIFT)
     statement.setString(1, now)
@@ -251,7 +266,12 @@ class ShiftService(
     } else {
       statement.setNull(2, java.sql.Types.REAL)
     }
-    statement.setString(3, id)
+    if (difference != null) {
+      statement.setDouble(3, difference)
+    } else {
+      statement.setNull(3, java.sql.Types.REAL)
+    }
+    statement.setString(4, id)
 
     val rows = statement.executeUpdate()
     if (rows > 0) {

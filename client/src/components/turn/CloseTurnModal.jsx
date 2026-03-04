@@ -185,7 +185,7 @@ export function CloseTurnModal({
           <Button
             variant="solid"
             color="danger"
-            onPress={() => onConfirm(finalAmount)}
+            onPress={() => onConfirm(finalAmount, difference)}
             isDisabled={confirmLoading}
             isLoading={confirmLoading}
           >

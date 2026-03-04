@@ -29,8 +29,8 @@ export async function openTurn(userId, initialAmount = 0) {
   return await parseJsonResponse(response, null);
 }
 
-export async function closeTurn(openTurnId, finalAmount = null) {
-  const body = finalAmount !== null ? JSON.stringify({ final_amount: finalAmount }) : "{}";
+export async function closeTurn(openTurnId, finalAmount = null, difference = null) {
+  const body = JSON.stringify({ final_amount: finalAmount, difference });
   const response = await httpClient(`/shifts/${openTurnId}/close`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

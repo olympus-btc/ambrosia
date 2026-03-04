@@ -243,11 +243,13 @@ data class Shift(
     val notes: String,
     val initial_amount: Double = 0.0,
     val final_amount: Double? = null,
+    val difference: Double? = null,
 )
 
 @Serializable
 data class CloseShiftRequest(
     val final_amount: Double? = null,
+    val difference: Double? = null,
 )
 
 @Serializable data class RolePassword(
