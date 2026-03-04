@@ -1,19 +1,22 @@
 "use client";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useMemo } from "react";
 
-export function usePermission(requirement) {
+import { useAuth } from "@/hooks/auth/useAuth";
+import { buildPermissionSet } from "@/lib/modules";
+
+function usePermissionNames() {
   const { permissions } = useAuth();
-  const names = new Set((permissions || []).map((p) => p.name));
-  const list = Array.isArray(requirement) ? requirement : [requirement];
-  return list.every((k) => names.has(k));
+  return useMemo(() => buildPermissionSet(permissions), [permissions]);
+}
+
+export function usePermission({ allOf = [], anyOf = [] } = {}) {
+  const names = usePermissionNames();
+  const hasAll = allOf.length === 0 || allOf.every((k) => names.has(k));
+  const hasAny = anyOf.length === 0 || anyOf.some((k) => names.has(k));
+  return hasAll && hasAny;
 }
 
 export function RequirePermission({ allOf = [], anyOf = [], children, fallback = null }) {
-  const { permissions } = useAuth();
-  const names = new Set((permissions || []).map((p) => p.name));
-
-  const hasAll = allOf.length === 0 || allOf.every((k) => names.has(k));
-  const hasAny = anyOf.length === 0 || anyOf.some((k) => names.has(k));
-
-  return hasAll && hasAny ? children : fallback;
+  const allowed = usePermission({ allOf, anyOf });
+  return allowed ? <>{children}</> : fallback;
 }
