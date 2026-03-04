@@ -27,11 +27,12 @@ export const permissionCatalog = [
   { key: "orders_create", group: "sales", business: "store" },
   { key: "orders_update", group: "sales", business: "store" },
   { key: "orders_delete", group: "sales", business: "store" },
+  { key: "orders_export", group: "sales", business: "store" },
+  { key: "orders_refund", group: "sales", business: "store" },
 
   { key: "payments_read", group: "payments", business: "both", related: ["/store/wallet"] },
   { key: "payments_create", group: "payments", business: "both" },
   { key: "payments_update", group: "payments", business: "both" },
-  { key: "payments_delete", group: "payments", business: "both" },
   { key: "wallet_read", group: "payments", business: "store" },
 
   { key: "settings_read", group: "settings", business: "both", related: ["/store/settings"] },
@@ -66,12 +67,10 @@ export const permissionCatalog = [
   { key: "shifts_read", group: "shifts", business: "restaurant" },
   { key: "shifts_create", group: "shifts", business: "restaurant" },
   { key: "shifts_update", group: "shifts", business: "restaurant" },
-  { key: "shifts_delete", group: "shifts", business: "restaurant" },
 
   { key: "tickets_read", group: "tickets", business: "both" },
   { key: "tickets_create", group: "tickets", business: "both" },
   { key: "tickets_update", group: "tickets", business: "both" },
-  { key: "tickets_delete", group: "tickets", business: "both" },
 
   { key: "reports_read", group: "reports", business: "restaurant" },
   { key: "reports_export", group: "reports", business: "restaurant" },
