@@ -16,7 +16,7 @@ export function useRoles() {
     try {
       const rolesRequest = await httpClient("/roles");
       const rolesData = await parseJsonResponse(rolesRequest, []);
-      setRoles(rolesData);
+      setRoles(toArray(rolesData));
     } catch (error) {
       console.error("Error fetching roles:", error);
     } finally {

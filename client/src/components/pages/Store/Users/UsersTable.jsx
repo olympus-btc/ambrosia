@@ -13,8 +13,11 @@ import {
 import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { RequirePermission, usePermission } from "@/hooks/usePermission";
+
 export function UsersTable({ users, onEditUser, onDeleteUser }) {
   const t = useTranslations("users");
+  const canManageUsers = usePermission({ anyOf: ["users_update", "users_delete"] });
 
   return (
     <section className="w-full overflow-x-auto">
@@ -27,7 +30,7 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
           <TableColumn className="py-2 px-3 w-20">{t("role")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[150px]">{t("email")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[100px]">{t("phone")}</TableColumn>
-          <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
+          <TableColumn className={canManageUsers ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
@@ -44,27 +47,31 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
               </TableCell>
               <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
               <TableCell className="max-w-[100px] truncate">{user.phone}</TableCell>
-              <TableCell className="py-2 px-3">
+              <TableCell className={canManageUsers ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
-                  <Button
-                    aria-label="Edit User"
-                    isIconOnly
-                    size="sm"
-                    className="text-xs text-white bg-blue-500"
-                    onPress={() => onEditUser(user)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    aria-label="Delete User"
-                    isIconOnly
-                    size="sm"
-                    color="danger"
-                    className="text-xs text-white"
-                    onPress={() => onDeleteUser(user)}
-                  >
-                    <Trash className="w-4 h-4" />
-                  </Button>
+                  <RequirePermission allOf={["users_update"]}>
+                    <Button
+                      aria-label="Edit User"
+                      isIconOnly
+                      size="sm"
+                      className="text-xs text-white bg-blue-500"
+                      onPress={() => onEditUser(user)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </RequirePermission>
+                  <RequirePermission allOf={["users_delete"]}>
+                    <Button
+                      aria-label="Delete User"
+                      isIconOnly
+                      size="sm"
+                      color="danger"
+                      className="text-xs text-white"
+                      onPress={() => onDeleteUser(user)}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  </RequirePermission>
                 </div>
               </TableCell>
             </TableRow>

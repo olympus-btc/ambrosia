@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { RequirePermission } from "@/hooks/usePermission";
+
 import { StoreLayout } from "../StoreLayout";
 
 import { useRoles } from "./../hooks/useRoles";
@@ -68,23 +70,25 @@ export function Users() {
             {t("subtitle")}
           </p>
         </div>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={() => {
-            setData({
-              userId: "",
-              userName: "",
-              userPin: "",
-              userPhone: "",
-              userEmail: "",
-              userRole: roles?.[0]?.id || "",
-            });
-            setAddUsersShowModal(true);
-          }}
-        >
-          {t("addUser")}
-        </Button>
+        <RequirePermission allOf={["users_create"]}>
+          <Button
+            color="primary"
+            className="bg-green-800"
+            onPress={() => {
+              setData({
+                userId: "",
+                userName: "",
+                userPin: "",
+                userPhone: "",
+                userEmail: "",
+                userRole: roles?.[0]?.id || "",
+              });
+              setAddUsersShowModal(true);
+            }}
+          >
+            {t("addUser")}
+          </Button>
+        </RequirePermission>
       </header>
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <UsersTable
@@ -93,9 +97,11 @@ export function Users() {
           onDeleteUser={handleDeleteUser}
         />
       </div>
-      <div className="mt-8">
-        <Roles />
-      </div>
+      <RequirePermission allOf={["roles_read"]}>
+        <div className="mt-8">
+          <Roles />
+        </div>
+      </RequirePermission>
 
       <AddUsersModal
         data={data}
