@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { RequirePermission } from "@/hooks/usePermission";
+
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
@@ -84,13 +86,15 @@ export function Products() {
             {t("subtitle")}
           </p>
         </div>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={() => setAddProductsShowModal(true)}
-        >
-          {t("addProduct")}
-        </Button>
+        <RequirePermission allOf={["products_create"]}>
+          <Button
+            color="primary"
+            className="bg-green-800"
+            onPress={() => setAddProductsShowModal(true)}
+          >
+            {t("addProduct")}
+          </Button>
+        </RequirePermission>
       </header>
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <ProductsTable
