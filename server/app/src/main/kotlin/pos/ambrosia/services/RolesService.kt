@@ -110,7 +110,7 @@ class RolesService(
 
     if (id == null) return false
     // Verificar que el nombre del rol no exista ya (excluyendo el rol actual)
-    if (role.id != null && roleNameExistsExcludingId(role.role, role.id)) {
+    if (roleNameExistsExcludingId(role.role, id)) {
       logger.error("Role name already exists: ${role.role}")
       return false
     }
@@ -123,7 +123,7 @@ class RolesService(
       val encryptedPin = SecurePinProcessor.hashPinForStorage(role.password.toCharArray(), id, env)
       statement.setString(3, SecurePinProcessor.byteArrayToBase64(encryptedPin))
     }
-    statement.setString(role.password?.let { 4 } ?: 3, role.id)
+    statement.setString(role.password?.let { 4 } ?: 3, id)
 
     val rowsUpdated = statement.executeUpdate()
     if (rowsUpdated > 0) {
