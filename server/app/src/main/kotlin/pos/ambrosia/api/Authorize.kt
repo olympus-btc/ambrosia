@@ -27,6 +27,39 @@ import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.InvalidTokenException
 import java.sql.Connection
+import java.util.concurrent.ConcurrentHashMap
+
+private object LoginRateLimiter {
+    private val failedAttempts = ConcurrentHashMap<String, Pair<Int, Long>>()
+    private const val MAX_FAILURES = 5
+    private val WINDOW_MS = 2 * 60 * 1000L // 2 minutes
+
+    fun isBlocked(ip: String): Boolean {
+        val (count, since) = failedAttempts[ip] ?: return false
+        return if (System.currentTimeMillis() - since >= WINDOW_MS) {
+            failedAttempts.remove(ip)
+            false
+        } else {
+            count >= MAX_FAILURES
+        }
+    }
+
+    fun recordFailure(ip: String) {
+        val now = System.currentTimeMillis()
+        failedAttempts.compute(ip) { _, existing ->
+            if (existing != null) {
+                val (count, since) = existing
+                if (now - since < WINDOW_MS) Pair(count + 1, since) else Pair(1, now)
+            } else {
+                Pair(1, now)
+            }
+        }
+    }
+
+    fun reset(ip: String) {
+        failedAttempts.remove(ip)
+    }
+}
 
 fun Application.configureAuth() {
     val connection: Connection = DatabaseConnection.getConnection()
@@ -42,6 +75,12 @@ fun Route.auth(
     permissionsService: PermissionsService,
 ) {
     post("/login") {
+        val ip = call.request.origin.remoteAddress
+        if (LoginRateLimiter.isBlocked(ip)) {
+            call.respond(HttpStatusCode.TooManyRequests)
+            return@post
+        }
+
         val loginRequest = call.receive<AuthRequest>()
         val userInfo = authService.authenticateUser(loginRequest.name, loginRequest.pin.toCharArray())
         logger.info(userInfo?.toString() ?: "User not found")
@@ -50,8 +89,11 @@ fun Route.auth(
                 call.request.header("X-Forwarded-Proto") == "https"
 
         if (userInfo == null) {
+            LoginRateLimiter.recordFailure(ip)
             throw InvalidCredentialsException()
         }
+
+        LoginRateLimiter.reset(ip)
         val accessTokenResponse = tokenService.generateAccessToken(userInfo)
         val refreshTokenResponse = tokenService.generateRefreshToken(userInfo)
 
@@ -105,8 +147,6 @@ fun Route.auth(
         val isSecureRequest =
             call.request.origin.scheme == "https" ||
                 call.request.header("X-Forwarded-Proto") == "https"
-
-        logger.info("Refreshing token with: $refreshToken")
 
         val isValidRefreshToken = tokenService.validateRefreshToken(refreshToken)
         if (!isValidRefreshToken) {
