@@ -77,8 +77,8 @@ class CategoryService(
         }
     }
 
-    suspend fun getCategories(type: String): List<CategoryItem> {
-        if (!validateType(type)) return emptyList()
+    suspend fun getCategories(type: String): List<CategoryItem>? {
+        if (!validateType(type)) return null
         val st =
             connection.prepareStatement(
                 "SELECT id, name FROM categories WHERE type = ? AND is_deleted = 0",
