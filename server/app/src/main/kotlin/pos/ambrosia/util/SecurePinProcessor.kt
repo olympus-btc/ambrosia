@@ -56,7 +56,6 @@ object SecurePinProcessor {
         env: ApplicationEnvironment,
     ): Boolean {
         val newHash = hashPinForStorage(enteredPin, id, env)
-        logger.info("Pins: " + newHash + " = " + storedHash)
         return MessageDigest.isEqual(newHash, storedHash)
     }
 
