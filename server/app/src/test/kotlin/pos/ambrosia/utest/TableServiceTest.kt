@@ -88,7 +88,13 @@ class TableServiceTest {
     @Test
     fun `getTablesBySpace returns tables when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val spaceCheckStatement: PreparedStatement = mock() // Arrange
+            val spaceResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("spaces"))).thenReturn(spaceCheckStatement) // Arrange
+            whenever(spaceCheckStatement.executeQuery()).thenReturn(spaceResultSet) // Arrange
+            whenever(spaceResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM tables"))).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn("table-1") // Arrange
@@ -98,6 +104,7 @@ class TableServiceTest {
             whenever(mockResultSet.getString("status")).thenReturn("occupied") // Arrange
             val service = TableService(mockConnection) // Arrange
             val result = service.getTablesBySpace("space-1") // Act
+            assertNotNull(result) // Assert
             assertEquals(1, result.size) // Assert
             assertEquals("T1", result[0].name) // Assert
         }
@@ -106,12 +113,34 @@ class TableServiceTest {
     @Test
     fun `getTablesBySpace returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val spaceCheckStatement: PreparedStatement = mock() // Arrange
+            val spaceResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("spaces"))).thenReturn(spaceCheckStatement) // Arrange
+            whenever(spaceCheckStatement.executeQuery()).thenReturn(spaceResultSet) // Arrange
+            whenever(spaceResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM tables"))).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
             val service = TableService(mockConnection) // Arrange
             val result = service.getTablesBySpace("space-2") // Act
+            assertNotNull(result) // Assert
             assertTrue(result.isEmpty()) // Assert
+        }
+    }
+
+    @Test
+    fun `getTablesBySpace returns null when space not found`() {
+        runBlocking {
+            val spaceCheckStatement: PreparedStatement = mock() // Arrange
+            val spaceResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("spaces"))).thenReturn(spaceCheckStatement) // Arrange
+            whenever(spaceCheckStatement.executeQuery()).thenReturn(spaceResultSet) // Arrange
+            whenever(spaceResultSet.next()).thenReturn(false) // Arrange
+
+            val service = TableService(mockConnection) // Arrange
+            val result = service.getTablesBySpace("not-found") // Act
+            assertNull(result) // Assert
         }
     }
 
