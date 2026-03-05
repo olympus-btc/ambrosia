@@ -97,10 +97,7 @@ fun Route.suppliers(supplierService: SupplierService) {
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Supplier deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

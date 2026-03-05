@@ -89,10 +89,7 @@ fun Route.dishes(dishService: DishService) {
             }
 
             dishService.deleteDish(id)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Dish deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

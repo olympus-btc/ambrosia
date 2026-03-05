@@ -112,7 +112,7 @@ fun Route.tables(tableService: TableService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Table deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

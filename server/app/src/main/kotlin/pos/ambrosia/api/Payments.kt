@@ -203,10 +203,7 @@ fun Route.payments(
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Payment deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
 
         delete("/ticket-payments") {
@@ -224,14 +221,7 @@ fun Route.payments(
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "paymentId" to paymentId,
-                    "ticketId" to ticketId,
-                    "message" to "Ticket payment relationship deleted successfully",
-                ),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
 
         delete("/ticket-payments/by-ticket/{ticketId}") {
@@ -242,13 +232,7 @@ fun Route.payments(
             }
 
             ticketPaymentService.deleteTicketPaymentsByTicket(ticketId)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "ticketId" to ticketId,
-                    "message" to "All payment relationships for ticket deleted",
-                ),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

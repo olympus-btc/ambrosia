@@ -94,7 +94,7 @@ fun Route.tickets(ticketService: TicketService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Ticket deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

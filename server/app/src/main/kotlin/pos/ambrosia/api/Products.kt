@@ -104,10 +104,7 @@ fun Route.products(service: ProductService) {
                         "Missing or malformed ID",
                     )
             service.deleteProduct(id)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Product deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

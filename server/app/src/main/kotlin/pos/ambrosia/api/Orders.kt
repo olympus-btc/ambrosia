@@ -337,10 +337,7 @@ fun Route.orders(orderService: OrderService) {
             if (!isDeleted) {
                 throw ResourceNotFoundException("Order $id not found")
             }
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Order deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
 
         delete("/{id}/dishes/{dishId}") {
@@ -358,14 +355,7 @@ fun Route.orders(orderService: OrderService) {
 
             // Update order total
             orderService.updateOrderTotal(orderId)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "orderId" to orderId,
-                    "dishId" to dishId,
-                    "message" to "Dish removed from order successfully",
-                ),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
 
         delete("/{id}/dishes") {
@@ -383,13 +373,7 @@ fun Route.orders(orderService: OrderService) {
 
             // Update order total to 0
             orderService.updateOrderTotal(orderId)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "orderId" to orderId,
-                    "message" to "All dishes removed from order successfully",
-                ),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

@@ -128,10 +128,7 @@ fun Route.roles(
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Role deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

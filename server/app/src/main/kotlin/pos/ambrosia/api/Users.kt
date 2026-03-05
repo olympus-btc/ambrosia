@@ -166,10 +166,7 @@ fun Route.users(
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "User deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

@@ -114,10 +114,7 @@ fun Route.categories(service: CategoryService) {
                 )
                 return@delete
             }
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Category deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }
