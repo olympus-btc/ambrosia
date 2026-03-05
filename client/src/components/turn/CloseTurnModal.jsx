@@ -101,6 +101,7 @@ export function CloseTurnModal({
               minValue={0}
               value={finalAmount}
               onValueChange={setFinalAmount}
+              onChange={(e) => setFinalAmount(parseFloat(e.target.value) || 0)}
               step={0.1}
             />
 
