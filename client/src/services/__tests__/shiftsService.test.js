@@ -94,8 +94,7 @@ describe("shiftsService", () => {
 
     it("uses local date components (not UTC toISOString) for shift_date", async () => {
       jest.useFakeTimers();
-      // 20:00 local — in UTC-6 this is still the same calendar day
-      jest.setSystemTime(new Date(2026, 2, 4, 20, 0, 0)); // March 4 at 20:00 local
+      jest.setSystemTime(new Date(2026, 2, 4, 20, 0, 0));
 
       await openTurn(1, 0);
 

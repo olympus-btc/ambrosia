@@ -115,14 +115,12 @@ describe("CloseTurnModal", () => {
     it("shows initialAmountLabel with formatted value", () => {
       setupMocks({ totalBalance: 250, loading: false });
       renderModal();
-      // initialAmount=100 → $100.00
       expect(screen.getByText("$100.00")).toBeInTheDocument();
     });
 
     it("shows expectedTotal = initialAmount + totalBalance", () => {
       setupMocks({ totalBalance: 250, loading: false });
       renderModal();
-      // expectedTotal = 100 + 250 = 350 → $350.00
       expect(screen.getByText("$350.00")).toBeInTheDocument();
     });
 
@@ -159,8 +157,6 @@ describe("CloseTurnModal", () => {
     it("calls onConfirm with finalAmount=0 and computed difference", async () => {
       const user = userEvent.setup();
       const onConfirm = jest.fn();
-      // With finalAmount=0, initialAmount=100, totalBalance=250:
-      // expectedTotal = 350, difference = 0 - 350 = -350
       setupMocks({ totalBalance: 250, loading: false });
       renderModal({ onConfirm });
       await user.click(screen.getByText("close.confirm"));

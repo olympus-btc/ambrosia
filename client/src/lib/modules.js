@@ -57,7 +57,7 @@ export const modules = {
         path: "/reports",
         label: "Reportes",
         icon: "chart-line",
-        showInNavbar: false, // Oculto del navbar pero accesible por URL
+        showInNavbar: false,
       },
     ],
   },
