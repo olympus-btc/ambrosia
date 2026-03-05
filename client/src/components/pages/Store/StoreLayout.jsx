@@ -11,6 +11,7 @@ import { LogOut } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { ShiftWidget } from "@/components/turn/ShiftWidget";
 import { useModules } from "@hooks/useModules";
 
 import ambrosia from "../../../../public/ambrosia.svg";
@@ -160,6 +161,7 @@ export function StoreLayout({ children }) {
       </aside>
 
       <main className="flex-1 gradient-fresh p-6 overflow-y-auto">{children}</main>
+      <ShiftWidget />
     </div>
   );
 }

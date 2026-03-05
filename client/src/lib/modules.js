@@ -231,7 +231,7 @@ export const modules = {
         path: "/store/reports",
         label: "reports",
         icon: "chart-line",
-        showInNavbar: true,
+        showInNavbar: false,
       },
       {
         path: "/store/settings",

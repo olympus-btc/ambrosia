@@ -49,6 +49,11 @@ const componentsEs = {
     byPaymentMethod: "Por método de pago",
     expectedTotal: "Total esperado",
     difference: "Diferencia",
+    shiftActive: "Turno activo",
+    shiftOpenedAt: "Apertura",
+    closeShiftButton: "Cerrar turno",
+    other: "Otro",
+    loadError: "Error al cargar datos del turno",
   },
 };
 

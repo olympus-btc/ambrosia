@@ -49,6 +49,11 @@ const componentsEn = {
     byPaymentMethod: "By payment method",
     expectedTotal: "Expected total",
     difference: "Difference",
+    shiftActive: "Active shift",
+    shiftOpenedAt: "Opened at",
+    closeShiftButton: "Close shift",
+    other: "Other",
+    loadError: "Error loading shift data",
   },
 };
 

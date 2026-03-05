@@ -3,13 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Card, CardBody, CardHeader, addToast } from "@heroui/react";
-import { TrendingUp, DollarSign, Receipt, PieChart, Lock, AlertCircle, Calendar } from "lucide-react";
+import { TrendingUp, DollarSign, Receipt, PieChart, AlertCircle, Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { CloseTurnModal } from "@/components/turn/CloseTurnModal";
-import { useShiftTickets } from "@/hooks/turn/useShiftTickets";
-import { useTurn } from "@/hooks/turn/useTurn";
 
 import { StoreLayout } from "../StoreLayout";
 
@@ -33,13 +30,9 @@ export default function Reports() {
   const [reportData, setReportData] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
-  const [showCloseTurnModal, setShowCloseTurnModal] = useState(false);
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const { loading: reportsLoading, error: reportsError, generateReportFromData } = useReports();
   const displayError = error || reportsError;
-  const { closeShift, openShiftData } = useTurn();
-  const { totalBalance: shiftBalance } = useShiftTickets(openShiftData);
-  const [closingTurn, setClosingTurn] = useState(false);
   const t = useTranslations("reports");
 
   const formatDate = useCallback((dateString) => {
@@ -231,63 +224,6 @@ export default function Reports() {
           </div>
         )}
 
-        <Card className="shadow-lg border-0 bg-white">
-          <CardBody className="flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="text-left">
-              <p className="text-deep font-semibold">{t("close.sectionTitle")}</p>
-              <p className="text-forest text-sm">{t("close.sectionSubtitle")}</p>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <Card className="bg-green-50 border-green-200 hidden md:block">
-                <CardBody className="py-3 px-4">
-                  <div className="flex items-center gap-2 text-green-800">
-                    <DollarSign className="w-4 h-4" />
-                    <span className="text-sm font-semibold">
-                      {t("close.balanceLabel")} {formatCurrency(shiftBalance)}
-                    </span>
-                  </div>
-                </CardBody>
-              </Card>
-              <button
-                onClick={() => setShowCloseTurnModal(true)}
-                className="bg-red-500 text-white text-lg px-6 py-3 rounded-xl hover:bg-red-600 transition-colors font-semibold w-full md:w-auto flex items-center justify-center gap-2"
-              >
-                <Lock className="w-5 h-5" />
-                {t("close.confirm")}
-              </button>
-            </div>
-          </CardBody>
-        </Card>
-
-        <CloseTurnModal
-          isOpen={showCloseTurnModal}
-          onClose={() => setShowCloseTurnModal(false)}
-          onConfirm={async (finalAmount, difference) => {
-            setClosingTurn(true);
-            try {
-              const closed = await closeShift(finalAmount, difference);
-              if (!closed) {
-                showError(t("statuses.closeError"));
-                return;
-              }
-              addToast({
-                title: t("statuses.closeSuccessTitle"),
-                description: t("statuses.closeSuccessDesc"),
-                variant: "solid",
-                color: "success",
-              });
-              setShowCloseTurnModal(false);
-            } catch (err) {
-              console.error(err);
-              showError(t("statuses.closeErrorGeneric"));
-            } finally {
-              setClosingTurn(false);
-            }
-          }}
-          shiftData={openShiftData}
-          formatCurrency={formatCurrency}
-          confirmLoading={closingTurn}
-        />
       </div>
     </StoreLayout>
   );

@@ -10,7 +10,11 @@ export async function getTurnOpen() {
 
 export async function openTurn(userId, initialAmount = 0) {
   const now = new Date();
-  const shiftDate = now.toISOString().split("T")[0];
+  const shiftDate = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
   const startTime = now.toTimeString().split(" ")[0];
 
   const response = await httpClient("/shifts", {
