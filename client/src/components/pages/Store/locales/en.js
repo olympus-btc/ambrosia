@@ -239,6 +239,14 @@ const storeEn = {
           label: "Delete orders",
           description: "Delete orders and items.",
         },
+        orders_export: {
+          label: "Export orders",
+          description: "Download order reports.",
+        },
+        orders_refund: {
+          label: "Refund orders",
+          description: "Issue refunds on orders.",
+        },
         payments_read: {
           label: "View payments",
           description: "List payments and methods.",
@@ -251,17 +259,9 @@ const storeEn = {
           label: "Edit payments",
           description: "Adjust existing payments.",
         },
-        payments_delete: {
-          label: "Delete payments",
-          description: "Remove payments or links.",
-        },
         wallet_read: {
           label: "Access wallet",
           description: "Use wallet/cash UI.",
-        },
-        settings_read: {
-          label: "View settings",
-          description: "See business configuration.",
         },
         settings_update: {
           label: "Edit settings",
@@ -363,10 +363,6 @@ const storeEn = {
           label: "Edit shifts",
           description: "Update shift data.",
         },
-        shifts_delete: {
-          label: "Close/delete shifts",
-          description: "Close or remove shifts.",
-        },
         tickets_read: {
           label: "View tickets",
           description: "List and review tickets.",
@@ -378,10 +374,6 @@ const storeEn = {
         tickets_update: {
           label: "Edit tickets",
           description: "Update ticket data.",
-        },
-        tickets_delete: {
-          label: "Delete tickets",
-          description: "Remove tickets.",
         },
         reports_read: {
           label: "View reports",

@@ -239,6 +239,14 @@ const storeEs = {
           label: "Eliminar órdenes",
           description: "Borrar órdenes y sus ítems.",
         },
+        orders_export: {
+          label: "Exportar órdenes",
+          description: "Descargar reportes de órdenes.",
+        },
+        orders_refund: {
+          label: "Reembolsar órdenes",
+          description: "Emitir reembolsos en órdenes.",
+        },
         payments_read: {
           label: "Ver pagos",
           description: "Listar pagos y métodos.",
@@ -251,17 +259,9 @@ const storeEs = {
           label: "Editar pagos",
           description: "Ajustar pagos existentes.",
         },
-        payments_delete: {
-          label: "Eliminar pagos",
-          description: "Borrar pagos o relaciones.",
-        },
         wallet_read: {
           label: "Acceder a billetera",
           description: "Usar la billetera/caja.",
-        },
-        settings_read: {
-          label: "Ver configuración",
-          description: "Consultar configuración de negocio.",
         },
         settings_update: {
           label: "Editar configuración",
@@ -363,10 +363,6 @@ const storeEs = {
           label: "Editar turnos",
           description: "Actualizar estado o datos.",
         },
-        shifts_delete: {
-          label: "Cerrar/eliminar turnos",
-          description: "Cerrar o eliminar turnos.",
-        },
         tickets_read: {
           label: "Ver tickets",
           description: "Listar y revisar tickets.",
@@ -378,10 +374,6 @@ const storeEs = {
         tickets_update: {
           label: "Editar tickets",
           description: "Actualizar datos de tickets.",
-        },
-        tickets_delete: {
-          label: "Eliminar tickets",
-          description: "Borrar tickets.",
         },
         reports_read: {
           label: "Ver reportes",
