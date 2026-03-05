@@ -11,8 +11,9 @@ import {
   ModalFooter,
   ModalHeader,
   NumberInput,
+  addToast,
 } from "@heroui/react";
-import { AlertCircle, Lock, Printer } from "lucide-react";
+import { AlertCircle, Printer } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { usePrinters } from "@/components/pages/Store/hooks/usePrinter";
@@ -31,7 +32,7 @@ export function CloseTurnModal({
   const t = useTranslations("reports");
   const ts = useTranslations("shifts");
 
-  const { totalBalance, totalTickets, byPaymentMethod, loading: ticketsLoading } =
+  const { totalBalance, totalTickets, byPaymentMethod, loading: ticketsLoading, breakdownLoading } =
     useShiftTickets(isOpen ? shiftData : null);
 
   const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
@@ -46,7 +47,7 @@ export function CloseTurnModal({
   const handlePrintCorteZ = async () => {
     setPrinting(true);
     try {
-      await printTicket({
+      const res = await printTicket({
         templateName: null,
         printerType: "CUSTOMER",
         broadcast: false,
@@ -65,8 +66,10 @@ export function CloseTurnModal({
           invoice: null,
         },
       });
-    } catch {}
-    finally {
+      if (!res?.ok) throw new Error("print failed");
+    } catch {
+      addToast({ color: "danger", description: ts("printCorteZError") });
+    } finally {
       setPrinting(false);
     }
   };
@@ -84,7 +87,6 @@ export function CloseTurnModal({
       <ModalContent>
         <ModalHeader>
           <div className="flex items-center space-x-2">
-            <Lock className="w-5 h-5 text-red-600" />
             <span>{t("close.modalTitle")}</span>
           </div>
         </ModalHeader>
@@ -106,7 +108,7 @@ export function CloseTurnModal({
             />
 
             {!ticketsLoading && (
-              <Card className="border border-default-200 bg-default-50">
+              <Card className="border">
                 <CardBody className="p-3 space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="text-default-500">{ts("initialAmountLabel")}</span>
@@ -128,7 +130,7 @@ export function CloseTurnModal({
               </Card>
             )}
 
-            <Card className="border border-default-200">
+            <Card className="border">
               <CardBody className="p-3 space-y-2">
                 <p className="text-sm font-semibold text-deep">{ts("cortezTitle")}</p>
                 <div className="flex justify-between text-sm text-forest">
@@ -164,13 +166,12 @@ export function CloseTurnModal({
                 )}
                 {!loadingConfigs && hasCustomerPrinter && (
                   <Button
-                    size="sm"
-                    variant="bordered"
+                    className="bg-green-800"
+                    color="primary"
                     startContent={<Printer className="w-4 h-4" />}
                     onPress={handlePrintCorteZ}
                     isLoading={printing}
-                    isDisabled={ticketsLoading}
-                    className="w-full mt-1"
+                    isDisabled={ticketsLoading || breakdownLoading}
                   >
                     {ts("printCorteZ")}
                   </Button>
@@ -180,7 +181,12 @@ export function CloseTurnModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" color="default" onPress={onClose}>
+          <Button
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="bordered"
+            type="button"
+            onPress={onClose}
+          >
             {t("close.cancel")}
           </Button>
           <Button
@@ -190,7 +196,6 @@ export function CloseTurnModal({
             isDisabled={confirmLoading}
             isLoading={confirmLoading}
           >
-            <Lock className="w-4 h-4 mr-1" />
             {confirmLoading ? t("close.confirming") : t("close.confirm")}
           </Button>
         </ModalFooter>

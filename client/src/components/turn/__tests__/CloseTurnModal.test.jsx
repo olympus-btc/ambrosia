@@ -1,6 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const mockAddToast = jest.fn();
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  addToast: (...args) => mockAddToast(...args),
+}));
+
 jest.mock("@/hooks/turn/useShiftTickets", () => ({
   useShiftTickets: jest.fn(),
 }));
@@ -31,7 +37,7 @@ function setupMocks({
   printerConfigs = [],
   loadingConfigs = false,
 } = {}) {
-  useShiftTickets.mockReturnValue({ totalBalance, totalTickets, byPaymentMethod, loading });
+  useShiftTickets.mockReturnValue({ totalBalance, totalTickets, byPaymentMethod, loading, breakdownLoading: false });
   usePrinters.mockReturnValue({ printTicket: jest.fn(), printerConfigs, loadingConfigs });
 }
 
@@ -169,6 +175,21 @@ describe("CloseTurnModal", () => {
   });
 
   describe("printer integration", () => {
+    it("disables print button while breakdown is loading", () => {
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
+      useShiftTickets.mockReturnValue({
+        totalBalance: 250, totalTickets: 5, byPaymentMethod: [], loading: false, breakdownLoading: true,
+      });
+      usePrinters.mockReturnValue({
+        printTicket: jest.fn(),
+        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
+        loadingConfigs: false,
+      });
+      renderModal();
+      const printBtn = screen.getByText("printCorteZ").closest("button");
+      expect(printBtn).toHaveAttribute("data-disabled", "true");
+    });
+
     it("does not show print button when no customer printer is configured", () => {
       setupMocks({ printerConfigs: [], loadingConfigs: false });
       renderModal();
@@ -193,9 +214,41 @@ describe("CloseTurnModal", () => {
       expect(screen.getByText("printCorteZ")).toBeInTheDocument();
     });
 
+    it("shows error toast when printTicket fails", async () => {
+      const user = userEvent.setup();
+      const printTicket = jest.fn().mockRejectedValue(new Error("printer offline"));
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
+      usePrinters.mockReturnValue({
+        printTicket,
+        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
+        loadingConfigs: false,
+      });
+      renderModal();
+      await user.click(screen.getByText("printCorteZ"));
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "printCorteZError" }),
+      );
+    });
+
+    it("shows error toast when printTicket returns non-ok response", async () => {
+      const user = userEvent.setup();
+      const printTicket = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
+      usePrinters.mockReturnValue({
+        printTicket,
+        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
+        loadingConfigs: false,
+      });
+      renderModal();
+      await user.click(screen.getByText("printCorteZ"));
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "printCorteZError" }),
+      );
+    });
+
     it("calls printTicket with corte-z ticket data on print", async () => {
       const user = userEvent.setup();
-      const printTicket = jest.fn().mockResolvedValue(undefined);
+      const printTicket = jest.fn().mockResolvedValue({ ok: true });
       const byPaymentMethod = [{ name: "Cash", total: 100 }];
       setupMocks({
         totalBalance: 100,

@@ -16,6 +16,7 @@ export function useShiftTickets(shiftData) {
   const [totalTickets, setTotalTickets] = useState(0);
   const [byPaymentMethod, setByPaymentMethod] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -24,29 +25,34 @@ export function useShiftTickets(shiftData) {
     let cancelled = false;
 
     async function fetchBreakdown(shiftTickets) {
-      const [payments, methods] = await Promise.all([
-        getPayments(),
-        getPaymentMethods(),
-      ]);
+      if (!cancelled) setBreakdownLoading(true);
+      try {
+        const [payments, methods] = await Promise.all([
+          getPayments(),
+          getPaymentMethods(),
+        ]);
 
-      const methodTotals = {};
-      for (const ticket of shiftTickets) {
-        const ticketPayments = await getPaymentByTicketId(ticket.id);
-        if (!ticketPayments?.length) continue;
+        const methodTotals = {};
+        for (const ticket of shiftTickets) {
+          const ticketPayments = await getPaymentByTicketId(ticket.id);
+          if (!ticketPayments?.length) continue;
 
-        const payment = payments.find((payment) => payment.id === ticketPayments[0].payment_id);
-        if (!payment) continue;
+          const payment = payments.find((payment) => payment.id === ticketPayments[0].payment_id);
+          if (!payment) continue;
 
-        const method = methods.find((method) => method.id === payment.method_id);
-        const methodName = method?.name ?? ts("other");
+          const method = methods.find((method) => method.id === payment.method_id);
+          const methodName = method?.name ?? ts("other");
 
-        methodTotals[methodName] = (methodTotals[methodName] ?? 0) + ticket.total_amount;
-      }
+          methodTotals[methodName] = (methodTotals[methodName] ?? 0) + ticket.total_amount;
+        }
 
-      if (!cancelled) {
-        setByPaymentMethod(
-          Object.entries(methodTotals).map(([name, total]) => ({ name, total })),
-        );
+        if (!cancelled) {
+          setByPaymentMethod(
+            Object.entries(methodTotals).map(([name, total]) => ({ name, total })),
+          );
+        }
+      } finally {
+        if (!cancelled) setBreakdownLoading(false);
       }
     }
 
@@ -80,5 +86,5 @@ export function useShiftTickets(shiftData) {
     return () => { cancelled = true; };
   }, [shiftData?.shift_date, shiftData?.start_time, ts]);
 
-  return { totalBalance, totalTickets, byPaymentMethod, loading, error };
+  return { totalBalance, totalTickets, byPaymentMethod, loading, breakdownLoading, error };
 }

@@ -43,6 +43,7 @@ const componentsEs = {
     finalAmount: "Monto final en caja",
     cortezTitle: "Corte Z",
     printCorteZ: "Imprimir Corte Z",
+    printCorteZError: "Error al imprimir el Corte Z",
     shiftPeriod: "Período del turno",
     totalSales: "Total de ventas",
     totalTickets: "Total de tickets",

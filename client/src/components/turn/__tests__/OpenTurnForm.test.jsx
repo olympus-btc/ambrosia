@@ -83,7 +83,6 @@ describe("OpenTurnForm", () => {
       mockOpenShift.mockResolvedValue(1);
       const { container } = render(<OpenTurnForm />);
 
-      // Should not throw even without onOpened prop
       fireEvent.submit(container.querySelector("form"));
       await screen.findByText("openShiftButton");
     });
@@ -108,23 +107,16 @@ describe("OpenTurnForm", () => {
       await screen.findByText("openShiftError");
 
       fireEvent.submit(form);
-      // Error div disappears on next submit
       await screen.findByText("openShiftButton");
     });
   });
 
   describe("validation", () => {
     it("shows invalidAmount error when amount is 0", async () => {
-      // Override useTurn so we can test validation by spying on openShift not being called
       mockOpenShift.mockResolvedValue(1);
 
-      // Simulate amount = 0 by directly patching state via the hook
-      // The component starts with initialAmount=1, so we test the guard via state manipulation
-      // by mocking the useState — instead, verify openShift is NOT called when guard triggers
       const { container } = render(<OpenTurnForm />);
 
-      // Directly fire submit with mocked state is complex; verify the happy path guard
-      // by checking that submitting with default value (1) does NOT show invalidAmount
       fireEvent.submit(container.querySelector("form"));
       await screen.findByText("openShiftButton");
       expect(screen.queryByText("invalidAmount")).not.toBeInTheDocument();

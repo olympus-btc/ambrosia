@@ -43,6 +43,7 @@ const componentsEn = {
     finalAmount: "Final amount in cash register",
     cortezTitle: "Z Report",
     printCorteZ: "Print Z Report",
+    printCorteZError: "Error printing Z Report",
     shiftPeriod: "Shift period",
     totalSales: "Total sales",
     totalTickets: "Total tickets",

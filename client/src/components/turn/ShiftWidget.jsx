@@ -46,7 +46,7 @@ export function ShiftWidget() {
             transition={{ duration: 0.15 }}
             className="absolute bottom-16 right-0 w-72"
           >
-            <Card shadow="lg" className="border border-default-200">
+            <Card shadow="lg" className="rounded-lg">
               <CardBody className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm text-deep">{ts("shiftActive")}</span>
@@ -83,9 +83,6 @@ export function ShiftWidget() {
 
                 <Button
                   color="danger"
-                  variant="solid"
-                  size="sm"
-                  className="w-full"
                   onPress={() => setShowCloseModal(true)}
                 >
                   {ts("closeShiftButton")}

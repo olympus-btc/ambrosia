@@ -41,6 +41,7 @@ describe("useShiftTickets", () => {
       expect(result.current.totalTickets).toBe(0);
       expect(result.current.byPaymentMethod).toEqual([]);
       expect(result.current.loading).toBe(false);
+      expect(result.current.breakdownLoading).toBe(false);
       expect(result.current.error).toBeNull();
       expect(getTickets).not.toHaveBeenCalled();
     });
@@ -142,6 +143,28 @@ describe("useShiftTickets", () => {
       await waitFor(() => expect(result.current.loading).toBe(false));
 
       expect(result.current.byPaymentMethod).toEqual([]);
+    });
+
+    it("sets breakdownLoading true while breakdown is in progress", async () => {
+      let resolvePayments;
+      getTickets.mockResolvedValue([ticketAfter1]);
+      getPayments.mockReturnValue(new Promise((res) => { resolvePayments = res; }));
+
+      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.breakdownLoading).toBe(true);
+
+      resolvePayments([]);
+      await waitFor(() => expect(result.current.breakdownLoading).toBe(false));
+    });
+
+    it("clears breakdownLoading when breakdown fails", async () => {
+      getTickets.mockResolvedValue([ticketAfter1]);
+      getPayments.mockRejectedValue(new Error("payments down"));
+
+      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.breakdownLoading).toBe(false));
     });
 
     it("does not affect totalBalance or totalTickets when breakdown fails", async () => {
