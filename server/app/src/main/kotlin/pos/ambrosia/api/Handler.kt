@@ -88,7 +88,6 @@ fun Application.handler() {
             logger.error("Print ticket error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
         }
-        // catch-all handlers van al final para no sombrar los específicos
         exception<Exception> { call, cause ->
             logger.error("Unhandled exception: ${cause.message}")
             call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))

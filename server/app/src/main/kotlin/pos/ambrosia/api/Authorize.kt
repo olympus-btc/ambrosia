@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 private object LoginRateLimiter {
     private val failedAttempts = ConcurrentHashMap<String, Pair<Int, Long>>()
     private const val MAX_FAILURES = 5
-    private val WINDOW_MS = 2 * 60 * 1000L // 2 minutes
+    private val WINDOW_MS = 2 * 60 * 1000L
 
     fun isBlocked(ip: String): Boolean {
         val (count, since) = failedAttempts[ip] ?: return false

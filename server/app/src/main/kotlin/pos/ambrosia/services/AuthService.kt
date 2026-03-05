@@ -72,10 +72,9 @@ class AuthService(
             val storedPasswordHashBase64 = resultSet.getString("role_password")
             val storedPasswordHash = SecurePinProcessor.base64ToByteArray(storedPasswordHashBase64)
 
-            // The salt for role password is the role ID.
             val isValidPassword =
                 SecurePinProcessor.verifyPin(rolePassword, roleId, storedPasswordHash, env)
-            rolePassword.fill('\u0000') // Clear password from memory
+            rolePassword.fill('\u0000')
 
             return isValidPassword
         }
