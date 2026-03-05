@@ -15,10 +15,9 @@ import {
 import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { RequirePermission, usePermission } from "@/hooks/usePermission";
-
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
+import { RequirePermission, usePermission } from "@/hooks/usePermission";
 
 export function ProductsTable({ products, categories = [], onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
