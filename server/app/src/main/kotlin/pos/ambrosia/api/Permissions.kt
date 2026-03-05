@@ -20,7 +20,7 @@ fun Application.configurePermissions() {
                 get("") {
                     val list = permissionsService.getAll()
                     if (list.isEmpty()) {
-                        call.respond(HttpStatusCode.NoContent)
+                        call.respond(HttpStatusCode.OK, "No permissions found")
                     } else {
                         call.respond(HttpStatusCode.OK, list)
                     }
