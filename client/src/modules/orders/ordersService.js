@@ -38,11 +38,8 @@ export async function getOrderById(orderId) {
   return response;
 }
 
-export async function createOrder(tableId = null) {
-  if (!localStorage.getItem("userId")) {
-    throw new Error("No hay usuario logeado");
-  }
-  const response = await getUserById(localStorage.getItem("userId"));
+export async function createOrder(tableId = null, userId) {
+  const response = await getUserById(userId);
   if (response) {
     const body = {
       user_id: response.id,

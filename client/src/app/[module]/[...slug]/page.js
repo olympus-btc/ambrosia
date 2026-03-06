@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import DynamicModuleRenderer from "@/components/DynamicModuleRenderer";
+import RequireOpenTurn from "@/components/turn/RequireOpenTurn";
 import { findRouteConfig, matchesBusiness } from "@/lib/modules";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function ModuleSubPage({ params, searchParams }) {
 
     routeSegments.forEach((segment, i) => {
       if (segment.startsWith(":")) {
-        const paramName = segment.slice(1); // Remover el ":"
+        const paramName = segment.slice(1);
         dynamicParams[paramName] = pathSegments[i];
       }
     });
@@ -44,9 +45,9 @@ export default async function ModuleSubPage({ params, searchParams }) {
 
   const componentPath =
     routeConfig.moduleConfig.componentPath || routeConfig.module;
-  const componentBase = routeConfig.moduleConfig.componentBase || "modules"; // allow switching base dir (e.g., "components/pages")
+  const componentBase = routeConfig.moduleConfig.componentBase || "modules";
 
-  return (
+  const renderer = (
     <DynamicModuleRenderer
       componentBase={componentBase}
       componentPath={componentPath}
@@ -59,5 +60,11 @@ export default async function ModuleSubPage({ params, searchParams }) {
         searchParams: resolvedSearchParams,
       }}
     />
+  );
+
+  return routeConfig.route.requiresOpenTurn ? (
+    <RequireOpenTurn>{renderer}</RequireOpenTurn>
+  ) : (
+    renderer
   );
 }

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import DynamicModuleRenderer from "@/components/DynamicModuleRenderer";
+import RequireOpenTurn from "@/components/turn/RequireOpenTurn";
 import { modules, findRouteConfig, matchesBusiness } from "@lib/modules";
 
 export const dynamic = "force-dynamic";
@@ -32,9 +33,9 @@ export default async function ModulePage({ params }) {
 
   const componentPath =
     routeConfig.moduleConfig.componentPath || routeConfig.module;
-  const componentBase = routeConfig.moduleConfig.componentBase || "modules"; // allow switching base dir (e.g., "components/pages")
+  const componentBase = routeConfig.moduleConfig.componentBase || "modules";
 
-  return (
+  const renderer = (
     <DynamicModuleRenderer
       componentBase={componentBase}
       componentPath={componentPath}
@@ -44,5 +45,11 @@ export default async function ModulePage({ params }) {
         moduleName: routeConfig.moduleConfig.name,
       }}
     />
+  );
+
+  return routeConfig.route.requiresOpenTurn ? (
+    <RequireOpenTurn>{renderer}</RequireOpenTurn>
+  ) : (
+    renderer
   );
 }

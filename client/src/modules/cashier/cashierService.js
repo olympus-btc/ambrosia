@@ -1,51 +1,9 @@
-import { httpClient, parseJsonResponse } from "@/lib/http";
-
 import { getPaymentByTicketId } from "../orders/ordersService";
 
-export async function getTurnOpen() {
-  const response = await httpClient("/shifts");
-  const shifts = await parseJsonResponse(response, []);
-  if (!shifts) return;
-  const openShift = shifts.find((shift) => shift.end_time === null);
-  return openShift ? openShift.id : null;
-}
-
-export async function openTurn() {
-  const response = await httpClient("/shifts", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      user_id: localStorage.getItem("userId"),
-      shift_date: Date.now(),
-      start_time: Date.now(),
-      notes: "",
-    }),
-  });
-  return await parseJsonResponse(response, null);
-}
-
-export async function closeTurn(openTurn) {
-  const getResponse = await httpClient(`/shifts/${openTurn}`);
-  const currentShift = await parseJsonResponse(getResponse, null);
-  if (!currentShift) throw new Error("Turn not found");
-  currentShift.end_time = Date.now();
-  const updateResponse = await httpClient(`/shifts/${openTurn}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(currentShift),
-  });
-  return await parseJsonResponse(updateResponse, null);
-}
-
 export async function getReport(startDate, endDate) {
-  const response = await httpClient(
+  return await apiClient(
     `/get-report?startDate=${startDate}&endDate=${endDate}`,
   );
-  return await parseJsonResponse(response, null);
 }
 
 export async function generateReportFromData(
@@ -74,6 +32,7 @@ export async function generateReportFromData(
     const paymentMethodName = paymentMethods.find(
       (method) => method.id === payment.method_id,
     ).name;
+
     const ticketInfo = {
       amount: ticket.total_amount,
       paymentMethod: paymentMethodName,
