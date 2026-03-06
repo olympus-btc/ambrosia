@@ -1,5 +1,3 @@
-import { apiClient } from "../../services/apiClient";
-
 export async function getAllOrders() {
   const response = await apiClient("/orders");
   return response ? response : [];

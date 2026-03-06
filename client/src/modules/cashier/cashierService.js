@@ -1,4 +1,3 @@
-import { apiClient } from "../../services/apiClient";
 import { getPaymentByTicketId } from "../orders/ordersService";
 
 export async function getReport(startDate, endDate) {
