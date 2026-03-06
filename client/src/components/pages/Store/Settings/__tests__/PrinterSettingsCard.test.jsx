@@ -94,7 +94,7 @@ describe("PrinterSettingsCard", () => {
       printerType: "CUSTOMER",
       printerName: "Printer A",
       templateName: "Template A",
-      isDefault: false,
+      isDefault: true,
       enabled: true,
     }),
     );

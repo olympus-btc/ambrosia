@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Select, SelectItem, Switch } from "@heroui/react";
+import { Trash2 } from "lucide-react";
 
 export function PrinterConfigRow({
   config,
@@ -14,7 +15,7 @@ export function PrinterConfigRow({
   t,
 }) {
   return (
-    <div className="grid gap-3 rounded-md border border-gray-200 bg-white p-4 lg:grid-cols-[1.2fr_1fr_auto] lg:items-center">
+    <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white p-4">
       <div className="flex flex-col">
         <span className="font-semibold text-green-900">
           {config.printerName}
@@ -38,7 +39,7 @@ export function PrinterConfigRow({
 
       <div>
         <Select
-          className="min-w-52 max-w-full"
+          className="w-full"
           label={t("cardPrinters.templateLabel")}
           selectedKeys={config.templateName ? [config.templateName] : []}
           onChange={(e) => onTemplateChange(e.target.value || null)}
@@ -56,7 +57,7 @@ export function PrinterConfigRow({
         </Select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 lg:min-w-[240px]">
+      <div className="flex items-center justify-between gap-3">
         <Switch
           size="sm"
           isSelected={config.isDefault}
@@ -77,8 +78,14 @@ export function PrinterConfigRow({
         >
           {t("cardPrinters.enabledLabel")}
         </Switch>
-        <Button color="danger" variant="bordered" onPress={onRemove}>
-          {t("cardPrinters.remove")}
+        <Button
+          isIconOnly
+          variant="light"
+          color="danger"
+          onPress={onRemove}
+          aria-label={t("cardPrinters.remove")}
+        >
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </div>

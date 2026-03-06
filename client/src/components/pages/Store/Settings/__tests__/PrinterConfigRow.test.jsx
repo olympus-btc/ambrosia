@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { PrinterConfigRow } from "../PrinterSettings/PrinterConfigRow";
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ onPress, children, ...props }) => (
-    <button type="button" onClick={onPress} {...props}>
+  Button: ({ onPress, children, "aria-label": ariaLabel, ...props }) => (
+    <button type="button" onClick={onPress} aria-label={ariaLabel} {...props}>
       {children}
     </button>
   ),
@@ -82,7 +82,7 @@ describe("PrinterConfigRow", () => {
     fireEvent.click(screen.getByText("cardPrinters.enabledLabel"));
     expect(onToggleEnabled).toHaveBeenCalledWith(true);
 
-    fireEvent.click(screen.getByText("cardPrinters.remove"));
+    fireEvent.click(screen.getByRole("button", { name: "cardPrinters.remove" }));
     expect(onRemove).toHaveBeenCalled();
   });
 
