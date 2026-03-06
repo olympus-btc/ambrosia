@@ -23,6 +23,7 @@ import pos.ambrosia.services.PrintService
 import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.PrinterConfigUpdateStatus
 import pos.ambrosia.services.TicketTemplateService
+import pos.ambrosia.utils.PrintTicketException
 
 fun Application.configurePrinters() {
     val connection = DatabaseConnection.getConnection()
@@ -123,7 +124,7 @@ fun Route.printers(
                 )
                 call.respondText("Print job sent", status = HttpStatusCode.OK)
             } catch (e: Exception) {
-                throw pos.ambrosia.utils.PrintTicketException(e.message ?: "An unknown error occurred during printing.")
+                throw PrintTicketException(e.message ?: "An unknown error occurred during printing.")
             }
         }
     }

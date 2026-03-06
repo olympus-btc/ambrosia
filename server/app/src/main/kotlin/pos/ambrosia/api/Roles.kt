@@ -90,7 +90,6 @@ fun Route.roles(
 
             val updatedRole = call.receive<Role>()
             val isUpdated = roleService.updateRole(id, updatedRole)
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Role with ID: $id not found")

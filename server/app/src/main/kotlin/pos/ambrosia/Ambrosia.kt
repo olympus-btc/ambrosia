@@ -110,7 +110,7 @@ class Ambrosia : CliktCommand() {
                 value
             }
         val jwtAccessTokenExpirationSeconds by
-            option("--jwt-access-token-expiration", help = "Access token expiration in seconds (default: 60)").default("60")
+            option("--jwt-access-token-expiration", help = "Access token expiration in seconds").default("60")
         val phoenixdWebhookSecret by
             option(
                 "--phoenixd-webhook-secret",

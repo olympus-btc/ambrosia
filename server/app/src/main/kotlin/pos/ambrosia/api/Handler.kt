@@ -19,7 +19,9 @@ import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
+import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.WalletOnlyException
 import java.sql.SQLException
 
 fun Application.handler() {
@@ -27,13 +29,6 @@ fun Application.handler() {
         exception<SQLException> { call, cause ->
             logger.error("Database connection error: ${cause.message}", cause)
             call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
-        }
-        exception<Throwable> { call, cause ->
-            logger.error("Unhandled Throwable: ${cause.message}", cause)
-            call.respondText(
-                text = cause.message ?: "",
-                status = defaultExceptionStatusCode(cause) ?: HttpStatusCode.InternalServerError,
-            )
         }
         exception<InvalidCredentialsException> { call, cause ->
             logger.warn("Invalid login attempt: ${cause.message}")
@@ -43,6 +38,10 @@ fun Application.handler() {
             logger.warn("Invalid token: ${cause.message}")
             call.respond(HttpStatusCode.Unauthorized, Message("Invalid token"))
         }
+        exception<UnauthorizedApiException> { call, _ ->
+            logger.warn("Unauthorized API access attempt")
+            call.respond(HttpStatusCode.Unauthorized, Message("Unauthorized API access"))
+        }
         exception<DuplicateUserNameException> { call, cause ->
             logger.warn("Duplicate user name: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
@@ -50,14 +49,6 @@ fun Application.handler() {
         exception<LastUserDeletionException> { call, cause ->
             logger.warn("Attempt to delete last user: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
-        }
-        exception<Exception> { call, cause ->
-            logger.error("Unhandled exception: ${cause.message}")
-            call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
-        }
-        exception<UnauthorizedApiException> { call, _ ->
-            logger.warn("Unauthorized API access attempt")
-            call.respond(HttpStatusCode.Unauthorized, Message("Unauthorized API access"))
         }
         exception<AdminOnlyException> { call, _ ->
             logger.warn("Non-admin user attempted to access admin-only endpoint")
@@ -88,6 +79,22 @@ fun Application.handler() {
         exception<PhoenixServiceException> { call, cause ->
             logger.error("Phoenix service error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
+        }
+        exception<WalletOnlyException> { call, _ ->
+            logger.warn("Wallet-only endpoint accessed without wallet token")
+            call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
+        }
+        exception<PrintTicketException> { call, cause ->
+            logger.error("Print ticket error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
+        }
+        exception<Exception> { call, cause ->
+            logger.error("Unhandled exception: ${cause.message}")
+            call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
+        }
+        exception<Throwable> { call, cause ->
+            logger.error("Unhandled Throwable: ${cause.message}", cause)
+            call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
         }
     }
 }
