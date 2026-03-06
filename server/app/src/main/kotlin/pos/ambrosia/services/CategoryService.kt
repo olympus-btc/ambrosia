@@ -130,15 +130,32 @@ class CategoryService(
         type: String,
     ): Boolean {
         if (!validateType(type)) return false
-        if (categoryInUse(id, type)) return false
-        val st =
-            connection.prepareStatement(
-                "UPDATE categories SET is_deleted = 1 WHERE id = ? AND type = ?",
-            )
-        st.setString(1, id)
-        st.setString(2, type)
-        val rows = st.executeUpdate()
-        if (rows > 0) logger.info("Category deleted: $id type=$type")
-        return rows > 0
+        val table = usageTable(type)
+        val prev = connection.autoCommit
+        connection.autoCommit = false
+        try {
+            val clearSt =
+                connection.prepareStatement(
+                    "UPDATE $table SET category_id = NULL WHERE category_id = ? AND is_deleted = 0",
+                )
+            clearSt.setString(1, id)
+            clearSt.executeUpdate()
+
+            val st =
+                connection.prepareStatement(
+                    "UPDATE categories SET is_deleted = 1 WHERE id = ? AND type = ?",
+                )
+            st.setString(1, id)
+            st.setString(2, type)
+            val rows = st.executeUpdate()
+            connection.commit()
+            if (rows > 0) logger.info("Category deleted: $id type=$type")
+            return rows > 0
+        } catch (e: Exception) {
+            connection.rollback()
+            throw e
+        } finally {
+            connection.autoCommit = prev
+        }
     }
 }
