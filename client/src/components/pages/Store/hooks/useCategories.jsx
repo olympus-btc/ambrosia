@@ -59,7 +59,7 @@ export function useCategories(type = "product") {
 
   const deleteCategory = useCallback(
     async (categoryId) => {
-      await httpClient(`/categories/${categoryId}`, {
+      await httpClient(`/categories/${categoryId}?type=${type}`, {
         method: "DELETE",
       });
 
