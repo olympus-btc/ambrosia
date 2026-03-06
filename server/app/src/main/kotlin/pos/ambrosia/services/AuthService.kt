@@ -42,7 +42,7 @@ class AuthService(
             val storedPinHash = SecurePinProcessor.base64ToByteArray(storedPinHashBase64)
 
             val isValidPin = SecurePinProcessor.verifyPin(pin, userIdString, storedPinHash, env)
-            pin.fill('\u0000') // Limpiar PIN de memoria
+            pin.fill('\u0000')
 
             if (isValidPin) {
                 return AuthResponse(

@@ -188,7 +188,6 @@ fun Route.auth(
 
             tokenService.revokeRefreshToken(userId)
 
-            // Eliminar las cookies usando maxAge = 0
             call.response.cookies.append(
                 Cookie(
                     name = "accessToken",
