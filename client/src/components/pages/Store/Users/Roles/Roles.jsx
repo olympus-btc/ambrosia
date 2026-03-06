@@ -88,7 +88,6 @@ export function Roles() {
       });
       setShowEditModal(true);
     } catch {
-      // handled by hook log
     }
   };
 

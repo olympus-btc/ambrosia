@@ -109,7 +109,6 @@ class RolesService(
         sql.append("WHERE id = ?")
 
         if (id == null) return false
-        // Verificar que el nombre del rol no exista ya (excluyendo el rol actual)
         if (roleNameExistsExcludingId(role.role, id)) {
             logger.error("Role name already exists: ${role.role}")
             return false
