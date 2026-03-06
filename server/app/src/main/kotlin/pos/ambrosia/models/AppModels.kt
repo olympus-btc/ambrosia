@@ -334,7 +334,7 @@ data class Product(
     val description: String? = null,
     val image_url: String? = null,
     val cost_cents: Int,
-    val category_id: String,
+    val category_id: String? = null,
     val quantity: Int,
     val min_stock_threshold: Int,
     val max_stock_threshold: Int,

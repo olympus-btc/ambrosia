@@ -47,7 +47,7 @@ class ProductService(
         if (p.min_stock_threshold < 0) return false
         if (p.max_stock_threshold < 0) return false
         if (p.max_stock_threshold > 0 && p.min_stock_threshold > p.max_stock_threshold) return false
-        if (p.category_id.isBlank()) return false
+        if (p.category_id.isNullOrBlank()) return false
         return true
     }
 

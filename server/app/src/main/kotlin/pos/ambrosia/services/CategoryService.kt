@@ -143,10 +143,11 @@ class CategoryService(
 
             val st =
                 connection.prepareStatement(
-                    "UPDATE categories SET is_deleted = 1 WHERE id = ? AND type = ?",
+                    "UPDATE categories SET name = ?, is_deleted = 1 WHERE id = ? AND type = ?",
                 )
-            st.setString(1, id)
-            st.setString(2, type)
+            st.setString(1, "DELETED-$id")
+            st.setString(2, id)
+            st.setString(3, type)
             val rows = st.executeUpdate()
             connection.commit()
             if (rows > 0) logger.info("Category deleted: $id type=$type")
