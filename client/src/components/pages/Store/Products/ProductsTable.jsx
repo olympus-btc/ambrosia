@@ -77,9 +77,12 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                 </TableCell>
                 <TableCell>
                   <Chip
-                    className="bg-green-200 text-xs text-green-800 border border-green-300"
+                    className={`text-xs border ${categoryNameById[String(product.category_id)]
+                        ? "bg-green-200 text-green-800 border-green-300"
+                        : "bg-gray-200 text-gray-500 border-gray-300"
+                      }`}
                   >
-                    {categoryNameById[String(product.category_id)] ?? product.category_id}
+                    {categoryNameById[String(product.category_id)] ?? "Sin categoría"}
                   </Chip>
                 </TableCell>
                 <TableCell>
