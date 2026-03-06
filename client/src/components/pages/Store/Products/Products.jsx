@@ -9,6 +9,7 @@ import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
 
 import { AddProductsModal } from "./AddProductsModal";
+import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
 import { ProductsTable } from "./ProductsTable";
@@ -37,6 +38,8 @@ export function Products() {
     categories,
     loading: categoriesLoading,
     createCategory,
+    updateCategory,
+    deleteCategory,
     refetch: refetchCategories,
   } = useCategories("product");
 
@@ -138,6 +141,14 @@ export function Products() {
           setDeleteProductsShowModal(false);
           deleteProduct(productToDelete);
         }}
+      />
+
+      <Categories
+        categories={categories}
+        createCategory={createCategory}
+        updateCategory={updateCategory}
+        deleteCategory={deleteCategory}
+        refetch={refetchCategories}
       />
     </StoreLayout>
   );

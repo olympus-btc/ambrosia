@@ -26,10 +26,10 @@ export function useCategories(type = "product") {
   }, [type]);
 
   const createCategory = useCallback(
-    async (name) => {
+    async (name, categoryType) => {
       const response = await httpClient("/categories", {
         method: "POST",
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify({ name, type: categoryType || type }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -42,6 +42,32 @@ export function useCategories(type = "product") {
     [fetchCategories, type],
   );
 
+  const updateCategory = useCallback(
+    async (category) => {
+      await httpClient(`/categories/${category.categoryId}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: category.categoryName, type: "product" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
+  const deleteCategory = useCallback(
+    async (categoryId) => {
+      await httpClient(`/categories/${categoryId}`, {
+        method: "DELETE",
+      });
+
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
@@ -49,6 +75,8 @@ export function useCategories(type = "product") {
   return {
     categories,
     createCategory,
+    updateCategory,
+    deleteCategory,
     loading,
     error,
     refetch: fetchCategories,
