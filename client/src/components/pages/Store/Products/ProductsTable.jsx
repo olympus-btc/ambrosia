@@ -84,7 +84,7 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                     </div>
                   ) : (
                     <Chip className="bg-gray-200 text-xs text-gray-500 border border-gray-300">
-                      Sin categoría
+                      {t("noCategory")}
                     </Chip>
                   )}
                 </TableCell>

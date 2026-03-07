@@ -122,6 +122,7 @@ const storeEs = {
       out: "Agotado",
     },
     actions: "Acciones",
+    noCategory: "Sin categoría",
     modal: {
       titleAdd: "Agregar Producto",
       titleEdit: "Editar Producto",

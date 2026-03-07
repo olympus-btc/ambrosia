@@ -122,6 +122,7 @@ const storeEn = {
       out: "Out of stock",
     },
     actions: "Actions",
+    noCategory: "No category",
     modal: {
       titleAdd: "Add Product",
       titleEdit: "Edit Product",

@@ -65,7 +65,7 @@ export function useCategories(type = "product") {
 
       await fetchCategories();
     },
-    [fetchCategories],
+    [fetchCategories, type],
   );
 
   useEffect(() => {
