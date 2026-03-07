@@ -49,7 +49,7 @@ export function AddProductsModal({
       setData({
         productName: "",
         productDescription: "",
-        productCategory: "",
+        productCategories: [],
         productSKU: "",
         productPrice: "",
         productStock: 1,
@@ -71,7 +71,7 @@ export function AddProductsModal({
       setIsCreatingCategory(true);
       const newId = await createCategory(newCategoryName.trim());
       if (newId) {
-        onChange({ productCategory: newId });
+        onChange({ productCategories: [...data.productCategories, newId] });
       }
       setNewCategoryName("");
     } finally {
@@ -118,15 +118,15 @@ export function AddProductsModal({
               <Select
                 label={t("modal.productCategoryLabel")}
                 placeholder={t("modal.categorySelectPlaceholder")}
-                selectedKeys={data.productCategory ? [data.productCategory] : []}
+                selectionMode="multiple"
+                selectedKeys={new Set(data.productCategories)}
                 isRequired
-                errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                onChange={(e) => onChange({ productCategory: e.target.value })
-                }
+                errorMessage={t("modal.errorMsgSelectEmpty")}
+                onSelectionChange={(keys) => onChange({ productCategories: Array.from(keys) })}
                 isLoading={categoriesLoading}
               >
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.id} classNames={{ selectedIcon: "border-2 border-green-800 rounded-sm w-5 h-5 p-0.5" }}>
                     {category.name}
                   </SelectItem>
                 ))}

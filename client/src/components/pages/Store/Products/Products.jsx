@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { toArray } from "@/components/utils/array";
+
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
@@ -22,7 +24,7 @@ export function Products() {
     productId: "",
     productName: "",
     productDescription: "",
-    productCategory: "",
+    productCategories: [],
     productSKU: "",
     productPrice: "",
     productStock: 1,
@@ -54,7 +56,7 @@ export function Products() {
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
-      productCategory: product.category_id,
+      productCategories: toArray(product.category_ids),
       productSKU: product.SKU,
       productPrice: product.price_cents ? product.price_cents / 100 : "",
       productStock: product.quantity,
