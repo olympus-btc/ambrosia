@@ -55,7 +55,10 @@ class ProductService(
         return ids
     }
 
-    private fun insertCategories(productId: String, categoryIds: List<String>) {
+    private fun insertCategories(
+        productId: String,
+        categoryIds: List<String>,
+    ) {
         val st = connection.prepareStatement(INSERT_CATEGORY)
         for (categoryId in categoryIds) {
             st.setString(1, productId)
@@ -82,7 +85,10 @@ class ProductService(
         if (!valid(product)) return null
         val existing = getProductBySKU(product.SKU)
         if (existing != null) return null
-        val id = java.util.UUID.randomUUID().toString()
+        val id =
+            java.util.UUID
+                .randomUUID()
+                .toString()
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
