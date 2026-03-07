@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Button, ModalFooter } from "@heroui/react";
 
 export function TicketTemplatesFooter({
@@ -12,18 +14,26 @@ export function TicketTemplatesFooter({
   name,
   t,
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
     <ModalFooter className="flex justify-between">
       <div className="flex items-center gap-2">
         {selectedId && (
-          <Button
-            color="danger"
-            variant="bordered"
-            onPress={onDelete}
-            isDisabled={deleting}
-          >
-            {t("templates.deleteTemplate")}
-          </Button>
+          confirmDelete ? (
+            <>
+              <Button size="sm" color="danger" onPress={onDelete} isDisabled={deleting}>
+                {t("templates.confirmDelete")}
+              </Button>
+              <Button size="sm" variant="light" onPress={() => setConfirmDelete(false)}>
+                {t("templates.cancelDelete")}
+              </Button>
+            </>
+          ) : (
+            <Button color="danger" variant="bordered" onPress={() => setConfirmDelete(true)}>
+              {t("templates.deleteTemplate")}
+            </Button>
+          )
         )}
       </div>
       <div className="flex items-center gap-2">
