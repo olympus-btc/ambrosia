@@ -130,13 +130,12 @@ class CategoryService(
         type: String,
     ): Boolean {
         if (!validateType(type)) return false
-        val table = usageTable(type)
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
             val clearSt =
                 connection.prepareStatement(
-                    "UPDATE $table SET category_id = NULL WHERE category_id = ? AND is_deleted = 0",
+                    "DELETE FROM product_categories WHERE category_id = ?",
                 )
             clearSt.setString(1, id)
             clearSt.executeUpdate()
