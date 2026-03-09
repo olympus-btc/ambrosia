@@ -7,7 +7,7 @@ import { TicketTemplatesModal } from "../TicketTemplate/TicketTemplatesModal";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
-  Button: ({ onPress, isDisabled, children, ...props }) => (
+  Button: ({ onPress, isDisabled, children, isIconOnly, ...props }) => (
     <button
       type="button"
       onClick={isDisabled ? undefined : onPress}
@@ -47,6 +47,50 @@ jest.mock("@heroui/react", () => ({
 
 jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
+}));
+
+jest.mock("@dnd-kit/core", () => ({
+  DndContext: ({ children }) => <>{children}</>,
+  closestCenter: jest.fn(),
+  PointerSensor: jest.fn(),
+  KeyboardSensor: jest.fn(),
+  useSensor: jest.fn(),
+  useSensors: jest.fn(() => []),
+}));
+
+jest.mock("@dnd-kit/sortable", () => ({
+  SortableContext: ({ children }) => <>{children}</>,
+  sortableKeyboardCoordinates: jest.fn(),
+  verticalListSortingStrategy: jest.fn(),
+  arrayMove: jest.fn((arr, from, to) => {
+    const result = [...arr];
+    const [item] = result.splice(from, 1);
+    result.splice(to, 0, item);
+    return result;
+  }),
+  useSortable: jest.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: jest.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  })),
+}));
+
+jest.mock("@dnd-kit/utilities", () => ({
+  CSS: { Transform: { toString: jest.fn(() => "") } },
+}));
+
+jest.mock("@providers/configurations/configurationsProvider", () => ({
+  useConfigurations: jest.fn(() => ({
+    config: {
+      businessName: "Ambrosia",
+      businessAddress: "Calle Principal 123",
+      businessPhone: "+52 555 1234567",
+      businessEmail: "contact@ambrosia.mx",
+    },
+  })),
 }));
 
 jest.mock("../../hooks/usePrinter", () => ({
@@ -120,9 +164,14 @@ describe("TicketTemplatesModal", () => {
       elements: expect.any(Array),
     }),
     );
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "success", description: "templates.saveSuccess" }),
+    ));
   });
 
   it("creates, prints with error, and deletes a template", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
     const createTemplate = jest.fn().mockResolvedValue({ id: "tpl-new" });
     const deleteTemplate = jest.fn().mockResolvedValue(true);
     const printTicket = jest.fn().mockRejectedValue(new Error("fail"));
@@ -175,16 +224,21 @@ describe("TicketTemplatesModal", () => {
     }),
     );
 
-    await waitFor(() => expect(screen.getByText("templates.deleteTemplate")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "success", description: "templates.saveSuccess" }),
+    ));
+
+    await waitFor(() => expect(screen.getByText("templates.deleteTemplate")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("templates.deleteTemplate"));
+    await waitFor(() => expect(screen.getByText("templates.confirmDelete")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("templates.confirmDelete"));
 
     await waitFor(() => expect(deleteTemplate).toHaveBeenCalledWith("tpl-new"));
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("");
   });
 
-  it("edits elements, moves them, and changes printer type", async () => {
+  it("collapses elements by default, expands on click, remove and add work", async () => {
     const initialTemplate = {
       id: "tpl-3",
       name: "Breaks",
@@ -215,24 +269,27 @@ describe("TicketTemplatesModal", () => {
     );
 
     expect(container.querySelector(".border-dashed")).not.toBeNull();
-    expect(container.querySelector(".h-3")).not.toBeNull();
 
-    const valueInputs = screen.getAllByLabelText("templates.elementValueLabel");
-    fireEvent.change(valueInputs[valueInputs.length - 1], {
-      target: { value: "Updated" },
-    });
+    expect(screen.queryByLabelText("templates.elementValueLabel")).toBeNull();
 
-    fireEvent.click(screen.getAllByText("templates.moveUp")[0]);
-    fireEvent.click(screen.getAllByText("templates.moveDown").slice(-1)[0]);
+    const typeLabels = screen.getAllByText("templates.elementTypes.TEXT");
+    fireEvent.click(typeLabels[0]);
 
-    fireEvent.click(screen.getAllByText("templates.removeElement")[0]);
+    const valueInput = screen.getByLabelText("templates.elementValueLabel");
+    expect(valueInput).toHaveValue("Hello");
+    fireEvent.change(valueInput, { target: { value: "Updated" } });
+
+    expect(screen.getAllByRole("button", { name: "templates.removeElement" })).toHaveLength(3);
+    fireEvent.click(screen.getAllByRole("button", { name: "templates.removeElement" })[0]);
+    expect(screen.getAllByRole("button", { name: "templates.removeElement" })).toHaveLength(2);
 
     fireEvent.click(screen.getByText("templates.addElement"));
+    await waitFor(() => expect(screen.getAllByLabelText("templates.elementTypeLabel").length).toBeGreaterThan(0),
+    );
 
     fireEvent.change(screen.getByLabelText("templates.printTypeLabel"), {
       target: { value: "CUSTOMER" },
     });
-
     expect(screen.getByText("cardPrinters.types.CUSTOMER")).toBeInTheDocument();
   });
 

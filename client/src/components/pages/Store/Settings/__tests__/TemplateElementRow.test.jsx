@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { TemplateElementRow } from "../TicketTemplate/TemplateElementRow";
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ onPress, children, ...props }) => (
-    <button type="button" onClick={onPress} {...props}>
+  Button: ({ onPress, children, "aria-label": ariaLabel, isIconOnly, ...props }) => (
+    <button type="button" onClick={onPress} aria-label={ariaLabel} {...props}>
       {children}
     </button>
   ),
@@ -31,31 +31,43 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
+jest.mock("@dnd-kit/sortable", () => ({
+  useSortable: jest.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: jest.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  })),
+}));
+
+jest.mock("@dnd-kit/utilities", () => ({
+  CSS: { Transform: { toString: jest.fn(() => "") } },
+}));
+
 const t = (key) => key;
 
-describe("TemplateElementRow", () => {
-  it("updates element fields and toggles bold", () => {
-    const onChange = jest.fn();
-    const onMove = jest.fn();
-    const onRemove = jest.fn();
+const element = {
+  localId: "el-1",
+  type: "TEXT",
+  value: "",
+  style: { bold: false, justification: "LEFT", fontSize: "NORMAL" },
+};
 
-    const element = {
-      localId: "el-1",
-      type: "TEXT",
-      value: "",
-      style: {
-        bold: false,
-        justification: "LEFT",
-        fontSize: "NORMAL",
-      },
-    };
+describe("TemplateElementRow", () => {
+  it("updates element fields and toggles bold when expanded", () => {
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <TemplateElementRow
         element={element}
+        isOpen
+        onToggle={jest.fn()}
         onChange={onChange}
-        onMove={onMove}
         onRemove={onRemove}
+        config={null}
         t={t}
       />,
     );
@@ -86,41 +98,52 @@ describe("TemplateElementRow", () => {
       style: { ...element.style, fontSize: "LARGE" },
     });
 
-    fireEvent.click(screen.getByText("templates.boldOff"));
+    fireEvent.click(screen.getByRole("button", { name: "templates.boldToggle" }));
     expect(onChange).toHaveBeenCalledWith({
       ...element,
       style: { ...element.style, bold: true },
     });
 
-    fireEvent.click(screen.getByText("templates.moveUp"));
-    expect(onMove).toHaveBeenCalledWith("el-1", -1);
-
-    fireEvent.click(screen.getByText("templates.moveDown"));
-    expect(onMove).toHaveBeenCalledWith("el-1", 1);
-
-    fireEvent.click(screen.getByText("templates.removeElement"));
+    fireEvent.click(screen.getByRole("button", { name: "templates.removeElement" }));
     expect(onRemove).toHaveBeenCalledWith("el-1");
+  });
+
+  it("collapses fields by default and shows them on toggle", () => {
+    const onToggle = jest.fn();
+
+    render(
+      <TemplateElementRow
+        element={element}
+        isOpen={false}
+        onToggle={onToggle}
+        onChange={jest.fn()}
+        onRemove={jest.fn()}
+        config={null}
+        t={t}
+      />,
+    );
+
+    expect(screen.queryByLabelText("templates.elementValueLabel")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "templates.expand" }));
+    expect(onToggle).toHaveBeenCalled();
   });
 
   it("hides value and style controls for line breaks", () => {
     render(
       <TemplateElementRow
-        element={{ localId: "el-2", type: "LINE_BREAK" }}
+        element={{ localId: "el-2", type: "LINE_BREAK", value: "", style: {} }}
+        isOpen
+        onToggle={jest.fn()}
         onChange={jest.fn()}
-        onMove={jest.fn()}
         onRemove={jest.fn()}
+        config={null}
         t={t}
       />,
     );
 
-    expect(
-      screen.queryByLabelText("templates.elementValueLabel"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("templates.justificationLabel"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText("templates.fontSizeLabel"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("templates.elementValueLabel")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("templates.justificationLabel")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("templates.fontSizeLabel")).not.toBeInTheDocument();
   });
 });
