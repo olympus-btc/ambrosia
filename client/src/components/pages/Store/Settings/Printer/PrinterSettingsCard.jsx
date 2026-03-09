@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@heroui/react";
 
@@ -31,18 +31,25 @@ export function PrinterSettingsCard({
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const initializedRef = useRef(false);
+  const autoDefaultedRef = useRef(false);
 
   useEffect(() => {
-    if (!printerName && availablePrinters.length > 0) {
-      setPrinterName(availablePrinters[0]);
-    }
-  }, [availablePrinters, printerName]);
+    if (initializedRef.current) return;
+    const hasAvailable = availablePrinters.length > 0;
+    const hasTemplates = Array.isArray(templates) && templates.length > 0;
+    if (hasAvailable) setPrinterName(availablePrinters[0]);
+    if (hasTemplates) setTemplateName(templates[0].name);
+    if (hasAvailable || hasTemplates) initializedRef.current = true;
+  }, [availablePrinters, templates]);
 
   useEffect(() => {
-    if (!templateName && Array.isArray(templates) && templates.length > 0) {
-      setTemplateName(templates[0].name);
+    if (autoDefaultedRef.current || loadingConfigs) return;
+    autoDefaultedRef.current = true;
+    if (Array.isArray(printerConfigs) && printerConfigs.length === 0) {
+      setIsDefault(true);
     }
-  }, [templates, templateName]);
+  }, [printerConfigs, loadingConfigs]);
 
   const configRows = useMemo(() => {
     if (!Array.isArray(printerConfigs)) return [];
@@ -67,6 +74,9 @@ export function PrinterSettingsCard({
         isDefault,
         enabled,
       });
+      setPrinterType("CUSTOMER");
+      setPrinterName(availablePrinters[0] ?? "");
+      setTemplateName(templates?.[0]?.name ?? "");
       setIsDefault(false);
       setEnabled(true);
     } finally {
@@ -124,7 +134,7 @@ export function PrinterSettingsCard({
             )}
 
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
                 <h3 className="text-lg font-semibold text-green-900">
                   {t("cardPrinters.listTitle")}
                 </h3>

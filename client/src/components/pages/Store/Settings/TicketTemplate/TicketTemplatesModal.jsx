@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { addToast, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
+
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
 
@@ -26,6 +28,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     deleteTemplate,
   } = useTemplates();
   const { printTicket } = usePrinters();
+  const { config } = useConfigurations();
 
   const [selectedId, setSelectedId] = useState("");
   const [name, setName] = useState("");
@@ -35,7 +38,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   const [printing, setPrinting] = useState(false);
   const [printerType, setPrinterType] = useState("CUSTOMER");
 
-  const previewElements = useTicketTemplatePreviewElements(elements);
+  const previewElements = useTicketTemplatePreviewElements(elements, config);
 
   useEffect(() => {
     if (isOpen && initialTemplate) {
@@ -61,19 +64,6 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     setElements([createElement()]);
   };
 
-  const moveElement = (id, direction) => {
-    setElements((prev) => {
-      const index = prev.findIndex((element) => element.localId === id);
-      if (index === -1) return prev;
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
-      const updated = [...prev];
-      const [moved] = updated.splice(index, 1);
-      updated.splice(nextIndex, 0, moved);
-      return updated;
-    });
-  };
-
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
@@ -94,6 +84,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           setSelectedId(created.id);
         }
       }
+      addToast({ color: "success", description: t("templates.saveSuccess") });
     } finally {
       setSaving(false);
     }
@@ -154,12 +145,15 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
               name={name}
               onNameChange={(e) => setName(e.target.value)}
               elements={elements}
-              onElementChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)),
-              )
-              }
-              onElementAdd={() => setElements((prev) => [...prev, createElement()])}
-              onElementMove={moveElement}
+              onElementChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)))}
+              onElementAdd={() => {
+                const newEl = createElement();
+                setElements((prev) => [...prev, newEl]);
+                return newEl;
+              }}
+              onElementReorder={(newArray) => setElements(newArray)}
               onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
+              config={config}
               t={t}
             />
 
@@ -176,6 +170,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           </div>
         </ModalBody>
         <TicketTemplatesFooter
+          key={selectedId}
           selectedId={selectedId}
           deleting={deleting}
           onDelete={handleDelete}
