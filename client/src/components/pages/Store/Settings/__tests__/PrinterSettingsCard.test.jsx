@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import { PrinterSettingsCard } from "../PrinterSettings/PrinterSettingsCard";
+import { PrinterSettingsCard } from "../Printer/PrinterSettingsCard";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -15,7 +15,7 @@ jest.mock("@heroui/react", () => ({
 
 let lastAddProps = null;
 
-jest.mock("../PrinterSettings/PrinterAddForm", () => ({
+jest.mock("../Printer/PrinterAddForm", () => ({
   PrinterAddForm: (props) => {
     lastAddProps = props;
     return (
@@ -26,7 +26,7 @@ jest.mock("../PrinterSettings/PrinterAddForm", () => ({
   },
 }));
 
-jest.mock("../PrinterSettings/PrinterConfigRow", () => ({
+jest.mock("../Printer/PrinterConfigRow", () => ({
   PrinterConfigRow: ({
     config,
     onTemplateChange,

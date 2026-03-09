@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { PrinterConfigRow } from "../PrinterSettings/PrinterConfigRow";
+import { PrinterConfigRow } from "../Printer/PrinterConfigRow";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, "aria-label": ariaLabel, ...props }) => (

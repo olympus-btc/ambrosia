@@ -20,7 +20,7 @@ import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
-import { PrinterSettingsCard } from "./PrinterSettings/PrinterSettingsCard";
+import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
 import { SeedCard } from "./Seed/SeedCard";
 import { TemplateList } from "./TicketTemplate/TemplateList";
 import { TicketTemplatesModal } from "./TicketTemplate/TicketTemplatesModal";
