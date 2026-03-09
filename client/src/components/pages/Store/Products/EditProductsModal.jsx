@@ -57,7 +57,7 @@ export function EditProductsModal({
       productId: "",
       productName: "",
       productDescription: "",
-      productCategory: "",
+      productCategories: [],
       productSKU: "",
       productPrice: "",
       productStock: "",
@@ -110,15 +110,15 @@ export function EditProductsModal({
               <Select
                 label={t("modal.productCategoryLabel")}
                 placeholder={t("modal.categorySelectPlaceholder")}
+                selectionMode="multiple"
                 isRequired
                 errorMessage={t("modal.errorMsgSelectEmpty")}
-                selectedKeys={data.productCategory ? [data.productCategory] : []}
-                onChange={(e) => onChange({ productCategory: e.target.value })
-                }
+                selectedKeys={new Set(data.productCategories)}
+                onSelectionChange={(keys) => onChange({ productCategories: Array.from(keys) })}
                 isLoading={categoriesLoading}
               >
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.id} classNames={{ selectedIcon: "border-2 border-green-800 rounded-sm w-5 h-5 p-0.5" }}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -140,7 +140,7 @@ export function EditProductsModal({
                       setIsCreatingCategory(true);
                       const newId = await createCategory(newCategoryName.trim());
                       if (newId) {
-                        onChange({ productCategory: newId });
+                        onChange({ productCategories: [...data.productCategories, newId] });
                       }
                       setNewCategoryName("");
                     } finally {

@@ -9,34 +9,64 @@ class ProductService(
 ) {
     companion object {
         private const val ADD_PRODUCT =
-            "INSERT INTO products (id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO products (id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         private const val GET_PRODUCTS =
-            "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE is_deleted = 0"
+            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE is_deleted = 0"
         private const val GET_PRODUCT_BY_ID =
-            "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE id = ? AND is_deleted = 0"
+            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE id = ? AND is_deleted = 0"
         private const val GET_PRODUCT_BY_SKU =
-            "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
+            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
         private const val UPDATE_PRODUCT =
-            "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, category_id = ?, quantity = ?, min_stock_threshold = ?, max_stock_threshold = ?, price_cents = ? WHERE id = ?"
+            "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, quantity = ?, min_stock_threshold = ?, max_stock_threshold = ?, price_cents = ? WHERE id = ?"
         private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1, SKU = ? WHERE id = ?"
+        private const val GET_CATEGORY_IDS =
+            "SELECT category_id FROM product_categories WHERE product_id = ?"
+        private const val INSERT_CATEGORY =
+            "INSERT OR IGNORE INTO product_categories (product_id, category_id) VALUES (?, ?)"
+        private const val DELETE_CATEGORIES =
+            "DELETE FROM product_categories WHERE product_id = ?"
         private const val GET_PRODUCTS_BY_CATEGORY =
-            "SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE category_id = ? AND is_deleted = 0"
+            "SELECT DISTINCT p.id, p.SKU, p.name, p.description, p.image_url, p.cost_cents, p.quantity, p.min_stock_threshold, p.max_stock_threshold, p.price_cents FROM products p INNER JOIN product_categories pc ON p.id = pc.product_id WHERE pc.category_id = ? AND p.is_deleted = 0"
     }
 
-    private fun map(result: java.sql.ResultSet): Product =
-        Product(
-            id = result.getString("id"),
+    private fun map(result: java.sql.ResultSet): Product {
+        val productId = result.getString("id")
+        return Product(
+            id = productId,
             SKU = result.getString("SKU"),
             name = result.getString("name"),
             description = result.getString("description"),
             image_url = result.getString("image_url"),
             cost_cents = result.getInt("cost_cents"),
-            category_id = result.getString("category_id"),
+            category_ids = getCategoryIds(productId),
             quantity = result.getInt("quantity"),
             min_stock_threshold = result.getInt("min_stock_threshold"),
             max_stock_threshold = result.getInt("max_stock_threshold"),
             price_cents = result.getInt("price_cents"),
         )
+    }
+
+    private fun getCategoryIds(productId: String): List<String> {
+        val st = connection.prepareStatement(GET_CATEGORY_IDS)
+        st.setString(1, productId)
+        val rs = st.executeQuery()
+        val ids = mutableListOf<String>()
+        while (rs.next()) ids.add(rs.getString("category_id"))
+        return ids
+    }
+
+    private fun insertCategories(
+        productId: String,
+        categoryIds: List<String>,
+    ) {
+        val st = connection.prepareStatement(INSERT_CATEGORY)
+        for (categoryId in categoryIds) {
+            st.setString(1, productId)
+            st.setString(2, categoryId)
+            st.addBatch()
+        }
+        st.executeBatch()
+    }
 
     private fun valid(p: Product): Boolean {
         if (p.SKU.isBlank()) return false
@@ -47,7 +77,7 @@ class ProductService(
         if (p.min_stock_threshold < 0) return false
         if (p.max_stock_threshold < 0) return false
         if (p.max_stock_threshold > 0 && p.min_stock_threshold > p.max_stock_threshold) return false
-        if (p.category_id.isBlank()) return false
+        if (p.category_ids.isEmpty()) return false
         return true
     }
 
@@ -59,24 +89,34 @@ class ProductService(
             java.util.UUID
                 .randomUUID()
                 .toString()
-        val st = connection.prepareStatement(ADD_PRODUCT)
-        st.setString(1, id)
-        st.setString(2, product.SKU)
-        st.setString(3, product.name)
-        st.setString(4, product.description)
-        st.setString(5, product.image_url)
-        st.setInt(6, product.cost_cents)
-        st.setString(7, product.category_id)
-        st.setInt(8, product.quantity)
-        st.setInt(9, product.min_stock_threshold)
-        st.setInt(10, product.max_stock_threshold)
-        st.setInt(11, product.price_cents)
-        val rows = st.executeUpdate()
-        return if (rows > 0) {
+        val prev = connection.autoCommit
+        connection.autoCommit = false
+        try {
+            val st = connection.prepareStatement(ADD_PRODUCT)
+            st.setString(1, id)
+            st.setString(2, product.SKU)
+            st.setString(3, product.name)
+            st.setString(4, product.description)
+            st.setString(5, product.image_url)
+            st.setInt(6, product.cost_cents)
+            st.setInt(7, product.quantity)
+            st.setInt(8, product.min_stock_threshold)
+            st.setInt(9, product.max_stock_threshold)
+            st.setInt(10, product.price_cents)
+            val rows = st.executeUpdate()
+            if (rows == 0) {
+                connection.rollback()
+                return null
+            }
+            insertCategories(id, product.category_ids)
+            connection.commit()
             logger.info("Product created: $id")
-            id
-        } else {
-            null
+            return id
+        } catch (e: Exception) {
+            connection.rollback()
+            throw e
+        } finally {
+            connection.autoCommit = prev
         }
     }
 
@@ -116,21 +156,38 @@ class ProductService(
         if (!valid(product)) return false
         val current = getProductBySKU(product.SKU)
         if (current != null && current.id != product.id) return false
-        val st = connection.prepareStatement(UPDATE_PRODUCT)
-        st.setString(1, product.SKU)
-        st.setString(2, product.name)
-        st.setString(3, product.description)
-        st.setString(4, product.image_url)
-        st.setInt(5, product.cost_cents)
-        st.setString(6, product.category_id)
-        st.setInt(7, product.quantity)
-        st.setInt(8, product.min_stock_threshold)
-        st.setInt(9, product.max_stock_threshold)
-        st.setInt(10, product.price_cents)
-        st.setString(11, product.id)
-        val rows = st.executeUpdate()
-        if (rows > 0) logger.info("Product updated: ${product.id}")
-        return rows > 0
+        val prev = connection.autoCommit
+        connection.autoCommit = false
+        try {
+            val st = connection.prepareStatement(UPDATE_PRODUCT)
+            st.setString(1, product.SKU)
+            st.setString(2, product.name)
+            st.setString(3, product.description)
+            st.setString(4, product.image_url)
+            st.setInt(5, product.cost_cents)
+            st.setInt(6, product.quantity)
+            st.setInt(7, product.min_stock_threshold)
+            st.setInt(8, product.max_stock_threshold)
+            st.setInt(9, product.price_cents)
+            st.setString(10, product.id)
+            val rows = st.executeUpdate()
+            if (rows == 0) {
+                connection.rollback()
+                return false
+            }
+            val deleteSt = connection.prepareStatement(DELETE_CATEGORIES)
+            deleteSt.setString(1, product.id)
+            deleteSt.executeUpdate()
+            insertCategories(product.id, product.category_ids)
+            connection.commit()
+            logger.info("Product updated: ${product.id}")
+            return true
+        } catch (e: Exception) {
+            connection.rollback()
+            throw e
+        } finally {
+            connection.autoCommit = prev
+        }
     }
 
     suspend fun deleteProduct(id: String): Boolean {
