@@ -43,7 +43,7 @@ fun Route.tables(tableService: TableService) {
 
             val tables = tableService.getTablesBySpace(spaceId = id)
             if (tables == null) {
-                call.respond(HttpStatusCode.OK, "Space not found")
+                call.respond(HttpStatusCode.NotFound, "Space not found")
                 return@get
             }
             if (tables.isEmpty()) {

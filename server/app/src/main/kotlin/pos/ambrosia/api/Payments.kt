@@ -109,7 +109,7 @@ fun Route.payments(
 
             val payments = ticketPaymentService.getTicketPaymentsByTicket(ticketId)
             if (payments == null) {
-                call.respond(HttpStatusCode.OK, "Ticket not found")
+                call.respond(HttpStatusCode.NotFound, "Ticket not found")
                 return@get
             }
             if (payments.isEmpty()) {
@@ -128,7 +128,7 @@ fun Route.payments(
 
             val tickets = ticketPaymentService.getTicketPaymentsByPayment(paymentId)
             if (tickets == null) {
-                call.respond(HttpStatusCode.OK, "Payment not found")
+                call.respond(HttpStatusCode.NotFound, "Payment not found")
                 return@get
             }
             if (tickets.isEmpty()) {

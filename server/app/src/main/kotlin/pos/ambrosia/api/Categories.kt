@@ -34,7 +34,7 @@ fun Route.categories(service: CategoryService) {
             }
             val items = service.getCategories(type)
             if (items == null) {
-                call.respond(HttpStatusCode.OK, "No category type found")
+                call.respond(HttpStatusCode.NotFound, "No category type found")
                 return@get
             }
             if (items.isEmpty()) {

@@ -106,7 +106,7 @@ fun Route.orders(orderService: OrderService) {
 
             val orders = orderService.getOrdersByUserId(userId)
             if (orders == null) {
-                call.respond(HttpStatusCode.OK, "User not found")
+                call.respond(HttpStatusCode.NotFound, "User not found")
                 return@get
             }
             if (orders.isEmpty()) {
@@ -125,7 +125,7 @@ fun Route.orders(orderService: OrderService) {
 
             val orders = orderService.getOrdersByTableId(tableId)
             if (orders == null) {
-                call.respond(HttpStatusCode.OK, "Table not found")
+                call.respond(HttpStatusCode.NotFound, "Table not found")
                 return@get
             }
             if (orders.isEmpty()) {
@@ -144,7 +144,7 @@ fun Route.orders(orderService: OrderService) {
 
             val orders = orderService.getOrdersByStatus(status)
             if (orders == null) {
-                call.respond(HttpStatusCode.OK, "Invalid order status")
+                call.respond(HttpStatusCode.NotFound, "Invalid order status")
                 return@get
             }
             if (orders.isEmpty()) {

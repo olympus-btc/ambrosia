@@ -64,7 +64,7 @@ fun Route.roles(
             }
             val perms = permissionsService.getByRole(id)
             if (perms == null) {
-                call.respond(HttpStatusCode.OK, "Role not found")
+                call.respond(HttpStatusCode.NotFound, "Role not found")
                 return@get
             }
             if (perms.isEmpty()) {
@@ -106,6 +106,11 @@ fun Route.roles(
             val id = call.parameters["id"]
             if (id == null) {
                 call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@put
+            }
+
+            if (!permissionsService.roleExists(id)) {
+                call.respond(HttpStatusCode.NotFound, "Role with ID: $id not found")
                 return@put
             }
 
