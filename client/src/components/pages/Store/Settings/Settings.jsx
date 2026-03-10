@@ -9,6 +9,7 @@ import { useTranslations, useLocale } from "next-intl";
 
 import { useUpload } from "@components/hooks/useUpload";
 import { LanguageSwitcher } from "@i18n/I18nProvider";
+import { isElectron } from "@lib/isElectron";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { useCurrency } from "../../../hooks/useCurrency";
@@ -20,6 +21,7 @@ import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { EditSettingsModal } from "./EditSettingsModal";
+import { LightningCard } from "./Lightning/LightningCard";
 import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
 import { SeedCard } from "./Seed/SeedCard";
 import { TemplateList } from "./TicketTemplate/TemplateList";
@@ -325,6 +327,12 @@ export function Settings() {
         <div className="flex flex-col lg:w-[47%] h-full">
           <TutorialsCard t={t} />
         </div>
+
+        {isElectron && (
+          <div className="flex flex-col lg:w-[47%] h-full">
+            <LightningCard />
+          </div>
+        )}
       </div>
 
       <EditSettingsModal

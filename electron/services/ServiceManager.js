@@ -170,6 +170,7 @@ class ServiceManager extends EventEmitter {
         case 'phoenixd':
           await this.phoenixdService.stop();
           await this.phoenixdService.start(this.ports.phoenixd, this.configs.phoenix);
+          this.externalServices.phoenixd = false;
           break;
         case 'backend':
           await this.backendService.stop();
