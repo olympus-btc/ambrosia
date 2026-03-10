@@ -65,13 +65,15 @@ class PhoenixdService {
         console.log(`[PhoenixdService] Using native phoenixd binary for ${process.platform}-${process.arch}`);
       }
 
-      this.process = spawn(phoenixdPath, args, {
+      const spawnedProcess = spawn(phoenixdPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
         env,
       });
 
-      this.process.stdout.on('data', (data) => {
+      this.process = spawnedProcess;
+
+      spawnedProcess.stdout.on('data', (data) => {
         const message = data.toString();
         console.log(`[Phoenixd] ${message.trim()}`);
         if (this.logStream) {
@@ -79,7 +81,7 @@ class PhoenixdService {
         }
       });
 
-      this.process.stderr.on('data', (data) => {
+      spawnedProcess.stderr.on('data', (data) => {
         const message = data.toString();
         console.error(`[Phoenixd ERROR] ${message.trim()}`);
         if (this.logStream) {
@@ -87,16 +89,20 @@ class PhoenixdService {
         }
       });
 
-      this.process.on('error', (error) => {
+      spawnedProcess.on('error', (error) => {
         console.error('[PhoenixdService] Failed to start:', error);
         this.status = 'error';
-        this.cleanup();
+        if (this.process === spawnedProcess) this.cleanup();
       });
 
-      this.process.on('close', (code) => {
+      spawnedProcess.on('close', (code) => {
         console.log(`[PhoenixdService] Process exited with code ${code}`);
-        this.status = 'stopped';
-        this.cleanup();
+        // Only cleanup if this process is still the active one.
+        // Avoids overwriting this.process after a restart has already set a new process.
+        if (this.process === spawnedProcess) {
+          this.status = 'stopped';
+          this.cleanup();
+        }
       });
 
       console.log('[PhoenixdService] Waiting for phoenixd to be healthy...');
@@ -114,9 +120,27 @@ class PhoenixdService {
     }
   }
 
+  async killByPort(port) {
+    const { exec } = require('child_process');
+    const targetPort = port || this.port;
+    if (!targetPort) return;
+    return new Promise((resolve) => {
+      const command = process.platform === 'win32'
+        ? `for /f "tokens=5" %a in ('netstat -aon ^| findstr LISTENING ^| findstr :${targetPort}') do taskkill /F /PID %a`
+        : `lsof -ti TCP:${targetPort} -sTCP:LISTEN | xargs kill -9`;
+      exec(command, () => resolve());
+    });
+  }
+
   async stop() {
     if (!this.process) {
-      console.log('[PhoenixdService] No process to stop');
+      if (this.port) {
+        console.log(`[PhoenixdService] No owned process — attempting to kill any process on port ${this.port}`);
+        await this.killByPort(this.port);
+        await new Promise((resolve) => { setTimeout(resolve, 500); });
+      } else {
+        console.log('[PhoenixdService] No process to stop');
+      }
       return;
     }
 
@@ -124,30 +148,37 @@ class PhoenixdService {
 
     return new Promise((resolve) => {
       const pid = this.process.pid;
+      const processToKill = this.process;
+
+      const onExit = () => {
+        clearTimeout(forceKillTimer);
+        console.log('[PhoenixdService] Process exited cleanly');
+        this.cleanup();
+        resolve();
+      };
+
+      processToKill.once('exit', onExit);
+
+      const forceKillTimer = setTimeout(() => {
+        processToKill.removeListener('exit', onExit);
+        console.warn('[PhoenixdService] Force killing after timeout');
+        treeKill(pid, 'SIGKILL', () => {
+          this.cleanup();
+          resolve();
+        });
+      }, 5000);
 
       treeKill(pid, 'SIGTERM', (err) => {
         if (err) {
-          console.error('[PhoenixdService] Failed to kill process tree:', err);
+          console.error('[PhoenixdService] Failed to send SIGTERM:', err);
+          clearTimeout(forceKillTimer);
+          processToKill.removeListener('exit', onExit);
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();
           });
-        } else {
-          console.log('[PhoenixdService] Process tree killed successfully');
-          this.cleanup();
-          resolve();
         }
       });
-
-      setTimeout(() => {
-        if (this.process) {
-          console.warn('[PhoenixdService] Force killing after timeout');
-          treeKill(pid, 'SIGKILL', () => {
-            this.cleanup();
-            resolve();
-          });
-        }
-      }, 5000);
     });
   }
 

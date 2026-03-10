@@ -8,6 +8,8 @@ const INVOKE_CHANNELS = [
   'services:get-logs',
   'update:install',
   'update:open-release',
+  'phoenixd:get-auto-liquidity',
+  'phoenixd:set-auto-liquidity',
 ];
 
 const RECEIVE_CHANNELS = [
