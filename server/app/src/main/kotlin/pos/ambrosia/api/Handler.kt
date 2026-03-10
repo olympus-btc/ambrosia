@@ -20,15 +20,17 @@ import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.PrintTicketException
+import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.UnauthorizedApiException
 import pos.ambrosia.utils.WalletOnlyException
 import java.sql.SQLException
 
 fun Application.handler() {
     install(StatusPages) {
-        exception<SQLException> { call, cause ->
-            logger.error("Database connection error: ${cause.message}", cause)
-            call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
+        // --- Specific Exceptions First ---
+        exception<ResourceNotFoundException> { call, cause ->
+            logger.warn("Resource not found: ${cause.message}")
+            call.respond(HttpStatusCode.NotFound, Message(cause.message ?: "Resource not found"))
         }
         exception<InvalidCredentialsException> { call, cause ->
             logger.warn("Invalid login attempt: ${cause.message}")
@@ -58,6 +60,14 @@ fun Application.handler() {
             logger.warn("User attempted to access endpoint without required permission")
             call.respond(HttpStatusCode.Forbidden, Message("Permission required"))
         }
+        exception<WalletOnlyException> { call, _ ->
+            logger.warn("Wallet-only endpoint accessed without wallet token")
+            call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
+        }
+        exception<PrintTicketException> { call, cause ->
+            logger.error("Print ticket error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
+        }
         exception<PhoenixConnectionException> { call, cause ->
             logger.error("Phoenix Lightning node connection error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node is unavailable"))
@@ -80,13 +90,11 @@ fun Application.handler() {
             logger.error("Phoenix service error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
         }
-        exception<WalletOnlyException> { call, _ ->
-            logger.warn("Wallet-only endpoint accessed without wallet token")
-            call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
-        }
-        exception<PrintTicketException> { call, cause ->
-            logger.error("Print ticket error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
+
+        // --- Generic and SQL Exceptions Last ---
+        exception<SQLException> { call, cause ->
+            logger.error("Database connection error: ${cause.message}", cause)
+            call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
         }
         exception<Exception> { call, cause ->
             logger.error("Unhandled exception: ${cause.message}")
@@ -94,7 +102,10 @@ fun Application.handler() {
         }
         exception<Throwable> { call, cause ->
             logger.error("Unhandled Throwable: ${cause.message}", cause)
-            call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
+            call.respondText(
+                text = cause.message ?: "",
+                status = defaultExceptionStatusCode(cause) ?: HttpStatusCode.InternalServerError,
+            )
         }
     }
 }

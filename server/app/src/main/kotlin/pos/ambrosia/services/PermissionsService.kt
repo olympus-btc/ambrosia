@@ -46,7 +46,8 @@ class PermissionsService(
         return list
     }
 
-    fun getByRole(roleId: String?): List<Permission> {
+    fun getByRole(roleId: String?): List<Permission>? {
+        if (roleId == null || !roleExists(roleId)) return null
         val statement = connection.prepareStatement(SELECT_BY_ROLE)
         statement.setString(1, roleId)
         val rs = statement.executeQuery()
@@ -64,7 +65,7 @@ class PermissionsService(
         return list
     }
 
-    private fun roleExists(roleId: String): Boolean {
+    fun roleExists(roleId: String): Boolean {
         val st = connection.prepareStatement(ROLE_EXISTS)
         st.setString(1, roleId)
         val rs = st.executeQuery()

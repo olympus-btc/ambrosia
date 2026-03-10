@@ -32,9 +32,19 @@ class CategoryServiceTest {
 
             val service = CategoryService(mockConnection)
             val result = service.getCategories("product")
+            assertNotNull(result)
             assertEquals(2, result.size)
             assertEquals("Bebidas", result[0].name)
             assertEquals("Postres", result[1].name)
+        }
+    }
+
+    @Test
+    fun `getCategories returns null for invalid type`() {
+        runBlocking {
+            val service = CategoryService(mockConnection)
+            val result = service.getCategories("invalid-type")
+            assertTrue(result == null)
         }
     }
 

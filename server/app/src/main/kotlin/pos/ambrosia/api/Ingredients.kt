@@ -29,7 +29,7 @@ fun Route.ingredients(ingredientService: IngredientService) {
         get("") {
             val ingredients = ingredientService.getIngredients()
             if (ingredients.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No ingredients found")
+                call.respond(HttpStatusCode.OK, "No ingredients found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, ingredients)
@@ -57,7 +57,7 @@ fun Route.ingredients(ingredientService: IngredientService) {
             }
             val lowStockIngredients = ingredientService.getLowStockIngredients() // Example threshold
             if (lowStockIngredients.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No low stock ingredients found")
+                call.respond(HttpStatusCode.OK, "No low stock ingredients found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, lowStockIngredients)
@@ -110,10 +110,7 @@ fun Route.ingredients(ingredientService: IngredientService) {
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Ingredient deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

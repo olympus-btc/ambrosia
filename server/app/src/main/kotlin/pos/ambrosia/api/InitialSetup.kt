@@ -105,7 +105,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
 
         val currency = currencyService.getByAcronym(businessCurrency)
         if (currency == null) {
-            call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Unknown currency acronym: $businessCurrency"))
+            call.respond(HttpStatusCode.NotFound, mapOf("message" to "Unknown currency acronym: $businessCurrency"))
             return@post
         }
 

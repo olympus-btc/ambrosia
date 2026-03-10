@@ -29,7 +29,7 @@ fun Route.suppliers(supplierService: SupplierService) {
         get("") {
             val suppliers = supplierService.getSuppliers()
             if (suppliers.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No suppliers found")
+                call.respond(HttpStatusCode.OK, "No suppliers found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, suppliers)
@@ -97,10 +97,7 @@ fun Route.suppliers(supplierService: SupplierService) {
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Supplier deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

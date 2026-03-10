@@ -30,7 +30,7 @@ fun Route.shifts(shiftService: ShiftService) {
         get("") {
             val shifts = shiftService.getShifts()
             if (shifts.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No shifts found")
+                call.respond(HttpStatusCode.OK, "No shifts found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, shifts)
@@ -137,7 +137,7 @@ fun Route.shifts(shiftService: ShiftService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Shift deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }
