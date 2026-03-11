@@ -6,7 +6,7 @@ const storeEs = {
     wallet: "Billetera",
     settings: "Configuración",
     logout: "Cerrar sesión",
-    cart: "Caja",
+    cart: "Venta",
     orders: "Ordenes",
     reports: "Reportes",
   },
@@ -161,7 +161,7 @@ const storeEs = {
     },
   },
   cart: {
-    title: "Caja",
+    title: "Venta",
     subtitle: "Sistema de pago de productos",
     search: {
       label: "Buscar",

@@ -6,7 +6,7 @@ const storeEn = {
     wallet: "Wallet",
     settings: "Settings",
     logout: "Log Out",
-    cart: "Cart",
+    cart: "Sale",
     orders: "Orders",
     reports: "Reports",
   },
@@ -161,7 +161,7 @@ const storeEn = {
     },
   },
   cart: {
-    title: "Cart",
+    title: "Sale",
     subtitle: "Product payment system",
     search: {
       label: "Search",

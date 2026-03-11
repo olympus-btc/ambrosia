@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button, Card, CardBody, CardFooter, CardHeader, Divider, NumberInput, Select, SelectItem } from "@heroui/react";
 import { Trash } from "lucide-react";
@@ -37,12 +37,11 @@ export function Summary({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const items = cartItems || [];
 
-  useEffect(() => {
-    if (paymentMethods.length > 0 && !selectedPaymentMethod) {
-      const btc = paymentMethods.find((m) => m.name === "BTC");
-      if (btc) setSelectedPaymentMethod(String(btc.id));
-    }
-  }, [paymentMethods, selectedPaymentMethod]);
+  const effectivePaymentMethod = useMemo(() => {
+    if (selectedPaymentMethod) return selectedPaymentMethod;
+    const bitcoinLightningMethod = paymentMethods.find((method) => method.name === "BTC");
+    return bitcoinLightningMethod ? String(bitcoinLightningMethod.id) : "";
+  }, [selectedPaymentMethod, paymentMethods]);
 
   const { subtotal, discountAmount, total } = useMemo(() => {
     const itemsToProcess = cartItems || [];
@@ -66,7 +65,7 @@ export function Summary({
       discount,
       discountAmount,
       total,
-      selectedPaymentMethod,
+      selectedPaymentMethod: effectivePaymentMethod,
     });
   };
 
@@ -147,7 +146,7 @@ export function Summary({
               placeholder={t("summary.paymentMethodSelectPlaceholder")}
               isRequired
               errorMessage={t("summary.errorMsgSelectEmpty")}
-              selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
+              selectedKeys={effectivePaymentMethod ? [effectivePaymentMethod] : []}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0];
                 if (!value) return;
