@@ -14,10 +14,10 @@ import {
   Button,
   Form,
 } from "@heroui/react";
-import { driver } from "driver.js";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useTour } from "@/hooks/tour/useTour";
 import {
   loginWallet,
   logoutWallet,
@@ -104,11 +104,28 @@ export default function WalletGuard({
     };
   }, []);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!localStorage.getItem(WALLET_GUARD_TOUR_KEY)) return;
-
-    const timer = setTimeout(() => {
+  useTour({
+    key: WALLET_GUARD_TOUR_KEY,
+    condition: isOpen,
+    delay: 300,
+    driverOptions: {
+      allowClose: true,
+      overlayOpacity: 0,
+      steps: [
+        {
+          element: "#wallet-guard-anchor",
+          popover: {
+            title: tTour("guardTitle"),
+            description: tTour("guardDescription"),
+            side: "top",
+            align: "center",
+            nextBtnText: tTour("guardButton"),
+            showButtons: ["next"],
+          },
+        },
+      ],
+    },
+    onBeforeStart: () => {
       const updateAnchorPosition = () => {
         const formEl = document.getElementById("wallet-guard-form");
         const dialogEl = formEl?.closest('[role="dialog"]') ?? document.querySelector('[role="dialog"]');
@@ -120,44 +137,11 @@ export default function WalletGuard({
           anchor.style.transform = "translateX(-50%)";
         }
       };
-
       updateAnchorPosition();
-      const resize = { handler: null };
-
-      const driverObj = driver({
-        allowClose: true,
-        overlayOpacity: 0,
-        steps: [
-          {
-            element: "#wallet-guard-anchor",
-            popover: {
-              title: tTour("guardTitle"),
-              description: tTour("guardDescription"),
-              side: "top",
-              align: "center",
-              nextBtnText: tTour("guardButton"),
-              showButtons: ["next"],
-            },
-          },
-        ],
-        onDestroyStarted: () => {
-          window.removeEventListener("resize", resize.handler);
-          localStorage.removeItem(WALLET_GUARD_TOUR_KEY);
-          driverObj.destroy();
-        },
-      });
-
-      resize.handler = () => {
-        updateAnchorPosition();
-        driverObj.refresh();
-      };
-      window.addEventListener("resize", resize.handler);
-
-      driverObj.drive();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, tTour]);
+      window.addEventListener("resize", updateAnchorPosition);
+      return () => window.removeEventListener("resize", updateAnchorPosition);
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
