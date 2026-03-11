@@ -2,12 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { Button, Card, CardBody, CardHeader, Chip, Divider } from "@heroui/react";
-import { Pencil, ShieldPlus } from "lucide-react";
+import { addToast, Button, Card, CardBody, CardHeader, Chip, Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { Pencil, ShieldPlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
-import { useRoles } from "@/components/pages/Store/hooks/useRoles";
 import { RequirePermission } from "@/hooks/usePermission";
 import { buildPermissionSet } from "@/lib/modules";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
@@ -16,14 +15,7 @@ import { CreateRoleModal } from "./CreateRoleModal";
 import { EditRoleModal } from "./EditRoleModal";
 import { permissionCatalog } from "./utils/permissionCatalog";
 
-export function Roles() {
-  const {
-    roles,
-    createRole,
-    loading: loadingRoles,
-    updateRoleWithPermissions,
-    getRolePermissions,
-  } = useRoles();
+export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions }) {
   const { permissions, loading: loadingPerms } = usePermissions();
   const t = useTranslations();
   const { businessType } = useConfigurations();
@@ -32,6 +24,8 @@ export function Roles() {
   const [editingRole, setEditingRole] = useState(null);
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     password: "",
@@ -106,6 +100,20 @@ export function Roles() {
       setForm({ name: "", password: "", isAdmin: false, permissions: [] });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    if (!roleToDelete) return;
+    try {
+      setDeleting(true);
+      await deleteRole(roleToDelete.id);
+      setRoleToDelete(null);
+      addToast({ title: t("roles.actions.deleteSuccess"), color: "success" });
+    } catch {
+      addToast({ title: t("roles.actions.deleteError"), color: "danger" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -184,6 +192,17 @@ export function Roles() {
                           {t("roles.actions.edit")}
                         </Button>
                       </RequirePermission>
+                      <RequirePermission allOf={["roles_delete"]}>
+                        <Button
+                          variant="light"
+                          color="danger"
+                          size="sm"
+                          startContent={<Trash2 className="w-4 h-4" />}
+                          onPress={() => setRoleToDelete(role)}
+                        >
+                          {t("roles.actions.delete")}
+                        </Button>
+                      </RequirePermission>
                     </div>
                   </div>
                 ))}
@@ -205,6 +224,36 @@ export function Roles() {
         t={t}
         businessType={businessType}
       />
+
+      <Modal
+        isOpen={!!roleToDelete}
+        onOpenChange={(open) => { if (!open) setRoleToDelete(null); }}
+        backdrop="blur"
+        classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
+      >
+        <ModalContent>
+          <ModalHeader>{t("roles.actions.deleteConfirmTitle")}</ModalHeader>
+          <ModalBody>
+            <p>{t("roles.actions.deleteConfirmBody", { name: roleToDelete?.role ?? "" })}</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="bordered"
+              onPress={() => setRoleToDelete(null)}
+              isDisabled={deleting}
+            >
+              {t("roles.actions.cancel")}
+            </Button>
+            <Button
+              color="danger"
+              onPress={handleDeleteRole}
+              isLoading={deleting}
+            >
+              {t("roles.actions.delete")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {editingRole && (
         <EditRoleModal

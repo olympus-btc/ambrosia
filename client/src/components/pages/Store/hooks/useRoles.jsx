@@ -100,6 +100,11 @@ export function useRoles() {
     [assignPermissions, fetchRoles, updateRole],
   );
 
+  const deleteRole = useCallback(async (roleId) => {
+    await httpClient(`/roles/${roleId}`, { method: "DELETE" });
+    await fetchRoles();
+  }, [fetchRoles]);
+
   const getRolePermissions = useCallback(async (roleId) => {
     if (!roleId) return [];
     try {
@@ -121,6 +126,7 @@ export function useRoles() {
   return {
     roles,
     createRole,
+    deleteRole,
     assignPermissions,
     updateRoleWithPermissions,
     getRolePermissions,
