@@ -18,7 +18,8 @@ class RolesService(
             "SELECT id, role, password, isAdmin FROM roles WHERE is_deleted = 0"
         private const val GET_ROLE_BY_ID =
             "SELECT id, role, password, isAdmin FROM roles WHERE id = ? AND is_deleted = 0"
-        private const val DELETE_ROLE = "UPDATE roles SET is_deleted = 1 WHERE id = ?"
+        private const val DELETE_ROLE = "UPDATE roles SET role = ?,  is_deleted = 1 WHERE id = ?"
+        private const val UNASSIGN_ROLE_FROM_USERS = "UPDATE users SET role_id = NULL WHERE role_id = ?"
         private const val CHECK_ROLE_NAME_EXISTS =
             "SELECT id FROM roles WHERE role = ? AND is_deleted = 0"
     }
@@ -148,13 +149,13 @@ class RolesService(
     }
 
     suspend fun deleteRole(id: String): Boolean {
-        if (roleInUse(id)) {
-            logger.error("Cannot delete role $id: it's being used by users")
-            return false
-        }
+        val unassignStmt = connection.prepareStatement(UNASSIGN_ROLE_FROM_USERS)
+        unassignStmt.setString(1, id)
+        unassignStmt.executeUpdate()
 
         val statement = connection.prepareStatement(DELETE_ROLE)
-        statement.setString(1, id)
+        statement.setString(1, "DELETED-$id")
+        statement.setString(2, id)
         val rowsDeleted = statement.executeUpdate()
 
         if (rowsDeleted > 0) {
