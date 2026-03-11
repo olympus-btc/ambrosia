@@ -150,6 +150,7 @@ export function Summary({
               selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0];
+                if (!value) return;
                 setSelectedPaymentMethod(value);
                 onClearPaymentError?.();
               }}
