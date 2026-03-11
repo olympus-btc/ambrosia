@@ -50,7 +50,7 @@ fun Application.configureCurrency() {
                     }
                     val ok = service.setBaseCurrencyByAcronym(req.acronym)
                     if (!ok) {
-                        call.respond(HttpStatusCode.BadRequest, Message("Unknown currency acronym: ${req.acronym}"))
+                        call.respond(HttpStatusCode.NotFound, Message("Unknown currency acronym: ${req.acronym}"))
                         return@put
                     }
                     val curr = service.getBaseCurrency()

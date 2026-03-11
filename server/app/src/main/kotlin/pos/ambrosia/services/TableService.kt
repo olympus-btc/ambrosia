@@ -150,7 +150,8 @@ class TableService(
         }
     }
 
-    suspend fun getTablesBySpace(spaceId: String): List<Table> {
+    suspend fun getTablesBySpace(spaceId: String): List<Table>? {
+        if (!spaceExists(spaceId)) return null
         val statement = connection.prepareStatement(GET_TABLES_BY_SPACE)
         statement.setString(1, spaceId)
         val resultSet = statement.executeQuery()

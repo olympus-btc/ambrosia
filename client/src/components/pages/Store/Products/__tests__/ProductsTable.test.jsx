@@ -33,7 +33,7 @@ const products = [
     sku: "jade-wallet",
     name: "Jade Wallet",
     description: "Hardware wallet",
-    category_id: "cat-1",
+    category_ids: ["cat-1"],
     price_cents: 1600,
     quantity: 10,
     image_url: "/images/jade.png",
@@ -42,7 +42,7 @@ const products = [
     sku: "jade-plus",
     name: "Jade Plus",
     description: "Hardware wallet plus",
-    category_id: "cat-1",
+    category_ids: ["cat-1"],
     price_cents: 4000,
     quantity: 5,
     image_url: "/images/jade-plus.png",
@@ -51,7 +51,7 @@ const products = [
     sku: "unknown-cat",
     name: "No Cat",
     description: "Missing category",
-    category_id: "missing",
+    category_ids: ["missing"],
     price_cents: 0,
     quantity: 1,
     image_url: "/images/no-cat.png",
@@ -88,10 +88,11 @@ describe("ProductsTable", () => {
     expect(screen.getByText("$16.00")).toBeInTheDocument();
   });
 
-  it("falls back to category id and formats image src via storedAssetUrl", () => {
+  it("falls back to noCategory translation for unknown category ids and formats image src via storedAssetUrl", () => {
     renderTable();
 
-    expect(screen.getByText("missing")).toBeInTheDocument();
+    expect(screen.queryByText("missing")).not.toBeInTheDocument();
+    expect(screen.getAllByText("noCategory").length).toBeGreaterThan(0);
     expect(mockStoredAssetUrl).toHaveBeenCalledWith("/images/no-cat.png");
     const img = screen.getByAltText("No Cat");
     expect(img.getAttribute("src")).toBe("cdn/images/no-cat.png");

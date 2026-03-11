@@ -37,6 +37,12 @@ export function Summary({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const items = cartItems || [];
 
+  const effectivePaymentMethod = useMemo(() => {
+    if (selectedPaymentMethod) return selectedPaymentMethod;
+    const bitcoinLightningMethod = paymentMethods.find((method) => method.name === "BTC");
+    return bitcoinLightningMethod ? String(bitcoinLightningMethod.id) : "";
+  }, [selectedPaymentMethod, paymentMethods]);
+
   const { subtotal, discountAmount, total } = useMemo(() => {
     const itemsToProcess = cartItems || [];
     const subtotalValue = itemsToProcess.reduce((sum, item) => sum + item.subtotal, 0);
@@ -59,7 +65,7 @@ export function Summary({
       discount,
       discountAmount,
       total,
-      selectedPaymentMethod,
+      selectedPaymentMethod: effectivePaymentMethod,
     });
   };
 
@@ -140,9 +146,10 @@ export function Summary({
               placeholder={t("summary.paymentMethodSelectPlaceholder")}
               isRequired
               errorMessage={t("summary.errorMsgSelectEmpty")}
-              selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
+              selectedKeys={effectivePaymentMethod ? [effectivePaymentMethod] : []}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0];
+                if (!value) return;
                 setSelectedPaymentMethod(value);
                 onClearPaymentError?.();
               }}

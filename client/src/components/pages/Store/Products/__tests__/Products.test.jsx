@@ -82,6 +82,8 @@ jest.mock("../../hooks/useCategories", () => ({
     ],
     loading: false,
     createCategory: mockCreateCategory,
+    updateCategory: jest.fn(() => Promise.resolve()),
+    deleteCategory: jest.fn(() => Promise.resolve()),
     refetch: mockRefetchCategories,
   }),
 }));
@@ -171,7 +173,7 @@ describe("Products page", () => {
     await act(async () => {
       renderProducts();
     });
-    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "title" })).toBeInTheDocument();
     expect(screen.getByText("addProduct")).toBeInTheDocument();
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
     expect(screen.getByText("Jade Plus")).toBeInTheDocument();

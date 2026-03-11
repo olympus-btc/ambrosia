@@ -77,8 +77,8 @@ class CategoryService(
         }
     }
 
-    suspend fun getCategories(type: String): List<CategoryItem> {
-        if (!validateType(type)) return emptyList()
+    suspend fun getCategories(type: String): List<CategoryItem>? {
+        if (!validateType(type)) return null
         val st =
             connection.prepareStatement(
                 "SELECT id, name FROM categories WHERE type = ? AND is_deleted = 0",
@@ -130,15 +130,32 @@ class CategoryService(
         type: String,
     ): Boolean {
         if (!validateType(type)) return false
-        if (categoryInUse(id, type)) return false
-        val st =
-            connection.prepareStatement(
-                "UPDATE categories SET is_deleted = 1 WHERE id = ? AND type = ?",
-            )
-        st.setString(1, id)
-        st.setString(2, type)
-        val rows = st.executeUpdate()
-        if (rows > 0) logger.info("Category deleted: $id type=$type")
-        return rows > 0
+        val prev = connection.autoCommit
+        connection.autoCommit = false
+        try {
+            val clearSt =
+                connection.prepareStatement(
+                    "DELETE FROM product_categories WHERE category_id = ?",
+                )
+            clearSt.setString(1, id)
+            clearSt.executeUpdate()
+
+            val st =
+                connection.prepareStatement(
+                    "UPDATE categories SET name = ?, is_deleted = 1 WHERE id = ? AND type = ?",
+                )
+            st.setString(1, "DELETED-$id")
+            st.setString(2, id)
+            st.setString(3, type)
+            val rows = st.executeUpdate()
+            connection.commit()
+            if (rows > 0) logger.info("Category deleted: $id type=$type")
+            return rows > 0
+        } catch (e: Exception) {
+            connection.rollback()
+            throw e
+        } finally {
+            connection.autoCommit = prev
+        }
     }
 }

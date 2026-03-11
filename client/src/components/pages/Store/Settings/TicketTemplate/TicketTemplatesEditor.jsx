@@ -10,8 +10,9 @@ export function TicketTemplatesEditor({
   elements,
   onElementChange,
   onElementAdd,
-  onElementMove,
+  onElementReorder,
   onElementRemove,
+  config,
   t,
 }) {
   return (
@@ -26,8 +27,9 @@ export function TicketTemplatesEditor({
         elements={elements}
         onChange={onElementChange}
         onAdd={onElementAdd}
-        onMove={onElementMove}
+        onReorder={onElementReorder}
         onRemove={onElementRemove}
+        config={config}
         t={t}
       />
     </div>

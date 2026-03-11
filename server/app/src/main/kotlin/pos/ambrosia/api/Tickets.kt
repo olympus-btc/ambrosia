@@ -29,7 +29,7 @@ fun Route.tickets(ticketService: TicketService) {
         get("") {
             val tickets = ticketService.getTickets()
             if (tickets.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No tickets found")
+                call.respond(HttpStatusCode.OK, "No tickets found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, tickets)
@@ -94,7 +94,7 @@ fun Route.tickets(ticketService: TicketService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Ticket deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

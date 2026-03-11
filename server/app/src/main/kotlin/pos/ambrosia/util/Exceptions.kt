@@ -53,3 +53,7 @@ class DuplicateUserNameException(
 class LastUserDeletionException(
     message: String = "Cannot delete the last user",
 ) : IllegalStateException(message)
+
+class ResourceNotFoundException(
+    message: String = "Resource not found",
+) : RuntimeException(message)

@@ -19,11 +19,19 @@ import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
+import pos.ambrosia.utils.PrintTicketException
+import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.WalletOnlyException
 import java.sql.SQLException
 
 fun Application.handler() {
     install(StatusPages) {
+        // --- Specific Exceptions First ---
+        exception<ResourceNotFoundException> { call, cause ->
+            logger.warn("Resource not found: ${cause.message}")
+            call.respond(HttpStatusCode.NotFound, Message(cause.message ?: "Resource not found"))
+        }
         exception<InvalidCredentialsException> { call, cause ->
             logger.warn("Invalid login attempt: ${cause.message}")
             call.respond(HttpStatusCode.Unauthorized, Message("Invalid credentials"))
@@ -36,6 +44,14 @@ fun Application.handler() {
             logger.warn("Unauthorized API access attempt")
             call.respond(HttpStatusCode.Unauthorized, Message("Unauthorized API access"))
         }
+        exception<DuplicateUserNameException> { call, cause ->
+            logger.warn("Duplicate user name: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
+        }
+        exception<LastUserDeletionException> { call, cause ->
+            logger.warn("Attempt to delete last user: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
+        }
         exception<AdminOnlyException> { call, _ ->
             logger.warn("Non-admin user attempted to access admin-only endpoint")
             call.respond(HttpStatusCode.Forbidden, Message("Admin privileges required"))
@@ -44,13 +60,13 @@ fun Application.handler() {
             logger.warn("User attempted to access endpoint without required permission")
             call.respond(HttpStatusCode.Forbidden, Message("Permission required"))
         }
-        exception<DuplicateUserNameException> { call, cause ->
-            logger.warn("Duplicate user name: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
+        exception<WalletOnlyException> { call, _ ->
+            logger.warn("Wallet-only endpoint accessed without wallet token")
+            call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
         }
-        exception<LastUserDeletionException> { call, cause ->
-            logger.warn("Attempt to delete last user: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
+        exception<PrintTicketException> { call, cause ->
+            logger.error("Print ticket error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
         }
         exception<PhoenixConnectionException> { call, cause ->
             logger.error("Phoenix Lightning node connection error: ${cause.message}")
@@ -74,6 +90,8 @@ fun Application.handler() {
             logger.error("Phoenix service error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
         }
+
+        // --- Generic and SQL Exceptions Last ---
         exception<SQLException> { call, cause ->
             logger.error("Database connection error: ${cause.message}", cause)
             call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))

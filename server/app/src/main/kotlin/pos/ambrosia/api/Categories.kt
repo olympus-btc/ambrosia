@@ -33,8 +33,12 @@ fun Route.categories(service: CategoryService) {
                 return@get
             }
             val items = service.getCategories(type)
+            if (items == null) {
+                call.respond(HttpStatusCode.NotFound, "No category type found")
+                return@get
+            }
             if (items.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No categories found")
+                call.respond(HttpStatusCode.OK, "No categories added yet")
                 return@get
             }
             call.respond(HttpStatusCode.OK, items)
@@ -110,10 +114,7 @@ fun Route.categories(service: CategoryService) {
                 )
                 return@delete
             }
-            call.respond(
-                HttpStatusCode.NoContent,
-                mapOf("id" to id, "message" to "Category deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

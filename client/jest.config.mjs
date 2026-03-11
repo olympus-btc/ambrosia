@@ -12,6 +12,7 @@ const config = {
     "^driver\\.js$": "<rootDir>/__tests__/__mocks__/driver.js",
     "driver\\.js/dist/driver\\.css": "<rootDir>/__tests__/__mocks__/emptyMock.js",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "^@/hooks/turn/useTurn$": "<rootDir>/__tests__/__mocks__/hooks/useTurn.js",
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@hooks/(.*)$": "<rootDir>/src/hooks/$1",
     "^@services/(.*)$": "<rootDir>/src/services/$1",

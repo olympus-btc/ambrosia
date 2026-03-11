@@ -167,6 +167,46 @@ describe("Summary", () => {
     expect(screen.getByText("summary.pay")).toBeDisabled();
   });
 
+  it("does not clear selection when same payment method is selected again", () => {
+    render(
+      <Summary
+        cartItems={cartItems}
+        discount={0}
+        onRemoveProduct={jest.fn()}
+        onUpdateQuantity={jest.fn()}
+        onPay={jest.fn()}
+        isPaying={false}
+        paymentError=""
+        onClearPaymentError={jest.fn()}
+      />,
+    );
+
+    const select = screen.getByLabelText("summary.paymentMethodLabel");
+    fireEvent.change(select, { target: { value: "cash" } });
+    expect(select.value).toBe("cash");
+
+    fireEvent.change(select, { target: { value: "" } });
+    expect(select.value).toBe("cash");
+  });
+
+  it("selects BTC Lightning as default payment method when available", () => {
+    render(
+      <Summary
+        cartItems={cartItems}
+        discount={0}
+        onRemoveProduct={jest.fn()}
+        onUpdateQuantity={jest.fn()}
+        onPay={jest.fn()}
+        isPaying={false}
+        paymentError=""
+        onClearPaymentError={jest.fn()}
+      />,
+    );
+
+    const select = screen.getByLabelText("summary.paymentMethodLabel");
+    expect(select.value).toBe("btc");
+  });
+
   it("renders payment modals when configs exist", () => {
     render(
       <Summary

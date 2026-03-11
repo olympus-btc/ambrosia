@@ -73,7 +73,8 @@ class TicketPaymentService(
         }
     }
 
-    suspend fun getTicketPaymentsByTicket(ticketId: String): List<pos.ambrosia.models.TicketPayment> {
+    suspend fun getTicketPaymentsByTicket(ticketId: String): List<pos.ambrosia.models.TicketPayment>? {
+        if (!ticketExists(ticketId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_TICKET)
         statement.setString(1, ticketId)
         val resultSet = statement.executeQuery()
@@ -92,7 +93,8 @@ class TicketPaymentService(
         return ticketPayments
     }
 
-    suspend fun getTicketPaymentsByPayment(paymentId: String): List<pos.ambrosia.models.TicketPayment> {
+    suspend fun getTicketPaymentsByPayment(paymentId: String): List<pos.ambrosia.models.TicketPayment>? {
+        if (!paymentExists(paymentId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_PAYMENT)
         statement.setString(1, paymentId)
         val resultSet = statement.executeQuery()

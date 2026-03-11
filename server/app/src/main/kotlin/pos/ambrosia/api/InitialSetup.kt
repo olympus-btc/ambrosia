@@ -105,7 +105,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
 
         val currency = currencyService.getByAcronym(businessCurrency)
         if (currency == null) {
-            call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Unknown currency acronym: $businessCurrency"))
+            call.respond(HttpStatusCode.NotFound, mapOf("message" to "Unknown currency acronym: $businessCurrency"))
             return@post
         }
 
@@ -141,7 +141,6 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                 throw IllegalStateException("Failed to set base currency")
             }
 
-            connection.autoCommit = false
             connection.commit()
             call.respond(HttpStatusCode.Created, mapOf("message" to "Initial setup completed", "userId" to userId, "roleId" to roleId))
         } catch (e: Exception) {

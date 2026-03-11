@@ -42,9 +42,8 @@ class AuthService(
             val storedPinHash = SecurePinProcessor.base64ToByteArray(storedPinHashBase64)
 
             val isValidPin = SecurePinProcessor.verifyPin(pin, userIdString, storedPinHash, env)
-            pin.fill('\u0000') // Limpiar PIN de memoria
+            pin.fill('\u0000')
 
-            logger.info("Authentication result for user pin: $isValidPin")
             if (isValidPin) {
                 return AuthResponse(
                     id = userIdString,
@@ -73,12 +72,10 @@ class AuthService(
             val storedPasswordHashBase64 = resultSet.getString("role_password")
             val storedPasswordHash = SecurePinProcessor.base64ToByteArray(storedPasswordHashBase64)
 
-            // The salt for role password is the role ID.
             val isValidPassword =
                 SecurePinProcessor.verifyPin(rolePassword, roleId, storedPasswordHash, env)
-            rolePassword.fill('\u0000') // Clear password from memory
+            rolePassword.fill('\u0000')
 
-            logger.info("Authentication result for role password: $isValidPassword")
             return isValidPassword
         }
         return false

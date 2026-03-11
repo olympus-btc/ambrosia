@@ -45,7 +45,7 @@ const categories = [
 const baseData = {
   productName: "Jade Wallet",
   productDescription: "Hardware wallet",
-  productCategory: "cat-1",
+  productCategories: ["cat-1"],
   productSKU: "jade-wallet",
   productPrice: 10,
   productStock: 5,
@@ -161,13 +161,10 @@ describe("AddProductsModal", () => {
   });
 
   it("handles category select with empty value and loading", () => {
-    const onChange = jest.fn();
-    renderModal({ onChange, categories: [], categoriesLoading: true, data: { ...baseData, productCategory: "" } });
+    renderModal({ categories: [], categoriesLoading: true, data: { ...baseData, productCategories: [] } });
 
     const select = screen.getAllByLabelText("modal.productCategoryLabel")[0];
     expect(select).toBeInTheDocument();
-    fireEvent.change(select, { target: { value: "" } });
-    expect(onChange).toHaveBeenLastCalledWith({ productCategory: "" });
   });
 
   it("cancels and closes modal", () => {
@@ -217,7 +214,7 @@ describe("AddProductsModal", () => {
     fireEvent.click(screen.getByText("modal.createCategoryButton"));
 
     await waitFor(() => expect(createCategory).toHaveBeenCalledWith("New Cat"));
-    expect(onChange).toHaveBeenCalledWith({ productCategory: "cat-2" });
+    expect(onChange).toHaveBeenCalledWith({ productCategories: ["cat-1", "cat-2"] });
   });
 
   it("does not submit when uploading", () => {
@@ -256,7 +253,7 @@ describe("AddProductsModal", () => {
     expect(setData).toHaveBeenCalledWith({
       productName: "",
       productDescription: "",
-      productCategory: "",
+      productCategories: [],
       productSKU: "",
       productPrice: "",
       productStock: 1,

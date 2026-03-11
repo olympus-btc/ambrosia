@@ -62,7 +62,7 @@ class PhoenixWebhookRouteTest {
                     setBody(body)
                 }
 
-            assertEquals(HttpStatusCode.Accepted, response.status)
-            assertEquals("""{"status":"ok"}""", response.bodyAsText())
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("Ok", response.bodyAsText())
         }
 }

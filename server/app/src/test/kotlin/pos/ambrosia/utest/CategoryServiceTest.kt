@@ -32,9 +32,19 @@ class CategoryServiceTest {
 
             val service = CategoryService(mockConnection)
             val result = service.getCategories("product")
+            assertNotNull(result)
             assertEquals(2, result.size)
             assertEquals("Bebidas", result[0].name)
             assertEquals("Postres", result[1].name)
+        }
+    }
+
+    @Test
+    fun `getCategories returns null for invalid type`() {
+        runBlocking {
+            val service = CategoryService(mockConnection)
+            val result = service.getCategories("invalid-type")
+            assertTrue(result == null)
         }
     }
 
@@ -72,18 +82,15 @@ class CategoryServiceTest {
     }
 
     @Test
-    fun `deleteCategory checks product usage`() {
+    fun `deleteCategory soft deletes category and clears product_categories`() {
         runBlocking {
-            val usageStatement: PreparedStatement = mock()
+            val clearStatement: PreparedStatement = mock()
             val deleteStatement: PreparedStatement = mock()
-            val usageResultSet: ResultSet = mock()
 
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*) as count FROM products"))).thenReturn(usageStatement)
-            whenever(mockConnection.prepareStatement(contains("UPDATE categories SET is_deleted"))).thenReturn(deleteStatement)
+            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_categories"))).thenReturn(clearStatement)
+            whenever(mockConnection.prepareStatement(contains("UPDATE categories SET name"))).thenReturn(deleteStatement)
 
-            whenever(usageResultSet.next()).thenReturn(true)
-            whenever(usageResultSet.getInt("count")).thenReturn(0)
-            whenever(usageStatement.executeQuery()).thenReturn(usageResultSet)
+            whenever(clearStatement.executeUpdate()).thenReturn(0)
             whenever(deleteStatement.executeUpdate()).thenReturn(1)
 
             val service = CategoryService(mockConnection)

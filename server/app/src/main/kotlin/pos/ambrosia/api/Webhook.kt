@@ -73,7 +73,7 @@ fun Route.phoenixWebhook() {
 
         PhoenixWebhookNotifier.broadcast(payload)
 
-        call.respond(HttpStatusCode.Accepted, mapOf("status" to "ok"))
+        call.respond(HttpStatusCode.OK, "Ok")
     }
 }
 
