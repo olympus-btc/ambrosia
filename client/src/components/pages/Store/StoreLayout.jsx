@@ -18,8 +18,6 @@ import ambrosia from "../../../../public/ambrosia.svg";
 import { useConfigurations } from "../../../providers/configurations/configurationsProvider";
 import { storedAssetUrl } from "../../utils/storedAssetUrl";
 
-import "driver.js/dist/driver.css";
-
 function Icon({ name, className = "w-5 h-5" }) {
   const formatIconName = (iconName) => (
     iconName

@@ -23,8 +23,6 @@ import {
   logoutWallet,
 } from "@/services/walletService";
 
-import "driver.js/dist/driver.css";
-
 const WALLET_GUARD_TOUR_KEY = "ambrosia:tour:wallet-guard";
 
 export default function WalletGuard({

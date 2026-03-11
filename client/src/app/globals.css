@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "driver.js/dist/driver.css";
 @plugin './hero.ts';
 /* Note: You may need to change the path to fit your project structure */
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
@@ -174,4 +175,91 @@
       var(--color-accent-300) 100%
     );
   }
+}
+
+/* ── DriverJS — Ambrosia design overrides ── */
+
+.driver-popover {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  min-width: 280px;
+  max-width: 360px;
+  border: none;
+  color: var(--color-gray-700);
+}
+
+.driver-popover-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-dark-800);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.driver-popover-description {
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.driver-popover-footer {
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+.driver-popover-navigation-btns {
+  gap: 8px;
+}
+
+.driver-popover-footer button {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 7px 18px;
+  line-height: 1.4;
+  text-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.driver-popover-footer button.driver-popover-next-btn {
+  background-color: var(--color-primary-500);
+  color: #ffffff;
+  border-color: var(--color-primary-500);
+}
+
+.driver-popover-footer button.driver-popover-next-btn:hover,
+.driver-popover-footer button.driver-popover-next-btn:focus {
+  background-color: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: #ffffff;
+}
+
+.driver-popover-footer button.driver-popover-prev-btn {
+  background-color: transparent;
+  color: var(--color-dark-800);
+  border-color: var(--color-dark-800);
+}
+
+.driver-popover-footer button.driver-popover-prev-btn:hover,
+.driver-popover-footer button.driver-popover-prev-btn:focus {
+  background-color: var(--color-gray-100);
+  color: var(--color-dark-800);
+}
+
+.driver-popover-close-btn {
+  color: var(--color-gray-400);
+  transition: color 0.15s ease;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus {
+  color: var(--color-gray-700);
 }
