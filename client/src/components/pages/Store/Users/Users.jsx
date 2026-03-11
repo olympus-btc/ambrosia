@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -23,8 +23,13 @@ export function Users() {
   const [deleteUsersShowModal, setDeleteUsersShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-  const { users, updateUser, addUser, deleteUser } = useUsers();
-  const { roles } = useRoles();
+  const { users, updateUser, addUser, deleteUser, refetch: refetchUsers } = useUsers();
+  const { roles, createRole, deleteRole: deleteRoleBase, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions } = useRoles();
+
+  const deleteRole = useCallback(async (roleId) => {
+    await deleteRoleBase(roleId);
+    await refetchUsers();
+  }, [deleteRoleBase, refetchUsers]);
 
   const [data, setData] = useState({
     userId: "",
@@ -99,7 +104,14 @@ export function Users() {
       </div>
       <RequirePermission allOf={["roles_read"]}>
         <div className="mt-8">
-          <Roles />
+          <Roles
+            roles={roles}
+            createRole={createRole}
+            deleteRole={deleteRole}
+            loading={loadingRoles}
+            updateRoleWithPermissions={updateRoleWithPermissions}
+            getRolePermissions={getRolePermissions}
+          />
         </div>
       </RequirePermission>
 
