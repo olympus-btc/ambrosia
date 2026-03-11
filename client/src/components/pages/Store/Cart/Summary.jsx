@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button, Card, CardBody, CardFooter, CardHeader, Divider, NumberInput, Select, SelectItem } from "@heroui/react";
 import { Trash } from "lucide-react";
@@ -36,6 +36,13 @@ export function Summary({
   const { paymentMethods } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const items = cartItems || [];
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !selectedPaymentMethod) {
+      const btc = paymentMethods.find((m) => m.name === "BTC");
+      if (btc) setSelectedPaymentMethod(String(btc.id));
+    }
+  }, [paymentMethods, selectedPaymentMethod]);
 
   const { subtotal, discountAmount, total } = useMemo(() => {
     const itemsToProcess = cartItems || [];

@@ -167,6 +167,24 @@ describe("Summary", () => {
     expect(screen.getByText("summary.pay")).toBeDisabled();
   });
 
+  it("selects BTC Lightning as default payment method when available", () => {
+    render(
+      <Summary
+        cartItems={cartItems}
+        discount={0}
+        onRemoveProduct={jest.fn()}
+        onUpdateQuantity={jest.fn()}
+        onPay={jest.fn()}
+        isPaying={false}
+        paymentError=""
+        onClearPaymentError={jest.fn()}
+      />,
+    );
+
+    const select = screen.getByLabelText("summary.paymentMethodLabel");
+    expect(select.value).toBe("btc");
+  });
+
   it("renders payment modals when configs exist", () => {
     render(
       <Summary
