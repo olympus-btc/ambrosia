@@ -1,24 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { driver } from "driver.js";
 import { LogOut } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { ShiftWidget } from "@/components/turn/ShiftWidget";
+import { useWalletTour } from "@/hooks/tour/useWalletTour";
 import { useModules } from "@hooks/useModules";
 
 import ambrosia from "../../../../public/ambrosia.svg";
 import { useConfigurations } from "../../../providers/configurations/configurationsProvider";
 import { storedAssetUrl } from "../../utils/storedAssetUrl";
-
-import "driver.js/dist/driver.css";
 
 function Icon({ name, className = "w-5 h-5" }) {
   const formatIconName = (iconName) => (
@@ -48,75 +44,14 @@ function NavBarButton({ text, icon, href, isActive, id }) {
   );
 }
 
-const WALLET_TOUR_KEY = "ambrosia:tour:wallet-channel";
-const WALLET_GUARD_TOUR_KEY = "ambrosia:tour:wallet-guard";
-const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
-
 export function StoreLayout({ children }) {
   const pathname = usePathname();
   const t = useTranslations("navbar");
-  const tTour = useTranslations("walletTour");
   const { config } = useConfigurations();
   const { availableNavigation, isAuth, logout } = useModules();
   const logoSrc = storedAssetUrl(config?.businessLogoUrl);
-  const driverRef = useRef(null);
-  const tourStartedRef = useRef(false);
 
-  useEffect(() => {
-    if (!pathname.startsWith("/store/wallet")) return;
-    if (driverRef.current) {
-      driverRef.current.destroy();
-      driverRef.current = null;
-    }
-    document.querySelectorAll(".driver-overlay, .driver-popover").forEach((el) => {
-      el.style.opacity = "0";
-      el.style.pointerEvents = "none";
-    });
-    document.body.classList.remove("driver-active");
-    document.documentElement.classList.remove("driver-active");
-  }, [pathname]);
-
-  const tourTitle = tTour("title");
-  const tourDescription = tTour.raw("description");
-  const tourClickWallet = tTour("clickWallet");
-
-  useEffect(() => {
-    if (!isAuth || tourStartedRef.current) return;
-    if (localStorage.getItem(WALLET_TOUR_KEY)) return;
-
-    tourStartedRef.current = true;
-    localStorage.setItem(WALLET_TOUR_KEY, "true");
-
-    const driverObj = driver({
-      allowClose: true,
-      overlayOpacity: 0.5,
-      steps: [
-        {
-          popover: {
-            title: tourTitle,
-            description: tourDescription,
-            showButtons: ["next"],
-          },
-        },
-        {
-          element: "#nav-wallet",
-          popover: {
-            description: tourClickWallet,
-            side: "right",
-            align: "center",
-            showButtons: ["close"],
-          },
-          onHighlighted: () => {
-            localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
-            localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
-          },
-        },
-      ],
-    });
-
-    driverRef.current = driverObj;
-    driverObj.drive();
-  }, [isAuth, tourTitle, tourDescription, tourClickWallet]);
+  useWalletTour(isAuth);
 
   return (
     <div className="flex h-screen overflow-hidden">
