@@ -39,11 +39,13 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
             >
               <TableCell className="max-w-[120px] truncate">{user.name}</TableCell>
               <TableCell>
-                <Chip
-                  className="bg-green-200 text-xs text-green-800 border border-green-300"
-                >
-                  {user.role}
-                </Chip>
+                {user.role ? (
+                  <Chip className="bg-green-200 text-xs text-green-800 border border-green-300">
+                    {user.role}
+                  </Chip>
+                ) : (
+                  <span className="text-xs text-default-400 italic">{t("noRole")}</span>
+                )}
               </TableCell>
               <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
               <TableCell className="max-w-[100px] truncate">{user.phone}</TableCell>

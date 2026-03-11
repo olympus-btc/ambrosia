@@ -39,6 +39,7 @@ const storeEn = {
     title: "Users",
     subtitle: "Manage your store staff",
     addUser: "Add User",
+    noRole: "No role assigned",
     name: "Name",
     role: "Role",
     email: "Email",
@@ -82,9 +83,14 @@ const storeEn = {
     actions: {
       new: "New role",
       edit: "Edit",
+      delete: "Delete",
       create: "Create role",
       save: "Save changes",
       cancel: "Cancel",
+      deleteConfirmTitle: "Delete role",
+      deleteConfirmBody: "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
+      deleteSuccess: "Role deleted successfully",
+      deleteError: "Could not delete the role",
     },
     create: {
       title: "Create role",

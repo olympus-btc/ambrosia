@@ -39,6 +39,7 @@ const storeEs = {
     title: "Usuarios",
     subtitle: "Gestiona el personal de tu tienda",
     addUser: "Agregar Usuario",
+    noRole: "Sin rol asignado",
     name: "Nombre",
     role: "Rol",
     email: "Email",
@@ -82,9 +83,14 @@ const storeEs = {
     actions: {
       new: "Nuevo rol",
       edit: "Editar",
+      delete: "Eliminar",
       create: "Crear rol",
       save: "Guardar cambios",
       cancel: "Cancelar",
+      deleteConfirmTitle: "Eliminar rol",
+      deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
+      deleteSuccess: "Rol eliminado correctamente",
+      deleteError: "No se pudo eliminar el rol",
     },
     create: {
       title: "Crear rol",
