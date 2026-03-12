@@ -65,21 +65,21 @@ describe("AddUsersModal", () => {
   it("renders modal and basic fields", () => {
     renderModal();
 
-    expect(screen.getByText("modal.titleAdd")).toBeInTheDocument();
-    expect(screen.getByLabelText("modal.userNameLabel")).toBeInTheDocument();
-    expect(screen.getByLabelText("modal.userEmailLabel")).toBeInTheDocument();
-    expect(screen.getByLabelText("modal.userPhoneLabel")).toBeInTheDocument();
-    expect(screen.getByLabelText("modal.userPinLabel")).toBeInTheDocument();
+    expect(screen.getByText("users.modal.titleAdd")).toBeInTheDocument();
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toBeInTheDocument();
+    expect(screen.getByLabelText("users.modal.userEmailLabel")).toBeInTheDocument();
+    expect(screen.getByLabelText("users.modal.userPhoneLabel")).toBeInTheDocument();
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toBeInTheDocument();
   });
 
   it("normalizes phone and pin to digits on change", () => {
     const onChange = jest.fn();
     renderModal({ onChange });
 
-    fireEvent.change(screen.getByLabelText("modal.userPhoneLabel"), { target: { value: "123-45a" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userPhoneLabel"), { target: { value: "123-45a" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userPhone: "12345a".replace(/\D/g, "") });
 
-    fireEvent.change(screen.getByLabelText("modal.userPinLabel"), { target: { value: "9x8y" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userPinLabel"), { target: { value: "9x8y" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userPin: "98" });
   });
 
@@ -87,13 +87,13 @@ describe("AddUsersModal", () => {
     const onChange = jest.fn();
     renderModal({ onChange });
 
-    fireEvent.change(screen.getByLabelText("modal.userNameLabel"), { target: { value: "Maria" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userNameLabel"), { target: { value: "Maria" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userName: "Maria" });
 
-    fireEvent.change(screen.getByLabelText("modal.userEmailLabel"), { target: { value: "maria@test.com" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userEmailLabel"), { target: { value: "maria@test.com" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userEmail: "maria@test.com" });
 
-    const roleSelect = screen.getAllByLabelText("modal.userRoleLabel")[0];
+    const roleSelect = screen.getAllByLabelText("users.modal.userRoleLabel")[0];
     fireEvent.change(roleSelect, { target: { value: "admin" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userRole: "admin" });
   });
@@ -110,11 +110,11 @@ describe("AddUsersModal", () => {
       roles: [],
     });
 
-    expect(screen.getByLabelText("modal.userNameLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userEmailLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userPhoneLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userPinLabel")).toHaveValue("");
-    const roleSelect = screen.getAllByLabelText("modal.userRoleLabel")[0];
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userEmailLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userPhoneLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveValue("");
+    const roleSelect = screen.getAllByLabelText("users.modal.userRoleLabel")[0];
     expect(roleSelect).toHaveValue("");
   });
 
@@ -124,7 +124,7 @@ describe("AddUsersModal", () => {
       roles: [{ id: "admin", role: "Admin" }],
     });
 
-    const roleSelect = screen.getAllByLabelText("modal.userRoleLabel")[0];
+    const roleSelect = screen.getAllByLabelText("users.modal.userRoleLabel")[0];
     expect(roleSelect).toHaveValue("admin");
   });
 
@@ -139,7 +139,7 @@ describe("AddUsersModal", () => {
       setAddUsersShowModal,
     });
 
-    fireEvent.click(screen.getByText("modal.submitButton"));
+    fireEvent.click(screen.getByText("users.modal.submitButton"));
 
     await waitFor(() => expect(addUser).toHaveBeenCalledWith(baseData));
     expect(setData).toHaveBeenCalledWith({
@@ -156,7 +156,7 @@ describe("AddUsersModal", () => {
     const setAddUsersShowModal = jest.fn();
     renderModal({ setAddUsersShowModal });
 
-    const pinInput = screen.getByLabelText("modal.userPinLabel");
+    const pinInput = screen.getByLabelText("users.modal.userPinLabel");
     expect(pinInput).toHaveAttribute("type", "password");
 
     fireEvent.click(screen.getByRole("button", { name: "Show PIN" }));
@@ -165,7 +165,7 @@ describe("AddUsersModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hide PIN" }));
     expect(pinInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(screen.getByText("modal.cancelButton"));
+    fireEvent.click(screen.getByText("users.modal.cancelButton"));
     expect(setAddUsersShowModal).toHaveBeenCalledWith(false);
   });
 });

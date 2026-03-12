@@ -6,6 +6,11 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => true,
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("framer-motion", () => {
   const React = require("react");
   const Mock = React.forwardRef(({ children, ...props }, ref) => (

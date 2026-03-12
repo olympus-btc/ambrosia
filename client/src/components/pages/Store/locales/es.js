@@ -1,6 +1,7 @@
 const storeEs = {
   navbar: {
     users: "Usuarios",
+    roles: "Roles",
     products: "Productos",
     checkout: "Caja",
     wallet: "Billetera",
@@ -39,6 +40,7 @@ const storeEs = {
     title: "Usuarios",
     subtitle: "Gestiona el personal de tu tienda",
     addUser: "Agregar Usuario",
+    noRole: "Sin rol asignado",
     name: "Nombre",
     role: "Rol",
     email: "Email",
@@ -72,6 +74,334 @@ const storeEs = {
       genericErrorDescription: "No se pudo completar la operación.",
       lastUserTitle: "No permitido",
       lastUserDescription: "No puedes eliminar el único usuario existente.",
+    },
+  },
+  roles: {
+    header: {
+      title: "Roles y permisos",
+      subtitle: "Define qué pantallas y acciones están disponibles para cada rol.",
+    },
+    actions: {
+      new: "Nuevo rol",
+      edit: "Editar",
+      delete: "Eliminar",
+      create: "Crear rol",
+      save: "Guardar cambios",
+      cancel: "Cancelar",
+      deleteConfirmTitle: "Eliminar rol",
+      deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
+      deleteSuccess: "Rol eliminado correctamente",
+      deleteError: "No se pudo eliminar el rol",
+    },
+    create: {
+      title: "Crear rol",
+      roleName: "Nombre del rol",
+      password: "Contraseña para acciones críticas (opcional)",
+      passwordPlaceholder: "Opcional",
+      isAdmin: "Con privilegios de administrador",
+      templateLegend: "Elige una plantilla de rol para comenzar, o usa el modo avanzado para configurarlo manualmente.",
+      advanced: "Modo avanzado",
+    },
+    templates: {
+      cashier: {
+        name: "Cajero",
+        description: "Procesa ventas y cobros.",
+      },
+      seller: {
+        name: "Vendedor",
+        description: "Consulta productos y crea órdenes.",
+      },
+      manager: {
+        name: "Gerente",
+        description: "Acceso operativo completo.",
+      },
+      admin: {
+        name: "Administrador",
+        description: "Acceso total al sistema.",
+      },
+      waiter: {
+        name: "Mesero",
+        description: "Toma órdenes y gestiona mesas.",
+      },
+      supervisor: {
+        name: "Supervisor",
+        description: "Supervisa operaciones y personal.",
+      },
+    },
+    edit: {
+      title: "Editar rol",
+      roleName: "Nombre del rol",
+      password: "Actualizar contraseña (opcional)",
+      passwordPlaceholder: "Dejar vacío para mantener",
+      isAdmin: "Con privilegios de administrador",
+    },
+    list: {
+      title: "Roles disponibles",
+      subtitle: "Cada rol controla acceso a pantallas específicas.",
+    },
+    permissions: {
+      title: "Permisos visibles",
+      subtitle: "Catálogo filtrado según el tipo de negocio",
+      legend: "Selecciona los permisos que tendrá este rol. Solo se muestran los que aplican al tipo de negocio actual.",
+      affects: "Afecta a:",
+      scope: {
+        store: "Tienda",
+        restaurant: "Restaurante",
+      },
+      groups: {
+        people: "Personas y acceso",
+        catalog: "Catálogo",
+        sales: "Ventas y pedidos",
+        payments: "Pagos y caja",
+        settings: "Configuración",
+        menu: "Menú",
+        inventory: "Inventario",
+        floor: "Salón y mesas",
+        shifts: "Turnos",
+        tickets: "Tickets",
+        reports: "Reportes",
+      },
+      items: {
+        users_read: {
+          label: "Ver usuarios",
+          description: "Listar y ver usuarios.",
+        },
+        users_create: {
+          label: "Crear usuarios",
+          description: "Dar de alta usuarios.",
+        },
+        users_update: {
+          label: "Editar usuarios",
+          description: "Actualizar datos y rol.",
+        },
+        users_delete: {
+          label: "Eliminar usuarios",
+          description: "Dar de baja usuarios.",
+        },
+        roles_read: {
+          label: "Ver roles",
+          description: "Listar roles y sus permisos.",
+        },
+        roles_create: {
+          label: "Crear roles",
+          description: "Dar de alta nuevos roles.",
+        },
+        roles_update: {
+          label: "Editar roles",
+          description: "Modificar rol y permisos.",
+        },
+        roles_delete: {
+          label: "Eliminar roles",
+          description: "Dar de baja roles.",
+        },
+        permissions_read: {
+          label: "Ver permisos",
+          description: "Consultar el catálogo de permisos.",
+        },
+        products_read: {
+          label: "Ver productos",
+          description: "Listar productos en tienda.",
+        },
+        products_create: {
+          label: "Crear productos",
+          description: "Dar de alta productos en tienda.",
+        },
+        products_update: {
+          label: "Editar productos",
+          description: "Actualizar datos y precios.",
+        },
+        products_delete: {
+          label: "Eliminar productos",
+          description: "Dar de baja productos.",
+        },
+        categories_read: {
+          label: "Ver categorías",
+          description: "Listar categorías de catálogo.",
+        },
+        categories_create: {
+          label: "Crear categorías",
+          description: "Dar de alta categorías.",
+        },
+        categories_update: {
+          label: "Editar categorías",
+          description: "Renombrar categorías.",
+        },
+        categories_delete: {
+          label: "Eliminar categorías",
+          description: "Dar de baja categorías.",
+        },
+        orders_read: {
+          label: "Ver órdenes",
+          description: "Listar y revisar órdenes.",
+        },
+        orders_create: {
+          label: "Crear órdenes",
+          description: "Generar nuevas órdenes.",
+        },
+        orders_update: {
+          label: "Editar órdenes",
+          description: "Modificar o actualizar órdenes.",
+        },
+        orders_delete: {
+          label: "Eliminar órdenes",
+          description: "Borrar órdenes y sus ítems.",
+        },
+        orders_export: {
+          label: "Exportar órdenes",
+          description: "Descargar reportes de órdenes.",
+        },
+        orders_refund: {
+          label: "Reembolsar órdenes",
+          description: "Emitir reembolsos en órdenes.",
+        },
+        payments_read: {
+          label: "Ver pagos",
+          description: "Listar pagos y métodos.",
+        },
+        payments_create: {
+          label: "Registrar pagos",
+          description: "Agregar pagos a órdenes.",
+        },
+        payments_update: {
+          label: "Editar pagos",
+          description: "Ajustar pagos existentes.",
+        },
+        wallet_read: {
+          label: "Acceder a billetera",
+          description: "Usar la billetera/caja.",
+        },
+        settings_update: {
+          label: "Editar configuración",
+          description: "Actualizar datos de negocio.",
+        },
+        printer_update: {
+          label: "Configurar impresora",
+          description: "Actualizar ajustes de tickets.",
+        },
+        dish_read: {
+          label: "Ver platillos",
+          description: "Listar platillos del menú.",
+        },
+        dish_create: {
+          label: "Crear platillos",
+          description: "Dar de alta platillos.",
+        },
+        dish_update: {
+          label: "Editar platillos",
+          description: "Actualizar recetas o precios.",
+        },
+        dish_delete: {
+          label: "Eliminar platillos",
+          description: "Dar de baja platillos.",
+        },
+        ingredients_read: {
+          label: "Ver ingredientes",
+          description: "Listar ingredientes en inventario.",
+        },
+        ingredients_create: {
+          label: "Crear ingredientes",
+          description: "Agregar ingredientes al inventario.",
+        },
+        ingredients_update: {
+          label: "Editar ingredientes",
+          description: "Actualizar existencias y datos.",
+        },
+        ingredients_delete: {
+          label: "Eliminar ingredientes",
+          description: "Dar de baja ingredientes.",
+        },
+        suppliers_read: {
+          label: "Ver proveedores",
+          description: "Listar proveedores.",
+        },
+        suppliers_create: {
+          label: "Crear proveedores",
+          description: "Agregar nuevos proveedores.",
+        },
+        suppliers_update: {
+          label: "Editar proveedores",
+          description: "Actualizar datos de proveedores.",
+        },
+        suppliers_delete: {
+          label: "Eliminar proveedores",
+          description: "Dar de baja proveedores.",
+        },
+        tables_read: {
+          label: "Ver mesas",
+          description: "Listar mesas por sala.",
+        },
+        tables_create: {
+          label: "Crear mesas",
+          description: "Agregar nuevas mesas.",
+        },
+        tables_update: {
+          label: "Editar mesas",
+          description: "Actualizar estado o asignación.",
+        },
+        tables_delete: {
+          label: "Eliminar mesas",
+          description: "Dar de baja mesas.",
+        },
+        spaces_read: {
+          label: "Ver espacios",
+          description: "Listar salas/espacios.",
+        },
+        spaces_create: {
+          label: "Crear espacios",
+          description: "Agregar nuevas salas.",
+        },
+        spaces_update: {
+          label: "Editar espacios",
+          description: "Actualizar nombres o disposición.",
+        },
+        spaces_delete: {
+          label: "Eliminar espacios",
+          description: "Dar de baja salas.",
+        },
+        shifts_read: {
+          label: "Ver turnos",
+          description: "Listar turnos registrados.",
+        },
+        shifts_create: {
+          label: "Abrir turnos",
+          description: "Crear/aperturar turnos.",
+        },
+        shifts_update: {
+          label: "Editar turnos",
+          description: "Actualizar estado o datos.",
+        },
+        tickets_read: {
+          label: "Ver tickets",
+          description: "Listar y revisar tickets.",
+        },
+        tickets_create: {
+          label: "Crear tickets",
+          description: "Generar tickets nuevos.",
+        },
+        tickets_update: {
+          label: "Editar tickets",
+          description: "Actualizar datos de tickets.",
+        },
+        reports_read: {
+          label: "Ver reportes",
+          description: "Visualizar reportes.",
+        },
+        reports_export: {
+          label: "Exportar reportes",
+          description: "Descargar reportes.",
+        },
+      },
+    },
+    labels: {
+      admin: "Administrador",
+      standard: "Rol estándar",
+      adminChip: "Admin",
+      standardChip: "Limitado",
+    },
+    state: {
+      loading: "Cargando roles...",
+      empty: "No hay roles creados.",
+      loadingPerms: "Cargando permisos...",
     },
   },
   categories: {

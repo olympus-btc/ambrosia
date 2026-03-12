@@ -6,8 +6,10 @@ import { Button, Input, Select, SelectItem, Modal, ModalContent, ModalHeader, Mo
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { resolveRoleName } from "@/components/pages/Store/Users/Roles/utils/roleTemplates";
+
 export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModal, setAddUsersShowModal, addUser }) {
-  const t = useTranslations("users");
+  const t = useTranslations();
   const [showPin, setShowPin] = useState(false);
   return (
     <Modal
@@ -20,7 +22,7 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
     >
       <ModalContent>
         <ModalHeader>
-          {t("modal.titleAdd")}
+          {t("users.modal.titleAdd")}
         </ModalHeader>
         <ModalBody>
           <form
@@ -39,23 +41,23 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
             }}
           >
             <Input
-              label={t("modal.userNameLabel")}
+              label={t("users.modal.userNameLabel")}
               type="text"
-              placeholder={t("modal.userNamePlaceholder")}
+              placeholder={t("users.modal.userNamePlaceholder")}
               value={data.userName ?? ""}
               onChange={(e) => onChange({ ...data, userName: e.target.value })}
             />
             <Input
-              label={t("modal.userEmailLabel")}
+              label={t("users.modal.userEmailLabel")}
               type="email"
-              placeholder={t("modal.userEmailPlaceholder")}
+              placeholder={t("users.modal.userEmailPlaceholder")}
               value={data.userEmail ?? ""}
               onChange={(e) => onChange({ ...data, userEmail: e.target.value })}
             />
             <Input
-              label={t("modal.userPhoneLabel")}
+              label={t("users.modal.userPhoneLabel")}
               type="tel"
-              placeholder={t("modal.userPhonePlaceholder")}
+              placeholder={t("users.modal.userPhonePlaceholder")}
               maxLength={10}
               value={data.userPhone ?? ""}
               onChange={(e) => {
@@ -64,9 +66,9 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               }}
             />
             <Input
-              label={t("modal.userPinLabel")}
+              label={t("users.modal.userPinLabel")}
               type={showPin ? "text" : "password"}
-              placeholder={t("modal.userPinPlaceholder")}
+              placeholder={t("users.modal.userPinPlaceholder")}
               maxLength={4}
               value={data.userPin ?? ""}
               onChange={(e) => {
@@ -87,14 +89,15 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               }
             />
             <Select
-              label={t("modal.userRoleLabel")}
+              label={t("users.modal.userRoleLabel")}
+              isRequired
               defaultSelectedKeys={[data.userRole || roles?.[0]?.id || ""]}
               value={data.userRole || roles?.[0]?.id || ""}
               onChange={(e) => onChange({ ...data, userRole: e.target.value })}
             >
               {roles.map((role) => (
                 <SelectItem key={role.id} value={role.id}>
-                  {role.role}
+                  {resolveRoleName(role.role, t)}
                 </SelectItem>
               ))}
             </Select>
@@ -105,14 +108,15 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => setAddUsersShowModal(false)}
               >
-                {t("modal.cancelButton")}
+                {t("users.modal.cancelButton")}
               </Button>
               <Button
                 color="primary"
                 className="bg-green-800"
                 type="submit"
+                isDisabled={!data.userRole}
               >
-                {t("modal.submitButton")}
+                {t("users.modal.submitButton")}
               </Button>
             </ModalFooter>
           </form>

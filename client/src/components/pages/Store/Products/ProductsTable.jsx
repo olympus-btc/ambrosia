@@ -17,10 +17,12 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
+import { RequirePermission, usePermission } from "@/hooks/usePermission";
 
 export function ProductsTable({ products, categories = [], onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
   const { formatAmount } = useCurrency();
+  const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
   const defaultMaxStock = 11;
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
     map[String(category.id)] = category.name;
@@ -57,7 +59,7 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
           <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
           <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
-          <TableColumn className="py-2 px-3 w-[100px] text-right">{t("actions")}</TableColumn>
+          <TableColumn className={canManageProducts ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("actions")}</TableColumn>
         </TableHeader>
         <TableBody>
           {products.map((product) => {
@@ -120,27 +122,31 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                     {t(`status.${status}`)}
                   </Chip>
                 </TableCell>
-                <TableCell className="py-2 px-3">
+                <TableCell className={canManageProducts ? "py-2 px-3" : "hidden"}>
                   <div className="flex justify-end gap-2">
-                    <Button
-                      aria-label="Edit Product"
-                      isIconOnly
-                      size="sm"
-                      className="text-xs text-white bg-blue-500"
-                      onPress={() => onEditProduct(product)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      aria-label="Delete Product"
-                      isIconOnly
-                      size="sm"
-                      color="danger"
-                      className="text-xs text-white"
-                      onPress={() => onDeleteProduct(product)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
+                    <RequirePermission allOf={["products_update"]}>
+                      <Button
+                        aria-label="Edit Product"
+                        isIconOnly
+                        size="sm"
+                        className="text-xs text-white bg-blue-500"
+                        onPress={() => onEditProduct(product)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </RequirePermission>
+                    <RequirePermission allOf={["products_delete"]}>
+                      <Button
+                        aria-label="Delete Product"
+                        isIconOnly
+                        size="sm"
+                        color="danger"
+                        className="text-xs text-white"
+                        onPress={() => onDeleteProduct(product)}
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </RequirePermission>
                   </div>
                 </TableCell>
               </TableRow>

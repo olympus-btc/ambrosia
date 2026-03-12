@@ -81,6 +81,8 @@ fun Route.products(service: ProductService) {
                 mapOf("id" to id, "message" to "Product updated successfully"),
             )
         }
+    }
+    authorizePermission("orders_create") {
         post("/stock") {
             val adjustments = call.receive<List<ProductStockAdjustment>>()
             if (adjustments.isEmpty()) {

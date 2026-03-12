@@ -1,3 +1,7 @@
+export function buildPermissionSet(permissions = []) {
+  return new Set((permissions || []).map((permission) => permission.name));
+}
+
 export const modules = {
   auth: {
     enabled: true,
@@ -8,7 +12,8 @@ export const modules = {
         path: "/restaurant/roles",
         component: "Roles",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["roles_read"],
       },
       {
         path: "/restaurant/users",
@@ -42,7 +47,8 @@ export const modules = {
         path: "/reports",
         component: "Reports",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["reports_read"],
       },
       {
         path: "/wallet",
@@ -144,6 +150,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["users_read"],
         default: false,
       },
       {
@@ -152,6 +159,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["products_read"],
         default: false,
       },
       {
@@ -161,6 +169,7 @@ export const modules = {
         requiresAdmin: false,
         requiresOpenTurn: true,
         types: ["store"],
+        permissions: ["orders_create"],
         default: false,
       },
       {
@@ -169,6 +178,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["orders_read"],
         default: false,
       },
       {
@@ -177,6 +187,16 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["wallet_read"],
+        default: false,
+      },
+      {
+        path: "/store/reports",
+        component: "Reports",
+        requiresAuth: true,
+        requiresAdmin: true,
+        types: ["store"],
+        permissions: ["wallet_read"],
         default: false,
       },
       {
@@ -191,7 +211,8 @@ export const modules = {
         path: "/store/settings",
         component: "Settings",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["settings_update"],
         types: ["store"],
         default: false,
       },
@@ -320,7 +341,7 @@ export function getNavigationItems(
   businessType = null,
 ) {
   const navItems = [];
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
 
   Object.entries(modules).forEach(([moduleKey, config]) => {
     if (!config.enabled) return;
@@ -356,7 +377,7 @@ export function getAvailableModules(
   permissions = [],
   businessType = null,
 ) {
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const availableModules = {};
 
   Object.entries(modules).forEach(([moduleKey, moduleConfig]) => {
@@ -446,7 +467,7 @@ export function hasAccessToRoute(
   if (!routeConfig) return false;
   if (!matchesBusiness(routeConfig.route || {}, businessType)) return false;
 
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const route = routeConfig.route;
 
   if (!route.requiresAuth) return true;

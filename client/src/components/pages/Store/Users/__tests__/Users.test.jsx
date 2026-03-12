@@ -18,6 +18,11 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store/users"),
 }));
 
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => true,
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("../AddUsersModal", () => ({
   AddUsersModal: ({ addUsersShowModal, data, onChange, addUser }) => (
     addUsersShowModal ? (

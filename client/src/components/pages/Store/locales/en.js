@@ -1,6 +1,7 @@
 const storeEn = {
   navbar: {
     users: "Users",
+    roles: "Roles",
     products: "Products",
     checkout: "Checkout",
     wallet: "Wallet",
@@ -39,6 +40,7 @@ const storeEn = {
     title: "Users",
     subtitle: "Manage your store staff",
     addUser: "Add User",
+    noRole: "No role assigned",
     name: "Name",
     role: "Role",
     email: "Email",
@@ -72,6 +74,334 @@ const storeEn = {
       genericErrorDescription: "Could not complete the operation.",
       lastUserTitle: "Not allowed",
       lastUserDescription: "You cannot delete the only existing user.",
+    },
+  },
+  roles: {
+    header: {
+      title: "Roles & permissions",
+      subtitle: "Define which screens and actions are available for each role.",
+    },
+    actions: {
+      new: "New role",
+      edit: "Edit",
+      delete: "Delete",
+      create: "Create role",
+      save: "Save changes",
+      cancel: "Cancel",
+      deleteConfirmTitle: "Delete role",
+      deleteConfirmBody: "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
+      deleteSuccess: "Role deleted successfully",
+      deleteError: "Could not delete the role",
+    },
+    create: {
+      title: "Create role",
+      roleName: "Role name",
+      password: "Password for critical actions (optional)",
+      passwordPlaceholder: "Optional",
+      isAdmin: "With admin privileges",
+      templateLegend: "Choose a role template to get started, or use advanced mode to configure it manually.",
+      advanced: "Advanced mode",
+    },
+    templates: {
+      cashier: {
+        name: "Cashier",
+        description: "Process sales and payments.",
+      },
+      seller: {
+        name: "Seller",
+        description: "Browse products and create orders.",
+      },
+      manager: {
+        name: "Manager",
+        description: "Full operational access.",
+      },
+      admin: {
+        name: "Administrator",
+        description: "Full system access.",
+      },
+      waiter: {
+        name: "Waiter",
+        description: "Take orders and manage tables.",
+      },
+      supervisor: {
+        name: "Supervisor",
+        description: "Oversee operations and staff.",
+      },
+    },
+    edit: {
+      title: "Edit role",
+      roleName: "Role name",
+      password: "Update password (optional)",
+      passwordPlaceholder: "Leave empty to keep current",
+      isAdmin: "With admin privileges",
+    },
+    list: {
+      title: "Available roles",
+      subtitle: "Each role controls access to specific screens.",
+    },
+    permissions: {
+      title: "Visible permissions",
+      subtitle: "Catalog filtered by business type",
+      legend: "Select the permissions for this role. Only those that apply to the current business type are shown.",
+      affects: "Affects:",
+      scope: {
+        store: "Store",
+        restaurant: "Restaurant",
+      },
+      groups: {
+        people: "People & access",
+        catalog: "Catalog",
+        sales: "Sales & orders",
+        payments: "Payments & cash",
+        settings: "Settings",
+        menu: "Menu",
+        inventory: "Inventory",
+        floor: "Floor & tables",
+        shifts: "Shifts",
+        tickets: "Tickets",
+        reports: "Reports",
+      },
+      items: {
+        users_read: {
+          label: "View users",
+          description: "List and view users.",
+        },
+        users_create: {
+          label: "Create users",
+          description: "Add new users.",
+        },
+        users_update: {
+          label: "Edit users",
+          description: "Update user data and role.",
+        },
+        users_delete: {
+          label: "Delete users",
+          description: "Remove users.",
+        },
+        roles_read: {
+          label: "View roles",
+          description: "List roles and permissions.",
+        },
+        roles_create: {
+          label: "Create roles",
+          description: "Add new roles.",
+        },
+        roles_update: {
+          label: "Edit roles",
+          description: "Modify role and permissions.",
+        },
+        roles_delete: {
+          label: "Delete roles",
+          description: "Remove roles.",
+        },
+        permissions_read: {
+          label: "View permissions",
+          description: "Consult the permission catalog.",
+        },
+        products_read: {
+          label: "View products",
+          description: "List store products.",
+        },
+        products_create: {
+          label: "Create products",
+          description: "Add products to store.",
+        },
+        products_update: {
+          label: "Edit products",
+          description: "Update details and prices.",
+        },
+        products_delete: {
+          label: "Delete products",
+          description: "Remove products.",
+        },
+        categories_read: {
+          label: "View categories",
+          description: "List catalog categories.",
+        },
+        categories_create: {
+          label: "Create categories",
+          description: "Add categories.",
+        },
+        categories_update: {
+          label: "Edit categories",
+          description: "Rename categories.",
+        },
+        categories_delete: {
+          label: "Delete categories",
+          description: "Remove categories.",
+        },
+        orders_read: {
+          label: "View orders",
+          description: "List and review orders.",
+        },
+        orders_create: {
+          label: "Create orders",
+          description: "Generate new orders.",
+        },
+        orders_update: {
+          label: "Edit orders",
+          description: "Modify or update orders.",
+        },
+        orders_delete: {
+          label: "Delete orders",
+          description: "Delete orders and items.",
+        },
+        orders_export: {
+          label: "Export orders",
+          description: "Download order reports.",
+        },
+        orders_refund: {
+          label: "Refund orders",
+          description: "Issue refunds on orders.",
+        },
+        payments_read: {
+          label: "View payments",
+          description: "List payments and methods.",
+        },
+        payments_create: {
+          label: "Register payments",
+          description: "Add payments to orders.",
+        },
+        payments_update: {
+          label: "Edit payments",
+          description: "Adjust existing payments.",
+        },
+        wallet_read: {
+          label: "Access wallet",
+          description: "Use wallet/cash UI.",
+        },
+        settings_update: {
+          label: "Edit settings",
+          description: "Update business data.",
+        },
+        printer_update: {
+          label: "Configure printer",
+          description: "Update ticket printer settings.",
+        },
+        dish_read: {
+          label: "View dishes",
+          description: "List menu dishes.",
+        },
+        dish_create: {
+          label: "Create dishes",
+          description: "Add dishes to menu.",
+        },
+        dish_update: {
+          label: "Edit dishes",
+          description: "Update recipes or prices.",
+        },
+        dish_delete: {
+          label: "Delete dishes",
+          description: "Remove dishes.",
+        },
+        ingredients_read: {
+          label: "View ingredients",
+          description: "List inventory ingredients.",
+        },
+        ingredients_create: {
+          label: "Create ingredients",
+          description: "Add ingredients to inventory.",
+        },
+        ingredients_update: {
+          label: "Edit ingredients",
+          description: "Update stock and details.",
+        },
+        ingredients_delete: {
+          label: "Delete ingredients",
+          description: "Remove ingredients.",
+        },
+        suppliers_read: {
+          label: "View suppliers",
+          description: "List suppliers.",
+        },
+        suppliers_create: {
+          label: "Create suppliers",
+          description: "Add new suppliers.",
+        },
+        suppliers_update: {
+          label: "Edit suppliers",
+          description: "Update supplier data.",
+        },
+        suppliers_delete: {
+          label: "Delete suppliers",
+          description: "Remove suppliers.",
+        },
+        tables_read: {
+          label: "View tables",
+          description: "List tables by room.",
+        },
+        tables_create: {
+          label: "Create tables",
+          description: "Add new tables.",
+        },
+        tables_update: {
+          label: "Edit tables",
+          description: "Update status or assignment.",
+        },
+        tables_delete: {
+          label: "Delete tables",
+          description: "Remove tables.",
+        },
+        spaces_read: {
+          label: "View spaces",
+          description: "List rooms/spaces.",
+        },
+        spaces_create: {
+          label: "Create spaces",
+          description: "Add new rooms.",
+        },
+        spaces_update: {
+          label: "Edit spaces",
+          description: "Update names or layout.",
+        },
+        spaces_delete: {
+          label: "Delete spaces",
+          description: "Remove rooms.",
+        },
+        shifts_read: {
+          label: "View shifts",
+          description: "List recorded shifts.",
+        },
+        shifts_create: {
+          label: "Open shifts",
+          description: "Create/open shifts.",
+        },
+        shifts_update: {
+          label: "Edit shifts",
+          description: "Update shift data.",
+        },
+        tickets_read: {
+          label: "View tickets",
+          description: "List and review tickets.",
+        },
+        tickets_create: {
+          label: "Create tickets",
+          description: "Generate new tickets.",
+        },
+        tickets_update: {
+          label: "Edit tickets",
+          description: "Update ticket data.",
+        },
+        reports_read: {
+          label: "View reports",
+          description: "See reports.",
+        },
+        reports_export: {
+          label: "Export reports",
+          description: "Download reports.",
+        },
+      },
+    },
+    labels: {
+      admin: "Administrator",
+      standard: "Standard role",
+      adminChip: "Admin",
+      standardChip: "Limited",
+    },
+    state: {
+      loading: "Loading roles...",
+      empty: "No roles created.",
+      loadingPerms: "Loading permissions...",
     },
   },
   categories: {

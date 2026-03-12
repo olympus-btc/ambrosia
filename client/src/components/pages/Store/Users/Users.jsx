@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
+import { RequirePermission } from "@/hooks/usePermission";
 
 import { StoreLayout } from "../StoreLayout";
 
@@ -12,6 +14,7 @@ import { useUsers } from "./../hooks/useUsers";
 import { AddUsersModal } from "./AddUsersModal";
 import { DeleteUsersModal } from "./DeleteUsersModal";
 import { EditUsersModal } from "./EditUsersModal";
+import { Roles } from "./Roles";
 import { UsersTable } from "./UsersTable";
 
 export function Users() {
@@ -20,8 +23,13 @@ export function Users() {
   const [deleteUsersShowModal, setDeleteUsersShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-  const { users, updateUser, addUser, deleteUser } = useUsers();
-  const { roles } = useRoles();
+  const { users, updateUser, addUser, deleteUser, refetch: refetchUsers } = useUsers();
+  const { roles, createRole, deleteRole: deleteRoleBase, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions } = useRoles();
+
+  const deleteRole = useCallback(async (roleId) => {
+    await deleteRoleBase(roleId);
+    await refetchUsers();
+  }, [deleteRoleBase, refetchUsers]);
 
   const [data, setData] = useState({
     userId: "",
@@ -67,23 +75,25 @@ export function Users() {
             {t("subtitle")}
           </p>
         </div>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={() => {
-            setData({
-              userId: "",
-              userName: "",
-              userPin: "",
-              userPhone: "",
-              userEmail: "",
-              userRole: roles?.[0]?.id || "",
-            });
-            setAddUsersShowModal(true);
-          }}
-        >
-          {t("addUser")}
-        </Button>
+        <RequirePermission allOf={["users_create"]}>
+          <Button
+            color="primary"
+            className="bg-green-800"
+            onPress={() => {
+              setData({
+                userId: "",
+                userName: "",
+                userPin: "",
+                userPhone: "",
+                userEmail: "",
+                userRole: roles?.[0]?.id || "",
+              });
+              setAddUsersShowModal(true);
+            }}
+          >
+            {t("addUser")}
+          </Button>
+        </RequirePermission>
       </header>
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         <UsersTable
@@ -92,6 +102,18 @@ export function Users() {
           onDeleteUser={handleDeleteUser}
         />
       </div>
+      <RequirePermission allOf={["roles_read"]}>
+        <div className="mt-8">
+          <Roles
+            roles={roles}
+            createRole={createRole}
+            deleteRole={deleteRole}
+            loading={loadingRoles}
+            updateRoleWithPermissions={updateRoleWithPermissions}
+            getRolePermissions={getRolePermissions}
+          />
+        </div>
+      </RequirePermission>
 
       <AddUsersModal
         data={data}

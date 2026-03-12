@@ -4,6 +4,11 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { Categories } from "../Categories";
 
+jest.mock("@/hooks/usePermission", () => ({
+  RequirePermission: ({ children }) => <>{children}</>,
+  usePermission: () => true,
+}));
+
 const categories = [
   { id: "cat-1", name: "Hardware" },
   { id: "cat-2", name: "Gadgets" },

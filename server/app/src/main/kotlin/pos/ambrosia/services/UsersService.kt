@@ -24,7 +24,7 @@ class UsersService(
             """
             SELECT u.id, u.name, u.refresh_token, u.pin, r.role, u.role_id, u.email, u.phone
             FROM users u
-            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.is_deleted = 0
         """
 
@@ -32,7 +32,6 @@ class UsersService(
             """
             SELECT COUNT(*)
             FROM users u
-            JOIN roles r ON u.role_id = r.id
             WHERE u.is_deleted = 0
         """
 
@@ -40,7 +39,7 @@ class UsersService(
             """
             SELECT u.id, u.name, u.refresh_token, u.pin, u.email, u.phone, r.role, r.isAdmin
             FROM users u
-            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.id = ? AND u.is_deleted = 0
         """
 

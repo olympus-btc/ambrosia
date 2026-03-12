@@ -15,9 +15,10 @@ jest.mock("@/components/utils/storedAssetUrl", () => ({
   __esModule: true,
   storedAssetUrl: (url) => url,
 }));
-jest.mock("@/components/utils/storedAssetUrl", () => ({
-  __esModule: true,
-  storedAssetUrl: (url) => url,
+
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => true,
+  RequirePermission: ({ children }) => children,
 }));
 
 jest.mock("../AddProductsModal", () => ({

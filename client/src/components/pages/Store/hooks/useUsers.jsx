@@ -32,7 +32,7 @@ export function useUsers() {
     try {
       const body = {
         name: user.userName,
-        role_id: user.userRole,
+        roleId: user.userRole,
         email: user.userEmail,
         phone: user.userPhone,
       };
