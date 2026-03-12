@@ -4,9 +4,8 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { RequirePermission } from "@/hooks/usePermission";
-
 import { toArray } from "@/components/utils/array";
+import { RequirePermission } from "@/hooks/usePermission";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
