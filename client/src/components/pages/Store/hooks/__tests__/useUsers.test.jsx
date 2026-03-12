@@ -122,7 +122,7 @@ describe("useUsers", () => {
       },
       body: JSON.stringify({
         name: "Paula",
-        role_id: 1,
+        roleId: 1,
         email: "paula@example.com",
         phone: "555-0202",
         pin: "7777",
@@ -158,7 +158,7 @@ describe("useUsers", () => {
       },
       body: JSON.stringify({
         name: "Rosa",
-        role_id: 3,
+        roleId: 3,
         email: "rosa@example.com",
         phone: "555-0303",
       }),
