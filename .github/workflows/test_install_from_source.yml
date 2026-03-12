@@ -85,5 +85,10 @@ jobs:
             exit 1
           fi
 
+          if [ ! -d "/tmp/ambrosia-client-dist" ]; then
+            echo "Error: CLIENT_DIST_DIR /tmp/ambrosia-client-dist not found — build-client may have failed"
+            exit 1
+          fi
+
           which ambrosia-client
           ls -l "$(which ambrosia-client)"
