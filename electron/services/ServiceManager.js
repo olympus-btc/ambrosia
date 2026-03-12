@@ -45,7 +45,7 @@ class ServiceManager extends EventEmitter {
 
         console.log('[ServiceManager] Starting Next.js service...');
         const result = await this.nextjsService.start(this.ports.nextjs, {
-          host: '127.0.0.1',
+          host: 'localhost',
           port: this.ports.backend,
         });
         console.log('[ServiceManager] All services started successfully');
@@ -183,7 +183,7 @@ class ServiceManager extends EventEmitter {
         case 'nextjs':
           await this.nextjsService.stop();
           await this.nextjsService.start(this.ports.nextjs, {
-            host: '127.0.0.1',
+            host: 'localhost',
             port: this.ports.backend,
           });
           break;
