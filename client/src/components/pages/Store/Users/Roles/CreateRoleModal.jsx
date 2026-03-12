@@ -71,7 +71,7 @@ export function CreateRoleModal({
       <ModalContent className="max-h-[85vh]">
         <ModalHeader className="flex items-center gap-2">
           {advanced && (
-            <Button isIconOnly variant="light" size="sm" onPress={handleBack}>
+            <Button isIconOnly variant="light" size="sm" onPress={handleBack} aria-label="Go back">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
