@@ -132,6 +132,7 @@ class TicketFactory(
             resolved = resolved.replace("{{config.businessName}}", it.businessName)
             resolved = resolved.replace("{{config.businessAddress}}", it.businessAddress ?: "")
             resolved = resolved.replace("{{config.businessPhone}}", it.businessPhone ?: "")
+            resolved = resolved.replace("{{config.businessEmail}}", it.businessEmail ?: "")
         }
 
         return resolved

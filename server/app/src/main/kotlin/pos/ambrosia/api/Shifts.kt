@@ -13,6 +13,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
+import pos.ambrosia.models.CloseShiftRequest
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.authorizePermission
@@ -25,15 +26,26 @@ fun Application.configureShifts() {
 }
 
 fun Route.shifts(shiftService: ShiftService) {
-    get("") {
-        val shifts = shiftService.getShifts()
-        if (shifts.isEmpty()) {
-            call.respond(HttpStatusCode.NoContent, "No shifts found")
-            return@get
-        }
-        call.respond(HttpStatusCode.OK, shifts)
-    }
     authorizePermission("shifts_read") {
+        get("") {
+            val shifts = shiftService.getShifts()
+            if (shifts.isEmpty()) {
+                call.respond(HttpStatusCode.OK, "No shifts found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, shifts)
+        }
+
+        get("/open") {
+            val userId = call.request.queryParameters["user_id"]
+            val openShift = shiftService.getOpenShift(userId)
+            if (openShift == null) {
+                call.respond(HttpStatusCode.NoContent)
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, openShift)
+        }
+
         get("/{id}") {
             val id = call.parameters["id"]
             if (id == null) {
@@ -52,32 +64,63 @@ fun Route.shifts(shiftService: ShiftService) {
     }
     authorizePermission("shifts_create") {
         post("") {
+            val open = shiftService.getOpenShift(null)
+            if (open != null) {
+                call.respond(HttpStatusCode.Conflict, "There is already an open shift")
+                return@post
+            }
+
             val shift = call.receive<Shift>()
             val createdShift = shiftService.addShift(shift)
+            if (createdShift == null) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to add shift")
+                return@post
+            }
             call.respond(
                 HttpStatusCode.Created,
                 mapOf("id" to createdShift, "message" to "Shift added successfully"),
             )
         }
-    }
-    authorizePermission("shifts_update") {
-        put("/{id}") {
+        authorizePermission("shifts_update") {
+            put("/{id}") {
+                val id = call.parameters["id"]
+                if (id == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                    return@put
+                }
+
+                val updatedShift = call.receive<Shift>()
+                val isUpdated = shiftService.updateShift(updatedShift.copy(id = id))
+                logger.info(isUpdated.toString())
+
+                if (!isUpdated) {
+                    call.respond(HttpStatusCode.NotFound, "Shift with ID: $id not found")
+                    return@put
+                }
+
+                call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Shift updated successfully"))
+            }
+        }
+
+        post("/{id}/close") {
             val id = call.parameters["id"]
             if (id == null) {
                 call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-                return@put
+                return@post
             }
 
-            val updatedShift = call.receive<Shift>()
-            val isUpdated = shiftService.updateShift(updatedShift.copy(id = id))
-            logger.info(isUpdated.toString())
-
-            if (!isUpdated) {
-                call.respond(HttpStatusCode.NotFound, "Shift with ID: $id not found")
-                return@put
+            val request =
+                try {
+                    call.receive<CloseShiftRequest>()
+                } catch (_: Exception) {
+                    CloseShiftRequest()
+                }
+            val closed = shiftService.closeShift(id, request.final_amount, request.difference)
+            if (!closed) {
+                call.respond(HttpStatusCode.NotFound, "Shift not found or already closed")
+                return@post
             }
-
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Shift updated successfully"))
+            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Shift closed successfully"))
         }
     }
     authorizePermission("shifts_delete") {
@@ -94,7 +137,7 @@ fun Route.shifts(shiftService: ShiftService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Shift deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

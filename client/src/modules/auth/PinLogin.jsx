@@ -114,7 +114,7 @@ export default function PinLoginNew() {
       });
       setPin("");
       setSelectedUser("");
-      window.location.replace("/");
+      router.push("/");
     } catch {
       setError(t("errorMessages.incorrectPin"));
       setPin("");

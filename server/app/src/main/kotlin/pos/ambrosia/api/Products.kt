@@ -30,7 +30,7 @@ fun Route.products(service: ProductService) {
         get("") {
             val items = service.getProducts()
             if (items.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No products found")
+                call.respond(HttpStatusCode.OK, "No products found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, items)
@@ -82,22 +82,17 @@ fun Route.products(service: ProductService) {
             )
         }
         post("/stock") {
-            try {
-                val adjustments = call.receive<List<ProductStockAdjustment>>()
-                if (adjustments.isEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, "No stock adjustments provided")
-                    return@post
-                }
-                val ok = service.adjustStock(adjustments)
-                if (!ok) {
-                    call.respond(HttpStatusCode.BadRequest, "Invalid or insufficient stock")
-                    return@post
-                }
-                call.respond(HttpStatusCode.OK, mapOf("message" to "Stock adjusted successfully"))
-            } catch (e: Exception) {
-                logger.error("Error adjusting product stock: ${e.message}")
-                call.respond(HttpStatusCode.BadRequest, "Invalid stock adjustment data")
+            val adjustments = call.receive<List<ProductStockAdjustment>>()
+            if (adjustments.isEmpty()) {
+                call.respond(HttpStatusCode.BadRequest, "No stock adjustments provided")
+                return@post
             }
+            val ok = service.adjustStock(adjustments)
+            if (!ok) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid or insufficient stock")
+                return@post
+            }
+            call.respond(HttpStatusCode.OK, mapOf("message" to "Stock adjusted successfully"))
         }
     }
     authorizePermission("products_delete") {
@@ -109,10 +104,7 @@ fun Route.products(service: ProductService) {
                         "Missing or malformed ID",
                     )
             service.deleteProduct(id)
-            call.respond(
-                HttpStatusCode.NoContent,
-                mapOf("id" to id, "message" to "Product deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

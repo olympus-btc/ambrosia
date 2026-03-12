@@ -241,6 +241,15 @@ data class Shift(
     val start_time: String,
     val end_time: String? = null,
     val notes: String,
+    val initial_amount: Double = 0.0,
+    val final_amount: Double? = null,
+    val difference: Double? = null,
+)
+
+@Serializable
+data class CloseShiftRequest(
+    val final_amount: Double? = null,
+    val difference: Double? = null,
 )
 
 @Serializable data class RolePassword(
@@ -325,7 +334,7 @@ data class Product(
     val description: String? = null,
     val image_url: String? = null,
     val cost_cents: Int,
-    val category_id: String,
+    val category_ids: List<String> = emptyList(),
     val quantity: Int,
     val min_stock_threshold: Int,
     val max_stock_threshold: Int,

@@ -51,7 +51,7 @@ fun Route.roles(
         get("") {
             val roles = roleService.getRoles()
             if (roles.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No roles found")
+                call.respond(HttpStatusCode.OK, "No roles found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, roles)
@@ -63,8 +63,12 @@ fun Route.roles(
                 return@get
             }
             val perms = permissionsService.getByRole(id)
+            if (perms == null) {
+                call.respond(HttpStatusCode.NotFound, "Role not found")
+                return@get
+            }
             if (perms.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent)
+                call.respond(HttpStatusCode.OK, "No permissions found for this role")
                 return@get
             }
             call.respond(HttpStatusCode.OK, perms)
@@ -105,6 +109,11 @@ fun Route.roles(
                 return@put
             }
 
+            if (!permissionsService.roleExists(id)) {
+                call.respond(HttpStatusCode.NotFound, "Role with ID: $id not found")
+                return@put
+            }
+
             val payload = call.receive<RolePermissionsUpdateRequest>()
             val count = permissionsService.replaceRolePermissions(id, payload.permissions.distinct())
             call.respond(HttpStatusCode.OK, RolePermissionsUpdateResult(roleId = id, assigned = count))
@@ -124,10 +133,7 @@ fun Route.roles(
                 return@delete
             }
 
-            call.respond(
-                HttpStatusCode.NoContent,
-                mapOf("id" to id, "message" to "Role deleted successfully"),
-            )
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }

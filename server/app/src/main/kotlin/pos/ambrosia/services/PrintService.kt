@@ -105,6 +105,7 @@ class PrintService(
 
                     val printerOutputStream = PrinterOutputStream(printerService)
                     val escpos = EscPos(printerOutputStream)
+                    escpos.setCharsetName("cp850")
                     val ticketFactory = TicketFactory(template)
                     ticketFactory.build(escpos, ticketData, config)
                     escpos.feed(5).cut(EscPos.CutMode.FULL)

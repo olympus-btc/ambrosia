@@ -23,11 +23,9 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
   const { formatAmount } = useCurrency();
   const defaultMaxStock = 11;
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
-    const categoryId = String(category.id);
-    map[categoryId] = category.name;
+    map[String(category.id)] = category.name;
     return map;
-  }, {})
-  , [categories]);
+  }, {}), [categories]);
   const normalizeNumber = (value, fallback = 0) => {
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
@@ -76,11 +74,19 @@ export function ProductsTable({ products, categories = [], onEditProduct, onDele
                   <span className="block max-w-[50px] truncate">{product.description}</span>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    className="bg-green-200 text-xs text-green-800 border border-green-300"
-                  >
-                    {categoryNameById[String(product.category_id)] ?? product.category_id}
-                  </Chip>
+                  {product.category_ids?.some((catId) => categoryNameById[String(catId)]) ? (
+                    <div className="flex flex-wrap gap-1">
+                      {product.category_ids.filter((catId) => categoryNameById[String(catId)]).map((catId) => (
+                        <Chip key={catId} className="bg-green-200 text-xs text-green-800 border border-green-300">
+                          {categoryNameById[String(catId)]}
+                        </Chip>
+                      ))}
+                    </div>
+                  ) : (
+                    <Chip className="bg-gray-200 text-xs text-gray-500 border border-gray-300">
+                      {t("noCategory")}
+                    </Chip>
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{product.SKU}</span>

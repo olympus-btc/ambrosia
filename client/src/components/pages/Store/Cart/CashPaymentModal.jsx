@@ -93,6 +93,10 @@ export function CashPaymentModal({
               setCashReceived(value);
               setError("");
             }}
+            onChange={(e) => {
+              setCashReceived(parseFloat(e.target.value) || 0);
+              setError("");
+            }}
             minValue={0}
             step={0.10}
             size="lg"

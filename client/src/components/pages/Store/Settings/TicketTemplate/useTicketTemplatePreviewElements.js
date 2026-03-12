@@ -11,12 +11,14 @@ const fontSizeClasses = {
   EXTRA_LARGE: "text-lg",
 };
 
-function resolveValue(value) {
+export function resolveValue(value, config) {
   if (!value) return "";
+  const resolvedConfig = config ?? sampleConfig;
   return value
-    .replaceAll("{{config.businessName}}", sampleConfig.businessName)
-    .replaceAll("{{config.businessAddress}}", sampleConfig.businessAddress)
-    .replaceAll("{{config.businessPhone}}", sampleConfig.businessPhone)
+    .replaceAll("{{config.businessName}}", resolvedConfig.businessName ?? "")
+    .replaceAll("{{config.businessAddress}}", resolvedConfig.businessAddress ?? "")
+    .replaceAll("{{config.businessPhone}}", resolvedConfig.businessPhone ?? "")
+    .replaceAll("{{config.businessEmail}}", resolvedConfig.businessEmail ?? "")
     .replaceAll("{{ticket.id}}", sampleTicket.ticketId)
     .replaceAll("{{ticket.tableName}}", sampleTicket.tableName)
     .replaceAll("{{ticket.roomName}}", sampleTicket.roomName)
@@ -31,7 +33,7 @@ function resolveAlignment(justification) {
   return "text-left";
 }
 
-export function useTicketTemplatePreviewElements(elements) {
+export function useTicketTemplatePreviewElements(elements, config) {
   return useMemo(() => {
     if (!Array.isArray(elements)) return [];
     const output = [];
@@ -53,7 +55,7 @@ export function useTicketTemplatePreviewElements(elements) {
         return;
       }
       if (element.type === "QRCODE") {
-        const qrValue = resolveValue(element.value || "") || sampleTicket.invoice;
+        const qrValue = resolveValue(element.value || "", config) || sampleTicket.invoice;
         output.push(
           <div
             key={`${element.localId}-qr`}
@@ -99,10 +101,10 @@ export function useTicketTemplatePreviewElements(elements) {
       }
       output.push(
         <div key={element.localId} className={className}>
-          {resolveValue(element.value || "")}
+          {resolveValue(element.value || "", config)}
         </div>,
       );
     });
     return output;
-  }, [elements]);
+  }, [elements, config]);
 }

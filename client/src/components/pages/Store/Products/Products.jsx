@@ -4,11 +4,14 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { toArray } from "@/components/utils/array";
+
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
 
 import { AddProductsModal } from "./AddProductsModal";
+import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
 import { ProductsTable } from "./ProductsTable";
@@ -21,7 +24,7 @@ export function Products() {
     productId: "",
     productName: "",
     productDescription: "",
-    productCategory: "",
+    productCategories: [],
     productSKU: "",
     productPrice: "",
     productStock: 1,
@@ -37,6 +40,8 @@ export function Products() {
     categories,
     loading: categoriesLoading,
     createCategory,
+    updateCategory,
+    deleteCategory,
     refetch: refetchCategories,
   } = useCategories("product");
 
@@ -51,7 +56,7 @@ export function Products() {
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
-      productCategory: product.category_id,
+      productCategories: toArray(product.category_ids),
       productSKU: product.SKU,
       productPrice: product.price_cents ? product.price_cents / 100 : "",
       productStock: product.quantity,
@@ -138,6 +143,14 @@ export function Products() {
           setDeleteProductsShowModal(false);
           deleteProduct(productToDelete);
         }}
+      />
+
+      <Categories
+        categories={categories}
+        createCategory={createCategory}
+        updateCategory={updateCategory}
+        deleteCategory={deleteCategory}
+        refetch={refetchCategories}
       />
     </StoreLayout>
   );

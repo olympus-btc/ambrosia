@@ -183,7 +183,8 @@ class OrderService(
         }
     }
 
-    suspend fun getOrdersByTableId(tableId: String): List<Order> {
+    suspend fun getOrdersByTableId(tableId: String): List<Order>? {
+        if (!tableExists(tableId)) return null
         val statement = connection.prepareStatement(GET_ORDERS_BY_TABLE)
         statement.setString(1, tableId)
         val resultSet = statement.executeQuery()
@@ -195,7 +196,8 @@ class OrderService(
         return orders
     }
 
-    suspend fun getOrdersByUserId(userId: String): List<Order> {
+    suspend fun getOrdersByUserId(userId: String): List<Order>? {
+        if (!userExists(userId)) return null
         val statement = connection.prepareStatement(GET_ORDERS_BY_USER)
         statement.setString(1, userId)
         val resultSet = statement.executeQuery()
@@ -207,10 +209,10 @@ class OrderService(
         return orders
     }
 
-    suspend fun getOrdersByStatus(status: String): List<Order> {
+    suspend fun getOrdersByStatus(status: String): List<Order>? {
         if (!isValidStatus(status)) {
             logger.error("Invalid status: $status")
-            return emptyList()
+            return null
         }
 
         val statement = connection.prepareStatement(GET_ORDERS_BY_STATUS)

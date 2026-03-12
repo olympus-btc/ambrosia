@@ -3,7 +3,9 @@ const path = require('path');
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
 
 const AutoUpdater = require('./services/AutoUpdater');
+const { readConfig, writeConfig } = require('./services/ConfigurationBootstrap');
 const ServiceManager = require('./services/ServiceManager');
+const { getPhoenixDataDirectory } = require('./utils/resourcePaths');
 
 // To prevent multiple instances of the application
 const gotTheLock = app.requestSingleInstanceLock();
@@ -280,6 +282,42 @@ ipcMain.handle('services:restart', async (event, serviceName) => {
 ipcMain.handle('services:get-logs', () => {
   const logsDir = path.join(require('os').homedir(), '.Ambrosia-POS', 'logs');
   return { logsDir };
+});
+
+const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
+
+let phoenixdRestartInProgress = false;
+
+ipcMain.handle('phoenixd:get-auto-liquidity', () => {
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  return phoenixConfig['auto-liquidity'] ?? 'off';
+});
+
+ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
+  if (!serviceManager) {
+    throw new Error('ServiceManager not initialized');
+  }
+  if (phoenixdRestartInProgress) {
+    throw new Error('A restart is already in progress');
+  }
+
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  phoenixConfig['auto-liquidity'] = value;
+  writeConfig(phoenixConfigPath, phoenixConfig);
+
+  if (!serviceManager.isDevMode()) {
+    if (serviceManager.configs?.phoenix) {
+      serviceManager.configs.phoenix['auto-liquidity'] = value;
+    }
+    phoenixdRestartInProgress = true;
+    try {
+      await serviceManager.restartService('phoenixd');
+    } finally {
+      phoenixdRestartInProgress = false;
+    }
+  }
+
+  return true;
 });
 
 // App initialization

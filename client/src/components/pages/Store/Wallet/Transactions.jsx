@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Card, CardBody, Tab, Tabs } from "@heroui/react";
-import { driver } from "driver.js";
 import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useTour } from "@/hooks/tour/useTour";
 
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
 
@@ -26,56 +27,48 @@ export function Transactions({
   const tTour = useTranslations("walletTour");
   const [activeTab, setActiveTab] = useState("receive");
 
-  useEffect(() => {
-    if (!localStorage.getItem(WALLET_RECEIVE_TOUR_KEY)) return;
-
-    const timer = setTimeout(() => {
-      document.getElementById("wallet-receive-amount")?.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      const driverObj = driver({
-        allowClose: true,
-        overlayOpacity: 0.5,
-        showProgress: true,
-        steps: [
-          {
-            element: "#wallet-receive-amount",
-            popover: {
-              title: tTour("receiveAmountTitle"),
-              description: tTour.raw("receiveAmountDescription"),
-              side: "top",
-              align: "center",
-            },
+  useTour({
+    key: WALLET_RECEIVE_TOUR_KEY,
+    delay: 500,
+    driverOptions: {
+      allowClose: true,
+      overlayOpacity: 0.5,
+      showProgress: true,
+      steps: [
+        {
+          element: "#wallet-receive-amount",
+          popover: {
+            title: tTour("receiveAmountTitle"),
+            description: tTour.raw("receiveAmountDescription"),
+            side: "top",
+            align: "center",
           },
-          {
-            element: "#wallet-receive-description",
-            popover: {
-              title: tTour("receiveDescTitle"),
-              description: tTour.raw("receiveDescDescription"),
-              side: "top",
-              align: "center",
-            },
-          },
-          {
-            element: "#wallet-receive-button",
-            popover: {
-              title: tTour("receiveButtonTitle"),
-              description: tTour.raw("receiveButtonDescription"),
-              side: "top",
-              align: "center",
-              nextBtnText: tTour("receiveButton"),
-            },
-          },
-        ],
-        onDestroyStarted: () => {
-          localStorage.removeItem(WALLET_RECEIVE_TOUR_KEY);
-          driverObj.destroy();
         },
-      });
-      driverObj.drive();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [tTour]);
+        {
+          element: "#wallet-receive-description",
+          popover: {
+            title: tTour("receiveDescTitle"),
+            description: tTour.raw("receiveDescDescription"),
+            side: "top",
+            align: "center",
+          },
+        },
+        {
+          element: "#wallet-receive-button",
+          popover: {
+            title: tTour("receiveButtonTitle"),
+            description: tTour.raw("receiveButtonDescription"),
+            side: "top",
+            align: "center",
+            nextBtnText: tTour("receiveButton"),
+          },
+        },
+      ],
+    },
+    onBeforeStart: () => {
+      document.getElementById("wallet-receive-amount")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+  });
 
   return (
     <Card className="rounded-lg mb-6 p-6">

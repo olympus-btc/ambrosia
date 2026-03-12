@@ -29,7 +29,7 @@ fun Route.spaces(spaceService: SpaceService) {
         get("") {
             val spaces = spaceService.getSpaces()
             if (spaces.isEmpty()) {
-                call.respond(HttpStatusCode.NoContent, "No spaces found")
+                call.respond(HttpStatusCode.OK, "No spaces found")
                 return@get
             }
             call.respond(HttpStatusCode.OK, spaces)
@@ -95,7 +95,7 @@ fun Route.spaces(spaceService: SpaceService) {
                 return@delete
             }
 
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Space deleted successfully"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }
