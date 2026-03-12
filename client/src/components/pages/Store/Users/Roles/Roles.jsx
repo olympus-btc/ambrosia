@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-import { addToast, Button, Card, CardBody, CardHeader, Chip, Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { Pencil, ShieldPlus, Trash2 } from "lucide-react";
+import { addToast, Button, Card, CardBody, CardHeader, Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ShieldPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
@@ -13,7 +13,9 @@ import { useConfigurations } from "@/providers/configurations/configurationsProv
 
 import { CreateRoleModal } from "./CreateRoleModal";
 import { EditRoleModal } from "./EditRoleModal";
+import { RolesTable } from "./RolesTable";
 import { permissionCatalog } from "./utils/permissionCatalog";
+import { resolveRoleName } from "./utils/roleTemplates";
 
 export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions }) {
   const { permissions, loading: loadingPerms } = usePermissions();
@@ -155,59 +157,12 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
           </CardHeader>
           <Divider />
           <CardBody className="p-4 lg:p-6">
-            {loadingRoles ? (
-              <p className="text-default-500">{t("roles.state.loading")}</p>
-            ) : roles.length === 0 ? (
-              <p className="text-default-500">{t("roles.state.empty")}</p>
-            ) : (
-              <div className="space-y-3">
-                {roles.map((role) => (
-                  <div
-                    key={role.id}
-                    className="flex items-center justify-between rounded-xl border border-default-200 px-5 py-4 bg-default-50 hover:bg-default-100 transition-colors"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <p className="font-semibold text-foreground">{role.role}</p>
-                      <p className="text-sm text-default-500">
-                        {role.isAdmin ? t("roles.labels.admin") : t("roles.labels.standard")}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {role.isAdmin ? (
-                        <Chip color="success" variant="flat" size="sm">
-                          {t("roles.labels.adminChip")}
-                        </Chip>
-                      ) : (
-                        <Chip color="default" variant="flat" size="sm">
-                          {t("roles.labels.standardChip")}
-                        </Chip>
-                      )}
-                      <RequirePermission allOf={["roles_update"]}>
-                        <Button
-                          variant="light"
-                          size="sm"
-                          startContent={<Pencil className="w-4 h-4" />}
-                          onPress={() => openEditModal(role)}
-                        >
-                          {t("roles.actions.edit")}
-                        </Button>
-                      </RequirePermission>
-                      <RequirePermission allOf={["roles_delete"]}>
-                        <Button
-                          variant="light"
-                          color="danger"
-                          size="sm"
-                          startContent={<Trash2 className="w-4 h-4" />}
-                          onPress={() => setRoleToDelete(role)}
-                        >
-                          {t("roles.actions.delete")}
-                        </Button>
-                      </RequirePermission>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <RolesTable
+              roles={roles}
+              loading={loadingRoles}
+              onEdit={openEditModal}
+              onDelete={setRoleToDelete}
+            />
           </CardBody>
         </Card>
       </div>
@@ -234,7 +189,7 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         <ModalContent>
           <ModalHeader>{t("roles.actions.deleteConfirmTitle")}</ModalHeader>
           <ModalBody>
-            <p>{t("roles.actions.deleteConfirmBody", { name: roleToDelete?.role ?? "" })}</p>
+            <p>{t("roles.actions.deleteConfirmBody", { name: resolveRoleName(roleToDelete?.role ?? "", t) })}</p>
           </ModalBody>
           <ModalFooter>
             <Button
