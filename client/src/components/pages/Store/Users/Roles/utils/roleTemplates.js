@@ -22,6 +22,9 @@ export const roleTemplates = {
         "payments_read",
         "tickets_read",
         "tickets_create",
+        "shifts_read",
+        "shifts_create",
+        "shifts_update",
       ],
     },
     {
@@ -36,6 +39,9 @@ export const roleTemplates = {
         "payments_read",
         "tickets_read",
         "tickets_create",
+        "shifts_read",
+        "shifts_create",
+        "shifts_update",
       ],
     },
     {
@@ -174,3 +180,15 @@ export const roleTemplates = {
     },
   ],
 };
+
+export const templateKeys = new Set([
+  "cashier", "seller", "manager", "admin",
+  "waiter", "supervisor",
+]);
+
+export function resolveRoleName(name, t) {
+  if (name && templateKeys.has(name)) {
+    return t(`roles.templates.${name}.name`);
+  }
+  return name;
+}

@@ -15,7 +15,7 @@ import {
 import { SlidersHorizontal, ArrowLeft } from "lucide-react";
 
 import { PermissionSelector } from "./PermissionSelector";
-import { roleTemplates } from "./utils/roleTemplates";
+import { roleTemplates, resolveRoleName } from "./utils/roleTemplates";
 
 export function CreateRoleModal({
   isOpen,
@@ -38,7 +38,7 @@ export function CreateRoleModal({
     setSelectedTemplate(template.key);
     setForm((prev) => ({
       ...prev,
-      name: t(`roles.templates.${template.key}.name`),
+      name: template.key,
       isAdmin: template.isAdmin ?? false,
       permissions: template.permissions,
     }));
@@ -120,7 +120,7 @@ export function CreateRoleModal({
                 <Input
                   label={t("roles.create.roleName")}
                   placeholder="Ej. Cajero"
-                  value={form.name}
+                  value={resolveRoleName(form.name, t)}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                   isRequired
                 />
