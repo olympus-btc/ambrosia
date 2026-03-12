@@ -73,7 +73,7 @@ class NextJsService {
       const env = {
         ...process.env,
         PORT: port.toString(),
-        HOSTNAME: '0.0.0.0', // Listen on all interfaces (IPv4)
+        HOSTNAME: '127.0.0.1',
         NEXT_PUBLIC_API_URL: apiUrl,
         NEXT_PUBLIC_ELECTRON: 'true',
       };
