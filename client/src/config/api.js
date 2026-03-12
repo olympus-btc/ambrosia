@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = "http://127.0.0.1:9154";
+const DEFAULT_API_URL = "http://localhost:9154";
 
 export function getApiUrl() {
   return process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
@@ -9,8 +9,18 @@ export function getWsUrl() {
     return process.env.NEXT_PUBLIC_WS_URL;
   }
 
-  const apiUrl = getApiUrl();
-  return `${apiUrl.replace(/^http/i, "ws")}/ws/payments`;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/^http/i, "ws")}/ws/payments`;
+  }
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const port = process.env.NEXT_PUBLIC_PORT_API || "9154";
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${host}:${port}/ws/payments`;
+  }
+
+  return `ws://localhost:9154/ws/payments`;
 }
 
 export function isElectronEnv() {

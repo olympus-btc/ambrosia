@@ -54,7 +54,7 @@ class NextJsService {
       console.log(`[NextJsService] Environment PORT: ${port}`);
 
       // Use backend config passed as parameter (with fallback to defaults)
-      const backendHost = backendConfig.host || '127.0.0.1';
+      const backendHost = backendConfig.host || 'localhost';
       const backendPort = backendConfig.port || '9154';
       const apiUrl = `http://${backendHost}:${backendPort}`;
 
