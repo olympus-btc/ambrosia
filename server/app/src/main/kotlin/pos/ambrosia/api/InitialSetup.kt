@@ -21,6 +21,7 @@ import pos.ambrosia.services.CurrencyService
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.RolesService
 import pos.ambrosia.services.UsersService
+import pos.ambrosia.utils.InitialSetupException
 import java.sql.Connection
 
 fun Application.configureInitialSetup() {
@@ -59,8 +60,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                         existingConfig.copy(businessType = businessType, businessTypeConfirmed = true),
                     )
                 if (!saved) {
-                    call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Failed to update business type"))
-                    return@post
+                    throw InitialSetupException("Failed to update business type")
                 }
 
                 call.respond(HttpStatusCode.OK, mapOf("message" to "Business type updated"))
@@ -114,13 +114,13 @@ private fun Route.initialSetupRoutes(connection: Connection) {
 
             val roleId =
                 rolesService.addRole(Role(role = "Admin", password = userPassword, isAdmin = true))
-                    ?: throw IllegalStateException("Failed to create admin role")
+                    ?: throw InitialSetupException("Failed to create admin role")
 
             permissionsService.assignAllEnabledToRole(roleId)
 
             val userId =
                 usersService.addUser(User(name = userName, pin = userPin, role = roleId))
-                    ?: throw IllegalStateException("Failed to create user")
+                    ?: throw InitialSetupException("Failed to create user")
 
             val saved =
                 configService.updateConfig(
@@ -135,11 +135,10 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                         businessTypeConfirmed = true,
                     ),
                 )
-            if (!saved) throw IllegalStateException("Failed to save config")
+            if (!saved) throw InitialSetupException("Failed to save config")
 
-            if (!currencyService.setBaseCurrencyById(currency.id!!)) {
-                throw IllegalStateException("Failed to set base currency")
-            }
+            val currencyId = currency.id ?: throw InitialSetupException("Currency ID missing")
+            if (!currencyService.setBaseCurrencyById(currencyId)) throw InitialSetupException("Failed to set base currency")
 
             connection.commit()
             call.respond(HttpStatusCode.Created, mapOf("message" to "Initial setup completed", "userId" to userId, "roleId" to roleId))
@@ -149,7 +148,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                 connection.rollback()
             } catch (_: Exception) {
             }
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to (e.message ?: "Setup failed")))
+            throw if (e is InitialSetupException) e else InitialSetupException(e.message ?: "Setup failed")
         } finally {
             try {
                 connection.autoCommit = true

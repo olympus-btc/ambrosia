@@ -57,3 +57,11 @@ class LastUserDeletionException(
 class ResourceNotFoundException(
     message: String = "Resource not found",
 ) : RuntimeException(message)
+
+class InitialSetupException(
+    message: String = "Initial setup failed",
+) : RuntimeException(message)
+
+class DatabaseException(
+    message: String = "Database operation failed",
+) : RuntimeException(message)

@@ -19,6 +19,7 @@ import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
 import pos.ambrosia.models.OrderWithDishesRequest
 import pos.ambrosia.services.OrderService
+import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
@@ -367,8 +368,7 @@ fun Route.orders(orderService: OrderService) {
 
             val isDeleted = orderService.removeAllOrderDishes(orderId)
             if (!isDeleted) {
-                call.respond(HttpStatusCode.InternalServerError, "Failed to remove dishes from order")
-                return@delete
+                throw DatabaseException("Failed to remove dishes from order")
             }
 
             // Update order total to 0
