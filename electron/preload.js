@@ -19,6 +19,19 @@ const RECEIVE_CHANNELS = [
   'update:downloaded',
 ];
 
+function sanitizeArg(arg) {
+  if (arg === null || arg === undefined) return arg;
+  const type = typeof arg;
+  if (type === 'string' || type === 'number' || type === 'boolean') return arg;
+  if (Array.isArray(arg)) return arg.map(sanitizeArg);
+  if (type === 'object') {
+    return Object.fromEntries(
+      Object.entries(arg).map(([k, v]) => [k, sanitizeArg(v)]),
+    );
+  }
+  return null; // drop functions, symbols, circular refs
+}
+
 // Expose APIs securely to the renderer
 contextBridge.exposeInMainWorld('electron', {
   // System information API
@@ -38,7 +51,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     invoke: (channel, ...args) => {
       if (INVOKE_CHANNELS.includes(channel)) {
-        return ipcRenderer.invoke(channel, ...args);
+        return ipcRenderer.invoke(channel, ...args.map(sanitizeArg));
       }
       return Promise.reject(new Error(`Invalid channel: ${channel}`));
     },
