@@ -281,14 +281,16 @@ async function main() {
   console.log(`  Downloading JRE 21 for ${currentPlatform}`);
   console.log('===========================================\n');
 
-  for (const jre of JRE_DOWNLOADS) {
-    try {
-      await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
-    } catch (error) {
-      console.error(`Failed to download JRE for ${jre.platform}:`, error);
-      process.exit(1);
-    }
-  }
+  await Promise.all(
+    JRE_DOWNLOADS.map(async (jre) => {
+      try {
+        await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
+      } catch (error) {
+        console.error(`Failed to download JRE for ${jre.platform}:`, error);
+        process.exit(1);
+      }
+    }),
+  );
 
   console.log('\n===========================================');
   console.log(`  ✓ JRE download for ${currentPlatform} complete!`);
