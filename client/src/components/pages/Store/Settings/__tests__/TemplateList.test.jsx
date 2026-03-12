@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateList } from "../TicketTemplate/TemplateList";
+import { TemplateList } from "../TicketTemplate/List";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateElementRow } from "../TicketTemplate/TemplateElementRow";
+import { TemplateElementRow } from "../TicketTemplate/ElementRow";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, "aria-label": ariaLabel, isIconOnly, ...props }) => (
@@ -8,10 +8,11 @@ jest.mock("@heroui/react", () => ({
       {children}
     </button>
   ),
-  Input: ({ label, value, onChange }) => (
+  Input: ({ label, value, onChange, endContent }) => (
     <label>
       {label}
       <input aria-label={label} value={value ?? ""} onChange={onChange} />
+      {endContent}
     </label>
   ),
   Select: ({ label, children, onChange, selectedKeys }) => (
@@ -28,6 +29,19 @@ jest.mock("@heroui/react", () => ({
   ),
   SelectItem: ({ value, children }) => (
     <option value={value}>{children}</option>
+  ),
+  Tooltip: ({ children }) => <>{children}</>,
+}));
+
+jest.mock("../TicketTemplate/VariablePicker", () => ({
+  TemplateVariablePicker: ({ onSelect }) => (
+    <button
+      type="button"
+      data-testid="variable-picker"
+      onClick={() => onSelect("{{config.businessName}}")}
+    >
+      picker
+    </button>
   ),
 }));
 
@@ -145,5 +159,60 @@ describe("TemplateElementRow", () => {
     expect(screen.queryByLabelText("templates.elementValueLabel")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("templates.justificationLabel")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("templates.fontSizeLabel")).not.toBeInTheDocument();
+  });
+
+  it.each(["HEADER", "TEXT", "FOOTER"])(
+    "shows variable picker for %s type",
+    (type) => {
+      render(
+        <TemplateElementRow
+          element={{ localId: "el-3", type, value: "", style: {} }}
+          isOpen
+          onToggle={jest.fn()}
+          onChange={jest.fn()}
+          onRemove={jest.fn()}
+          config={null}
+          t={t}
+        />,
+      );
+      expect(screen.getByTestId("variable-picker")).toBeInTheDocument();
+    },
+  );
+
+  it.each(["QRCODE", "TABLE_HEADER"])(
+    "hides variable picker for %s type",
+    (type) => {
+      render(
+        <TemplateElementRow
+          element={{ localId: "el-4", type, value: "", style: {} }}
+          isOpen
+          onToggle={jest.fn()}
+          onChange={jest.fn()}
+          onRemove={jest.fn()}
+          config={null}
+          t={t}
+        />,
+      );
+      expect(screen.queryByTestId("variable-picker")).not.toBeInTheDocument();
+    },
+  );
+
+  it("selecting a variable replaces the entire input value", () => {
+    const onChange = jest.fn();
+    render(
+      <TemplateElementRow
+        element={{ localId: "el-5", type: "TEXT", value: "old value", style: {} }}
+        isOpen
+        onToggle={jest.fn()}
+        onChange={onChange}
+        onRemove={jest.fn()}
+        config={null}
+        t={t}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("variable-picker"));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ value: "{{config.businessName}}" }),
+    );
   });
 });

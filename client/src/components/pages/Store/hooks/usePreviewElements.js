@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 
-import { DEFAULT_STYLE } from "./ticketTemplateDefaults";
-import { sampleConfig, sampleTicket } from "./ticketTemplateSampleData";
+import { DEFAULT_STYLE } from "@/components/pages/Store/Settings/TicketTemplate/defaults";
+import { sampleConfig, sampleTicket } from "@/components/pages/Store/Settings/TicketTemplate/sampleData";
 
 const fontSizeClasses = {
   NORMAL: "text-sm",

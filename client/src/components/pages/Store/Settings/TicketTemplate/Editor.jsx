@@ -2,7 +2,7 @@
 
 import { Input } from "@heroui/react";
 
-import { TemplateElementsEditor } from "./TemplateElementsEditor";
+import { TemplateElementsEditor } from "./ElementsEditor";
 
 export function TicketTemplatesEditor({
   name,

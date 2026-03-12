@@ -2,10 +2,14 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Input, Select, SelectItem } from "@heroui/react";
+import { Button, Input, Select, SelectItem, Tooltip } from "@heroui/react";
 import { Bold, ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
 
-import { resolveValue } from "./useTicketTemplatePreviewElements";
+import { resolveValue } from "@/components/pages/Store/hooks/usePreviewElements";
+
+import { TemplateVariablePicker } from "./VariablePicker";
+
+const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER"];
 
 const ELEMENT_TYPES = [
   "HEADER",
@@ -34,12 +38,15 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
 
   const type = element.type;
   const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "QRCODE"].includes(type);
+  const showVariablePicker = VARIABLE_PICKER_TYPES.includes(type);
   const showStyle = type !== "LINE_BREAK" && type !== "SEPARATOR";
   const showBold = showStyle && type !== "QRCODE";
   const showJustification = showStyle;
   const showFontSize = showStyle;
 
   const handleChange = (updates) => onChange({ ...element, ...updates });
+
+  const selectVariable = (variable) => handleChange({ value: variable });
 
   const typeLabel = t(`templates.elementTypes.${type}`);
   const resolvedSummary = resolveValue(element.value ?? "", config);
@@ -94,7 +101,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
             <Select
               label={t("templates.elementTypeLabel")}
               selectedKeys={element.type ? [element.type] : []}
-              onChange={(e) => handleChange({ type: e.target.value })}
+              onChange={(e) => { if (e.target.value) handleChange({ type: e.target.value }); }}
             >
               {ELEMENT_TYPES.map((typeOption) => (
                 <SelectItem key={typeOption} value={typeOption}>
@@ -111,6 +118,19 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
                   label={t("templates.elementValueLabel")}
                   value={element.value ?? ""}
                   onChange={(e) => handleChange({ value: e.target.value })}
+                  endContent={showVariablePicker ? (
+                    <Tooltip
+                      showArrow
+                      placement="right"
+                      size="sm"
+                      content={t("templates.variables.tooltip")}
+                      classNames={{ base: "before:rounded-none before:shadow-none shadow-none", content: "rounded-md border-none shadow-none" }}
+                    >
+                      <div>
+                        <TemplateVariablePicker onSelect={selectVariable} t={t} />
+                      </div>
+                    </Tooltip>
+                  ) : null}
                 />
               )}
 

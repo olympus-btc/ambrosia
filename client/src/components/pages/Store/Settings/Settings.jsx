@@ -24,8 +24,8 @@ import { EditSettingsModal } from "./EditSettingsModal";
 import { LightningCard } from "./Lightning/LightningCard";
 import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
 import { SeedCard } from "./Seed/SeedCard";
-import { TemplateList } from "./TicketTemplate/TemplateList";
-import { TicketTemplatesModal } from "./TicketTemplate/TicketTemplatesModal";
+import { TemplateList } from "./TicketTemplate/List";
+import { TicketTemplatesModal } from "./TicketTemplate/Modal";
 import { TutorialsCard } from "./Tutorials/TutorialsCard";
 
 export function Settings() {
