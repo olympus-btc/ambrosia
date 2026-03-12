@@ -388,7 +388,12 @@ app.whenReady().then(async () => {
 
     serviceManager.on('service:error', ({ service, error }) => {
       console.error(`[Electron] Service error: ${service}`, error);
-      updateSplash(null, null, `Error starting ${service || 'service'}`);
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash:error', {
+          service,
+          message: error ? error.message || String(error) : `Failed to start ${service || 'service'}`,
+        });
+      }
     });
 
     serviceManager.on('all:started', () => {
@@ -420,9 +425,16 @@ app.whenReady().then(async () => {
 
     console.log('[Electron] Application initialized successfully');
   } catch (error) {
-    // Close splash on error
+    // Show error state in splash before closing
     if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
+      splashWindow.webContents.send('splash:error', {
+        service: null,
+        message: error ? error.message || String(error) : 'Unexpected startup error',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+      }
     }
     await handleStartupError(error);
   }

@@ -115,6 +115,33 @@
         opacity: 0;
       }
     }
+
+    .error-box {
+      display: none;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-word;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .error-box.visible {
+      display: block;
+    }
+
+    .step.error .step-dot {
+      background: #f87171;
+    }
+
+    body.has-error {
+      background: linear-gradient(0deg, #b45309, #ef4444);
+    }
   </style>
 </head>
 <body>
@@ -143,12 +170,14 @@
         <span>Frontend</span>
       </div>
     </div>
+    <div class="error-box" id="error-box"></div>
   </div>
 
   <script>
     const statusText = document.getElementById('status-text');
     const progressBar = document.getElementById('progress-bar');
     const spinner = document.getElementById('spinner');
+    const errorBox = document.getElementById('error-box');
 
     const steps = {
       phoenixd: document.getElementById('step-phoenixd'),
@@ -183,6 +212,25 @@
       if (service && steps[service]) {
         steps[service].classList.remove('active');
         steps[service].classList.add('completed');
+      }
+    });
+
+    // Listen for error signal
+    window.splashBridge.on('splash:error', (data) => {
+      const { service, message } = data || {};
+
+      document.body.classList.add('has-error');
+      spinner.style.display = 'none';
+      statusText.textContent = 'Startup failed';
+
+      if (service && steps[service]) {
+        steps[service].classList.remove('active');
+        steps[service].classList.add('error');
+      }
+
+      if (message) {
+        errorBox.textContent = message;
+        errorBox.classList.add('visible');
       }
     });
 

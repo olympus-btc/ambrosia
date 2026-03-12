@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-const SPLASH_CHANNELS = ['splash:update', 'splash:complete', 'splash:close'];
+const SPLASH_CHANNELS = ['splash:update', 'splash:complete', 'splash:close', 'splash:error'];
 
 contextBridge.exposeInMainWorld('splashBridge', {
   on: (channel, callback) => {
