@@ -1,5 +1,5 @@
 export function buildPermissionSet(permissions = []) {
-  return new Set((permissions || []).map((p) => p.name));
+  return new Set((permissions || []).map((permission) => permission.name));
 }
 
 export const modules = {
