@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Card, CardBody, CardHeader } from "@heroui/react";
 
-import { TicketTemplatesModal } from "../TicketTemplate/TicketTemplatesModal";
+import { TicketTemplatesModal } from "../TicketTemplate/Modal";
 
 import { PrinterAddForm } from "./PrinterAddForm";
 import { PrinterConfigRow } from "./PrinterConfigRow";

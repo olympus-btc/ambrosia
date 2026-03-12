@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateVariablePicker } from "../TicketTemplate/TemplateVariablePicker";
+import { TemplateVariablePicker } from "../TicketTemplate/VariablePicker";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, "aria-label": ariaLabel, isIconOnly, ...props }) => (

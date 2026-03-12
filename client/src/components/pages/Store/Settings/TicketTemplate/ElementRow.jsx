@@ -5,8 +5,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button, Input, Select, SelectItem, Tooltip } from "@heroui/react";
 import { Bold, ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
 
-import { TemplateVariablePicker } from "./TemplateVariablePicker";
-import { resolveValue } from "./useTicketTemplatePreviewElements";
+import { resolveValue } from "@/components/pages/Store/hooks/usePreviewElements";
+
+import { TemplateVariablePicker } from "./VariablePicker";
 
 const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER"];
 

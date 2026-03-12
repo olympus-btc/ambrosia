@@ -56,7 +56,7 @@ jest.mock("../Printer/PrinterConfigRow", () => ({
   ),
 }));
 
-jest.mock("../TicketTemplate/TicketTemplatesModal", () => ({
+jest.mock("../TicketTemplate/Modal", () => ({
   TicketTemplatesModal: ({ isOpen }) => (isOpen ? <div>templates-modal</div> : null),
 }));
 

@@ -5,17 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 import { addToast, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useTicketTemplatePreviewElements } from "@/components/pages/Store/hooks/usePreviewElements";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
 
-import { TemplatePreview } from "./TemplatePreview";
-import { createElement, DEFAULT_STYLE } from "./ticketTemplateDefaults";
-import { sampleTicket } from "./ticketTemplateSampleData";
-import { TicketTemplatesEditor } from "./TicketTemplatesEditor";
-import { TicketTemplatesFooter } from "./TicketTemplatesFooter";
-import { useTicketTemplatePreviewElements } from "./useTicketTemplatePreviewElements";
+import { createElement, DEFAULT_STYLE } from "./defaults";
+import { TicketTemplatesEditor } from "./Editor";
+import { TicketTemplatesFooter } from "./Footer";
+import { TemplatePreview } from "./Preview";
+import { sampleTicket } from "./sampleData";
 
 const PRINTER_TYPES = ["CUSTOMER"];
 

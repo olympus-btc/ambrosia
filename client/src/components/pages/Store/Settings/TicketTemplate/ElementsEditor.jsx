@@ -6,7 +6,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Button } from "@heroui/react";
 
-import { TemplateElementRow } from "./TemplateElementRow";
+import { TemplateElementRow } from "./ElementRow";
 
 export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, onRemove, config, t }) {
   const [openIds, setOpenIds] = useState(() => new Set());
