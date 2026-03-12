@@ -61,7 +61,8 @@ const ALL_PHOENIXD_DOWNLOADS = {
 const currentPlatform = getBuildPlatform();
 const PHOENIXD_DOWNLOADS = [ALL_PHOENIXD_DOWNLOADS[currentPlatform]];
 
-function downloadFile(url, dest) {
+function downloadFile(url, dest, redirectCount = 0) {
+  const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
 
@@ -73,10 +74,14 @@ function downloadFile(url, dest) {
       if (response.statusCode === 301 || response.statusCode === 302 ||
           response.statusCode === 307 || response.statusCode === 308) {
         const redirectUrl = response.headers.location;
-        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
         file.close();
         fs.unlinkSync(dest);
-        downloadFile(redirectUrl, dest).then(resolve).catch(reject);
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
+          return;
+        }
+        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
+        downloadFile(redirectUrl, dest, redirectCount + 1).then(resolve).catch(reject);
         return;
       }
 
