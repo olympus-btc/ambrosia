@@ -101,7 +101,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
             <Select
               label={t("templates.elementTypeLabel")}
               selectedKeys={element.type ? [element.type] : []}
-              onChange={(e) => handleChange({ type: e.target.value })}
+              onChange={(e) => { if (e.target.value) handleChange({ type: e.target.value }); }}
             >
               {ELEMENT_TYPES.map((typeOption) => (
                 <SelectItem key={typeOption} value={typeOption}>
