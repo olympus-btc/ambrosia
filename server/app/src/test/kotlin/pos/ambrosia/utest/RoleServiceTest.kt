@@ -5,7 +5,6 @@ import kotlinx.coroutines.runBlocking
 import org.mockito.ArgumentMatchers.contains
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Role
@@ -86,55 +85,35 @@ class RoleServiceTest {
     }
 
     @Test
-    fun `deleteRole returns false if role is in use`() {
+    fun `deleteRole unassigns users and returns true on success`() {
         runBlocking {
-            val roleId = "role-1" // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getInt("count")).thenReturn(1) // Arrange: Simulate role is in use
-            val service = RolesService(mockEnv, mockConnection) // Arrange
-            val result = service.deleteRole(roleId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("UPDATE roles SET is_deleted")) // Assert
-        }
-    }
-
-    @Test
-    fun `deleteRole returns true on success`() {
-        runBlocking {
-            val roleId = "role-1" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE roles SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = RolesService(mockEnv, mockConnection) // Arrange
-            val result = service.deleteRole(roleId) // Act
-            assertTrue(result) // Assert
+            val roleId = "role-1"
+            val unassignStatement: PreparedStatement = mock()
+            val deleteStatement: PreparedStatement = mock()
+            whenever(mockConnection.prepareStatement(contains("UPDATE users SET role_id = NULL"))).thenReturn(unassignStatement)
+            whenever(mockConnection.prepareStatement(contains("UPDATE roles SET role"))).thenReturn(deleteStatement)
+            whenever(unassignStatement.executeUpdate()).thenReturn(1)
+            whenever(deleteStatement.executeUpdate()).thenReturn(1)
+            val service = RolesService(mockEnv, mockConnection)
+            val result = service.deleteRole(roleId)
+            assertTrue(result)
+            verify(unassignStatement).executeUpdate()
         }
     }
 
     @Test
     fun `deleteRole returns false when role not found`() {
         runBlocking {
-            val roleId = "not-found-role" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE roles SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = RolesService(mockEnv, mockConnection) // Arrange
-            val result = service.deleteRole(roleId) // Act
-            assertFalse(result) // Assert
+            val roleId = "not-found-role"
+            val unassignStatement: PreparedStatement = mock()
+            val deleteStatement: PreparedStatement = mock()
+            whenever(mockConnection.prepareStatement(contains("UPDATE users SET role_id = NULL"))).thenReturn(unassignStatement)
+            whenever(mockConnection.prepareStatement(contains("UPDATE roles SET role"))).thenReturn(deleteStatement)
+            whenever(unassignStatement.executeUpdate()).thenReturn(0)
+            whenever(deleteStatement.executeUpdate()).thenReturn(0)
+            val service = RolesService(mockEnv, mockConnection)
+            val result = service.deleteRole(roleId)
+            assertFalse(result)
         }
     }
 }
