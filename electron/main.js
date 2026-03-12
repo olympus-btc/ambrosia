@@ -59,7 +59,6 @@ function createSplashScreen() {
       preload: path.join(__dirname, 'splash-preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
     },
   });
 
@@ -325,8 +324,9 @@ app.whenReady().then(async () => {
   try {
     console.log('[Electron] Initializing Ambrosia POS...');
 
-    // Show splash screen immediately
+    // Show splash screen and wait for it to finish loading before sending IPC
     createSplashScreen();
+    await new Promise((resolve) => splashWindow.webContents.once('did-finish-load', resolve));
 
     // SPLASH ONLY MODE: For design/testing purposes
     if (process.env.SPLASH_ONLY === 'true') {

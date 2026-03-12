@@ -58,6 +58,7 @@ class ServiceManager extends EventEmitter {
           host: 'localhost',
           port: this.ports.backend,
         });
+        this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
         console.log('[ServiceManager] All services started successfully');
         return result.url;
       }

@@ -1,6 +1,6 @@
 {
   "name": "ambrosia-pos",
-  "version": "0.5.1-alpha",
+  "version": "0.6.0-beta",
   "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
@@ -64,6 +64,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "splash-preload.js",
       "splash.html",
       "package.json",
       "services/**/*",
