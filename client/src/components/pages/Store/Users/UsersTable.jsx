@@ -13,10 +13,11 @@ import {
 import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { resolveRoleName } from "@/components/pages/Store/Users/Roles/utils/roleTemplates";
 import { RequirePermission, usePermission } from "@/hooks/usePermission";
 
 export function UsersTable({ users, onEditUser, onDeleteUser }) {
-  const t = useTranslations("users");
+  const t = useTranslations();
   const canManageUsers = usePermission({ anyOf: ["users_update", "users_delete"] });
 
   return (
@@ -26,11 +27,11 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
         removeWrapper
       >
         <TableHeader>
-          <TableColumn className="py-2 px-3 w-[120px]">{t("name")}</TableColumn>
-          <TableColumn className="py-2 px-3 w-20">{t("role")}</TableColumn>
-          <TableColumn className="py-2 px-3 w-[150px]">{t("email")}</TableColumn>
-          <TableColumn className="py-2 px-3 w-[100px]">{t("phone")}</TableColumn>
-          <TableColumn className={canManageUsers ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("actions")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[120px]">{t("users.name")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-20">{t("users.role")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[150px]">{t("users.email")}</TableColumn>
+          <TableColumn className="py-2 px-3 w-[100px]">{t("users.phone")}</TableColumn>
+          <TableColumn className={canManageUsers ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("users.actions")}</TableColumn>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
@@ -41,10 +42,10 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
               <TableCell>
                 {user.role ? (
                   <Chip className="bg-green-200 text-xs text-green-800 border border-green-300">
-                    {user.role}
+                    {resolveRoleName(user.role, t)}
                   </Chip>
                 ) : (
-                  <span className="text-xs text-default-400 italic">{t("noRole")}</span>
+                  <span className="text-xs text-default-400 italic">{t("users.noRole")}</span>
                 )}
               </TableCell>
               <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>

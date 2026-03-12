@@ -63,9 +63,9 @@ export const permissionCatalog = [
   { key: "spaces_update", group: "floor", business: "restaurant" },
   { key: "spaces_delete", group: "floor", business: "restaurant" },
 
-  { key: "shifts_read", group: "shifts", business: "restaurant" },
-  { key: "shifts_create", group: "shifts", business: "restaurant" },
-  { key: "shifts_update", group: "shifts", business: "restaurant" },
+  { key: "shifts_read", group: "shifts", business: "both" },
+  { key: "shifts_create", group: "shifts", business: "both" },
+  { key: "shifts_update", group: "shifts", business: "both" },
 
   { key: "tickets_read", group: "tickets", business: "both" },
   { key: "tickets_create", group: "tickets", business: "both" },
