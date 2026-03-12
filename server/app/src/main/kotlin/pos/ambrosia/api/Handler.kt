@@ -10,7 +10,9 @@ import io.ktor.server.response.respondText
 import pos.ambrosia.logger
 import pos.ambrosia.models.Message
 import pos.ambrosia.utils.AdminOnlyException
+import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.DuplicateUserNameException
+import pos.ambrosia.utils.InitialSetupException
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastUserDeletionException
@@ -60,6 +62,10 @@ fun Application.handler() {
             logger.warn("User attempted to access endpoint without required permission")
             call.respond(HttpStatusCode.Forbidden, Message("Permission required"))
         }
+        exception<InitialSetupException> { call, cause ->
+            logger.error("Initial setup failed: ${cause.message}")
+            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Initial setup failed"))
+        }
         exception<WalletOnlyException> { call, _ ->
             logger.warn("Wallet-only endpoint accessed without wallet token")
             call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
@@ -89,6 +95,10 @@ fun Application.handler() {
         exception<PhoenixServiceException> { call, cause ->
             logger.error("Phoenix service error: ${cause.message}")
             call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
+        }
+        exception<DatabaseException> { call, cause ->
+            logger.error("Database operation failed: ${cause.message}")
+            call.respond(HttpStatusCode.InternalServerError, Message(cause.message ?: "Database operation failed"))
         }
 
         // --- Generic and SQL Exceptions Last ---

@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.logger
+import pos.ambrosia.utils.PhoenixServiceException
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -38,11 +39,7 @@ fun Route.phoenixWebhook() {
         val secret = call.application.getPhoenixWebhookSecret()
         if (secret.isNullOrBlank()) {
             logger.error("Phoenix webhook-secret not configured in phoenix.conf or application config")
-            call.respond(
-                HttpStatusCode.InternalServerError,
-                "Missing phoenix webhook-secret; set webhook-secret in phoenix.conf",
-            )
-            return@post
+            throw PhoenixServiceException("Missing phoenix webhook-secret; set webhook-secret in phoenix.conf")
         }
 
         val providedSignature = call.request.headers[SIGNATURE_HEADER]
