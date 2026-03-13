@@ -67,7 +67,8 @@ if (currentPlatform === 'win-arm64') {
   JRE_DOWNLOADS = [ALL_JRE_DOWNLOADS[currentPlatform]];
 }
 
-function downloadFile(url, dest) {
+function downloadFile(url, dest, redirectCount = 0) {
+  const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
     const protocol = url.startsWith('https') ? https : http;
@@ -80,10 +81,14 @@ function downloadFile(url, dest) {
       if (response.statusCode === 301 || response.statusCode === 302 ||
           response.statusCode === 307 || response.statusCode === 308) {
         const redirectUrl = response.headers.location;
-        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
         file.close();
         fs.unlinkSync(dest);
-        downloadFile(redirectUrl, dest).then(resolve).catch(reject);
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
+          return;
+        }
+        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
+        downloadFile(redirectUrl, dest, redirectCount + 1).then(resolve).catch(reject);
         return;
       }
 
@@ -276,14 +281,16 @@ async function main() {
   console.log(`  Downloading JRE 21 for ${currentPlatform}`);
   console.log('===========================================\n');
 
-  for (const jre of JRE_DOWNLOADS) {
-    try {
-      await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
-    } catch (error) {
-      console.error(`Failed to download JRE for ${jre.platform}:`, error);
-      process.exit(1);
-    }
-  }
+  await Promise.all(
+    JRE_DOWNLOADS.map(async (jre) => {
+      try {
+        await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
+      } catch (error) {
+        console.error(`Failed to download JRE for ${jre.platform}:`, error);
+        process.exit(1);
+      }
+    }),
+  );
 
   console.log('\n===========================================');
   console.log(`  ✓ JRE download for ${currentPlatform} complete!`);

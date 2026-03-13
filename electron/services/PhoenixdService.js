@@ -183,6 +183,9 @@ class PhoenixdService {
   }
 
   cleanup() {
+    if (this.process) {
+      this.process.removeAllListeners();
+    }
     this.process = null;
     this.status = 'stopped';
     if (this.logStream) {

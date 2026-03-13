@@ -69,11 +69,12 @@ class NextJsService {
         console.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
       }
 
-      // Pass environment variables directly to Next.js (no .env file needed)
       const env = {
-        ...process.env,
         PORT: port.toString(),
-        HOSTNAME: '0.0.0.0', // Listen on all interfaces (IPv4)
+        HOSTNAME: '127.0.0.1',
+        NODE_ENV: process.env.NODE_ENV || 'production',
+        PATH: process.env.PATH,
+        HOME: process.env.HOME,
         NEXT_PUBLIC_API_URL: apiUrl,
         NEXT_PUBLIC_ELECTRON: 'true',
       };

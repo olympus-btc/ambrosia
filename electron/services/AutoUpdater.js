@@ -1,7 +1,13 @@
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
 const { dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
 const SUPPORTS_AUTO_UPDATE = process.platform === 'win32';
+const UPDATE_EXPIRY_DAYS = 7;
+const UPDATE_STATE_FILE = path.join(os.homedir(), '.Ambrosia-POS', 'pending-update.json');
 
 class AutoUpdater {
   constructor(mainWindow, { onMenuUpdate, releaseUrl } = {}) {
@@ -19,6 +25,54 @@ class AutoUpdater {
 
     this._setupEvents();
     this._setupIpcHandlers();
+    this._checkExpiredUpdate();
+  }
+
+  _saveUpdateState(version) {
+    try {
+      const dir = path.dirname(UPDATE_STATE_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(UPDATE_STATE_FILE, JSON.stringify({ version, downloadedAt: Date.now() }));
+    } catch (err) {
+      console.error('[AutoUpdater] Failed to save update state:', err.message);
+    }
+  }
+
+  _clearUpdateState() {
+    try {
+      if (fs.existsSync(UPDATE_STATE_FILE)) fs.unlinkSync(UPDATE_STATE_FILE);
+    } catch (err) {
+      console.error('[AutoUpdater] Failed to clear update state:', err.message);
+    }
+  }
+
+  _checkExpiredUpdate() {
+    if (!SUPPORTS_AUTO_UPDATE) return;
+    try {
+      if (!fs.existsSync(UPDATE_STATE_FILE)) return;
+      const state = JSON.parse(fs.readFileSync(UPDATE_STATE_FILE, 'utf8'));
+      const ageMs = Date.now() - (state.downloadedAt || 0);
+      const ageDays = ageMs / (1000 * 60 * 60 * 24);
+      if (ageDays >= UPDATE_EXPIRY_DAYS) {
+        console.log(`[AutoUpdater] Pending update v${state.version} is ${Math.floor(ageDays)} days old — prompting install`);
+        dialog.showMessageBox(this.mainWindow, {
+          type: 'warning',
+          title: 'Update Ready to Install',
+          message: `Version ${state.version} has been waiting ${Math.floor(ageDays)} days`,
+          detail: 'Restart Ambrosia POS now to apply the update.',
+          buttons: ['Restart Now', 'Later'],
+          defaultId: 0,
+          cancelId: 1,
+        }).then(({ response }) => {
+          if (response === 0) {
+            this._clearUpdateState();
+            autoUpdater.quitAndInstall(false, true);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[AutoUpdater] Failed to check pending update state:', err.message);
+    }
   }
 
   _setupEvents() {
@@ -64,10 +118,14 @@ class AutoUpdater {
     // Only fires on Windows (only platform that downloads)
     autoUpdater.on('update-downloaded', (info) => {
       console.log('[AutoUpdater] Update downloaded:', info.version);
+      this._saveUpdateState(info.version);
       this.onMenuUpdate({
         label: `Restart to Update to ${info.version}`,
         enabled: true,
-        click: () => autoUpdater.quitAndInstall(false, true),
+        click: () => {
+          this._clearUpdateState();
+          autoUpdater.quitAndInstall(false, true);
+        },
       });
       this._sendToRenderer('update:downloaded', { version: info.version });
     });
@@ -91,6 +149,7 @@ class AutoUpdater {
   _setupIpcHandlers() {
     ipcMain.handle('update:install', () => {
       if (SUPPORTS_AUTO_UPDATE) {
+        this._clearUpdateState();
         autoUpdater.quitAndInstall(false, true);
       }
     });

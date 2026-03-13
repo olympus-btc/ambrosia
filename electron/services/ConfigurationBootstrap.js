@@ -32,10 +32,6 @@ function validateSecret(mnemonic) {
   return bip39.validateMnemonic(mnemonic);
 }
 
-function hashSecret(secret) {
-  return crypto.createHash('sha256').update(secret).digest('hex');
-}
-
 function generateRandomHex(length) {
   return crypto.randomBytes(length).toString('hex');
 }
@@ -102,8 +98,8 @@ async function ensureConfigurations(ports) {
 
   if (!fs.existsSync(ambrosiaConfigPath) || Object.keys(ambrosiaConfig).length === 0) {
     console.log('[ConfigurationBootstrap] Generating Ambrosia configuration...');
-    const secret = generateSecret();
-    const secretHash = hashSecret(secret);
+    const secret = generateRandomHex(32);
+    const secretHash = crypto.createHash('sha256').update(secret).digest('hex');
 
     ambrosiaConfig = {
       'http-bind-ip': '127.0.0.1',

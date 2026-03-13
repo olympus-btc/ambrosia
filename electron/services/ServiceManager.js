@@ -26,6 +26,16 @@ class ServiceManager extends EventEmitter {
   }
 
   async startAll() {
+    const STARTUP_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Startup timed out after 2 minutes')), STARTUP_TIMEOUT_MS);
+    });
+
+    return Promise.race([this._startAll(), timeoutPromise]);
+  }
+
+  async _startAll() {
     try {
       console.log('[ServiceManager] Starting all services...');
 
@@ -48,6 +58,7 @@ class ServiceManager extends EventEmitter {
           host: 'localhost',
           port: this.ports.backend,
         });
+        this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
         console.log('[ServiceManager] All services started successfully');
         return result.url;
       }
@@ -95,6 +106,7 @@ class ServiceManager extends EventEmitter {
       this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
 
       console.log('[ServiceManager] All services started successfully');
+      this.startHealthMonitor();
       this.emit('all:started');
 
       return result.url;
@@ -106,7 +118,29 @@ class ServiceManager extends EventEmitter {
     }
   }
 
+  startHealthMonitor() {
+    const INTERVAL_MS = 30 * 1000; // 30 seconds
+
+    this._healthMonitor = setInterval(() => {
+      const statuses = this.getServiceStatuses();
+      for (const [service, status] of Object.entries(statuses)) {
+        if (status === 'error' || (status === 'stopped' && !this.externalServices[service])) {
+          console.warn(`[ServiceManager] Health monitor: ${service} is ${status}, emitting event`);
+          this.emit('service:error', { service, error: new Error(`${service} is ${status}`) });
+        }
+      }
+    }, INTERVAL_MS);
+  }
+
+  stopHealthMonitor() {
+    if (this._healthMonitor) {
+      clearInterval(this._healthMonitor);
+      this._healthMonitor = null;
+    }
+  }
+
   async stopAll() {
+    this.stopHealthMonitor();
     console.log('[ServiceManager] Stopping all services...');
 
     try {
@@ -163,6 +197,11 @@ class ServiceManager extends EventEmitter {
   }
 
   async restartService(serviceName) {
+    if (this.externalServices[serviceName]) {
+      console.log(`[ServiceManager] Skipping restart of external service: ${serviceName}`);
+      return;
+    }
+
     console.log(`[ServiceManager] Restarting ${serviceName}...`);
 
     try {

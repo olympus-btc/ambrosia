@@ -1,0 +1,36 @@
+module.exports = {
+  // Port ranges
+  PORTS: {
+    PHOENIXD_DEFAULT: 9740,
+    BACKEND_DEFAULT: 9154,
+    NEXTJS_DEFAULT: 3000,
+    PHOENIXD_RANGE: { min: 9740, max: 9800 },
+    BACKEND_RANGE: { min: 9154, max: 9200 },
+    NEXTJS_RANGE: { min: 3000, max: 3100 },
+  },
+
+  // Health check
+  HEALTH: {
+    MAX_ATTEMPTS: 60,
+    INTERVAL_MS: 1000,
+    REQUEST_TIMEOUT_MS: 5000,
+    SINGLE_CHECK_TIMEOUT_MS: 2000,
+    LOG_EVERY_N_ATTEMPTS: 10,
+    MONITOR_INTERVAL_MS: 30 * 1000,
+  },
+
+  // Startup
+  STARTUP: {
+    TIMEOUT_MS: 2 * 60 * 1000,
+    FORCE_KILL_TIMEOUT_MS: 5000,
+    BACKEND_FORCE_KILL_TIMEOUT_MS: 10000,
+    SPLASH_DELAY_MS: 800,
+  },
+
+  // Downloads
+  DOWNLOAD: {
+    MAX_REDIRECTS: 5,
+    PHOENIXD_VERSION: '0.7.2',
+    JRE_VERSION: 21,
+  },
+};
