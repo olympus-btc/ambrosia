@@ -10,10 +10,10 @@ import { useTranslations } from "next-intl";
 import { useTurn } from "@/hooks/turn/useTurn";
 
 export default function OpenTurnForm({ onOpened }) {
-  const [initialAmount, setInitialAmount] = useState(1);
+  const [initialAmount, setInitialAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { updateTurn, openShift } = useTurn();
+  const { updateTurn, openShift, refreshTurn } = useTurn();
   const router = useRouter();
 
   const t = useTranslations("shifts");
@@ -26,7 +26,7 @@ export default function OpenTurnForm({ onOpened }) {
     e.preventDefault();
     setError("");
 
-    if (!initialAmount || initialAmount < 1) {
+    if (initialAmount == null || isNaN(Number(initialAmount)) || initialAmount < 0) {
       setError(t("invalidAmount"));
       return;
     }
@@ -36,8 +36,12 @@ export default function OpenTurnForm({ onOpened }) {
       const id = await openShift(initialAmount);
       updateTurn(id);
       onOpened?.(id);
-    } catch {
-      setError(t("openShiftError"));
+    } catch (err) {
+      if (err?.message === "shift_already_open") {
+        await refreshTurn();
+      } else {
+        setError(t("openShiftError"));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +63,7 @@ export default function OpenTurnForm({ onOpened }) {
           startContent={
             <span className="text-default-400 text-small">$</span>
           }
-          minValue={1}
+          minValue={0}
           value={initialAmount}
           onValueChange={handleAmountChange}
           step={0.1}

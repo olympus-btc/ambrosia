@@ -17,10 +17,11 @@ import OpenTurnForm from "../OpenTurnForm";
 
 const mockOpenShift = jest.fn();
 const mockUpdateTurn = jest.fn();
+const mockRefreshTurn = jest.fn();
 const mockBack = jest.fn();
 
 function setupMocks() {
-  useTurn.mockReturnValue({ openShift: mockOpenShift, updateTurn: mockUpdateTurn });
+  useTurn.mockReturnValue({ openShift: mockOpenShift, updateTurn: mockUpdateTurn, refreshTurn: mockRefreshTurn });
   useRouter.mockReturnValue({ back: mockBack });
 }
 
@@ -55,7 +56,7 @@ describe("OpenTurnForm", () => {
       fireEvent.submit(container.querySelector("form"));
 
       await screen.findByText("openShiftButton");
-      expect(mockOpenShift).toHaveBeenCalledWith(1);
+      expect(mockOpenShift).toHaveBeenCalledWith(0);
     });
 
     it("calls updateTurn with the returned shift id", async () => {
