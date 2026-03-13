@@ -113,14 +113,39 @@ describe("OpenTurnForm", () => {
   });
 
   describe("validation", () => {
-    it("shows invalidAmount error when amount is 0", async () => {
+    it("accepts $0 as a valid opening amount", async () => {
       mockOpenShift.mockResolvedValue(1);
-
       const { container } = render(<OpenTurnForm />);
 
       fireEvent.submit(container.querySelector("form"));
       await screen.findByText("openShiftButton");
+
+      expect(mockOpenShift).toHaveBeenCalledWith(0);
       expect(screen.queryByText("invalidAmount")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("shift_already_open handling", () => {
+    it("calls refreshTurn when server returns shift_already_open", async () => {
+      mockOpenShift.mockRejectedValue(new Error("shift_already_open"));
+      mockRefreshTurn.mockResolvedValue(null);
+      const { container } = render(<OpenTurnForm />);
+
+      fireEvent.submit(container.querySelector("form"));
+      await screen.findByText("openShiftButton");
+
+      expect(mockRefreshTurn).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not show error message when shift_already_open", async () => {
+      mockOpenShift.mockRejectedValue(new Error("shift_already_open"));
+      mockRefreshTurn.mockResolvedValue(null);
+      const { container } = render(<OpenTurnForm />);
+
+      fireEvent.submit(container.querySelector("form"));
+      await screen.findByText("openShiftButton");
+
+      expect(screen.queryByText("openShiftError")).not.toBeInTheDocument();
     });
   });
 
