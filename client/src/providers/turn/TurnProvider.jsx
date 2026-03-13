@@ -71,10 +71,11 @@ export function TurnProvider({ children }) {
       setOpenTurn: setOpenTurnId,
       updateTurn,
       refreshTurn,
+      checkOpenShift: loadOpenTurn,
       openShift,
       closeShift,
     }),
-    [openTurnId, openShiftData, loading, error, updateTurn, refreshTurn, openShift, closeShift],
+    [openTurnId, openShiftData, loading, error, updateTurn, refreshTurn, loadOpenTurn, openShift, closeShift],
   );
 
   return (

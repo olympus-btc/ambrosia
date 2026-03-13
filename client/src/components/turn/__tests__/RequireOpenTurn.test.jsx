@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("@/hooks/turn/useTurn", () => ({
   useTurn: jest.fn(),
@@ -14,7 +14,7 @@ import { useTurn } from "@/hooks/turn/useTurn";
 import RequireOpenTurn from "../RequireOpenTurn";
 
 function setupMocks({ openTurn = null, loading = false } = {}) {
-  useTurn.mockReturnValue({ openTurn, loading });
+  useTurn.mockReturnValue({ openTurn, loading, checkOpenShift: jest.fn().mockResolvedValue(null) });
 }
 
 beforeEach(() => {
@@ -84,6 +84,50 @@ describe("RequireOpenTurn", () => {
         </RequireOpenTurn>,
       );
       expect(screen.queryByText("requiredOpenShiftTitle")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("proactive shift detection", () => {
+    it("calls checkOpenShift when modal first appears", async () => {
+      const checkOpenShift = jest.fn().mockResolvedValue(null);
+      useTurn.mockReturnValue({ openTurn: null, loading: false, checkOpenShift });
+
+      render(<RequireOpenTurn><div>Content</div></RequireOpenTurn>);
+
+      await waitFor(() => {
+        expect(checkOpenShift).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("does not call checkOpenShift when still loading", () => {
+      const checkOpenShift = jest.fn().mockResolvedValue(null);
+      useTurn.mockReturnValue({ openTurn: null, loading: true, checkOpenShift });
+
+      render(<RequireOpenTurn><div>Content</div></RequireOpenTurn>);
+
+      expect(checkOpenShift).not.toHaveBeenCalled();
+    });
+
+    it("does not call checkOpenShift when shift is already open", () => {
+      const checkOpenShift = jest.fn().mockResolvedValue(null);
+      useTurn.mockReturnValue({ openTurn: 5, loading: false, checkOpenShift });
+
+      render(<RequireOpenTurn><div>Content</div></RequireOpenTurn>);
+
+      expect(checkOpenShift).not.toHaveBeenCalled();
+    });
+
+    it("does not call checkOpenShift a second time on re-render", async () => {
+      const checkOpenShift = jest.fn().mockResolvedValue(null);
+      useTurn.mockReturnValue({ openTurn: null, loading: false, checkOpenShift });
+
+      const { rerender } = render(<RequireOpenTurn><div>Content</div></RequireOpenTurn>);
+
+      await waitFor(() => expect(checkOpenShift).toHaveBeenCalledTimes(1));
+
+      rerender(<RequireOpenTurn><div>Content</div></RequireOpenTurn>);
+
+      expect(checkOpenShift).toHaveBeenCalledTimes(1);
     });
   });
 });

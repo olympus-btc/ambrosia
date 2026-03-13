@@ -30,6 +30,8 @@ export async function openTurn(userId, initialAmount = 0) {
       initial_amount: initialAmount,
     }),
   });
+  if (response.status === 409) throw new Error("shift_already_open");
+  if (!response.ok) throw new Error(`Failed to open shift: ${response.status}`);
   return await parseJsonResponse(response, null);
 }
 
