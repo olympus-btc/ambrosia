@@ -249,6 +249,7 @@ async function main() {
   console.log('\n===========================================');
   console.log(`  ✓ Phoenixd download for ${currentPlatform} complete!`);
   console.log('===========================================');
+  process.exit(0);
 }
 
 main().catch((error) => {

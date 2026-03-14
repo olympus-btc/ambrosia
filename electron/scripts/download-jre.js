@@ -295,6 +295,7 @@ async function main() {
   console.log('\n===========================================');
   console.log(`  ✓ JRE download for ${currentPlatform} complete!`);
   console.log('===========================================');
+  process.exit(0);
 }
 
 main().catch((error) => {
