@@ -14,6 +14,7 @@ CREATE TABLE products__new (
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
 );
 
-INSERT INTO products__new SELECT * FROM products;
+INSERT INTO products__new (id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents, is_deleted)
+SELECT id, SKU, name, description, image_url, cost_cents, category_id, quantity, min_stock_threshold, max_stock_threshold, price_cents, is_deleted FROM products;
 DROP TABLE products;
 ALTER TABLE products__new RENAME TO products;
