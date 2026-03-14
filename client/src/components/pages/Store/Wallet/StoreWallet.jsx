@@ -145,6 +145,8 @@ function WalletInner() {
         filter={filter}
         setFilter={setFilter}
         invoiceActions={invoiceActions}
+        fetchInfo={fetchInfo}
+        fetchTransactions={fetchTransactions}
       />
 
       <InvoiceModal

@@ -19,7 +19,7 @@ import { payInvoiceFromService } from "@/services/walletService";
 
 import { copyToClipboard, formatSats } from "./utils/formatters";
 
-export function TransactionsSendTab({ loading, setLoading, setError }) {
+export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, fetchTransactions }) {
   const t = useTranslations("wallet");
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);
@@ -61,6 +61,8 @@ export function TransactionsSendTab({ loading, setLoading, setError }) {
       setPayInvoice("");
       setError("");
       setInvalidInvoice(false);
+      fetchInfo?.();
+      fetchTransactions?.();
       addToast({
         title: t("payments.send.paySuccessTitle"),
         description: t("payments.send.paySuccessDescription"),
