@@ -5,6 +5,7 @@ const spawn = require('cross-spawn');
 const treeKill = require('tree-kill');
 
 const { checkPhoenixd } = require('../utils/healthCheck');
+const logger = require('../utils/logger');
 const { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
 
 class PhoenixdService {
@@ -42,7 +43,7 @@ class PhoenixdService {
         `--http-bind-port=${port}`,
       ];
 
-      console.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
+      logger.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
 
       // Set JAVA_HOME for phoenixd when using JVM version
       // Windows ARM64 uses JVM version and needs x64 JRE
@@ -55,14 +56,14 @@ class PhoenixdService {
         const { getBasePath } = require('../utils/resourcePaths');
         const javaPath = path.join(getBasePath(), 'jre', 'win-x64', 'bin', 'java.exe');
         env.JAVA_HOME = path.dirname(path.dirname(javaPath));
-        console.log(`[PhoenixdService] Using x64 JRE for phoenixd JVM version (Windows ARM64)`);
-        console.log(`[PhoenixdService] JAVA_HOME: ${env.JAVA_HOME}`);
+        logger.log(`[PhoenixdService] Using x64 JRE for phoenixd JVM version (Windows ARM64)`);
+        logger.log(`[PhoenixdService] JAVA_HOME: ${env.JAVA_HOME}`);
       } else if (process.platform === 'linux' && process.arch === 'arm64') {
         // Linux ARM64: phoenixd has native ARM64 binary, no JRE needed
-        console.log(`[PhoenixdService] Using native ARM64 phoenixd binary (Linux ARM64)`);
+        logger.log(`[PhoenixdService] Using native ARM64 phoenixd binary (Linux ARM64)`);
       } else {
         // Other platforms: native binaries (macOS ARM64/x64, Linux x64, Windows x64)
-        console.log(`[PhoenixdService] Using native phoenixd binary for ${process.platform}-${process.arch}`);
+        logger.log(`[PhoenixdService] Using native phoenixd binary for ${process.platform}-${process.arch}`);
       }
 
       const spawnedProcess = spawn(phoenixdPath, args, {
@@ -75,7 +76,7 @@ class PhoenixdService {
 
       spawnedProcess.stdout.on('data', (data) => {
         const message = data.toString();
-        console.log(`[Phoenixd] ${message.trim()}`);
+        logger.log(`[Phoenixd] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ${message}`);
         }
@@ -83,20 +84,20 @@ class PhoenixdService {
 
       spawnedProcess.stderr.on('data', (data) => {
         const message = data.toString();
-        console.error(`[Phoenixd ERROR] ${message.trim()}`);
+        logger.error(`[Phoenixd ERROR] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ERROR: ${message}`);
         }
       });
 
       spawnedProcess.on('error', (error) => {
-        console.error('[PhoenixdService] Failed to start:', error);
+        logger.error('[PhoenixdService] Failed to start:', error);
         this.status = 'error';
         if (this.process === spawnedProcess) this.cleanup();
       });
 
       spawnedProcess.on('close', (code) => {
-        console.log(`[PhoenixdService] Process exited with code ${code}`);
+        logger.log(`[PhoenixdService] Process exited with code ${code}`);
         // Only cleanup if this process is still the active one.
         // Avoids overwriting this.process after a restart has already set a new process.
         if (this.process === spawnedProcess) {
@@ -105,15 +106,15 @@ class PhoenixdService {
         }
       });
 
-      console.log('[PhoenixdService] Waiting for phoenixd to be healthy...');
+      logger.log('[PhoenixdService] Waiting for phoenixd to be healthy...');
       await checkPhoenixd(port);
 
       this.status = 'running';
-      console.log('[PhoenixdService] Phoenixd is running and healthy');
+      logger.log('[PhoenixdService] Phoenixd is running and healthy');
 
       return { port };
     } catch (error) {
-      console.error('[PhoenixdService] Startup failed:', error);
+      logger.error('[PhoenixdService] Startup failed:', error);
       this.status = 'error';
       await this.stop();
       throw error;
@@ -135,16 +136,16 @@ class PhoenixdService {
   async stop() {
     if (!this.process) {
       if (this.port) {
-        console.log(`[PhoenixdService] No owned process — attempting to kill any process on port ${this.port}`);
+        logger.log(`[PhoenixdService] No owned process — attempting to kill any process on port ${this.port}`);
         await this.killByPort(this.port);
         await new Promise((resolve) => { setTimeout(resolve, 500); });
       } else {
-        console.log('[PhoenixdService] No process to stop');
+        logger.log('[PhoenixdService] No process to stop');
       }
       return;
     }
 
-    console.log('[PhoenixdService] Stopping phoenixd...');
+    logger.log('[PhoenixdService] Stopping phoenixd...');
 
     return new Promise((resolve) => {
       const pid = this.process.pid;
@@ -152,7 +153,7 @@ class PhoenixdService {
 
       const onExit = () => {
         clearTimeout(forceKillTimer);
-        console.log('[PhoenixdService] Process exited cleanly');
+        logger.log('[PhoenixdService] Process exited cleanly');
         this.cleanup();
         resolve();
       };
@@ -161,7 +162,7 @@ class PhoenixdService {
 
       const forceKillTimer = setTimeout(() => {
         processToKill.removeListener('exit', onExit);
-        console.warn('[PhoenixdService] Force killing after timeout');
+        logger.warn('[PhoenixdService] Force killing after timeout');
         treeKill(pid, 'SIGKILL', () => {
           this.cleanup();
           resolve();
@@ -170,7 +171,7 @@ class PhoenixdService {
 
       treeKill(pid, 'SIGTERM', (err) => {
         if (err) {
-          console.error('[PhoenixdService] Failed to send SIGTERM:', err);
+          logger.error('[PhoenixdService] Failed to send SIGTERM:', err);
           clearTimeout(forceKillTimer);
           processToKill.removeListener('exit', onExit);
           treeKill(pid, 'SIGKILL', () => {

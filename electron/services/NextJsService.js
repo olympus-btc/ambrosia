@@ -5,6 +5,7 @@ const spawn = require('cross-spawn');
 const treeKill = require('tree-kill');
 
 const { checkNextJs } = require('../utils/healthCheck');
+const logger = require('../utils/logger');
 const { getClientPath, getLogsDirectory, isDevelopment, getNodePath } = require('../utils/resourcePaths');
 
 class NextJsService {
@@ -48,17 +49,17 @@ class NextJsService {
         cwd = clientPath;
       }
 
-      console.log(`[NextJsService] Starting Next.js at port ${port}...`);
-      console.log(`[NextJsService] Command: ${command} ${args.join(' ')}`);
-      console.log(`[NextJsService] Working directory: ${cwd}`);
-      console.log(`[NextJsService] Environment PORT: ${port}`);
+      logger.log(`[NextJsService] Starting Next.js at port ${port}...`);
+      logger.log(`[NextJsService] Command: ${command} ${args.join(' ')}`);
+      logger.log(`[NextJsService] Working directory: ${cwd}`);
+      logger.log(`[NextJsService] Environment PORT: ${port}`);
 
       // Use backend config passed as parameter (with fallback to defaults)
       const backendHost = backendConfig.host || 'localhost';
       const backendPort = backendConfig.port || '9154';
       const apiUrl = `http://${backendHost}:${backendPort}`;
 
-      console.log(`[NextJsService] Backend configuration: ${apiUrl}`);
+      logger.log(`[NextJsService] Backend configuration: ${apiUrl}`);
 
       // Verify server.js exists (only in production mode)
       if (!isDev) {
@@ -66,7 +67,7 @@ class NextJsService {
         if (!fs.existsSync(serverJsPath)) {
           throw new Error(`server.js not found at: ${serverJsPath}`);
         }
-        console.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
+        logger.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
       }
 
       const env = {
@@ -79,14 +80,14 @@ class NextJsService {
         NEXT_PUBLIC_ELECTRON: 'true',
       };
 
-      console.log(`[NextJsService] Environment variables:`, {
+      logger.log(`[NextJsService] Environment variables:`, {
         PORT: env.PORT,
         HOSTNAME: env.HOSTNAME,
         NEXT_PUBLIC_API_URL: env.NEXT_PUBLIC_API_URL,
         NEXT_PUBLIC_ELECTRON: env.NEXT_PUBLIC_ELECTRON,
       });
 
-      console.log(`[NextJsService] Spawning process...`);
+      logger.log(`[NextJsService] Spawning process...`);
       this.process = spawn(command, args, {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -97,11 +98,11 @@ class NextJsService {
       if (!this.process || !this.process.pid) {
         throw new Error('Failed to spawn Next.js process');
       }
-      console.log(`[NextJsService] Process spawned with PID: ${this.process.pid}`);
+      logger.log(`[NextJsService] Process spawned with PID: ${this.process.pid}`);
 
       this.process.stdout.on('data', (data) => {
         const message = data.toString();
-        console.log(`[Next.js] ${message.trim()}`);
+        logger.log(`[Next.js] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ${message}`);
         }
@@ -109,33 +110,33 @@ class NextJsService {
 
       this.process.stderr.on('data', (data) => {
         const message = data.toString();
-        console.error(`[Next.js ERROR] ${message.trim()}`);
+        logger.error(`[Next.js ERROR] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ERROR: ${message}`);
         }
       });
 
       this.process.on('error', (error) => {
-        console.error('[NextJsService] Failed to start:', error);
+        logger.error('[NextJsService] Failed to start:', error);
         this.status = 'error';
         this.cleanup();
       });
 
       this.process.on('close', (code) => {
-        console.log(`[NextJsService] Process exited with code ${code}`);
+        logger.log(`[NextJsService] Process exited with code ${code}`);
         this.status = 'stopped';
         this.cleanup();
       });
 
-      console.log('[NextJsService] Waiting for Next.js to be healthy...');
+      logger.log('[NextJsService] Waiting for Next.js to be healthy...');
       await checkNextJs(port);
 
       this.status = 'running';
-      console.log('[NextJsService] Next.js is running and healthy');
+      logger.log('[NextJsService] Next.js is running and healthy');
 
       return { port, url: `http://localhost:${port}` };
     } catch (error) {
-      console.error('[NextJsService] Startup failed:', error);
+      logger.error('[NextJsService] Startup failed:', error);
       this.status = 'error';
       await this.stop();
       throw error;
@@ -144,24 +145,24 @@ class NextJsService {
 
   async stop() {
     if (!this.process) {
-      console.log('[NextJsService] No process to stop');
+      logger.log('[NextJsService] No process to stop');
       return;
     }
 
-    console.log('[NextJsService] Stopping Next.js...');
+    logger.log('[NextJsService] Stopping Next.js...');
 
     return new Promise((resolve) => {
       const pid = this.process.pid;
 
       treeKill(pid, 'SIGTERM', (err) => {
         if (err) {
-          console.error('[NextJsService] Failed to kill process tree:', err);
+          logger.error('[NextJsService] Failed to kill process tree:', err);
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();
           });
         } else {
-          console.log('[NextJsService] Process tree killed successfully');
+          logger.log('[NextJsService] Process tree killed successfully');
           this.cleanup();
           resolve();
         }
@@ -169,7 +170,7 @@ class NextJsService {
 
       setTimeout(() => {
         if (this.process) {
-          console.warn('[NextJsService] Force killing after timeout');
+          logger.warn('[NextJsService] Force killing after timeout');
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();

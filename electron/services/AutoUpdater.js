@@ -5,6 +5,8 @@ const path = require('path');
 const { dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
+const logger = require('../utils/logger');
+
 const SUPPORTS_AUTO_UPDATE = process.platform === 'win32';
 const UPDATE_EXPIRY_DAYS = 7;
 const UPDATE_STATE_FILE = path.join(os.homedir(), '.Ambrosia-POS', 'pending-update.json');
@@ -34,7 +36,7 @@ class AutoUpdater {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(UPDATE_STATE_FILE, JSON.stringify({ version, downloadedAt: Date.now() }));
     } catch (err) {
-      console.error('[AutoUpdater] Failed to save update state:', err.message);
+      logger.error('[AutoUpdater] Failed to save update state:', err.message);
     }
   }
 
@@ -42,7 +44,7 @@ class AutoUpdater {
     try {
       if (fs.existsSync(UPDATE_STATE_FILE)) fs.unlinkSync(UPDATE_STATE_FILE);
     } catch (err) {
-      console.error('[AutoUpdater] Failed to clear update state:', err.message);
+      logger.error('[AutoUpdater] Failed to clear update state:', err.message);
     }
   }
 
@@ -54,7 +56,7 @@ class AutoUpdater {
       const ageMs = Date.now() - (state.downloadedAt || 0);
       const ageDays = ageMs / (1000 * 60 * 60 * 24);
       if (ageDays >= UPDATE_EXPIRY_DAYS) {
-        console.log(`[AutoUpdater] Pending update v${state.version} is ${Math.floor(ageDays)} days old — prompting install`);
+        logger.log(`[AutoUpdater] Pending update v${state.version} is ${Math.floor(ageDays)} days old — prompting install`);
         dialog.showMessageBox(this.mainWindow, {
           type: 'warning',
           title: 'Update Ready to Install',
@@ -71,13 +73,13 @@ class AutoUpdater {
         });
       }
     } catch (err) {
-      console.error('[AutoUpdater] Failed to check pending update state:', err.message);
+      logger.error('[AutoUpdater] Failed to check pending update state:', err.message);
     }
   }
 
   _setupEvents() {
     autoUpdater.on('update-available', (info) => {
-      console.log('[AutoUpdater] Update available:', info.version);
+      logger.log('[AutoUpdater] Update available:', info.version);
       this.pendingVersion = info.version;
       this.isManualCheck = false;
 
@@ -97,7 +99,7 @@ class AutoUpdater {
     });
 
     autoUpdater.on('update-not-available', (info) => {
-      console.log('[AutoUpdater] Up to date:', info.version);
+      logger.log('[AutoUpdater] Up to date:', info.version);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
       if (this.isManualCheck) {
         this.isManualCheck = false;
@@ -112,12 +114,12 @@ class AutoUpdater {
     });
 
     autoUpdater.on('download-progress', (progress) => {
-      console.log('[AutoUpdater] Download progress:', `${progress.percent.toFixed(1)}%`);
+      logger.log('[AutoUpdater] Download progress:', `${progress.percent.toFixed(1)}%`);
     });
 
     // Only fires on Windows (only platform that downloads)
     autoUpdater.on('update-downloaded', (info) => {
-      console.log('[AutoUpdater] Update downloaded:', info.version);
+      logger.log('[AutoUpdater] Update downloaded:', info.version);
       this._saveUpdateState(info.version);
       this.onMenuUpdate({
         label: `Restart to Update to ${info.version}`,
@@ -131,7 +133,7 @@ class AutoUpdater {
     });
 
     autoUpdater.on('error', (error) => {
-      console.error('[AutoUpdater] Error:', error.message);
+      logger.error('[AutoUpdater] Error:', error.message);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
       if (this.isManualCheck) {
         this.isManualCheck = false;
@@ -191,7 +193,7 @@ class AutoUpdater {
   checkForUpdates() {
     this.onMenuUpdate({ label: 'Checking for Updates...', enabled: false });
     autoUpdater.checkForUpdates().catch((err) => {
-      console.error('[AutoUpdater] Scheduled check failed:', err.message);
+      logger.error('[AutoUpdater] Scheduled check failed:', err.message);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
     });
   }
