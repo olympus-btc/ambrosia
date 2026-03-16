@@ -35,7 +35,6 @@
     "eslint-plugin-n": "^17.23.1"
   },
   "dependencies": {
-    "bip39": "^3.1.0",
     "cross-spawn": "^7.0.6",
     "electron-updater": "^6.3.9",
     "find-free-port": "^2.0.0",

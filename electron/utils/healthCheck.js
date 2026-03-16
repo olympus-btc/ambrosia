@@ -2,6 +2,8 @@ const http = require('http');
 
 const waitOn = require('wait-on');
 
+const logger = require('./logger');
+
 async function waitForHealth(url, options = {}) {
   const {
     timeout = 60000,
@@ -23,18 +25,18 @@ async function waitForHealth(url, options = {}) {
   };
 
   try {
-    console.log(`[HealthCheck] Waiting for ${url} to be healthy...`);
+    logger.log(`[HealthCheck] Waiting for ${url} to be healthy...`);
     await waitOn(waitOptions);
-    console.log(`[HealthCheck] ${url} is healthy`);
+    logger.log(`[HealthCheck] ${url} is healthy`);
     return true;
   } catch (error) {
-    console.error(`[HealthCheck] ${url} failed health check:`, error.message);
+    logger.error(`[HealthCheck] ${url} failed health check:`, error.message);
     throw error;
   }
 }
 
 async function checkService({ url, name, isHealthy, maxAttempts = 60, intervalMs = 1000 }) {
-  console.log(`[HealthCheck] Checking ${name} at ${url}...`);
+  logger.log(`[HealthCheck] Checking ${name} at ${url}...`);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -42,7 +44,7 @@ async function checkService({ url, name, isHealthy, maxAttempts = 60, intervalMs
         const req = http.get(url, (res) => {
           res.resume();
           if (isHealthy(res.statusCode)) {
-            console.log(`[HealthCheck] ${name} is healthy (status: ${res.statusCode})`);
+            logger.log(`[HealthCheck] ${name} is healthy (status: ${res.statusCode})`);
             resolve();
           } else {
             reject(new Error(`Unexpected status code: ${res.statusCode}`));
@@ -59,11 +61,11 @@ async function checkService({ url, name, isHealthy, maxAttempts = 60, intervalMs
       return true;
     } catch (error) {
       if (attempt === maxAttempts) {
-        console.error(`[HealthCheck] ${name} health check failed after ${maxAttempts} attempts:`, error.message);
+        logger.error(`[HealthCheck] ${name} health check failed after ${maxAttempts} attempts:`, error.message);
         throw new Error(`Timed out waiting for: ${url}`);
       }
       if (attempt % 10 === 0) {
-        console.log(`[HealthCheck] Still waiting for ${name}... (attempt ${attempt}/${maxAttempts})`);
+        logger.log(`[HealthCheck] Still waiting for ${name}... (attempt ${attempt}/${maxAttempts})`);
       }
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }

@@ -49,15 +49,21 @@ const ALL_DOWNLOADS = {
 const currentPlatform = getBuildPlatform();
 const DOWNLOADS = [ALL_DOWNLOADS[currentPlatform]];
 
-function downloadFile(url, destination) {
+const MAX_REDIRECTS = 5;
+
+function downloadFile(url, destination, redirectCount = 0) {
   return new Promise((resolve, reject) => {
     console.log(`Downloading: ${url}`);
     const file = fs.createWriteStream(destination);
 
     https.get(url, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
-        // Handle redirect
-        return downloadFile(response.headers.location, destination)
+        file.close();
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
+          return;
+        }
+        return downloadFile(response.headers.location, destination, redirectCount + 1)
           .then(resolve)
           .catch(reject);
       }
@@ -179,7 +185,9 @@ async function main() {
   console.log('===========================================');
 }
 
-main().catch((error) => {
-  console.error('\n✗ Error:', error.message);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('\n✗ Error:', error.message);
+    process.exit(1);
+  });

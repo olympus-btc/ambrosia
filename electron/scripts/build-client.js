@@ -88,8 +88,23 @@ function main() {
     console.log(`✓ Created directory: ${RESOURCES_DIR}\n`);
 
     // Copy standalone build
+    // Next.js 16 nests standalone output inside a subdirectory named after the project
+    // (.next/standalone/client/server.js instead of .next/standalone/server.js)
     console.log('Copying standalone build...');
-    copyDirectory(standalonePath, RESOURCES_DIR);
+    let standaloneRoot = standalonePath;
+    if (!fs.existsSync(path.join(standaloneRoot, 'server.js'))) {
+      const entries = fs.readdirSync(standaloneRoot, { withFileTypes: true });
+      const nested = entries.find(
+        (e) => e.isDirectory() && fs.existsSync(path.join(standaloneRoot, e.name, 'server.js')),
+      );
+      if (nested) {
+        standaloneRoot = path.join(standaloneRoot, nested.name);
+        console.log(`Detected nested standalone structure, using: ${standaloneRoot}\n`);
+      } else {
+        throw new Error(`server.js not found inside standalone build at: ${standaloneRoot}`);
+      }
+    }
+    copyDirectory(standaloneRoot, RESOURCES_DIR);
     console.log('✓ Copied standalone build to root\n');
 
     // Copy static files into standalone/.next/static
