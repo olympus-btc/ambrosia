@@ -53,13 +53,15 @@ class BackendService {
 
       logger.log(`[BackendService] Starting backend at port ${port}...`);
 
-      this.process = spawn(javaPath, args, {
+      const spawnedProcess = spawn(javaPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
         env,
       });
 
-      this.process.stdout.on('data', (data) => {
+      this.process = spawnedProcess;
+
+      spawnedProcess.stdout.on('data', (data) => {
         const message = data.toString();
         logger.log(`[Backend] ${message.trim()}`);
         if (this.logStream) {
@@ -67,7 +69,7 @@ class BackendService {
         }
       });
 
-      this.process.stderr.on('data', (data) => {
+      spawnedProcess.stderr.on('data', (data) => {
         const message = data.toString();
         logger.error(`[Backend ERROR] ${message.trim()}`);
         if (this.logStream) {
@@ -75,16 +77,20 @@ class BackendService {
         }
       });
 
-      this.process.on('error', (error) => {
+      spawnedProcess.on('error', (error) => {
         logger.error('[BackendService] Failed to start:', error);
-        this.status = 'error';
-        this.cleanup();
+        if (this.process === spawnedProcess) {
+          this.status = 'error';
+          this.cleanup();
+        }
       });
 
-      this.process.on('close', (code) => {
+      spawnedProcess.on('close', (code) => {
         logger.log(`[BackendService] Process exited with code ${code}`);
-        this.status = 'stopped';
-        this.cleanup();
+        if (this.process === spawnedProcess) {
+          this.status = 'stopped';
+          this.cleanup();
+        }
       });
 
       logger.log('[BackendService] Waiting for backend to be healthy...');
