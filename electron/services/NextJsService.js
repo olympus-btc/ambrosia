@@ -88,19 +88,21 @@ class NextJsService {
       });
 
       logger.log(`[NextJsService] Spawning process...`);
-      this.process = spawn(command, args, {
+      const spawnedProcess = spawn(command, args, {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
         env,
       });
 
-      if (!this.process || !this.process.pid) {
+      this.process = spawnedProcess;
+
+      if (!spawnedProcess || !spawnedProcess.pid) {
         throw new Error('Failed to spawn Next.js process');
       }
-      logger.log(`[NextJsService] Process spawned with PID: ${this.process.pid}`);
+      logger.log(`[NextJsService] Process spawned with PID: ${spawnedProcess.pid}`);
 
-      this.process.stdout.on('data', (data) => {
+      spawnedProcess.stdout.on('data', (data) => {
         const message = data.toString();
         logger.log(`[Next.js] ${message.trim()}`);
         if (this.logStream) {
@@ -108,7 +110,7 @@ class NextJsService {
         }
       });
 
-      this.process.stderr.on('data', (data) => {
+      spawnedProcess.stderr.on('data', (data) => {
         const message = data.toString();
         logger.error(`[Next.js ERROR] ${message.trim()}`);
         if (this.logStream) {
@@ -116,16 +118,20 @@ class NextJsService {
         }
       });
 
-      this.process.on('error', (error) => {
+      spawnedProcess.on('error', (error) => {
         logger.error('[NextJsService] Failed to start:', error);
-        this.status = 'error';
-        this.cleanup();
+        if (this.process === spawnedProcess) {
+          this.status = 'error';
+          this.cleanup();
+        }
       });
 
-      this.process.on('close', (code) => {
+      spawnedProcess.on('close', (code) => {
         logger.log(`[NextJsService] Process exited with code ${code}`);
-        this.status = 'stopped';
-        this.cleanup();
+        if (this.process === spawnedProcess) {
+          this.status = 'stopped';
+          this.cleanup();
+        }
       });
 
       logger.log('[NextJsService] Waiting for Next.js to be healthy...');
@@ -181,6 +187,9 @@ class NextJsService {
   }
 
   cleanup() {
+    if (this.process) {
+      this.process.removeAllListeners();
+    }
     this.process = null;
     this.status = 'stopped';
     if (this.logStream) {
