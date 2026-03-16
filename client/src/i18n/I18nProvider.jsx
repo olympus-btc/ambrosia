@@ -12,6 +12,8 @@ import onboardingEn from "../components/pages/Onboarding/locales/en";
 import onboardingEs from "../components/pages/Onboarding/locales/es";
 import storeEn from "../components/pages/Store/locales/en";
 import storeEs from "../components/pages/Store/locales/es";
+import unauthorizedEn from "../components/pages/Unauthorized/locales/en";
+import unauthorizedEs from "../components/pages/Unauthorized/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
@@ -21,11 +23,13 @@ const translations = {
     components: componentsEn,
     onboarding: onboardingEn,
     store: storeEn,
+    unauthorized: unauthorizedEn,
   },
   es: {
     components: componentsEs,
     onboarding: onboardingEs,
     store: storeEs,
+    unauthorized: unauthorizedEs,
   },
 };
 
