@@ -125,7 +125,8 @@ class ServiceManager extends EventEmitter {
     this._healthMonitor = setInterval(() => {
       const statuses = this.getServiceStatuses();
       for (const [service, status] of Object.entries(statuses)) {
-        if (status === 'error' || (status === 'stopped' && !this.externalServices[service])) {
+        if (this.externalServices[service]) continue;
+        if (status === 'error' || status === 'stopped') {
           logger.warn(`[ServiceManager] Health monitor: ${service} is ${status}, emitting event`);
           this.emit('service:error', { service, error: new Error(`${service} is ${status}`) });
         }

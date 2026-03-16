@@ -125,6 +125,7 @@ class PhoenixdService {
     const { exec } = require('child_process');
     const targetPort = port || this.port;
     if (!targetPort) return;
+    if (!Number.isInteger(targetPort)) return;
     return new Promise((resolve) => {
       const command = process.platform === 'win32'
         ? `for /f "tokens=5" %a in ('netstat -aon ^| findstr LISTENING ^| findstr :${targetPort}') do taskkill /F /PID %a`

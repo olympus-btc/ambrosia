@@ -1,5 +1,6 @@
 const findFreePort = require('find-free-port');
 
+const logger = require('./logger');
 const { isDevelopment } = require('./resourcePaths');
 
 const DEFAULT_PORTS = {
@@ -10,7 +11,7 @@ const DEFAULT_PORTS = {
 
 async function allocatePorts() {
   if (isDevelopment()) {
-    console.log('[PortAllocator] Development mode: using default ports');
+    logger.log('[PortAllocator] Development mode: using default ports');
     return {
       phoenixd: DEFAULT_PORTS.phoenixd,
       backend: DEFAULT_PORTS.backend,
@@ -18,7 +19,7 @@ async function allocatePorts() {
     };
   }
 
-  console.log('[PortAllocator] Production mode: allocating dynamic ports');
+  logger.log('[PortAllocator] Production mode: allocating dynamic ports');
 
   try {
     const [phoenixdPort] = await findFreePort(9740, 9800);
@@ -31,11 +32,10 @@ async function allocatePorts() {
       nextjs: nextjsPort,
     };
 
-    console.log('[PortAllocator] Allocated ports:', ports);
+    logger.log('[PortAllocator] Allocated ports:', ports);
     return ports;
   } catch (error) {
-    console.error('[PortAllocator] Failed to allocate ports:', error);
-    console.log('[PortAllocator] Falling back to default ports');
+    logger.warn('[PortAllocator] Dynamic allocation failed, using defaults:', error.message);
     return {
       phoenixd: DEFAULT_PORTS.phoenixd,
       backend: DEFAULT_PORTS.backend,
