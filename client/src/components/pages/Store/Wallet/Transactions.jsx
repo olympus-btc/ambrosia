@@ -22,6 +22,8 @@ export function Transactions({
   filter,
   setFilter,
   invoiceActions,
+  fetchInfo,
+  fetchTransactions,
 }) {
   const t = useTranslations("wallet");
   const tTour = useTranslations("walletTour");
@@ -114,6 +116,8 @@ export function Transactions({
               loading={loading}
               setLoading={setLoading}
               setError={setError}
+              fetchInfo={fetchInfo}
+              fetchTransactions={fetchTransactions}
             />
           </Tab>
 
