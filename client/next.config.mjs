@@ -1,7 +1,16 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Creates optimized bundle with minified deps for Electron
   output: "standalone",
+
+  // Pin file tracing root to client/ to prevent Turbopack from going up to
+  // the monorepo root and breaking PostCSS/Tailwind module resolution
+  outputFileTracingRoot: __dirname,
 
   // Image configuration for Electron
   images: {
