@@ -1,5 +1,22 @@
 "use client";
 
+/**
+ * DynamicModuleRenderer — lazy-loads feature components by path at runtime.
+ *
+ * Supported componentBase values and their resolution conventions:
+ *
+ * "modules" (legacy feature modules)
+ *   - Resolves: src/modules/{componentPath}/{componentFile}
+ *   - Export:   default export or named export matching componentFile
+ *   - Example:  componentBase="modules" componentPath="auth" componentFile="AuthProvider"
+ *
+ * "components/pages" (page-level components)
+ *   - Resolves: src/components/pages/{componentPath}/{componentFile}/index  (preferred)
+ *              src/components/pages/{componentPath}/{componentFile}         (fallback)
+ *   - Export:   default, named matching componentFile, or named matching {componentFile}Page
+ *   - Example:  componentBase="components/pages" componentPath="Store" componentFile="Store"
+ */
+
 import React from "react";
 
 import dynamic from "next/dynamic";
