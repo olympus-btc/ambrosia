@@ -20,6 +20,12 @@
     "dist:win:arm64": "npm run clean && cross-env TARGET_PLATFORM=win-arm64 npm run build:prepare && electron-builder --win --arm64 --publish never",
     "dist:linux:x64": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux --x64 --publish never",
     "dist:linux:arm64": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux --arm64 --publish never",
+    "dist:linux:x64:deb": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux deb --x64 --publish never",
+    "dist:linux:x64:rpm": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux rpm --x64 --publish never",
+    "dist:linux:x64:tar": "npm run clean && cross-env TARGET_PLATFORM=linux-x64 npm run build:prepare && electron-builder --linux tar.gz --x64 --publish never",
+    "dist:linux:arm64:deb": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux deb --arm64 --publish never",
+    "dist:linux:arm64:rpm": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux rpm --arm64 --publish never",
+    "dist:linux:arm64:tar": "npm run clean && cross-env TARGET_PLATFORM=linux-arm64 npm run build:prepare && electron-builder --linux tar.gz --arm64 --publish never",
     "postinstall": "electron-builder install-app-deps"
   },
   "author": "olympus-btc",
