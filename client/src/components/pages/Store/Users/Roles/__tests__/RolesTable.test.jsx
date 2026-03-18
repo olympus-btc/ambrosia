@@ -4,22 +4,6 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { RolesTable } from "../RolesTable";
 
-jest.mock("framer-motion", () => {
-  const React = require("react");
-  const Mock = React.forwardRef(({ children, ...props }, ref) => (
-    <div ref={ref} {...props}>{children}</div>
-  ));
-  Mock.displayName = "MotionDiv";
-  return {
-    __esModule: true,
-    AnimatePresence: ({ children }) => children,
-    LazyMotion: ({ children }) => children,
-    domAnimation: {},
-    motion: new Proxy({}, { get: () => Mock }),
-    m: new Proxy({}, { get: () => Mock }),
-  };
-});
-
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => <>{children}</>,
   usePermission: () => true,

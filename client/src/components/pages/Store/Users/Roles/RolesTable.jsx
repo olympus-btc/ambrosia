@@ -31,7 +31,7 @@ export function RolesTable({ roles, loading, onEdit, onDelete }) {
 
   return (
     <section className="w-full overflow-x-auto">
-      <Table className="min-w-[400px]" removeWrapper>
+      <Table className="min-w-[400px]" removeWrapper aria-label={t("roles.header.title")}>
         <TableHeader>
           <TableColumn className="py-2 px-3">{t("roles.columns.name")}</TableColumn>
           <TableColumn className="py-2 px-3">{t("roles.columns.description")}</TableColumn>
