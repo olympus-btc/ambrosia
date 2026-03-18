@@ -31,13 +31,13 @@ export function PermissionSelector({
         </div>
       )}
       {Object.entries(grouped).map(([groupKey, perms]) => (
-        <div key={groupKey} className="border border-default-200 rounded-lg p-3">
+        <div key={groupKey} className="border border-primary-200 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-default-700">
               {t(`roles.permissions.groups.${groupKey}`, { defaultValue: groupKey })}
             </p>
           </div>
-          <Divider className="mb-3" />
+          <Divider className="mb-3 bg-primary-200" />
           <div className="grid md:grid-cols-2 gap-2">
             {perms.map((perm) => (
               <div key={perm.key} className="flex flex-col gap-1">
