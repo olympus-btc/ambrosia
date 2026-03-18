@@ -72,6 +72,14 @@ describe("RolesTable", () => {
     expect(screen.getByText("roles.templates.admin.name")).toBeInTheDocument();
   });
 
+  it("renders column headers", () => {
+    renderTable();
+    expect(screen.getByText("roles.columns.name")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.description")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.type")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.actions")).toBeInTheDocument();
+  });
+
   it("shows admin chip for admin roles and standard chip for others", () => {
     renderTable();
     expect(screen.getByText("roles.labels.adminChip")).toBeInTheDocument();
@@ -87,7 +95,7 @@ describe("RolesTable", () => {
   it("calls onEdit with the correct role when edit is pressed", () => {
     const onEdit = jest.fn();
     renderTable({ onEdit });
-    const editButtons = screen.getAllByText("roles.actions.edit");
+    const editButtons = screen.getAllByRole("button", { name: "Edit Role" });
     fireEvent.click(editButtons[0]);
     expect(onEdit).toHaveBeenCalledWith(roles[0]);
   });
@@ -95,7 +103,7 @@ describe("RolesTable", () => {
   it("calls onDelete with the correct role when delete is pressed", () => {
     const onDelete = jest.fn();
     renderTable({ onDelete });
-    const deleteButtons = screen.getAllByText("roles.actions.delete");
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete Role" });
     fireEvent.click(deleteButtons[1]);
     expect(onDelete).toHaveBeenCalledWith(roles[1]);
   });
