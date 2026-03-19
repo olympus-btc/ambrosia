@@ -180,7 +180,7 @@ export default function PinLogin() {
                 return (
                   <div key={item.key} className="flex items-center gap-3">
                     <Avatar
-                      className="flex-shrink-0 bg-mint text-forest font-bold"
+                      className="shrink-0 bg-mint text-forest font-bold"
                       size="sm"
                       name={employee.avatar}
                     />
@@ -206,7 +206,7 @@ export default function PinLogin() {
                   >
                     <div className="flex items-center gap-4">
                       <Avatar
-                        className="flex-shrink-0 bg-mint text-forest font-bold shadow-sm"
+                        className="shrink-0 bg-mint text-forest font-bold shadow-sm"
                         size="md"
                         name={employee.avatar}
                         fallback={employee.avatar}
