@@ -1,7 +1,7 @@
 import { act, useEffect } from "react";
 
-import { render, screen, waitFor } from "@testing-library/react";
 import { addToast } from "@heroui/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 import { useUpload } from "@/components/hooks/useUpload";
 import { I18nProvider } from "@/i18n/I18nProvider";
