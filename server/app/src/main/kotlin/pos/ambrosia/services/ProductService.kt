@@ -2,7 +2,9 @@ package pos.ambrosia.services
 
 import pos.ambrosia.logger
 import pos.ambrosia.models.Product
+import pos.ambrosia.utils.DuplicateProductSkuException
 import java.sql.Connection
+import java.sql.SQLException
 
 class ProductService(
     private val connection: Connection,
@@ -84,7 +86,7 @@ class ProductService(
     suspend fun addProduct(product: Product): String? {
         if (!valid(product)) return null
         val existing = getProductBySKU(product.SKU)
-        if (existing != null) return null
+        if (existing != null) throw DuplicateProductSkuException()
         val id =
             java.util.UUID
                 .randomUUID()
@@ -112,6 +114,10 @@ class ProductService(
             connection.commit()
             logger.info("Product created: $id")
             return id
+        } catch (e: SQLException) {
+            connection.rollback()
+            if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
+            throw e
         } catch (e: Exception) {
             connection.rollback()
             throw e
@@ -155,7 +161,7 @@ class ProductService(
         if (product.id == null) return false
         if (!valid(product)) return false
         val current = getProductBySKU(product.SKU)
-        if (current != null && current.id != product.id) return false
+        if (current != null && current.id != product.id) throw DuplicateProductSkuException()
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
@@ -182,6 +188,10 @@ class ProductService(
             connection.commit()
             logger.info("Product updated: ${product.id}")
             return true
+        } catch (e: SQLException) {
+            connection.rollback()
+            if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
+            throw e
         } catch (e: Exception) {
             connection.rollback()
             throw e
@@ -200,6 +210,9 @@ class ProductService(
     }
 
     private fun deletedSku(id: String): String = "DELETED-$id"
+
+    private fun isDuplicateSkuViolation(error: SQLException): Boolean =
+        error.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true
 
     suspend fun adjustStock(adjustments: List<pos.ambrosia.models.ProductStockAdjustment>): Boolean {
         if (adjustments.isEmpty()) return true

@@ -10,11 +10,13 @@ import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
+import pos.ambrosia.utils.DuplicateProductSkuException
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -205,7 +207,7 @@ class ProductServiceTest {
     }
 
     @Test
-    fun `addProduct returns null if SKU already exists`() {
+    fun `addProduct throws if SKU already exists`() {
         runBlocking {
             val newProduct = Product(null, "SKU-1", "Prod1", null, null, 100, listOf("cat-1"), 5, 1, 10, 199) // Arrange
             val skuCheckStatement: PreparedStatement = mock() // Arrange
@@ -225,8 +227,7 @@ class ProductServiceTest {
             whenever(skuCheckResultSet.getInt("price_cents")).thenReturn(199) // Arrange
             stubCategoryIds() // Arrange
             val service = ProductService(mockConnection) // Arrange
-            val result = service.addProduct(newProduct) // Act
-            assertNull(result) // Assert
+            assertFailsWith<DuplicateProductSkuException> { service.addProduct(newProduct) } // Act
         }
     }
 
@@ -316,7 +317,7 @@ class ProductServiceTest {
     }
 
     @Test
-    fun `updateProduct returns false if SKU belongs to another product`() {
+    fun `updateProduct throws if SKU belongs to another product`() {
         runBlocking {
             val toUpdate =
                 Product(
@@ -349,8 +350,7 @@ class ProductServiceTest {
             whenever(skuCheckResultSet.getInt("price_cents")).thenReturn(99) // Arrange
             stubCategoryIds() // Arrange
             val service = ProductService(mockConnection) // Arrange
-            val result = service.updateProduct(toUpdate) // Act
-            assertFalse(result) // Assert
+            assertFailsWith<DuplicateProductSkuException> { service.updateProduct(toUpdate) } // Act
             verify(mockConnection, never()).prepareStatement(contains("UPDATE products")) // Assert
         }
     }
