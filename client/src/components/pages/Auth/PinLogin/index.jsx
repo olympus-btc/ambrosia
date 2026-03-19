@@ -19,26 +19,18 @@ import {
 import { Delete, LogIn, Users, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { resolveRoleName } from "@/components/pages/Store/Users/Roles/utils/roleTemplates";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { getUsers } from "@/modules/auth/authService";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
-import { getUsers } from "./authService";
-
-export default function PinLoginNew() {
+export default function PinLogin() {
   const t = useTranslations("pinLogin");
   const [pin, setPin] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [employees, setEmployees] = useState([
-    {
-      id: "no-employee",
-      name: "No hay Empleados Disponibles",
-      role: "",
-      pin: "",
-      avatar: "MG",
-    },
-  ]);
+  const [employees, setEmployees] = useState([]);
   const router = useRouter();
   const { login, isAuth, isLoading: isAuthLoading } = useAuth();
   const { config } = useConfigurations();
@@ -50,23 +42,20 @@ export default function PinLoginNew() {
   }, [isAuth, isAuthLoading, router]);
 
   useEffect(() => {
-    async function getUsersFromService() {
+    async function fetchEmployees() {
       try {
         const users = await getUsers({ silentAuth: true });
 
-        const employeesWithRoleName = users.map((user) => ({
+        const employeesWithData = users.map((user) => ({
           ...user,
-          role: t("roleName"), //TODO Update with RoleName
+          role: resolveRoleName(user.role, t),
           avatar: user.name.slice(0, 2),
         }));
 
-        setEmployees(employeesWithRoleName);
-      } catch {
-      } finally {
-        setIsLoading(false);
-      }
+        setEmployees(employeesWithData);
+      } catch { }
     }
-    getUsersFromService();
+    fetchEmployees();
   }, [t]);
 
   const handleNumberClick = (number) => {
@@ -136,7 +125,7 @@ export default function PinLoginNew() {
         <CardHeader className="text-center space-y-3 pb-4 flex flex-col items-center justify-center">
           <div className="flex flex-col items-center justify-center">
             <div className="mx-auto w-16 h-16 bg-mint rounded-full flex items-center justify-center shadow-lg">
-              <Image className="w-8 h-8 text-forest" src={config?.businessLogoUrl} alt={config?.businessName || ""} />
+              <Image className="w-8 h-8 text-forest" src={config?.businessLogoUrl || null} alt={config?.businessName || ""} />
             </div>
             <div className="flex flex-col items-center justify-center">
               <h1 className="text-2xl font-bold text-deep">
@@ -150,7 +139,6 @@ export default function PinLoginNew() {
         </CardHeader>
 
         <CardBody className="space-y-4 px-6 pb-6">
-          {/* User Selection */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-deep flex items-center">
               <Users className="w-4 h-4 mr-2" />
@@ -162,7 +150,7 @@ export default function PinLoginNew() {
               placeholder={t("selectPlaceholder")}
               variant="bordered"
               size="lg"
-              aria-label="Employees"
+              aria-label={t("selectLabel")}
               classNames={{
                 trigger:
                   "h-12 border-2 border-mint/30 hover:border-forest data-[focus=true]:border-forest",
@@ -208,35 +196,40 @@ export default function PinLoginNew() {
                 );
               })}
             >
-              {employees.map((employee) => (
-                <SelectItem
-                  key={employee.id}
-                  value={employee.id}
-                  textValue={employee.name}
-                  className="py-2"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar
-                      className="flex-shrink-0 bg-mint text-forest font-bold shadow-sm"
-                      size="md"
-                      name={employee.avatar}
-                      fallback={employee.avatar}
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-deep text-lg">
-                        {employee.name}
-                      </span>
-                      <span className="text-forest text-sm">
-                        {employee.role}
-                      </span>
+              {employees.length > 0 ? (
+                employees.map((employee) => (
+                  <SelectItem
+                    key={employee.id}
+                    value={employee.id}
+                    textValue={employee.name}
+                    className="py-2"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar
+                        className="flex-shrink-0 bg-mint text-forest font-bold shadow-sm"
+                        size="md"
+                        name={employee.avatar}
+                        fallback={employee.avatar}
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-deep text-lg">
+                          {employee.name}
+                        </span>
+                        <span className="text-forest text-sm">
+                          {employee.role}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem key="no-employee" isDisabled textValue={t("noEmployees")}>
+                  {t("noEmployees")}
                 </SelectItem>
-              ))}
+              )}
             </Select>
           </div>
 
-          {/* PIN Display */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-deep">
               {t("pinLabel")}
@@ -259,12 +252,11 @@ export default function PinLoginNew() {
             )}
           </div>
 
-          {/* Number Pad - Usando las clases personalizadas */}
           <div className="grid grid-cols-3 gap-4">
             {numbers.flat().map((number, index) => (
               <Button
                 key={index}
-                variant={number ? "outline" : "ghost"}
+                variant={number ? "bordered" : "ghost"}
                 size="md"
                 className={`h-14 text-xl font-bold transition-all duration-200 ${number
                   ? "border-2 border-mint bg-cream/50 hover:bg-mint hover:text-deep hover:border-forest active:scale-95 shadow-md"
@@ -278,10 +270,9 @@ export default function PinLoginNew() {
             ))}
           </div>
 
-          {/* Action Buttons - Usando las clases personalizadas */}
           <div className="grid grid-cols-2 gap-4">
             <Button
-              variant="outline"
+              variant="bordered"
               size="md"
               onPress={handleDelete}
               disabled={isLoading || pin.length === 0}
@@ -291,7 +282,7 @@ export default function PinLoginNew() {
               {t("eraseButton")}
             </Button>
             <Button
-              variant="outline"
+              variant="bordered"
               size="md"
               onPress={handleClear}
               disabled={isLoading || pin.length === 0}
@@ -302,7 +293,6 @@ export default function PinLoginNew() {
             </Button>
           </div>
 
-          {/* Login Button - Usando gradiente personalizado */}
           <Button
             onPress={handleLogin}
             disabled={isLoading || pin.length === 0}

@@ -6,6 +6,8 @@ export const modules = {
   auth: {
     enabled: true,
     name: "Autenticación",
+    componentBase: "components/pages",
+    componentPath: "Auth",
     routes: [
       { path: "/auth", component: "PinLogin", requiresAuth: false },
       {

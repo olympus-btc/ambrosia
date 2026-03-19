@@ -12,6 +12,7 @@ const componentsEn = {
     loginButton: "Log In",
     loading: "Verifying...",
     roleName: "Employee",
+    noEmployees: "No employees available",
     errorMessages: {
       selectEmployee: "Please select an employee.",
       enterPin: "The PIN must be at least 4 digits long.",
