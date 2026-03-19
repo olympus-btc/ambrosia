@@ -8,6 +8,8 @@ import { NextIntlClientProvider } from "next-intl";
 
 import componentsEn from "../components/locales/en";
 import componentsEs from "../components/locales/es";
+import authEn from "../components/pages/Auth/locales/en";
+import authEs from "../components/pages/Auth/locales/es";
 import onboardingEn from "../components/pages/Onboarding/locales/en";
 import onboardingEs from "../components/pages/Onboarding/locales/es";
 import storeEn from "../components/pages/Store/locales/en";
@@ -20,12 +22,14 @@ export const useI18n = () => useContext(I18nContext);
 
 const translations = {
   en: {
+    auth: authEn,
     components: componentsEn,
     onboarding: onboardingEn,
     store: storeEn,
     unauthorized: unauthorizedEn,
   },
   es: {
+    auth: authEs,
     components: componentsEs,
     onboarding: onboardingEs,
     store: storeEs,
