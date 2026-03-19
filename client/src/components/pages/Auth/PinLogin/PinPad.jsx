@@ -33,39 +33,27 @@ export function PinPad({ pin, error, isLoading, onNumberClick, onDelete, onClear
 
   return (
     <>
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-deep">
-          {t("pinLabel")}
-        </label>
-        <Input
-          type="password"
-          variant="bordered"
-          value={pin}
-          readOnly
-          size="lg"
-          placeholder="----"
-          maxLength={4}
-        />
-        {error && (
-          <div className="text-red-600 text-base text-center font-semibold bg-red-50 p-3 rounded-lg border border-red-200">
-            {error}
-          </div>
-        )}
-      </div>
+      <Input
+        label={t("pinLabel")}
+        type="password"
+        value={pin}
+        readOnly
+        placeholder="----"
+        maxLength={4}
+        isInvalid={!!error}
+        errorMessage={error}
+      />
 
       <div className="grid grid-cols-3 gap-4">
         {NUMBER_PAD.flat().map((number, index) => (
           <Button
             key={index}
-            variant={number ? "bordered" : "ghost"}
-            size="md"
-            className={`h-14 text-xl font-bold transition-all duration-200 ${
-              number
-                ? "border-2 border-mint bg-cream/50 hover:bg-mint hover:text-deep hover:border-forest active:scale-95 shadow-md"
-                : "invisible"
-            }`}
+            color="default"
+            variant={number ? "bordered" : "light"}
+            size="lg"
+            className={`h-14 text-xl font-bold bg-white border border-primary-400 shadow-sm hover:shadow-md active:scale-95 transition-all ${!number && "invisible"}`}
             onPress={() => number && onNumberClick(number)}
-            disabled={isLoading || !number}
+            isDisabled={isLoading || !number}
           >
             {number}
           </Button>
@@ -77,41 +65,34 @@ export function PinPad({ pin, error, isLoading, onNumberClick, onDelete, onClear
           variant="bordered"
           size="md"
           onPress={onDelete}
-          disabled={isLoading || pin.length === 0}
-          className="h-12 text-base font-semibold border-2 border-lime bg-lime/20 hover:bg-lime hover:text-deep active:scale-95"
+          isDisabled={isLoading || pin.length === 0}
+          startContent={<Delete className="w-4 h-4" />}
+          className="border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <Delete className="w-4 h-4 mr-2" />
           {t("eraseButton")}
         </Button>
         <Button
           variant="bordered"
           size="md"
           onPress={onClear}
-          disabled={isLoading || pin.length === 0}
-          className="h-12 text-base font-semibold border-2 border-lime bg-lime/20 hover:bg-lime hover:text-deep active:scale-95"
+          isDisabled={isLoading || pin.length === 0}
+          startContent={<Trash2 className="w-4 h-4" />}
+          className="border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
           {t("clearButton")}
         </Button>
       </div>
 
       <Button
+        color="primary"
+        size="lg"
+        className="w-full"
         onPress={onLogin}
-        disabled={isLoading || pin.length === 0}
-        size="md"
-        className="w-full h-14 text-lg font-bold gradient-forest text-white shadow-lg active:scale-95 transition-all duration-200 border-0"
+        isDisabled={pin.length === 0}
+        isLoading={isLoading}
+        startContent={!isLoading && <LogIn className="w-5 h-5" />}
       >
-        {isLoading ? (
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3" />
-            {t("loading")}
-          </div>
-        ) : (
-          <>
-            <LogIn className="w-5 h-5 mr-2" />
-            {t("loginButton")}
-          </>
-        )}
+        {isLoading ? t("loading") : t("loginButton")}
       </Button>
     </>
   );

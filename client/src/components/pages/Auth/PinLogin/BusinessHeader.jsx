@@ -5,17 +5,17 @@ export function BusinessHeader({ businessName, businessLogoUrl }) {
   const t = useTranslations("pinLogin");
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="mx-auto w-16 h-16 bg-mint rounded-full flex items-center justify-center shadow-lg">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
         <Image
-          className="w-8 h-8 text-forest"
+          className="w-10 h-10 object-contain"
           src={businessLogoUrl || null}
           alt={businessName || ""}
         />
       </div>
-      <div className="flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold text-deep">{businessName}</h1>
-        <p className="text-forest mt-2 text-base text-center">{t("title")}</p>
+      <div className="flex flex-col items-center gap-1">
+        <h1 className="text-2xl font-bold text-foreground">{businessName}</h1>
+        <p className="text-default-500 text-sm text-center">{t("title")}</p>
       </div>
     </div>
   );

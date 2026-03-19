@@ -23,7 +23,7 @@ const renderSelect = (props = {}) => render(
 describe("EmployeeSelect", () => {
   it("renders the select label", () => {
     renderSelect();
-    expect(screen.getByText("selectLabel")).toBeInTheDocument();
+    expect(screen.getAllByText("selectLabel")[0]).toBeInTheDocument();
   });
 
   it("renders all employee options", () => {

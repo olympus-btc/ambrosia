@@ -102,7 +102,7 @@ export default function PinLogin() {
 
   return (
     <div className="min-h-screen gradient-fresh flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white mx-auto my-auto">
+      <Card className="w-full max-w-md rounded-lg shadow-lg mx-auto my-auto">
         <CardHeader className="text-center space-y-3 pb-4 flex flex-col items-center justify-center">
           <BusinessHeader
             businessName={config?.businessName}
