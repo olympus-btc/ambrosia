@@ -489,6 +489,12 @@ const storeEs = {
       errorMsgInputFieldEmpty: "Por favor, complete este campo.",
       errorMsgSelectEmpty: "Por favor, seleccione un elemento de la lista.",
     },
+    toasts: {
+      duplicateSkuTitle: "SKU duplicado",
+      duplicateSkuDescription: "Ya existe un producto con ese SKU.",
+      genericErrorTitle: "Error",
+      genericErrorDescription: "No se pudo completar la operación.",
+    },
   },
   cart: {
     title: "Venta",

@@ -489,6 +489,12 @@ const storeEn = {
       errorMsgInputFieldEmpty: "Please fill out this field.",
       errorMsgSelectEmpty: "Please select an item in the list.",
     },
+    toasts: {
+      duplicateSkuTitle: "Duplicate SKU",
+      duplicateSkuDescription: "A product with that SKU already exists.",
+      genericErrorTitle: "Error",
+      genericErrorDescription: "Could not complete the operation.",
+    },
   },
   cart: {
     title: "Sale",
