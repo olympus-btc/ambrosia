@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { Button, Input } from "@heroui/react";
 import { Delete, LogIn, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -11,6 +13,23 @@ const NUMBER_PAD = [
 
 export function PinPad({ pin, error, isLoading, onNumberClick, onDelete, onClear, onLogin }) {
   const t = useTranslations("pinLogin");
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (isLoading) return;
+      if (e.key >= "0" && e.key <= "9") {
+        onNumberClick(e.key);
+      } else if (e.key === "Backspace") {
+        onDelete();
+      } else if (e.key === "Delete") {
+        onClear();
+      } else if (e.key === "Enter") {
+        onLogin();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLoading, onNumberClick, onDelete, onClear, onLogin]);
 
   return (
     <>

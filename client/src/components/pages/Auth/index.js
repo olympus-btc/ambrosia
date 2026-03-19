@@ -1,1 +1,1 @@
-export { default as PinLogin } from "./PinLogin";
+export * from "./PinLogin";
