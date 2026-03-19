@@ -12,7 +12,7 @@ import {
   Checkbox,
   Spinner,
 } from "@heroui/react";
-import { SlidersHorizontal, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { PermissionSelector } from "./PermissionSelector";
 import { roleTemplates, resolveRoleName } from "./utils/roleTemplates";
@@ -94,15 +94,15 @@ export function CreateRoleModal({
                       type="button"
                       onClick={() => handleSelectTemplate(template)}
                       className={`flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all ${isSelected
-                        ? "border-green-700 bg-green-50"
-                        : "border-default-200 hover:border-green-400 hover:bg-default-50"
+                        ? "border-primary"
+                        : "border-default-200 hover:border-primary-300"
                         }`}
                     >
-                      <div className={`rounded-lg p-2 ${isSelected ? "bg-green-100" : "bg-default-100"}`}>
-                        <Icon className={`w-5 h-5 ${isSelected ? "text-green-700" : "text-default-600"}`} />
+                      <div className="rounded-lg p-2 bg-default-100">
+                        <Icon className="w-5 h-5 text-default-600" />
                       </div>
                       <div>
-                        <p className={`font-semibold text-sm ${isSelected ? "text-green-800" : "text-foreground"}`}>
+                        <p className="font-semibold text-sm text-foreground">
                           {t(`roles.templates.${template.key}.name`)}
                         </p>
                         <p className="text-xs text-default-400">
@@ -119,7 +119,7 @@ export function CreateRoleModal({
               <div className="grid md:grid-cols-2 gap-4">
                 <Input
                   label={t("roles.create.roleName")}
-                  placeholder="Ej. Cajero"
+                  placeholder={t("roles.create.roleNamePlaceholder")}
                   value={resolveRoleName(form.name, t)}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                   isRequired
@@ -160,7 +160,6 @@ export function CreateRoleModal({
             {!advanced && (
               <Button
                 variant="flat"
-                startContent={<SlidersHorizontal className="w-4 h-4" />}
                 onPress={handleAdvanced}
               >
                 {t("roles.create.advanced")}
@@ -168,7 +167,11 @@ export function CreateRoleModal({
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="bordered" onPress={handleClose}>
+            <Button
+              variant="bordered"
+              className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
+              onPress={handleClose}
+            >
               {t("roles.actions.cancel")}
             </Button>
             <Button

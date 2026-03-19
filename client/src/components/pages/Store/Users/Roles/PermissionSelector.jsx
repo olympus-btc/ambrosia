@@ -12,11 +12,11 @@ export function PermissionSelector({
 }) {
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  const grouped = useMemo(() => catalog.reduce((acc, perm) => {
-    const groupKey = perm.group || "other";
-    if (!acc[groupKey]) acc[groupKey] = [];
-    acc[groupKey].push(perm);
-    return acc;
+  const groupedPermissions = useMemo(() => catalog.reduce((permissionsByGroup, permission) => {
+    const groupKey = permission.group || "other";
+    if (!permissionsByGroup[groupKey]) permissionsByGroup[groupKey] = [];
+    permissionsByGroup[groupKey].push(permission);
+    return permissionsByGroup;
   }, {}), [catalog]);
 
   return (
@@ -30,14 +30,14 @@ export function PermissionSelector({
           </Chip>
         </div>
       )}
-      {Object.entries(grouped).map(([groupKey, perms]) => (
-        <div key={groupKey} className="border border-default-200 rounded-lg p-3">
+      {Object.entries(groupedPermissions).map(([groupKey, perms]) => (
+        <div key={groupKey} className="border border-primary-200 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-default-700">
               {t(`roles.permissions.groups.${groupKey}`, { defaultValue: groupKey })}
             </p>
           </div>
-          <Divider className="mb-3" />
+          <Divider className="mb-3 bg-primary-200" />
           <div className="grid md:grid-cols-2 gap-2">
             {perms.map((perm) => (
               <div key={perm.key} className="flex flex-col gap-1">
@@ -55,7 +55,7 @@ export function PermissionSelector({
                 {perm.related && perm.related.length > 0 && (
                   <p className="text-[11px] text-default-400">
                     {t("roles.permissions.affects")}{" "}
-                    {perm.related.join(", ")}
+                    {perm.related.map((relatedSection) => t(`roles.permissions.related.${relatedSection}`, { defaultValue: relatedSection })).join(", ")}
                   </p>
                 )}
               </div>
