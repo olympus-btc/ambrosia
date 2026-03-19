@@ -50,6 +50,10 @@ class DuplicateUserNameException(
     message: String = "User name already exists",
 ) : IllegalStateException(message)
 
+class DuplicateProductSkuException(
+    message: String = "SKU already exists",
+) : IllegalStateException(message)
+
 class LastUserDeletionException(
     message: String = "Cannot delete the last user",
 ) : IllegalStateException(message)

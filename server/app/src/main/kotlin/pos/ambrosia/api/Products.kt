@@ -12,7 +12,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
-import pos.ambrosia.logger
+import pos.ambrosia.models.Message
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
@@ -53,7 +53,7 @@ fun Route.products(service: ProductService) {
             val body = call.receive<Product>()
             val id = service.addProduct(body)
             if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid or duplicate product"))
+                call.respond(HttpStatusCode.BadRequest, Message("Invalid product data"))
                 return@post
             }
             call.respond(
@@ -71,14 +71,17 @@ fun Route.products(service: ProductService) {
                         "Missing or malformed ID",
                     )
             val body = call.receive<Product>()
+            val existing =
+                service.getProductById(id)
+                    ?: return@put call.respond(HttpStatusCode.NotFound, Message("Product with ID $id not found"))
             val ok = service.updateProduct(body.copy(id = id))
             if (!ok) {
-                call.respond(HttpStatusCode.NotFound, "Product with ID: $id not found")
+                call.respond(HttpStatusCode.BadRequest, Message("Invalid product data"))
                 return@put
             }
             call.respond(
                 HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Product updated successfully"),
+                mapOf("id" to existing.id, "message" to "Product updated successfully"),
             )
         }
     }

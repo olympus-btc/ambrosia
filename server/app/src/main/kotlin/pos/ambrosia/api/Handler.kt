@@ -11,6 +11,7 @@ import pos.ambrosia.logger
 import pos.ambrosia.models.Message
 import pos.ambrosia.utils.AdminOnlyException
 import pos.ambrosia.utils.DatabaseException
+import pos.ambrosia.utils.DuplicateProductSkuException
 import pos.ambrosia.utils.DuplicateUserNameException
 import pos.ambrosia.utils.InitialSetupException
 import pos.ambrosia.utils.InvalidCredentialsException
@@ -49,6 +50,10 @@ fun Application.handler() {
         exception<DuplicateUserNameException> { call, cause ->
             logger.warn("Duplicate user name: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
+        }
+        exception<DuplicateProductSkuException> { call, cause ->
+            logger.warn("Duplicate product SKU: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "SKU already exists"))
         }
         exception<LastUserDeletionException> { call, cause ->
             logger.warn("Attempt to delete last user: ${cause.message}")
