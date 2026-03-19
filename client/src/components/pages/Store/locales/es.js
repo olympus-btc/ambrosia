@@ -82,7 +82,7 @@ const storeEs = {
       subtitle: "Define qué pantallas y acciones están disponibles para cada rol.",
     },
     actions: {
-      new: "Nuevo rol",
+      new: "Agregar Rol",
       edit: "Editar",
       delete: "Eliminar",
       create: "Crear rol",
@@ -96,6 +96,7 @@ const storeEs = {
     create: {
       title: "Crear rol",
       roleName: "Nombre del rol",
+      roleNamePlaceholder: "Ej. Cajero",
       password: "Contraseña para acciones críticas (opcional)",
       passwordPlaceholder: "Opcional",
       isAdmin: "Con privilegios de administrador",
@@ -131,19 +132,27 @@ const storeEs = {
     edit: {
       title: "Editar rol",
       roleName: "Nombre del rol",
+      roleNamePlaceholder: "Ej. Cajero",
       password: "Actualizar contraseña (opcional)",
       passwordPlaceholder: "Dejar vacío para mantener",
       isAdmin: "Con privilegios de administrador",
-    },
-    list: {
-      title: "Roles disponibles",
-      subtitle: "Cada rol controla acceso a pantallas específicas.",
     },
     permissions: {
       title: "Permisos visibles",
       subtitle: "Catálogo filtrado según el tipo de negocio",
       legend: "Selecciona los permisos que tendrá este rol. Solo se muestran los que aplican al tipo de negocio actual.",
       affects: "Afecta a:",
+      related: {
+        Users: "Usuarios",
+        Products: "Productos",
+        Orders: "Órdenes",
+        Sale: "Venta",
+        Wallet: "Wallet",
+        Settings: "Configuración",
+        Dishes: "Platillos",
+        Tables: "Mesas",
+        Spaces: "Espacios",
+      },
       scope: {
         store: "Tienda",
         restaurant: "Restaurante",
@@ -391,6 +400,12 @@ const storeEs = {
           description: "Descargar reportes.",
         },
       },
+    },
+    columns: {
+      name: "Rol",
+      description: "Descripción",
+      type: "Tipo",
+      actions: "Acciones",
     },
     labels: {
       admin: "Administrador",

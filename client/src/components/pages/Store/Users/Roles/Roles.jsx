@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { addToast, Button, Card, CardBody, CardHeader, Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ShieldPlus } from "lucide-react";
+import { addToast, Button, Card, CardBody, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
@@ -134,7 +133,6 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
           <Button
             color="primary"
             className="bg-green-800"
-            startContent={<ShieldPlus className="w-5 h-5" />}
             onPress={() => setShowModal(true)}
             isDisabled={loadingPerms}
           >
@@ -143,29 +141,16 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         </RequirePermission>
       </header>
 
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-foreground">
-                {t("roles.list.title")}
-              </h3>
-              <p className="text-sm text-default-500">
-                {t("roles.list.subtitle")}
-              </p>
-            </div>
-          </CardHeader>
-          <Divider />
-          <CardBody className="p-4 lg:p-6">
-            <RolesTable
-              roles={roles}
-              loading={loadingRoles}
-              onEdit={openEditModal}
-              onDelete={setRoleToDelete}
-            />
-          </CardBody>
-        </Card>
-      </div>
+      <Card className="bg-white rounded-lg shadow-lg overflow-x-auto">
+        <CardBody className="p-4 lg:p-8">
+          <RolesTable
+            roles={roles}
+            loading={loadingRoles}
+            onEdit={openEditModal}
+            onDelete={setRoleToDelete}
+          />
+        </CardBody>
+      </Card>
 
       <CreateRoleModal
         isOpen={showModal}
@@ -194,6 +179,7 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
           <ModalFooter>
             <Button
               variant="bordered"
+              className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
               onPress={() => setRoleToDelete(null)}
               isDisabled={deleting}
             >

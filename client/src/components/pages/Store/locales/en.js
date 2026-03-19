@@ -82,7 +82,7 @@ const storeEn = {
       subtitle: "Define which screens and actions are available for each role.",
     },
     actions: {
-      new: "New role",
+      new: "Add Role",
       edit: "Edit",
       delete: "Delete",
       create: "Create role",
@@ -96,6 +96,7 @@ const storeEn = {
     create: {
       title: "Create role",
       roleName: "Role name",
+      roleNamePlaceholder: "e.g. Cashier",
       password: "Password for critical actions (optional)",
       passwordPlaceholder: "Optional",
       isAdmin: "With admin privileges",
@@ -131,19 +132,27 @@ const storeEn = {
     edit: {
       title: "Edit role",
       roleName: "Role name",
+      roleNamePlaceholder: "e.g. Cashier",
       password: "Update password (optional)",
       passwordPlaceholder: "Leave empty to keep current",
       isAdmin: "With admin privileges",
-    },
-    list: {
-      title: "Available roles",
-      subtitle: "Each role controls access to specific screens.",
     },
     permissions: {
       title: "Visible permissions",
       subtitle: "Catalog filtered by business type",
       legend: "Select the permissions for this role. Only those that apply to the current business type are shown.",
       affects: "Affects:",
+      related: {
+        Users: "Users",
+        Products: "Products",
+        Orders: "Orders",
+        Sale: "Sale",
+        Wallet: "Wallet",
+        Settings: "Settings",
+        Dishes: "Dishes",
+        Tables: "Tables",
+        Spaces: "Spaces",
+      },
       scope: {
         store: "Store",
         restaurant: "Restaurant",
@@ -391,6 +400,12 @@ const storeEn = {
           description: "Download reports.",
         },
       },
+    },
+    columns: {
+      name: "Role",
+      description: "Description",
+      type: "Type",
+      actions: "Actions",
     },
     labels: {
       admin: "Administrator",

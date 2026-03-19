@@ -44,7 +44,7 @@ export function EditRoleModal({
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               label={t("roles.edit.roleName")}
-              placeholder="Ej. Cajero"
+              placeholder={t("roles.edit.roleNamePlaceholder")}
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               isRequired
@@ -78,7 +78,11 @@ export function EditRoleModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="bordered" onPress={onClose}>
+          <Button
+            variant="bordered"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
+            onPress={onClose}
+          >
             {t("roles.actions.cancel")}
           </Button>
           <Button

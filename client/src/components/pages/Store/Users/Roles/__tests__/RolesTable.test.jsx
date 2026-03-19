@@ -4,22 +4,6 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { RolesTable } from "../RolesTable";
 
-jest.mock("framer-motion", () => {
-  const React = require("react");
-  const Mock = React.forwardRef(({ children, ...props }, ref) => (
-    <div ref={ref} {...props}>{children}</div>
-  ));
-  Mock.displayName = "MotionDiv";
-  return {
-    __esModule: true,
-    AnimatePresence: ({ children }) => children,
-    LazyMotion: ({ children }) => children,
-    domAnimation: {},
-    motion: new Proxy({}, { get: () => Mock }),
-    m: new Proxy({}, { get: () => Mock }),
-  };
-});
-
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => <>{children}</>,
   usePermission: () => true,
@@ -72,6 +56,14 @@ describe("RolesTable", () => {
     expect(screen.getByText("roles.templates.admin.name")).toBeInTheDocument();
   });
 
+  it("renders column headers", () => {
+    renderTable();
+    expect(screen.getByText("roles.columns.name")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.description")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.type")).toBeInTheDocument();
+    expect(screen.getByText("roles.columns.actions")).toBeInTheDocument();
+  });
+
   it("shows admin chip for admin roles and standard chip for others", () => {
     renderTable();
     expect(screen.getByText("roles.labels.adminChip")).toBeInTheDocument();
@@ -87,7 +79,7 @@ describe("RolesTable", () => {
   it("calls onEdit with the correct role when edit is pressed", () => {
     const onEdit = jest.fn();
     renderTable({ onEdit });
-    const editButtons = screen.getAllByText("roles.actions.edit");
+    const editButtons = screen.getAllByRole("button", { name: "Edit Role" });
     fireEvent.click(editButtons[0]);
     expect(onEdit).toHaveBeenCalledWith(roles[0]);
   });
@@ -95,7 +87,7 @@ describe("RolesTable", () => {
   it("calls onDelete with the correct role when delete is pressed", () => {
     const onDelete = jest.fn();
     renderTable({ onDelete });
-    const deleteButtons = screen.getAllByText("roles.actions.delete");
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete Role" });
     fireEvent.click(deleteButtons[1]);
     expect(onDelete).toHaveBeenCalledWith(roles[1]);
   });
