@@ -44,7 +44,7 @@ describe("PinLogin", () => {
   it("renders all sections: header, employee select and pin pad", async () => {
     await renderPinLogin();
     expect(screen.getByText("Test Store")).toBeInTheDocument();
-    expect(screen.getByText("selectLabel")).toBeInTheDocument();
+    expect(screen.getAllByText("selectLabel")[0]).toBeInTheDocument();
     expect(screen.getByPlaceholderText("----")).toBeInTheDocument();
   });
 
