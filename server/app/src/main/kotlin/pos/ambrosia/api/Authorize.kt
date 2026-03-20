@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 private object LoginRateLimiter {
     private val failedAttempts = ConcurrentHashMap<String, Pair<Int, Long>>()
     private const val MAX_FAILURES = 5
-    private val WINDOW_MS = 2 * 60 * 1000L
+    private val WINDOW_MS = 3 * 60 * 1000L
 
     fun isBlocked(ip: String): Boolean {
         val (count, since) = failedAttempts[ip] ?: return false
@@ -42,6 +42,12 @@ private object LoginRateLimiter {
         } else {
             count >= MAX_FAILURES
         }
+    }
+
+    fun getRemainingSeconds(ip: String): Int {
+        val (_, since) = failedAttempts[ip] ?: return 0
+        val remaining = WINDOW_MS - (System.currentTimeMillis() - since)
+        return if (remaining > 0) ((remaining + 999) / 1000).toInt() else 0
     }
 
     fun recordFailure(ip: String) {
@@ -77,7 +83,9 @@ fun Route.auth(
     post("/login") {
         val ip = call.request.origin.remoteAddress
         if (LoginRateLimiter.isBlocked(ip)) {
-            call.respond(HttpStatusCode.TooManyRequests)
+            val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+            call.response.headers.append("Retry-After", retryAfter.toString())
+            call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
             return@post
         }
 
