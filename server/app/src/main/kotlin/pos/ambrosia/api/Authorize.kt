@@ -55,7 +55,13 @@ private object LoginRateLimiter {
         failedAttempts.compute(ip) { _, existing ->
             if (existing != null) {
                 val (count, since) = existing
-                if (now - since < WINDOW_MS) Pair(count + 1, since) else Pair(1, now)
+                if (now - since < WINDOW_MS) {
+                    val newCount = count + 1
+                    val newSince = if (newCount >= MAX_FAILURES) now else since
+                    Pair(newCount, newSince)
+                } else {
+                    Pair(1, now)
+                }
             } else {
                 Pair(1, now)
             }
@@ -98,7 +104,14 @@ fun Route.auth(
 
         if (userInfo == null) {
             LoginRateLimiter.recordFailure(ip)
-            throw InvalidCredentialsException()
+            if (LoginRateLimiter.isBlocked(ip)) {
+                val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+                call.response.headers.append("Retry-After", retryAfter.toString())
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
+            } else {
+                throw InvalidCredentialsException()
+            }
+            return@post
         }
 
         LoginRateLimiter.reset(ip)
