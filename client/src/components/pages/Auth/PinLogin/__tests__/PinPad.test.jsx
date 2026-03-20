@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 
@@ -17,6 +17,8 @@ const renderPinPad = (props = {}) => render(
       pin=""
       error=""
       isLoading={false}
+      lockedUntil={null}
+      onLockoutExpired={jest.fn()}
       {...mockHandlers}
       {...props}
     />
@@ -89,5 +91,29 @@ describe("PinPad", () => {
   it("renders PIN input with placeholder", () => {
     renderPinPad();
     expect(screen.getByPlaceholderText("----")).toBeInTheDocument();
+  });
+
+  it("does not show lockout message when lockedUntil is in the past", async () => {
+    renderPinPad({ lockedUntil: Date.now() - 1000 });
+    await act(async () => {});
+    expect(screen.queryByText(/lockout\.message/)).not.toBeInTheDocument();
+  });
+
+  it("shows lockout message and disables all buttons when lockedUntil is in the future", async () => {
+    renderPinPad({ lockedUntil: Date.now() + 180000 });
+    await act(async () => {});
+    expect(screen.getByText(/lockout\.message/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /eraseButton/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /clearButton/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /loginButton/i })).toBeDisabled();
+  });
+
+  it("does not call handlers on keydown when locked", async () => {
+    renderPinPad({ lockedUntil: Date.now() + 180000 });
+    await act(async () => {});
+    fireEvent.keyDown(window, { key: "5" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(mockHandlers.onNumberClick).not.toHaveBeenCalled();
+    expect(mockHandlers.onLogin).not.toHaveBeenCalled();
   });
 });
