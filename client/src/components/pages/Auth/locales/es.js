@@ -10,6 +10,9 @@ const authEs = {
     loading: "Verificando...",
     roleName: "Empleado",
     noEmployees: "No hay empleados disponibles",
+    lockout: {
+      message: "Demasiados intentos fallidos. Intenta en",
+    },
     errorMessages: {
       selectEmployee: "Por favor selecciona un empleado",
       enterPin: "El PIN debe tener al menos 4 dígitos",
