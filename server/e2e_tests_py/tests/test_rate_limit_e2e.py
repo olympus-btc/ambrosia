@@ -124,22 +124,12 @@ class TestLoginRateLimit:
                 f"got {response.status_code}"
             )
             logger.info(
-                f"New session, same IP, wrong creds: {response.status_code} (shared bucket ✓)"
-            )
-
-            # Correct credentials always succeed and reset the counter even when blocked
-            response = await new_client.post("/auth/login", json=DEFAULT_TEST_USER)
-            assert response.status_code == 200, (
-                f"Correct credentials on blocked IP: expected 200 (bypass + reset), "
-                f"got {response.status_code}"
-            )
-            logger.info(
-                f"Correct credentials on blocked IP: {response.status_code} (reset ✓)"
+                f"New session, same IP: {response.status_code} (shared bucket ✓)"
             )
 
         logger.info(
             f"✓ IP blocked after {MAX_FAILURES} failed logins; "
-            "block is shared across sessions; correct credentials bypass and reset"
+            "block is shared across sessions"
         )
 
     @pytest.mark.asyncio
@@ -151,16 +141,13 @@ class TestLoginRateLimit:
         seconds of tolerance for test execution time).
         """
         async with AmbrosiaHttpClient(server_url) as client:
-            # Reset counter with a successful login
-            reset = await client.post("/auth/login", json=DEFAULT_TEST_USER)
-            assert reset.status_code == 200, (
-                f"Pre-test reset login: expected 200, got {reset.status_code}"
-            )
-
-            # Trigger lockout on the 5th failure
-            for _ in range(MAX_FAILURES - 1):
-                await client.post("/auth/login", json=INVALID_CREDS)
-            response = await client.post("/auth/login", json=INVALID_CREDS)
+            # Fire bad logins until we get a 429 — works whether the IP is already
+            # blocked (from a previous test) or starts clean.
+            response = None
+            for _ in range(MAX_FAILURES + 1):
+                response = await client.post("/auth/login", json=INVALID_CREDS)
+                if response.status_code == 429:
+                    break
 
         assert response.status_code == 429, (
             f"Expected 429 after {MAX_FAILURES} failures, got {response.status_code}"

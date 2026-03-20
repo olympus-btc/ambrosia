@@ -63,6 +63,9 @@ class AmbrosiaTestServer:
 
         logger.info(f"Starting server with command: {' '.join(cmd)}")
 
+        env = os.environ.copy()
+        env["AMBROSIA_DATADIR"] = "/tmp/ambrosia-test-data"
+
         try:
             self.server_process = subprocess.Popen(
                 cmd,
@@ -70,6 +73,7 @@ class AmbrosiaTestServer:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid if os.name != "nt" else None,
+                env=env,
             )
             logger.info(f"Server process started with PID: {self.server_process.pid}")
 
