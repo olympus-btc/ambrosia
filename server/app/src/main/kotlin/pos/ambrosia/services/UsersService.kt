@@ -6,6 +6,7 @@ import pos.ambrosia.models.AuthResponse
 import pos.ambrosia.models.UpdateUserRequest
 import pos.ambrosia.models.User
 import pos.ambrosia.utils.DuplicateUserNameException
+import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.SecurePinProcessor
 import java.sql.Connection
@@ -14,6 +15,8 @@ class UsersService(
     private val env: ApplicationEnvironment,
     private val connection: Connection,
 ) {
+    private val adminGuard = AdminGuardService(connection)
+
     companion object {
         private const val ADD_USER =
             """
@@ -221,6 +224,7 @@ class UsersService(
                 logger.error("Role does not exist: $roleId")
                 return false
             }
+            ensureUserRoleChangeKeepsAdmin(id, roleId)
             fields += "role_id = ?" to { statement, idx -> statement.setString(idx, roleId) }
         }
 
@@ -251,6 +255,7 @@ class UsersService(
         if (activeUserCount() <= 1) {
             throw LastUserDeletionException()
         }
+        ensureUserDeletionKeepsAdmin(id)
         val statement = connection.prepareStatement(DELETE_USER)
         statement.setString(1, deletedName(id))
         statement.setString(2, id)
@@ -259,4 +264,29 @@ class UsersService(
     }
 
     private fun deletedName(id: String): String = "DELETED-$id"
+
+    private fun ensureUserRoleChangeKeepsAdmin(
+        userId: String,
+        targetRoleId: String,
+    ) {
+        val currentState = adminGuard.getUserAdminState(userId) ?: return
+        if (!currentState.isAdmin) return
+        if (currentState.roleId == targetRoleId) return
+
+        val targetRoleIsAdmin = adminGuard.isRoleAdmin(targetRoleId) ?: return
+        if (targetRoleIsAdmin) return
+
+        if (adminGuard.activeAdminUserCount() <= 1) {
+            throw LastAdminRemovalException()
+        }
+    }
+
+    private fun ensureUserDeletionKeepsAdmin(userId: String) {
+        val currentState = adminGuard.getUserAdminState(userId) ?: return
+        if (!currentState.isAdmin) return
+
+        if (adminGuard.activeAdminUserCount() <= 1) {
+            throw LastAdminRemovalException()
+        }
+    }
 }

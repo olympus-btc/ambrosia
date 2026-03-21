@@ -15,6 +15,7 @@ import pos.ambrosia.utils.DuplicateUserNameException
 import pos.ambrosia.utils.InitialSetupException
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.InvalidTokenException
+import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.PermissionDeniedException
 import pos.ambrosia.utils.PhoenixBalanceException
@@ -53,6 +54,10 @@ fun Application.handler() {
         exception<LastUserDeletionException> { call, cause ->
             logger.warn("Attempt to delete last user: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
+        }
+        exception<LastAdminRemovalException> { call, cause ->
+            logger.warn("Attempt to remove last admin user: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message("Cannot remove the last admin user"))
         }
         exception<AdminOnlyException> { call, _ ->
             logger.warn("Non-admin user attempted to access admin-only endpoint")
