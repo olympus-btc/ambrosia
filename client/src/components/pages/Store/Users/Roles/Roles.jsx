@@ -99,6 +99,13 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
       setShowEditModal(false);
       setEditingRole(null);
       setForm({ name: "", password: "", isAdmin: false, permissions: [] });
+      addToast({ title: t("roles.actions.saveSuccess"), color: "success" });
+    } catch (error) {
+      addToast({
+        title: error?.status === 409 ? t("roles.actions.lastAdminTitle") : t("roles.actions.saveErrorTitle"),
+        description: error?.status == 409 ? t("roles.actions.lastAdminDescription") : t("roles.actions.saveErrorDescription"),
+        color: error?.status === 409 ? "warning" : "danger",
+      });
     } finally {
       setUpdating(false);
     }
@@ -111,8 +118,12 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
       await deleteRole(roleToDelete.id);
       setRoleToDelete(null);
       addToast({ title: t("roles.actions.deleteSuccess"), color: "success" });
-    } catch {
-      addToast({ title: t("roles.actions.deleteError"), color: "danger" });
+    } catch (error) {
+      addToast({
+        title: error?.status === 409 ? t("roles.actions.lastAdminTitle") : t("roles.actions.saveErrorTitle"),
+        description: error?.status == 409 ? t("roles.actions.lastAdminDescription") : t("roles.actions.saveErrorDescription"),
+        color: error?.status === 409 ? "warning" : "danger",
+      });
     } finally {
       setDeleting(false);
     }

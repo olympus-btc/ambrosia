@@ -154,6 +154,26 @@ describe("useRoles", () => {
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
   });
 
+  it("throws conflict when deleting role is rejected", async () => {
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "admin" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    let thrown;
+    await act(async () => {
+      try {
+        await handlers.deleteRole("1");
+      } catch (error) {
+        thrown = error;
+      }
+    });
+
+    expect(thrown?.status).toBe(409);
+  });
+
   it("fetches role permissions by id", async () => {
     httpClient.mockResolvedValue({});
     parseJsonResponse.mockResolvedValueOnce([]);

@@ -13,18 +13,23 @@ const storeEn = {
   },
   walletTour: {
     title: "Before you start!",
-    description: "To receive <b>Bitcoin payments</b> you need to open a <b>Lightning channel</b>.",
+    description:
+      "To receive <b>Bitcoin payments</b> you need to open a <b>Lightning channel</b>.",
     clickWallet: "Click on Wallet to get started.",
     nextButton: "Go to Wallet",
     guardTitle: "Wallet Access",
-    guardDescription: "This password protects your Bitcoin wallet. Enter it to access your Lightning channels.",
+    guardDescription:
+      "This password protects your Bitcoin wallet. Enter it to access your Lightning channels.",
     guardButton: "Got it",
     receiveAmountTitle: "Step 1: Amount in satoshis",
-    receiveAmountDescription: "Enter <b>5000</b> as the amount. This covers the fee to open your Lightning channel.",
+    receiveAmountDescription:
+      "Enter <b>5000</b> as the amount. This covers the fee to open your Lightning channel.",
     receiveDescTitle: "Step 2: Description",
-    receiveDescDescription: "Type <b>open channel</b> as the description to identify this payment.",
+    receiveDescDescription:
+      "Type <b>open channel</b> as the description to identify this payment.",
     receiveButtonTitle: "Step 3: Create & Scan",
-    receiveButtonDescription: "Click <b>Create Lightning Invoice</b>, then scan the QR code that appears with your Lightning wallet to open the channel.",
+    receiveButtonDescription:
+      "Click <b>Create Lightning Invoice</b>, then scan the QR code that appears with your Lightning wallet to open the channel.",
     receiveButton: "Got it",
   },
   dashboard: {
@@ -74,6 +79,8 @@ const storeEn = {
       genericErrorDescription: "Could not complete the operation.",
       lastUserTitle: "Not allowed",
       lastUserDescription: "You cannot delete the only existing user.",
+      lastAdminTitle: "Not allowed",
+      lastAdminDescription: "You cannot remove or delete the last admin user.",
     },
   },
   roles: {
@@ -87,11 +94,18 @@ const storeEn = {
       delete: "Delete",
       create: "Create role",
       save: "Save changes",
+      saveSuccess: "Role updated successfully",
+      saveErrorTitle: "Error",
+      saveErrorDescription: "Could not update the role",
       cancel: "Cancel",
       deleteConfirmTitle: "Delete role",
-      deleteConfirmBody: "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
+      deleteConfirmBody:
+        "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
       deleteSuccess: "Role deleted successfully",
       deleteError: "Could not delete the role",
+      lastAdminTitle: "Not allowed",
+      lastAdminDescription:
+        "You cannot delete the last role with active admin users",
     },
     create: {
       title: "Create role",
@@ -100,7 +114,8 @@ const storeEn = {
       password: "Password for critical actions (optional)",
       passwordPlaceholder: "Optional",
       isAdmin: "With admin privileges",
-      templateLegend: "Choose a role template to get started, or use advanced mode to configure it manually.",
+      templateLegend:
+        "Choose a role template to get started, or use advanced mode to configure it manually.",
       advanced: "Advanced mode",
     },
     templates: {
@@ -140,7 +155,8 @@ const storeEn = {
     permissions: {
       title: "Visible permissions",
       subtitle: "Catalog filtered by business type",
-      legend: "Select the permissions for this role. Only those that apply to the current business type are shown.",
+      legend:
+        "Select the permissions for this role. Only those that apply to the current business type are shown.",
       affects: "Affects:",
       related: {
         Users: "Users",
@@ -754,11 +770,14 @@ const storeEn = {
     },
     cardSeed: {
       title: "Lightning SEED",
-      description: "Your SEED is the master key of your wallet. Keep it in a safe place and never share it with anyone.",
-      warning: "This information is extremely sensitive. Anyone with access to your SEED can control all your Bitcoin funds.",
+      description:
+        "Your SEED is the master key of your wallet. Keep it in a safe place and never share it with anyone.",
+      warning:
+        "This information is extremely sensitive. Anyone with access to your SEED can control all your Bitcoin funds.",
       revealButton: "View SEED",
       hideButton: "Hide",
-      paperNote: "Write these words on paper and store them in a safe place. Never share them with anyone or save them in digital format.",
+      paperNote:
+        "Write these words on paper and store them in a safe place. Never share them with anyone or save them in digital format.",
       modalTitle: "Confirm access",
       passwordLabel: "Wallet password",
       cancelButton: "Cancel",
@@ -774,7 +793,8 @@ const storeEn = {
       replayButton: "Replay",
       walletTour: {
         name: "Lightning Channel",
-        description: "Learn how to create your Lightning channel and receive Bitcoin payments.",
+        description:
+          "Learn how to create your Lightning channel and receive Bitcoin payments.",
       },
     },
   },
@@ -967,11 +987,13 @@ const storeEn = {
     },
     close: {
       sectionTitle: "Close shift",
-      sectionSubtitle: "End the day and consolidate movements for the selected period.",
+      sectionSubtitle:
+        "End the day and consolidate movements for the selected period.",
       balanceLabel: "Balance:",
       modalTitle: "Confirm Shift Close",
       modalQuestion: "Are you sure you want to close the shift?",
-      modalDesc: "This action will finish the current shift. Ensure all operations are complete.",
+      modalDesc:
+        "This action will finish the current shift. Ensure all operations are complete.",
       modalPeriodBalance: "Period balance:",
       cancel: "Cancel",
       confirm: "Close Shift",
@@ -981,12 +1003,15 @@ const storeEn = {
   lightning: {
     title: "Lightning Network",
     autoLiquidityLabel: "Auto Liquidity",
-    autoLiquidityDescription: "Automatically open channels when inbound liquidity is needed.",
-    autoLiquidityWarning: "On-chain fees apply each time a channel is opened automatically.",
+    autoLiquidityDescription:
+      "Automatically open channels when inbound liquidity is needed.",
+    autoLiquidityWarning:
+      "On-chain fees apply each time a channel is opened automatically.",
     restarting: "Restarting Lightning...",
     restartSuccess: "Lightning restarted successfully",
     restartError: "Failed to restart Lightning",
-    manualRestartRequired: "Config saved. Restart phoenixd manually to apply the change.",
+    manualRestartRequired:
+      "Config saved. Restart phoenixd manually to apply the change.",
   },
 };
 
