@@ -126,4 +126,9 @@ data class CloseChannelRequest(
     val address: String,
     val feerateSatByte: Long,
 )
+
+@Serializable
+data class CloseChannelResponse(
+    val txId: String,
+)
 //endregion
