@@ -10,6 +10,9 @@ const authEn = {
     loading: "Verifying...",
     roleName: "Employee",
     noEmployees: "No employees available",
+    lockout: {
+      message: "Too many failed attempts. Try again in",
+    },
     errorMessages: {
       selectEmployee: "Please select an employee.",
       enterPin: "The PIN must be at least 4 digits long.",

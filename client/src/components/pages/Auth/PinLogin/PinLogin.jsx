@@ -23,6 +23,12 @@ export default function PinLogin() {
   const [selectedUser, setSelectedUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lockedUntil, setLockedUntil] = useState(() => {
+    const stored = localStorage.getItem("pinLockoutUntil");
+    if (!stored) return null;
+    const ts = parseInt(stored, 10);
+    return ts > Date.now() ? ts : null;
+  });
   const [employees, setEmployees] = useState([]);
   const router = useRouter();
   const { login, isAuth, isLoading: isAuthLoading } = useAuth();
@@ -67,6 +73,8 @@ export default function PinLogin() {
   };
 
   const handleLogin = async () => {
+    if (lockedUntil && Date.now() < lockedUntil) return;
+
     if (!selectedUser) {
       setError(t("errorMessages.selectEmployee"));
       return;
@@ -91,9 +99,18 @@ export default function PinLogin() {
       });
       setPin("");
       setSelectedUser("");
+      setLockedUntil(null);
+      localStorage.removeItem("pinLockoutUntil");
       router.push("/");
-    } catch {
-      setError(t("errorMessages.incorrectPin"));
+    } catch (err) {
+      if (err?.status === 429) {
+        const ts = Date.now() + (err.retryAfter ?? 180) * 1000;
+        setLockedUntil(ts);
+        localStorage.setItem("pinLockoutUntil", ts.toString());
+        setError("");
+      } else {
+        setError(t("errorMessages.incorrectPin"));
+      }
       setPin("");
     } finally {
       setIsLoading(false);
@@ -120,10 +137,15 @@ export default function PinLogin() {
             pin={pin}
             error={error}
             isLoading={isLoading}
+            lockedUntil={lockedUntil}
             onNumberClick={handleNumberClick}
             onDelete={handleDelete}
             onClear={handleClear}
             onLogin={handleLogin}
+            onLockoutExpired={() => {
+              setLockedUntil(null);
+              localStorage.removeItem("pinLockoutUntil");
+            }}
           />
         </CardBody>
       </Card>

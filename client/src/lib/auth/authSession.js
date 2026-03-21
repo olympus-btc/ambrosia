@@ -32,6 +32,9 @@ export async function authenticateUser({ name, pin }) {
     const message = data?.message || "Invalid Credentials";
     const error = new Error(message);
     error.status = response.status;
+    if (response.status === 429) {
+      error.retryAfter = data?.retryAfter ?? 180;
+    }
     throw error;
   }
 

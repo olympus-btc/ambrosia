@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -8,6 +8,20 @@ import { getUsers } from "@/modules/auth/authService";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import PinLogin from "../PinLogin";
+
+jest.mock("../EmployeeSelect", () => ({
+  EmployeeSelect: ({ employees, onSelect }) => (
+    <div>
+      <label>selectLabel</label>
+      {employees.length > 0
+        ? employees.map((emp) => (
+          <button key={emp.id} onClick={() => onSelect(emp.id)}>{emp.name}</button>
+        ))
+        : <span>noEmployees</span>
+      }
+    </div>
+  ),
+}));
 
 jest.mock("@/modules/auth/authService", () => ({ getUsers: jest.fn() }));
 jest.mock("@/hooks/auth/useAuth", () => ({ useAuth: jest.fn() }));
@@ -34,6 +48,7 @@ const renderPinLogin = async () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  localStorage.clear();
   useRouter.mockReturnValue({ push: jest.fn(), replace: mockReplace });
   useAuth.mockReturnValue({ login: mockLogin, isAuth: false, isLoading: false });
   useConfigurations.mockReturnValue({ config: { businessName: "Test Store", businessLogoUrl: null } });
@@ -65,5 +80,44 @@ describe("PinLogin", () => {
     useAuth.mockReturnValue({ login: mockLogin, isAuth: true, isLoading: false });
     await renderPinLogin();
     expect(mockReplace).toHaveBeenCalledWith("/");
+  });
+
+  it("shows lockout message after a 429 response from the server", async () => {
+    const err = new Error("Too many requests");
+    err.status = 429;
+    err.retryAfter = 180;
+    mockLogin.mockRejectedValue(err);
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText(/lockout\.message/)).toBeInTheDocument();
+  });
+
+  it("does not show lockout message after a successful login", async () => {
+    mockLogin.mockResolvedValue({});
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "4" });
+    });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.queryByText(/lockout\.message/)).not.toBeInTheDocument();
   });
 });

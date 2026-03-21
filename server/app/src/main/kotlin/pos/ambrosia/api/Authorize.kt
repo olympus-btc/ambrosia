@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 private object LoginRateLimiter {
     private val failedAttempts = ConcurrentHashMap<String, Pair<Int, Long>>()
     private const val MAX_FAILURES = 5
-    private val WINDOW_MS = 2 * 60 * 1000L
+    private val WINDOW_MS = 3 * 60 * 1000L
 
     fun isBlocked(ip: String): Boolean {
         val (count, since) = failedAttempts[ip] ?: return false
@@ -44,12 +44,24 @@ private object LoginRateLimiter {
         }
     }
 
+    fun getRemainingSeconds(ip: String): Int {
+        val (_, since) = failedAttempts[ip] ?: return 0
+        val remaining = WINDOW_MS - (System.currentTimeMillis() - since)
+        return if (remaining > 0) ((remaining + 999) / 1000).toInt() else 0
+    }
+
     fun recordFailure(ip: String) {
         val now = System.currentTimeMillis()
         failedAttempts.compute(ip) { _, existing ->
             if (existing != null) {
                 val (count, since) = existing
-                if (now - since < WINDOW_MS) Pair(count + 1, since) else Pair(1, now)
+                if (now - since < WINDOW_MS) {
+                    val newCount = count + 1
+                    val newSince = if (newCount >= MAX_FAILURES) now else since
+                    Pair(newCount, newSince)
+                } else {
+                    Pair(1, now)
+                }
             } else {
                 Pair(1, now)
             }
@@ -77,7 +89,9 @@ fun Route.auth(
     post("/login") {
         val ip = call.request.origin.remoteAddress
         if (LoginRateLimiter.isBlocked(ip)) {
-            call.respond(HttpStatusCode.TooManyRequests)
+            val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+            call.response.headers.append("Retry-After", retryAfter.toString())
+            call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
             return@post
         }
 
@@ -90,7 +104,14 @@ fun Route.auth(
 
         if (userInfo == null) {
             LoginRateLimiter.recordFailure(ip)
-            throw InvalidCredentialsException()
+            if (LoginRateLimiter.isBlocked(ip)) {
+                val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+                call.response.headers.append("Retry-After", retryAfter.toString())
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
+            } else {
+                throw InvalidCredentialsException()
+            }
+            return@post
         }
 
         LoginRateLimiter.reset(ip)
