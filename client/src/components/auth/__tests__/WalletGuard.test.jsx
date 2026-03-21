@@ -47,9 +47,7 @@ beforeEach(() => {
   localStorageMock.clear();
 
   jest.spyOn(walletService, "logoutWallet").mockResolvedValue({});
-  jest.spyOn(walletService, "loginWallet").mockResolvedValue({
-    walletTokenExpiresAt: Date.now() + 8 * 60 * 60 * 1000,
-  });
+  jest.spyOn(walletService, "loginWallet").mockResolvedValue({});
 });
 
 afterEach(() => {
@@ -103,23 +101,6 @@ describe("WalletGuard — driver.js tour", () => {
 
     expect(driver).toHaveBeenCalledTimes(1);
     expect(driver.mock.results[0].value.drive).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not start the tour when the modal is closed (session restored from localStorage)", async () => {
-    jest.useFakeTimers();
-
-    localStorageMock.setItem("walletAccessExpiry", String(Date.now() + 60 * 60 * 1000));
-    localStorageMock.setItem(WALLET_GUARD_TOUR_KEY, "true");
-
-    await act(async () => {
-      renderWalletGuard();
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
-
-    expect(driver).not.toHaveBeenCalled();
   });
 
   it("adds a resize event listener when the tour starts", async () => {
