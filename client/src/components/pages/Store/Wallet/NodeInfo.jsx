@@ -96,7 +96,7 @@ export function NodeInfo({ info, onRefresh }) {
           <div className="space-y-3">
             <h4 className="font-semibold text-deep">{t("nodeInfo.subtitle")}</h4>
             {info.channels.map((channel, index) => (
-              <Card key={channel.channelId} className="border">
+              <Card key={channel.channelId} className="border" shadow="none">
                 <CardBody className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -119,15 +119,6 @@ export function NodeInfo({ info, onRefresh }) {
                         </p>
                         <p className="text-sm text-forest">{t("nodeInfo.balanceSat")}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        color="danger"
-                        variant="flat"
-                        onPress={() => handleOpenCloseModal(channel)}
-                        isDisabled={channel.state !== "Normal"}
-                      >
-                        {t("closeChannel.buttonLabel")}
-                      </Button>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -150,6 +141,15 @@ export function NodeInfo({ info, onRefresh }) {
                       color="primary"
                       size="sm"
                     />
+                    <Button
+                      className="mt-4"
+                      size="sm"
+                      color="danger"
+                      onPress={() => handleOpenCloseModal(channel)}
+                      isDisabled={channel.state !== "Normal"}
+                    >
+                      {t("closeChannel.buttonLabel")}
+                    </Button>
                   </div>
                 </CardBody>
               </Card>

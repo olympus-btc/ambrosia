@@ -44,10 +44,14 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
     }
   }, [isOpen]);
 
+  const isValidBitcoinAddress = (addr) => /^(1|3|bc1q|bc1p|m|n|2|tb1q|tb1p)[a-zA-HJ-NP-Z0-9]{25,89}$/.test(addr);
+
   const validate = () => {
     const newErrors = {};
     if (!address.trim()) {
       newErrors.address = t("closeChannel.validationAddressRequired");
+    } else if (!isValidBitcoinAddress(address.trim())) {
+      newErrors.address = t("closeChannel.validationAddressInvalid");
     }
     if (!feerate.trim()) {
       newErrors.feerate = t("closeChannel.validationFeerateRequired");
@@ -97,11 +101,15 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
   if (!channel) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      backdrop="blur"
+      classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
+    >
       <ModalContent>
-        <ModalHeader>
-          <h3 className="text-lg font-bold">{t("closeChannel.modalTitle")}</h3>
-        </ModalHeader>
+        <ModalHeader>{t("closeChannel.modalTitle")}</ModalHeader>
 
         {step === "success" ? (
           <>
@@ -116,7 +124,9 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
             </ModalBody>
             <ModalFooter>
               <Button
-                variant="flat"
+                variant="bordered"
+                type="button"
+                className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => copyToClipboard(txId, t)}
               >
                 {t("closeChannel.copyTxIdButton")}
@@ -151,10 +161,15 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
               />
             </ModalBody>
             <ModalFooter>
-              <Button variant="flat" onPress={onClose}>
+              <Button
+                variant="bordered"
+                type="button"
+                className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onPress={onClose}
+              >
                 {t("closeChannel.cancelButton")}
               </Button>
-              <Button color="warning" onPress={handleNext}>
+              <Button color="primary" onPress={handleNext}>
                 {t("closeChannel.nextButton")}
               </Button>
             </ModalFooter>
@@ -162,7 +177,7 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
         ) : (
           <>
             <ModalBody className="gap-4">
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3 border border-red-400 rounded-lg p-4">
                 <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
                 <div>
                   <p className="font-bold text-red-800 text-sm mb-1">
@@ -200,7 +215,13 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button variant="flat" onPress={() => setStep("form")} isDisabled={isLoading}>
+              <Button
+                variant="bordered"
+                type="button"
+                className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onPress={() => setStep("form")}
+                isDisabled={isLoading}
+              >
                 {t("closeChannel.backButton")}
               </Button>
               <Button

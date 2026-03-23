@@ -900,6 +900,7 @@ const storeEs = {
       successToast: "Cierre de canal iniciado con éxito.",
       errorToast: "Error al cerrar el canal. Por favor, intenta de nuevo.",
       validationAddressRequired: "La dirección Bitcoin es obligatoria.",
+      validationAddressInvalid: "Formato de dirección Bitcoin inválido.",
       validationFeerateRequired: "La tarifa es obligatoria.",
       validationFeerateInvalid: "La tarifa debe ser un número entero positivo.",
     },

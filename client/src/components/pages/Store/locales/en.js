@@ -897,6 +897,7 @@ const storeEn = {
       successToast: "Channel close initiated successfully.",
       errorToast: "Failed to close channel. Please try again.",
       validationAddressRequired: "Bitcoin address is required.",
+      validationAddressInvalid: "Invalid Bitcoin address format.",
       validationFeerateRequired: "Fee rate is required.",
       validationFeerateInvalid: "Fee rate must be a positive integer.",
     },
