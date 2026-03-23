@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { CloseChannelModal } from "./CloseChannelModal";
+import { CloseChannelModal } from "./CloseChannel/CloseChannelModal";
 import { formatSats } from "./utils/formatters";
 
 export function NodeInfo({ info, onRefresh }) {
