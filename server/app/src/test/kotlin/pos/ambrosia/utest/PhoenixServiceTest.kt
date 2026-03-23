@@ -18,6 +18,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import pos.ambrosia.models.phoenix.CloseChannelResponse
 import pos.ambrosia.models.phoenix.NodeInfo
 import pos.ambrosia.services.PhoenixService
 import java.io.IOException
@@ -1385,7 +1386,7 @@ class PhoenixServiceTest {
         val response = runBlocking { phoenixService.closeChannel(request) }
 
         // Assert
-        assertEquals(pos.ambrosia.models.phoenix.CloseChannelResponse(txId = "txId12345"), response)
+        assertEquals(CloseChannelResponse(txId = "txId12345"), response)
     }
 
     @Test
