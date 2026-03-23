@@ -1385,7 +1385,7 @@ class PhoenixServiceTest {
         val response = runBlocking { phoenixService.closeChannel(request) }
 
         // Assert
-        assertEquals("txId12345", response)
+        assertEquals(pos.ambrosia.models.phoenix.CloseChannelResponse(txId = "txId12345"), response)
     }
 
     @Test
