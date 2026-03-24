@@ -57,6 +57,7 @@ function WalletInner() {
     async () => {
       try {
         setLoading(true);
+        setTransactions([]);
         let incoming = [];
         let outgoing = [];
 

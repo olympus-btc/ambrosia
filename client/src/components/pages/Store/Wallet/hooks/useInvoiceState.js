@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export const useInvoiceState = () => {
   const [invoiceState, setInvoiceState] = useState({
@@ -9,7 +9,7 @@ export const useInvoiceState = () => {
     showModal: false,
   });
 
-  const actions = {
+  const actions = useMemo(() => ({
     createInvoice: (invoice) => {
       setInvoiceState({
         created: invoice,
@@ -61,7 +61,7 @@ export const useInvoiceState = () => {
         showModal: false,
       });
     },
-  };
+  }), []);
 
   return { invoiceState, actions };
 };
