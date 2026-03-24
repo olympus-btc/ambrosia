@@ -1,5 +1,6 @@
 import { act, useEffect } from "react";
 
+import { addToast } from "@heroui/react";
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
@@ -9,6 +10,14 @@ import { useUsers } from "../useUsers";
 jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
   parseJsonResponse: jest.fn(),
+}));
+
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => ({
+  useTranslations: () => (key) => key,
 }));
 
 const handlers = {};
@@ -180,6 +189,27 @@ describe("useUsers", () => {
 
     expect(httpClient).toHaveBeenCalledWith("/users/6", {
       method: "DELETE",
+    });
+  });
+
+  it("shows last admin toast when deleting user returns conflict", async () => {
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce([{ id: 6, name: "Tomas" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Cannot remove the last admin user" });
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    await act(async () => {
+      await handlers.deleteUser(6);
+    });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "toasts.lastAdminTitle",
+      description: "toasts.lastAdminDescription",
+      color: "warning",
     });
   });
 });

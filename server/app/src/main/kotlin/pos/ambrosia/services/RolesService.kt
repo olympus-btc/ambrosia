@@ -3,6 +3,7 @@ package pos.ambrosia.services
 import io.ktor.server.application.ApplicationEnvironment
 import pos.ambrosia.logger
 import pos.ambrosia.models.Role
+import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.SecurePinProcessor
 import java.lang.StringBuilder
 import java.sql.Connection
@@ -11,6 +12,8 @@ class RolesService(
     private val env: ApplicationEnvironment,
     private val connection: Connection,
 ) {
+    private val adminGuard = AdminGuardService(connection)
+
     companion object {
         private const val ADD_ROLE =
             "INSERT INTO roles (id, role, password, isAdmin) VALUES (?, ?, ?, ?)"
@@ -114,6 +117,7 @@ class RolesService(
             logger.error("Role name already exists: ${role.role}")
             return false
         }
+        ensureRoleAdminInvariant(id, role.isAdmin ?: false)
 
         val statement = connection.prepareStatement(sql.toString())
 
@@ -149,6 +153,8 @@ class RolesService(
     }
 
     suspend fun deleteRole(id: String): Boolean {
+        ensureRoleDeletionKeepsAdmin(id)
+
         val unassignStmt = connection.prepareStatement(UNASSIGN_ROLE_FROM_USERS)
         unassignStmt.setString(1, id)
         unassignStmt.executeUpdate()
@@ -177,5 +183,32 @@ class RolesService(
             return resultSet.getInt("count") > 0
         }
         return false
+    }
+
+    private fun ensureRoleDeletionKeepsAdmin(roleId: String) {
+        val currentIsAdmin = adminGuard.isRoleAdmin(roleId) ?: return
+        if (!currentIsAdmin) return
+
+        val adminsAssignedToRole = adminGuard.activeAdminUsersByRole(roleId)
+        if (adminsAssignedToRole == 0L) return
+
+        if (adminGuard.activeAdminUserCount() - adminsAssignedToRole <= 0) {
+            throw LastAdminRemovalException()
+        }
+    }
+
+    private fun ensureRoleAdminInvariant(
+        roleId: String,
+        targetIsAdmin: Boolean,
+    ) {
+        val currentIsAdmin = adminGuard.isRoleAdmin(roleId) ?: return
+        if (!currentIsAdmin || targetIsAdmin) return
+
+        val adminsAssignedToRole = adminGuard.activeAdminUsersByRole(roleId)
+        if (adminsAssignedToRole == 0L) return
+
+        if (adminGuard.activeAdminUserCount() - adminsAssignedToRole <= 0) {
+            throw LastAdminRemovalException()
+        }
     }
 }

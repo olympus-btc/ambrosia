@@ -74,6 +74,8 @@ const storeEs = {
       genericErrorDescription: "No se pudo completar la operación.",
       lastUserTitle: "No permitido",
       lastUserDescription: "No puedes eliminar el único usuario existente.",
+      lastAdminTitle: "No permitido",
+      lastAdminDescription: "No puedes quitar o eliminar al último usuario administrador.",
     },
   },
   roles: {
@@ -87,11 +89,16 @@ const storeEs = {
       delete: "Eliminar",
       create: "Crear rol",
       save: "Guardar cambios",
+      saveSuccess: "Rol actualizado correctamente",
+      saveErrorTitle: "Error",
+      saveErrorDescription: "No se pudo actualizar el rol",
       cancel: "Cancelar",
       deleteConfirmTitle: "Eliminar rol",
       deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
       deleteSuccess: "Rol eliminado correctamente",
       deleteError: "No se pudo eliminar el rol",
+      lastAdminErrorTittle: "No permitiod",
+      lastAdminErrorDescription: "No puedes eliminar el último rol con usuarios administradores activos",
     },
     create: {
       title: "Crear rol",
@@ -639,8 +646,7 @@ const storeEs = {
       templateLabel: "Plantilla",
       templateNone: "Sin plantilla",
       addButton: "Agregar",
-      addDescription:
-        "Elige el tipo, la impresora del sistema y asigna una plantilla.",
+      addDescription: "Elige el tipo, la impresora del sistema y asigna una plantilla.",
       manageTemplates: "Administrar plantillas",
       addTitle: "Agregar impresora",
       listTitle: "Impresoras configuradas",
@@ -824,10 +830,8 @@ const storeEs = {
         invoiceLightningButton: "Crear Factura Lightning",
         invoiceLightningLoading: "Creando Factura...",
         invoiceSuccessTitle: "Factura creada",
-        invoiceSuccessDescription:
-          "La factura Lightning se ha generado correctamente",
-        invoiceAmountError:
-          "Debes ingresar un monto para para generar el invoice",
+        invoiceSuccessDescription: "La factura Lightning se ha generado correctamente",
+        invoiceAmountError: "Debes ingresar un monto para para generar el invoice",
         invoiceCreateError: "Error al crear el invoice",
       },
       send: {
@@ -853,13 +857,11 @@ const storeEs = {
         received: "Recibidos",
         sent: "Enviados",
         noTx: "No hay transacciones",
-        noTxMessage:
-          "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
+        noTxMessage: "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
         sent: "Enviado",
         received: "Recibido",
         getTransactionsError: "Error al cargar historial",
-        getTransactionsErrorDescription:
-          "No se pudo cargar el historial de transacciones",
+        getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
       },
     },
     invoiceModal: {
@@ -1008,8 +1010,7 @@ const storeEs = {
       balanceLabel: "Balance:",
       modalTitle: "Confirmar Cierre de Turno",
       modalQuestion: "¿Estás seguro de que quieres cerrar el turno?",
-      modalDesc:
-        "Esta acción finalizará el turno actual y generará un reporte final. Asegúrate de que todas las operaciones del día estén completas.",
+      modalDesc: "Esta acción finalizará el turno actual y generará un reporte final. Asegúrate de que todas las operaciones del día estén completas.",
       modalPeriodBalance: "Balance del período:",
       cancel: "Cancelar",
       confirm: "Cerrar Turno",
