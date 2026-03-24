@@ -820,6 +820,7 @@ const storeEs = {
       inboundLiquidity: "Liquidez Entrante:",
       fetchInfoError: "Error al obtener la información de la wallet",
       getInfoErrorDescription: "No se pudo cargar la información de la wallet",
+      noChannels: "No hay canales Lightning activos",
     },
     payments: {
       receive: {

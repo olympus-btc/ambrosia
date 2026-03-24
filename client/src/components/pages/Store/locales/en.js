@@ -820,6 +820,7 @@ const storeEn = {
       inboundLiquidity: "Inbound Liquidity:",
       fetchInfoError: "Error fetching wallet information",
       getInfoErrorDescription: "Could not load wallet information",
+      noChannels: "No active Lightning channels",
     },
     payments: {
       receive: {
