@@ -20,8 +20,7 @@ import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
 import { InvoiceModal } from "./InvoiceModal";
-import { NodeError } from "./NodeError";
-import { NodeInfo } from "./NodeInfo";
+import { NodeError, NodeInfo } from "./NodeInfo";
 import { Transactions } from "./Transactions";
 
 function WalletInner() {
