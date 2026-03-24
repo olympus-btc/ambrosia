@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { TransactionsHistoryTab } from "../TransactionsHistoryTab";
+import { HistoryTab } from "../HistoryTab";
 
 const mockIncomingTransaction = {
   paymentId: "payment-1",
@@ -30,7 +30,7 @@ function renderHistoryTab(props = {}) {
 
   return render(
     <I18nProvider>
-      <TransactionsHistoryTab {...defaultProps} {...props} />
+      <HistoryTab {...defaultProps} {...props} />
     </I18nProvider>,
   );
 }
@@ -70,7 +70,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("TransactionsHistoryTab Component", () => {
+describe("HistoryTab Component", () => {
   describe("Rendering", () => {
     it("renders all filter buttons", () => {
       renderHistoryTab();

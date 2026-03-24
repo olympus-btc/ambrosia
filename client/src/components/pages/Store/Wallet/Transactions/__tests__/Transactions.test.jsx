@@ -5,8 +5,8 @@ import { I18nProvider } from "@i18n/I18nProvider";
 
 import { Transactions } from "../Transactions";
 
-jest.mock("../TransactionsReceiveTab", () => ({
-  TransactionsReceiveTab: ({ setLoading, setError, invoiceActions }) => (
+jest.mock("../ReceiveTab", () => ({
+  ReceiveTab: ({ setLoading, setError, invoiceActions }) => (
     <div data-testid="receive-tab">
       Receive Tab
       <button onClick={() => setLoading(true)}>Set Loading</button>
@@ -18,8 +18,8 @@ jest.mock("../TransactionsReceiveTab", () => ({
   ),
 }));
 
-jest.mock("../TransactionsSendTab", () => ({
-  TransactionsSendTab: ({ setLoading, setError }) => (
+jest.mock("../SendTab", () => ({
+  SendTab: ({ setLoading, setError }) => (
     <div data-testid="send-tab">
       Send Tab
       <button onClick={() => setLoading(true)}>Set Loading</button>
@@ -28,8 +28,8 @@ jest.mock("../TransactionsSendTab", () => ({
   ),
 }));
 
-jest.mock("../TransactionsHistoryTab", () => ({
-  TransactionsHistoryTab: ({ transactions, filter, setFilter }) => (
+jest.mock("../HistoryTab", () => ({
+  HistoryTab: ({ transactions, filter, setFilter }) => (
     <div data-testid="history-tab">
       History Tab
       <span>Transactions: {transactions.length}</span>

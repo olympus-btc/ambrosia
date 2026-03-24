@@ -17,9 +17,9 @@ import { useTranslations } from "next-intl";
 
 import { payInvoiceFromService } from "@/services/walletService";
 
-import { copyToClipboard, formatSats } from "./utils/formatters";
+import { copyToClipboard, formatSats } from "../utils/formatters";
 
-export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, fetchTransactions }) {
+export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransactions }) {
   const t = useTranslations("wallet");
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);

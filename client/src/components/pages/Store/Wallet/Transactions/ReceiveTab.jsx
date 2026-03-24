@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { createInvoice } from "@/services/walletService";
 
-export function TransactionsReceiveTab({ loading, setLoading, setError, invoiceActions }) {
+export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
   const t = useTranslations("wallet");
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceDesc, setInvoiceDesc] = useState("");

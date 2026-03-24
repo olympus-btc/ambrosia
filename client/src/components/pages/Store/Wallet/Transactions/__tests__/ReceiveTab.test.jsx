@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import * as walletService from "@/services/walletService";
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { TransactionsReceiveTab } from "../TransactionsReceiveTab";
+import { ReceiveTab } from "../ReceiveTab";
 
 function renderReceiveTab(props = {}) {
   const defaultProps = {
@@ -20,7 +20,7 @@ function renderReceiveTab(props = {}) {
 
   return render(
     <I18nProvider>
-      <TransactionsReceiveTab {...defaultProps} {...props} />
+      <ReceiveTab {...defaultProps} {...props} />
     </I18nProvider>,
   );
 }
@@ -68,7 +68,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("TransactionsReceiveTab Component", () => {
+describe("ReceiveTab Component", () => {
   describe("Rendering", () => {
     it("renders amount input", () => {
       renderReceiveTab();

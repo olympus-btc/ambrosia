@@ -10,9 +10,9 @@ import { useTour } from "@/hooks/tour/useTour";
 
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
 
-import { TransactionsHistoryTab } from "./TransactionsHistoryTab";
-import { TransactionsReceiveTab } from "./TransactionsReceiveTab";
-import { TransactionsSendTab } from "./TransactionsSendTab";
+import { HistoryTab } from "./HistoryTab";
+import { ReceiveTab } from "./ReceiveTab";
+import { SendTab } from "./SendTab";
 
 export function Transactions({
   transactions,
@@ -95,7 +95,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsReceiveTab
+            <ReceiveTab
               loading={loading}
               setLoading={setLoading}
               setError={setError}
@@ -112,7 +112,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsSendTab
+            <SendTab
               loading={loading}
               setLoading={setLoading}
               setError={setError}
@@ -130,7 +130,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsHistoryTab
+            <HistoryTab
               transactions={transactions}
               loading={loading}
               filter={filter}

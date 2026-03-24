@@ -4,7 +4,7 @@ import { Button, Card, CardBody, Chip, Spinner } from "@heroui/react";
 import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { formatSats } from "./utils/formatters";
+import { formatSats } from "../utils/formatters";
 
 const getTransactionIcon = (type) => (
   type === "outgoing_payment" ? (
@@ -14,7 +14,7 @@ const getTransactionIcon = (type) => (
   )
 );
 
-export function TransactionsHistoryTab({ transactions, loading, filter, setFilter }) {
+export function HistoryTab({ transactions, loading, filter, setFilter }) {
   const t = useTranslations("wallet");
 
   return (
