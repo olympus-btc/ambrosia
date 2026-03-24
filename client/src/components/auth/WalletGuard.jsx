@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -42,57 +42,15 @@ export default function WalletGuard({
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [authorized, setAuthorized] = useState(false);
-  const expiryKey = "walletAccessExpiry";
-  const expiryTimeoutRef = useRef(null);
-  const fallbackExpiryMs = 8 * 60 * 60 * 1000;
-  const expiryBufferMs = 30 * 1000;
-
-  const scheduleExpiry = useCallback((expiresAtMs) => {
-    try {
-      localStorage.setItem(expiryKey, String(expiresAtMs));
-      if (expiryTimeoutRef.current) clearTimeout(expiryTimeoutRef.current);
-      const msRemaining = Math.max(0, expiresAtMs - Date.now() - expiryBufferMs);
-      expiryTimeoutRef.current = setTimeout(() => {
-        setAuthorized(false);
-        setIsOpen(true);
-      }, msRemaining);
-    } catch {}
-  }, [expiryBufferMs, expiryKey]);
 
   useEffect(() => () => {
     logoutWallet().catch(() => {});
-    try {
-      localStorage.removeItem(expiryKey);
-    } catch {}
-    if (expiryTimeoutRef.current) {
-      clearTimeout(expiryTimeoutRef.current);
-      expiryTimeoutRef.current = null;
-    }
   }, []);
-
-  useEffect(() => {
-    try {
-      const storedExpiry = Number(localStorage.getItem(expiryKey));
-      const now = Date.now();
-      if (Number.isFinite(storedExpiry) && storedExpiry - now > 0) {
-        setAuthorized(true);
-        setIsOpen(false);
-        scheduleExpiry(storedExpiry);
-      }
-    } catch {}
-  }, [scheduleExpiry]);
 
   useEffect(() => {
     const handler = () => {
       setAuthorized(false);
       setIsOpen(true);
-      try {
-        localStorage.removeItem(expiryKey);
-      } catch {}
-      if (expiryTimeoutRef.current) {
-        clearTimeout(expiryTimeoutRef.current);
-        expiryTimeoutRef.current = null;
-      }
     };
     if (typeof window !== "undefined") {
       window.addEventListener("wallet:unauthorized", handler);
@@ -148,15 +106,10 @@ export default function WalletGuard({
     if (!password) return;
     setSubmitting(true);
     try {
-      const result = await loginWallet(password);
+      await loginWallet(password);
       await new Promise((r) => setTimeout(r, 150));
       setAuthorized(true);
       setIsOpen(false);
-      const expiresAt =
-        typeof result?.walletTokenExpiresAt === "number"
-          ? result.walletTokenExpiresAt
-          : Date.now() + fallbackExpiryMs;
-      scheduleExpiry(expiresAt);
       if (onAuthorized) onAuthorized();
     } catch {}
     finally {

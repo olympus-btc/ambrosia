@@ -44,10 +44,6 @@ const mockOutgoingTransactions = [
   },
 ];
 
-const mockWalletLoginResponse = {
-  walletTokenExpiresAt: Date.now() + 8 * 60 * 60 * 1000,
-};
-
 function renderStoreWallet() {
   const mockAuthContext = {
     user: { userName: "testuser", userId: 1 },
@@ -155,7 +151,7 @@ beforeEach(() => {
     updateConfig: mockUpdateConfig,
   });
 
-  jest.spyOn(walletService, "loginWallet").mockResolvedValue(mockWalletLoginResponse);
+  jest.spyOn(walletService, "loginWallet").mockResolvedValue({});
   jest.spyOn(walletService, "logoutWallet").mockResolvedValue({});
   jest.spyOn(walletService, "getInfo").mockResolvedValue(mockNodeInfo);
   jest.spyOn(walletService, "getIncomingTransactions").mockResolvedValue(mockIncomingTransactions);
@@ -216,24 +212,13 @@ describe("StoreWallet Component", () => {
       });
     });
 
-    it("stores wallet token expiry in localStorage", async () => {
+    it("does not restore wallet access automatically after mount", async () => {
       await act(async () => {
         renderStoreWallet();
       });
 
-      const passwordInput = screen.getByLabelText("access.passwordLabel");
-      const confirmButton = screen.getByText("access.confirmText");
-
-      await userEvent.type(passwordInput, "password123");
-      await act(async () => {
-        fireEvent.click(confirmButton);
-      });
-
-      await waitFor(() => {
-        const storedExpiry = localStorage.getItem("walletAccessExpiry");
-        expect(storedExpiry).toBeTruthy();
-        expect(Number(storedExpiry)).toBeGreaterThan(Date.now());
-      });
+      expect(walletService.getInfo).not.toHaveBeenCalled();
+      expect(screen.getByText("access.title")).toBeInTheDocument();
     });
   });
 

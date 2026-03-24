@@ -14,7 +14,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.ktor.util.date.GMTDate
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.RolePassword
 import pos.ambrosia.models.WalletAuthResponse
@@ -72,7 +71,7 @@ fun Route.wallet(
                         httpOnly = true,
                         secure = isSecureRequest,
                         path = "/",
-                        expires = GMTDate(expiresAt),
+                        extensions = mapOf("SameSite" to "Strict"),
                     ),
                 )
                 call.respond(HttpStatusCode.OK, WalletAuthResponse("Login successful", expiresAt))
