@@ -170,6 +170,75 @@ describe("NodeInfo Component", () => {
     });
   });
 
+  describe("Closing States", () => {
+    const closingStates = [
+      { state: "ShuttingDown", labelKey: "nodeInfo.stateShuttingDown" },
+      { state: "Negotiating", labelKey: "nodeInfo.stateNegotiating" },
+      { state: "Closing", labelKey: "nodeInfo.stateClosing" },
+      { state: "Closed", labelKey: "nodeInfo.stateClosed" },
+    ];
+
+    closingStates.forEach(({ state, labelKey }) => {
+      it(`shows orange indicator for ${state} state`, () => {
+        const info = {
+          ...mockNodeInfo,
+          channels: [{ ...mockNodeInfo.channels[0], state }],
+        };
+        const { container } = renderNodeInfo(info);
+
+        const orangeIndicators = container.querySelectorAll(".bg-orange-400");
+        expect(orangeIndicators.length).toBeGreaterThan(0);
+      });
+
+      it(`shows descriptive label for ${state} state`, () => {
+        const info = {
+          ...mockNodeInfo,
+          channels: [{ ...mockNodeInfo.channels[0], state }],
+        };
+        renderNodeInfo(info);
+
+        expect(screen.getByText(labelKey)).toBeInTheDocument();
+      });
+    });
+
+    it("shows red indicator for unknown state", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [{ ...mockNodeInfo.channels[0], state: "UnknownState" }],
+      };
+      const { container } = renderNodeInfo(info);
+
+      const redIndicators = container.querySelectorAll(".bg-red-500");
+      expect(redIndicators.length).toBeGreaterThan(0);
+    });
+
+    it("shows raw state name for unknown state", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [{ ...mockNodeInfo.channels[0], state: "UnknownState" }],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("UnknownState")).toBeInTheDocument();
+    });
+  });
+
+  describe("Empty State", () => {
+    it("hides Lightning Channels section when no channels", () => {
+      const emptyInfo = { ...mockNodeInfo, channels: [] };
+      renderNodeInfo(emptyInfo);
+
+      expect(screen.queryByText("nodeInfo.subtitle")).not.toBeInTheDocument();
+    });
+
+    it("shows empty state message when no channels", () => {
+      const emptyInfo = { ...mockNodeInfo, channels: [] };
+      renderNodeInfo(emptyInfo);
+
+      expect(screen.getByText("nodeInfo.noChannels")).toBeInTheDocument();
+    });
+  });
+
   describe("Edge Cases", () => {
     it("handles single channel correctly", () => {
       renderNodeInfo(mockNodeInfoSingleChannel);
