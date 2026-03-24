@@ -19,6 +19,7 @@ import io.ktor.server.application.ApplicationEnvironment
 import kotlinx.serialization.json.Json
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.models.phoenix.CloseChannelRequest
+import pos.ambrosia.models.phoenix.CloseChannelResponse
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceResponse
 import pos.ambrosia.models.phoenix.CreateOffer
@@ -367,7 +368,7 @@ class PhoenixService(
     }
 
     /** Close a channel and send funds to an on-chain address */
-    suspend fun closeChannel(request: CloseChannelRequest): String {
+    suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse {
         try {
             val response: HttpResponse =
                 httpClient.submitForm(
@@ -383,7 +384,7 @@ class PhoenixService(
                 throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
             }
 
-            return response.bodyAsText()
+            return CloseChannelResponse(txId = response.bodyAsText().trim())
         } catch (e: Exception) {
             throw PhoenixServiceException("Failed to close channel on Phoenix: ${e.message}")
         }

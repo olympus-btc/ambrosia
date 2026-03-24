@@ -63,3 +63,18 @@ export async function getSeed() {
   const response = await httpClient("/wallet/seed");
   return await parseJsonResponse(response, null);
 }
+
+export async function closeChannel(channelId, address, feerateSatByte) {
+  const response = await httpClient("/wallet/closechannel", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ channelId, address, feerateSatByte }),
+  });
+  if (!response.ok) {
+    const body = await parseJsonResponse(response, {});
+    throw new Error(body?.message ?? "Failed to close channel");
+  }
+  return await parseJsonResponse(response, null);
+}
