@@ -13,23 +13,18 @@ const storeEs = {
   },
   walletTour: {
     title: "¡Antes de comenzar!",
-    description:
-      "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
+    description: "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
     clickWallet: "Haz click en Billetera para comenzar.",
     nextButton: "Ir a Billetera",
     guardTitle: "Acceso a la Billetera",
-    guardDescription:
-      "Esta contraseña protege tu billetera Bitcoin. Ingrésala para acceder a tus canales Lightning.",
+    guardDescription: "Esta contraseña protege tu billetera Bitcoin. Ingrésala para acceder a tus canales Lightning.",
     guardButton: "Entendido",
     receiveAmountTitle: "Paso 1: Monto en satoshis",
-    receiveAmountDescription:
-      "Ingresa <b>5000</b> como monto. Esta cantidad cubre la comisión para abrir tu canal Lightning.",
+    receiveAmountDescription: "Ingresa <b>5000</b> como monto. Esta cantidad cubre la comisión para abrir tu canal Lightning.",
     receiveDescTitle: "Paso 2: Descripción",
-    receiveDescDescription:
-      "Escribe <b>open channel</b> como descripción para identificar este pago.",
+    receiveDescDescription: "Escribe <b>open channel</b> como descripción para identificar este pago.",
     receiveButtonTitle: "Paso 3: Crear y escanear",
-    receiveButtonDescription:
-      "Haz click en <b>Crear Invoice Lightning</b>, luego escanea el QR que aparece con tu wallet Lightning para abrir el canal.",
+    receiveButtonDescription: "Haz click en <b>Crear Invoice Lightning</b>, luego escanea el QR que aparece con tu wallet Lightning para abrir el canal.",
     receiveButton: "Entendido",
   },
   dashboard: {
@@ -80,15 +75,13 @@ const storeEs = {
       lastUserTitle: "No permitido",
       lastUserDescription: "No puedes eliminar el único usuario existente.",
       lastAdminTitle: "No permitido",
-      lastAdminDescription:
-        "No puedes quitar o eliminar al último usuario administrador.",
+      lastAdminDescription: "No puedes quitar o eliminar al último usuario administrador.",
     },
   },
   roles: {
     header: {
       title: "Roles y permisos",
-      subtitle:
-        "Define qué pantallas y acciones están disponibles para cada rol.",
+      subtitle: "Define qué pantallas y acciones están disponibles para cada rol.",
     },
     actions: {
       new: "Agregar Rol",
@@ -101,13 +94,11 @@ const storeEs = {
       saveErrorDescription: "No se pudo actualizar el rol",
       cancel: "Cancelar",
       deleteConfirmTitle: "Eliminar rol",
-      deleteConfirmBody:
-        "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
+      deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
       deleteSuccess: "Rol eliminado correctamente",
       deleteError: "No se pudo eliminar el rol",
       lastAdminErrorTittle: "No permitiod",
-      lastAdminErrorDescription:
-        "No puedes eliminar el último rol con usuarios administradores activos",
+      lastAdminErrorDescription: "No puedes eliminar el último rol con usuarios administradores activos",
     },
     create: {
       title: "Crear rol",
@@ -116,8 +107,7 @@ const storeEs = {
       password: "Contraseña para acciones críticas (opcional)",
       passwordPlaceholder: "Opcional",
       isAdmin: "Con privilegios de administrador",
-      templateLegend:
-        "Elige una plantilla de rol para comenzar, o usa el modo avanzado para configurarlo manualmente.",
+      templateLegend: "Elige una plantilla de rol para comenzar, o usa el modo avanzado para configurarlo manualmente.",
       advanced: "Modo avanzado",
     },
     templates: {
@@ -157,8 +147,7 @@ const storeEs = {
     permissions: {
       title: "Permisos visibles",
       subtitle: "Catálogo filtrado según el tipo de negocio",
-      legend:
-        "Selecciona los permisos que tendrá este rol. Solo se muestran los que aplican al tipo de negocio actual.",
+      legend: "Selecciona los permisos que tendrá este rol. Solo se muestran los que aplican al tipo de negocio actual.",
       affects: "Afecta a:",
       related: {
         Users: "Usuarios",
@@ -651,8 +640,7 @@ const storeEs = {
       templateLabel: "Plantilla",
       templateNone: "Sin plantilla",
       addButton: "Agregar",
-      addDescription:
-        "Elige el tipo, la impresora del sistema y asigna una plantilla.",
+      addDescription: "Elige el tipo, la impresora del sistema y asigna una plantilla.",
       manageTemplates: "Administrar plantillas",
       addTitle: "Agregar impresora",
       listTitle: "Impresoras configuradas",
@@ -772,14 +760,11 @@ const storeEs = {
     },
     cardSeed: {
       title: "SEED de Lightning",
-      description:
-        "Tu SEED es la clave maestra de tu wallet. Guárdala en un lugar seguro y nunca la compartas con nadie.",
-      warning:
-        "Esta información es extremadamente sensible. Quien tenga acceso a tu SEED puede controlar todos tus fondos de Bitcoin.",
+      description: "Tu SEED es la clave maestra de tu wallet. Guárdala en un lugar seguro y nunca la compartas con nadie.",
+      warning: "Esta información es extremadamente sensible. Quien tenga acceso a tu SEED puede controlar todos tus fondos de Bitcoin.",
       revealButton: "Ver SEED",
       hideButton: "Ocultar",
-      paperNote:
-        "Escribe estas palabras en papel y guárdalas en un lugar seguro. Nunca las compartas con nadie ni las guardes en formato digital.",
+      paperNote: "Escribe estas palabras en papel y guárdalas en un lugar seguro. Nunca las compartas con nadie ni las guardes en formato digital.",
       modalTitle: "Confirmar acceso",
       passwordLabel: "Contraseña de wallet",
       cancelButton: "Cancelar",
@@ -795,8 +780,7 @@ const storeEs = {
       replayButton: "Repetir",
       walletTour: {
         name: "Canal de Lightning",
-        description:
-          "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
+        description: "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
       },
     },
   },
@@ -840,10 +824,8 @@ const storeEs = {
         invoiceLightningButton: "Crear Factura Lightning",
         invoiceLightningLoading: "Creando Factura...",
         invoiceSuccessTitle: "Factura creada",
-        invoiceSuccessDescription:
-          "La factura Lightning se ha generado correctamente",
-        invoiceAmountError:
-          "Debes ingresar un monto para para generar el invoice",
+        invoiceSuccessDescription: "La factura Lightning se ha generado correctamente",
+        invoiceAmountError: "Debes ingresar un monto para para generar el invoice",
         invoiceCreateError: "Error al crear el invoice",
       },
       send: {
@@ -869,13 +851,11 @@ const storeEs = {
         received: "Recibidos",
         sent: "Enviados",
         noTx: "No hay transacciones",
-        noTxMessage:
-          "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
+        noTxMessage: "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
         sent: "Enviado",
         received: "Recibido",
         getTransactionsError: "Error al cargar historial",
-        getTransactionsErrorDescription:
-          "No se pudo cargar el historial de transacciones",
+        getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
       },
     },
     invoiceModal: {
@@ -992,13 +972,11 @@ const storeEs = {
     },
     close: {
       sectionTitle: "Cerrar turno",
-      sectionSubtitle:
-        "Finaliza el día y consolida los movimientos del período seleccionado.",
+      sectionSubtitle: "Finaliza el día y consolida los movimientos del período seleccionado.",
       balanceLabel: "Balance:",
       modalTitle: "Confirmar Cierre de Turno",
       modalQuestion: "¿Estás seguro de que quieres cerrar el turno?",
-      modalDesc:
-        "Esta acción finalizará el turno actual y generará un reporte final. Asegúrate de que todas las operaciones del día estén completas.",
+      modalDesc: "Esta acción finalizará el turno actual y generará un reporte final. Asegúrate de que todas las operaciones del día estén completas.",
       modalPeriodBalance: "Balance del período:",
       cancel: "Cancelar",
       confirm: "Cerrar Turno",
@@ -1008,15 +986,12 @@ const storeEs = {
   lightning: {
     title: "Lightning Network",
     autoLiquidityLabel: "Auto Liquidez",
-    autoLiquidityDescription:
-      "Abre canales automáticamente cuando se necesita liquidez entrante.",
-    autoLiquidityWarning:
-      "Se aplican comisiones on-chain cada vez que se abre un canal automáticamente.",
+    autoLiquidityDescription: "Abre canales automáticamente cuando se necesita liquidez entrante.",
+    autoLiquidityWarning: "Se aplican comisiones on-chain cada vez que se abre un canal automáticamente.",
     restarting: "Reiniciando Lightning...",
     restartSuccess: "Lightning reiniciado correctamente",
     restartError: "Error al reiniciar Lightning",
-    manualRestartRequired:
-      "Configuración guardada. Reinicia phoenixd manualmente para aplicar el cambio.",
+    manualRestartRequired: "Configuración guardada. Reinicia phoenixd manualmente para aplicar el cambio.",
   },
 };
 
