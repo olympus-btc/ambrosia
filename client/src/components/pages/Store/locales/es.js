@@ -821,6 +821,10 @@ const storeEs = {
       fetchInfoError: "Error al obtener la información de la wallet",
       getInfoErrorDescription: "No se pudo cargar la información de la wallet",
       noChannels: "No hay canales Lightning activos",
+      stateShuttingDown: "Cerrando — liquidando pagos pendientes",
+      stateNegotiating: "Cerrando — finalizando la transacción de cierre",
+      stateClosing: "Cerrando — esperando confirmación en blockchain",
+      stateClosed: "Cerrado — desaparecerá al reiniciar el nodo",
     },
     payments: {
       receive: {

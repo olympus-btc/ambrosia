@@ -821,6 +821,10 @@ const storeEn = {
       fetchInfoError: "Error fetching wallet information",
       getInfoErrorDescription: "Could not load wallet information",
       noChannels: "No active Lightning channels",
+      stateShuttingDown: "Closing — settling pending payments",
+      stateNegotiating: "Closing — finalizing closing transaction",
+      stateClosing: "Closing — waiting for on-chain confirmation",
+      stateClosed: "Closed — will disappear on next restart",
     },
     payments: {
       receive: {

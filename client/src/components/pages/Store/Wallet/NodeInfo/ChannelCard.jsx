@@ -7,6 +7,39 @@ import { formatSats } from "../utils/formatters";
 
 const CHANNEL_STATE_NORMAL = "Normal";
 
+const CLOSING_STATES = {
+  ShuttingDown: "stateShuttingDown",
+  Negotiating: "stateNegotiating",
+  Closing: "stateClosing",
+  Closed: "stateClosed",
+};
+
+function ChannelStateLabel({ state, t }) {
+  if (state === CHANNEL_STATE_NORMAL) {
+    return (
+      <div className="flex items-center space-x-1 mt-1">
+        <span className="w-2 h-2 rounded-full bg-green-500" />
+        <span className="text-sm text-forest">{state}</span>
+      </div>
+    );
+  }
+  const closingKey = CLOSING_STATES[state];
+  if (closingKey) {
+    return (
+      <div className="flex items-center space-x-1 mt-1">
+        <span className="w-2 h-2 rounded-full bg-orange-400" />
+        <span className="text-sm text-orange-600">{t(`nodeInfo.${closingKey}`)}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center space-x-1 mt-1">
+      <span className="w-2 h-2 rounded-full bg-red-500" />
+      <span className="text-sm text-forest">{state}</span>
+    </div>
+  );
+}
+
 export function ChannelCard({ channel, index, onClose }) {
   const t = useTranslations("wallet");
   const isNormal = channel.state === CHANNEL_STATE_NORMAL;
@@ -19,12 +52,7 @@ export function ChannelCard({ channel, index, onClose }) {
             <h5 className="font-semibold text-deep">
               {t("nodeInfo.channel")}{index + 1}
             </h5>
-            <div className="flex items-center space-x-1 mt-1">
-              <span
-                className={`w-2 h-2 rounded-full ${isNormal ? "bg-green-500" : "bg-red-500"}`}
-              />
-              <span className="text-sm text-forest">{channel.state}</span>
-            </div>
+            <ChannelStateLabel state={channel.state} t={t} />
           </div>
           <div className="flex items-start gap-3">
             <div className="text-right">
