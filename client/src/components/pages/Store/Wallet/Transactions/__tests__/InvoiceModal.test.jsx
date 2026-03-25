@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { InvoiceModal } from "../InvoiceModal";
-import * as formatters from "../utils/formatters";
+import * as formatters from "../../utils/formatters";
 
 jest.mock("react-qr-code", () => ({
   QRCode: ({ value, size }) => (

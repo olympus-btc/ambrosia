@@ -12,12 +12,13 @@ import {
   Input,
   Spinner,
 } from "@heroui/react";
-import { CheckCircle, Copy, Send, Zap } from "lucide-react";
+import { CheckCircle, Send, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { CopyButton } from "@/components/shared/CopyButton";
 import { payInvoiceFromService } from "@/services/walletService";
 
-import { copyToClipboard, formatSats } from "../utils/formatters";
+import { formatSats } from "../utils/formatters";
 
 export function SendTab({ fetchInfo, fetchTransactions }) {
   const t = useTranslations("wallet");
@@ -166,14 +167,11 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
                   <span className="text-sm font-medium text-green-700">
                     {t("payments.send.paymentHash")}
                   </span>
-                  <Button
+                  <CopyButton
+                    value={paymentResult.paymentHash}
+                    label={t("payments.send.copyButton")}
                     size="sm"
-                    variant="outline"
-                    onPress={() => copyToClipboard(paymentResult.paymentHash, t)}
-                  >
-                    <Copy className="w-3 h-3 mr-1" />
-                    {t("payments.send.copyButton")}
-                  </Button>
+                  />
                 </div>
                 <div className="bg-white p-2 rounded text-xs break-all">
                   {paymentResult.paymentHash}

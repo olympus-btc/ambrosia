@@ -9,14 +9,11 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/react";
-import {
-  Copy,
-  QrCode,
-} from "lucide-react";
+import { QrCode } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QRCode } from "react-qr-code";
 
-import { copyToClipboard } from "./utils/formatters";
+import { CopyButton } from "@/components/shared/CopyButton";
 
 export function InvoiceModal({ invoiceState, onClose }) {
   const t = useTranslations("wallet");
@@ -81,14 +78,11 @@ export function InvoiceModal({ invoiceState, onClose }) {
                       <span className="font-medium text-deep">
                         {t("invoiceModal.invoice")}
                       </span>
-                      <Button
+                      <CopyButton
+                        value={invoiceState.created.serialized}
+                        label={t("invoiceModal.copyButton")}
                         size="sm"
-                        variant="outline"
-                        onPress={() => copyToClipboard(invoiceState.created.serialized, t)}
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        {t("invoiceModal.copyButton")}
-                      </Button>
+                      />
                     </div>
                     <div className="bg-gray-50 p-3 rounded text-xs break-all">
                       {invoiceState.created.serialized}
@@ -106,14 +100,11 @@ export function InvoiceModal({ invoiceState, onClose }) {
                           <span>{t("invoiceModal.waitingPayment")}</span>
                         </div>
                       ) : null}
-                      <Button
+                      <CopyButton
+                        value={invoiceState.created.paymentHash}
+                        label={t("invoiceModal.copyButton")}
                         size="sm"
-                        variant="outline"
-                        onPress={() => copyToClipboard(invoiceState.created.paymentHash, t)}
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        {t("invoiceModal.copyButton")}
-                      </Button>
+                      />
                     </div>
                     <div className="bg-gray-50 p-3 rounded text-xs break-all">
                       {invoiceState.created.paymentHash}

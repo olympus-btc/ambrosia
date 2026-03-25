@@ -19,9 +19,8 @@ import WalletGuard from "@components/auth/WalletGuard";
 import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
-import { InvoiceModal } from "./InvoiceModal";
 import { NodeError, NodeInfo } from "./NodeInfo";
-import { Transactions } from "./Transactions";
+import { InvoiceModal, Transactions } from "./Transactions";
 
 function WalletInner() {
   const t = useTranslations("wallet");
