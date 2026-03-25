@@ -127,6 +127,121 @@ class OrderServiceTest {
     }
 
     @Test
+    fun `getOrdersWithPaymentsFiltered applies date range filters`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered(
+                OrderWithPaymentFilters(
+                    startDate = "2025-01-01",
+                    endDate = "2025-01-31",
+                ),
+            )
+
+            val query = sqlCaptor.firstValue
+            assertTrue(query.contains("date(o.created_at) >= date(?)"))
+            assertTrue(query.contains("date(o.created_at) <= date(?)"))
+            verify(mockStatement).setString(1, "2025-01-01")
+            verify(mockStatement).setString(2, "2025-01-31")
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered applies user id filter`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(userId = "user-123"))
+
+            assertTrue(sqlCaptor.firstValue.contains("o.user_id = ?"))
+            verify(mockStatement).setString(1, "user-123")
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered applies payment method filter`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(paymentMethod = "cash"))
+
+            assertTrue(sqlCaptor.firstValue.contains("lower(pm2.name) = lower(?)"))
+            verify(mockStatement).setString(1, "cash")
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered applies total range filters`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered(
+                OrderWithPaymentFilters(
+                    minTotal = 10.0,
+                    maxTotal = 500.0,
+                ),
+            )
+
+            val query = sqlCaptor.firstValue
+            assertTrue(query.contains("o.total >= ?"))
+            assertTrue(query.contains("o.total <= ?"))
+            verify(mockStatement).setDouble(1, 10.0)
+            verify(mockStatement).setDouble(2, 500.0)
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered sorts by total ascending`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered(
+                OrderWithPaymentFilters(
+                    sortBy = "total",
+                    sortOrder = "asc",
+                ),
+            )
+
+            assertTrue(sqlCaptor.firstValue.contains("ORDER BY o.total asc"))
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered sorts by date descending by default`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered()
+
+            assertTrue(sqlCaptor.firstValue.contains("ORDER BY datetime(o.created_at) desc"))
+        }
+    }
+
+    @Test
     fun `getOrdersWithPaymentsFiltered rejects invalid status`() {
         runBlocking {
             val service = OrderService(mockConnection)
