@@ -43,10 +43,15 @@ const mockInvoiceAwaiting = {
   awaitingPayment: true,
 };
 
-function renderInvoiceModal(invoiceState, onClose = jest.fn()) {
+function renderInvoiceModal(invoiceState, onClose = jest.fn(), { onMarkAsPaid = jest.fn(), wsConnected = true } = {}) {
   return render(
     <I18nProvider>
-      <InvoiceModal invoiceState={invoiceState} onClose={onClose} />
+      <InvoiceModal
+        invoiceState={invoiceState}
+        onClose={onClose}
+        onMarkAsPaid={onMarkAsPaid}
+        wsConnected={wsConnected}
+      />
     </I18nProvider>,
   );
 }
@@ -503,6 +508,35 @@ describe("InvoiceModal Component", () => {
 
       expect(() => renderInvoiceModal(inconsistentState)).not.toThrow();
       expect(screen.queryByText("invoiceModal.waitingPayment")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Mark as Paid Button", () => {
+    it("shows mark as paid button when awaiting and WS disconnected", () => {
+      renderInvoiceModal(mockInvoiceAwaiting, jest.fn(), { wsConnected: false });
+
+      expect(screen.getByText("invoiceModal.markAsPaidButton")).toBeInTheDocument();
+    });
+
+    it("hides mark as paid button when WS is connected", () => {
+      renderInvoiceModal(mockInvoiceAwaiting, jest.fn(), { wsConnected: true });
+
+      expect(screen.queryByText("invoiceModal.markAsPaidButton")).not.toBeInTheDocument();
+    });
+
+    it("hides mark as paid button when not awaiting payment", () => {
+      renderInvoiceModal(mockInvoiceCreated, jest.fn(), { wsConnected: false });
+
+      expect(screen.queryByText("invoiceModal.markAsPaidButton")).not.toBeInTheDocument();
+    });
+
+    it("calls onMarkAsPaid when button is pressed", () => {
+      const onMarkAsPaid = jest.fn();
+      renderInvoiceModal(mockInvoiceAwaiting, jest.fn(), { onMarkAsPaid, wsConnected: false });
+
+      fireEvent.click(screen.getByText("invoiceModal.markAsPaidButton"));
+
+      expect(onMarkAsPaid).toHaveBeenCalledTimes(1);
     });
   });
 });

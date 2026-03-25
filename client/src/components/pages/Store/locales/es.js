@@ -875,6 +875,7 @@ const storeEs = {
       invoice: "Factura BOLT11:",
       paymentHash: "Payment Hash:",
       closeButton: "Cerrar",
+      markAsPaidButton: "Marcar como Pagado",
       copyButton: "Copiar",
       waitingPayment: "Esperando la confirmación del pago...",
       paymentReceived: "Pago recibido",

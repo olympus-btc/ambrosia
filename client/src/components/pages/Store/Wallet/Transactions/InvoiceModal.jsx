@@ -15,7 +15,7 @@ import { QRCode } from "react-qr-code";
 
 import { CopyButton } from "@/components/shared/CopyButton";
 
-export function InvoiceModal({ invoiceState, onClose }) {
+export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected }) {
   const t = useTranslations("wallet");
   const format = useFormatter();
 
@@ -112,6 +112,11 @@ export function InvoiceModal({ invoiceState, onClose }) {
           >
             {t("invoiceModal.closeButton")}
           </Button>
+          {invoiceState.awaitingPayment && !wsConnected && (
+            <Button color="primary" onPress={onMarkAsPaid}>
+              {t("invoiceModal.markAsPaidButton")}
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>

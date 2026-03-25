@@ -875,6 +875,7 @@ const storeEn = {
       invoice: "BOLT11 Invoice:",
       paymentHash: "Payment Hash:",
       closeButton: "Close",
+      markAsPaidButton: "Mark as Paid",
       copyButton: "Copy",
       waitingPayment: "Waiting for payment confirmation...",
       paymentReceived: "Payment received",

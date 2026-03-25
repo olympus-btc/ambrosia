@@ -31,7 +31,7 @@ function WalletInner() {
   const [filter, setFilter] = useState("all");
   const fetchTransactionsRef = useRef(null);
   const invoiceHashRef = useRef(null);
-  const { setInvoiceHash, setFetchers, onPayment } = usePaymentWebsocket();
+  const { connected: wsConnected, setInvoiceHash, setFetchers, onPayment } = usePaymentWebsocket();
   const { invoiceState, actions: invoiceActions } = useInvoiceState();
 
   const fetchInfo = useCallback(async () => {
@@ -148,6 +148,8 @@ function WalletInner() {
       <InvoiceModal
         invoiceState={invoiceState}
         onClose={invoiceActions.closeModal}
+        onMarkAsPaid={() => invoiceActions.markAsPaid(Date.now())}
+        wsConnected={wsConnected}
       />
 
     </div>
