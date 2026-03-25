@@ -35,7 +35,7 @@ export function NodeSummary({ info, totalBalance }) {
       <StatCard
         icon={Zap}
         label={t("nodeInfo.channels")}
-        value={info.channels.length}
+        value={info.channels?.length ?? 0}
       />
       <StatCard
         icon={Layers}

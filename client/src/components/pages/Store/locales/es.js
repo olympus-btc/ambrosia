@@ -820,6 +820,7 @@ const storeEs = {
       inboundLiquidity: "Liquidez Entrante:",
       fetchInfoError: "Error al obtener la información de la wallet",
       getInfoErrorDescription: "No se pudo cargar la información de la wallet",
+      nodeUnavailable: "El nodo Lightning no está disponible. Verifica que phoenixd esté corriendo.",
       noChannels: "No hay canales Lightning activos",
       stateShuttingDown: "Cerrando — liquidando pagos pendientes",
       stateNegotiating: "Cerrando — finalizando la transacción de cierre",

@@ -820,6 +820,7 @@ const storeEn = {
       inboundLiquidity: "Inbound Liquidity:",
       fetchInfoError: "Error fetching wallet information",
       getInfoErrorDescription: "Could not load wallet information",
+      nodeUnavailable: "Lightning node is not available. Make sure phoenixd is running.",
       noChannels: "No active Lightning channels",
       stateShuttingDown: "Closing — settling pending payments",
       stateNegotiating: "Closing — finalizing closing transaction",

@@ -70,10 +70,9 @@ export function StoreWallet() {
         );
         setTransactions(allTx);
       } catch {
-        setError(t("history.getTransactionsError"));
         addToast({
           title: "Error",
-          description: t("history.getTransactionsErrorDescription"),
+          description: t("payments.history.getTransactionsErrorDescription"),
           variant: "solid",
           color: "danger",
         });
@@ -126,30 +125,36 @@ export function StoreWallet() {
     );
   }
 
+  const nodeAvailable = Boolean(info?.nodeId);
+
   return (
     <div className="">
-      {error && (
-        <NodeError error={error} />
+      {(error || !nodeAvailable) && (
+        <NodeError error={error || t("nodeInfo.nodeUnavailable")} />
       )}
 
-      <NodeInfo info={info} onRefresh={fetchInfo} />
+      {nodeAvailable && (
+        <>
+          <NodeInfo info={info} onRefresh={fetchInfo} />
 
-      <Transactions
-        transactions={transactions}
-        loading={loading}
-        filter={filter}
-        setFilter={setFilter}
-        invoiceActions={invoiceActions}
-        fetchInfo={fetchInfo}
-        fetchTransactions={fetchTransactions}
-      />
+          <Transactions
+            transactions={transactions}
+            loading={loading}
+            filter={filter}
+            setFilter={setFilter}
+            invoiceActions={invoiceActions}
+            fetchInfo={fetchInfo}
+            fetchTransactions={fetchTransactions}
+          />
 
-      <InvoiceModal
-        invoiceState={invoiceState}
-        onClose={invoiceActions.closeModal}
-        onMarkAsPaid={() => invoiceActions.markAsPaid(Date.now())}
-        wsConnected={wsConnected}
-      />
+          <InvoiceModal
+            invoiceState={invoiceState}
+            onClose={invoiceActions.closeModal}
+            onMarkAsPaid={() => invoiceActions.markAsPaid(Date.now())}
+            wsConnected={wsConnected}
+          />
+        </>
+      )}
     </div>
   );
 }
