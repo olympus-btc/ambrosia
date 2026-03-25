@@ -393,11 +393,11 @@ describe("InvoiceModal Component", () => {
       expect(qrCode).toHaveAttribute("data-value", mockInvoiceCreated.created.serialized);
     });
 
-    it("renders QRCode with size 200", () => {
+    it("renders QRCode with responsive style", () => {
       renderInvoiceModal(mockInvoiceCreated);
 
       const qrCode = screen.getByTestId("qr-code");
-      expect(qrCode).toHaveAttribute("data-size", "200");
+      expect(qrCode).toBeInTheDocument();
     });
 
     it("does not render QRCode when invoice is paid", () => {

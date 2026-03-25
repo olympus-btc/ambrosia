@@ -67,8 +67,11 @@ export function InvoiceModal({ invoiceState, onClose }) {
             invoiceState.created && (
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <div className="bg-white p-4 rounded-lg border">
-                    <QRCode value={invoiceState.created.serialized} size={200} />
+                  <div className="bg-white p-4 rounded-lg border w-full max-w-[280px]">
+                    <QRCode
+                      value={invoiceState.created.serialized}
+                      style={{ width: "100%", height: "auto" }}
+                    />
                   </div>
                 </div>
 
