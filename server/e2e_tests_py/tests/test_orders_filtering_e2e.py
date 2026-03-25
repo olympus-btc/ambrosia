@@ -13,7 +13,9 @@ async def _get_current_user_id(admin_client) -> str:
     return response.json()["user"]["user_id"]
 
 
-async def _create_order(admin_client, user_id: str, status: str, total: float, created_at: str) -> str:
+async def _create_order(
+    admin_client, user_id: str, status: str, total: float, created_at: str
+) -> str:
     payload = {
         "user_id": user_id,
         "table_id": None,
@@ -30,7 +32,9 @@ async def _create_order(admin_client, user_id: str, status: str, total: float, c
 @pytest.mark.asyncio
 async def test_orders_with_payments_filters_by_paid_status(admin_client):
     user_id = await _get_current_user_id(admin_client)
-    paid_order_id = await _create_order(admin_client, user_id, "paid", 55.0, "2025-01-10T10:00:00")
+    paid_order_id = await _create_order(
+        admin_client, user_id, "paid", 55.0, "2025-01-10T10:00:00"
+    )
     await _create_order(admin_client, user_id, "open", 22.0, "2025-01-11T10:00:00")
 
     response = await admin_client.get("/orders/with-payments?status=paid")
