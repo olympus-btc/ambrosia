@@ -41,97 +41,6 @@ export const modules = {
       },
     ],
   },
-  cashier: {
-    enabled: true,
-    name: "Wallet",
-    routes: [
-      {
-        path: "/reports",
-        component: "Reports",
-        requiresAuth: true,
-        requiresAdmin: false,
-        permissions: ["reports_read"],
-      },
-      {
-        path: "/wallet",
-        component: "Wallet",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/cashier/cashierService"),
-    navItems: [
-      {
-        path: "/reports",
-        label: "Reportes",
-        icon: "chart-line",
-        showInNavbar: false,
-      },
-    ],
-  },
-  orders: {
-    enabled: true,
-    name: "Ordenes",
-    routes: [
-      {
-        path: "/restaurant/all-orders",
-        component: "Orders",
-        requiresAuth: true,
-        requiresAdmin: false,
-        default: true,
-        requiresOpenTurn: true,
-      },
-      {
-        path: "/restaurant/modify-order/:pedidoId",
-        component: "EditOrder",
-        requiresAuth: true,
-        requiresAdmin: false,
-        requiresOpenTurn: true,
-      },
-    ],
-    services: () => import("../modules/orders/ordersService"),
-    navItems: [
-      {
-        path: "/restaurant/all-orders",
-        label: "Ordenes",
-        icon: "clipboard-clock",
-        showInNavbar: true,
-      },
-    ],
-  },
-  spaces: {
-    enabled: true,
-    name: "Salas",
-    routes: [
-      {
-        path: "/restaurant/rooms",
-        component: "Rooms",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/restaurant/tables/:roomId",
-        component: "Tables",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/restaurant/spaces",
-        component: "Spaces",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/spaces/spacesService"),
-    navItems: [
-      {
-        path: "/restaurant/rooms",
-        label: "Ver Salas",
-        icon: "building",
-        showInNavbar: false,
-      },
-    ],
-  },
   store: {
     enabled: true,
     name: "Store",
@@ -202,14 +111,6 @@ export const modules = {
         default: false,
       },
       {
-        path: "/store/reports",
-        component: "Reports",
-        requiresAuth: true,
-        requiresAdmin: true,
-        types: ["store"],
-        default: false,
-      },
-      {
         path: "/store/settings",
         component: "Settings",
         requiresAuth: true,
@@ -254,7 +155,7 @@ export const modules = {
         path: "/store/reports",
         label: "reports",
         icon: "chart-line",
-        showInNavbar: false,
+        showInNavbar: true,
       },
       {
         path: "/store/settings",

@@ -384,3 +384,25 @@ data class InitialSetupStatus(
 data class SetBaseCurrencyRequest(
     val acronym: String,
 )
+
+@Serializable
+data class ReportTicketItem(
+    val amount: Double,
+    val paymentMethod: String,
+    val userName: String,
+)
+
+@Serializable
+data class DayReport(
+    val date: String,
+    val balance: Double,
+    val tickets: List<ReportTicketItem>,
+)
+
+@Serializable
+data class ReportResponse(
+    val startDate: String,
+    val endDate: String,
+    val totalBalance: Double,
+    val reports: List<DayReport>,
+)
