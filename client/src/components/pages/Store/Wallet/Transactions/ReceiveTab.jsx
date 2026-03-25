@@ -8,11 +8,12 @@ import { useTranslations } from "next-intl";
 
 import { createInvoice } from "@/services/walletService";
 
-export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
+export function ReceiveTab({ invoiceActions }) {
   const t = useTranslations("wallet");
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceDesc, setInvoiceDesc] = useState("");
   const [invalidNumberInput, setInvalidNumberInput] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateInvoice = async () => {
     if (invoiceAmount < 1 || !invoiceAmount) {
@@ -20,12 +21,11 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
       return;
     }
     try {
-      setLoading(true);
+      setIsLoading(true);
       const res = await createInvoice(invoiceAmount, invoiceDesc);
       invoiceActions.createInvoice(res);
       setInvoiceAmount("");
       setInvoiceDesc("");
-      setError("");
       addToast({
         title: t("payments.receive.invoiceSuccessTitle"),
         description: t("payments.receive.invoiceSuccessDescription"),
@@ -34,7 +34,6 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
       });
     } catch (err) {
       console.error(err);
-      setError(t("payments.receive.invoiceCreateError"));
       addToast({
         title: "Error",
         description: t("payments.receive.invoiceCreateError"),
@@ -42,7 +41,7 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
         color: "danger",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -73,7 +72,7 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
               setInvalidNumberInput(false);
             }}
             startContent={<Bitcoin className="w-5 h-5 text-gray-400 pb-0.5" />}
-            disabled={loading}
+            disabled={isLoading}
             isInvalid={invalidNumberInput}
             errorMessage={invalidNumberInput ? t("payments.receive.invoiceAmountError") : ""}
           />
@@ -97,7 +96,7 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
                 "border-green-600",
               ],
             }}
-            disabled={loading}
+            disabled={isLoading}
           />
         </div>
         <div id="wallet-receive-button">
@@ -106,10 +105,10 @@ export function ReceiveTab({ loading, setLoading, setError, invoiceActions }) {
             variant="solid"
             color="primary"
             size="lg"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full gradient-forest text-white"
           >
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center space-x-2">
                 <Spinner size="sm" color="white" />
                 <span>{t("payments.receive.invoiceLightningLoading")}</span>

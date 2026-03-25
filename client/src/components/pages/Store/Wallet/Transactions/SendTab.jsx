@@ -19,11 +19,12 @@ import { payInvoiceFromService } from "@/services/walletService";
 
 import { copyToClipboard, formatSats } from "../utils/formatters";
 
-export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransactions }) {
+export function SendTab({ fetchInfo, fetchTransactions }) {
   const t = useTranslations("wallet");
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);
   const [invalidInvoice, setInvalidInvoice] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateBolt11 = (invoice) => {
     if (!invoice || !invoice.trim()) {
@@ -50,16 +51,14 @@ export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransac
 
     if (!validation.valid) {
       setInvalidInvoice(true);
-      setError(validation.error);
       return;
     }
 
     try {
-      setLoading(true);
+      setIsLoading(true);
       const res = await payInvoiceFromService(payInvoice);
       setPaymentResult(res);
       setPayInvoice("");
-      setError("");
       setInvalidInvoice(false);
       fetchInfo?.();
       fetchTransactions?.();
@@ -71,7 +70,6 @@ export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransac
       });
     } catch (err) {
       console.error(err);
-      setError(t("payments.send.paymentError"));
       addToast({
         title: "Error",
         description: t("payments.send.paymentErrorDescription"),
@@ -79,7 +77,7 @@ export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransac
         color: "danger",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -106,10 +104,9 @@ export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransac
           onChange={(e) => {
             setPayInvoice(e.target.value);
             setInvalidInvoice(false);
-            setError("");
           }}
           startContent={<Zap className="w-5 h-5 text-gray-400" />}
-          disabled={loading}
+          disabled={isLoading}
           isInvalid={invalidInvoice}
           errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}
         />
@@ -118,10 +115,10 @@ export function SendTab({ loading, setLoading, setError, fetchInfo, fetchTransac
           variant="solid"
           color="warning"
           size="lg"
-          disabled={loading}
+          disabled={isLoading}
           className="w-full"
         >
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center space-x-2">
               <Spinner size="sm" color="white" />
               <span>{t("payments.send.payLightningLoading")}</span>

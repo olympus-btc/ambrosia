@@ -17,8 +17,6 @@ import { SendTab } from "./SendTab";
 export function Transactions({
   transactions,
   loading,
-  setLoading,
-  setError,
   filter,
   setFilter,
   invoiceActions,
@@ -96,9 +94,6 @@ export function Transactions({
             )}
           >
             <ReceiveTab
-              loading={loading}
-              setLoading={setLoading}
-              setError={setError}
               invoiceActions={invoiceActions}
             />
           </Tab>
@@ -113,9 +108,6 @@ export function Transactions({
             )}
           >
             <SendTab
-              loading={loading}
-              setLoading={setLoading}
-              setError={setError}
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
             />

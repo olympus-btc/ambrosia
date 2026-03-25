@@ -139,9 +139,6 @@ function WalletInner() {
       <Transactions
         transactions={transactions}
         loading={loading}
-        setLoading={setLoading}
-        error={error}
-        setError={setError}
         filter={filter}
         setFilter={setFilter}
         invoiceActions={invoiceActions}
