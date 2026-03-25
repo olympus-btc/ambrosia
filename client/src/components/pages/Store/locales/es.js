@@ -57,6 +57,7 @@ const storeEs = {
       userNamePlaceholder: "Introduce el Nombre del Usuario",
       userPinLabel: "PIN",
       userPinPlaceholder: "Introduce un PIN de 4 dígitos",
+      // userPinError: "El PIN debe tener al menos 4 dígitos",
       userPhoneLabel: "Teléfono",
       userPhonePlaceholder: "Ej: 3312345678",
       userEmailLabel: "Email",

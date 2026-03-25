@@ -70,6 +70,7 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               type={showPin ? "text" : "password"}
               placeholder={t("users.modal.userPinPlaceholder")}
               maxLength={4}
+              // minLength={4}
               value={data.userPin ?? ""}
               onChange={(e) => {
                 const onlyNumbers = e.target.value.replace(/\D/g, "");
