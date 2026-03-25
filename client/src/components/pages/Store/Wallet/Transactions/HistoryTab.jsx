@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, Chip, Spinner } from "@heroui/react";
 import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { formatSats } from "../utils/formatters";
 
@@ -16,6 +16,7 @@ const getTransactionIcon = (type) => (
 
 export function HistoryTab({ transactions, loading, filter, setFilter }) {
   const t = useTranslations("wallet");
+  const format = useFormatter();
 
   return (
     <div className="p-6 space-y-6">
@@ -99,10 +100,10 @@ export function HistoryTab({ transactions, loading, filter, setFilter }) {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-500">
-                      {new Date(tx.completedAt).toLocaleDateString()}
+                      {format.dateTime(new Date(tx.completedAt), { dateStyle: "short" })}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(tx.completedAt).toLocaleTimeString()}
+                      {format.dateTime(new Date(tx.completedAt), { timeStyle: "short" })}
                     </p>
                   </div>
                 </div>

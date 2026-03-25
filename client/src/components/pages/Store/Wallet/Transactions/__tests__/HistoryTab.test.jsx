@@ -210,15 +210,15 @@ describe("HistoryTab Component", () => {
     it("shows transaction date", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const date = new Date(mockIncomingTransaction.completedAt).toLocaleDateString();
-      expect(screen.getByText(date)).toBeInTheDocument();
+      const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
+      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
     });
 
     it("shows transaction time", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const time = new Date(mockIncomingTransaction.completedAt).toLocaleTimeString();
-      expect(screen.getByText(time)).toBeInTheDocument();
+      const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
+      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
     });
 
     it("displays transaction fees", () => {
