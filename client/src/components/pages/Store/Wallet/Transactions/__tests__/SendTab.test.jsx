@@ -7,15 +7,9 @@ import { I18nProvider } from "@i18n/I18nProvider";
 import { SendTab } from "../SendTab";
 
 function renderSendTab(props = {}) {
-  const defaultProps = {
-    loading: false,
-    setLoading: jest.fn(),
-    setError: jest.fn(),
-  };
-
   return render(
     <I18nProvider>
-      <SendTab {...defaultProps} {...props} />
+      <SendTab {...props} />
     </I18nProvider>,
   );
 }
@@ -87,21 +81,19 @@ describe("SendTab Component", () => {
   });
 
   describe("BOLT11 Validation", () => {
-    it("shows error when submitting empty invoice", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+    it("shows inline error when submitting empty invoice", async () => {
+      const { container } = renderSendTab();
 
       const button = screen.getByText("payments.send.payLightningButton");
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(container.querySelector('[data-invalid="true"]')).toBeInTheDocument();
       });
     });
 
-    it("shows error when submitting random text", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+    it("shows inline error when submitting random text", async () => {
+      renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "random-invalid-text");
@@ -110,7 +102,7 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
       });
     });
 
@@ -157,8 +149,7 @@ describe("SendTab Component", () => {
     });
 
     it("rejects invoice with invalid prefix", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+      renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "invalid1000n1pj9h8uqpp5test");
@@ -167,13 +158,12 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
       });
     });
 
     it("rejects invoice shorter than 20 characters", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+      renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "lnbc123");
@@ -182,26 +172,25 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
       });
     });
 
     it("clears error when user starts typing", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+      const { container } = renderSendTab();
 
       const button = screen.getByText("payments.send.payLightningButton");
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(container.querySelector('[data-invalid="true"]')).toBeInTheDocument();
       });
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "lnbc");
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("");
+        expect(container.querySelector('[data-invalid="true"]')).not.toBeInTheDocument();
       });
     });
 
@@ -212,8 +201,7 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        const invalidInput = container.querySelector('[data-invalid="true"]');
-        expect(invalidInput).toBeInTheDocument();
+        expect(container.querySelector('[data-invalid="true"]')).toBeInTheDocument();
       });
     });
   });
@@ -317,11 +305,10 @@ describe("SendTab Component", () => {
       });
     });
 
-    it("handles API error gracefully", async () => {
-      const setError = jest.fn();
+    it("handles API error gracefully without crashing", async () => {
       jest.spyOn(walletService, "payInvoiceFromService").mockRejectedValue(new Error("API Error"));
 
-      renderSendTab({ setError });
+      renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "lnbc1000n1pj9h8uqpp5test");
@@ -330,30 +317,44 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.paymentError");
+        expect(screen.getByText("payments.send.payLightningButton")).toBeInTheDocument();
       });
     });
   });
 
   describe("Loading State", () => {
-    it("disables input when loading", () => {
-      renderSendTab({ loading: true });
+    it("shows loading text while paying invoice", async () => {
+      jest.spyOn(walletService, "payInvoiceFromService").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
+
+      renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
-      expect(invoiceInput).toBeDisabled();
+      await userEvent.type(invoiceInput, "lnbc1000n1pj9h8uqpp5test");
+
+      fireEvent.click(screen.getByText("payments.send.payLightningButton"));
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.send.payLightningLoading")).toBeInTheDocument();
+      });
     });
 
-    it("disables button when loading", () => {
-      renderSendTab({ loading: true });
+    it("disables input while paying invoice", async () => {
+      jest.spyOn(walletService, "payInvoiceFromService").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
 
-      const button = screen.getByText("payments.send.payLightningLoading");
-      expect(button.closest("button")).toBeDisabled();
-    });
+      renderSendTab();
 
-    it("shows loading text on button", () => {
-      renderSendTab({ loading: true });
+      const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
+      await userEvent.type(invoiceInput, "lnbc1000n1pj9h8uqpp5test");
 
-      expect(screen.getByText("payments.send.payLightningLoading")).toBeInTheDocument();
+      fireEvent.click(screen.getByText("payments.send.payLightningButton"));
+
+      await waitFor(() => {
+        expect(invoiceInput).toBeDisabled();
+      });
     });
   });
 
@@ -403,8 +404,7 @@ describe("SendTab Component", () => {
     });
 
     it("treats whitespace-only input as empty", async () => {
-      const setError = jest.fn();
-      renderSendTab({ setError });
+      const { container } = renderSendTab();
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
       await userEvent.type(invoiceInput, "   ");
@@ -413,7 +413,7 @@ describe("SendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(container.querySelector('[data-invalid="true"]')).toBeInTheDocument();
       });
     });
   });

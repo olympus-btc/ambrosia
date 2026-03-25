@@ -8,9 +8,6 @@ import { ReceiveTab } from "../ReceiveTab";
 
 function renderReceiveTab(props = {}) {
   const defaultProps = {
-    loading: false,
-    setLoading: jest.fn(),
-    setError: jest.fn(),
     invoiceActions: {
       createInvoice: jest.fn(),
       closeModal: jest.fn(),
@@ -238,11 +235,10 @@ describe("ReceiveTab Component", () => {
       });
     });
 
-    it("handles API error gracefully", async () => {
-      const setError = jest.fn();
+    it("handles API error gracefully without crashing", async () => {
       jest.spyOn(walletService, "createInvoice").mockRejectedValue(new Error("API Error"));
 
-      renderReceiveTab({ setError });
+      renderReceiveTab();
 
       const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
       fireEvent.focus(amountInput);
@@ -254,33 +250,51 @@ describe("ReceiveTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.receive.invoiceCreateError");
+        expect(screen.getByText("payments.receive.invoiceLightningButton")).toBeInTheDocument();
       });
     });
   });
 
   describe("Loading State", () => {
-    it("disables inputs when loading", () => {
-      renderReceiveTab({ loading: true });
+    it("shows loading text while creating invoice", async () => {
+      jest.spyOn(walletService, "createInvoice").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
+
+      renderReceiveTab();
 
       const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
-      const descInput = screen.getByLabelText("payments.receive.invoiceDescriptionLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
 
-      expect(amountInput).toBeDisabled();
-      expect(descInput).toBeDisabled();
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceLightningLoading")).toBeInTheDocument();
+      });
     });
 
-    it("disables button when loading", () => {
-      renderReceiveTab({ loading: true });
+    it("disables inputs while creating invoice", async () => {
+      jest.spyOn(walletService, "createInvoice").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
 
-      const button = screen.getByText("payments.receive.invoiceLightningLoading");
-      expect(button.closest("button")).toBeDisabled();
-    });
+      renderReceiveTab();
 
-    it("shows loading text on button", () => {
-      renderReceiveTab({ loading: true });
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
 
-      expect(screen.getByText("payments.receive.invoiceLightningLoading")).toBeInTheDocument();
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(amountInput).toBeDisabled();
+      });
     });
   });
 
