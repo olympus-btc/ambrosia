@@ -102,8 +102,8 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
       addToast({ title: t("roles.actions.saveSuccess"), color: "success" });
     } catch (error) {
       addToast({
-        title: error?.status === 409 ? t("roles.actions.lastAdminTitle") : t("roles.actions.saveErrorTitle"),
-        description: error?.status == 409 ? t("roles.actions.lastAdminDescription") : t("roles.actions.saveErrorDescription"),
+        title: error?.status === 409 ? t("roles.actions.lastAdminErrorTittle") : t("roles.actions.saveErrorTitle"),
+        description: error?.status == 409 ? t("roles.actions.lastAdminErrorDescription") : t("roles.actions.saveErrorDescription"),
         color: error?.status === 409 ? "warning" : "danger",
       });
     } finally {
@@ -120,8 +120,8 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
       addToast({ title: t("roles.actions.deleteSuccess"), color: "success" });
     } catch (error) {
       addToast({
-        title: error?.status === 409 ? t("roles.actions.lastAdminTitle") : t("roles.actions.saveErrorTitle"),
-        description: error?.status == 409 ? t("roles.actions.lastAdminDescription") : t("roles.actions.saveErrorDescription"),
+        title: error?.status === 409 ? t("roles.actions.lastAdminErrorTittle") : t("roles.actions.saveErrorTitle"),
+        description: error?.status == 409 ? t("roles.actions.lastAdminErrorDescription") : t("roles.actions.saveErrorDescription"),
         color: error?.status === 409 ? "warning" : "danger",
       });
     } finally {

@@ -97,8 +97,8 @@ const storeEn = {
       deleteConfirmBody: "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
       deleteSuccess: "Role deleted successfully",
       deleteError: "Could not delete the role",
-      lastAdminTitle: "Not allowed",
-      lastAdminDescription: "You cannot delete the last role with active admin users",
+      lastAdminErrorTittle: "Not allowed",
+      lastAdminErrorDescription: "You cannot delete the last role with active admin users",
     },
     create: {
       title: "Create role",
