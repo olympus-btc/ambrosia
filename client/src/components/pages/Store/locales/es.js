@@ -97,7 +97,7 @@ const storeEs = {
       deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
       deleteSuccess: "Rol eliminado correctamente",
       deleteError: "No se pudo eliminar el rol",
-      lastAdminErrorTittle: "No permitiod",
+      lastAdminErrorTittle: "No permitido",
       lastAdminErrorDescription: "No puedes eliminar el último rol con usuarios administradores activos",
     },
     create: {
