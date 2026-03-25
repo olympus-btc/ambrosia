@@ -148,19 +148,16 @@ class OrderService(
     }
 
     suspend fun addOrder(order: Order): String? {
-        // Verificar que el usuario existe
         if (!userExists(order.user_id)) {
             logger.error("User does not exist: ${order.user_id}")
             return null
         }
 
-        // Verificar que la mesa existe (si se proporciona)
         if (!tableExists(order.table_id)) {
             logger.error("Table does not exist: ${order.table_id}")
             return null
         }
 
-        // Validar status
         val orderStatus = order.status
         if (!isValidStatus(orderStatus)) {
             logger.error("Invalid order status: $orderStatus")
@@ -176,7 +173,6 @@ class OrderService(
         statement.setString(4, order.waiter)
         statement.setString(5, orderStatus)
         statement.setDouble(6, order.total)
-        // Si no se proporciona fecha, usar la actual
         val createdAt =
             order.created_at.ifEmpty {
                 java.time.LocalDateTime
@@ -368,19 +364,16 @@ class OrderService(
             return false
         }
 
-        // Verificar que el usuario existe
         if (!userExists(order.user_id)) {
             logger.error("User does not exist: ${order.user_id}")
             return false
         }
 
-        // Verificar que la mesa existe (si se proporciona)
         if (!tableExists(order.table_id)) {
             logger.error("Table does not exist: ${order.table_id}")
             return false
         }
 
-        // Validar status
         val orderStatus = order.status
         if (!isValidStatus(orderStatus)) {
             logger.error("Invalid order status: $orderStatus")
@@ -432,7 +425,6 @@ class OrderService(
         return total
     }
 
-    // New methods for handling order dishes
     suspend fun addDishesToOrder(
         orderId: String,
         dishes: List<OrderDish>,
@@ -459,7 +451,6 @@ class OrderService(
 
     suspend fun calculateOrderTotal(orderId: String): Double {
         val dishes = orderDishService.getOrderDishesByOrderId(orderId)
-        // Como ya no hay quantity, sumamos directamente los precios
         return dishes.sumOf { it.price_at_order }
     }
 
