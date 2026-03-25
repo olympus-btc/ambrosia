@@ -35,7 +35,9 @@ async def test_orders_with_payments_filters_by_paid_status(admin_client):
     paid_order_id = await _create_order(
         admin_client, user_id, "paid", 55.0, "2025-01-10T10:00:00"
     )
-    await _create_order(admin_client, user_id, "open", 22.0, "2025-01-11T10:00:00")
+    await _create_order(
+        admin_client, user_id, "open", 22.0, "2025-01-11T10:00:00"
+    )
 
     response = await admin_client.get("/orders/with-payments?status=paid")
     assert_status_code(response, 200)
@@ -49,11 +51,19 @@ async def test_orders_with_payments_filters_by_paid_status(admin_client):
 @pytest.mark.asyncio
 async def test_orders_with_payments_sorts_by_total_ascending(admin_client):
     user_id = await _get_current_user_id(admin_client)
-    await _create_order(admin_client, user_id, "paid", 31.0, "2025-02-01T10:00:00")
-    await _create_order(admin_client, user_id, "paid", 12.0, "2025-02-02T10:00:00")
-    await _create_order(admin_client, user_id, "paid", 25.0, "2025-02-03T10:00:00")
+    await _create_order(
+        admin_client, user_id, "paid", 31.0, "2025-02-01T10:00:00"
+    )
+    await _create_order(
+        admin_client, user_id, "paid", 12.0, "2025-02-02T10:00:00"
+    )
+    await _create_order(
+        admin_client, user_id, "paid", 25.0, "2025-02-03T10:00:00"
+    )
 
-    response = await admin_client.get("/orders/with-payments?sort_by=total&sort_order=asc")
+    response = await admin_client.get(
+        "/orders/with-payments?sort_by=total&sort_order=asc"
+    )
     assert_status_code(response, 200)
 
     totals = [order["total"] for order in response.json()]
