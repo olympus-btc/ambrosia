@@ -73,6 +73,9 @@ export function Transactions({
   return (
     <Card className="rounded-lg mb-6 p-6">
       <CardBody className="p-0">
+        <h2 className="text-xl font-bold text-deep px-6 pt-2 pb-4">
+          {t("payments.title")}
+        </h2>
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={setActiveTab}

@@ -827,6 +827,7 @@ const storeEs = {
       stateClosed: "Cerrado — desaparecerá al reiniciar el nodo",
     },
     payments: {
+      title: "Transacciones",
       receive: {
         tabTitle: "Recibir",
         invoiceAmountLabel: "Monto en satoshis",

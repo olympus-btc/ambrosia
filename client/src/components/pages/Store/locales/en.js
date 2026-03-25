@@ -827,6 +827,7 @@ const storeEn = {
       stateClosed: "Closed — will disappear on next restart",
     },
     payments: {
+      title: "Transactions",
       receive: {
         tabTitle: "Receive",
         invoiceAmountLabel: "Amount in satoshis",
