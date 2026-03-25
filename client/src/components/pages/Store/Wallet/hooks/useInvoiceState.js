@@ -30,12 +30,13 @@ export const useInvoiceState = () => {
     },
 
     closeModal: () => {
-      setInvoiceState((prev) => ({
-        ...prev,
-        showModal: false,
+      setInvoiceState({
+        created: null,
+        paid: false,
         awaitingPayment: false,
         completedAt: null,
-      }));
+        showModal: false,
+      });
     },
 
     openModal: () => {
