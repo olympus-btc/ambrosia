@@ -320,6 +320,23 @@ describe("HistoryTab Component", () => {
       expect(screen.getByText("1,000,000 sats")).toBeInTheDocument();
     });
 
+    it("shows description when present", () => {
+      const txWithDescription = {
+        ...mockIncomingTransaction,
+        description: "Coffee payment",
+      };
+
+      renderHistoryTab({ transactions: [txWithDescription] });
+
+      expect(screen.getByText("Coffee payment")).toBeInTheDocument();
+    });
+
+    it("does not show description for outgoing transactions", () => {
+      renderHistoryTab({ transactions: [mockOutgoingTransaction] });
+
+      expect(screen.queryByText("Coffee payment")).not.toBeInTheDocument();
+    });
+
     it("handles transactions with missing completedAt gracefully", () => {
       const txWithoutDate = {
         paymentId: "no-date",

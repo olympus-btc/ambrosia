@@ -96,6 +96,9 @@ export function HistoryTab({ transactions, loading, filter, setFilter }) {
                       <p className="text-sm text-forest">
                         Fee: {formatSats(Number(tx.fees) / 1000)} sats
                       </p>
+                      {tx.description && (
+                        <p className="text-sm text-gray-500">{tx.description}</p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
