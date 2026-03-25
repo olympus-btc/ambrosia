@@ -1,13 +1,23 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import StoreOrders from "../StoreOrders";
 
 let mockOrders = [];
 const mockPush = jest.fn();
+const mockFetchOrders = jest.fn();
+const mockFetchOrdersFiltered = jest.fn();
 
 jest.mock("../../hooks/useOrders", () => ({
   useOrders: () => ({
     orders: mockOrders,
+    fetchOrders: mockFetchOrders,
+    fetchOrdersFiltered: mockFetchOrdersFiltered,
+  }),
+}));
+
+jest.mock("@/components/pages/Store/Cart/hooks/usePaymentMethod", () => ({
+  usePaymentMethods: () => ({
+    paymentMethods: [{ id: "cash", name: "Cash" }],
   }),
 }));
 
@@ -24,7 +34,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("../OrdersFilterBar", () => ({
-  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange }) => (
+  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange, onFiltersChange, onApplyFilters, onClearFilters }) => (
     <div>
       <button type="button" onClick={() => onSearchChange("order-1")}>
         search-match
@@ -34,6 +44,15 @@ jest.mock("../OrdersFilterBar", () => ({
       </button>
       <button type="button" onClick={() => onRowsPerPageChange("1")}>
         rows-1
+      </button>
+      <button type="button" onClick={() => onFiltersChange({ status: "paid" })}>
+        set-status
+      </button>
+      <button type="button" onClick={onApplyFilters}>
+        apply-filters
+      </button>
+      <button type="button" onClick={onClearFilters}>
+        clear-filters
       </button>
     </div>
   ),
@@ -95,6 +114,8 @@ describe("StoreOrders", () => {
       { id: "order-2", status: "paid", waiter: "Luis", total: 20, created_at: "2024-01-02" },
     ];
     mockPush.mockClear();
+    mockFetchOrders.mockReset();
+    mockFetchOrdersFiltered.mockReset();
   });
 
   it("filters by search term and shows empty state", () => {
@@ -132,5 +153,23 @@ describe("StoreOrders", () => {
     fireEvent.click(screen.getByText("edit"));
     expect(mockPush).toHaveBeenCalledWith("/modify-order/order-2");
     expect(screen.queryByText("selected-order-2")).toBeNull();
+  });
+
+  it("applies server filters and clears them through the hook", async () => {
+    mockFetchOrdersFiltered.mockResolvedValue([]);
+    mockFetchOrders.mockResolvedValue([]);
+
+    render(<StoreOrders />);
+
+    fireEvent.click(screen.getByText("set-status"));
+    fireEvent.click(screen.getByText("apply-filters"));
+
+    await waitFor(() => expect(mockFetchOrdersFiltered).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "paid" }),
+    ));
+
+    fireEvent.click(screen.getByText("clear-filters"));
+
+    await waitFor(() => expect(mockFetchOrders).toHaveBeenCalledTimes(1));
   });
 });

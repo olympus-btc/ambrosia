@@ -14,12 +14,13 @@ jest.mock("@/lib/http", () => ({
 const handlers = {};
 
 function TestComponent() {
-  const { orders, loading, error, createOrder, updateOrder } = useOrders();
+  const { orders, loading, error, createOrder, updateOrder, fetchOrdersFiltered } = useOrders();
 
   useEffect(() => {
     handlers.createOrder = createOrder;
     handlers.updateOrder = updateOrder;
-  }, [createOrder, updateOrder]);
+    handlers.fetchOrdersFiltered = fetchOrdersFiltered;
+  }, [createOrder, updateOrder, fetchOrdersFiltered]);
 
   return (
     <div>
@@ -146,5 +147,67 @@ describe("useOrders", () => {
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
 
     await expect(handlers.updateOrder()).rejects.toThrow("orderId is required");
+  });
+
+  it("fetchOrdersFiltered sends status query params", async () => {
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+
+    await act(async () => {
+      await handlers.fetchOrdersFiltered({ status: "paid" });
+    });
+
+    expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments?status=paid");
+  });
+
+  it("fetchOrdersFiltered sends sorting query params", async () => {
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+
+    await act(async () => {
+      await handlers.fetchOrdersFiltered({ sortBy: "total", sortOrder: "asc" });
+    });
+
+    expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments?sort_by=total&sort_order=asc");
+  });
+
+  it("fetchOrdersFiltered omits empty params", async () => {
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce([]);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+
+    await act(async () => {
+      await handlers.fetchOrdersFiltered({});
+    });
+
+    expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments");
+  });
+
+  it("sets error when filtered fetch returns non-ok response", async () => {
+    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: false });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ message: "bad request" });
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+
+    await expect(handlers.fetchOrdersFiltered({ status: "paid" })).rejects.toThrow("bad request");
+    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"));
   });
 });
