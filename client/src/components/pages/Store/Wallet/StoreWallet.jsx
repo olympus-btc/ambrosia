@@ -15,14 +15,13 @@ import {
   getInfo,
   getOutgoingTransactions,
 } from "@/services/walletService";
-import WalletGuard from "@components/auth/WalletGuard";
 import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
 import { NodeError, NodeInfo } from "./NodeInfo";
 import { InvoiceModal, Transactions } from "./Transactions";
 
-function WalletInner() {
+export function StoreWallet() {
   const t = useTranslations("wallet");
   const [info, setInfo] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -151,22 +150,6 @@ function WalletInner() {
         onMarkAsPaid={() => invoiceActions.markAsPaid(Date.now())}
         wsConnected={wsConnected}
       />
-
     </div>
-  );
-}
-
-export function StoreWallet() {
-  const t = useTranslations("wallet");
-  return (
-    <WalletGuard
-      placeholder={<div className="min-h-screen gradient-fresh p-4" />}
-      title={t("access.title")}
-      passwordLabel={t("access.passwordLabel")}
-      confirmText={t("access.confirmText")}
-      cancelText={t("access.cancelText")}
-    >
-      <WalletInner />
-    </WalletGuard>
   );
 }
