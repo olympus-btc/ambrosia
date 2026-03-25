@@ -15,14 +15,37 @@ import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.AddOrderDishRequest
 import pos.ambrosia.models.CompleteOrder
+import pos.ambrosia.models.Message
 import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
 import pos.ambrosia.models.OrderWithDishesRequest
+import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.OrderService
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
+import java.time.LocalDate
+
+private fun parseDateQueryParam(
+    value: String?,
+    name: String,
+): String? {
+    if (value.isNullOrBlank()) return null
+    return try {
+        LocalDate.parse(value).toString()
+    } catch (_: Exception) {
+        throw IllegalArgumentException("Invalid $name: $value. Expected format YYYY-MM-DD")
+    }
+}
+
+private fun parseDoubleQueryParam(
+    value: String?,
+    name: String,
+): Double? {
+    if (value.isNullOrBlank()) return null
+    return value.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid $name: $value")
+}
 
 fun Application.configureOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
@@ -42,7 +65,36 @@ fun Route.orders(orderService: OrderService) {
         }
 
         get("/with-payments") {
-            val orders = orderService.getOrdersWithPayments()
+            val filters =
+                try {
+                    OrderWithPaymentFilters(
+                        startDate = parseDateQueryParam(call.request.queryParameters["start_date"], "start_date"),
+                        endDate = parseDateQueryParam(call.request.queryParameters["end_date"], "end_date"),
+                        status = call.request.queryParameters["status"]?.takeIf { it.isNotBlank() },
+                        userId = call.request.queryParameters["user_id"]?.takeIf { it.isNotBlank() },
+                        paymentMethod = call.request.queryParameters["payment_method"]?.takeIf { it.isNotBlank() },
+                        minTotal = parseDoubleQueryParam(call.request.queryParameters["min_total"], "min_total"),
+                        maxTotal = parseDoubleQueryParam(call.request.queryParameters["max_total"], "max_total"),
+                        sortBy = call.request.queryParameters["sort_by"]?.takeIf { it.isNotBlank() },
+                        sortOrder = call.request.queryParameters["sort_order"]?.takeIf { it.isNotBlank() },
+                    ).also {
+                        if (it.startDate != null && it.endDate != null && it.startDate > it.endDate) {
+                            throw IllegalArgumentException("start_date cannot be greater than end_date")
+                        }
+                    }
+                } catch (error: IllegalArgumentException) {
+                    call.respond(HttpStatusCode.BadRequest, Message(error.message ?: "Invalid query parameters"))
+                    return@get
+                }
+
+            val orders =
+                try {
+                    orderService.getOrdersWithPaymentsFiltered(filters)
+                } catch (error: IllegalArgumentException) {
+                    call.respond(HttpStatusCode.BadRequest, Message(error.message ?: "Invalid query parameters"))
+                    return@get
+                }
+
             if (orders.isEmpty()) {
                 call.respond(HttpStatusCode.OK, "No orders found")
                 return@get

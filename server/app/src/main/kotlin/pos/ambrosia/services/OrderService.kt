@@ -4,7 +4,9 @@ import pos.ambrosia.logger
 import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
 import pos.ambrosia.models.OrderWithPayment
+import pos.ambrosia.models.OrderWithPaymentFilters
 import java.sql.Connection
+import java.sql.PreparedStatement
 import java.util.UUID
 
 class OrderService(
@@ -32,7 +34,7 @@ class OrderService(
             "SELECT id, user_id, table_id, waiter, status, total, created_at FROM orders WHERE created_at BETWEEN ? AND ? AND is_deleted = 0"
         private const val GET_TOTAL_SALES_BY_DATE =
             "SELECT SUM(total) AS total_sales FROM orders WHERE DATE(created_at) = ? AND status = 'paid' AND is_deleted = 0"
-        private const val GET_ORDERS_WITH_PAYMENTS =
+        private const val GET_ORDERS_WITH_PAYMENTS_BASE =
             """
             SELECT o.id,
                    o.user_id,
@@ -49,11 +51,16 @@ class OrderService(
             LEFT JOIN payments p ON p.id = tp.payment_id
             LEFT JOIN payment_methods pm ON pm.id = p.method_id
             WHERE o.is_deleted = 0
-            GROUP BY o.id
             """
     }
 
     private val validStatuses = setOf("open", "closed", "paid")
+    private val validSortByColumns =
+        mapOf(
+            "date" to "datetime(o.created_at)",
+            "total" to "o.total",
+        )
+    private val validSortOrders = setOf("asc", "desc")
     private val orderDishService = OrderDishService(connection)
 
     private fun userExists(userId: String): Boolean {
@@ -83,6 +90,62 @@ class OrderService(
             total = resultSet.getDouble("total"),
             created_at = resultSet.getString("created_at"),
         )
+
+    private fun mapResultSetToOrderWithPayment(resultSet: java.sql.ResultSet): OrderWithPayment {
+        val paymentNames = resultSet.getString("payment_method") ?: ""
+        val paymentIdsConcat = resultSet.getString("payment_method_ids") ?: ""
+        val paymentIds =
+            paymentIdsConcat.split(",").mapNotNull { it.takeIf { id -> id.isNotBlank() } }
+
+        return OrderWithPayment(
+            id = resultSet.getString("id"),
+            user_id = resultSet.getString("user_id"),
+            table_id = resultSet.getString("table_id"),
+            waiter = resultSet.getString("waiter"),
+            status = resultSet.getString("status"),
+            total = resultSet.getDouble("total"),
+            created_at = resultSet.getString("created_at"),
+            payment_method = paymentNames,
+            payment_method_ids = paymentIds,
+        )
+    }
+
+    private fun bindQueryParameters(
+        statement: PreparedStatement,
+        parameters: List<Any>,
+    ) {
+        parameters.forEachIndexed { index, value ->
+            when (value) {
+                is String -> statement.setString(index + 1, value)
+                is Double -> statement.setDouble(index + 1, value)
+                else -> error("Unsupported query parameter type: ${value::class.simpleName}")
+            }
+        }
+    }
+
+    private fun validateOrdersWithPaymentFilters(filters: OrderWithPaymentFilters) {
+        filters.status?.let { status ->
+            if (!isValidStatus(status)) {
+                throw IllegalArgumentException("Invalid status: $status")
+            }
+        }
+
+        filters.sortBy?.let { sortBy ->
+            if (sortBy !in validSortByColumns.keys) {
+                throw IllegalArgumentException("Invalid sort_by: $sortBy")
+            }
+        }
+
+        filters.sortOrder?.let { sortOrder ->
+            if (sortOrder.lowercase() !in validSortOrders) {
+                throw IllegalArgumentException("Invalid sort_order: $sortOrder")
+            }
+        }
+
+        if (filters.minTotal != null && filters.maxTotal != null && filters.minTotal > filters.maxTotal) {
+            throw IllegalArgumentException("min_total cannot be greater than max_total")
+        }
+    }
 
     suspend fun addOrder(order: Order): String? {
         // Verificar que el usuario existe
@@ -144,30 +207,87 @@ class OrderService(
         return orders
     }
 
-    suspend fun getOrdersWithPayments(): List<OrderWithPayment> {
-        val statement = connection.prepareStatement(GET_ORDERS_WITH_PAYMENTS)
+    suspend fun getOrdersWithPayments(): List<OrderWithPayment> = getOrdersWithPaymentsFiltered()
+
+    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> {
+        validateOrdersWithPaymentFilters(filters)
+
+        val whereClauses = mutableListOf<String>()
+        val parameters = mutableListOf<Any>()
+
+        filters.startDate?.let {
+            whereClauses.add("date(o.created_at) >= date(?)")
+            parameters.add(it)
+        }
+
+        filters.endDate?.let {
+            whereClauses.add("date(o.created_at) <= date(?)")
+            parameters.add(it)
+        }
+
+        filters.status?.let {
+            whereClauses.add("o.status = ?")
+            parameters.add(it)
+        }
+
+        filters.userId?.let {
+            whereClauses.add("o.user_id = ?")
+            parameters.add(it)
+        }
+
+        filters.paymentMethod?.let {
+            whereClauses.add(
+                """
+                EXISTS (
+                    SELECT 1
+                    FROM tickets t2
+                    JOIN ticket_payments tp2 ON tp2.ticket_id = t2.id
+                    JOIN payments p2 ON p2.id = tp2.payment_id
+                    JOIN payment_methods pm2 ON pm2.id = p2.method_id
+                    WHERE t2.order_id = o.id
+                      AND lower(pm2.name) = lower(?)
+                )
+                """.trimIndent(),
+            )
+            parameters.add(it)
+        }
+
+        filters.minTotal?.let {
+            whereClauses.add("o.total >= ?")
+            parameters.add(it)
+        }
+
+        filters.maxTotal?.let {
+            whereClauses.add("o.total <= ?")
+            parameters.add(it)
+        }
+
+        val orderByColumn = validSortByColumns[filters.sortBy ?: "date"] ?: validSortByColumns.getValue("date")
+        val orderDirection = (filters.sortOrder ?: "desc").lowercase()
+
+        val query =
+            buildString {
+                append(GET_ORDERS_WITH_PAYMENTS_BASE)
+                if (whereClauses.isNotEmpty()) {
+                    append("\nAND ")
+                    append(whereClauses.joinToString("\nAND "))
+                }
+                append("\nGROUP BY o.id")
+                append("\nORDER BY ")
+                append(orderByColumn)
+                append(" ")
+                append(orderDirection)
+            }
+
+        val statement = connection.prepareStatement(query)
+        bindQueryParameters(statement, parameters)
+
         val resultSet = statement.executeQuery()
         val orders = mutableListOf<OrderWithPayment>()
         while (resultSet.next()) {
-            val paymentNames = resultSet.getString("payment_method") ?: ""
-            val paymentIdsConcat = resultSet.getString("payment_method_ids") ?: ""
-            val paymentIds =
-                paymentIdsConcat.split(",").mapNotNull { it.takeIf { id -> id.isNotBlank() } }
-            orders.add(
-                OrderWithPayment(
-                    id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    table_id = resultSet.getString("table_id"),
-                    waiter = resultSet.getString("waiter"),
-                    status = resultSet.getString("status"),
-                    total = resultSet.getDouble("total"),
-                    created_at = resultSet.getString("created_at"),
-                    payment_method = paymentNames,
-                    payment_method_ids = paymentIds,
-                ),
-            )
+            orders.add(mapResultSetToOrderWithPayment(resultSet))
         }
-        logger.info("Retrieved ${orders.size} orders with payments")
+        logger.info("Retrieved ${orders.size} orders with payments using filters: $filters")
         return orders
     }
 
