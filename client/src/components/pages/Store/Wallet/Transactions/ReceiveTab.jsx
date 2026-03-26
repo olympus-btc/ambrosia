@@ -13,11 +13,16 @@ export function ReceiveTab({ invoiceActions }) {
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceDesc, setInvoiceDesc] = useState("");
   const [invalidNumberInput, setInvalidNumberInput] = useState(false);
+  const [amountTooLarge, setAmountTooLarge] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateInvoice = async () => {
     if (invoiceAmount < 1 || !invoiceAmount) {
       setInvalidNumberInput(true);
+      return;
+    }
+    if (!Number.isSafeInteger(invoiceAmount)) {
+      setAmountTooLarge(true);
       return;
     }
     try {
@@ -70,11 +75,18 @@ export function ReceiveTab({ invoiceActions }) {
             onValueChange={(value) => {
               setInvoiceAmount(value === null ? "" : value);
               setInvalidNumberInput(false);
+              setAmountTooLarge(false);
             }}
             startContent={<Bitcoin className="w-5 h-5 text-gray-400 pb-0.5" />}
             disabled={isLoading}
-            isInvalid={invalidNumberInput}
-            errorMessage={invalidNumberInput ? t("payments.receive.invoiceAmountError") : ""}
+            isInvalid={invalidNumberInput || amountTooLarge}
+            errorMessage={
+              amountTooLarge
+                ? t("payments.receive.invoiceAmountTooLargeError")
+                : invalidNumberInput
+                  ? t("payments.receive.invoiceAmountError")
+                  : ""
+            }
           />
         </div>
         <div id="wallet-receive-description">

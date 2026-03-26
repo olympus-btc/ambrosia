@@ -838,7 +838,8 @@ const storeEs = {
         invoiceLightningLoading: "Creando Factura...",
         invoiceSuccessTitle: "Factura creada",
         invoiceSuccessDescription: "La factura Lightning se ha generado correctamente",
-        invoiceAmountError: "Debes ingresar un monto para para generar el invoice",
+        invoiceAmountError: "Debes ingresar un monto para generar el invoice",
+        invoiceAmountTooLargeError: "El monto ingresado es demasiado grande",
         invoiceCreateError: "Error al crear el invoice",
       },
       send: {

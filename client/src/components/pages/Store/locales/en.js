@@ -839,6 +839,7 @@ const storeEn = {
         invoiceSuccessTitle: "Invoice created",
         invoiceSuccessDescription: "Lightning invoice generated successfully",
         invoiceAmountError: "You must enter an amount to generate the invoice",
+        invoiceAmountTooLargeError: "The entered amount is too large",
         invoiceCreateError: "Error creating the invoice",
       },
       send: {

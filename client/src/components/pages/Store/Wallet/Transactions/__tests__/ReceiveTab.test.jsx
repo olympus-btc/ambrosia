@@ -149,6 +149,65 @@ describe("ReceiveTab Component", () => {
       });
     });
 
+    it("shows error when amount exceeds Number.MAX_SAFE_INTEGER", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceAmountTooLargeError")).toBeInTheDocument();
+      });
+    });
+
+    it("does not call createInvoice when amount is too large", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(walletService.createInvoice).not.toHaveBeenCalled();
+      });
+    });
+
+    it("clears too-large error when user changes amount", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceAmountTooLargeError")).toBeInTheDocument();
+      });
+
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
+
+      await waitFor(() => {
+        expect(screen.queryByText("payments.receive.invoiceAmountTooLargeError")).not.toBeInTheDocument();
+      });
+    });
+
     it("shows visual error state on NumberInput", async () => {
       const { container } = renderReceiveTab();
 
