@@ -95,7 +95,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(screen.getByText("payments.send.noInvoiceToPay")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
     });
 
@@ -110,7 +111,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
     });
 
@@ -167,7 +169,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
     });
 
@@ -182,7 +185,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.invalidInvoiceFormat");
+        expect(screen.getByText("payments.send.invalidInvoiceFormat")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
     });
 
@@ -194,7 +198,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(screen.getByText("payments.send.noInvoiceToPay")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
 
       const invoiceInput = screen.getByLabelText("payments.send.payInvoiceLabel");
@@ -413,7 +418,8 @@ describe("TransactionsSendTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.send.noInvoiceToPay");
+        expect(screen.getByText("payments.send.noInvoiceToPay")).toBeInTheDocument();
+        expect(setError).toHaveBeenCalledWith("");
       });
     });
   });

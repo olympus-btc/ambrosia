@@ -279,6 +279,26 @@ describe("StoreWallet Component", () => {
         expect(screen.getByText("loadingMessage")).toBeInTheDocument();
       });
     });
+
+    it("shows BOLT11 validation errors only once", async () => {
+      await authenticateAndWait();
+
+      fireEvent.click(screen.getByText("payments.send.tabTitle"));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText("payments.send.payInvoiceLabel")).toBeInTheDocument();
+      });
+
+      await userEvent.type(
+        screen.getByLabelText("payments.send.payInvoiceLabel"),
+        "random-invalid-text",
+      );
+      fireEvent.click(screen.getByText("payments.send.payLightningButton"));
+
+      await waitFor(() => {
+        expect(screen.getAllByText("payments.send.invalidInvoiceFormat")).toHaveLength(1);
+      });
+    });
   });
 
   describe("Error Handling", () => {

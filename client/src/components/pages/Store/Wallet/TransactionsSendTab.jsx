@@ -23,7 +23,7 @@ export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, 
   const t = useTranslations("wallet");
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);
-  const [invalidInvoice, setInvalidInvoice] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const validateBolt11 = (invoice) => {
     if (!invoice || !invoice.trim()) {
@@ -49,8 +49,8 @@ export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, 
     const validation = validateBolt11(payInvoice);
 
     if (!validation.valid) {
-      setInvalidInvoice(true);
-      setError(validation.error);
+      setValidationError(validation.error);
+      setError("");
       return;
     }
 
@@ -60,7 +60,7 @@ export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, 
       setPaymentResult(res);
       setPayInvoice("");
       setError("");
-      setInvalidInvoice(false);
+      setValidationError("");
       fetchInfo?.();
       fetchTransactions?.();
       addToast({
@@ -105,13 +105,13 @@ export function TransactionsSendTab({ loading, setLoading, setError, fetchInfo, 
           value={payInvoice}
           onChange={(e) => {
             setPayInvoice(e.target.value);
-            setInvalidInvoice(false);
+            setValidationError("");
             setError("");
           }}
           startContent={<Zap className="w-5 h-5 text-gray-400" />}
           disabled={loading}
-          isInvalid={invalidInvoice}
-          errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}
+          isInvalid={Boolean(validationError)}
+          errorMessage={validationError}
         />
         <Button
           onPress={handlePayInvoice}
