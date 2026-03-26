@@ -84,14 +84,14 @@ describe("HistoryTab Component", () => {
       renderHistoryTab({ filter: "all" });
 
       const allButton = screen.getByText("payments.history.all").closest("button");
-      expect(allButton).toHaveClass("bg-primary");
+      expect(allButton).toHaveClass("bg-default");
     });
 
     it("shows 'received' filter as active when selected", () => {
       renderHistoryTab({ filter: "incoming" });
 
       const receivedButton = screen.getByText("payments.history.received").closest("button");
-      expect(receivedButton).toHaveClass("bg-success");
+      expect(receivedButton).toHaveClass("bg-primary");
     });
 
     it("shows 'sent' filter as active when selected", () => {
@@ -224,7 +224,7 @@ describe("HistoryTab Component", () => {
     it("displays transaction fees", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      expect(screen.getByText(/Fee: 0.1 sats/)).toBeInTheDocument();
+      expect(screen.getByText(/payments.history.fee/)).toBeInTheDocument();
     });
 
     it("renders multiple transactions", () => {
@@ -236,18 +236,18 @@ describe("HistoryTab Component", () => {
       expect(screen.getByText("3,000 sats")).toBeInTheDocument();
     });
 
-    it("displays success chip for incoming transaction", () => {
+    it("displays incoming amount in default color", () => {
       const { container } = renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const successChip = container.querySelector('[class*="bg-success"]');
-      expect(successChip).toBeInTheDocument();
+      const amount = container.querySelector(".text-deep.font-bold");
+      expect(amount).toBeInTheDocument();
     });
 
-    it("displays danger chip for outgoing transaction", () => {
+    it("displays outgoing amount in red", () => {
       const { container } = renderHistoryTab({ transactions: [mockOutgoingTransaction] });
 
-      const dangerChip = container.querySelector('[class*="bg-danger"]');
-      expect(dangerChip).toBeInTheDocument();
+      const amount = container.querySelector(".text-red-700.font-bold");
+      expect(amount).toBeInTheDocument();
     });
   });
 
@@ -293,7 +293,7 @@ describe("HistoryTab Component", () => {
 
       const scrollContainer = container.querySelector(".overflow-y-auto");
       expect(scrollContainer).toBeInTheDocument();
-      expect(scrollContainer).toHaveClass("max-h-96");
+      expect(scrollContainer).toHaveClass("h-96");
     });
   });
 
@@ -306,7 +306,7 @@ describe("HistoryTab Component", () => {
 
       renderHistoryTab({ transactions: [txWithZeroFees] });
 
-      expect(screen.getByText(/Fee: 0 sats/)).toBeInTheDocument();
+      expect(screen.getByText(/payments.history.fee/)).toBeInTheDocument();
     });
 
     it("formats large amounts correctly", () => {

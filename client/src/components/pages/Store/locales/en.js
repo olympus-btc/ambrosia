@@ -869,6 +869,7 @@ const storeEn = {
         noTxMessage: "Transactions will appear here once you'll starting to use the wallet",
         sent: "Sent",
         received: "Received",
+        fee: "Fee:",
         getTransactionsError: "Error loading history",
         getTransactionsErrorDescription: "Could not load transaction history",
       },

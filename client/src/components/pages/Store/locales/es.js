@@ -869,6 +869,7 @@ const storeEs = {
         noTxMessage: "Las transacciones aparecerán aquí una vez que comiences a usar la wallet",
         sent: "Enviado",
         received: "Recibido",
+        fee: "Comisión:",
         getTransactionsError: "Error al cargar historial",
         getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
       },
