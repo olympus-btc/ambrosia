@@ -79,6 +79,7 @@ describe("copyToClipboard", () => {
     });
 
     it("falls back to execCommand when clipboard API fails", async () => {
+      jest.spyOn(console, "error").mockImplementation(() => {});
       global.navigator.clipboard.writeText = jest.fn(() => Promise.reject(new Error("Failed")));
 
       await copyToClipboard("test-text", mockT);

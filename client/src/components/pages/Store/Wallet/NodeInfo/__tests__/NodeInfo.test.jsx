@@ -250,10 +250,10 @@ describe("NodeInfo Component", () => {
       expect(balances.length).toBeGreaterThan(0);
     });
 
-    it("calculates total balance with single channel", () => {
+    it("calculates total balance with single channel in non-Normal state as 0", () => {
       renderNodeInfo(mockNodeInfoSingleChannel);
 
-      expect(screen.getByText("100,000 sats")).toBeInTheDocument();
+      expect(screen.getByText("0 sats")).toBeInTheDocument();
     });
 
     it("handles empty channels array", () => {
@@ -281,6 +281,59 @@ describe("NodeInfo Component", () => {
       renderNodeInfo(noChannelsInfo);
 
       expect(screen.getByText("0 sats")).toBeInTheDocument();
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+  });
+
+  describe("Balance and Channel Count Filtering", () => {
+    it("excludes closing channels from total balance", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("50,000 sats")).toBeInTheDocument();
+    });
+
+    it("shows 0 balance when all channels are closing", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 20000, capacitySat: 50000, inboundLiquiditySat: 30000, state: "Negotiating" },
+          { channelId: "ch-2", balanceSat: 10000, capacitySat: 30000, inboundLiquiditySat: 20000, state: "ShuttingDown" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("0 sats")).toBeInTheDocument();
+    });
+
+    it("excludes closing channels from channel count", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+
+    it("shows 0 channel count when all channels are closing", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 20000, capacitySat: 50000, inboundLiquiditySat: 30000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
       expect(screen.getByText("0")).toBeInTheDocument();
     });
   });

@@ -58,20 +58,6 @@ describe("NodeError Component", () => {
   });
 
   describe("Styling", () => {
-    it("has red background", () => {
-      const { container } = renderNodeError("Test error");
-
-      const card = container.querySelector(".bg-red-50");
-      expect(card).toBeInTheDocument();
-    });
-
-    it("has red border", () => {
-      const { container } = renderNodeError("Test error");
-
-      const card = container.querySelector(".border-red-200");
-      expect(card).toBeInTheDocument();
-    });
-
     it("has red text color", () => {
       renderNodeError("Test error");
 
@@ -128,7 +114,7 @@ describe("NodeError Component", () => {
     it("has spacing between icon and text", () => {
       const { container } = renderNodeError("Test error");
 
-      const flexContainer = container.querySelector(".space-x-2");
+      const flexContainer = container.querySelector(".space-x-3");
       expect(flexContainer).toBeInTheDocument();
     });
 

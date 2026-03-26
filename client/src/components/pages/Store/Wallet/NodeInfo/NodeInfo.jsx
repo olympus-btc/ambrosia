@@ -17,7 +17,9 @@ export function NodeInfo({ info, onRefresh }) {
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
   const totalBalance = info?.channels
-    ? info.channels.reduce((total, ch) => total + ch.balanceSat, 0)
+    ? info.channels
+      .filter((channel) => channel.state === "Normal")
+      .reduce((total, channel) => total + channel.balanceSat, 0)
     : 0;
 
   const handleOpenCloseModal = (channel) => {
