@@ -5,7 +5,9 @@ import pos.ambrosia.models.DayReport
 import pos.ambrosia.models.ReportResponse
 import pos.ambrosia.models.ReportTicketItem
 import java.sql.Connection
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class ReportService(
@@ -26,9 +28,9 @@ class ReportService(
             JOIN ticket_payments tp ON tp.ticket_id = t.id
             JOIN payments p         ON p.id  = tp.payment_id
             JOIN payment_methods pm ON pm.id = p.method_id
-            WHERE t.ticket_date >= ?
-              AND t.ticket_date <= ?
-            ORDER BY t.ticket_date ASC
+            WHERE CAST(t.ticket_date AS INTEGER) >= ?
+              AND CAST(t.ticket_date AS INTEGER) <= ?
+            ORDER BY CAST(t.ticket_date AS INTEGER) ASC
             """
     }
 
@@ -36,9 +38,13 @@ class ReportService(
         startDate: String,
         endDate: String,
     ): ReportResponse {
+        val zone = ZoneId.systemDefault()
+        val startMs = LocalDate.parse(startDate).atStartOfDay(zone).toInstant().toEpochMilli()
+        val endMs = LocalDate.parse(endDate).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+
         val statement = connection.prepareStatement(GET_REPORT)
-        statement.setString(1, "$startDate 00:00:00")
-        statement.setString(2, "$endDate 23:59:59")
+        statement.setLong(1, startMs)
+        statement.setLong(2, endMs)
 
         val resultSet = statement.executeQuery()
         val reportsByDate = linkedMapOf<String, MutableList<ReportTicketItem>>()
@@ -46,8 +52,10 @@ class ReportService(
         while (resultSet.next()) {
             val rawDate = resultSet.getString("ticket_date")
             val date =
-                LocalDate
-                    .parse(rawDate.substring(0, 10))
+                Instant
+                    .ofEpochMilli(rawDate.toLong())
+                    .atZone(zone)
+                    .toLocalDate()
                     .format(DAY_FORMATTER)
 
             val item =
