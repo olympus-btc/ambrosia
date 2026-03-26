@@ -10,9 +10,8 @@ import {
   CardHeader,
   Divider,
   Input,
-  Spinner,
 } from "@heroui/react";
-import { CheckCircle, Send, Zap } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { CopyButton } from "@/components/shared/CopyButton";
@@ -83,55 +82,28 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="space-y-4">
-        <Input
-          classNames={{
-            label: "text-sm font-semibold text-deep",
-            input: "text-base bg-white",
-            innerWrapper: "bg-white",
-            inputWrapper: [
-              "bg-white",
-              "hover:!bg-white",
-              "group-data-[hover=true]:!bg-white",
-              "group-data-[focus=true]:bg-white",
-              "border-1",
-              "border-yellow-400",
-            ],
-          }}
-          label={t("payments.send.payInvoiceLabel")}
-          placeholder="lnbc1..."
-          value={payInvoice}
-          onChange={(e) => {
-            setPayInvoice(e.target.value);
-            setInvalidInvoice(false);
-          }}
-          startContent={<Zap className="w-5 h-5 text-gray-400" />}
-          disabled={isLoading}
-          isInvalid={invalidInvoice}
-          errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}
-        />
-        <Button
-          onPress={handlePayInvoice}
-          variant="solid"
-          color="warning"
-          size="lg"
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <Spinner size="sm" color="white" />
-              <span>{t("payments.send.payLightningLoading")}</span>
-            </div>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              {t("payments.send.payLightningButton")}
-            </>
-          )}
-        </Button>
-      </div>
+    <div className="p-6 space-y-4">
+      <Input
+        label={t("payments.send.payInvoiceLabel")}
+        placeholder="lnbc1..."
+        value={payInvoice}
+        onChange={(e) => {
+          setPayInvoice(e.target.value);
+          setInvalidInvoice(false);
+        }}
+        isDisabled={isLoading}
+        isInvalid={invalidInvoice}
+        errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}
+      />
+      <Button
+        onPress={handlePayInvoice}
+        color="primary"
+        size="lg"
+        isLoading={isLoading}
+        className="w-full"
+      >
+        {isLoading ? t("payments.send.payLightningLoading") : t("payments.send.payLightningButton")}
+      </Button>
 
       {paymentResult && (
         <Card className="bg-green-50 border-green-200">
