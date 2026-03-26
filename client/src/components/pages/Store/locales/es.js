@@ -858,6 +858,7 @@ const storeEs = {
         paySuccessDescription: "El pago Lightning se ha enviado correctamente",
         paymentError: "Error al pagar el invoice",
         paymentErrorDescription: "No se pudo procesar el pago",
+        closeButton: "Cerrar",
       },
       history: {
         tabTitle: "Historial",

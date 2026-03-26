@@ -858,6 +858,7 @@ const storeEn = {
         paySuccessDescription: "Lightning payment sent successfully",
         paymentError: "Error paying the invoice",
         paymentErrorDescription: "Could not process the payment",
+        closeButton: "Close",
       },
       history: {
         tabTitle: "History",
