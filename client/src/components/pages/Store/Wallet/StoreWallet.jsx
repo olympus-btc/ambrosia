@@ -135,17 +135,19 @@ export function StoreWallet() {
 
       {nodeAvailable && (
         <>
-          <NodeInfo info={info} onRefresh={fetchInfo} />
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+            <NodeInfo info={info} onRefresh={fetchInfo} />
 
-          <Transactions
-            transactions={transactions}
-            loading={loading}
-            filter={filter}
-            setFilter={setFilter}
-            invoiceActions={invoiceActions}
-            fetchInfo={fetchInfo}
-            fetchTransactions={fetchTransactions}
-          />
+            <Transactions
+              transactions={transactions}
+              loading={loading}
+              filter={filter}
+              setFilter={setFilter}
+              invoiceActions={invoiceActions}
+              fetchInfo={fetchInfo}
+              fetchTransactions={fetchTransactions}
+            />
+          </div>
 
           <InvoiceModal
             invoiceState={invoiceState}
@@ -155,6 +157,7 @@ export function StoreWallet() {
           />
         </>
       )}
+
     </div>
   );
 }
