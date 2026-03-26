@@ -134,7 +134,7 @@ function WalletInner() {
         <NodeError error={error} />
       )}
 
-      <NodeInfo info={info} />
+      <NodeInfo info={info} onRefresh={fetchInfo} />
 
       <Transactions
         transactions={transactions}

@@ -6,10 +6,45 @@ import { useTranslations } from "next-intl";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
+async function buildHttpRequestError(response, fallbackMessage) {
+  const responsePayload = await parseJsonResponse(response, null);
+  const requestError = new Error(fallbackMessage);
+  requestError.status = response.status;
+  requestError.responseMessage = responsePayload?.message;
+  return requestError;
+}
+
+function isLastAdminConflict(requestError) {
+  return requestError?.status === 409 && requestError?.responseMessage?.includes("last admin");
+}
+
 export function useUsers() {
   const t = useTranslations("users");
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const showGenericMutationErrorToast = useCallback(() => {
+    addToast({
+      title: t("toasts.genericErrorTitle"),
+      description: t("toasts.genericErrorDescription"),
+      color: "danger",
+    });
+  }, [t]);
+
+  const showUserConflictToast = useCallback((requestError, fallbackConflictToast) => {
+    if (isLastAdminConflict(requestError)) {
+      addToast({
+        title: t("toasts.lastAdminTitle"),
+        description: t("toasts.lastAdminDescription"),
+        color: "warning",
+      });
+      return;
+    }
+
+    addToast(fallbackConflictToast);
+  }, [t]);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -30,7 +65,7 @@ export function useUsers() {
 
   const updateUser = async (user) => {
     try {
-      const body = {
+      const updateUserPayload = {
         name: user.userName,
         roleId: user.userRole,
         email: user.userEmail,
@@ -38,42 +73,43 @@ export function useUsers() {
       };
 
       if (user.userPin && user.userPin.trim().length > 0) {
-        body.pin = user.userPin;
+        updateUserPayload.pin = user.userPin;
       }
 
-      const updateUser = await httpClient(`/users/${user.userId}`, {
+      const updateUserResponse = await httpClient(`/users/${user.userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(updateUserPayload),
       });
+
+      if (updateUserResponse.ok === false) {
+        throw await buildHttpRequestError(updateUserResponse, "Error updating user");
+      }
 
       await fetchUsers();
 
-      const updatedDataUser = await parseJsonResponse(updateUser, null);
+      const updatedUserData = await parseJsonResponse(updateUserResponse, null);
 
-      return updatedDataUser;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+      return updatedUserData;
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.duplicateNameTitle"),
           description: t("toasts.duplicateNameDescription"),
           color: "danger",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 
   const addUser = async (user) => {
     try {
-      const addUserResponse = await httpClient(`/users`, {
+      const createUserResponse = await httpClient(`/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,22 +123,23 @@ export function useUsers() {
         }),
       });
 
+      if (createUserResponse.ok === false) {
+        throw await buildHttpRequestError(createUserResponse, "Error adding user");
+      }
+
       await fetchUsers();
-      return addUserResponse;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+      return createUserResponse;
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.duplicateNameTitle"),
           description: t("toasts.duplicateNameDescription"),
           color: "danger",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 
@@ -112,22 +149,23 @@ export function useUsers() {
         method: "DELETE",
       });
 
+      if (deleteUserResponse.ok === false) {
+        throw await buildHttpRequestError(deleteUserResponse, "Error deleting user");
+      }
+
       await fetchUsers();
       return deleteUserResponse;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.lastUserTitle"),
           description: t("toasts.lastUserDescription"),
           color: "warning",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 

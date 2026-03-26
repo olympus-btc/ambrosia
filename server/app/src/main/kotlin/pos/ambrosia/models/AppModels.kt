@@ -155,6 +155,18 @@ data class OrderWithPayment(
     val payment_method_ids: List<String> = emptyList(),
 )
 
+data class OrderWithPaymentFilters(
+    val startDate: String? = null,
+    val endDate: String? = null,
+    val status: String? = null,
+    val userId: String? = null,
+    val paymentMethod: String? = null,
+    val minTotal: Double? = null,
+    val maxTotal: Double? = null,
+    val sortBy: String? = null,
+    val sortOrder: String? = null,
+)
+
 @Serializable
 data class OrderDish(
     val id: String? = null,

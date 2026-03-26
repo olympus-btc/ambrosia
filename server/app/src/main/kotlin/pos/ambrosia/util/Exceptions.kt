@@ -58,6 +58,10 @@ class LastUserDeletionException(
     message: String = "Cannot delete the last user",
 ) : IllegalStateException(message)
 
+class LastAdminRemovalException(
+    message: String = "Cannot remove the last admin user",
+) : IllegalStateException(message)
+
 class ResourceNotFoundException(
     message: String = "Resource not found",
 ) : RuntimeException(message)
