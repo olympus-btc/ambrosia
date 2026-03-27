@@ -35,8 +35,6 @@ class TestUserPinValidation:
         yield user_id
         await admin_client.delete(f"/users/{user_id}")
 
-    # --- POST /users ---
-
     @pytest.mark.asyncio
     async def test_create_user_with_1_digit_pin_fails(self, admin_client, role_id):
         """POST /users with a 1-digit PIN should return 400."""
@@ -109,8 +107,6 @@ class TestUserPinValidation:
         )
         await admin_client.delete(f"/users/{response.json()['id']}")
         logger.info("✓ Valid 4-digit PIN correctly accepted on create")
-
-    # --- PUT /users/{id} ---
 
     @pytest.mark.asyncio
     async def test_update_user_with_1_digit_pin_fails(
