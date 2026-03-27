@@ -820,8 +820,15 @@ const storeEn = {
       inboundLiquidity: "Inbound Liquidity:",
       fetchInfoError: "Error fetching wallet information",
       getInfoErrorDescription: "Could not load wallet information",
+      nodeUnavailable: "Lightning node is not available. Make sure phoenixd is running.",
+      noChannels: "No active Lightning channels",
+      stateShuttingDown: "Closing — settling pending payments",
+      stateNegotiating: "Closing — finalizing closing transaction",
+      stateClosing: "Closing — waiting for on-chain confirmation",
+      stateClosed: "Closed — will disappear on next restart",
     },
     payments: {
+      title: "Transactions",
       receive: {
         tabTitle: "Receive",
         invoiceAmountLabel: "Amount in satoshis",
@@ -832,6 +839,7 @@ const storeEn = {
         invoiceSuccessTitle: "Invoice created",
         invoiceSuccessDescription: "Lightning invoice generated successfully",
         invoiceAmountError: "You must enter an amount to generate the invoice",
+        invoiceAmountTooLargeError: "The entered amount is too large",
         invoiceCreateError: "Error creating the invoice",
       },
       send: {
@@ -850,6 +858,7 @@ const storeEn = {
         paySuccessDescription: "Lightning payment sent successfully",
         paymentError: "Error paying the invoice",
         paymentErrorDescription: "Could not process the payment",
+        closeButton: "Close",
       },
       history: {
         tabTitle: "History",
@@ -860,6 +869,7 @@ const storeEn = {
         noTxMessage: "Transactions will appear here once you'll starting to use the wallet",
         sent: "Sent",
         received: "Received",
+        fee: "Fee:",
         getTransactionsError: "Error loading history",
         getTransactionsErrorDescription: "Could not load transaction history",
       },
@@ -869,6 +879,7 @@ const storeEn = {
       invoice: "BOLT11 Invoice:",
       paymentHash: "Payment Hash:",
       closeButton: "Close",
+      markAsPaidButton: "Mark as Paid",
       copyButton: "Copy",
       waitingPayment: "Waiting for payment confirmation...",
       paymentReceived: "Payment received",

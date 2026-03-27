@@ -170,6 +170,75 @@ describe("NodeInfo Component", () => {
     });
   });
 
+  describe("Closing States", () => {
+    const closingStates = [
+      { state: "ShuttingDown", labelKey: "nodeInfo.stateShuttingDown" },
+      { state: "Negotiating", labelKey: "nodeInfo.stateNegotiating" },
+      { state: "Closing", labelKey: "nodeInfo.stateClosing" },
+      { state: "Closed", labelKey: "nodeInfo.stateClosed" },
+    ];
+
+    closingStates.forEach(({ state, labelKey }) => {
+      it(`shows orange indicator for ${state} state`, () => {
+        const info = {
+          ...mockNodeInfo,
+          channels: [{ ...mockNodeInfo.channels[0], state }],
+        };
+        const { container } = renderNodeInfo(info);
+
+        const orangeIndicators = container.querySelectorAll(".bg-orange-400");
+        expect(orangeIndicators.length).toBeGreaterThan(0);
+      });
+
+      it(`shows descriptive label for ${state} state`, () => {
+        const info = {
+          ...mockNodeInfo,
+          channels: [{ ...mockNodeInfo.channels[0], state }],
+        };
+        renderNodeInfo(info);
+
+        expect(screen.getByText(labelKey)).toBeInTheDocument();
+      });
+    });
+
+    it("shows red indicator for unknown state", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [{ ...mockNodeInfo.channels[0], state: "UnknownState" }],
+      };
+      const { container } = renderNodeInfo(info);
+
+      const redIndicators = container.querySelectorAll(".bg-red-500");
+      expect(redIndicators.length).toBeGreaterThan(0);
+    });
+
+    it("shows raw state name for unknown state", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [{ ...mockNodeInfo.channels[0], state: "UnknownState" }],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("UnknownState")).toBeInTheDocument();
+    });
+  });
+
+  describe("Empty State", () => {
+    it("hides Lightning Channels section when no channels", () => {
+      const emptyInfo = { ...mockNodeInfo, channels: [] };
+      renderNodeInfo(emptyInfo);
+
+      expect(screen.queryByText("nodeInfo.subtitle")).not.toBeInTheDocument();
+    });
+
+    it("shows empty state message when no channels", () => {
+      const emptyInfo = { ...mockNodeInfo, channels: [] };
+      renderNodeInfo(emptyInfo);
+
+      expect(screen.getByText("nodeInfo.noChannels")).toBeInTheDocument();
+    });
+  });
+
   describe("Edge Cases", () => {
     it("handles single channel correctly", () => {
       renderNodeInfo(mockNodeInfoSingleChannel);
@@ -181,10 +250,10 @@ describe("NodeInfo Component", () => {
       expect(balances.length).toBeGreaterThan(0);
     });
 
-    it("calculates total balance with single channel", () => {
+    it("calculates total balance with single channel in non-Normal state as 0", () => {
       renderNodeInfo(mockNodeInfoSingleChannel);
 
-      expect(screen.getByText("100,000 sats")).toBeInTheDocument();
+      expect(screen.getByText("0 sats")).toBeInTheDocument();
     });
 
     it("handles empty channels array", () => {
@@ -212,6 +281,59 @@ describe("NodeInfo Component", () => {
       renderNodeInfo(noChannelsInfo);
 
       expect(screen.getByText("0 sats")).toBeInTheDocument();
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+  });
+
+  describe("Balance and Channel Count Filtering", () => {
+    it("excludes closing channels from total balance", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("50,000 sats")).toBeInTheDocument();
+    });
+
+    it("shows 0 balance when all channels are closing", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 20000, capacitySat: 50000, inboundLiquiditySat: 30000, state: "Negotiating" },
+          { channelId: "ch-2", balanceSat: 10000, capacitySat: 30000, inboundLiquiditySat: 20000, state: "ShuttingDown" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("0 sats")).toBeInTheDocument();
+    });
+
+    it("excludes closing channels from channel count", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+
+    it("shows 0 channel count when all channels are closing", () => {
+      const info = {
+        ...mockNodeInfo,
+        channels: [
+          { channelId: "ch-1", balanceSat: 20000, capacitySat: 50000, inboundLiquiditySat: 30000, state: "Closing" },
+        ],
+      };
+      renderNodeInfo(info);
+
       expect(screen.getByText("0")).toBeInTheDocument();
     });
   });

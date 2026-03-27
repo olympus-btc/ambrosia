@@ -8,7 +8,7 @@ import * as usePaymentWebsocketHook from "@hooks/usePaymentWebsocket";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
-import { StoreWallet } from "../StoreWallet";
+import { Wallet } from "../Wallet";
 
 const mockNodeInfo = {
   nodeId: "test-node-id",
@@ -53,7 +53,7 @@ function renderStoreWallet() {
   return render(
     <AuthContext.Provider value={mockAuthContext}>
       <I18nProvider>
-        <StoreWallet />
+        <Wallet />
       </I18nProvider>
     </AuthContext.Provider>,
   );
@@ -180,6 +180,24 @@ afterEach(() => {
 });
 
 describe("StoreWallet Component", () => {
+  describe("Page Header", () => {
+    it("renders wallet title", async () => {
+      await act(async () => {
+        renderStoreWallet();
+      });
+
+      expect(screen.getByText("title")).toBeInTheDocument();
+    });
+
+    it("renders wallet subtitle", async () => {
+      await act(async () => {
+        renderStoreWallet();
+      });
+
+      expect(screen.getByText("subtitle")).toBeInTheDocument();
+    });
+  });
+
   describe("WalletGuard Authentication", () => {
     it("shows wallet guard modal on initial load", async () => {
       await act(async () => {

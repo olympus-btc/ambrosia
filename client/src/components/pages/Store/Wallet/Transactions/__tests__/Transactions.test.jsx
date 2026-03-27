@@ -5,12 +5,10 @@ import { I18nProvider } from "@i18n/I18nProvider";
 
 import { Transactions } from "../Transactions";
 
-jest.mock("../TransactionsReceiveTab", () => ({
-  TransactionsReceiveTab: ({ setLoading, setError, invoiceActions }) => (
+jest.mock("../ReceiveTab", () => ({
+  ReceiveTab: ({ invoiceActions }) => (
     <div data-testid="receive-tab">
       Receive Tab
-      <button onClick={() => setLoading(true)}>Set Loading</button>
-      <button onClick={() => setError("Test error")}>Set Error</button>
       <button onClick={() => invoiceActions.createInvoice({ test: "invoice" })}>
         Create Invoice
       </button>
@@ -18,18 +16,18 @@ jest.mock("../TransactionsReceiveTab", () => ({
   ),
 }));
 
-jest.mock("../TransactionsSendTab", () => ({
-  TransactionsSendTab: ({ setLoading, setError }) => (
+jest.mock("../SendTab", () => ({
+  SendTab: ({ fetchInfo, fetchTransactions }) => (
     <div data-testid="send-tab">
       Send Tab
-      <button onClick={() => setLoading(true)}>Set Loading</button>
-      <button onClick={() => setError("Test error")}>Set Error</button>
+      <button onClick={() => fetchInfo?.()}>Fetch Info</button>
+      <button onClick={() => fetchTransactions?.()}>Fetch Transactions</button>
     </div>
   ),
 }));
 
-jest.mock("../TransactionsHistoryTab", () => ({
-  TransactionsHistoryTab: ({ transactions, filter, setFilter }) => (
+jest.mock("../HistoryTab", () => ({
+  HistoryTab: ({ transactions, filter, setFilter }) => (
     <div data-testid="history-tab">
       History Tab
       <span>Transactions: {transactions.length}</span>
@@ -43,8 +41,6 @@ function renderTransactions(props = {}) {
   const defaultProps = {
     transactions: [],
     loading: false,
-    setLoading: jest.fn(),
-    setError: jest.fn(),
     filter: "all",
     setFilter: jest.fn(),
     invoiceActions: {
@@ -169,24 +165,28 @@ describe("Transactions Component", () => {
   });
 
   describe("Props Passing", () => {
-    it("passes loading and setLoading to receive tab", () => {
-      const setLoading = jest.fn();
-      renderTransactions({ loading: false, setLoading });
+    it("passes fetchInfo to send tab", async () => {
+      const fetchInfo = jest.fn();
+      renderTransactions({ fetchInfo });
 
-      const setLoadingButton = screen.getByText("Set Loading");
-      fireEvent.click(setLoadingButton);
+      fireEvent.click(screen.getByText("payments.send.tabTitle"));
+      await waitFor(() => expect(screen.getByTestId("send-tab")).toBeInTheDocument());
 
-      expect(setLoading).toHaveBeenCalledWith(true);
+      fireEvent.click(screen.getByText("Fetch Info"));
+
+      expect(fetchInfo).toHaveBeenCalled();
     });
 
-    it("passes setError to receive tab", () => {
-      const setError = jest.fn();
-      renderTransactions({ setError });
+    it("passes fetchTransactions to send tab", async () => {
+      const fetchTransactions = jest.fn();
+      renderTransactions({ fetchTransactions });
 
-      const setErrorButton = screen.getByText("Set Error");
-      fireEvent.click(setErrorButton);
+      fireEvent.click(screen.getByText("payments.send.tabTitle"));
+      await waitFor(() => expect(screen.getByTestId("send-tab")).toBeInTheDocument());
 
-      expect(setError).toHaveBeenCalledWith("Test error");
+      fireEvent.click(screen.getByText("Fetch Transactions"));
+
+      expect(fetchTransactions).toHaveBeenCalled();
     });
 
     it("passes invoiceActions to receive tab", () => {
