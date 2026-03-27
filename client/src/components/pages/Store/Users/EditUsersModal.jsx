@@ -83,7 +83,9 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
               label={t("users.modal.userPinLabel")}
               type={showPin ? "text" : "password"}
               placeholder={t("users.modal.userPinPlaceholder")}
+              minLength={4}
               maxLength={4}
+              errorMessage={t("users.modal.userPinError")}
               value={data.userPin ?? ""}
               onChange={(e) => {
                 const onlyNumbers = e.target.value.replace(/\D/g, "");
