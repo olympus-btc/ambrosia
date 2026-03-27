@@ -32,6 +32,7 @@ import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.models.phoenix.PaymentResponse
 import pos.ambrosia.models.phoenix.PhoenixBalance
+import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
@@ -269,7 +270,9 @@ class PhoenixService(
                 throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
             }
 
-            return response.body<List<OutgoingPayment>>()
+            return response.body<List<OutgoingPayment>>().map { payment ->
+                payment.copy(description = Bolt11Decoder.extractDescription(payment.invoice))
+            }
         } catch (e: Exception) {
             throw PhoenixServiceException("Failed to list outgoing payments on Phoenix: ${e.message}")
         }
@@ -283,7 +286,8 @@ class PhoenixService(
                 throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
             }
 
-            return response.body<OutgoingPayment>()
+            val payment = response.body<OutgoingPayment>()
+            return payment.copy(description = Bolt11Decoder.extractDescription(payment.invoice))
         } catch (e: Exception) {
             throw PhoenixServiceException("Failed to get outgoing payment on Phoenix: ${e.message}")
         }
@@ -298,7 +302,8 @@ class PhoenixService(
                 throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
             }
 
-            return response.body<OutgoingPayment>()
+            val payment = response.body<OutgoingPayment>()
+            return payment.copy(description = Bolt11Decoder.extractDescription(payment.invoice))
         } catch (e: Exception) {
             throw PhoenixServiceException(
                 "Failed to get outgoing payment by hash on Phoenix: ${e.message}",

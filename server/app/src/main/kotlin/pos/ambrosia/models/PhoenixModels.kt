@@ -84,6 +84,7 @@ data class OutgoingPayment(
     val sent: Long,
     val fees: Long,
     val invoice: String? = null,
+    val description: String? = null,
     val completedAt: Long? = null,
     val createdAt: Long,
 )

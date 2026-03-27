@@ -44,6 +44,7 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.49.1.0")
 
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
+    implementation("fr.acinq.lightning:lightning-kmp-jvm:1.8.4")
 }
 
 tasks.named<JavaExec>("run") {
