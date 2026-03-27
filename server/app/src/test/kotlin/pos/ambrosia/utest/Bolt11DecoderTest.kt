@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class Bolt11DecoderTest {
-
     // Mainnet invoice with description "1 cup coffee" (updated BOLT11 spec vector with payment secret)
     private val invoiceWithDescription =
         "lnbc2500u1pvjluezsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygspp5qqqsyqcy" +
