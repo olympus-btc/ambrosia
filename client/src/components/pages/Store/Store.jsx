@@ -4,6 +4,8 @@ import { Card, CardHeader, CardBody } from "@heroui/card";
 import { Users, Package, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { PageHeader } from "@components/shared/PageHeader";
+
 import { useOrders } from "./hooks/useOrders";
 import { useProducts } from "./hooks/useProducts";
 import { useUsers } from "./hooks/useUsers";
@@ -40,14 +42,7 @@ export function Store() {
 
   return (
     <StoreLayout>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-semibold text-green-800">{t("title")}</h1>
-          <p className=" text-gray-800 mt-4">
-            {t("subtitle")}
-          </p>
-        </div>
-      </header>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <div className="bg-white rounded-lg shadow-lg p-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
