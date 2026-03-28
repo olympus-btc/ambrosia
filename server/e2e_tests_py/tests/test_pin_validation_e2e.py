@@ -94,9 +94,7 @@ class TestUserPinValidation:
     @pytest.mark.asyncio
     async def test_update_user_with_blank_name_fails(self, admin_client, existing_user):
         """PUT /users/{id} with a blank name should return 400."""
-        response = await admin_client.put(
-            f"/users/{existing_user}", json={"name": ""}
-        )
+        response = await admin_client.put(f"/users/{existing_user}", json={"name": ""})
         assert_status_code(response, 400, "Blank name should be rejected on update")
         logger.info("✓ Blank name correctly rejected on update")
 
