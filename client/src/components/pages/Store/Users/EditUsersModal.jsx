@@ -58,6 +58,8 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
               label={t("users.modal.userNameLabel")}
               type="text"
               placeholder={t("users.modal.userNamePlaceholder")}
+              isRequired
+              errorMessage={t("users.modal.userNameError")}
               value={data.userName ?? ""}
               onChange={(e) => onChange({ ...data, userName: e.target.value })}
             />

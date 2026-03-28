@@ -166,13 +166,13 @@ describe("EditUsersModal", () => {
     expect(roleSelect).toHaveValue("");
   });
 
-  it("pin is optional but enforces min length when provided", () => {
+  it("name is required but pin is optional and enforces min length when provided", () => {
     renderModal();
 
     const pinInput = screen.getByLabelText("users.modal.userPinLabel");
     expect(pinInput).toHaveAttribute("minlength", "4");
     expect(pinInput).not.toHaveAttribute("required");
-    expect(screen.getByLabelText("users.modal.userNameLabel")).not.toHaveAttribute("required");
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
   });
 
   it("resets role to empty when no roles are available", () => {
