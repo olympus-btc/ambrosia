@@ -12,6 +12,15 @@ jest.mock("@heroui/react", () => {
   const Input = ({ placeholder, value, onChange }) => (
     <input placeholder={placeholder} value={value} onChange={onChange} />
   );
+  const NumberInput = ({ label, placeholder, value, onValueChange }) => (
+    <input
+      aria-label={label}
+      placeholder={placeholder}
+      type="number"
+      value={value ?? ""}
+      onChange={(e) => onValueChange?.(e.target.value === "" ? null : Number(e.target.value))}
+    />
+  );
   const Button = ({ children, onPress }) => (
     <button type="button" onClick={onPress}>
       {children}
@@ -34,6 +43,7 @@ jest.mock("@heroui/react", () => {
     ...actual,
     Button,
     Input,
+    NumberInput,
     Popover,
     PopoverTrigger,
     PopoverContent,
