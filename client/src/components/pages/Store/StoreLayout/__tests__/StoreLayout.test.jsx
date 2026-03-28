@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, within, act } from "@testing-library/react";
 
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
@@ -18,6 +18,8 @@ jest.mock("lucide-react", () => ({
   LogOut: () => <div>LogOut Icon</div>,
   FileText: () => <div>FileText Icon</div>,
   Languages: () => <div>Languages Icon</div>,
+  Menu: () => <div>Menu Icon</div>,
+  X: () => <div>X Icon</div>,
 }));
 
 jest.mock("@/lib/http", () => ({
@@ -50,12 +52,14 @@ describe("StoreLayout", () => {
       label: "products",
       icon: "package",
       showInNavbar: true,
+      showInBottomNav: true,
     },
     {
       path: "/store/checkout",
       label: "checkout",
       icon: "shopping-cart",
       showInNavbar: true,
+      showInBottomNav: true,
     },
     {
       path: "/store/settings",
@@ -100,15 +104,19 @@ describe("StoreLayout", () => {
     );
   }
 
+  function getDesktopSidebar() {
+    return screen.getByTestId("desktop-sidebar");
+  }
+
   describe("Logo and Branding", () => {
     it("renders the Ambrosia logo", () => {
       renderStoreLayout();
-      expect(screen.getByAltText("ambrosia")).toBeInTheDocument();
+      expect(screen.getAllByAltText("ambrosia")[0]).toBeInTheDocument();
     });
 
     it("displays the business name from config", () => {
       renderStoreLayout();
-      expect(screen.getByText("Mi Tienda Test")).toBeInTheDocument();
+      expect(screen.getAllByText("Mi Tienda Test")[0]).toBeInTheDocument();
     });
 
     it("does not display business name when config is null", () => {
@@ -126,7 +134,7 @@ describe("StoreLayout", () => {
 
     it("logo links to homepage", () => {
       renderStoreLayout();
-      const logoLink = screen.getByAltText("ambrosia").closest("a");
+      const logoLink = within(getDesktopSidebar()).getByAltText("ambrosia").closest("a");
       expect(logoLink).toHaveAttribute("href", "/");
     });
   });
@@ -134,11 +142,12 @@ describe("StoreLayout", () => {
   describe("Navigation Items", () => {
     it("renders all navigation items when authenticated", () => {
       renderStoreLayout();
+      const sidebar = getDesktopSidebar();
 
-      expect(screen.getByText("users")).toBeInTheDocument();
-      expect(screen.getByText("products")).toBeInTheDocument();
-      expect(screen.getByText("checkout")).toBeInTheDocument();
-      expect(screen.getByText("settings")).toBeInTheDocument();
+      expect(within(sidebar).getByText("users")).toBeInTheDocument();
+      expect(within(sidebar).getByText("products")).toBeInTheDocument();
+      expect(within(sidebar).getByText("checkout")).toBeInTheDocument();
+      expect(within(sidebar).getByText("settings")).toBeInTheDocument();
     });
 
     it("does not render navigation items when not authenticated", () => {
@@ -163,11 +172,12 @@ describe("StoreLayout", () => {
 
     it("navigation items link to correct paths", () => {
       renderStoreLayout();
+      const sidebar = getDesktopSidebar();
 
-      const usersLink = screen.getByText("users").closest("a");
-      const productsLink = screen.getByText("products").closest("a");
-      const checkoutLink = screen.getByText("checkout").closest("a");
-      const settingsLink = screen.getByText("settings").closest("a");
+      const usersLink = within(sidebar).getByText("users").closest("a");
+      const productsLink = within(sidebar).getByText("products").closest("a");
+      const checkoutLink = within(sidebar).getByText("checkout").closest("a");
+      const settingsLink = within(sidebar).getByText("settings").closest("a");
 
       expect(usersLink).toHaveAttribute("href", "/store/users");
       expect(productsLink).toHaveAttribute("href", "/store/products");
@@ -197,9 +207,10 @@ describe("StoreLayout", () => {
       });
 
       renderStoreLayout();
+      const sidebar = getDesktopSidebar();
 
-      expect(screen.getByText("inventory")).toBeInTheDocument();
-      expect(screen.queryByText("users")).not.toBeInTheDocument();
+      expect(within(sidebar).getByText("inventory")).toBeInTheDocument();
+      expect(within(sidebar).queryByText("users")).not.toBeInTheDocument();
     });
   });
 
@@ -210,7 +221,7 @@ describe("StoreLayout", () => {
 
       renderStoreLayout();
 
-      const usersLink = screen.getByText("users").closest("a");
+      const usersLink = within(getDesktopSidebar()).getByText("users").closest("a");
       expect(usersLink).toHaveClass("bg-green-300", "text-green-800");
     });
 
@@ -220,7 +231,7 @@ describe("StoreLayout", () => {
 
       renderStoreLayout();
 
-      const productsLink = screen.getByText("products").closest("a");
+      const productsLink = within(getDesktopSidebar()).getByText("products").closest("a");
       expect(productsLink).toHaveClass("text-slate-100");
       expect(productsLink).not.toHaveClass("bg-green-300");
     });
@@ -231,14 +242,14 @@ describe("StoreLayout", () => {
 
       renderStoreLayout();
 
-      const usersLink = screen.getByText("users").closest("a");
+      const usersLink = within(getDesktopSidebar()).getByText("users").closest("a");
       expect(usersLink).toHaveClass("bg-green-300", "text-green-800");
     });
 
     it("applies hover styles to navigation items", () => {
       renderStoreLayout();
 
-      const usersLink = screen.getByText("users").closest("a");
+      const usersLink = within(getDesktopSidebar()).getByText("users").closest("a");
       expect(usersLink).toHaveClass("hover:bg-green-300", "hover:text-green-800");
     });
   });
@@ -246,20 +257,18 @@ describe("StoreLayout", () => {
   describe("Logout Functionality", () => {
     it("renders logout button", () => {
       renderStoreLayout();
-      expect(screen.getByText("logout")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("logout")).toBeInTheDocument();
     });
 
     it("logout button links to /auth", () => {
       renderStoreLayout();
-
-      const logoutLink = screen.getByText("logout").closest("a");
+      const logoutLink = within(getDesktopSidebar()).getByText("logout").closest("a");
       expect(logoutLink).toHaveAttribute("href", "/auth");
     });
 
     it("calls logout function when logout button is clicked", () => {
       renderStoreLayout();
-
-      const logoutButton = screen.getByText("logout").closest("a");
+      const logoutButton = within(getDesktopSidebar()).getByText("logout").closest("a");
       fireEvent.click(logoutButton);
 
       expect(mockLogout).toHaveBeenCalledTimes(1);
@@ -267,24 +276,29 @@ describe("StoreLayout", () => {
 
     it("renders logout icon", () => {
       renderStoreLayout();
-      const logoutButton = screen.getByText("logout").closest("a");
+      const logoutButton = within(getDesktopSidebar()).getByText("logout").closest("a");
       expect(logoutButton).toBeInTheDocument();
     });
   });
 
   describe("Layout Structure", () => {
-    it("renders sidebar with correct classes", () => {
-      const { container } = renderStoreLayout();
-      const sidebar = container.querySelector("aside");
+    it("renders desktop sidebar with correct classes", () => {
+      renderStoreLayout();
+      const sidebar = getDesktopSidebar();
 
-      expect(sidebar).toHaveClass("w-48", "lg:w-64", "bg-primary-500", "flex", "flex-col");
+      expect(sidebar).toHaveClass("md:w-48", "lg:w-64", "bg-primary-500", "flex-col");
+    });
+
+    it("renders mobile drawer trigger", () => {
+      renderStoreLayout();
+      expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
     });
 
     it("renders main content area", () => {
       const { container } = renderStoreLayout();
       const main = container.querySelector("main");
 
-      expect(main).toHaveClass("flex-1", "gradient-fresh", "p-6");
+      expect(main).toHaveClass("flex-1", "gradient-fresh");
     });
 
     it("renders children in main content area", () => {
@@ -296,7 +310,7 @@ describe("StoreLayout", () => {
 
     it("positions logout button at bottom of sidebar", () => {
       renderStoreLayout();
-      const logoutContainer = screen.getByText("logout").closest("div");
+      const logoutContainer = within(getDesktopSidebar()).getByText("logout").closest("div");
 
       expect(logoutContainer).toHaveClass(
         "mt-auto",
@@ -309,18 +323,108 @@ describe("StoreLayout", () => {
 
     it("has proper border styling on sidebar sections", () => {
       const { container } = renderStoreLayout();
-      const headerSection = container.querySelector(".border-b");
-      const footerSection = container.querySelector(".border-t");
+      const desktopSidebar = container.querySelector("[data-testid='desktop-sidebar']");
+      const headerSection = desktopSidebar.querySelector(".border-b");
+      const footerSection = desktopSidebar.querySelector(".border-t");
 
       expect(headerSection).toHaveClass("border-green-300");
       expect(footerSection).toHaveClass("border-green-300");
     });
   });
 
+  describe("Mobile Drawer", () => {
+    it("renders hamburger button in bottom nav", () => {
+      renderStoreLayout();
+      expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
+    });
+
+    it("drawer is not visible by default", () => {
+      renderStoreLayout();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("drawer opens when hamburger is clicked", () => {
+      renderStoreLayout();
+      fireEvent.click(screen.getByLabelText("Open menu"));
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("drawer shows navigation items when open", () => {
+      renderStoreLayout();
+      fireEvent.click(screen.getByLabelText("Open menu"));
+
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).getByText("users")).toBeInTheDocument();
+      expect(within(dialog).getByText("logout")).toBeInTheDocument();
+    });
+  });
+
+  describe("Bottom Navigation Bar", () => {
+    it("renders bottom nav bar", () => {
+      renderStoreLayout();
+      expect(screen.getByTestId("bottom-nav")).toBeInTheDocument();
+    });
+
+    it("renders hamburger button with More label", () => {
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+      expect(within(bottomNav).getByLabelText("Open menu")).toBeInTheDocument();
+      expect(within(bottomNav).getByText("menu")).toBeInTheDocument();
+    });
+
+    it("renders only items with showInBottomNav as icon shortcuts", () => {
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+      const links = within(bottomNav).getAllByRole("link");
+
+      // defaultNavigation has showInBottomNav on products and checkout
+      expect(links.length).toBe(2);
+    });
+
+    it("renders labels for bottom nav shortcuts", () => {
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+
+      expect(within(bottomNav).getByText("products")).toBeInTheDocument();
+      expect(within(bottomNav).getByText("checkout")).toBeInTheDocument();
+    });
+
+    it("highlights active route in bottom nav", () => {
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/store/products");
+
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+      const productsLink = within(bottomNav).getAllByRole("link")[0];
+
+      expect(productsLink).toHaveClass("bg-green-300", "text-green-800");
+    });
+
+    it("active item label has font-semibold", () => {
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/store/products");
+
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+      const activeLabel = within(bottomNav).getByText("products");
+
+      expect(activeLabel).toHaveClass("font-semibold");
+    });
+
+    it("navigates when bottom nav icon is clicked", () => {
+      renderStoreLayout();
+      const bottomNav = screen.getByTestId("bottom-nav");
+      const firstLink = within(bottomNav).getAllByRole("link")[0];
+
+      expect(firstLink).toHaveAttribute("href", "/store/products");
+    });
+  });
+
   describe("Icon Component", () => {
     it("renders icon with correct formatting", () => {
       renderStoreLayout();
-      expect(screen.getByText("users")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("users")).toBeInTheDocument();
     });
 
     it("handles multi-word icon names with kebab-case", () => {
@@ -345,7 +449,7 @@ describe("StoreLayout", () => {
       });
 
       renderStoreLayout();
-      expect(screen.getByText("test")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("test")).toBeInTheDocument();
     });
   });
 
@@ -360,7 +464,7 @@ describe("StoreLayout", () => {
       });
 
       renderStoreLayout();
-      expect(screen.getByAltText("ambrosia")).toBeInTheDocument();
+      expect(screen.getAllByAltText("ambrosia")[0]).toBeInTheDocument();
     });
 
     it("renders layout when modules are loading", () => {
@@ -376,39 +480,39 @@ describe("StoreLayout", () => {
       });
 
       renderStoreLayout();
-      expect(screen.getByAltText("ambrosia")).toBeInTheDocument();
+      expect(screen.getAllByAltText("ambrosia")[0]).toBeInTheDocument();
     });
   });
 
   describe("Responsive and Accessibility", () => {
-    it("sidebar has proper width", () => {
-      const { container } = renderStoreLayout();
-      const sidebar = container.querySelector("aside");
+    it("desktop sidebar has correct width classes", () => {
+      renderStoreLayout();
+      const sidebar = getDesktopSidebar();
 
-      expect(sidebar).toHaveClass("w-48", "lg:w-64", "bg-primary-500", "flex", "flex-col");
+      expect(sidebar).toHaveClass("md:w-48", "lg:w-64", "bg-primary-500", "flex-col");
     });
 
     it("navigation items have proper spacing", () => {
       const { container } = renderStoreLayout();
-      const navList = container.querySelector("nav ul");
+      const desktopSidebar = container.querySelector("[data-testid='desktop-sidebar']");
+      const navList = desktopSidebar.querySelector("nav ul");
 
       expect(navList).toHaveClass("space-y-2");
     });
 
     it("nav buttons have flex layout for icon and text", () => {
       renderStoreLayout();
-      const usersLink = screen.getByText("users").closest("a");
+      const usersLink = within(getDesktopSidebar()).getByText("users").closest("a");
 
       expect(usersLink).toHaveClass("flex", "items-center", "space-x-2");
     });
 
-    it("has proper padding and margins throughout", () => {
+    it("has proper padding in nav and main", () => {
       const { container } = renderStoreLayout();
-      const nav = container.querySelector("nav");
-      const main = container.querySelector("main");
+      const desktopSidebar = container.querySelector("[data-testid='desktop-sidebar']");
+      const nav = desktopSidebar.querySelector("nav");
 
       expect(nav).toHaveClass("p-4");
-      expect(main).toHaveClass("p-6");
     });
   });
 
@@ -418,8 +522,8 @@ describe("StoreLayout", () => {
         renderStoreLayout();
       });
 
-      expect(screen.getByText("users")).toBeInTheDocument();
-      expect(screen.getByText("logout")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("users")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("logout")).toBeInTheDocument();
     });
 
     it("integrates with ConfigurationsProvider for business data", () => {
@@ -437,13 +541,13 @@ describe("StoreLayout", () => {
       });
 
       renderStoreLayout();
-      expect(screen.getByText("Custom Store Name")).toBeInTheDocument();
+      expect(screen.getAllByText("Custom Store Name")[0]).toBeInTheDocument();
     });
 
     it("integrates with useModules hook for navigation", () => {
       renderStoreLayout();
       expect(useModulesHook.useModules).toHaveBeenCalled();
-      expect(screen.getByText("users")).toBeInTheDocument();
+      expect(within(getDesktopSidebar()).getByText("users")).toBeInTheDocument();
     });
   });
 });
