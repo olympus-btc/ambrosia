@@ -7,6 +7,7 @@ const storeEs = {
     wallet: "Billetera",
     settings: "Configuración",
     logout: "Cerrar sesión",
+    menu: "Menú",
     cart: "Venta",
     orders: "Ordenes",
     reports: "Reportes",

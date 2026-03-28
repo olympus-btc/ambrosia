@@ -7,6 +7,7 @@ const storeEn = {
     wallet: "Wallet",
     settings: "Settings",
     logout: "Log Out",
+    menu: "Menu",
     cart: "Sale",
     orders: "Orders",
     reports: "Reports",
