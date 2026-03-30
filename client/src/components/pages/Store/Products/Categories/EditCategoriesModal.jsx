@@ -46,6 +46,7 @@ export function EditCategoriesModal({
     <Modal
       isOpen={editCategoriesShowModal}
       onOpenChange={handleOnCloseModal}
+      placement="center"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",

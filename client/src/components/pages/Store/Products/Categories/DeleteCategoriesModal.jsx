@@ -9,6 +9,7 @@ export function DeleteCategoriesModal({ category, deleteCategoriesShowModal, set
     <Modal
       isOpen={deleteCategoriesShowModal}
       onOpenChange={setDeleteCategoriesShowModal}
+      placement="center"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
