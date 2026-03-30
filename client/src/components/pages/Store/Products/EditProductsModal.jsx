@@ -77,6 +77,7 @@ export function EditProductsModal({
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
       }}
+      placement="center"
     >
       <ModalContent>
         <ModalHeader>{t("modal.titleEdit")}</ModalHeader>
