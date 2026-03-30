@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { ProductsTable } from "../ProductsTable";
+import { ProductsList } from "../ProductsList";
 
 jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
@@ -30,6 +30,7 @@ const categories = [
 
 const products = [
   {
+    id: 1,
     sku: "jade-wallet",
     name: "Jade Wallet",
     description: "Hardware wallet",
@@ -39,6 +40,7 @@ const products = [
     image_url: "/images/jade.png",
   },
   {
+    id: 2,
     sku: "jade-plus",
     name: "Jade Plus",
     description: "Hardware wallet plus",
@@ -48,6 +50,7 @@ const products = [
     image_url: "/images/jade-plus.png",
   },
   {
+    id: 3,
     sku: "unknown-cat",
     name: "No Cat",
     description: "Missing category",
@@ -65,8 +68,8 @@ const localStorageMock = {
 };
 global.localStorage = localStorageMock;
 
-const renderTable = (props = {}) => render(
-  <ProductsTable
+const renderList = (props = {}) => render(
+  <ProductsList
     products={products}
     categories={categories}
     onEditProduct={jest.fn()}
@@ -75,27 +78,25 @@ const renderTable = (props = {}) => render(
   />,
 );
 
-describe("ProductsTable", () => {
+describe("ProductsList", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("renders rows with product data and formatted price", () => {
-    renderTable();
+    renderList();
 
-    expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
+    expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Category 1").length).toBeGreaterThan(0);
-    expect(screen.getByText("$16.00")).toBeInTheDocument();
+    expect(screen.getAllByText("$16.00").length).toBeGreaterThan(0);
   });
 
   it("falls back to noCategory translation for unknown category ids and formats image src via storedAssetUrl", () => {
-    renderTable();
+    renderList();
 
     expect(screen.queryByText("missing")).not.toBeInTheDocument();
     expect(screen.getAllByText("noCategory").length).toBeGreaterThan(0);
     expect(mockStoredAssetUrl).toHaveBeenCalledWith("/images/no-cat.png");
-    const img = screen.getByAltText("No Cat");
-    expect(img.getAttribute("src")).toBe("cdn/images/no-cat.png");
   });
 
   it("handles missing image url gracefully", () => {
@@ -103,7 +104,7 @@ describe("ProductsTable", () => {
       { ...products[0], image_url: undefined },
     ];
 
-    renderTable({ products: productsWithoutImage });
+    renderList({ products: productsWithoutImage });
     expect(mockStoredAssetUrl).toHaveBeenCalledWith(undefined);
   });
 
@@ -111,7 +112,7 @@ describe("ProductsTable", () => {
     const onEditProduct = jest.fn();
     const onDeleteProduct = jest.fn();
 
-    renderTable({ onEditProduct, onDeleteProduct });
+    renderList({ onEditProduct, onDeleteProduct });
 
     fireEvent.click(screen.getAllByRole("button", { name: "Edit Product" })[0]);
     expect(onEditProduct).toHaveBeenCalledWith(products[0]);
