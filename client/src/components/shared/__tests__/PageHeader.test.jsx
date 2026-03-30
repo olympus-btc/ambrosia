@@ -48,9 +48,16 @@ describe("PageHeader", () => {
   it("title has correct typography classes", () => {
     render(<PageHeader title="Users" />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveClass(
-      "text-4xl",
+      "text-2xl",
+      "md:text-4xl",
       "font-semibold",
       "text-green-900",
     );
+  });
+
+  it("subtitle has responsive size and spacing classes", () => {
+    const { container } = render(<PageHeader title="Users" subtitle="Manage" />);
+    const subtitle = container.querySelector("p");
+    expect(subtitle).toHaveClass("text-sm", "md:text-base", "mt-2", "md:mt-4");
   });
 });
