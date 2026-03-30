@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { RequirePermission } from "@/hooks/usePermission";
 
 import { AddCategoriesModal } from "./AddCategoriesModal";
-import { CategoriesTable } from "./CategoriesTable";
+import { CategoriesList } from "./CategoriesList";
 import { DeleteCategoriesModal } from "./DeleteCategoriesModal";
 import { EditCategoriesModal } from "./EditCategoriesModal";
 
@@ -52,8 +52,8 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
     <RequirePermission allOf={["categories_read"]}>
       <header className="flex items-center justify-between mb-6 mt-10">
         <div>
-          <h2 className="text-2xl font-semibold text-green-900">{t("title")}</h2>
-          <p className="text-gray-800 mt-2">{t("subtitle")}</p>
+          <h2 className="text-lg md:text-2xl font-semibold text-green-900">{t("title")}</h2>
+          <p className="text-gray-800 mt-1 md:mt-2 text-sm">{t("subtitle")}</p>
         </div>
         <RequirePermission allOf={["categories_create"]}>
           <Button
@@ -69,7 +69,7 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
         </RequirePermission>
       </header>
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
-        <CategoriesTable
+        <CategoriesList
           categories={categories}
           onEditCategory={handleEditCategory}
           onDeleteCategory={handleDeleteCategory}

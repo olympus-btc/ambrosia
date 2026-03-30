@@ -35,8 +35,8 @@ describe("Categories", () => {
   it("renders the categories table with existing categories", () => {
     renderCategories();
 
-    expect(screen.getByText("Hardware")).toBeInTheDocument();
-    expect(screen.getByText("Gadgets")).toBeInTheDocument();
+    expect(screen.getAllByText("Hardware").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Gadgets").length).toBeGreaterThan(0);
   });
 
   it("opens AddCategoriesModal when clicking add category button", async () => {
