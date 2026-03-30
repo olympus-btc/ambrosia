@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { toArray } from "@/components/utils/array";
 import { RequirePermission } from "@/hooks/usePermission";
+import { PageHeader } from "@components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
@@ -15,7 +16,7 @@ import { AddProductsModal } from "./AddProductsModal";
 import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
-import { ProductsTable } from "./ProductsTable";
+import { ProductsList } from "./ProductsList";
 
 export function Products() {
   const [addProductsShowModal, setAddProductsShowModal] = useState(false);
@@ -83,25 +84,23 @@ export function Products() {
 
   return (
     <StoreLayout>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-semibold text-green-900">{t("title")}</h1>
-          <p className="text-gray-800 mt-4">
-            {t("subtitle")}
-          </p>
-        </div>
-        <RequirePermission allOf={["products_create"]}>
-          <Button
-            color="primary"
-            className="bg-green-800"
-            onPress={() => setAddProductsShowModal(true)}
-          >
-            {t("addProduct")}
-          </Button>
-        </RequirePermission>
-      </header>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={(
+          <RequirePermission allOf={["products_create"]}>
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => setAddProductsShowModal(true)}
+            >
+              {t("addProduct")}
+            </Button>
+          </RequirePermission>
+        )}
+      />
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
-        <ProductsTable
+        <ProductsList
           products={products}
           categories={categories}
           onEditProduct={handleEditProduct}
