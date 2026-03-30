@@ -16,6 +16,7 @@ const storeEs = {
     title: "¡Antes de comenzar!",
     description: "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
     clickWallet: "Haz click en Billetera para comenzar.",
+    mobileGoToWallet: "Ir a Billetera",
     nextButton: "Ir a Billetera",
     guardTitle: "Acceso a la Billetera",
     guardDescription: "Esta contraseña protege tu billetera Bitcoin. Ingrésala para acceder a tus canales Lightning.",

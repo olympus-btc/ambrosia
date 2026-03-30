@@ -16,6 +16,7 @@ const storeEn = {
     title: "Before you start!",
     description: "To receive <b>Bitcoin payments</b> you need to open a <b>Lightning channel</b>.",
     clickWallet: "Click on Wallet to get started.",
+    mobileGoToWallet: "Go to Wallet",
     nextButton: "Go to Wallet",
     guardTitle: "Wallet Access",
     guardDescription: "This password protects your Bitcoin wallet. Enter it to access your Lightning channels.",
