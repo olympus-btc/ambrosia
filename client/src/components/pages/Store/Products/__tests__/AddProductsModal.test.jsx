@@ -14,6 +14,7 @@ jest.mock("@heroui/react", () => {
     errorMessage,
     startContent,
     minValue,
+    maxValue,
     ...props
   }) => (
     <input

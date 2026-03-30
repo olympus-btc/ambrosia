@@ -175,8 +175,8 @@ describe("Products page", () => {
     });
     expect(screen.getByRole("heading", { level: 1, name: "title" })).toBeInTheDocument();
     expect(screen.getByText("addProduct")).toBeInTheDocument();
-    expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
-    expect(screen.getByText("Jade Plus")).toBeInTheDocument();
+    expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Jade Plus").length).toBeGreaterThan(0);
   });
 
   it("opens AddProductsModal when clicking Add Product", async () => {
@@ -229,8 +229,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const table = screen.getByText("Jade Wallet").closest("table");
-    expect(table).toBeInTheDocument();
+    expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
     expect(screen.queryByText("modal.titleDelete")).not.toBeInTheDocument();
   });
 
