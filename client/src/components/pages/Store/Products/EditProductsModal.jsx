@@ -11,13 +11,13 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Select,
-  SelectItem,
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { ImageUploader } from "@components/shared/ImageUploader";
+
+import { CategorySelector } from "./CategorySelector";
 
 export function EditProductsModal({
   data,
@@ -35,9 +35,6 @@ export function EditProductsModal({
   const t = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || isUploading) return;
@@ -106,53 +103,14 @@ export function EditProductsModal({
               }
             />
 
-            <div className="space-y-2">
-              <Select
-                label={t("modal.productCategoryLabel")}
-                placeholder={t("modal.categorySelectPlaceholder")}
-                selectionMode="multiple"
-                isRequired
-                errorMessage={t("modal.errorMsgSelectEmpty")}
-                selectedKeys={new Set(data.productCategories)}
-                onSelectionChange={(keys) => onChange({ productCategories: Array.from(keys) })}
-                isLoading={categoriesLoading}
-              >
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id} classNames={{ selectedIcon: "border-2 border-green-800 rounded-sm w-5 h-5 p-0.5" }}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </Select>
-
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
-                <Input
-                  label={t("modal.createCategoryLabel")}
-                  placeholder={t("modal.createCategoryPlaceholder")}
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                />
-                <Button
-                  color="primary"
-                  className="bg-green-800"
-                  onPress={async () => {
-                    if (!newCategoryName.trim() || isCreatingCategory) return;
-                    try {
-                      setIsCreatingCategory(true);
-                      const newId = await createCategory(newCategoryName.trim());
-                      if (newId) {
-                        onChange({ productCategories: [...data.productCategories, newId] });
-                      }
-                      setNewCategoryName("");
-                    } finally {
-                      setIsCreatingCategory(false);
-                    }
-                  }}
-                  isLoading={isCreatingCategory}
-                >
-                  {t("modal.createCategoryButton")}
-                </Button>
-              </div>
-            </div>
+            <CategorySelector
+              categories={categories}
+              categoriesLoading={categoriesLoading}
+              selectedCategories={data.productCategories}
+              onSelectionChange={(keys) => onChange({ productCategories: keys })}
+              createCategory={createCategory}
+              isRequired
+            />
 
             <Input
               label={t("modal.productSKULabel")}
