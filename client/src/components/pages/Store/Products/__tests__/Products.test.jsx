@@ -157,7 +157,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Product" });
+    const editButtons = screen.getAllByText("edit").map((el) => el.closest("button"));
     await act(async () => {
       fireEvent.click(editButtons[0]);
     });
@@ -195,9 +195,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const editButtons = screen.getAllByRole("button", {
-      name: "Edit Product",
-    });
+    const editButtons = screen.getAllByText("edit").map((el) => el.closest("button"));
 
     await act(async () => {
       fireEvent.click(editButtons[0]);
@@ -213,9 +211,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const deleteButtons = screen.getAllByRole("button", {
-      name: "Delete Product",
-    });
+    const deleteButtons = screen.getAllByText("delete").map((el) => el.closest("button"));
 
     await act(async () => {
       fireEvent.click(deleteButtons[1]);
@@ -238,7 +234,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete Product" });
+    const deleteButtons = screen.getAllByText("delete").map((el) => el.closest("button"));
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
     });
@@ -267,9 +263,9 @@ describe("Products page", () => {
     await waitFor(() => expect(mockRefetchProducts).toHaveBeenCalled());
     expect(mockRefetchCategories).toHaveBeenCalled();
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Product" });
+    const editButtons2 = screen.getAllByText("edit").map((el) => el.closest("button"));
     await act(async () => {
-      fireEvent.click(editButtons[0]);
+      fireEvent.click(editButtons2[0]);
     });
     await act(async () => {
       fireEvent.click(screen.getByText("modal.editButton"));

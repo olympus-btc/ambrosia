@@ -6,19 +6,19 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("lucide-react", () => ({
-  Pencil: () => <span>PencilIcon</span>,
-  Trash: () => <span>TrashIcon</span>,
-}));
-
 jest.mock("@heroui/react", () => ({
-  Button: ({ children, onPress, "aria-label": ariaLabel, isIconOnly, ...props }) => (
-    <button aria-label={ariaLabel} onClick={onPress} {...props}>{children}</button>
-  ),
-  Card: ({ children, shadow }) => <div data-shadow={shadow}>{children}</div>,
+  Card: ({ children, shadow, className }) => <div data-shadow={shadow} className={className}>{children}</div>,
   CardBody: ({ children, className }) => <div className={className}>{children}</div>,
   Chip: ({ children, className }) => <span className={className}>{children}</span>,
   Image: ({ src, alt, width, height }) => <div role="img" aria-label={alt} data-src={src} data-width={width} data-height={height} />,
+}));
+
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress }) => <button data-testid="edit-button" onClick={onPress}><span data-testid="pencil-icon" /></button>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress }) => <button data-testid="delete-button" onClick={onPress}><span data-testid="trash-icon" /></button>,
 }));
 
 jest.mock("@/hooks/usePermission", () => ({
@@ -93,11 +93,30 @@ describe("ProductsCard", () => {
     expect(screen.getByRole("img", { name: "Jade Wallet" }).getAttribute("data-src")).toBe("cdn/images/jade.png");
   });
 
+  it("renders edit and delete icon buttons", () => {
+    renderCard();
+
+    expect(screen.getByTestId("pencil-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("trash-icon")).toBeInTheDocument();
+  });
+
+  it("renders EditButton for edit action", () => {
+    renderCard();
+
+    expect(screen.getByTestId("edit-button")).toBeInTheDocument();
+  });
+
+  it("renders DeleteButton for delete action", () => {
+    renderCard();
+
+    expect(screen.getByTestId("delete-button")).toBeInTheDocument();
+  });
+
   it("calls onEditProduct when edit button is pressed", () => {
     const onEditProduct = jest.fn();
     renderCard({ onEditProduct });
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Product" }));
+    fireEvent.click(screen.getByTestId("pencil-icon").closest("button"));
     expect(onEditProduct).toHaveBeenCalledWith(product);
   });
 
@@ -105,15 +124,15 @@ describe("ProductsCard", () => {
     const onDeleteProduct = jest.fn();
     renderCard({ onDeleteProduct });
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Product" }));
+    fireEvent.click(screen.getByTestId("trash-icon").closest("button"));
     expect(onDeleteProduct).toHaveBeenCalledWith(product);
   });
 
   it("hides action buttons when canManageProducts is false", () => {
     renderCard({ canManageProducts: false });
 
-    expect(screen.queryByRole("button", { name: "Edit Product" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Delete Product" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pencil-icon")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("trash-icon")).not.toBeInTheDocument();
   });
 
   it("uses productStock as fallback when quantity is undefined", () => {

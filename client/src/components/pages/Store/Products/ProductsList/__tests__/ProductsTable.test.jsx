@@ -6,11 +6,6 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("lucide-react", () => ({
-  Pencil: () => <span>PencilIcon</span>,
-  Trash: () => <span>TrashIcon</span>,
-}));
-
 jest.mock("@heroui/react", () => ({
   Table: ({ children }) => <table>{children}</table>,
   TableHeader: ({ children }) => <thead><tr>{children}</tr></thead>,
@@ -18,11 +13,16 @@ jest.mock("@heroui/react", () => ({
   TableBody: ({ children }) => <tbody>{children}</tbody>,
   TableRow: ({ children }) => <tr>{children}</tr>,
   TableCell: ({ children, className }) => <td className={className}>{children}</td>,
-  Button: ({ children, onPress, "aria-label": ariaLabel, isIconOnly, ...props }) => (
-    <button aria-label={ariaLabel} onClick={onPress} {...props}>{children}</button>
-  ),
   Chip: ({ children, className }) => <span className={className}>{children}</span>,
   Image: ({ src, alt, width }) => <div role="img" aria-label={alt} data-src={src} data-width={width} />,
+}));
+
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
 }));
 
 jest.mock("@/hooks/usePermission", () => ({
@@ -143,7 +143,7 @@ describe("ProductsTable", () => {
     const onEditProduct = jest.fn();
     renderTable({ onEditProduct });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Edit Product" })[0]);
+    fireEvent.click(screen.getAllByText("edit")[0].closest("button"));
     expect(onEditProduct).toHaveBeenCalledWith(products[0]);
   });
 
@@ -151,7 +151,7 @@ describe("ProductsTable", () => {
     const onDeleteProduct = jest.fn();
     renderTable({ onDeleteProduct });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Delete Product" })[1]);
+    fireEvent.click(screen.getAllByText("delete")[1].closest("button"));
     expect(onDeleteProduct).toHaveBeenCalledWith(products[1]);
   });
 

@@ -17,6 +17,14 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   }),
 }));
 
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
+}));
+
 const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
 
 jest.mock("@/components/utils/storedAssetUrl", () => ({
@@ -114,10 +122,10 @@ describe("ProductsList", () => {
 
     renderList({ onEditProduct, onDeleteProduct });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Edit Product" })[0]);
+    fireEvent.click(screen.getAllByText("edit")[0].closest("button"));
     expect(onEditProduct).toHaveBeenCalledWith(products[0]);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Delete Product" })[2]);
+    fireEvent.click(screen.getAllByText("delete")[2].closest("button"));
     expect(onDeleteProduct).toHaveBeenCalledWith(products[2]);
   });
 });
