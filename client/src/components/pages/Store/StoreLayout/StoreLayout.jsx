@@ -54,7 +54,7 @@ export function StoreLayout({ children }) {
         />
       </div>
 
-      <main className="flex-1 gradient-fresh overflow-y-auto pb-16 md:pb-0">
+      <main className="flex-1 gradient-fresh overflow-y-auto pb-32 md:pb-0">
         <div className="p-6">
           {children}
         </div>
