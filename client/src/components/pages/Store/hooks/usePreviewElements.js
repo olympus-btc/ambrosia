@@ -99,6 +99,22 @@ export function useTicketTemplatePreviewElements(elements, config) {
         });
         return;
       }
+      if (element.type === "TOTAL_ROW") {
+        const label = resolveValue(element.value || "", config).trim() || "TOTAL";
+        output.push(
+          <div key={`${element.localId}-total-sep`} className="border-t border-gray-400 my-2" />,
+        );
+        output.push(
+          <div
+            key={`${element.localId}-total`}
+            className={`flex justify-between gap-3 ${className}`}
+          >
+            <span className="font-semibold">{label}</span>
+            <span className="whitespace-nowrap font-semibold">{sampleTicket.total}</span>
+          </div>,
+        );
+        return;
+      }
       output.push(
         <div key={element.localId} className={className}>
           {resolveValue(element.value || "", config)}

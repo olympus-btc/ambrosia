@@ -9,7 +9,7 @@ import { resolveValue } from "@/components/pages/Store/hooks/usePreviewElements"
 
 import { TemplateVariablePicker } from "./VariablePicker";
 
-const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER"];
+const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER", "TOTAL_ROW"];
 
 const ELEMENT_TYPES = [
   "HEADER",
@@ -18,6 +18,7 @@ const ELEMENT_TYPES = [
   "SEPARATOR",
   "TABLE_HEADER",
   "TABLE_ROW",
+  "TOTAL_ROW",
   "FOOTER",
   "QRCODE",
 ];
@@ -37,7 +38,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
   };
 
   const type = element.type;
-  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "QRCODE"].includes(type);
+  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "TOTAL_ROW", "QRCODE"].includes(type);
   const showVariablePicker = VARIABLE_PICKER_TYPES.includes(type);
   const showStyle = type !== "LINE_BREAK" && type !== "SEPARATOR";
   const showBold = showStyle && type !== "QRCODE";
