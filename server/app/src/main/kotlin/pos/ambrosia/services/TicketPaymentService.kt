@@ -8,7 +8,6 @@ class TicketPaymentService(
     private val connection: Connection,
 ) {
     companion object {
-        // Ticket payment queries
         private const val ADD_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val GET_TICKET_PAYMENTS_BY_TICKET =
@@ -38,19 +37,16 @@ class TicketPaymentService(
     }
 
     suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean {
-        // Validar que los IDs no estén vacíos
         if (ticketPayment.payment_id.isBlank() || ticketPayment.ticket_id.isBlank()) {
             logger.error("Payment ID and ticket ID are required fields")
             return false
         }
 
-        // Verificar que el ticket exista
         if (!ticketExists(ticketPayment.ticket_id)) {
             logger.error("Ticket ID does not exist: ${ticketPayment.ticket_id}")
             return false
         }
 
-        // Verificar que el payment exista
         if (!paymentExists(ticketPayment.payment_id)) {
             logger.error("Payment ID does not exist: ${ticketPayment.payment_id}")
             return false
