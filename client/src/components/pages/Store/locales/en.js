@@ -554,6 +554,7 @@ const storeEn = {
       errorMsgSelectEmpty: "Please select an item in the list.",
       pay: "Pay",
       each: "each",
+      viewCart: "Checkout",
     },
     payment: {
       errors: {

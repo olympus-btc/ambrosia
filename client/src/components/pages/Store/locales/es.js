@@ -554,6 +554,7 @@ const storeEs = {
       errorMsgSelectEmpty: "Por favor, seleccione un elemento de la lista.",
       pay: "Pagar",
       each: "c/u",
+      viewCart: "Cobrar",
     },
     payment: {
       errors: {
