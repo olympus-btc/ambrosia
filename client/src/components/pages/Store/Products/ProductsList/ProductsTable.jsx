@@ -7,13 +7,13 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Button,
   Chip,
   Image,
 } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
@@ -31,7 +31,7 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
         <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
-        <TableColumn className={canManageProducts ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("actions")}</TableColumn>
+        <TableColumn className={canManageProducts ? "py-2 px-3 w-40 text-right" : "hidden"}>{t("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {products.map((product) => {
@@ -39,7 +39,13 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
           return (
             <TableRow key={product.id}>
               <TableCell>
-                <Image src={storedAssetUrl(product?.image_url)} width={60} alt={product.name} />
+                <Image
+                  alt={product.name}
+                  className="rounded-md object-cover shrink-0"
+                  src={storedAssetUrl(product?.image_url)}
+                  width={40}
+                  height={40}
+                />
               </TableCell>
               <TableCell>
                 <span className="block max-w-[120px] truncate">{product.name}</span>
@@ -97,27 +103,10 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
               <TableCell className={canManageProducts ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["products_update"]}>
-                    <Button
-                      aria-label="Edit Product"
-                      isIconOnly
-                      size="sm"
-                      className="text-xs text-white bg-blue-500"
-                      onPress={() => onEditProduct(product)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
+                    <EditButton onPress={() => onEditProduct(product)}>{t("edit")}</EditButton>
                   </RequirePermission>
                   <RequirePermission allOf={["products_delete"]}>
-                    <Button
-                      aria-label="Delete Product"
-                      isIconOnly
-                      size="sm"
-                      color="danger"
-                      className="text-xs text-white"
-                      onPress={() => onDeleteProduct(product)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
+                    <DeleteButton onPress={() => onDeleteProduct(product)}>{t("delete")}</DeleteButton>
                   </RequirePermission>
                 </div>
               </TableCell>

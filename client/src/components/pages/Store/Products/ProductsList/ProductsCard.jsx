@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, Card, CardBody, Chip, Image } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
+import { Card, CardBody, Chip, Image } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
@@ -11,7 +12,7 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
   const t = useTranslations("products");
 
   return (
-    <Card className="shadow-none border border-green-800">
+    <Card shadow="sm" className="border border-green-800">
       <CardBody className="flex flex-row items-center gap-3 p-3">
         <Image
           src={storedAssetUrl(product?.image_url)}
@@ -53,27 +54,10 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
         {canManageProducts && (
           <div className="flex flex-col gap-2 shrink-0">
             <RequirePermission allOf={["products_update"]}>
-              <Button
-                aria-label="Edit Product"
-                isIconOnly
-                size="sm"
-                className="text-xs text-white bg-blue-500"
-                onPress={() => onEditProduct(product)}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
+              <EditButton onPress={() => onEditProduct(product)} />
             </RequirePermission>
             <RequirePermission allOf={["products_delete"]}>
-              <Button
-                aria-label="Delete Product"
-                isIconOnly
-                size="sm"
-                color="danger"
-                className="text-xs text-white"
-                onPress={() => onDeleteProduct(product)}
-              >
-                <Trash className="w-4 h-4" />
-              </Button>
+              <DeleteButton onPress={() => onDeleteProduct(product)} />
             </RequirePermission>
           </div>
         )}
