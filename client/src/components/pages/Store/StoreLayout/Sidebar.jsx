@@ -15,12 +15,12 @@ function NavBarButton({ text, icon, href, isActive, id, onClick }) {
       id={id}
       href={href}
       onClick={onClick}
-      className={`flex text-2xl items-center space-x-2 p-2 rounded-md transition-colors hover:bg-green-300 hover:text-green-800 ${
+      className={`flex items-center space-x-2 p-2 rounded-md transition-colors hover:bg-green-300 hover:text-green-800 ${
         isActive ? "bg-green-300 text-green-800" : "text-slate-100"
       }`}
     >
-      <NavIcon name={icon} className="w-6 h-6" />
-      <span className="pl-2 text-2xl">{text}</span>
+      <NavIcon name={icon} className="w-6 h-6 md:w-5 md:h-5 lg:w-6 lg:h-6" />
+      <span className="pl-2 text-2xl md:text-lg lg:text-2xl">{text}</span>
     </Link>
   );
 }
@@ -77,10 +77,10 @@ export function SidebarContent({
             logout();
             onNavClick?.();
           }}
-          className="flex text-2xl items-center space-x-2 p-2 rounded-md transition-colors text-slate-100 hover:bg-green-300 hover:text-green-800"
+          className="flex items-center space-x-2 p-2 rounded-md transition-colors text-slate-100 hover:bg-green-300 hover:text-green-800"
         >
-          <LogOut className="w-7 h-7" />
-          <span className="pl-2 text-2xl">{t("logout")}</span>
+          <LogOut className="w-7 h-7 md:w-5 md:h-5 lg:w-7 lg:h-7" />
+          <span className="pl-2 text-2xl md:text-lg lg:text-2xl">{t("logout")}</span>
         </Link>
       </div>
     </>

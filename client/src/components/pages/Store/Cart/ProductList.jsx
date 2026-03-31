@@ -35,7 +35,7 @@ export function ProductList({ products, onAddProduct, categories }) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
       {products.map((product) => {
         const status = stockStatus(product);
         return (
@@ -44,19 +44,19 @@ export function ProductList({ products, onAddProduct, categories }) {
             className="bg-white rounded-lg"
             key={product.id}
           >
-            <CardHeader className="flex flex-col items-start">
-              <h2 className="text-lg">{product.name}</h2>
+            <CardHeader className="flex flex-col items-start pb-1">
+              <h2 className="text-sm md:text-lg font-medium">{product.name}</h2>
               <p className="text-xs">{getCategoryNames(product.category_ids)}</p>
             </CardHeader>
-            <CardBody>
-              <h2 className="text-2xl font-bold text-green-800">
+            <CardBody className="py-1">
+              <h2 className="text-lg md:text-2xl font-bold text-green-800">
                 {formatAmount(product.price_cents)}
               </h2>
-              <p className="text-xs">
+              <p className="hidden md:block text-xs">
                 SKU: <span className="text-gray-800">{product.SKU}</span>
               </p>
             </CardBody>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex flex-col items-stretch gap-5 sm:flex-row sm:items-center sm:justify-between">
               <Chip
                 size="sm"
                 className={

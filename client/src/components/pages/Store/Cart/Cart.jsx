@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { PageHeader } from "@/components/shared/PageHeader";
+
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
@@ -161,14 +163,7 @@ export function Cart() {
   return (
     <StoreLayout>
       <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
-        <header className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-semibold text-green-800">{t("title")}</h1>
-            <p className=" text-gray-800 mt-4">
-              {t("subtitle")}
-            </p>
-          </div>
-        </header>
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <section className="lg:col-span-2">
