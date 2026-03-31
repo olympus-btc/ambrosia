@@ -44,6 +44,8 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               label={t("users.modal.userNameLabel")}
               type="text"
               placeholder={t("users.modal.userNamePlaceholder")}
+              isRequired
+              errorMessage={t("users.modal.userNameError")}
               value={data.userName ?? ""}
               onChange={(e) => onChange({ ...data, userName: e.target.value })}
             />
@@ -69,7 +71,10 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               label={t("users.modal.userPinLabel")}
               type={showPin ? "text" : "password"}
               placeholder={t("users.modal.userPinPlaceholder")}
+              isRequired
+              minLength={4}
               maxLength={4}
+              errorMessage={t("users.modal.userPinError")}
               value={data.userPin ?? ""}
               onChange={(e) => {
                 const onlyNumbers = e.target.value.replace(/\D/g, "");

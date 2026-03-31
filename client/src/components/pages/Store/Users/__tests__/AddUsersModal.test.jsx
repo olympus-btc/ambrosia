@@ -152,6 +152,14 @@ describe("AddUsersModal", () => {
     expect(setAddUsersShowModal).toHaveBeenCalledWith(false);
   });
 
+  it("requires name and pin fields", () => {
+    renderModal();
+
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveAttribute("required");
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveAttribute("minlength", "4");
+  });
+
   it("toggles pin visibility and closes on cancel", () => {
     const setAddUsersShowModal = jest.fn();
     renderModal({ setAddUsersShowModal });

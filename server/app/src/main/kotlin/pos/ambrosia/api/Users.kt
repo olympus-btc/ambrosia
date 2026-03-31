@@ -109,6 +109,14 @@ fun Route.users(
     authorizePermission("users_create") {
         post("") {
             val user = call.receive<User>()
+            if (user.name == "" || user.pin.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to add user, user name and/or pin cannot be null or blank")
+                return@post
+            }
+            if (user.pin.length < 4) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be at least 4 characters long")
+                return@post
+            }
             val result = userService.addUser(user)
             if (result == null) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user")
@@ -138,6 +146,14 @@ fun Route.users(
                 updatedUser.refreshToken == null
             ) {
                 call.respond(HttpStatusCode.BadRequest, "No fields provided to update")
+                return@put
+            }
+            if (updatedUser.name != null && updatedUser.name.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to update user, user name cannot be blank")
+                return@put
+            }
+            if (updatedUser.pin != null && updatedUser.pin.isNotBlank() && updatedUser.pin.length < 4) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be at least 4 characters long")
                 return@put
             }
 
