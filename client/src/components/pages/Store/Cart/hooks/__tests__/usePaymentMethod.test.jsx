@@ -45,10 +45,12 @@ describe("usePaymentMethods", () => {
   });
 
   it("sets error when httpClient rejects", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
     httpClient.mockRejectedValue(new Error("fail"));
     render(<TestComponent />);
 
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
     expect(screen.getByTestId("error")).toHaveTextContent("yes");
+    console.error.mockRestore();
   });
 });
