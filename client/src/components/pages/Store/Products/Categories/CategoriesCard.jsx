@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Card, CardBody } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
+import { Card, CardBody } from "@heroui/react";
 
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function CategoriesCard({ category, canManageCategories, onEditCategory, onDeleteCategory }) {
@@ -13,27 +14,10 @@ export function CategoriesCard({ category, canManageCategories, onEditCategory, 
         {canManageCategories && (
           <div className="flex gap-2 shrink-0">
             <RequirePermission allOf={["categories_update"]}>
-              <Button
-                aria-label="Edit Category"
-                isIconOnly
-                size="sm"
-                className="text-xs text-white bg-blue-500"
-                onPress={() => onEditCategory(category)}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
+              <EditButton onPress={() => onEditCategory(category)} />
             </RequirePermission>
             <RequirePermission allOf={["categories_delete"]}>
-              <Button
-                aria-label="Delete Category"
-                isIconOnly
-                size="sm"
-                color="danger"
-                className="text-xs text-white"
-                onPress={() => onDeleteCategory(category)}
-              >
-                <Trash className="w-4 h-4" />
-              </Button>
+              <DeleteButton onPress={() => onDeleteCategory(category)} />
             </RequirePermission>
           </div>
         )}

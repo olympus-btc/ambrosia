@@ -7,11 +7,11 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Button,
 } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function CategoriesTable({ categories, canManageCategories, onEditCategory, onDeleteCategory }) {
@@ -21,7 +21,7 @@ export function CategoriesTable({ categories, canManageCategories, onEditCategor
     <Table className="min-w-[400px]" removeWrapper aria-label={t("tableAriaLabel")}>
       <TableHeader>
         <TableColumn className="py-2 px-3 w-[200px]">{t("name")}</TableColumn>
-        <TableColumn className={canManageCategories ? "py-2 px-3 w-[100px] text-right" : "hidden"}>{t("actions")}</TableColumn>
+        <TableColumn className={canManageCategories ? "py-2 px-3 w-40 text-right" : "hidden"}>{t("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {categories.map((category) => (
@@ -30,27 +30,10 @@ export function CategoriesTable({ categories, canManageCategories, onEditCategor
             <TableCell className={canManageCategories ? "py-2 px-3" : "hidden"}>
               <div className="flex justify-end gap-2">
                 <RequirePermission allOf={["categories_update"]}>
-                  <Button
-                    aria-label="Edit Category"
-                    isIconOnly
-                    size="sm"
-                    className="text-xs text-white bg-blue-500"
-                    onPress={() => onEditCategory(category)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
+                  <EditButton onPress={() => onEditCategory(category)}>{t("edit")}</EditButton>
                 </RequirePermission>
                 <RequirePermission allOf={["categories_delete"]}>
-                  <Button
-                    aria-label="Delete Category"
-                    isIconOnly
-                    size="sm"
-                    color="danger"
-                    className="text-xs text-white"
-                    onPress={() => onDeleteCategory(category)}
-                  >
-                    <Trash className="w-4 h-4" />
-                  </Button>
+                  <DeleteButton onPress={() => onDeleteCategory(category)}>{t("delete")}</DeleteButton>
                 </RequirePermission>
               </div>
             </TableCell>
