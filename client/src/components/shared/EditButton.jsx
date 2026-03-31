@@ -1,0 +1,18 @@
+"use client";
+
+import { Button } from "@heroui/react";
+import { Pencil } from "lucide-react";
+
+export function EditButton({ onPress, children, size = "sm" }) {
+  return (
+    <Button
+      className={`border border-blue-800 text-blue-800 ${children ? "" : "w-8 min-w-0 px-0"}`}
+      onPress={onPress}
+      size={size}
+      variant="outline"
+    >
+      <Pencil className="w-4 h-4" />
+      {children}
+    </Button>
+  );
+}
