@@ -37,7 +37,7 @@ class TicketPaymentService(
         return resultSet.next()
     }
 
-    suspend fun addTicketPayment(ticketPayment: pos.ambrosia.models.TicketPayment): Boolean {
+    suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean {
         // Validar que los IDs no estén vacíos
         if (ticketPayment.payment_id.isBlank() || ticketPayment.ticket_id.isBlank()) {
             logger.error("Payment ID and ticket ID are required fields")
@@ -73,16 +73,16 @@ class TicketPaymentService(
         }
     }
 
-    suspend fun getTicketPaymentsByTicket(ticketId: String): List<pos.ambrosia.models.TicketPayment>? {
+    suspend fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? {
         if (!ticketExists(ticketId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_TICKET)
         statement.setString(1, ticketId)
         val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<pos.ambrosia.models.TicketPayment>()
+        val ticketPayments = mutableListOf<TicketPayment>()
 
         while (resultSet.next()) {
             val ticketPayment =
-                pos.ambrosia.models.TicketPayment(
+                TicketPayment(
                     payment_id = resultSet.getString("payment_id"),
                     ticket_id = resultSet.getString("ticket_id"),
                 )
@@ -93,16 +93,16 @@ class TicketPaymentService(
         return ticketPayments
     }
 
-    suspend fun getTicketPaymentsByPayment(paymentId: String): List<pos.ambrosia.models.TicketPayment>? {
+    suspend fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? {
         if (!paymentExists(paymentId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_PAYMENT)
         statement.setString(1, paymentId)
         val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<pos.ambrosia.models.TicketPayment>()
+        val ticketPayments = mutableListOf<TicketPayment>()
 
         while (resultSet.next()) {
             val ticketPayment =
-                pos.ambrosia.models.TicketPayment(
+                TicketPayment(
                     payment_id = resultSet.getString("payment_id"),
                     ticket_id = resultSet.getString("ticket_id"),
                 )

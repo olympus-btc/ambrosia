@@ -5,6 +5,7 @@ import org.junit.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.models.TicketData
 import pos.ambrosia.services.PrintService
@@ -41,15 +42,16 @@ class PrintServiceTest {
         runBlocking {
             doReturn(null).whenever(printerConfigService).getDefaultByType(PrinterType.KITCHEN)
             assertFailsWith<IOException> {
-                printService.printTicket(
-                    ticketData,
-                    "Default",
-                    PrinterType.KITCHEN,
-                    null,
-                    null,
-                    false,
-                    false,
-                )
+                val request =
+                    PrintRequest(
+                        templateName = "Default",
+                        ticketData = ticketData,
+                        printerType = PrinterType.KITCHEN,
+                        printerId = null,
+                        broadcast = false,
+                        forceTemplateName = false,
+                    )
+                printService.printTicket(request, null)
             }
         }
     }

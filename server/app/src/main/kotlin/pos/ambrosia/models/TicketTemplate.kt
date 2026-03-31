@@ -37,6 +37,7 @@ enum class ElementType {
     SEPARATOR,
     TABLE_HEADER,
     TABLE_ROW,
+    TOTAL_ROW,
     FOOTER,
     QRCODE,
 }

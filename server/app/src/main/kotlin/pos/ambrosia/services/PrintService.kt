@@ -4,6 +4,7 @@ import com.github.anastaciocintra.escpos.EscPos
 import com.github.anastaciocintra.output.PrinterOutputStream
 import pos.ambrosia.logger
 import pos.ambrosia.models.Config
+import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.models.TicketData
 import pos.ambrosia.models.TicketTemplate
@@ -32,39 +33,34 @@ class PrintService(
     }
 
     suspend fun printTicket(
-        ticketData: TicketData,
-        templateName: String?,
-        type: PrinterType,
+        request: PrintRequest,
         config: Config?,
-        printerId: String?,
-        broadcast: Boolean,
-        forceTemplateName: Boolean,
     ) {
         val configs =
             when {
-                printerId != null -> {
-                    val configById = printerConfigService.getPrinterConfigById(printerId)
+                request.printerId != null -> {
+                    val configById = printerConfigService.getPrinterConfigById(request.printerId)
                     if (configById == null) {
-                        throw IOException("Printer configuration not found for id '$printerId'.")
+                        throw IOException("Printer configuration not found for id '${request.printerId}'.")
                     }
                     listOf(configById)
                 }
 
-                broadcast -> {
-                    printerConfigService.getEnabledByType(type)
+                request.broadcast -> {
+                    printerConfigService.getEnabledByType(request.printerType)
                 }
 
                 else -> {
-                    val defaultConfig = printerConfigService.getDefaultByType(type)
+                    val defaultConfig = printerConfigService.getDefaultByType(request.printerType)
                     if (defaultConfig == null) {
-                        throw IOException("Default printer for type $type not configured.")
+                        throw IOException("Default printer for type ${request.printerType} not configured.")
                     }
                     listOf(defaultConfig)
                 }
             }
 
         if (configs.isEmpty()) {
-            throw IOException("No printers configured for type $type.")
+            throw IOException("No printers configured for type ${request.printerType}.")
         }
 
         val resolvedConfigs =
@@ -79,54 +75,49 @@ class PrintService(
             }
 
         if (resolvedConfigs.isEmpty()) {
-            throw IOException("No configured printers found on this system for type $type.")
+            throw IOException("No configured printers found on this system for type ${request.printerType}.")
         }
 
-        try {
-            val templateCache = mutableMapOf<String, TicketTemplate>()
-            var successCount = 0
+        val templateCache = mutableMapOf<String, TicketTemplate>()
+        var successCount = 0
 
-            resolvedConfigs.forEach { (configItem, printerService) ->
-                try {
-                    val resolvedTemplateName =
-                        if (forceTemplateName && !templateName.isNullOrBlank()) {
-                            templateName
-                        } else {
-                            configItem.templateName ?: templateName
-                        }
-                    if (resolvedTemplateName.isNullOrBlank()) {
-                        throw IOException("Template not configured for printer ${configItem.printerName}.")
+        resolvedConfigs.forEach { (configItem, printerService) ->
+            try {
+                val resolvedTemplateName =
+                    if (request.forceTemplateName && !request.templateName.isNullOrBlank()) {
+                        request.templateName
+                    } else {
+                        configItem.templateName ?: request.templateName
                     }
-                    val template =
-                        templateCache.getOrPut(resolvedTemplateName) {
-                            ticketTemplateService.getTemplateByName(resolvedTemplateName)
-                                ?: throw IOException("Template '$resolvedTemplateName' not found.")
-                        }
+                if (resolvedTemplateName.isNullOrBlank()) {
+                    throw IOException("Template not configured for printer ${configItem.printerName}.")
+                }
+                val template =
+                    templateCache.getOrPut(resolvedTemplateName) {
+                        ticketTemplateService.getTemplateByName(resolvedTemplateName)
+                            ?: throw IOException("Template '$resolvedTemplateName' not found.")
+                    }
 
-                    val printerOutputStream = PrinterOutputStream(printerService)
-                    val escpos = EscPos(printerOutputStream)
-                    escpos.setCharsetName("cp850")
-                    val ticketFactory = TicketFactory(template)
-                    ticketFactory.build(escpos, ticketData, config)
-                    escpos.feed(5).cut(EscPos.CutMode.FULL)
-                    escpos.close()
-                    successCount += 1
-                } catch (e: Exception) {
-                    logger.error("Failed to print ticket to ${printerService.name}: ${e.message}", e)
-                    if (printerId != null || !broadcast) {
-                        throw e
-                    }
+                val printerOutputStream = PrinterOutputStream(printerService)
+                val escpos = EscPos(printerOutputStream)
+                escpos.setCharsetName(TicketFactory.DEFAULT_CHARSET)
+                val ticketFactory = TicketFactory(template)
+                ticketFactory.build(escpos, request.ticketData, config)
+                escpos.feed(TicketFactory.DEFAULT_FEED_LINES).cut(EscPos.CutMode.FULL)
+                escpos.close()
+                successCount += 1
+            } catch (e: Exception) {
+                logger.error("Failed to print ticket to ${printerService.name}: ${e.message}", e)
+                if (request.printerId != null || !request.broadcast) {
+                    throw e
                 }
             }
-
-            if (successCount == 0) {
-                throw IOException("Failed to print ticket to any configured printer.")
-            }
-
-            logger.info("Successfully sent print job to $type printer(s).")
-        } catch (e: Exception) {
-            logger.error("Failed to print ticket: ${e.message}", e)
-            throw IOException("Failed to print ticket: ${e.message}", e)
         }
+
+        if (successCount == 0) {
+            throw IOException("Failed to print ticket to any configured printer.")
+        }
+
+        logger.info("Successfully sent print job to ${request.printerType} printer(s).")
     }
 }

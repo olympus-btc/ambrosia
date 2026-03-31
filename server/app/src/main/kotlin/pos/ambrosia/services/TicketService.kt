@@ -39,27 +39,36 @@ class TicketService(
         return resultSet.next()
     }
 
-    private fun isValidStatus(status: Int): Boolean {
-        // Asumiendo que 1 = activo, 0 = inactivo o cancelado
-        return status in 0..1
+    private fun isValidStatus(status: Int): Boolean = status in 0..1
+
+    private fun validateTicket(ticket: Ticket): String? {
+        if (!orderExists(ticket.order_id)) {
+            return "Order does not exist: ${ticket.order_id}"
+        }
+        if (!userExists(ticket.user_id)) {
+            return "User does not exist: ${ticket.user_id}"
+        }
+        if (!isValidStatus(ticket.status)) {
+            return "Invalid ticket status: ${ticket.status}"
+        }
+        return null
     }
 
+    private fun mapResultSetToTicket(rs: java.sql.ResultSet): Ticket =
+        Ticket(
+            id = rs.getString("id"),
+            order_id = rs.getString("order_id"),
+            user_id = rs.getString("user_id"),
+            ticket_date = rs.getString("ticket_date"),
+            status = rs.getInt("status"),
+            total_amount = rs.getDouble("total_amount"),
+            notes = rs.getString("notes"),
+        )
+
     suspend fun addTicket(ticket: Ticket): String? {
-        // Verificar que la orden existe
-        if (!orderExists(ticket.order_id)) {
-            logger.error("Order does not exist: ${ticket.order_id}")
-            return null
-        }
-
-        // Verificar que el usuario existe
-        if (!userExists(ticket.user_id)) {
-            logger.error("User does not exist: ${ticket.user_id}")
-            return null
-        }
-
-        // Validar status
-        if (!isValidStatus(ticket.status)) {
-            logger.error("Invalid ticket status: ${ticket.status}")
+        val validationError = validateTicket(ticket)
+        if (validationError != null) {
+            logger.error(validationError)
             return null
         }
 
@@ -100,17 +109,7 @@ class TicketService(
         val resultSet = statement.executeQuery()
         val tickets = mutableListOf<Ticket>()
         while (resultSet.next()) {
-            val ticket =
-                Ticket(
-                    id = resultSet.getString("id"),
-                    order_id = resultSet.getString("order_id"),
-                    user_id = resultSet.getString("user_id"),
-                    ticket_date = resultSet.getString("ticket_date"),
-                    status = resultSet.getInt("status"),
-                    total_amount = resultSet.getDouble("total_amount"),
-                    notes = resultSet.getString("notes"),
-                )
-            tickets.add(ticket)
+            tickets.add(mapResultSetToTicket(resultSet))
         }
         logger.info("Retrieved ${tickets.size} tickets")
         return tickets
@@ -121,15 +120,7 @@ class TicketService(
         statement.setString(1, id)
         val resultSet = statement.executeQuery()
         return if (resultSet.next()) {
-            Ticket(
-                id = resultSet.getString("id"),
-                order_id = resultSet.getString("order_id"),
-                user_id = resultSet.getString("user_id"),
-                ticket_date = resultSet.getString("ticket_date"),
-                status = resultSet.getInt("status"),
-                total_amount = resultSet.getDouble("total_amount"),
-                notes = resultSet.getString("notes"),
-            )
+            mapResultSetToTicket(resultSet)
         } else {
             logger.warn("Ticket not found with ID: $id")
             null
@@ -142,17 +133,7 @@ class TicketService(
         val resultSet = statement.executeQuery()
         val tickets = mutableListOf<Ticket>()
         while (resultSet.next()) {
-            val ticket =
-                Ticket(
-                    id = resultSet.getString("id"),
-                    order_id = resultSet.getString("order_id"),
-                    user_id = resultSet.getString("user_id"),
-                    ticket_date = resultSet.getString("ticket_date"),
-                    status = resultSet.getInt("status"),
-                    total_amount = resultSet.getDouble("total_amount"),
-                    notes = resultSet.getString("notes"),
-                )
-            tickets.add(ticket)
+            tickets.add(mapResultSetToTicket(resultSet))
         }
         logger.info("Retrieved ${tickets.size} tickets for order: $orderId")
         return tickets
@@ -164,17 +145,7 @@ class TicketService(
         val resultSet = statement.executeQuery()
         val tickets = mutableListOf<Ticket>()
         while (resultSet.next()) {
-            val ticket =
-                Ticket(
-                    id = resultSet.getString("id"),
-                    order_id = resultSet.getString("order_id"),
-                    user_id = resultSet.getString("user_id"),
-                    ticket_date = resultSet.getString("ticket_date"),
-                    status = resultSet.getInt("status"),
-                    total_amount = resultSet.getDouble("total_amount"),
-                    notes = resultSet.getString("notes"),
-                )
-            tickets.add(ticket)
+            tickets.add(mapResultSetToTicket(resultSet))
         }
         logger.info("Retrieved ${tickets.size} tickets for user: $userId")
         return tickets
@@ -186,21 +157,9 @@ class TicketService(
             return false
         }
 
-        // Verificar que la orden existe
-        if (!orderExists(ticket.order_id)) {
-            logger.error("Order does not exist: ${ticket.order_id}")
-            return false
-        }
-
-        // Verificar que el usuario existe
-        if (!userExists(ticket.user_id)) {
-            logger.error("User does not exist: ${ticket.user_id}")
-            return false
-        }
-
-        // Validar status
-        if (!isValidStatus(ticket.status)) {
-            logger.error("Invalid ticket status: ${ticket.status}")
+        val validationError = validateTicket(ticket)
+        if (validationError != null) {
+            logger.error(validationError)
             return false
         }
 
