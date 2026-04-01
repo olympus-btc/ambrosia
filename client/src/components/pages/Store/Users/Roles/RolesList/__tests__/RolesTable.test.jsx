@@ -6,7 +6,18 @@ import { RolesTable } from "../RolesTable";
 
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => <>{children}</>,
-  usePermission: () => true,
+}));
+
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress, "aria-label": ariaLabel }) => (
+    <button aria-label={ariaLabel} onClick={onPress}>edit</button>
+  ),
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, "aria-label": ariaLabel }) => (
+    <button aria-label={ariaLabel} onClick={onPress}>delete</button>
+  ),
 }));
 
 const localStorageMock = {
@@ -26,7 +37,7 @@ const renderTable = (props = {}) => render(
   <I18nProvider>
     <RolesTable
       roles={roles}
-      loading={false}
+      canManageRoles
       onEdit={jest.fn()}
       onDelete={jest.fn()}
       {...props}
@@ -37,16 +48,6 @@ const renderTable = (props = {}) => render(
 describe("RolesTable", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it("shows loading state", () => {
-    renderTable({ loading: true });
-    expect(screen.getByText("roles.state.loading")).toBeInTheDocument();
-  });
-
-  it("shows empty state when no roles", () => {
-    renderTable({ roles: [] });
-    expect(screen.getByText("roles.state.empty")).toBeInTheDocument();
   });
 
   it("renders all roles", () => {
@@ -64,16 +65,14 @@ describe("RolesTable", () => {
     expect(screen.getByText("roles.columns.actions")).toBeInTheDocument();
   });
 
-  it("shows admin chip for admin roles and standard chip for others", () => {
+  it("shows admin chip for admin roles", () => {
     renderTable();
     expect(screen.getByText("roles.labels.adminChip")).toBeInTheDocument();
-    expect(screen.getAllByText("roles.labels.standardChip")).toHaveLength(2);
   });
 
-  it("shows admin/standard label text per role", () => {
+  it("shows standard chip for non-admin roles", () => {
     renderTable();
-    expect(screen.getByText("roles.labels.admin")).toBeInTheDocument();
-    expect(screen.getAllByText("roles.labels.standard")).toHaveLength(2);
+    expect(screen.getAllByText("roles.labels.standardChip")).toHaveLength(2);
   });
 
   it("calls onEdit with the correct role when edit is pressed", () => {
