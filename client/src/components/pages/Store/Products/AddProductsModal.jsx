@@ -64,12 +64,15 @@ export function AddProductsModal({
 
   return (
     <Modal
-      className="[@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       isOpen={addProductsShowModal}
       onOpenChange={setAddProductsShowModal}
       backdrop="blur"
+      shouldBlockScroll={false}
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+        body: "overflow-y-auto max-h-[65vh]",
       }}
       placement="center"
     >
