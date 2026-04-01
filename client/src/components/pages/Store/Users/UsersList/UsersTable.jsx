@@ -7,25 +7,21 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Button,
   Chip,
 } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { resolveRoleName } from "@/components/pages/Store/Users/Roles/utils/roleTemplates";
-import { RequirePermission, usePermission } from "@/hooks/usePermission";
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
+import { RequirePermission } from "@/hooks/usePermission";
 
-export function UsersTable({ users, onEditUser, onDeleteUser }) {
+export function UsersTable({ users, canManageUsers, onEditUser, onDeleteUser }) {
   const t = useTranslations();
-  const canManageUsers = usePermission({ anyOf: ["users_update", "users_delete"] });
 
   return (
-    <section className="w-full overflow-x-auto">
-      <Table
-        className="min-w-[400px]"
-        removeWrapper
-      >
+    <div className="overflow-x-auto">
+      <Table className="min-w-[400px]" removeWrapper>
         <TableHeader>
           <TableColumn className="py-2 px-3 w-[120px]">{t("users.name")}</TableColumn>
           <TableColumn className="py-2 px-3 w-20">{t("users.role")}</TableColumn>
@@ -35,9 +31,7 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow
-              key={user.id}
-            >
+            <TableRow key={user.id}>
               <TableCell className="max-w-[120px] truncate">{user.name}</TableCell>
               <TableCell>
                 {user.role ? (
@@ -53,27 +47,10 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
               <TableCell className={canManageUsers ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["users_update"]}>
-                    <Button
-                      aria-label="Edit User"
-                      isIconOnly
-                      size="sm"
-                      className="text-xs text-white bg-blue-500"
-                      onPress={() => onEditUser(user)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
+                    <EditButton onPress={() => onEditUser(user)} />
                   </RequirePermission>
                   <RequirePermission allOf={["users_delete"]}>
-                    <Button
-                      aria-label="Delete User"
-                      isIconOnly
-                      size="sm"
-                      color="danger"
-                      className="text-xs text-white"
-                      onPress={() => onDeleteUser(user)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
+                    <DeleteButton onPress={() => onDeleteUser(user)} />
                   </RequirePermission>
                 </div>
               </TableCell>
@@ -81,6 +58,6 @@ export function UsersTable({ users, onEditUser, onDeleteUser }) {
           ))}
         </TableBody>
       </Table>
-    </section>
+    </div>
   );
 }
