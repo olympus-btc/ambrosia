@@ -7,30 +7,21 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Button,
   Chip,
 } from "@heroui/react";
-import { Pencil, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { RequirePermission, usePermission } from "@/hooks/usePermission";
+import { DeleteButton } from "@/components/shared/DeleteButton";
+import { EditButton } from "@/components/shared/EditButton";
+import { RequirePermission } from "@/hooks/usePermission";
 
-import { resolveRoleName } from "./utils/roleTemplates";
+import { resolveRoleName } from "../utils/roleTemplates";
 
-export function RolesTable({ roles, loading, onEdit, onDelete }) {
+export function RolesTable({ roles, canManageRoles, onEdit, onDelete }) {
   const t = useTranslations();
-  const canManageRoles = usePermission({ anyOf: ["roles_update", "roles_delete"] });
-
-  if (loading) {
-    return <p className="text-default-500">{t("roles.state.loading")}</p>;
-  }
-
-  if (roles.length === 0) {
-    return <p className="text-default-500">{t("roles.state.empty")}</p>;
-  }
 
   return (
-    <section className="w-full overflow-x-auto">
+    <div className="overflow-x-auto">
       <Table className="min-w-[400px]" removeWrapper aria-label={t("roles.header.title")}>
         <TableHeader>
           <TableColumn className="py-2 px-3">{t("roles.columns.name")}</TableColumn>
@@ -61,27 +52,10 @@ export function RolesTable({ roles, loading, onEdit, onDelete }) {
               <TableCell className={canManageRoles ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["roles_update"]}>
-                    <Button
-                      aria-label="Edit Role"
-                      isIconOnly
-                      size="sm"
-                      className="text-xs text-white bg-blue-500"
-                      onPress={() => onEdit(role)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
+                    <EditButton aria-label="Edit Role" onPress={() => onEdit(role)} />
                   </RequirePermission>
                   <RequirePermission allOf={["roles_delete"]}>
-                    <Button
-                      aria-label="Delete Role"
-                      isIconOnly
-                      size="sm"
-                      color="danger"
-                      className="text-xs text-white"
-                      onPress={() => onDelete(role)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
+                    <DeleteButton aria-label="Delete Role" onPress={() => onDelete(role)} />
                   </RequirePermission>
                 </div>
               </TableCell>
@@ -89,6 +63,6 @@ export function RolesTable({ roles, loading, onEdit, onDelete }) {
           ))}
         </TableBody>
       </Table>
-    </section>
+    </div>
   );
 }
