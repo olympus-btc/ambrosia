@@ -8,7 +8,7 @@ import { RequirePermission } from "@/hooks/usePermission";
 
 export function CategoriesCard({ category, canManageCategories, onEditCategory, onDeleteCategory }) {
   return (
-    <Card shadow="sm" className="border border-green-800">
+    <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center justify-between gap-3 p-3">
         <span className="font-medium text-sm truncate">{category.name}</span>
         {canManageCategories && (
