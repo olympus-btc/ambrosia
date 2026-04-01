@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { RequirePermission } from "@/hooks/usePermission";
 
 import { StoreLayout } from "../StoreLayout";
@@ -15,7 +16,7 @@ import { AddUsersModal } from "./AddUsersModal";
 import { DeleteUsersModal } from "./DeleteUsersModal";
 import { EditUsersModal } from "./EditUsersModal";
 import { Roles } from "./Roles";
-import { UsersTable } from "./UsersTable";
+import { UsersList } from "./UsersList";
 
 export function Users() {
   const [addUsersShowModal, setAddUsersShowModal] = useState(false);
@@ -68,35 +69,33 @@ export function Users() {
 
   return (
     <StoreLayout>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-semibold text-green-900">{t("title")}</h1>
-          <p className="text-gray-800 mt-4">
-            {t("subtitle")}
-          </p>
-        </div>
-        <RequirePermission allOf={["users_create"]}>
-          <Button
-            color="primary"
-            className="bg-green-800"
-            onPress={() => {
-              setData({
-                userId: "",
-                userName: "",
-                userPin: "",
-                userPhone: "",
-                userEmail: "",
-                userRole: roles?.[0]?.id || "",
-              });
-              setAddUsersShowModal(true);
-            }}
-          >
-            {t("addUser")}
-          </Button>
-        </RequirePermission>
-      </header>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={(
+          <RequirePermission allOf={["users_create"]}>
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => {
+                setData({
+                  userId: "",
+                  userName: "",
+                  userPin: "",
+                  userPhone: "",
+                  userEmail: "",
+                  userRole: roles?.[0]?.id || "",
+                });
+                setAddUsersShowModal(true);
+              }}
+            >
+              {t("addUser")}
+            </Button>
+          </RequirePermission>
+        )}
+      />
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
-        <UsersTable
+        <UsersList
           users={users}
           onEditUser={handleEditUser}
           onDeleteUser={handleDeleteUser}

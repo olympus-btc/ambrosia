@@ -15,6 +15,7 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
     <Modal
       isOpen={addUsersShowModal}
       onOpenChange={setAddUsersShowModal}
+      placement="center"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",

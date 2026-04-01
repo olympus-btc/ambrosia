@@ -28,6 +28,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
     <Modal
       isOpen={editUsersShowModal}
       onOpenChange={handleOnCloseModal}
+      placement="center"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
