@@ -65,6 +65,7 @@ export function CreateRoleModal({
         if (!open) handleClose();
       }}
       size="3xl"
+      placement="center"
       backdrop="blur"
       scrollBehavior="inside"
     >

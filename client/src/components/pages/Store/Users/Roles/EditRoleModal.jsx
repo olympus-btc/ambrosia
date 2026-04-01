@@ -33,6 +33,7 @@ export function EditRoleModal({
         if (!open) onClose();
       }}
       size="3xl"
+      placement="center"
       backdrop="blur"
       scrollBehavior="inside"
     >
