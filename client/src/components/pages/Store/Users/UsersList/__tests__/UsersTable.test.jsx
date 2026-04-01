@@ -11,6 +11,14 @@ jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
 
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress }) => <button aria-label="Edit User" onClick={onPress}>edit</button>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress }) => <button aria-label="Delete User" onClick={onPress}>delete</button>,
+}));
+
 jest.mock("framer-motion", () => {
   const React = require("react");
   const Mock = React.forwardRef(({ children, ...props }, ref) => (
@@ -50,16 +58,22 @@ const renderTable = (props = {}) => render(
   />,
 );
 
-describe("UsersTable", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+});
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe("UsersTable", () => {
   it("renders rows with name, role, email and phone", () => {
     renderTable();
 
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.getByText("Admin")).toBeInTheDocument();
+    expect(screen.getAllByText("Alice")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Admin")[0]).toBeInTheDocument();
     expect(screen.getByText("alice@test.com")).toBeInTheDocument();
     expect(screen.getByText("1111111111")).toBeInTheDocument();
   });
