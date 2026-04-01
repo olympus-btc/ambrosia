@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Button, Input, NumberInput, Popover, PopoverContent, PopoverTrigger, Select, SelectItem } from "@heroui/react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -16,6 +18,7 @@ export function OrdersFilterBar({
   onClearFilters,
 }) {
   const t = useTranslations("orders");
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const activeFilterCount =
     [
       filters.status,
@@ -61,12 +64,12 @@ export function OrdersFilterBar({
         </Select>
 
         <div className="w-full md:w-48">
-          <Popover placement="bottom-end">
+          <Popover placement="bottom-end" onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger>
               <Button
                 variant="flat"
-                className="h-14 w-full justify-between border border-default-200 bg-default-50 px-4"
-                endContent={<ChevronDown className="w-4 h-4" />}
+                className="h-14 w-full justify-between px-4 hover:bg-gray-200"
+                endContent={<ChevronDown className={`w-4 h-4 text-foreground transition-transform duration-200 ${isPopoverOpen ? "rotate-180" : ""}`} strokeWidth={1} />}
               >
                 {activeFilterCount > 0
                   ? t("filter.moreFiltersActive", { count: activeFilterCount })
@@ -142,6 +145,12 @@ export function OrdersFilterBar({
                   <NumberInput
                     label={t("filter.minTotalLabel")}
                     placeholder={t("filter.totalPlaceholder")}
+                    variant="flat"
+                    classNames={{
+                      inputWrapper: "shadow-none",
+                      description: "font-semibold",
+                      input: "placeholder:!text-foreground",
+                    }}
                     value={filters.minTotal === null || filters.minTotal === undefined || filters.minTotal === ""
                       ? null
                       : Number(filters.minTotal)}
@@ -151,6 +160,10 @@ export function OrdersFilterBar({
                   <NumberInput
                     label={t("filter.maxTotalLabel")}
                     placeholder={t("filter.totalPlaceholder")}
+                    classNames={{
+                      inputWrapper: "shadow-none",
+                      input: "placeholder:!text-foreground",
+                    }}
                     value={filters.maxTotal === null || filters.maxTotal === undefined || filters.maxTotal === ""
                       ? null
                       : Number(filters.maxTotal)}
