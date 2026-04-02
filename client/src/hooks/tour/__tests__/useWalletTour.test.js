@@ -55,12 +55,31 @@ afterEach(() => {
 
 describe("useWalletTour", () => {
   describe("wallet pathname effect", () => {
-    it("sets guard and receive keys when pathname is /store/wallet", () => {
+    it("sets guard and receive keys on first wallet visit (WALLET_TOUR_KEY = 'true')", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store/wallet");
       renderHook(() => useWalletTour(false));
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
+      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
+    });
+
+    it("does not set guard/receive keys on subsequent wallet visits (WALLET_TOUR_KEY = 'visited')", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/store/wallet");
+      renderHook(() => useWalletTour(false));
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
+    });
+
+    it("does not set guard/receive keys when tour has not been seen yet", () => {
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/store/wallet");
+      renderHook(() => useWalletTour(false));
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
     });
 
     it("does not set guard/receive keys on other paths", () => {
@@ -108,9 +127,10 @@ describe("useWalletTour", () => {
       expect(capturedConfig.steps[1].element).toBe("#nav-wallet");
     });
 
-    it("sets guard and receive keys onHighlighted", () => {
+    it("sets guard, receive and visited keys onHighlighted", () => {
       renderHook(() => useWalletTour(true));
       capturedConfig.steps[1].onHighlighted();
+      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
     });
