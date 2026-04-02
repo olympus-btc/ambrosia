@@ -30,8 +30,12 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
       onOpenChange={handleOnCloseModal}
       placement="center"
       backdrop="blur"
+      shouldBlockScroll={false}
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+        body: "overflow-y-auto max-h-[65vh]",
       }}
     >
       <ModalContent>

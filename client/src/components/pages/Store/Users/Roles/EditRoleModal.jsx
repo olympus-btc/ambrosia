@@ -35,9 +35,13 @@ export function EditRoleModal({
       size="3xl"
       placement="center"
       backdrop="blur"
-      scrollBehavior="inside"
+      shouldBlockScroll={false}
+      classNames={{
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+      }}
     >
-      <ModalContent className="max-h-[85vh]">
+      <ModalContent>
         <ModalHeader>
           {t("roles.edit.title")} {roleName ? `(${roleName})` : ""}
         </ModalHeader>
