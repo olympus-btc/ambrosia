@@ -113,15 +113,7 @@ fun Route.printers(
 
             try {
                 val config = configService.getConfig()
-                printService.printTicket(
-                    request.ticketData,
-                    request.templateName,
-                    request.printerType,
-                    config,
-                    request.printerId,
-                    request.broadcast,
-                    request.forceTemplateName,
-                )
+                printService.printTicket(request, config)
                 call.respondText("Print job sent", status = HttpStatusCode.OK)
             } catch (e: Exception) {
                 throw PrintTicketException(e.message ?: "An unknown error occurred during printing.")

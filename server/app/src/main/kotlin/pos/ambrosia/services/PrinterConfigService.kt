@@ -5,6 +5,9 @@ import pos.ambrosia.models.PrinterConfig
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
 import pos.ambrosia.models.PrinterType
+import pos.ambrosia.util.executeInTransaction
+import pos.ambrosia.util.toBytes
+import pos.ambrosia.util.toUUID
 import java.sql.Connection
 import java.sql.ResultSet
 import java.util.UUID
@@ -88,8 +91,7 @@ open class PrinterConfigService(
         }
 
         val configId = UUID.randomUUID()
-        connection.autoCommit = false
-        try {
+        return executeInTransaction(connection) {
             if (request.isDefault) {
                 clearDefaultForType(request.printerType)
             }
@@ -104,24 +106,16 @@ open class PrinterConfigService(
                 stmt.executeUpdate()
             }
 
-            connection.commit()
             logger.info("Printer config created: ${request.printerType} ${request.printerName}")
-            return configId.toString()
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to create printer config: ${e.message}")
-            return null
-        } finally {
-            connection.autoCommit = true
+            configId.toString()
         }
     }
 
     suspend fun upsertDefaultByTypeName(
         printerType: PrinterType,
         printerName: String,
-    ): String? {
-        connection.autoCommit = false
-        try {
+    ): String? =
+        executeInTransaction(connection) {
             clearDefaultForType(printerType)
 
             val existing = getPrinterConfigByTypeName(printerType, printerName)
@@ -135,30 +129,21 @@ open class PrinterConfigService(
                     stmt.setBytes(6, UUID.fromString(existing.id).toBytes())
                     stmt.executeUpdate()
                 }
-                connection.commit()
-                return existing.id
+                existing.id
+            } else {
+                val configId = UUID.randomUUID()
+                connection.prepareStatement(ADD_PRINTER_CONFIG).use { stmt ->
+                    stmt.setBytes(1, configId.toBytes())
+                    stmt.setString(2, printerType.name)
+                    stmt.setString(3, printerName)
+                    stmt.setString(4, null)
+                    stmt.setBoolean(5, true)
+                    stmt.setBoolean(6, true)
+                    stmt.executeUpdate()
+                }
+                configId.toString()
             }
-
-            val configId = UUID.randomUUID()
-            connection.prepareStatement(ADD_PRINTER_CONFIG).use { stmt ->
-                stmt.setBytes(1, configId.toBytes())
-                stmt.setString(2, printerType.name)
-                stmt.setString(3, printerName)
-                stmt.setString(4, null)
-                stmt.setBoolean(5, true)
-                stmt.setBoolean(6, true)
-                stmt.executeUpdate()
-            }
-            connection.commit()
-            return configId.toString()
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to upsert default printer config: ${e.message}")
-            return null
-        } finally {
-            connection.autoCommit = true
         }
-    }
 
     suspend fun getPrinterConfigs(): List<PrinterConfig> {
         connection.createStatement().use { stmt ->
@@ -255,31 +240,26 @@ open class PrinterConfigService(
             return PrinterConfigUpdateStatus.CONFLICT
         }
 
-        connection.autoCommit = false
-        try {
-            if (newDefault) {
-                clearDefaultForType(newType)
+        val result =
+            executeInTransaction(connection) {
+                if (newDefault) {
+                    clearDefaultForType(newType)
+                }
+
+                connection.prepareStatement(UPDATE_PRINTER_CONFIG).use { stmt ->
+                    stmt.setString(1, newType.name)
+                    stmt.setString(2, newName)
+                    stmt.setString(3, newTemplateName)
+                    stmt.setBoolean(4, newDefault)
+                    stmt.setBoolean(5, newEnabled)
+                    stmt.setBytes(6, configId.toBytes())
+                    stmt.executeUpdate()
+                }
+
+                PrinterConfigUpdateStatus.UPDATED
             }
 
-            connection.prepareStatement(UPDATE_PRINTER_CONFIG).use { stmt ->
-                stmt.setString(1, newType.name)
-                stmt.setString(2, newName)
-                stmt.setString(3, newTemplateName)
-                stmt.setBoolean(4, newDefault)
-                stmt.setBoolean(5, newEnabled)
-                stmt.setBytes(6, configId.toBytes())
-                stmt.executeUpdate()
-            }
-
-            connection.commit()
-            return PrinterConfigUpdateStatus.UPDATED
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to update printer config: ${e.message}")
-            return PrinterConfigUpdateStatus.CONFLICT
-        } finally {
-            connection.autoCommit = true
-        }
+        return result ?: PrinterConfigUpdateStatus.CONFLICT
     }
 
     suspend fun deletePrinterConfig(id: String): Boolean {
@@ -299,22 +279,14 @@ open class PrinterConfigService(
 
     suspend fun setDefault(id: String): Boolean {
         val config = getPrinterConfigById(id) ?: return false
-        connection.autoCommit = false
-        try {
+        return executeInTransaction(connection) {
             clearDefaultForType(config.printerType)
             connection.prepareStatement(SET_DEFAULT_BY_ID).use { stmt ->
                 stmt.setBytes(1, UUID.fromString(id).toBytes())
                 stmt.executeUpdate()
             }
-            connection.commit()
-            return true
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to set default printer config: ${e.message}")
-            return false
-        } finally {
-            connection.autoCommit = true
-        }
+            true
+        } ?: false
     }
 
     private fun mapPrinterConfig(rs: ResultSet): PrinterConfig =

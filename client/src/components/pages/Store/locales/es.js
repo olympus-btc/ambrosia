@@ -713,6 +713,7 @@ const storeEs = {
         SEPARATOR: "Separador",
         TABLE_HEADER: "Encabezado tabla",
         TABLE_ROW: "Fila tabla",
+        TOTAL_ROW: "Fila de total",
         FOOTER: "Pie",
         QRCODE: "Codigo QR",
       },

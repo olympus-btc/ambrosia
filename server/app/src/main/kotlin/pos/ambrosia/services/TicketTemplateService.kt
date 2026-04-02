@@ -8,6 +8,9 @@ import pos.ambrosia.models.Justification
 import pos.ambrosia.models.TicketElement
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTemplateRequest
+import pos.ambrosia.util.executeInTransaction
+import pos.ambrosia.util.toBytes
+import pos.ambrosia.util.toUUID
 import java.sql.Connection
 import java.sql.ResultSet
 import java.util.UUID
@@ -26,8 +29,8 @@ open class TicketTemplateService(
         private const val CHECK_TEMPLATE_NAME_EXISTS_EXCLUDING_ID = "SELECT id FROM ticket_templates WHERE name = ? AND id != ?"
 
         private const val ADD_ELEMENT = """
-            INSERT INTO ticket_template_elements 
-            (id, template_id, element_order, type, value, style_bold, style_justification, style_font_size) 
+            INSERT INTO ticket_template_elements
+            (id, template_id, element_order, type, value, style_bold, style_justification, style_font_size)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
         private const val GET_ELEMENTS_BY_TEMPLATE_ID = """
@@ -56,6 +59,25 @@ open class TicketTemplateService(
         }
     }
 
+    private fun insertElements(
+        templateId: UUID,
+        elements: List<pos.ambrosia.models.TicketElementCreateRequest>,
+    ) {
+        elements.forEachIndexed { index, elementRequest ->
+            connection.prepareStatement(ADD_ELEMENT).use { stmt ->
+                stmt.setBytes(1, UUID.randomUUID().toBytes())
+                stmt.setBytes(2, templateId.toBytes())
+                stmt.setInt(3, index)
+                stmt.setString(4, elementRequest.type.name)
+                stmt.setString(5, elementRequest.value)
+                stmt.setBoolean(6, elementRequest.style?.bold ?: false)
+                stmt.setString(7, (elementRequest.style?.justification ?: Justification.LEFT).name)
+                stmt.setString(8, (elementRequest.style?.fontSize ?: FontSize.NORMAL).name)
+                stmt.executeUpdate()
+            }
+        }
+    }
+
     suspend fun addTemplate(request: TicketTemplateRequest): String? {
         if (templateNameExists(request.name)) {
             logger.error("Template name already exists: ${request.name}")
@@ -63,36 +85,17 @@ open class TicketTemplateService(
         }
 
         val templateId = UUID.randomUUID()
-        connection.autoCommit = false
-        try {
+        return executeInTransaction(connection) {
             connection.prepareStatement(ADD_TEMPLATE).use { stmt ->
                 stmt.setBytes(1, templateId.toBytes())
                 stmt.setString(2, request.name)
                 stmt.executeUpdate()
             }
 
-            request.elements.forEachIndexed { index, elementRequest ->
-                connection.prepareStatement(ADD_ELEMENT).use { stmt ->
-                    stmt.setBytes(1, UUID.randomUUID().toBytes())
-                    stmt.setBytes(2, templateId.toBytes())
-                    stmt.setInt(3, index)
-                    stmt.setString(4, elementRequest.type.name)
-                    stmt.setString(5, elementRequest.value)
-                    stmt.setBoolean(6, elementRequest.style?.bold ?: false)
-                    stmt.setString(7, (elementRequest.style?.justification ?: Justification.LEFT).name)
-                    stmt.setString(8, (elementRequest.style?.fontSize ?: FontSize.NORMAL).name)
-                    stmt.executeUpdate()
-                }
-            }
-            connection.commit()
+            insertElements(templateId, request.elements)
+
             logger.info("Template created successfully with ID: $templateId")
-            return templateId.toString()
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to create template: ${e.message}")
-            return null
-        } finally {
-            connection.autoCommit = true
+            templateId.toString()
         }
     }
 
@@ -157,8 +160,7 @@ open class TicketTemplateService(
             return false
         }
 
-        connection.autoCommit = false
-        try {
+        return executeInTransaction(connection) {
             connection.prepareStatement(UPDATE_TEMPLATE).use { stmt ->
                 stmt.setString(1, request.name)
                 stmt.setBytes(2, templateId.toBytes())
@@ -170,29 +172,11 @@ open class TicketTemplateService(
                 stmt.executeUpdate()
             }
 
-            request.elements.forEachIndexed { index, elementRequest ->
-                connection.prepareStatement(ADD_ELEMENT).use { stmt ->
-                    stmt.setBytes(1, UUID.randomUUID().toBytes())
-                    stmt.setBytes(2, templateId.toBytes())
-                    stmt.setInt(3, index)
-                    stmt.setString(4, elementRequest.type.name)
-                    stmt.setString(5, elementRequest.value)
-                    stmt.setBoolean(6, elementRequest.style?.bold ?: false)
-                    stmt.setString(7, (elementRequest.style?.justification ?: Justification.LEFT).name)
-                    stmt.setString(8, (elementRequest.style?.fontSize ?: FontSize.NORMAL).name)
-                    stmt.executeUpdate()
-                }
-            }
-            connection.commit()
+            insertElements(templateId, request.elements)
+
             logger.info("Template updated successfully: $id")
-            return true
-        } catch (e: Exception) {
-            connection.rollback()
-            logger.error("Failed to update template $id: ${e.message}")
-            return false
-        } finally {
-            connection.autoCommit = true
-        }
+            true
+        } ?: false
     }
 
     suspend fun deleteTemplate(id: String): Boolean {
@@ -252,19 +236,4 @@ open class TicketTemplateService(
                     fontSize = FontSize.valueOf(rs.getString("style_font_size")),
                 ),
         )
-}
-
-fun UUID.toBytes(): ByteArray {
-    val byteArray = ByteArray(16)
-    val bb = java.nio.ByteBuffer.wrap(byteArray)
-    bb.putLong(this.mostSignificantBits)
-    bb.putLong(this.leastSignificantBits)
-    return byteArray
-}
-
-fun ByteArray.toUUID(): UUID {
-    val bb = java.nio.ByteBuffer.wrap(this)
-    val mostSigBits = bb.getLong()
-    val leastSigBits = bb.getLong()
-    return UUID(mostSigBits, leastSigBits)
 }

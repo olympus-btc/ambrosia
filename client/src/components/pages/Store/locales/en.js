@@ -713,6 +713,7 @@ const storeEn = {
         SEPARATOR: "Separator",
         TABLE_HEADER: "Table header",
         TABLE_ROW: "Table row",
+        TOTAL_ROW: "Total row",
         FOOTER: "Footer",
         QRCODE: "QR code",
       },
