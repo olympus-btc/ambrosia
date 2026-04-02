@@ -7,12 +7,12 @@ import { formatSats } from "../utils/formatters";
 
 function StatCard({ icon: Icon, label, value }) {
   return (
-    <div className="border p-4 rounded-lg">
+    <div className="border p-3 sm:p-4 lg:p-3 xl:p-4 rounded-lg">
       <div className="flex items-center space-x-2 mb-2">
-        <Icon className="w-4 h-4 text-primary" />
-        <span className="text-sm font-medium text-forest">{label}</span>
+        <Icon className="hidden sm:block lg:hidden xl:block w-4 h-4 text-primary" />
+        <span className="text-xs sm:text-sm lg:text-xs xl:text-sm font-medium text-forest">{label}</span>
       </div>
-      <p className="text-xl font-bold text-deep">{value}</p>
+      <p className="text-base sm:text-xl lg:text-base xl:text-xl font-bold text-deep">{value}</p>
     </div>
   );
 }
@@ -21,7 +21,7 @@ export function NodeSummary({ info, totalBalance }) {
   const t = useTranslations("wallet");
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+    <div className="grid grid-cols-2 gap-4 mb-6">
       <StatCard
         icon={Wallet}
         label={t("nodeInfo.totalBalance")}
