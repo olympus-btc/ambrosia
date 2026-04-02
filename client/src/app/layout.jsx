@@ -26,19 +26,15 @@ export const viewport = {
   maximumScale: 1,
 };
 
-
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           <UpdateBanner />
-          <div className="">
-            <ModuleNavigation show="none">{children}</ModuleNavigation>
-          </div>
+          <ModuleNavigation show="none">{children}</ModuleNavigation>
         </Providers>
       </body>
     </html>
