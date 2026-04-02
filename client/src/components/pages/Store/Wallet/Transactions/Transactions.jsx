@@ -81,9 +81,9 @@ export function Transactions({
           onSelectionChange={setActiveTab}
           variant="underlined"
           classNames={{
-            tabList: "gap-6 relative rounded-none px-6 py-0",
+            tabList: "gap-2 sm:gap-6 relative rounded-none px-4 sm:px-6 py-0 overflow-x-auto flex-nowrap w-full",
             cursor: "w-full bg-forest",
-            tab: "max-w-fit px-6 py-4 h-12",
+            tab: "max-w-fit px-3 sm:px-6 py-4 h-12 shrink-0",
             tabContent: "group-data-[selected=true]:text-forest",
           }}
         >
@@ -91,7 +91,7 @@ export function Transactions({
             key="receive"
             title={(
               <div className="flex items-center space-x-2">
-                <ArrowDownLeft className="w-4 h-4" />
+                <ArrowDownLeft className="hidden sm:block w-4 h-4" />
                 <span>{t("payments.receive.tabTitle")}</span>
               </div>
             )}
@@ -105,7 +105,7 @@ export function Transactions({
             key="send"
             title={(
               <div className="flex items-center space-x-2">
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="hidden sm:block w-4 h-4" />
                 <span>{t("payments.send.tabTitle")}</span>
               </div>
             )}
@@ -120,7 +120,7 @@ export function Transactions({
             key="history"
             title={(
               <div className="flex items-center space-x-2">
-                <History className="w-4 h-4" />
+                <History className="hidden sm:block w-4 h-4" />
                 <span>{t("payments.history.tabTitle")}</span>
               </div>
             )}
