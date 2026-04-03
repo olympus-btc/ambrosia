@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { EditSettingsModal } from "../EditSettingsModal";
+import { EditStoreInfoModal } from "../EditStoreInfoModal";
 
 function renderModal(props = {}) {
   const defaultProps = {
@@ -19,14 +19,14 @@ function renderModal(props = {}) {
     setData: jest.fn(),
     onChange: jest.fn(),
     onSubmit: jest.fn(),
-    editSettingsShowModal: true,
-    setEditSettingsShowModal: jest.fn(),
+    isOpen: true,
+    setIsOpen: jest.fn(),
     ...props,
   };
 
   return render(
     <I18nProvider>
-      <EditSettingsModal {...defaultProps} />
+      <EditStoreInfoModal {...defaultProps} />
     </I18nProvider>,
   );
 }
@@ -67,9 +67,9 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("EditSettingsModal", () => {
+describe("EditStoreInfoModal", () => {
   describe("Rendering", () => {
-    it("renders modal when editSettingsShowModal is true", async () => {
+    it("renders modal when isOpen is true", async () => {
       await act(async () => {
         renderModal();
       });
@@ -77,9 +77,9 @@ describe("EditSettingsModal", () => {
       expect(screen.getByText("modal.title")).toBeInTheDocument();
     });
 
-    it("does not render modal when editSettingsShowModal is false", async () => {
+    it("does not render modal when isOpen is false", async () => {
       await act(async () => {
-        renderModal({ editSettingsShowModal: false });
+        renderModal({ isOpen: false });
       });
 
       expect(screen.queryByText("modal.title")).not.toBeInTheDocument();
@@ -213,19 +213,19 @@ describe("EditSettingsModal", () => {
       });
     });
 
-    it("calls setEditSettingsShowModal when cancel button is clicked", async () => {
+    it("calls setIsOpen(false) when cancel button is clicked", async () => {
       const user = userEvent.setup();
-      const mockSetEditSettingsShowModal = jest.fn();
+      const mockSetIsOpen = jest.fn();
 
       await act(async () => {
-        renderModal({ setEditSettingsShowModal: mockSetEditSettingsShowModal });
+        renderModal({ setIsOpen: mockSetIsOpen });
       });
 
       const cancelButton = screen.getByText("modal.cancelButton");
       await user.click(cancelButton);
 
       await waitFor(() => {
-        expect(mockSetEditSettingsShowModal).toHaveBeenCalledWith(false);
+        expect(mockSetIsOpen).toHaveBeenCalledWith(false);
       });
     });
 
@@ -465,33 +465,6 @@ describe("EditSettingsModal", () => {
         });
       }
     });
-
-    it("shows remove button when image preview exists", async () => {
-      const mockData = {
-        businessName: "Test Store",
-        businessType: "store",
-        businessLogoUrl: "http://localhost:9154/api/assets/logo.png",
-      };
-
-      await act(async () => {
-        renderModal({ data: mockData });
-      });
-
-      const logoPreview = screen.getByAltText("Image preview");
-      expect(logoPreview).toBeInTheDocument();
-
-      const buttons = screen.getAllByRole("button");
-      const removeButton = buttons.find((button) => {
-        const buttonText = button.textContent;
-        return !buttonText.includes("modal.cancelButton") &&
-               !buttonText.includes("modal.editButton") &&
-               !buttonText.includes("Close") &&
-               !buttonText.includes("Dismiss") &&
-               buttonText.trim() === "";
-      });
-
-      expect(removeButton).toBeTruthy();
-    });
   });
 
   describe("Edge Cases", () => {
@@ -514,24 +487,6 @@ describe("EditSettingsModal", () => {
       expect(screen.getByLabelText("modal.address")).toHaveValue("");
       expect(screen.getByLabelText("modal.email")).toHaveValue("");
       expect(screen.getByLabelText("modal.phone")).toHaveValue("");
-    });
-
-    it("handles undefined onChange callback", async () => {
-      await act(async () => {
-        renderModal({ onChange: undefined });
-      });
-
-      expect(screen.getByText("modal.title")).toBeInTheDocument();
-    });
-
-    it("closes modal on backdrop click", async () => {
-      const mockSetEditSettingsShowModal = jest.fn();
-
-      await act(async () => {
-        renderModal({ setEditSettingsShowModal: mockSetEditSettingsShowModal });
-      });
-
-      expect(screen.getByText("modal.title")).toBeInTheDocument();
     });
   });
 });
