@@ -36,7 +36,6 @@ export function usePaymentWebsocket() {
 
       ws.onopen = () => {
         setConnected(true);
-        console.warn("WS payments conectado", url);
       };
 
       ws.onmessage = (event) => {
@@ -71,7 +70,12 @@ export function usePaymentWebsocket() {
       ws.onclose = () => {
         setConnected(false);
         if (shouldReconnect) {
-          setTimeout(connect, 3000);
+          setTimeout(async () => {
+            try {
+              await fetch("/api/auth/refresh", { method: "POST" });
+            } catch {}
+            connect();
+          }, 3000);
         }
       };
     };
