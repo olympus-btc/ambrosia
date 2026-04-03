@@ -45,6 +45,13 @@ fun Route.wallet(
     tokenService: TokenService,
     authService: AuthService,
 ) {
+    authenticate("auth-jwt") {
+        post("/invoice") {
+            val request = call.receive<CreateInvoiceRequest>()
+            val invoice = phoenixService.createInvoice(request)
+            call.respond(HttpStatusCode.OK, invoice)
+        }
+    }
     authenticateAdmin {
         post("/auth") {
             val isSecureRequest =
