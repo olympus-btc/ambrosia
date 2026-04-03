@@ -28,6 +28,7 @@ class RolesService(
     }
 
     suspend fun addRole(role: Role): String? {
+        if (role.role.isBlank()) return null
         if (roleNameExists(role.role)) {
             logger.error("Role name already exists: ${role.role}")
             return null
@@ -113,6 +114,7 @@ class RolesService(
         sql.append("WHERE id = ?")
 
         if (id == null) return false
+        if (role.role.isBlank()) return false
         if (roleNameExistsExcludingId(role.role, id)) {
             logger.error("Role name already exists: ${role.role}")
             return false
