@@ -24,8 +24,13 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
       isOpen={invoiceState.showModal}
       onClose={onClose}
       size="2xl"
+      scrollBehavior="inside"
       backdrop="blur"
-      classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+      }}
     >
       <ModalContent>
         <ModalHeader>{t("invoiceModal.title")}</ModalHeader>
@@ -50,13 +55,20 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
             invoiceState.created && (
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <div className="bg-white p-4 rounded-lg border w-full max-w-[280px]">
+                  <div className="bg-white p-4 rounded-lg border w-full max-w-60 sm:max-w-[280px] mx-auto">
                     <QRCode
                       value={invoiceState.created.serialized}
-                      style={{ width: "100%", height: "auto" }}
+                      style={{ width: "100%", height: "auto", display: "block" }}
                     />
                   </div>
                 </div>
+
+                {invoiceState.awaitingPayment && (
+                  <div className="flex items-center justify-center space-x-2 text-sm text-forest">
+                    <Spinner size="sm" color="success" />
+                    <span>{t("invoiceModal.waitingPayment")}</span>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div>
@@ -70,7 +82,7 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
                         size="sm"
                       />
                     </div>
-                    <div className="bg-gray-100 rounded p-2 text-xs font-mono break-all">
+                    <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
                       {invoiceState.created.serialized}
                     </div>
                   </div>
@@ -80,21 +92,13 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
                       <span className="text-sm text-gray-500">
                         {t("invoiceModal.paymentHash")}
                       </span>
-                      <div className="flex items-center gap-2">
-                        {invoiceState.awaitingPayment ? (
-                          <div className="flex items-center space-x-2 text-sm text-forest">
-                            <Spinner size="sm" color="success" />
-                            <span>{t("invoiceModal.waitingPayment")}</span>
-                          </div>
-                        ) : null}
-                        <CopyButton
-                          value={invoiceState.created.paymentHash}
-                          label={t("invoiceModal.copyButton")}
-                          size="sm"
-                        />
-                      </div>
+                      <CopyButton
+                        value={invoiceState.created.paymentHash}
+                        label={t("invoiceModal.copyButton")}
+                        size="sm"
+                      />
                     </div>
-                    <div className="bg-gray-100 rounded p-2 text-xs font-mono break-all">
+                    <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
                       {invoiceState.created.paymentHash}
                     </div>
                   </div>
