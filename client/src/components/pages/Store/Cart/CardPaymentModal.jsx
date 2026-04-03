@@ -1,7 +1,6 @@
 "use client";
 import {
   Button,
-  Chip,
   Modal,
   ModalBody,
   ModalContent,
@@ -30,9 +29,12 @@ export function CardPaymentModal({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
       }}
     >
       <ModalContent>
@@ -43,19 +45,14 @@ export function CardPaymentModal({
           </span>
         </ModalHeader>
         <ModalBody className="space-y-4">
-          <div className="border-b pb-3 mb-3">
+          <div className="border-b pb-3">
             <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{t("totalLabel")}</p>
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-semibold text-green-900">
-                {formattedTotal}
-              </p>
-              <Chip className="bg-green-200 text-xs text-green-800 border border-green-300">
-                {resolvedMethodLabel}
-              </Chip>
-            </div>
+            <p className="text-xl font-semibold text-green-900">
+              {formattedTotal}
+            </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-400 p-3 flex justify-between items-center shadow-sm">
+          <div className="bg-white rounded-lg border p-3 flex justify-between items-center">
             <span className="text-sm text-gray-600">{t("methodLabel")}</span>
             <span className="text-lg font-semibold text-green-700">{resolvedMethodLabel}</span>
           </div>
