@@ -24,6 +24,8 @@ export function PaymentSentModal({ result, onClose }) {
       isOpen={Boolean(result)}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
+      shouldBlockScroll={false}
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",

@@ -25,6 +25,7 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
       onClose={onClose}
       size="2xl"
       scrollBehavior="inside"
+      shouldBlockScroll={false}
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
