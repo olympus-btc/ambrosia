@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import BitcoinPriceService from "@/services/bitcoinPriceService";
-import { createInvoice } from "@/services/walletService";
+import { createInvoiceForCart } from "@/services/walletService";
 
 const priceService = new BitcoinPriceService();
 
@@ -37,7 +37,7 @@ export function useBitcoinInvoice({
         currencyAcronym.toLowerCase(),
       );
       const fallbackDescription = paymentId || `btc-${Date.now()}`;
-      const createdInvoice = await createInvoice(
+      const createdInvoice = await createInvoiceForCart(
         sats,
         invoiceDescription || fallbackDescription,
       );
