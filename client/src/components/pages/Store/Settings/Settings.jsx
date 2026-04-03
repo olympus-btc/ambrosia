@@ -67,11 +67,61 @@ export function Settings() {
     <StoreLayout>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="flex flex-col gap-6">
           <StoreInfo />
+
+          <Card shadow="none" className="rounded-lg p-6 shadow-lg">
+            <CardHeader className="flex flex-col items-start">
+              <h2 className="text-lg font-semibold text-green-900">
+                {t("cardCurrency.title")}
+              </h2>
+            </CardHeader>
+            <CardBody>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="sm:w-1/2">
+                  <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
+                  <div className="text-base mt-0.5 font-medium text-green-800">{currency.acronym}</div>
+                </div>
+                <Select
+                  className="w-full sm:max-w-48"
+                  label={t("cardCurrency.currencyLabel")}
+                  value={config.businessCurrency}
+                  onChange={handleCurrencyChange}
+                >
+                  {CURRENCIES.map((currency) => (
+                    <SelectItem key={currency.code} value={currency.code}>
+                      {`${currency.code}  -  ${currency.name}`}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card shadow="none" className="rounded-lg p-6 shadow-lg">
+            <CardHeader className="flex flex-col items-start">
+              <h2 className="text-lg font-semibold text-green-900">
+                {t("cardLanguage.title")}
+              </h2>
+            </CardHeader>
+            <CardBody>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="sm:w-1/2">
+                  <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
+                  <div className="text-base mt-0.5 font-medium text-green-800">{locale.toUpperCase()}</div>
+                </div>
+                <LanguageSwitcher />
+              </div>
+            </CardBody>
+          </Card>
+
+          <SeedCard />
+
+          <TutorialsCard t={t} />
         </div>
-        <div>
+
+        <div className="flex flex-col gap-6">
           <PrinterSettingsCard
             availablePrinters={availablePrinters}
             printerConfigs={printerConfigs}
@@ -88,13 +138,12 @@ export function Settings() {
             t={t}
           />
 
-          <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
+          <Card shadow="none" className="rounded-lg p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-lg font-semibold text-green-900">
                 {t("templates.title")}
               </h2>
             </CardHeader>
-
             <CardBody>
               <div className="flex flex-col max-w-2xl">
                 <TemplateList
@@ -109,80 +158,9 @@ export function Settings() {
               </div>
             </CardBody>
           </Card>
+
+          {isElectron && <LightningCard />}
         </div>
-        <div>
-          <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
-            <CardHeader className="flex flex-col items-start">
-              <h2 className="text-lg font-semibold text-green-900">
-                {t("cardCurrency.title")}
-              </h2>
-            </CardHeader>
-
-            <CardBody>
-              <div className="flex flex-col max-w-2xl max-w-2x">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between my-2 gap-3">
-                  <div className="sm:w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
-                    <div className="text-base mt-0.5 font-medium text-green-800">{currency.acronym}</div>
-                  </div>
-
-                  <Select
-                    className="w-full sm:max-w-48"
-                    label={t("cardCurrency.currencyLabel")}
-                    value={config.businessCurrency}
-                    onChange={handleCurrencyChange}
-                  >
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {`${currency.code}  -  ${currency.name}`}
-                      </SelectItem>
-                    ))}
-                  </Select>
-
-                </div>
-
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-        <div>
-          <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
-            <CardHeader className="flex flex-col items-start">
-              <h2 className="text-lg font-semibold text-green-900">
-                {t("cardLanguage.title")}
-              </h2>
-            </CardHeader>
-
-            <CardBody>
-              <div className="flex flex-col max-w-2xl max-w-2x">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-2 gap-3">
-                  <div className="sm:w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
-                    <div className="text-base mt-0.5 font-medium text-green-800">{locale.toUpperCase()}</div>
-                  </div>
-
-                  <LanguageSwitcher />
-
-                </div>
-
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-
-        <div>
-          <SeedCard />
-        </div>
-
-        <div>
-          <TutorialsCard t={t} />
-        </div>
-
-        {isElectron && (
-          <div>
-            <LightningCard />
-          </div>
-        )}
       </div>
 
       <TicketTemplatesModal
