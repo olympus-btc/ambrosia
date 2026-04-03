@@ -2,35 +2,31 @@
 
 import { useState, useMemo } from "react";
 
-import Image from "next/image";
-
-import { Button, Card, CardBody, CardFooter, CardHeader, Select, SelectItem, addToast } from "@heroui/react";
+import { Card, CardBody, CardHeader, Select, SelectItem } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useUpload } from "@components/hooks/useUpload";
 import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { isElectron } from "@lib/isElectron";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { useCurrency } from "../../../hooks/useCurrency";
-import { storedAssetUrl } from "../../../utils/storedAssetUrl";
 import { CURRENCIES_EN } from "../../Onboarding/utils/currencies_en";
 import { CURRENCIES_ES } from "../../Onboarding/utils/currencies_es";
 import { usePrinters } from "../hooks/usePrinter";
 import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
-import { EditSettingsModal } from "./EditSettingsModal";
 import { LightningCard } from "./Lightning/LightningCard";
 import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
 import { SeedCard } from "./Seed/SeedCard";
+import { StoreInfo } from "./StoreInfo";
 import { TemplateList } from "./TicketTemplate/List";
 import { TicketTemplatesModal } from "./TicketTemplate/Modal";
 import { TutorialsCard } from "./Tutorials/TutorialsCard";
 
 export function Settings() {
-  const { config, updateConfig } = useConfigurations();
+  const { config } = useConfigurations();
   const {
     availablePrinters,
     printerConfigs,
@@ -43,57 +39,13 @@ export function Settings() {
     setDefaultPrinterConfig,
   } = usePrinters();
   const { templates, loading: loadingTemplates, error: templatesError, refetch: refetchTemplates } = useTemplates();
-  const [data, setData] = useState(config);
-  const [editSettingsShowModal, setEditSettingsShowModal] = useState(false);
   const [ticketTemplatesModalOpen, setTicketTemplatesModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const t = useTranslations("settings");
   const locale = useLocale();
   const { currency, updateCurrency } = useCurrency();
-  const { upload } = useUpload();
-
-  const handleDataChange = (newData) => {
-    setData((prev) => ({ ...prev, ...newData }));
-  };
-
-  const srcLogo = storedAssetUrl(data?.businessLogoUrl);
 
   const CURRENCIES = useMemo(() => (locale === "en" ? CURRENCIES_EN : CURRENCIES_ES), [locale]);
-
-  const handleEditSumbit = async (e) => {
-    e.preventDefault();
-    try {
-      let logoUrl = data.businessLogoUrl;
-
-      if (data.businessLogo instanceof File) {
-        const [uploaded] = await upload([data.businessLogo]);
-        logoUrl = uploaded?.url ?? uploaded?.path;
-      } else if (data.businessLogoRemoved) {
-        logoUrl = null;
-      }
-
-      const updatedData = {
-        ...data,
-        businessLogoUrl: logoUrl,
-        businessLogo: undefined,
-        businessLogoRemoved: undefined,
-      };
-
-      await updateConfig(updatedData);
-      setData(updatedData);
-      setEditSettingsShowModal(false);
-      addToast({
-        title: t("modal.updateSuccess"),
-        color: "success",
-      });
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description: error.message,
-        color: "danger",
-      });
-    }
-  };
 
   const handleCurrencyChange = (e) => {
     if (!e.target.value) { return; }
@@ -117,103 +69,7 @@ export function Settings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <Card shadow="none" className="rounded-lg mb-6 p-6 lg:w-full shadow-lg h-full">
-            <CardHeader className="flex flex-col items-start">
-              <h2 className="text-2xl font-semibold text-green-900">
-                {t("cardInfo.title")}
-              </h2>
-            </CardHeader>
-
-            <CardBody>
-              <div className="flex flex-col max-w-2xl ">
-                <div className="flex items-start justify-between my-2">
-                  <div className="w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">{data.businessName}</div>
-                  </div>
-
-                  <div className="w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.rfc")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">
-                      {data.businessTaxId ?
-                        data.businessTaxId :
-                        <span className="text-gray-400 italic">---</span>
-                      }
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="flex items-start justify-between my-2">
-
-                  <div className="w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.address")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">
-                      {data.businessAddress ?
-                        data.businessAddress :
-                        <span className="text-gray-400 italic">---</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start justify-between my-2">
-                  <div className="w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.email")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">
-                      {data.businessEmail ?
-                        data.businessEmail :
-                        <span className="text-gray-400 italic">---</span>
-                      }
-                    </div>
-                  </div>
-
-                  <div className="w-1/2">
-                    <div className="font-semibold text-gray-600">{t("cardInfo.phone")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">
-                      {data.businessPhone ?
-                        data.businessPhone :
-                        <span className="text-gray-400 italic">---</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-1/2">
-                  <div className="font-semibold text-gray-600 mb-4">{t("cardInfo.logo")}</div>
-                  {srcLogo ?
-                      (
-                        <Image
-                          src={srcLogo}
-                          width={400}
-                          height={0}
-                          alt="Logo"
-                          className="
-                            bg-[conic-gradient(#aaa_90deg,#eee_90deg_180deg,#aaa_180deg_270deg,#eee_270deg)]
-                            bg-size-[20px_20px] max-w-full h-auto rounded-lg border border-border p-2                        "
-                        />
-
-                      )
-                    :
-                      (
-                        <div className="w-40 h-40 bg-slate-100 rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center">
-                          <span className="text-sm text-slate-500">{t("cardInfo.noLogo")}</span>
-                        </div>
-                      )
-                  }
-                </div>
-              </div>
-            </CardBody>
-            <CardFooter>
-              <Button
-                color="primary"
-                onPress={() => setEditSettingsShowModal(true)}
-              >
-                {t("cardInfo.edit")}
-              </Button>
-            </CardFooter>
-          </Card>
-
+          <StoreInfo />
         </div>
         <div>
           <PrinterSettingsCard
@@ -234,7 +90,7 @@ export function Settings() {
 
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
-              <h2 className="text-2xl font-semibold text-green-900">
+              <h2 className="text-lg font-semibold text-green-900">
                 {t("templates.title")}
               </h2>
             </CardHeader>
@@ -257,23 +113,23 @@ export function Settings() {
         <div>
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
-              <h2 className="text-2xl font-semibold text-green-900">
+              <h2 className="text-lg font-semibold text-green-900">
                 {t("cardCurrency.title")}
               </h2>
             </CardHeader>
 
             <CardBody>
               <div className="flex flex-col max-w-2xl max-w-2x">
-                <div className="flex items-start justify-between my-2">
-                  <div className="w-1/2">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between my-2 gap-3">
+                  <div className="sm:w-1/2">
                     <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">{currency.acronym}</div>
+                    <div className="text-base mt-0.5 font-medium text-green-800">{currency.acronym}</div>
                   </div>
 
                   <Select
-                    className="max-w-48"
+                    className="w-full sm:max-w-48"
                     label={t("cardCurrency.currencyLabel")}
-                    value={data.businessCurrency}
+                    value={config.businessCurrency}
                     onChange={handleCurrencyChange}
                   >
                     {CURRENCIES.map((currency) => (
@@ -292,17 +148,17 @@ export function Settings() {
         <div>
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
-              <h2 className="text-2xl font-semibold text-green-900">
+              <h2 className="text-lg font-semibold text-green-900">
                 {t("cardLanguage.title")}
               </h2>
             </CardHeader>
 
             <CardBody>
               <div className="flex flex-col max-w-2xl max-w-2x">
-                <div className="flex items-center justify-between my-2">
-                  <div className="w-1/2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-2 gap-3">
+                  <div className="sm:w-1/2">
                     <div className="font-semibold text-gray-600">{t("cardInfo.name")}</div>
-                    <div className="text-xl mt-0.5 font-medium text-green-800">{locale.toUpperCase()}</div>
+                    <div className="text-base mt-0.5 font-medium text-green-800">{locale.toUpperCase()}</div>
                   </div>
 
                   <LanguageSwitcher />
@@ -328,15 +184,6 @@ export function Settings() {
           </div>
         )}
       </div>
-
-      <EditSettingsModal
-        data={data}
-        setData={setData}
-        onChange={handleDataChange}
-        onSubmit={handleEditSumbit}
-        editSettingsShowModal={editSettingsShowModal}
-        setEditSettingsShowModal={setEditSettingsShowModal}
-      />
 
       <TicketTemplatesModal
         isOpen={ticketTemplatesModalOpen}

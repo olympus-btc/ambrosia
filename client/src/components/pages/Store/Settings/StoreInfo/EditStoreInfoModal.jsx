@@ -7,13 +7,13 @@ import { useTranslations } from "next-intl";
 
 import { ImageUploader } from "@components/shared/ImageUploader";
 
-export function EditSettingsModal({ data, setData, onChange, onSubmit, editSettingsShowModal, setEditSettingsShowModal }) {
+export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, setIsOpen }) {
   const t = useTranslations("settings");
   const [rfcError, setRfcError] = useState("");
 
-  const handleOnCloseModal = () => {
+  const handleOnClose = () => {
     setData(data);
-    setEditSettingsShowModal(false);
+    setIsOpen(false);
   };
 
   const validateRFC = (value) => {
@@ -33,12 +33,15 @@ export function EditSettingsModal({ data, setData, onChange, onSubmit, editSetti
 
   return (
     <Modal
-      className="[@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
-      isOpen={editSettingsShowModal}
-      onOpenChange={handleOnCloseModal}
+      isOpen={isOpen}
+      onOpenChange={handleOnClose}
+      scrollBehavior="inside"
+      shouldBlockScroll={false}
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
       }}
     >
       <ModalContent>
@@ -106,7 +109,7 @@ export function EditSettingsModal({ data, setData, onChange, onSubmit, editSetti
                 variant="bordered"
                 type="button"
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                onPress={() => handleOnCloseModal()}
+                onPress={handleOnClose}
               >
                 {t("modal.cancelButton")}
               </Button>
