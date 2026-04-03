@@ -97,6 +97,10 @@ fun Route.roles(
             }
 
             val updatedRole = call.receive<Role>()
+            if (updatedRole.role.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid role data")
+                return@put
+            }
             val isUpdated = roleService.updateRole(id, updatedRole)
 
             if (!isUpdated) {
