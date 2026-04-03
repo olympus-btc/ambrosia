@@ -107,7 +107,7 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
             )
           )}
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter className="flex justify-between">
           <Button
             variant="bordered"
             type="button"
@@ -117,7 +117,7 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
             {t("invoiceModal.closeButton")}
           </Button>
           {invoiceState.awaitingPayment && !wsConnected && (
-            <Button color="primary" onPress={onMarkAsPaid}>
+            <Button color="primary" className="bg-green-800" onPress={onMarkAsPaid}>
               {t("invoiceModal.markAsPaidButton")}
             </Button>
           )}

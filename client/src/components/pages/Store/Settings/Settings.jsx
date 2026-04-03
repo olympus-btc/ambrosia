@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Button, Card, CardBody, CardFooter, CardHeader, Select, SelectItem, addToast } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { useUpload } from "@components/hooks/useUpload";
 import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { isElectron } from "@lib/isElectron";
@@ -112,17 +113,10 @@ export function Settings() {
 
   return (
     <StoreLayout>
-      <header className="mb-6">
-        <h1 className="text-4xl font-semibold text-green-900">
-          {t("title")}
-        </h1>
-        <p className="text-gray-800 mt-4">
-          {t("subtitle")}
-        </p>
-      </header>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <div className="flex flex-col flex-wrap items-stretch lg:flex-row lg:w-full lg:space-x-6">
-        <div className="flex flex-col lg:w-[47%] h-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
           <Card shadow="none" className="rounded-lg mb-6 p-6 lg:w-full shadow-lg h-full">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
@@ -221,7 +215,7 @@ export function Settings() {
           </Card>
 
         </div>
-        <div className="flex flex-col lg:w-[47%] h-full">
+        <div>
           <PrinterSettingsCard
             availablePrinters={availablePrinters}
             printerConfigs={printerConfigs}
@@ -260,7 +254,7 @@ export function Settings() {
             </CardBody>
           </Card>
         </div>
-        <div className="flex flex-col lg:w-[47%] h-full">
+        <div>
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
@@ -295,7 +289,7 @@ export function Settings() {
             </CardBody>
           </Card>
         </div>
-        <div className="flex flex-col lg:w-[47%] h-full">
+        <div>
           <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
               <h2 className="text-2xl font-semibold text-green-900">
@@ -320,16 +314,16 @@ export function Settings() {
           </Card>
         </div>
 
-        <div className="flex flex-col lg:w-[47%] h-full">
+        <div>
           <SeedCard />
         </div>
 
-        <div className="flex flex-col lg:w-[47%] h-full">
+        <div>
           <TutorialsCard t={t} />
         </div>
 
         {isElectron && (
-          <div className="flex flex-col lg:w-[47%] h-full">
+          <div>
             <LightningCard />
           </div>
         )}
