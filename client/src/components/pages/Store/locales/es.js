@@ -597,6 +597,7 @@ const storeEs = {
         complete: "Pago recibido",
         confirmed: "Pago confirmado",
         waitingPayment: "Esperando la confirmación del pago...",
+        markAsPaid: "Marcar como pagado",
         paidAt: "Confirmado a las {time}",
         websocket: {
           paymentReceivedTitle: "Pago recibido",

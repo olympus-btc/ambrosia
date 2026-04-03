@@ -597,6 +597,7 @@ const storeEn = {
         complete: "Payment received",
         confirmed: "Payment confirmed",
         waitingPayment: "Waiting for payment confirmation...",
+        markAsPaid: "Mark as paid",
         paidAt: "Confirmed at {time}",
         websocket: {
           paymentReceivedTitle: "Payment received",
