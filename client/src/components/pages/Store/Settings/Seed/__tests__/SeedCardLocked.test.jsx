@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { SeedCardLocked } from "../Seed/SeedCardLocked";
+import { SeedCardLocked } from "../SeedCardLocked";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -45,9 +45,7 @@ describe("SeedCardLocked", () => {
     it("calls onReveal when the reveal button is pressed", () => {
       const onReveal = jest.fn();
       renderLocked({ onReveal });
-
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
-
       expect(onReveal).toHaveBeenCalledTimes(1);
     });
   });

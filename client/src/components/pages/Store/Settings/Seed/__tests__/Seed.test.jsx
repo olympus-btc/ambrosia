@@ -2,7 +2,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 
 import * as walletService from "@/services/walletService";
 
-import { SeedCard } from "../Seed/SeedCard";
+import { Seed } from "../Seed";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -46,33 +46,29 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("SeedCard", () => {
+describe("Seed", () => {
   describe("Initial (locked) state", () => {
     it("renders the locked card by default", () => {
-      render(<SeedCard />);
+      render(<Seed />);
       expect(screen.getByText("cardSeed.revealButton")).toBeInTheDocument();
     });
 
     it("does not render the WalletGuard before reveal", () => {
-      render(<SeedCard />);
+      render(<Seed />);
       expect(screen.queryByTestId("wallet-guard")).not.toBeInTheDocument();
     });
   });
 
   describe("Transition to unlocked state", () => {
     it("renders WalletGuard after the reveal button is clicked", () => {
-      render(<SeedCard />);
-
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
-
       expect(screen.getByTestId("wallet-guard")).toBeInTheDocument();
     });
 
     it("hides the locked card after reveal button is clicked", () => {
-      render(<SeedCard />);
-
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
-
       expect(screen.queryByText("cardSeed.revealButton")).not.toBeInTheDocument();
     });
   });
@@ -80,7 +76,7 @@ describe("SeedCard", () => {
   describe("onAuthorized — successful seed fetch", () => {
     it("calls getSeed when WalletGuard confirms", async () => {
       jest.spyOn(walletService, "getSeed").mockResolvedValue(SEED);
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -92,7 +88,7 @@ describe("SeedCard", () => {
 
     it("renders seed words after a successful getSeed call", async () => {
       jest.spyOn(walletService, "getSeed").mockResolvedValue(SEED);
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -107,7 +103,7 @@ describe("SeedCard", () => {
     it("shows an error toast when getSeed throws", async () => {
       const { addToast } = require("@heroui/react");
       jest.spyOn(walletService, "getSeed").mockRejectedValue(new Error("unauthorized"));
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -121,7 +117,7 @@ describe("SeedCard", () => {
 
     it("goes back to locked state when getSeed throws", async () => {
       jest.spyOn(walletService, "getSeed").mockRejectedValue(new Error("unauthorized"));
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -135,7 +131,7 @@ describe("SeedCard", () => {
   describe("Hide (return to locked state)", () => {
     it("returns to locked state when the hide button is pressed", async () => {
       jest.spyOn(walletService, "getSeed").mockResolvedValue(SEED);
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -143,13 +139,12 @@ describe("SeedCard", () => {
       });
 
       fireEvent.click(screen.getByText("cardSeed.hideButton"));
-
       expect(screen.getByText("cardSeed.revealButton")).toBeInTheDocument();
     });
 
     it("clears the seed when hide button is pressed", async () => {
       jest.spyOn(walletService, "getSeed").mockResolvedValue(SEED);
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
 
       await act(async () => {
@@ -157,16 +152,13 @@ describe("SeedCard", () => {
       });
 
       fireEvent.click(screen.getByText("cardSeed.hideButton"));
-
       expect(screen.queryByText("abandon")).not.toBeInTheDocument();
     });
 
     it("returns to locked state when WalletGuard cancel is pressed", () => {
-      render(<SeedCard />);
+      render(<Seed />);
       fireEvent.click(screen.getByText("cardSeed.revealButton"));
-
       fireEvent.click(screen.getByTestId("guard-cancel"));
-
       expect(screen.getByText("cardSeed.revealButton")).toBeInTheDocument();
     });
   });

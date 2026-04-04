@@ -363,7 +363,6 @@ describe("Settings page", () => {
         expect(nameInput).toHaveValue("New Store Name");
       });
     });
-
   });
 
   describe("LightningCard visibility", () => {

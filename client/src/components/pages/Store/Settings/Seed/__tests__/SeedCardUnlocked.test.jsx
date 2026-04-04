@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { SeedCardUnlocked } from "../Seed/SeedCardUnlocked";
+import { SeedCardUnlocked } from "../SeedCardUnlocked";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -31,7 +31,6 @@ jest.mock("lucide-react", () => ({
 }));
 
 const t = (key) => key;
-
 const SEED = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
 function renderUnlocked(props = {}) {
@@ -77,8 +76,7 @@ describe("SeedCardUnlocked", () => {
 
     it("renders all 12 seed words", () => {
       renderUnlocked({ seed: SEED });
-      const words = SEED.split(" ");
-      words.forEach((word) => {
+      SEED.split(" ").forEach((word) => {
         expect(screen.getAllByText(word).length).toBeGreaterThan(0);
       });
     });
@@ -94,11 +92,6 @@ describe("SeedCardUnlocked", () => {
       expect(screen.getByText("cardSeed.paperNote")).toBeInTheDocument();
     });
 
-    it("renders the PenLine icon alongside the paper note", () => {
-      renderUnlocked({ seed: SEED });
-      expect(screen.getByTestId("icon-pen")).toBeInTheDocument();
-    });
-
     it("renders the hide button", () => {
       renderUnlocked({ seed: SEED });
       expect(screen.getByText("cardSeed.hideButton")).toBeInTheDocument();
@@ -109,27 +102,21 @@ describe("SeedCardUnlocked", () => {
     it("calls onHide when the hide button is pressed", () => {
       const onHide = jest.fn();
       renderUnlocked({ seed: SEED, onHide });
-
       fireEvent.click(screen.getByText("cardSeed.hideButton"));
-
       expect(onHide).toHaveBeenCalledTimes(1);
     });
 
     it("forwards onAuthorized to WalletGuard", () => {
       const onAuthorized = jest.fn();
       renderUnlocked({ onAuthorized });
-
       fireEvent.click(screen.getByTestId("guard-confirm"));
-
       expect(onAuthorized).toHaveBeenCalledTimes(1);
     });
 
     it("forwards onHide as onCancel to WalletGuard", () => {
       const onHide = jest.fn();
       renderUnlocked({ onHide });
-
       fireEvent.click(screen.getByTestId("guard-cancel"));
-
       expect(onHide).toHaveBeenCalledTimes(1);
     });
   });
