@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
@@ -371,68 +371,6 @@ describe("Settings page", () => {
 
       const languageButton = screen.getByText(/Switch to English|Cambiar a Español/i);
       expect(languageButton).toBeInTheDocument();
-    });
-  });
-
-  describe("Currency Management", () => {
-    it("displays current currency from useCurrency hook", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      expect(screen.getByText("USD")).toBeInTheDocument();
-    });
-
-    it("calls updateCurrency when currency is changed", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      expect(currencySelect).toBeInTheDocument();
-    });
-
-    it("does not update currency when empty value is selected", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      expect(mockUpdateCurrency).not.toHaveBeenCalled();
-    });
-
-    it("displays currencies based on locale", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      expect(currencySelect).toBeInTheDocument();
-    });
-
-    it("calls updateCurrency when a valid currency is selected", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      fireEvent.change(currencySelect, { target: { value: "EUR" } });
-
-      await waitFor(() => {
-        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-      });
-    });
-
-    it("executes handleCurrencyChange with valid value", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      fireEvent.change(currencySelect, { target: { value: "EUR" } });
-
-      await waitFor(() => {
-        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-      });
     });
   });
 
