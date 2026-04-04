@@ -645,7 +645,7 @@ const storeEs = {
     },
     cardCurrency: {
       title: "Moneda",
-      currencyLabel: "Moneda",
+      currencyLabel: "Cambiar moneda",
     },
     cardLanguage: {
       title: "Idioma",
