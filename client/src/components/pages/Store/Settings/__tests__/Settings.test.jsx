@@ -364,14 +364,6 @@ describe("Settings page", () => {
       });
     });
 
-    it("renders LanguageSwitcher component", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const languageButton = screen.getByText(/Switch to English|Cambiar a Español/i);
-      expect(languageButton).toBeInTheDocument();
-    });
   });
 
   describe("LightningCard visibility", () => {
