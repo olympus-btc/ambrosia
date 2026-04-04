@@ -5,9 +5,9 @@ import { AlertTriangle } from "lucide-react";
 
 export function SeedCardLocked({ onReveal, t }) {
   return (
-    <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
-      <CardHeader className="flex flex-col items-start">
-        <h2 className="text-2xl font-semibold text-green-900">
+    <Card shadow="none" className="rounded-lg p-6 shadow-lg">
+      <CardHeader className="flex flex-col items-start pb-0">
+        <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
           {t("cardSeed.title")}
         </h2>
       </CardHeader>
@@ -29,7 +29,7 @@ export function SeedCardLocked({ onReveal, t }) {
       <CardFooter>
         <Button
           color="primary"
-          className="bg-green-800"
+          className="bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium"
           onPress={onReveal}
         >
           {t("cardSeed.revealButton")}

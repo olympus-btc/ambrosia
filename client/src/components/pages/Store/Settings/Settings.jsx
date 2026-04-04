@@ -16,7 +16,7 @@ import { Currency } from "./Currency";
 import { Language } from "./Language";
 import { LightningCard } from "./Lightning/LightningCard";
 import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
-import { SeedCard } from "./Seed/SeedCard";
+import { Seed } from "./Seed";
 import { StoreInfo } from "./StoreInfo";
 import { TemplateList } from "./TicketTemplate/List";
 import { TicketTemplatesModal } from "./TicketTemplate/Modal";
@@ -59,7 +59,7 @@ export function Settings() {
           <StoreInfo />
           <Currency />
           <Language />
-          <SeedCard />
+          <Seed />
           <TutorialsCard t={t} />
         </div>
 

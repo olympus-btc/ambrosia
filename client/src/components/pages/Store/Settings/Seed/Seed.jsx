@@ -10,7 +10,7 @@ import { getSeed } from "@/services/walletService";
 import { SeedCardLocked } from "./SeedCardLocked";
 import { SeedCardUnlocked } from "./SeedCardUnlocked";
 
-export function SeedCard() {
+export function Seed() {
   const t = useTranslations("settings");
   const [showAccess, setShowAccess] = useState(false);
   const [seed, setSeed] = useState(null);
