@@ -6,7 +6,6 @@ import { Card, CardBody, CardHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { LanguageSwitcher } from "@i18n/I18nProvider";
 import { isElectron } from "@lib/isElectron";
 
 import { usePrinters } from "../hooks/usePrinter";
@@ -14,6 +13,7 @@ import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { Currency } from "./Currency";
+import { Language } from "./Language";
 import { LightningCard } from "./Lightning/LightningCard";
 import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
 import { SeedCard } from "./Seed/SeedCard";
@@ -57,22 +57,9 @@ export function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="flex flex-col gap-6">
           <StoreInfo />
-
           <Currency />
-
-          <Card shadow="none" className="rounded-lg p-6 shadow-lg">
-            <CardHeader className="flex flex-col items-start">
-              <h2 className="text-lg font-semibold text-green-900">
-                {t("cardLanguage.title")}
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <LanguageSwitcher />
-            </CardBody>
-          </Card>
-
+          <Language />
           <SeedCard />
-
           <TutorialsCard t={t} />
         </div>
 
