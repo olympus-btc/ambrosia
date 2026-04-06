@@ -1,9 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { PrinterConfigRow } from "../Printer/PrinterConfigRow";
+import { PrinterConfigRow } from "../PrinterConfigRow";
+
+jest.mock("@components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress }) => (
+    <button type="button" onClick={onPress} aria-label="delete">delete</button>
+  ),
+}));
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ onPress, children, "aria-label": ariaLabel, ...props }) => (
+  Card: ({ children, ...props }) => <div {...props}>{children}</div>,
+  CardBody: ({ children, ...props }) => <div {...props}>{children}</div>,
+  Button: ({ onPress, children, "aria-label": ariaLabel, isIconOnly, ...props }) => (
     <button type="button" onClick={onPress} aria-label={ariaLabel} {...props}>
       {children}
     </button>
@@ -82,7 +90,7 @@ describe("PrinterConfigRow", () => {
     fireEvent.click(screen.getByText("cardPrinters.enabledLabel"));
     expect(onToggleEnabled).toHaveBeenCalledWith(true);
 
-    fireEvent.click(screen.getByRole("button", { name: "cardPrinters.remove" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "delete" })[0]);
     expect(onRemove).toHaveBeenCalled();
   });
 
