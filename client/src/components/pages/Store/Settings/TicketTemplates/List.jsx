@@ -25,14 +25,13 @@ export function TemplateList({
       {error && (
         <p className="text-sm text-red-600">{t("templates.error")}</p>
       )}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Select
           label={t("templates.listTitle")}
           placeholder={t("templates.selectPlaceholder")}
           selectedKeys={selectedId ? [selectedId] : []}
           onChange={handleSelectionChange}
           isLoading={loading}
-          className="flex-1"
         >
           {templates.map((template) => (
             <SelectItem key={template.id} value={template.id}>
@@ -40,8 +39,12 @@ export function TemplateList({
             </SelectItem>
           ))}
         </Select>
-        <div className="w-full">
-          <Button color="primary" onPress={onNew}>
+        <div className="flex justify-end">
+          <Button
+            color="primary"
+            className="h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium bg-green-800"
+            onPress={onNew}
+          >
             {t("templates.addTemplate")}
           </Button>
         </div>

@@ -682,6 +682,7 @@ const storeEs = {
     },
     templates: {
       title: "Plantillas de ticket",
+      subtitle: "Crea y administra las plantillas de impresión de tickets",
       listTitle: "Plantillas",
       selectPlaceholder: "Selecciona una plantilla",
       addTemplate: "Agregar",

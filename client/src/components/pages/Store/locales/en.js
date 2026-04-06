@@ -682,6 +682,7 @@ const storeEn = {
     },
     templates: {
       title: "Ticket templates",
+      subtitle: "Create and manage ticket print templates",
       listTitle: "Templates",
       selectPlaceholder: "Select a template",
       addTemplate: "Add",

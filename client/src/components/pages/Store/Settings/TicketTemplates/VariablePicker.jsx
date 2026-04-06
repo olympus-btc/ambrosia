@@ -13,20 +13,7 @@ const VARIABLE_GROUPS = [
       { key: "{{config.businessEmail}}", label: "businessEmail" },
     ],
   },
-  {
-    group: "ticket",
-    vars: [
-      { key: "{{ticket.id}}", label: "ticketId" },
-      { key: "{{ticket.tableName}}", label: "tableName" },
-      { key: "{{ticket.roomName}}", label: "roomName" },
-      { key: "{{ticket.date}}", label: "date" },
-      { key: "{{ticket.total}}", label: "total" },
-      { key: "{{ticket.invoice}}", label: "invoice" },
-    ],
-  },
 ];
-
-const VISIBLE_GROUPS = ["config"];
 
 export function TemplateVariablePicker({ onSelect, t }) {
   return (
@@ -46,7 +33,7 @@ export function TemplateVariablePicker({ onSelect, t }) {
         <p className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           {t("templates.variables.title")}
         </p>
-        {VARIABLE_GROUPS.filter(({ group }) => VISIBLE_GROUPS.includes(group)).map(({ group, vars }) => (
+        {VARIABLE_GROUPS.map(({ group, vars }) => (
           <div key={group} className="mb-3 last:mb-0">
             <div className="flex flex-wrap gap-1">
               {vars.map(({ key, label }) => (

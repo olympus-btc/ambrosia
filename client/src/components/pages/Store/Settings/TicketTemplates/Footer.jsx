@@ -37,10 +37,19 @@ export function TicketTemplatesFooter({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="bordered" onPress={onClose}>
+        <Button
+          variant="bordered"
+          className="border border-border text-foreground hover:bg-muted transition-colors"
+          onPress={onClose}
+        >
           {t("templates.close")}
         </Button>
-        <Button color="primary" onPress={onSave} isDisabled={saving || !name.trim()}>
+        <Button
+          color="primary"
+          className="bg-green-800"
+          onPress={onSave}
+          isDisabled={saving || !name.trim()}
+        >
           {selectedId ? t("templates.saveChanges") : t("templates.saveNew")}
         </Button>
       </div>

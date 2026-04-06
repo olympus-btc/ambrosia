@@ -2,8 +2,11 @@
 
 import { Button, Select, SelectItem } from "@heroui/react";
 
+import { TicketElementsPreview } from "./TicketElements";
+
 export function TemplatePreview({
-  previewElements,
+  elements,
+  config,
   printerType,
   onPrinterTypeChange,
   printerTypes,
@@ -15,7 +18,7 @@ export function TemplatePreview({
   return (
     <div className="w-full lg:flex-1 lg:sticky lg:top-0">
       <div className="flex flex-col">
-        <h3 className="text-lg font-semibold text-green-900">
+        <h3 className="text-base sm:text-lg font-semibold text-green-900">
           {t("templates.previewTitle")}
         </h3>
         <div className="mt-4 flex items-end gap-2">
@@ -32,24 +35,23 @@ export function TemplatePreview({
             ))}
           </Select>
           <Button
-            className="h-14"
-            variant="bordered"
+            className="h-14 bg-green-800 text-white shrink-0"
             onPress={onPrintTest}
             isDisabled={!templateExists || printing}
           >
             {printing ? t("templates.printing") : t("templates.printTest")}
           </Button>
         </div>
-
       </div>
+
       <div className="mt-2 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        {previewElements.length === 0 ? (
+        {!elements || elements.length === 0 ? (
           <p className="text-sm text-gray-600">
             {t("templates.previewEmpty")}
           </p>
         ) : (
           <div className="font-mono text-gray-900">
-            {previewElements}
+            <TicketElementsPreview elements={elements} config={config} />
           </div>
         )}
       </div>

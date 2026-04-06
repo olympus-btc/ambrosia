@@ -1,5 +1,3 @@
-"use client";
-
 export const DEFAULT_STYLE = {
   bold: false,
   justification: "LEFT",

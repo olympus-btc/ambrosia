@@ -5,17 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 import { addToast, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { useTicketTemplatePreviewElements } from "@/components/pages/Store/hooks/usePreviewElements";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
-
-import { usePrinters } from "../../hooks/usePrinter";
-import { useTemplates } from "../../hooks/useTemplates";
+import { usePrinters } from "@components/pages/Store/hooks/usePrinter";
+import { useTemplates } from "@components/pages/Store/hooks/useTemplates";
 
 import { createElement, DEFAULT_STYLE } from "./defaults";
 import { TicketTemplatesEditor } from "./Editor";
 import { TicketTemplatesFooter } from "./Footer";
 import { TemplatePreview } from "./Preview";
-import { sampleTicket } from "./sampleData";
+import { sampleTicket } from "./TicketElements";
 
 const PRINTER_TYPES = ["CUSTOMER"];
 
@@ -37,8 +35,6 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   const [deleting, setDeleting] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [printerType, setPrinterType] = useState("CUSTOMER");
-
-  const previewElements = useTicketTemplatePreviewElements(elements, config);
 
   useEffect(() => {
     if (isOpen && initialTemplate) {
@@ -131,11 +127,17 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
 
   return (
     <Modal
-      className="min-h-[600px][@media(max-height:800px)]:max-h-[600px] overflow-y-auto"
       size="5xl"
       isOpen={isOpen}
       onOpenChange={onClose}
       scrollBehavior="inside"
+      shouldBlockScroll={false}
+      backdrop="blur"
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto max-h-[90dvh] overflow-hidden",
+      }}
     >
       <ModalContent>
         <ModalHeader>{t("templates.title")}</ModalHeader>
@@ -158,7 +160,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
             />
 
             <TemplatePreview
-              previewElements={previewElements}
+              elements={elements}
+              config={config}
               printerType={printerType}
               onPrinterTypeChange={(e) => setPrinterType(e.target.value)}
               printerTypes={PRINTER_TYPES}

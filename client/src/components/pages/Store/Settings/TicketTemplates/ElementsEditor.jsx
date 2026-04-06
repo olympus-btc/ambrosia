@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Button } from "@heroui/react";
 
@@ -12,7 +12,13 @@ export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, o
   const [openIds, setOpenIds] = useState(() => new Set());
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -46,10 +52,10 @@ export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, o
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-green-900">
+        <h3 className="text-base sm:text-lg font-semibold text-green-900">
           {t("templates.elementsTitle")}
         </h3>
-        <Button color="primary" onPress={handleAdd}>
+        <Button color="primary" className="bg-green-800" onPress={handleAdd}>
           {t("templates.addElement")}
         </Button>
       </div>
