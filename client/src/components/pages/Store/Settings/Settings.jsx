@@ -20,7 +20,7 @@ import { Seed } from "./Seed";
 import { StoreInfo } from "./StoreInfo";
 import { TemplateList } from "./TicketTemplate/List";
 import { TicketTemplatesModal } from "./TicketTemplate/Modal";
-import { TutorialsCard } from "./Tutorials/TutorialsCard";
+import { Tutorials } from "./Tutorials";
 
 export function Settings() {
   const {
@@ -60,7 +60,7 @@ export function Settings() {
           <Currency />
           <Language />
           <Seed />
-          <TutorialsCard t={t} />
+          <Tutorials />
         </div>
 
         <div className="flex flex-col gap-6">
