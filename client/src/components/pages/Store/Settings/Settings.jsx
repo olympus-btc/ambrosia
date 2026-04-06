@@ -8,14 +8,13 @@ import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { isElectron } from "@lib/isElectron";
 
-import { usePrinters } from "../hooks/usePrinter";
 import { useTemplates } from "../hooks/useTemplates";
 import { StoreLayout } from "../StoreLayout";
 
 import { Currency } from "./Currency";
 import { Language } from "./Language";
 import { LightningCard } from "./Lightning/LightningCard";
-import { PrinterSettingsCard } from "./Printer/PrinterSettingsCard";
+import { Printers } from "./Printers";
 import { Seed } from "./Seed";
 import { StoreInfo } from "./StoreInfo";
 import { TemplateList } from "./TicketTemplate/List";
@@ -23,21 +22,10 @@ import { TicketTemplatesModal } from "./TicketTemplate/Modal";
 import { Tutorials } from "./Tutorials";
 
 export function Settings() {
-  const {
-    availablePrinters,
-    printerConfigs,
-    loadingAvailable,
-    loadingConfigs,
-    error: printersError,
-    createPrinterConfig,
-    updatePrinterConfig,
-    deletePrinterConfig,
-    setDefaultPrinterConfig,
-  } = usePrinters();
+  const t = useTranslations("settings");
   const { templates, loading: loadingTemplates, error: templatesError, refetch: refetchTemplates } = useTemplates();
   const [ticketTemplatesModalOpen, setTicketTemplatesModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const t = useTranslations("settings");
 
   const handleOpenTemplateModal = (template = null) => {
     setSelectedTemplate(template);
@@ -64,21 +52,7 @@ export function Settings() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <PrinterSettingsCard
-            availablePrinters={availablePrinters}
-            printerConfigs={printerConfigs}
-            loadingAvailable={loadingAvailable}
-            loadingConfigs={loadingConfigs}
-            loadingTemplates={loadingTemplates}
-            templates={templates}
-            error={printersError}
-            createPrinterConfig={createPrinterConfig}
-            updatePrinterConfig={updatePrinterConfig}
-            deletePrinterConfig={deletePrinterConfig}
-            setDefaultPrinterConfig={setDefaultPrinterConfig}
-            onTemplatesRefresh={refetchTemplates}
-            t={t}
-          />
+          <Printers />
 
           <Card shadow="none" className="rounded-lg p-6 shadow-lg">
             <CardHeader className="flex flex-col items-start">
