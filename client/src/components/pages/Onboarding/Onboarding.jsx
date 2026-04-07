@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Progress, Divider, addToast } from "@heroui/react";
+import { Button, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { parseJsonResponse } from "@/lib/http";
@@ -135,20 +135,21 @@ export function Onboarding() {
       <div className="w-full max-w-2xl">
 
         {!needsBusinessType && (
-          <div className="mb-8 relative">
-            <div className="flex justify-between mb-2 relative z-10">
+          <div className="mb-8">
+            <div className="flex justify-between items-center relative">
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-gray-300 z-0" />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-green-800 z-0 transition-all duration-300 left-0"
+                style={{ width: `${progressValue}%` }}
+              />
               {[1, 2, 3, 4].map((num) => (
                 <div
                   key={num}
-                  className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-semibold transition-all ${num <= step ? "bg-green-800 text-white" : "bg-gray-300 text-gray-500"
-                    }`}
+                  className={`relative z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-semibold transition-all ${num <= step ? "bg-green-800 text-white" : "bg-gray-300 text-gray-500"}`}
                 >
                   {num}
                 </div>
               ))}
-            </div>
-            <div className="w-full rounded-full h-2 absolute top-[13px] sm:top-[15px] z-0">
-              <Progress size="md" color="primary" value={progressValue} />
             </div>
           </div>
         )}
