@@ -78,6 +78,10 @@ fun Route.roles(
         post("") {
             val user = call.receive<Role>()
             val id = roleService.addRole(user)
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid role data")
+                return@post
+            }
             call.respond(
                 HttpStatusCode.Created,
                 mapOf("id" to id, "message" to "Role added successfully"),
@@ -93,6 +97,10 @@ fun Route.roles(
             }
 
             val updatedRole = call.receive<Role>()
+            if (updatedRole.role.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid role data")
+                return@put
+            }
             val isUpdated = roleService.updateRole(id, updatedRole)
 
             if (!isUpdated) {
