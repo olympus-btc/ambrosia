@@ -2,7 +2,7 @@
 
 import { Button, Select, SelectItem } from "@heroui/react";
 
-import { TicketElementsPreview } from "./TicketElements";
+import { hasVisibleContent, TicketElementsPreview } from "./TicketElements";
 
 export function TemplatePreview({
   elements,
@@ -45,14 +45,13 @@ export function TemplatePreview({
       </div>
 
       <div className="mt-2 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        {!elements || elements.length === 0 ? (
-          <p className="text-sm text-gray-600">
+        <div className="font-mono text-gray-900">
+          <TicketElementsPreview elements={elements} config={config} />
+        </div>
+        {!hasVisibleContent(elements) && (
+          <p className="text-sm text-gray-400 italic text-center py-4">
             {t("templates.previewEmpty")}
           </p>
-        ) : (
-          <div className="font-mono text-gray-900">
-            <TicketElementsPreview elements={elements} config={config} />
-          </div>
         )}
       </div>
     </div>

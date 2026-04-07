@@ -9,6 +9,14 @@ import { ElementTableRow } from "./ElementTableRow";
 import { ElementText } from "./ElementText";
 import { ElementTotalRow } from "./ElementTotalRow";
 
+const ALWAYS_VISIBLE_TYPES = ["SEPARATOR", "LINE_BREAK", "TABLE_ROW"];
+
+export function hasVisibleContent(elements) {
+  return Array.isArray(elements) && elements.some(
+    (el) => ALWAYS_VISIBLE_TYPES.includes(el.type) || el.value?.trim(),
+  );
+}
+
 const fontSizeClasses = {
   NORMAL: "text-sm",
   LARGE: "text-base",
