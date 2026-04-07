@@ -12,7 +12,7 @@ export function EditButton({ onPress, children, size = "sm" }) {
       variant="outline"
     >
       <Pencil className="w-4 h-4" />
-      {children}
+      {children && <span className="hidden sm:inline">{children}</span>}
     </Button>
   );
 }
