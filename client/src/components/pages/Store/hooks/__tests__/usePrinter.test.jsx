@@ -74,6 +74,11 @@ function TestComponent() {
 describe("usePrinters", () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("loads printers and configs on mount", async () => {

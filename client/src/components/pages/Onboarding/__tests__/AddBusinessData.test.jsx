@@ -25,7 +25,14 @@ describe("Step 3 Business Details", () => {
     );
   }
 
-  beforeEach(() => mockChange.mockClear());
+  beforeEach(() => {
+    mockChange.mockClear();
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it("renders correct title for store", () => {
     remderBusinessDetails({ ...defaultData, businessType: "store" });

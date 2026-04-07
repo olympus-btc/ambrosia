@@ -378,7 +378,6 @@ describe("StoreLayout", () => {
       const bottomNav = screen.getByTestId("bottom-nav");
       const links = within(bottomNav).getAllByRole("link");
 
-      // defaultNavigation has showInBottomNav on products and checkout
       expect(links.length).toBe(2);
     });
 
