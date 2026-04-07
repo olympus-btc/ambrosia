@@ -47,10 +47,10 @@ export function UsersTable({ users, canManageUsers, onEditUser, onDeleteUser }) 
               <TableCell className={canManageUsers ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["users_update"]}>
-                    <EditButton onPress={() => onEditUser(user)} />
+                    <EditButton onPress={() => onEditUser(user)}>{t("users.edit")}</EditButton>
                   </RequirePermission>
                   <RequirePermission allOf={["users_delete"]}>
-                    <DeleteButton onPress={() => onDeleteUser(user)} />
+                    <DeleteButton onPress={() => onDeleteUser(user)}>{t("users.delete")}</DeleteButton>
                   </RequirePermission>
                 </div>
               </TableCell>

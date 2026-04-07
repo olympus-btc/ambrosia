@@ -9,14 +9,14 @@ jest.mock("@/hooks/usePermission", () => ({
 }));
 
 jest.mock("@/components/shared/EditButton", () => ({
-  EditButton: ({ onPress, "aria-label": ariaLabel }) => (
-    <button aria-label={ariaLabel} onClick={onPress}>edit</button>
+  EditButton: ({ onPress, children }) => (
+    <button onClick={onPress}>{children ?? "edit"}</button>
   ),
 }));
 
 jest.mock("@/components/shared/DeleteButton", () => ({
-  DeleteButton: ({ onPress, "aria-label": ariaLabel }) => (
-    <button aria-label={ariaLabel} onClick={onPress}>delete</button>
+  DeleteButton: ({ onPress, children }) => (
+    <button onClick={onPress}>{children ?? "delete"}</button>
   ),
 }));
 
@@ -78,7 +78,7 @@ describe("RolesTable", () => {
   it("calls onEdit with the correct role when edit is pressed", () => {
     const onEdit = jest.fn();
     renderTable({ onEdit });
-    const editButtons = screen.getAllByRole("button", { name: "Edit Role" });
+    const editButtons = screen.getAllByRole("button", { name: "roles.actions.edit" });
     fireEvent.click(editButtons[0]);
     expect(onEdit).toHaveBeenCalledWith(roles[0]);
   });
@@ -86,7 +86,7 @@ describe("RolesTable", () => {
   it("calls onDelete with the correct role when delete is pressed", () => {
     const onDelete = jest.fn();
     renderTable({ onDelete });
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete Role" });
+    const deleteButtons = screen.getAllByRole("button", { name: "roles.actions.delete" });
     fireEvent.click(deleteButtons[1]);
     expect(onDelete).toHaveBeenCalledWith(roles[1]);
   });

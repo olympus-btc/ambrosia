@@ -49,6 +49,8 @@ const storeEn = {
     phone: "Phone",
     status: "Status",
     actions: "Actions",
+    edit: "Edit",
+    delete: "Delete",
     modal: {
       titleAdd: "Add User",
       titleEdit: "Edit User",

@@ -49,6 +49,8 @@ const storeEs = {
     phone: "Teléfono",
     status: "Estado",
     actions: "Acciones",
+    edit: "Editar",
+    delete: "Eliminar",
     modal: {
       titleAdd: "Agregar Usuario",
       titleEdit: "Editar Usuario",

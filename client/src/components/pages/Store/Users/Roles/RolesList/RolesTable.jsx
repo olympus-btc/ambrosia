@@ -52,10 +52,10 @@ export function RolesTable({ roles, canManageRoles, onEdit, onDelete }) {
               <TableCell className={canManageRoles ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["roles_update"]}>
-                    <EditButton aria-label="Edit Role" onPress={() => onEdit(role)} />
+                    <EditButton onPress={() => onEdit(role)}>{t("roles.actions.edit")}</EditButton>
                   </RequirePermission>
                   <RequirePermission allOf={["roles_delete"]}>
-                    <DeleteButton aria-label="Delete Role" onPress={() => onDelete(role)} />
+                    <DeleteButton onPress={() => onDelete(role)}>{t("roles.actions.delete")}</DeleteButton>
                   </RequirePermission>
                 </div>
               </TableCell>
