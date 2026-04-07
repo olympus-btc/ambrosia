@@ -1,9 +1,10 @@
 import { addToast } from "@heroui/react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import { usePrinters } from "../../hooks/usePrinter";
-import { useTemplates } from "../../hooks/useTemplates";
-import { TicketTemplatesModal } from "../TicketTemplate/Modal";
+import { usePrinters } from "@components/pages/Store/hooks/usePrinter";
+import { useTemplates } from "@components/pages/Store/hooks/useTemplates";
+
+import { TicketTemplatesModal } from "../Modal";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -93,11 +94,11 @@ jest.mock("@providers/configurations/configurationsProvider", () => ({
   })),
 }));
 
-jest.mock("../../hooks/usePrinter", () => ({
+jest.mock("@components/pages/Store/hooks/usePrinter", () => ({
   usePrinters: jest.fn(),
 }));
 
-jest.mock("../../hooks/useTemplates", () => ({
+jest.mock("@components/pages/Store/hooks/useTemplates", () => ({
   useTemplates: jest.fn(),
 }));
 

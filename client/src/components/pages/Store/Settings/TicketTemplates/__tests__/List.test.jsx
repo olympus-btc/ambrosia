@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateList } from "../TicketTemplate/List";
+import { TemplateList } from "../List";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -8,7 +8,7 @@ jest.mock("@heroui/react", () => ({
       {children}
     </button>
   ),
-  Select: ({ children, label, placeholder, onChange, isLoading, ...props }) => (
+  Select: ({ children, label, placeholder, onChange, isLoading, selectedKeys, ...props }) => (
     <div>
       <label>{label}</label>
       {isLoading && <span>loading...</span>}

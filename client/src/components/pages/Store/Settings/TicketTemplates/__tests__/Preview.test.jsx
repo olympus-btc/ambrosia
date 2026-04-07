@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { TemplatePreview } from "../TicketTemplate/Preview";
+import { TemplatePreview } from "../Preview";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, isDisabled, ...props }) => (
@@ -8,7 +8,7 @@ jest.mock("@heroui/react", () => ({
       {children}
     </button>
   ),
-  Select: ({ children, label, onChange, ...props }) => (
+  Select: ({ children, label, onChange, selectedKeys, ...props }) => (
     <div>
       <label>{label}</label>
       <select onChange={onChange} {...props}>
@@ -19,10 +19,17 @@ jest.mock("@heroui/react", () => ({
   SelectItem: ({ children, value }) => <option value={value}>{children}</option>,
 }));
 
+jest.mock("../TicketElements", () => ({
+  TicketElementsPreview: ({ elements }) => (
+    <div data-testid="elements-preview" data-count={elements.length} />
+  ),
+}));
+
 const t = (key) => key;
 
 const defaultProps = {
-  previewElements: [],
+  elements: [],
+  config: null,
   printerType: "CUSTOMER",
   onPrinterTypeChange: jest.fn(),
   printerTypes: ["CUSTOMER"],
@@ -33,19 +40,20 @@ const defaultProps = {
 };
 
 describe("TemplatePreview", () => {
-  it("shows empty message when no elements exist", () => {
+  it("shows empty message when no elements", () => {
     render(<TemplatePreview {...defaultProps} />);
     expect(screen.getByText("templates.previewEmpty")).toBeInTheDocument();
   });
 
-  it("renders preview elements when provided", () => {
+  it("renders TicketElementsPreview when elements are provided", () => {
     render(
       <TemplatePreview
         {...defaultProps}
-        previewElements={[<div key="one">Preview Line</div>]}
+        elements={[{ localId: "e-1", type: "TEXT", value: "Hi", style: {} }]}
       />,
     );
-    expect(screen.getByText("Preview Line")).toBeInTheDocument();
+    expect(screen.getByTestId("elements-preview")).toBeInTheDocument();
+    expect(screen.queryByText("templates.previewEmpty")).not.toBeInTheDocument();
   });
 
   it("shows printer type select and print test button", () => {
@@ -61,13 +69,11 @@ describe("TemplatePreview", () => {
 
   it("disables print button when template does not exist", () => {
     render(<TemplatePreview {...defaultProps} templateExists={false} />);
-    const button = screen.getByText("templates.printTest");
-    expect(button).toBeDisabled();
+    expect(screen.getByText("templates.printTest")).toBeDisabled();
   });
 
   it("enables print button when template exists", () => {
     render(<TemplatePreview {...defaultProps} templateExists />);
-    const button = screen.getByText("templates.printTest");
-    expect(button).not.toBeDisabled();
+    expect(screen.getByText("templates.printTest")).not.toBeDisabled();
   });
 });

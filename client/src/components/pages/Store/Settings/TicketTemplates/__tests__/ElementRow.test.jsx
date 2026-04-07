@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateElementRow } from "../TicketTemplate/ElementRow";
+import { TemplateElementRow } from "../ElementRow";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, "aria-label": ariaLabel, isIconOnly, ...props }) => (
@@ -33,7 +33,7 @@ jest.mock("@heroui/react", () => ({
   Tooltip: ({ children }) => <>{children}</>,
 }));
 
-jest.mock("../TicketTemplate/VariablePicker", () => ({
+jest.mock("../VariablePicker", () => ({
   TemplateVariablePicker: ({ onSelect }) => (
     <button
       type="button"

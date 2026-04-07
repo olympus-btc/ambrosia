@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TemplateElementsEditor } from "../TicketTemplate/ElementsEditor";
+import { TemplateElementsEditor } from "../ElementsEditor";
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -10,7 +10,7 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
-jest.mock("../TicketTemplate/ElementRow", () => ({
+jest.mock("../ElementRow", () => ({
   TemplateElementRow: ({ element }) => (
     <div data-testid={`row-${element.localId}`} />
   ),
