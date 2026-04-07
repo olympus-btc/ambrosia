@@ -49,7 +49,7 @@ describe("Onboarding Wizard", () => {
       renderOnboarding();
     });
     expect(screen.getByText("buttons.next")).toBeInTheDocument();
-    expect(screen.getByText("1")).toHaveClass("bg-primary");
+    expect(screen.getByText("1")).toHaveClass("bg-green-800");
   });
 
   it("advances to the next step when Next is clicked", async () => {
@@ -65,7 +65,7 @@ describe("Onboarding Wizard", () => {
       fireEvent.click(nextButton);
     });
 
-    expect(screen.getByText("2")).toHaveClass("bg-primary");
+    expect(screen.getByText("2")).toHaveClass("bg-green-800");
   });
 
   it("goes back when Back is clicked", async () => {
@@ -80,7 +80,7 @@ describe("Onboarding Wizard", () => {
       fireEvent.click(backButton);
     });
 
-    expect(screen.getByText("1")).toHaveClass("bg-primary");
+    expect(screen.getByText("1")).toHaveClass("bg-green-800");
   });
 
   it("disables Back on first step", async () => {

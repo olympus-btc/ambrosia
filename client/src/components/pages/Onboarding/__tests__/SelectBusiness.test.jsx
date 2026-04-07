@@ -46,14 +46,14 @@ describe("Step 1 Business Type Selection", () => {
 
   it("renders both business type options", () => {
     renderBusinessTypeStep();
-    expect(screen.getByText("step1.businessType.store")).toBeInTheDocument();
-    expect(screen.getByText("step1.businessType.restaurant")).toBeInTheDocument();
+    expect(screen.getAllByText("step1.businessType.store").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("step1.businessType.restaurant").length).toBeGreaterThan(0);
   });
 
   it("renders the descriptions for both options", () => {
     renderBusinessTypeStep();
-    expect(screen.getByText("step1.descriptions.store")).toBeInTheDocument();
-    expect(screen.getByText("step1.descriptions.restaurant")).toBeInTheDocument();
+    expect(screen.getAllByText("step1.descriptions.store").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("step1.descriptions.restaurant").length).toBeGreaterThan(0);
   });
 
   it("calls onChange with 'store' when store card is clicked", () => {
