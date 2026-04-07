@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 export function EditButton({ onPress, children, size = "sm" }) {
   return (
     <Button
-      className={`border border-blue-800 text-blue-800 ${children ? "" : "w-8 min-w-0 px-0"}`}
+      className={`border border-green-800 text-green-800 w-8 min-w-0 px-0 ${children ? "sm:w-auto sm:min-w-16 sm:px-3" : ""}`}
       onPress={onPress}
       size={size}
       variant="outline"

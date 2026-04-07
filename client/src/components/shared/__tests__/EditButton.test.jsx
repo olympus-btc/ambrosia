@@ -29,12 +29,12 @@ describe("EditButton", () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it("uses outline variant with blue styles", () => {
+  it("uses outline variant with green styles", () => {
     render(<EditButton onPress={jest.fn()} />);
 
     const btn = screen.getByRole("button");
     expect(btn).toHaveAttribute("data-variant", "outline");
-    expect(btn).toHaveClass("border-blue-800", "text-blue-800");
+    expect(btn).toHaveClass("border-green-800", "text-green-800");
   });
 
   it("applies icon-only sizing classes when no children", () => {
@@ -43,13 +43,12 @@ describe("EditButton", () => {
     expect(screen.getByRole("button")).toHaveClass("w-8", "min-w-0", "px-0");
   });
 
-  it("does not apply icon-only sizing classes when children are provided", () => {
+  it("applies compact sizing on mobile and expands on sm+ when children are provided", () => {
     render(<EditButton onPress={jest.fn()}>Edit</EditButton>);
 
     const btn = screen.getByRole("button");
-    expect(btn).not.toHaveClass("w-8");
-    expect(btn).not.toHaveClass("min-w-0");
-    expect(btn).not.toHaveClass("px-0");
+    expect(btn).toHaveClass("w-8", "min-w-0", "px-0");
+    expect(btn).toHaveClass("sm:w-auto", "sm:min-w-16", "sm:px-3");
   });
 
   it("renders children when provided", () => {
