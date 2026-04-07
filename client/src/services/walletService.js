@@ -22,6 +22,20 @@ export async function getInfo() {
   return await parseJsonResponse(response, null);
 }
 
+export async function createInvoiceForCart(invoiceAmount, invoiceDesc) {
+  const response = await httpClient("/wallet/invoice", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      description: invoiceDesc,
+      amountSat: parseInt(invoiceAmount),
+    }),
+  });
+  return await parseJsonResponse(response, null);
+}
+
 export async function createInvoice(invoiceAmount, invoiceDesc) {
   const response = await httpClient("/wallet/createinvoice", {
     method: "POST",

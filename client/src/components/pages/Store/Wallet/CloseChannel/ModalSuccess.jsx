@@ -3,7 +3,7 @@
 import { Button, ModalBody, ModalFooter } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { copyToClipboard } from "../utils/formatters";
+import { CopyButton } from "@/components/shared/CopyButton";
 
 export function ModalSuccess({ txId, onClose }) {
   const t = useTranslations("wallet");
@@ -20,14 +20,10 @@ export function ModalSuccess({ txId, onClose }) {
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button
-          variant="bordered"
-          type="button"
-          className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          onPress={() => copyToClipboard(txId, t)}
-        >
-          {t("closeChannel.copyTxIdButton")}
-        </Button>
+        <CopyButton
+          value={txId}
+          label={t("closeChannel.copyTxIdButton")}
+        />
         <Button color="primary" onPress={onClose}>
           {t("closeChannel.doneButton")}
         </Button>

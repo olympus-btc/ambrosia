@@ -64,7 +64,7 @@ export function I18nProvider({ children }) {
       <NextIntlClientProvider
         locale={locale}
         messages={messages}
-        timeZone="UTC"
+        timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}
       >
         {children}
       </NextIntlClientProvider>

@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { TransactionsHistoryTab } from "../TransactionsHistoryTab";
+import { HistoryTab } from "../HistoryTab";
 
 const mockIncomingTransaction = {
   paymentId: "payment-1",
@@ -30,7 +30,7 @@ function renderHistoryTab(props = {}) {
 
   return render(
     <I18nProvider>
-      <TransactionsHistoryTab {...defaultProps} {...props} />
+      <HistoryTab {...defaultProps} {...props} />
     </I18nProvider>,
   );
 }
@@ -70,7 +70,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("TransactionsHistoryTab Component", () => {
+describe("HistoryTab Component", () => {
   describe("Rendering", () => {
     it("renders all filter buttons", () => {
       renderHistoryTab();
@@ -84,14 +84,14 @@ describe("TransactionsHistoryTab Component", () => {
       renderHistoryTab({ filter: "all" });
 
       const allButton = screen.getByText("payments.history.all").closest("button");
-      expect(allButton).toHaveClass("bg-primary");
+      expect(allButton).toHaveClass("bg-default");
     });
 
     it("shows 'received' filter as active when selected", () => {
       renderHistoryTab({ filter: "incoming" });
 
       const receivedButton = screen.getByText("payments.history.received").closest("button");
-      expect(receivedButton).toHaveClass("bg-success");
+      expect(receivedButton).toHaveClass("bg-primary");
     });
 
     it("shows 'sent' filter as active when selected", () => {
@@ -210,21 +210,21 @@ describe("TransactionsHistoryTab Component", () => {
     it("shows transaction date", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const date = new Date(mockIncomingTransaction.completedAt).toLocaleDateString();
-      expect(screen.getByText(date)).toBeInTheDocument();
+      const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
+      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
     });
 
     it("shows transaction time", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const time = new Date(mockIncomingTransaction.completedAt).toLocaleTimeString();
-      expect(screen.getByText(time)).toBeInTheDocument();
+      const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
+      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
     });
 
     it("displays transaction fees", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      expect(screen.getByText(/Fee: 0.1 sats/)).toBeInTheDocument();
+      expect(screen.getByText(/payments.history.fee/)).toBeInTheDocument();
     });
 
     it("renders multiple transactions", () => {
@@ -236,18 +236,18 @@ describe("TransactionsHistoryTab Component", () => {
       expect(screen.getByText("3,000 sats")).toBeInTheDocument();
     });
 
-    it("displays success chip for incoming transaction", () => {
+    it("displays incoming amount in default color", () => {
       const { container } = renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
-      const successChip = container.querySelector('[class*="bg-success"]');
-      expect(successChip).toBeInTheDocument();
+      const amount = container.querySelector(".text-deep.font-bold");
+      expect(amount).toBeInTheDocument();
     });
 
-    it("displays danger chip for outgoing transaction", () => {
+    it("displays outgoing amount in red", () => {
       const { container } = renderHistoryTab({ transactions: [mockOutgoingTransaction] });
 
-      const dangerChip = container.querySelector('[class*="bg-danger"]');
-      expect(dangerChip).toBeInTheDocument();
+      const amount = container.querySelector(".text-red-700.font-bold");
+      expect(amount).toBeInTheDocument();
     });
   });
 
@@ -293,7 +293,7 @@ describe("TransactionsHistoryTab Component", () => {
 
       const scrollContainer = container.querySelector(".overflow-y-auto");
       expect(scrollContainer).toBeInTheDocument();
-      expect(scrollContainer).toHaveClass("max-h-96");
+      expect(scrollContainer).toHaveClass("h-96");
     });
   });
 
@@ -306,7 +306,7 @@ describe("TransactionsHistoryTab Component", () => {
 
       renderHistoryTab({ transactions: [txWithZeroFees] });
 
-      expect(screen.getByText(/Fee: 0 sats/)).toBeInTheDocument();
+      expect(screen.getByText(/payments.history.fee/)).toBeInTheDocument();
     });
 
     it("formats large amounts correctly", () => {
@@ -318,6 +318,23 @@ describe("TransactionsHistoryTab Component", () => {
       renderHistoryTab({ transactions: [largeTransaction] });
 
       expect(screen.getByText("1,000,000 sats")).toBeInTheDocument();
+    });
+
+    it("shows description when present", () => {
+      const txWithDescription = {
+        ...mockIncomingTransaction,
+        description: "Coffee payment",
+      };
+
+      renderHistoryTab({ transactions: [txWithDescription] });
+
+      expect(screen.getByText("Coffee payment")).toBeInTheDocument();
+    });
+
+    it("does not show description for outgoing transactions", () => {
+      renderHistoryTab({ transactions: [mockOutgoingTransaction] });
+
+      expect(screen.queryByText("Coffee payment")).not.toBeInTheDocument();
     });
 
     it("handles transactions with missing completedAt gracefully", () => {

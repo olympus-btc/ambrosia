@@ -10,15 +10,13 @@ import { useTour } from "@/hooks/tour/useTour";
 
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
 
-import { TransactionsHistoryTab } from "./TransactionsHistoryTab";
-import { TransactionsReceiveTab } from "./TransactionsReceiveTab";
-import { TransactionsSendTab } from "./TransactionsSendTab";
+import { HistoryTab } from "./HistoryTab";
+import { ReceiveTab } from "./ReceiveTab";
+import { SendTab } from "./SendTab";
 
 export function Transactions({
   transactions,
   loading,
-  setLoading,
-  setError,
   filter,
   setFilter,
   invoiceActions,
@@ -75,6 +73,9 @@ export function Transactions({
   return (
     <Card className="rounded-lg mb-6 p-6">
       <CardBody className="p-0">
+        <h2 className="text-xl font-bold text-deep px-6 pt-2 pb-4">
+          {t("payments.title")}
+        </h2>
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={setActiveTab}
@@ -95,10 +96,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsReceiveTab
-              loading={loading}
-              setLoading={setLoading}
-              setError={setError}
+            <ReceiveTab
               invoiceActions={invoiceActions}
             />
           </Tab>
@@ -112,10 +110,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsSendTab
-              loading={loading}
-              setLoading={setLoading}
-              setError={setError}
+            <SendTab
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
             />
@@ -130,7 +125,7 @@ export function Transactions({
               </div>
             )}
           >
-            <TransactionsHistoryTab
+            <HistoryTab
               transactions={transactions}
               loading={loading}
               filter={filter}

@@ -57,14 +57,7 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
     setIsLoading(true);
     try {
       const result = await closeChannel(channel.channelId, address.trim(), parseInt(feerate, 10));
-      let extractedTxId = result?.txId ?? result?.txid ?? "";
-      if (!extractedTxId && typeof result === "string") {
-        try {
-          const parsed = JSON.parse(result);
-          extractedTxId = parsed?.txId ?? parsed?.txid ?? "";
-        } catch {}
-      }
-      setTxId(extractedTxId);
+      setTxId(result?.txId ?? "");
       setStep("success");
       onSuccess?.();
     } catch (err) {

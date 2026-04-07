@@ -108,6 +108,16 @@ class UsersService(
         statement.setString(1, generatedId)
         statement.setString(2, user.name)
 
+        if (user.name == "" || user.pin.isBlank()) {
+            logger.error("User name and/or pin cannot be null or blank")
+            return null
+        }
+
+        if (user.pin.length < 4) {
+            logger.error("Pin must be at least 4 characters long")
+            return null
+        }
+
         val encryptedPin = SecurePinProcessor.hashPinForStorage(user.pin.toCharArray(), generatedId, env)
         statement.setString(3, SecurePinProcessor.byteArrayToBase64(encryptedPin))
         statement.setString(4, user.refreshToken)

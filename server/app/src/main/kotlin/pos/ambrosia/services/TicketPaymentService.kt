@@ -8,7 +8,6 @@ class TicketPaymentService(
     private val connection: Connection,
 ) {
     companion object {
-        // Ticket payment queries
         private const val ADD_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val GET_TICKET_PAYMENTS_BY_TICKET =
@@ -37,20 +36,17 @@ class TicketPaymentService(
         return resultSet.next()
     }
 
-    suspend fun addTicketPayment(ticketPayment: pos.ambrosia.models.TicketPayment): Boolean {
-        // Validar que los IDs no estén vacíos
+    suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean {
         if (ticketPayment.payment_id.isBlank() || ticketPayment.ticket_id.isBlank()) {
             logger.error("Payment ID and ticket ID are required fields")
             return false
         }
 
-        // Verificar que el ticket exista
         if (!ticketExists(ticketPayment.ticket_id)) {
             logger.error("Ticket ID does not exist: ${ticketPayment.ticket_id}")
             return false
         }
 
-        // Verificar que el payment exista
         if (!paymentExists(ticketPayment.payment_id)) {
             logger.error("Payment ID does not exist: ${ticketPayment.payment_id}")
             return false
@@ -73,16 +69,16 @@ class TicketPaymentService(
         }
     }
 
-    suspend fun getTicketPaymentsByTicket(ticketId: String): List<pos.ambrosia.models.TicketPayment>? {
+    suspend fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? {
         if (!ticketExists(ticketId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_TICKET)
         statement.setString(1, ticketId)
         val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<pos.ambrosia.models.TicketPayment>()
+        val ticketPayments = mutableListOf<TicketPayment>()
 
         while (resultSet.next()) {
             val ticketPayment =
-                pos.ambrosia.models.TicketPayment(
+                TicketPayment(
                     payment_id = resultSet.getString("payment_id"),
                     ticket_id = resultSet.getString("ticket_id"),
                 )
@@ -93,16 +89,16 @@ class TicketPaymentService(
         return ticketPayments
     }
 
-    suspend fun getTicketPaymentsByPayment(paymentId: String): List<pos.ambrosia.models.TicketPayment>? {
+    suspend fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? {
         if (!paymentExists(paymentId)) return null
         val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_PAYMENT)
         statement.setString(1, paymentId)
         val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<pos.ambrosia.models.TicketPayment>()
+        val ticketPayments = mutableListOf<TicketPayment>()
 
         while (resultSet.next()) {
             val ticketPayment =
-                pos.ambrosia.models.TicketPayment(
+                TicketPayment(
                     payment_id = resultSet.getString("payment_id"),
                     ticket_id = resultSet.getString("ticket_id"),
                 )

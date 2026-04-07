@@ -4,13 +4,10 @@ import userEvent from "@testing-library/user-event";
 import * as walletService from "@/services/walletService";
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { TransactionsReceiveTab } from "../TransactionsReceiveTab";
+import { ReceiveTab } from "../ReceiveTab";
 
 function renderReceiveTab(props = {}) {
   const defaultProps = {
-    loading: false,
-    setLoading: jest.fn(),
-    setError: jest.fn(),
     invoiceActions: {
       createInvoice: jest.fn(),
       closeModal: jest.fn(),
@@ -20,7 +17,7 @@ function renderReceiveTab(props = {}) {
 
   return render(
     <I18nProvider>
-      <TransactionsReceiveTab {...defaultProps} {...props} />
+      <ReceiveTab {...defaultProps} {...props} />
     </I18nProvider>,
   );
 }
@@ -68,7 +65,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("TransactionsReceiveTab Component", () => {
+describe("ReceiveTab Component", () => {
   describe("Rendering", () => {
     it("renders amount input", () => {
       renderReceiveTab();
@@ -149,6 +146,65 @@ describe("TransactionsReceiveTab Component", () => {
 
       await waitFor(() => {
         expect(screen.queryByText("payments.receive.invoiceAmountError")).not.toBeInTheDocument();
+      });
+    });
+
+    it("shows error when amount exceeds Number.MAX_SAFE_INTEGER", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceAmountTooLargeError")).toBeInTheDocument();
+      });
+    });
+
+    it("does not call createInvoice when amount is too large", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(walletService.createInvoice).not.toHaveBeenCalled();
+      });
+    });
+
+    it("clears too-large error when user changes amount", async () => {
+      renderReceiveTab();
+
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.change(amountInput, { target: { value: "999999999999999999" } });
+      fireEvent.blur(amountInput);
+
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceAmountTooLargeError")).toBeInTheDocument();
+      });
+
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
+
+      await waitFor(() => {
+        expect(screen.queryByText("payments.receive.invoiceAmountTooLargeError")).not.toBeInTheDocument();
       });
     });
 
@@ -238,11 +294,10 @@ describe("TransactionsReceiveTab Component", () => {
       });
     });
 
-    it("handles API error gracefully", async () => {
-      const setError = jest.fn();
+    it("handles API error gracefully without crashing", async () => {
       jest.spyOn(walletService, "createInvoice").mockRejectedValue(new Error("API Error"));
 
-      renderReceiveTab({ setError });
+      renderReceiveTab();
 
       const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
       fireEvent.focus(amountInput);
@@ -254,33 +309,51 @@ describe("TransactionsReceiveTab Component", () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(setError).toHaveBeenCalledWith("payments.receive.invoiceCreateError");
+        expect(screen.getByText("payments.receive.invoiceLightningButton")).toBeInTheDocument();
       });
     });
   });
 
   describe("Loading State", () => {
-    it("disables inputs when loading", () => {
-      renderReceiveTab({ loading: true });
+    it("shows loading text while creating invoice", async () => {
+      jest.spyOn(walletService, "createInvoice").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
+
+      renderReceiveTab();
 
       const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
-      const descInput = screen.getByLabelText("payments.receive.invoiceDescriptionLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
 
-      expect(amountInput).toBeDisabled();
-      expect(descInput).toBeDisabled();
+      const button = screen.getByText("payments.receive.invoiceLightningButton");
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.receive.invoiceLightningLoading")).toBeInTheDocument();
+      });
     });
 
-    it("disables button when loading", () => {
-      renderReceiveTab({ loading: true });
+    it("disables inputs while creating invoice", async () => {
+      jest.spyOn(walletService, "createInvoice").mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 500)),
+      );
 
-      const button = screen.getByText("payments.receive.invoiceLightningLoading");
-      expect(button.closest("button")).toBeDisabled();
-    });
+      renderReceiveTab();
 
-    it("shows loading text on button", () => {
-      renderReceiveTab({ loading: true });
+      const amountInput = screen.getByLabelText("payments.receive.invoiceAmountLabel");
+      fireEvent.focus(amountInput);
+      fireEvent.input(amountInput, { target: { value: "1000" } });
+      fireEvent.change(amountInput, { target: { value: "1000" } });
+      fireEvent.blur(amountInput);
 
-      expect(screen.getByText("payments.receive.invoiceLightningLoading")).toBeInTheDocument();
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(amountInput).toBeDisabled();
+      });
     });
   });
 

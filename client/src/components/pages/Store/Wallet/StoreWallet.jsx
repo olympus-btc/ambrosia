@@ -15,16 +15,13 @@ import {
   getInfo,
   getOutgoingTransactions,
 } from "@/services/walletService";
-import WalletGuard from "@components/auth/WalletGuard";
 import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
-import { InvoiceModal } from "./InvoiceModal";
-import { NodeError } from "./NodeError";
-import { NodeInfo } from "./NodeInfo";
-import { Transactions } from "./Transactions";
+import { NodeError, NodeInfo } from "./NodeInfo";
+import { InvoiceModal, Transactions } from "./Transactions";
 
-function WalletInner() {
+export function StoreWallet() {
   const t = useTranslations("wallet");
   const [info, setInfo] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -33,7 +30,7 @@ function WalletInner() {
   const [filter, setFilter] = useState("all");
   const fetchTransactionsRef = useRef(null);
   const invoiceHashRef = useRef(null);
-  const { setInvoiceHash, setFetchers, onPayment } = usePaymentWebsocket();
+  const { connected: wsConnected, setInvoiceHash, setFetchers, onPayment } = usePaymentWebsocket();
   const { invoiceState, actions: invoiceActions } = useInvoiceState();
 
   const fetchInfo = useCallback(async () => {
@@ -57,6 +54,7 @@ function WalletInner() {
     async () => {
       try {
         setLoading(true);
+        setTransactions([]);
         let incoming = [];
         let outgoing = [];
 
@@ -72,10 +70,9 @@ function WalletInner() {
         );
         setTransactions(allTx);
       } catch {
-        setError(t("history.getTransactionsError"));
         addToast({
           title: "Error",
-          description: t("history.getTransactionsErrorDescription"),
+          description: t("payments.history.getTransactionsErrorDescription"),
           variant: "solid",
           color: "danger",
         });
@@ -128,47 +125,39 @@ function WalletInner() {
     );
   }
 
+  const nodeAvailable = Boolean(info?.nodeId);
+
   return (
     <div className="">
-      {error && (
-        <NodeError error={error} />
+      {(error || !nodeAvailable) && (
+        <NodeError error={error || t("nodeInfo.nodeUnavailable")} />
       )}
 
-      <NodeInfo info={info} onRefresh={fetchInfo} />
+      {nodeAvailable && (
+        <>
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+            <NodeInfo info={info} onRefresh={fetchInfo} />
 
-      <Transactions
-        transactions={transactions}
-        loading={loading}
-        setLoading={setLoading}
-        error={error}
-        setError={setError}
-        filter={filter}
-        setFilter={setFilter}
-        invoiceActions={invoiceActions}
-        fetchInfo={fetchInfo}
-        fetchTransactions={fetchTransactions}
-      />
+            <Transactions
+              transactions={transactions}
+              loading={loading}
+              filter={filter}
+              setFilter={setFilter}
+              invoiceActions={invoiceActions}
+              fetchInfo={fetchInfo}
+              fetchTransactions={fetchTransactions}
+            />
+          </div>
 
-      <InvoiceModal
-        invoiceState={invoiceState}
-        onClose={invoiceActions.closeModal}
-      />
+          <InvoiceModal
+            invoiceState={invoiceState}
+            onClose={invoiceActions.closeModal}
+            onMarkAsPaid={() => invoiceActions.markAsPaid(Date.now())}
+            wsConnected={wsConnected}
+          />
+        </>
+      )}
 
     </div>
-  );
-}
-
-export function StoreWallet() {
-  const t = useTranslations("wallet");
-  return (
-    <WalletGuard
-      placeholder={<div className="min-h-screen gradient-fresh p-4" />}
-      title={t("access.title")}
-      passwordLabel={t("access.passwordLabel")}
-      confirmText={t("access.confirmText")}
-      cancelText={t("access.cancelText")}
-    >
-      <WalletInner />
-    </WalletGuard>
   );
 }
