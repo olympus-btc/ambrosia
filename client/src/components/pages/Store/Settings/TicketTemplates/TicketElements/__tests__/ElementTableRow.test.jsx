@@ -9,8 +9,8 @@ function Wrapper({ localId, className }) {
 describe("ElementTableRow", () => {
   it("renders all sample ticket items with quantity and name", () => {
     render(<Wrapper localId="r-1" className="" />);
-    expect(screen.getByText("2x Tacos al pastor")).toBeInTheDocument();
-    expect(screen.getByText("1x Agua fresca")).toBeInTheDocument();
+    expect(screen.getByText("2x Burger")).toBeInTheDocument();
+    expect(screen.getByText("1x Lemonade")).toBeInTheDocument();
   });
 
   it("renders item prices", () => {
@@ -21,7 +21,7 @@ describe("ElementTableRow", () => {
 
   it("renders item comments prefixed with dash", () => {
     render(<Wrapper localId="r-3" className="" />);
-    expect(screen.getByText("- sin cebolla")).toBeInTheDocument();
+    expect(screen.getByText("- no onion")).toBeInTheDocument();
   });
 
   it("applies className to row elements", () => {

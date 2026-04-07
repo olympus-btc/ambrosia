@@ -23,6 +23,7 @@ jest.mock("../TicketElements", () => ({
   TicketElementsPreview: ({ elements }) => (
     <div data-testid="elements-preview" data-count={elements.length} />
   ),
+  hasVisibleContent: (elements) => Array.isArray(elements) && elements.some((el) => ["SEPARATOR", "LINE_BREAK", "TABLE_ROW"].includes(el.type) || el.value?.trim()),
 }));
 
 const t = (key) => key;
@@ -40,12 +41,22 @@ const defaultProps = {
 };
 
 describe("TemplatePreview", () => {
-  it("shows empty message when no elements", () => {
+  it("shows placeholder when no elements", () => {
     render(<TemplatePreview {...defaultProps} />);
     expect(screen.getByText("templates.previewEmpty")).toBeInTheDocument();
   });
 
-  it("renders TicketElementsPreview when elements are provided", () => {
+  it("shows placeholder when elements have no visible content", () => {
+    render(
+      <TemplatePreview
+        {...defaultProps}
+        elements={[{ localId: "e-1", type: "TEXT", value: "", style: {} }]}
+      />,
+    );
+    expect(screen.getByText("templates.previewEmpty")).toBeInTheDocument();
+  });
+
+  it("hides placeholder when elements have content", () => {
     render(
       <TemplatePreview
         {...defaultProps}
@@ -53,6 +64,16 @@ describe("TemplatePreview", () => {
       />,
     );
     expect(screen.getByTestId("elements-preview")).toBeInTheDocument();
+    expect(screen.queryByText("templates.previewEmpty")).not.toBeInTheDocument();
+  });
+
+  it("hides placeholder for always-visible types (SEPARATOR, LINE_BREAK, TABLE_ROW)", () => {
+    render(
+      <TemplatePreview
+        {...defaultProps}
+        elements={[{ localId: "e-2", type: "SEPARATOR", value: "", style: {} }]}
+      />,
+    );
     expect(screen.queryByText("templates.previewEmpty")).not.toBeInTheDocument();
   });
 

@@ -60,9 +60,9 @@ describe("TicketElementsPreview", () => {
     render(
       <Preview elements={[{ localId: "t-1", type: "TABLE_ROW", style: {} }]} config={null} />,
     );
-    expect(screen.getByText("2x Tacos al pastor")).toBeInTheDocument();
-    expect(screen.getByText("1x Agua fresca")).toBeInTheDocument();
-    expect(screen.getByText("- sin cebolla")).toBeInTheDocument();
+    expect(screen.getByText("2x Burger")).toBeInTheDocument();
+    expect(screen.getByText("1x Lemonade")).toBeInTheDocument();
+    expect(screen.getByText("- no onion")).toBeInTheDocument();
   });
 
   it("renders TOTAL_ROW with separator, label and total", () => {

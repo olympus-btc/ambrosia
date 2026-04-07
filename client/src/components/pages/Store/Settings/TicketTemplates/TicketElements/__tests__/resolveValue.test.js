@@ -27,8 +27,8 @@ describe("resolveValue", () => {
 
   it("replaces ticket variables with sampleTicket values", () => {
     expect(resolveValue("{{ticket.id}}")).toBe("123");
-    expect(resolveValue("{{ticket.tableName}}")).toBe("Mesa 4");
-    expect(resolveValue("{{ticket.roomName}}")).toBe("Salon");
+    expect(resolveValue("{{ticket.tableName}}")).toBe("Table 4");
+    expect(resolveValue("{{ticket.roomName}}")).toBe("Main Hall");
     expect(resolveValue("{{ticket.date}}")).toBe("2024-01-10 19:30");
     expect(resolveValue("{{ticket.total}}")).toBe("215");
     expect(resolveValue("{{ticket.invoice}}")).toBe("lnbc10u1p0exampleinvoice");
@@ -36,7 +36,7 @@ describe("resolveValue", () => {
 
   it("replaces multiple variables in one string", () => {
     const result = resolveValue("{{config.businessName}} - {{ticket.tableName}}", sampleConfig);
-    expect(result).toBe("Ambrosia - Mesa 4");
+    expect(result).toBe("Ambrosia - Table 4");
   });
 
   it("leaves unknown variables untouched", () => {

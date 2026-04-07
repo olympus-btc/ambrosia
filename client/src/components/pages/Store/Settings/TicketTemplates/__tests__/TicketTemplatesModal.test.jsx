@@ -53,10 +53,19 @@ jest.mock("next-intl", () => ({
 jest.mock("@dnd-kit/core", () => ({
   DndContext: ({ children }) => <>{children}</>,
   closestCenter: jest.fn(),
-  PointerSensor: jest.fn(),
+  MouseSensor: jest.fn(),
+  TouchSensor: jest.fn(),
   KeyboardSensor: jest.fn(),
   useSensor: jest.fn(),
   useSensors: jest.fn(() => []),
+}));
+
+jest.mock("@components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => (
+    <button type="button" onClick={onPress}>
+      {children}
+    </button>
+  ),
 }));
 
 jest.mock("@dnd-kit/sortable", () => ({
@@ -155,7 +164,7 @@ describe("TicketTemplatesModal", () => {
 
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("Kitchen");
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
-    expect(screen.getByText("2x Tacos al pastor")).toBeInTheDocument();
+    expect(screen.getByText("2x Burger")).toBeInTheDocument();
     expect(screen.getByText("lnbc10u1p0exampleinvoice")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("templates.saveChanges"));
