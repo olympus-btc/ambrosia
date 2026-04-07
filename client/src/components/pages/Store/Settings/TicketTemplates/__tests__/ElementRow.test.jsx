@@ -33,6 +33,14 @@ jest.mock("@heroui/react", () => ({
   Tooltip: ({ children }) => <>{children}</>,
 }));
 
+jest.mock("@components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress }) => (
+    <button type="button" data-testid="delete-button" onClick={onPress}>
+      delete
+    </button>
+  ),
+}));
+
 jest.mock("../VariablePicker", () => ({
   TemplateVariablePicker: ({ onSelect }) => (
     <button
@@ -118,7 +126,7 @@ describe("TemplateElementRow", () => {
       style: { ...element.style, bold: true },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "templates.removeElement" }));
+    fireEvent.click(screen.getByTestId("delete-button"));
     expect(onRemove).toHaveBeenCalledWith("el-1");
   });
 

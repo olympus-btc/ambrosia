@@ -3,7 +3,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input, Select, SelectItem, Tooltip } from "@heroui/react";
-import { Bold, ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
+import { Bold, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+
+import { DeleteButton } from "@components/shared/DeleteButton";
 
 import { resolveValue } from "./TicketElements";
 import { TemplateVariablePicker } from "./VariablePicker";
@@ -82,16 +84,9 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
           >
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="light"
-            color="danger"
-            onPress={() => onRemove(element.localId)}
-            aria-label={t("templates.removeElement")}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <DeleteButton onPress={() => onRemove(element.localId)}>
+            <span className="hidden sm:inline">{t("templates.removeElement")}</span>
+          </DeleteButton>
         </div>
       </div>
 
