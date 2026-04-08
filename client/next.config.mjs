@@ -9,7 +9,7 @@ const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
 const isDev = process.env.NODE_ENV === "development";
 
 const withSerwist = withSerwistInit({
-  swSrc: "src/app/sw.ts",
+  swSrc: "src/app/sw.js",
   swDest: "public/sw.js",
   disable: isElectron || isDev,
 });
@@ -19,7 +19,7 @@ const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: __dirname,
   images: {
-    unoptimized: true, // Required for Electron
+    unoptimized: true,
   },
   telemetry: false,
   async headers() {
