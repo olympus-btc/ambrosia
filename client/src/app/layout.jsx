@@ -15,15 +15,29 @@ const geistMono = GeistMono({
   subsets: ["latin"],
 });
 
+const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
+
 export const metadata = {
   title: "Ambrosia PoS",
   description: "The system for the sovereign individual.",
+  ...(!isElectron && {
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Ambrosia POS",
+    },
+    icons: {
+      apple: "/icons/apple-touch-icon.png",
+    },
+  }),
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#166534",
 };
 
 export default function RootLayout({ children }) {
