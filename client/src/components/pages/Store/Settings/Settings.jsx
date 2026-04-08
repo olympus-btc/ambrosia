@@ -8,6 +8,7 @@ import { isElectron } from "@lib/isElectron";
 import { StoreLayout } from "../StoreLayout";
 
 import { Currency } from "./Currency";
+import { InstallPWA } from "./InstallPWA";
 import { Language } from "./Language";
 import { LightningCard } from "./Lightning/LightningCard";
 import { Printers } from "./Printers";
@@ -37,6 +38,7 @@ export function Settings() {
           <TicketTemplates />
 
           {isElectron && <LightningCard />}
+          {!isElectron && <InstallPWA />}
         </div>
       </div>
     </StoreLayout>

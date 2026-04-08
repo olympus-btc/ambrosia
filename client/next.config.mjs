@@ -21,7 +21,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  telemetry: false,
+  turbopack: {},
   async headers() {
     return [
       {
