@@ -1,3 +1,4 @@
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -7,6 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
 const isDev = process.env.NODE_ENV === "development";
+
+function getLocalNetworkIPs() {
+  return Object.values(os.networkInterfaces())
+    .flat()
+    .filter((iface) => iface.family === "IPv4" && !iface.internal)
+    .map((iface) => iface.address);
+}
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.js",
@@ -22,6 +30,7 @@ const nextConfig = {
     unoptimized: true,
   },
   turbopack: {},
+  allowedDevOrigins: isDev ? getLocalNetworkIPs() : [],
   async headers() {
     return [
       {
