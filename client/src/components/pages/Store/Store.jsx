@@ -44,27 +44,23 @@ export function Store() {
     <StoreLayout>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {
-            STATS.map((stat) => (
-              <Card key={stat.id}>
-                <CardHeader>
-                  <div className="flex flex-col">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{stat.name}</h3>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <div className="flex justify-between items-center">
-                    <p className="text-2xl font-bold">
-                      {stat.quantity}
-                    </p>
-                    <stat.icon className="w-10 h-10 opacity-25" />
-                  </div>
-                </CardBody>
-              </Card>
-            ))
-          }
+          {STATS.map((stat) => (
+            <Card key={stat.id} shadow="none" className="border border-gray-200 rounded-lg">
+              <CardHeader>
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{stat.name}</h3>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div className="flex justify-between items-center">
+                  <p className="text-2xl font-bold text-green-900">{stat.quantity}</p>
+                  <stat.icon className="w-10 h-10 text-green-800 opacity-50" />
+                </div>
+              </CardBody>
+            </Card>
+          ))}
         </div>
       </div>
     </StoreLayout>
