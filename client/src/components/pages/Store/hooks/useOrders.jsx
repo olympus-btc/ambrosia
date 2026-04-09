@@ -71,61 +71,6 @@ export function useOrders() {
     [fetchOrdersRequest],
   );
 
-  const createOrder = useCallback(
-    async (orderBody) => {
-      try {
-        const createOrder = await httpClient("/orders", {
-          method: "POST",
-          body: JSON.stringify(orderBody),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const createdDataOrder = await parseJsonResponse(createOrder, null);
-        if (createdDataOrder?.id) {
-          setOrders((prev) => (Array.isArray(prev) ? [...prev, createdDataOrder] : [createdDataOrder]),
-          );
-        }
-        return createdDataOrder;
-      } catch (error) {
-        console.error("Error creating order:", error);
-        setError(error);
-        throw error;
-      }
-    },
-    [],
-  );
-
-  const updateOrder = useCallback(
-    async (orderId, orderBody) => {
-      if (!orderId) throw new Error("orderId is required");
-      try {
-        const updateOrder = await httpClient(`/orders/${orderId}`, {
-          method: "PUT",
-          body: JSON.stringify(orderBody),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const updatedDataOrder = await parseJsonResponse(updateOrder, null);
-
-        if (updatedDataOrder?.id) {
-          setOrders((prev) => (Array.isArray(prev)
-            ? prev.map((o) => (o.id === orderId ? updatedDataOrder : o))
-            : [updatedDataOrder]),
-          );
-        }
-        return updatedDataOrder;
-      } catch (error) {
-        console.error("Error updating order:", error);
-        setError(error);
-        throw error;
-      }
-    },
-    [],
-  );
-
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -137,7 +82,5 @@ export function useOrders() {
     refetch: fetchOrders,
     fetchOrders,
     fetchOrdersFiltered,
-    createOrder,
-    updateOrder,
   };
 }
