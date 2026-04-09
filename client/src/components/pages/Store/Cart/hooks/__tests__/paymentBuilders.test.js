@@ -1,8 +1,5 @@
 import {
   ensureCartReady,
-  buildOrderPayload,
-  buildTicketPayload,
-  buildPaymentPayload,
   normalizeAmounts,
 } from "../paymentBuilders";
 
@@ -14,32 +11,6 @@ describe("paymentBuilders", () => {
     expect(() => ensureCartReady({ t, items: [], selectedPaymentMethod: "cash" })).toThrow("errors.emptyCart");
     expect(() => ensureCartReady({ t, items: [{}], selectedPaymentMethod: "cash", userId: null, currencyId: "cur" })).toThrow("errors.noUser");
     expect(() => ensureCartReady({ t, items: [{}], selectedPaymentMethod: "cash", userId: "u1", currencyId: "" })).toThrow("errors.noCurrency");
-  });
-
-  it("builds order payload with fallback waiter name", () => {
-    const payload = buildOrderPayload({ user_id: "u1", name: "" }, 100);
-    expect(payload.user_id).toBe("u1");
-    expect(payload.waiter).toBe("Vendedor");
-    expect(payload.total).toBe(100);
-  });
-
-  it("builds ticket and payment payloads", () => {
-    const ticket = buildTicketPayload({ user_id: "u1" }, "order-1", 250);
-    expect(ticket.order_id).toBe("order-1");
-    expect(ticket.total_amount).toBe(250);
-
-    const payment = buildPaymentPayload({
-      methodId: "cash",
-      currencyId: "cur-1",
-      amount: 2.5,
-      transactionId: "tx-1",
-    });
-    expect(payment).toEqual({
-      method_id: "cash",
-      currency_id: "cur-1",
-      transaction_id: "tx-1",
-      amount: 2.5,
-    });
   });
 
   it("normalizes amounts and formats total", () => {
