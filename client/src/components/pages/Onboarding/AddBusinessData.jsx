@@ -33,12 +33,12 @@ export function BusinessDetailsStep({ data, onChange }) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-foreground mb-2">
+      <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2">
         {data.businessType === "store" ? t("step3.titleStore") : t("step3.titleRestaurant")}
       </h2>
-      <p className="text-muted-foreground mb-8">{t("step3.subtitle")}</p>
+      <p className="text-gray-500 mb-4 md:mb-8">{t("step3.subtitle")}</p>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <Input
           label={data.businessType === "store" ? t("step3.fields.businessrNameLabelStore") : t("step3.fields.businessrNameLabelRestaurant")}
           type="text"

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import formatDate from "@/lib/formatDate";
 
-import { StatusChip } from "./StatusChip";
+import { StatusChip } from "./OrdersList/StatusChip";
 
 export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
   const t = useTranslations("orders");
@@ -16,8 +16,12 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
       isOpen={isOpen}
       onOpenChange={onClose}
       backdrop="blur"
+      shouldBlockScroll={false}
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+        body: "overflow-y-auto max-h-[65vh]",
       }}
     >
       <ModalContent>

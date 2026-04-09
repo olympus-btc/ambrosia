@@ -9,6 +9,7 @@ import {
   ModalHeader,
   Spinner,
 } from "@heroui/react";
+import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QRCode } from "react-qr-code";
 
@@ -28,7 +29,7 @@ export function BitcoinPaymentModal({
   displayTotal,
 }) {
   const t = useTranslations("cart.paymentModal.bitcoin");
-  const { setInvoiceHash, onPayment } = usePaymentWebsocket();
+  const { setInvoiceHash, onPayment, connected } = usePaymentWebsocket();
 
   const [paymentReceived, setPaymentReceived] = useState(false);
   const [paymentAwaiting, setPaymentAwaiting] = useState(false);
@@ -93,9 +94,12 @@ export function BitcoinPaymentModal({
       isOpen={isOpen}
       onClose={handleClose}
       size="lg"
+      scrollBehavior="inside"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
       }}
     >
       <ModalContent>
@@ -128,11 +132,10 @@ export function BitcoinPaymentModal({
           {!loading && !paymentReceived && !error && invoice && (
             <>
               <div className="flex justify-center">
-                <div className="bg-white p-4 rounded-xl shadow">
+                <div className="bg-white p-4 rounded-lg border w-full max-w-60 sm:max-w-[280px] mx-auto">
                   <QRCode
                     value={invoice?.serialized || ""}
-                    size={220}
-                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                    style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 </div>
               </div>
@@ -155,42 +158,46 @@ export function BitcoinPaymentModal({
           )}
 
           {paymentReceived && (
-            <div className="flex flex-col items-center justify-center py-6 space-y-3">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="text-lg font-semibold text-green-900">
-                {t("confirmed")}
-              </p>
-              {paymentCompletedAt && (
-                <p className="text-sm text-green-700">
-                  {t("paidAt", { time: new Date(paymentCompletedAt).toLocaleTimeString() })}
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <CheckCircle className="h-16 w-16 text-forest" />
+              <div className="text-center space-y-1">
+                <p className="text-xl font-semibold text-deep">
+                  {t("confirmed")}
                 </p>
-              )}
+                {paymentCompletedAt && (
+                  <p className="text-sm text-gray-500">
+                    {t("paidAt", { time: new Date(paymentCompletedAt).toLocaleTimeString() })}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </ModalBody>
-        <ModalFooter className="flex gap-2">
+        <ModalFooter className="flex justify-between">
           <Button
-            color={paymentReceived ? "success" : "primary"}
+            variant="bordered"
+            type="button"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             isDisabled={loading}
             onPress={handleClose}
           >
             {paymentReceived ? t("close") : t("cancel")}
           </Button>
+          {paymentAwaiting && !connected && (
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => {
+                completedRef.current = true;
+                setPaymentReceived(true);
+                setPaymentAwaiting(false);
+                setPaymentCompletedAt(Date.now());
+                onComplete?.({ invoice, satoshis: satsAmount, paymentId, auto: false });
+              }}
+            >
+              {t("markAsPaid")}
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -34,6 +34,10 @@ jest.mock("../Summary", () => ({
       <button onClick={() => onPay({})}>pay</button>
     </div>
   ),
+  SummaryModal: ({ isOpen }) => (isOpen ? <div>summary-modal</div> : null),
+  MobileSummaryBar: ({ cart, onCheckout }) => (
+    cart?.length ? <button onClick={onCheckout}>mobile-checkout</button> : null
+  ),
 }));
 
 jest.mock("../hooks/usePersistentCart", () => ({

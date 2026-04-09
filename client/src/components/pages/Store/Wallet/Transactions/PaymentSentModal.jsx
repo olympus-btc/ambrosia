@@ -24,8 +24,14 @@ export function PaymentSentModal({ result, onClose }) {
       isOpen={Boolean(result)}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
+      shouldBlockScroll={false}
       backdrop="blur"
-      classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
+      }}
     >
       <ModalContent>
         <ModalHeader>{t("payments.send.paymentDone")}</ModalHeader>
@@ -59,7 +65,7 @@ export function PaymentSentModal({ result, onClose }) {
                 size="sm"
               />
             </div>
-            <div className="bg-gray-100 rounded p-2 text-xs font-mono break-all">
+            <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
               {result?.paymentHash}
             </div>
           </div>

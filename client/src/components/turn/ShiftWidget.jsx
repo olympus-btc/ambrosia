@@ -36,7 +36,7 @@ export function ShiftWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div className="fixed bottom-20 right-4 z-40 md:bottom-6 md:right-6">
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -44,7 +44,7 @@ export function ShiftWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-16 right-0 w-72"
+            className="absolute bottom-16 right-0 w-[calc(100vw-2rem)] max-w-72"
           >
             <Card shadow="lg" className="rounded-lg">
               <CardBody className="p-3 space-y-3">

@@ -42,6 +42,11 @@ function TestComponent() {
 describe("useTemplates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("loads templates on mount", async () => {

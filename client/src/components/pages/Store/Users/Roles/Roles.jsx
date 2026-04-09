@@ -2,19 +2,20 @@
 
 import { useMemo, useState } from "react";
 
-import { addToast, Button, Card, CardBody, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { addToast, Button, Card, CardBody } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { RequirePermission } from "@/hooks/usePermission";
 import { buildPermissionSet } from "@/lib/modules";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import { CreateRoleModal } from "./CreateRoleModal";
+import { DeleteRoleModal } from "./DeleteRoleModal";
 import { EditRoleModal } from "./EditRoleModal";
-import { RolesTable } from "./RolesTable";
+import { RolesList } from "./RolesList";
 import { permissionCatalog } from "./utils/permissionCatalog";
-import { resolveRoleName } from "./utils/roleTemplates";
 
 export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions }) {
   const { permissions, loading: loadingPerms } = usePermissions();
@@ -131,30 +132,26 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
 
   return (
     <div>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-4xl font-semibold text-green-900">
-            {t("roles.header.title")}
-          </h2>
-          <p className="text-gray-800 mt-2">
-            {t("roles.header.subtitle")}
-          </p>
-        </div>
-        <RequirePermission allOf={["roles_create"]}>
-          <Button
-            color="primary"
-            className="bg-green-800"
-            onPress={() => setShowModal(true)}
-            isDisabled={loadingPerms}
-          >
-            {t("roles.actions.new")}
-          </Button>
-        </RequirePermission>
-      </header>
+      <PageHeader
+        title={t("roles.header.title")}
+        subtitle={t("roles.header.subtitle")}
+        actions={(
+          <RequirePermission allOf={["roles_create"]}>
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => setShowModal(true)}
+              isDisabled={loadingPerms}
+            >
+              {t("roles.actions.new")}
+            </Button>
+          </RequirePermission>
+        )}
+      />
 
       <Card className="bg-white rounded-lg shadow-lg overflow-x-auto">
         <CardBody className="p-4 lg:p-8">
-          <RolesTable
+          <RolesList
             roles={roles}
             loading={loadingRoles}
             onEdit={openEditModal}
@@ -176,36 +173,12 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         businessType={businessType}
       />
 
-      <Modal
-        isOpen={!!roleToDelete}
-        onOpenChange={(open) => { if (!open) setRoleToDelete(null); }}
-        backdrop="blur"
-        classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
-      >
-        <ModalContent>
-          <ModalHeader>{t("roles.actions.deleteConfirmTitle")}</ModalHeader>
-          <ModalBody>
-            <p>{t("roles.actions.deleteConfirmBody", { name: resolveRoleName(roleToDelete?.role ?? "", t) })}</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="bordered"
-              className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
-              onPress={() => setRoleToDelete(null)}
-              isDisabled={deleting}
-            >
-              {t("roles.actions.cancel")}
-            </Button>
-            <Button
-              color="danger"
-              onPress={handleDeleteRole}
-              isLoading={deleting}
-            >
-              {t("roles.actions.delete")}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <DeleteRoleModal
+        role={roleToDelete}
+        onClose={() => setRoleToDelete(null)}
+        onConfirm={handleDeleteRole}
+        deleting={deleting}
+      />
 
       {editingRole && (
         <EditRoleModal

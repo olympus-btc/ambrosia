@@ -72,15 +72,22 @@ export function I18nProvider({ children }) {
   );
 }
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ compact = false }) {
   const { locale, changeLocale } = useI18n();
   return (
     <Button
       className="bg-slate-200 rounded-lg"
       onPress={() => changeLocale(locale === "es" ? "en" : "es")}
-      startContent={<Languages />}
+      startContent={<Languages className={compact ? "w-4 h-4" : undefined} />}
     >
-      {locale === "es" ? "Switch to English" : "Cambiar a Español"}
+      {compact ? (
+        <>
+          <span className="hidden md:inline">{locale === "es" ? "Switch to English" : "Cambiar a Español"}</span>
+          <span className="md:hidden">{locale === "es" ? "EN" : "ES"}</span>
+        </>
+      ) : (
+        locale === "es" ? "Switch to English" : "Cambiar a Español"
+      )}
     </Button>
   );
 }

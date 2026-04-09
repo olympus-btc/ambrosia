@@ -7,6 +7,7 @@ const onboardingEs = {
     next: "Siguiente",
     back: "Atrás",
     finish: "Completar",
+    edit: "Editar",
   },
   step1: {
     title: "¿Qué tipo de negocio tienes?",

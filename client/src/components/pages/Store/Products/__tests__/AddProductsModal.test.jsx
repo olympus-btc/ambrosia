@@ -14,6 +14,7 @@ jest.mock("@heroui/react", () => {
     errorMessage,
     startContent,
     minValue,
+    maxValue,
     ...props
   }) => (
     <input
@@ -137,8 +138,7 @@ describe("AddProductsModal", () => {
     expect(onChange).toHaveBeenCalledWith({ productImage: file });
     expect(await screen.findByAltText("Image preview")).toBeInTheDocument();
 
-    const removeButton = document.querySelector("button.bg-red-400");
-    expect(removeButton).not.toBeNull();
+    const removeButton = screen.getByTestId("remove-image-button");
     fireEvent.click(removeButton);
 
     const lastCall = onChange.mock.calls.at(-1)?.[0];

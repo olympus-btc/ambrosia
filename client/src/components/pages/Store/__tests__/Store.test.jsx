@@ -21,6 +21,10 @@ jest.mock("lucide-react", () => ({
   LogOut: () => <div>LogOut Icon</div>,
   FileText: () => <div>FileText Icon</div>,
   Languages: () => <div>Languages Icon</div>,
+  Menu: () => <div>Menu Icon</div>,
+  ClipboardClock: () => <div>ClipboardClock Icon</div>,
+  Box: () => <div>Box Icon</div>,
+  Wallet: () => <div>Wallet Icon</div>,
 }));
 
 jest.mock("@/lib/http", () => ({

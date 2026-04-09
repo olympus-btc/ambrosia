@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Progress, Divider, addToast } from "@heroui/react";
+import { Button, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { parseJsonResponse } from "@/lib/http";
@@ -128,32 +128,33 @@ export function Onboarding() {
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen gradient-fresh px-4 pb-4 pt-4">
-      <div className="flex justify-end w-full max-w-2xl mt-4 mb-8">
-        <LanguageSwitcher />
+      <div className="flex justify-end w-full max-w-2xl mt-2 mb-4 sm:mt-4 sm:mb-8">
+        <LanguageSwitcher compact />
       </div>
 
       <div className="w-full max-w-2xl">
 
         {!needsBusinessType && (
-          <div className="mb-8 relative">
-            <div className="flex justify-between mb-2 relative z-10">
+          <div className="mb-8">
+            <div className="flex justify-between items-center relative">
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-gray-300 z-0" />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-green-800 z-0 transition-all duration-300 left-0"
+                style={{ width: `${progressValue}%` }}
+              />
               {[1, 2, 3, 4].map((num) => (
                 <div
                   key={num}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all ${num <= step ? "bg-primary text-primary-foreground" : "bg-gray-300 text-muted-foreground"
-                    }`}
+                  className={`relative z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-semibold transition-all ${num <= step ? "bg-green-800 text-white" : "bg-gray-300 text-gray-500"}`}
                 >
                   {num}
                 </div>
               ))}
             </div>
-            <div className="w-full rounded-full h-2 absolute top-[15px] z-0">
-              <Progress size="md" color="primary" value={progressValue} />
-            </div>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <div className="bg-white rounded-lg shadow-lg p-4 md:p-8 mb-8">
           {step === 1 && (
             <BusinessTypeStep
               value={data.businessType}
@@ -190,9 +191,9 @@ export function Onboarding() {
 
           {step === 4 && <WizardSummary data={data} onEdit={(stepNum) => setStep(stepNum)} />}
 
-          <Divider className="my-8 bg-gray-400" />
+          <Divider className="hidden md:block my-8 bg-gray-400" />
 
-          <div className="flex w-full">
+          <div className="flex w-full mt-6 md:mt-0">
             {(!needsBusinessType && step !== 1) && (
               <Button
                 variant="bordered"
@@ -209,7 +210,7 @@ export function Onboarding() {
                   color="primary"
                   onPress={handleComplete}
                   isDisabled={!data.businessType}
-                  className="gradient-forest text-white"
+                  className="bg-green-800"
                 >
                   {t("buttons.finish")}
                 </Button>
@@ -222,7 +223,7 @@ export function Onboarding() {
                     (step === 2 && (!data.userName || !data.userPassword || !isPasswordStrong(data.userPassword) || !isPinValid(data.userPin))) ||
                     (step === 3 && (!data.businessName || !data.businessCurrency))
                   }
-                  className="gradient-forest text-white"
+                  className="bg-green-800"
                 >
                   {t("buttons.next")}
                 </Button>
@@ -230,7 +231,7 @@ export function Onboarding() {
                 <Button
                   color="primary"
                   onPress={handleComplete}
-                  className="gradient-forest text-white"
+                  className="bg-green-800"
                 >
                   {t("buttons.finish")}
                 </Button>

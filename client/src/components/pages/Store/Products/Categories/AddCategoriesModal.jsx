@@ -43,9 +43,13 @@ export function AddCategoriesModal({
       isOpen={addCategoriesShowModal}
       onOpenChange={setAddCategoriesShowModal}
       backdrop="blur"
+      shouldBlockScroll={false}
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
       }}
+      placement="center"
     >
       <ModalContent>
         <ModalHeader>{t("modal.titleAdd")}</ModalHeader>

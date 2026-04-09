@@ -17,10 +17,10 @@ import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymen
 
 import { useOrders } from "../hooks/useOrders";
 
-import { EmptyOrdersState } from "./EmptyOrdersState";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { OrdersFilterBar } from "./OrdersFilterBar";
-import { OrdersTable } from "./OrdersTable";
+import { OrdersList } from "./OrdersList";
+import { EmptyOrdersState } from "./OrdersList/EmptyOrdersState";
 
 const DEFAULT_FILTERS = {
   startDate: null,
@@ -118,7 +118,7 @@ export default function StoreOrders() {
         </CardBody>
       </Card>
 
-      <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
+      <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8">
         <CardHeader>
           <h3 className="text-lg font-semibold text-green-900">
             {t("header.paid", { count: filteredOrders.length })}
@@ -126,10 +126,9 @@ export default function StoreOrders() {
         </CardHeader>
         <CardBody>
           {filteredOrders.length > 0 ? (
-            <div className="w-full overflow-x-auto">
-              <OrdersTable
+            <div className="w-full">
+              <OrdersList
                 orders={paginatedOrders}
-                formatAmount={formatAmount}
                 onViewOrder={handleOrderClick}
               />
 
