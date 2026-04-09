@@ -20,15 +20,17 @@ function getApiPort() {
   return DEFAULT_API_PORT;
 }
 
-export function getWsUrl() {
+export function getWsUrl(loc) {
   if (process.env.NEXT_PUBLIC_WS_URL) {
     return process.env.NEXT_PUBLIC_WS_URL;
   }
 
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
+  const location = loc || (typeof window !== "undefined" ? window.location : null);
+
+  if (location) {
+    const host = location.hostname;
     const port = getApiPort();
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     return `${protocol}//${host}:${port}/ws/payments`;
   }
 

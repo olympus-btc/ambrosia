@@ -6,12 +6,18 @@ async function loadConfigModule() {
 }
 
 describe("api config", () => {
+  const spies = [];
+
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_API_URL;
     delete process.env.NEXT_PUBLIC_PORT_API;
     delete process.env.NEXT_PUBLIC_WS_URL;
-    window.history.replaceState({}, "", "http://localhost:3000");
+  });
+
+  afterEach(() => {
+    spies.forEach((s) => s.mockRestore());
+    spies.length = 0;
   });
 
   afterAll(() => {
@@ -21,11 +27,11 @@ describe("api config", () => {
   it("builds the websocket URL from the browser host and published API port", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://ambrosia:9154";
     process.env.NEXT_PUBLIC_PORT_API = "9155";
-    window.history.replaceState({}, "", "http://caja-1.local:3001");
-
     const { getWsUrl } = await loadConfigModule();
 
-    expect(getWsUrl()).toBe("ws://caja-1.local:9155/ws/payments");
+    expect(getWsUrl({ hostname: "caja-1.local", protocol: "http:" })).toBe(
+      "ws://caja-1.local:9155/ws/payments",
+    );
   });
 
   it("prefers an explicit websocket URL when provided", async () => {
