@@ -27,7 +27,10 @@ services:
       - phoenixd
 
   ambrosia-client:
-    build: client/
+    build:
+      context: client/
+      args:
+        NEXT_PUBLIC_PORT_API: "9154"
     image: ambrosia-client
     container_name: ambrosia-client
     restart: unless-stopped
@@ -41,7 +44,7 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://ambrosia:9154
-      NEXT_PUBLIC_WS_URL: ws://localhost:9154/ws/payments
+      NEXT_PUBLIC_PORT_API: "9154"
 
 volumes:
   phoenixd_datadir: 
