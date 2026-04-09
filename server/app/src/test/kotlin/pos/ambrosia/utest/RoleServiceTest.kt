@@ -30,6 +30,24 @@ class RoleServiceTest {
     private val mockEnv: ApplicationEnvironment = mock()
 
     @Test
+    fun `addRole returns null if role name is blank`() {
+        runBlocking {
+            val service = RolesService(mockEnv, mockConnection) // Arrange
+            val result = service.addRole(Role(role = "  ")) // Act
+            assertNull(result) // Assert
+        }
+    }
+
+    @Test
+    fun `updateRole returns false if role name is blank`() {
+        runBlocking {
+            val service = RolesService(mockEnv, mockConnection) // Arrange
+            val result = service.updateRole("some-id", Role(role = "  ")) // Act
+            assertFalse(result) // Assert
+        }
+    }
+
+    @Test
     fun `getRoles returns list of roles when found`() {
         runBlocking {
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange

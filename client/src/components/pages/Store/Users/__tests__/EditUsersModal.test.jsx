@@ -175,6 +175,18 @@ describe("EditUsersModal", () => {
     expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
   });
 
+  it("submit button is disabled when role is empty", () => {
+    renderModal({ data: { ...baseData, userRole: "" } });
+
+    expect(screen.getByText("users.modal.editButton").closest("button")).toBeDisabled();
+  });
+
+  it("submit button is enabled when role is selected", () => {
+    renderModal();
+
+    expect(screen.getByText("users.modal.editButton").closest("button")).not.toBeDisabled();
+  });
+
   it("resets role to empty when no roles are available", () => {
     const setData = jest.fn();
     const setEditUsersShowModal = jest.fn();

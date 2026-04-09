@@ -108,6 +108,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
             />
             <Select
               label={t("users.modal.userRoleLabel")}
+              isRequired
               defaultSelectedKeys={[data.userRole]}
               value={data.userRole}
               onChange={(e) => onChange({ ...data, userRole: e.target.value })}
@@ -132,6 +133,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
                 color="primary"
                 className="bg-green-800"
                 type="submit"
+                isDisabled={!data.userRole}
               >
                 {t("users.modal.editButton")}
               </Button>
