@@ -39,8 +39,19 @@ class ReportService(
         endDate: String,
     ): ReportResponse {
         val zone = ZoneId.systemDefault()
-        val startMs = LocalDate.parse(startDate).atStartOfDay(zone).toInstant().toEpochMilli()
-        val endMs = LocalDate.parse(endDate).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+        val startMs =
+            LocalDate
+                .parse(startDate)
+                .atStartOfDay(zone)
+                .toInstant()
+                .toEpochMilli()
+        val endMs =
+            LocalDate
+                .parse(endDate)
+                .plusDays(1)
+                .atStartOfDay(zone)
+                .toInstant()
+                .toEpochMilli() - 1
 
         val statement = connection.prepareStatement(GET_REPORT)
         statement.setLong(1, startMs)

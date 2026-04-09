@@ -418,3 +418,57 @@ data class ReportResponse(
     val totalBalance: Double,
     val reports: List<DayReport>,
 )
+
+@Serializable
+data class CreateStoreOrderItemRequest(
+    val product_id: String,
+    val quantity: Int,
+)
+
+@Serializable
+data class CreateStoreOrderRequest(
+    val items: List<CreateStoreOrderItemRequest>,
+)
+
+@Serializable
+data class StoreOrderItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreOrder(
+    val id: String,
+    val user_id: String,
+    val status: String,
+    val total: Int,
+    val created_at: String,
+    val items: List<StoreOrderItem>,
+)
+
+@Serializable
+data class StoreCheckoutItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreCheckoutRequest(
+    val user_id: String,
+    val waiter: String,
+    val items: List<StoreCheckoutItem>,
+    val payment_method_id: String,
+    val currency_id: String,
+    val amount: Double,
+    val transaction_id: String? = null,
+    val ticket_notes: String = "",
+)
+
+@Serializable
+data class StoreCheckoutResponse(
+    val order_id: String,
+    val ticket_id: String,
+    val payment_id: String,
+)
