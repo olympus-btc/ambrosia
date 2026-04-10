@@ -45,3 +45,9 @@ next-env.d.ts
 # AI generated files
 CLAUDE.md
 AGENTS.md
+
+# PWA generated files
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map

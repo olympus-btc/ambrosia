@@ -1,26 +1,36 @@
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import withSerwistInit from "@serwist/next";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
+const isDev = process.env.NODE_ENV === "development";
+
+function getLocalNetworkIPs() {
+  return Object.values(os.networkInterfaces())
+    .flat()
+    .filter((iface) => iface.family === "IPv4" && !iface.internal)
+    .map((iface) => iface.address);
+}
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.js",
+  swDest: "public/sw.js",
+  disable: isElectron || isDev,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Creates optimized bundle with minified deps for Electron
   output: "standalone",
-
-  // Pin file tracing root to client/ to prevent Turbopack from going up to
-  // the monorepo root and breaking PostCSS/Tailwind module resolution
   outputFileTracingRoot: __dirname,
-
-  // Image configuration for Electron
   images: {
-    unoptimized: true, // Required for Electron
+    unoptimized: true,
   },
-
-  // Disable telemetry
-  telemetry: false,
-
-  // Headers configuration (keep CORS for development)
+  turbopack: {},
+  allowedDevOrigins: isDev ? getLocalNetworkIPs() : [],
   async headers() {
     return [
       {
@@ -36,4 +46,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
