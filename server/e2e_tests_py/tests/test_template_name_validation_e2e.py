@@ -43,14 +43,18 @@ class TestTemplateNameValidation:
     # --- POST tests ---
 
     @pytest.mark.asyncio
-    async def test_create_template_with_duplicate_name_fails(self, admin_client, existing_template):
+    async def test_create_template_with_duplicate_name_fails(
+        self, admin_client, existing_template
+    ):
         """POST /templates with a name that already exists should return 409."""
         _, name = existing_template
         response = await admin_client.post(
             "/templates",
             json={"name": name, "elements": VALID_ELEMENTS},
         )
-        assert_status_code(response, 409, "Duplicate template name should be rejected on create")
+        assert_status_code(
+            response, 409, "Duplicate template name should be rejected on create"
+        )
         logger.info("✓ Duplicate template name correctly rejected on create")
 
     @pytest.mark.asyncio
@@ -61,14 +65,18 @@ class TestTemplateNameValidation:
             "/templates",
             json={"name": f"valid_template_{uid}", "elements": VALID_ELEMENTS},
         )
-        assert_status_code(response, 201, "Valid template name should be accepted on create")
+        assert_status_code(
+            response, 201, "Valid template name should be accepted on create"
+        )
         await admin_client.delete(f"/templates/{response.json()['id']}")
         logger.info("✓ Valid template name correctly accepted on create")
 
     # --- PUT tests ---
 
     @pytest.mark.asyncio
-    async def test_update_template_with_duplicate_name_fails(self, admin_client, existing_template):
+    async def test_update_template_with_duplicate_name_fails(
+        self, admin_client, existing_template
+    ):
         """PUT /templates/{id} with a name already taken by another template should return 409."""
         existing_id, existing_name = existing_template
         uid = str(uuid.uuid4())[:8]
@@ -86,13 +94,17 @@ class TestTemplateNameValidation:
                 f"/templates/{second_id}",
                 json={"name": existing_name, "elements": VALID_ELEMENTS},
             )
-            assert_status_code(response, 409, "Duplicate template name should be rejected on update")
+            assert_status_code(
+                response, 409, "Duplicate template name should be rejected on update"
+            )
             logger.info("✓ Duplicate template name correctly rejected on update")
         finally:
             await admin_client.delete(f"/templates/{second_id}")
 
     @pytest.mark.asyncio
-    async def test_update_template_with_valid_name_succeeds(self, admin_client, existing_template):
+    async def test_update_template_with_valid_name_succeeds(
+        self, admin_client, existing_template
+    ):
         """PUT /templates/{id} with a unique name should return 200."""
         existing_id, _ = existing_template
         uid = str(uuid.uuid4())[:8]
@@ -100,5 +112,7 @@ class TestTemplateNameValidation:
             f"/templates/{existing_id}",
             json={"name": f"updated_template_{uid}", "elements": VALID_ELEMENTS},
         )
-        assert_status_code(response, 200, "Valid template name should be accepted on update")
+        assert_status_code(
+            response, 200, "Valid template name should be accepted on update"
+        )
         logger.info("✓ Valid template name correctly accepted on update")

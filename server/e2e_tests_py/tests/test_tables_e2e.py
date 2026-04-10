@@ -76,13 +76,17 @@ class TestTablesEndpoint:
         assert_status_code(response, 200, "GET /tables should return 200")
         body = response.json()
         assert isinstance(body, list), "Response should be a list"
-        assert any(t["id"] == table_id for t in body), "Created table should be in the list"
+        assert any(t["id"] == table_id for t in body), (
+            "Created table should be in the list"
+        )
         logger.info("✓ GET /tables correctly includes created table")
 
     # --- GET by id ---
 
     @pytest.mark.asyncio
-    async def test_get_table_by_id_returns_correct_data(self, admin_client, table, space):
+    async def test_get_table_by_id_returns_correct_data(
+        self, admin_client, table, space
+    ):
         """GET /tables/{id} returns the table with correct fields."""
         table_id, name = table
         response = await admin_client.get(f"/tables/{table_id}")
@@ -111,7 +115,9 @@ class TestTablesEndpoint:
         assert_status_code(response, 200, "GET /tables/by-space/{id} should return 200")
         body = response.json()
         assert isinstance(body, list)
-        assert any(t["id"] == table_id for t in body), "Table should appear in space listing"
+        assert any(t["id"] == table_id for t in body), (
+            "Table should appear in space listing"
+        )
         logger.info("✓ GET /tables/by-space/{id} correctly returns tables for space")
 
     @pytest.mark.asyncio
@@ -119,7 +125,9 @@ class TestTablesEndpoint:
         """GET /tables/by-space/{id} with a non-existent space ID returns 404."""
         response = await admin_client.get(f"/tables/by-space/{NONEXISTENT_ID}")
         assert_status_code(response, 404, "Non-existent space should return 404")
-        logger.info("✓ GET /tables/by-space/{id} with non-existent space correctly returns 404")
+        logger.info(
+            "✓ GET /tables/by-space/{id} with non-existent space correctly returns 404"
+        )
 
     # --- PUT / status transitions ---
 
@@ -130,7 +138,11 @@ class TestTablesEndpoint:
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.put(
             f"/tables/{table_id}",
-            json={"name": f"e2e_table_{uid}_updated", "space_id": space, "status": "available"},
+            json={
+                "name": f"e2e_table_{uid}_updated",
+                "space_id": space,
+                "status": "available",
+            },
         )
         assert_status_code(response, 200, "PUT /tables/{id} should return 200")
         logger.info("✓ PUT /tables/{id} correctly returns 200")
@@ -143,7 +155,9 @@ class TestTablesEndpoint:
             f"/tables/{table_id}",
             json={"name": name, "space_id": space, "status": "occupied"},
         )
-        assert_status_code(response, 200, "Status transition to occupied should return 200")
+        assert_status_code(
+            response, 200, "Status transition to occupied should return 200"
+        )
 
         get_response = await admin_client.get(f"/tables/{table_id}")
         assert get_response.json()["status"] == "occupied"
@@ -157,7 +171,9 @@ class TestTablesEndpoint:
             f"/tables/{table_id}",
             json={"name": name, "space_id": space, "status": "reserved"},
         )
-        assert_status_code(response, 200, "Status transition to reserved should return 200")
+        assert_status_code(
+            response, 200, "Status transition to reserved should return 200"
+        )
 
         get_response = await admin_client.get(f"/tables/{table_id}")
         assert get_response.json()["status"] == "reserved"

@@ -48,7 +48,12 @@ class TestPaymentValidation:
         """Create a temporary payment for PUT tests and clean it up after."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": method_id, "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
         assert_status_code(response, 201, "Failed to create test payment fixture")
         payment_id = response.json()["id"]
@@ -58,60 +63,107 @@ class TestPaymentValidation:
     # --- POST tests ---
 
     @pytest.mark.asyncio
-    async def test_create_payment_with_blank_method_id_fails(self, admin_client, currency_id):
+    async def test_create_payment_with_blank_method_id_fails(
+        self, admin_client, currency_id
+    ):
         """POST /payments with a blank method_id should return 400."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": "", "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": "",
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 400, "Blank method_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Blank method_id should be rejected on create"
+        )
         logger.info("✓ Blank method_id correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_payment_with_blank_currency_id_fails(self, admin_client, method_id):
+    async def test_create_payment_with_blank_currency_id_fails(
+        self, admin_client, method_id
+    ):
         """POST /payments with a blank currency_id should return 400."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": method_id, "currency_id": "", "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": "",
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 400, "Blank currency_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Blank currency_id should be rejected on create"
+        )
         logger.info("✓ Blank currency_id correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_payment_with_nonexistent_method_id_fails(self, admin_client, currency_id):
+    async def test_create_payment_with_nonexistent_method_id_fails(
+        self, admin_client, currency_id
+    ):
         """POST /payments with a non-existent method_id should return 400."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": NONEXISTENT_ID, "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": NONEXISTENT_ID,
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 400, "Non-existent method_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Non-existent method_id should be rejected on create"
+        )
         logger.info("✓ Non-existent method_id correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_payment_with_nonexistent_currency_id_fails(self, admin_client, method_id):
+    async def test_create_payment_with_nonexistent_currency_id_fails(
+        self, admin_client, method_id
+    ):
         """POST /payments with a non-existent currency_id should return 400."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": method_id, "currency_id": NONEXISTENT_ID, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": NONEXISTENT_ID,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 400, "Non-existent currency_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Non-existent currency_id should be rejected on create"
+        )
         logger.info("✓ Non-existent currency_id correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_payment_with_valid_data_succeeds(self, admin_client, method_id, currency_id):
+    async def test_create_payment_with_valid_data_succeeds(
+        self, admin_client, method_id, currency_id
+    ):
         """POST /payments with valid data should return 201."""
         response = await admin_client.post(
             "/payments",
-            json={"method_id": method_id, "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 201, "Valid payment data should be accepted on create")
+        assert_status_code(
+            response, 201, "Valid payment data should be accepted on create"
+        )
         await admin_client.delete(f"/payments/{response.json()['id']}")
         logger.info("✓ Valid payment data correctly accepted on create")
 
     # --- PUT tests ---
 
     @pytest.mark.asyncio
-    async def test_update_payment_with_blank_method_id_returns_404(self, admin_client, existing_payment, currency_id):
+    async def test_update_payment_with_blank_method_id_returns_404(
+        self, admin_client, existing_payment, currency_id
+    ):
         """PUT /payments/{id} with a blank method_id currently returns 404.
 
         The service returns false for blank method_id and the route maps all failures to 404.
@@ -119,47 +171,94 @@ class TestPaymentValidation:
         """
         response = await admin_client.put(
             f"/payments/{existing_payment}",
-            json={"method_id": "", "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": "",
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 404, "Blank method_id on update currently returns 404")
+        assert_status_code(
+            response, 404, "Blank method_id on update currently returns 404"
+        )
         logger.info("✓ Blank method_id on update returns 404 (current behaviour)")
 
     @pytest.mark.asyncio
-    async def test_update_payment_with_blank_currency_id_returns_404(self, admin_client, existing_payment, method_id):
+    async def test_update_payment_with_blank_currency_id_returns_404(
+        self, admin_client, existing_payment, method_id
+    ):
         """PUT /payments/{id} with a blank currency_id currently returns 404."""
         response = await admin_client.put(
             f"/payments/{existing_payment}",
-            json={"method_id": method_id, "currency_id": "", "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": "",
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 404, "Blank currency_id on update currently returns 404")
+        assert_status_code(
+            response, 404, "Blank currency_id on update currently returns 404"
+        )
         logger.info("✓ Blank currency_id on update returns 404 (current behaviour)")
 
     @pytest.mark.asyncio
-    async def test_update_payment_with_nonexistent_method_id_returns_404(self, admin_client, existing_payment, currency_id):
+    async def test_update_payment_with_nonexistent_method_id_returns_404(
+        self, admin_client, existing_payment, currency_id
+    ):
         """PUT /payments/{id} with a non-existent method_id currently returns 404."""
         response = await admin_client.put(
             f"/payments/{existing_payment}",
-            json={"method_id": NONEXISTENT_ID, "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": NONEXISTENT_ID,
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 404, "Non-existent method_id on update currently returns 404")
-        logger.info("✓ Non-existent method_id on update returns 404 (current behaviour)")
+        assert_status_code(
+            response, 404, "Non-existent method_id on update currently returns 404"
+        )
+        logger.info(
+            "✓ Non-existent method_id on update returns 404 (current behaviour)"
+        )
 
     @pytest.mark.asyncio
-    async def test_update_payment_with_nonexistent_currency_id_returns_404(self, admin_client, existing_payment, method_id):
+    async def test_update_payment_with_nonexistent_currency_id_returns_404(
+        self, admin_client, existing_payment, method_id
+    ):
         """PUT /payments/{id} with a non-existent currency_id currently returns 404."""
         response = await admin_client.put(
             f"/payments/{existing_payment}",
-            json={"method_id": method_id, "currency_id": NONEXISTENT_ID, "transaction_id": str(uuid.uuid4()), "amount": 100.0},
+            json={
+                "method_id": method_id,
+                "currency_id": NONEXISTENT_ID,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 100.0,
+            },
         )
-        assert_status_code(response, 404, "Non-existent currency_id on update currently returns 404")
-        logger.info("✓ Non-existent currency_id on update returns 404 (current behaviour)")
+        assert_status_code(
+            response, 404, "Non-existent currency_id on update currently returns 404"
+        )
+        logger.info(
+            "✓ Non-existent currency_id on update returns 404 (current behaviour)"
+        )
 
     @pytest.mark.asyncio
-    async def test_update_payment_with_valid_data_succeeds(self, admin_client, existing_payment, method_id, currency_id):
+    async def test_update_payment_with_valid_data_succeeds(
+        self, admin_client, existing_payment, method_id, currency_id
+    ):
         """PUT /payments/{id} with valid data should return 200."""
         response = await admin_client.put(
             f"/payments/{existing_payment}",
-            json={"method_id": method_id, "currency_id": currency_id, "transaction_id": str(uuid.uuid4()), "amount": 200.0},
+            json={
+                "method_id": method_id,
+                "currency_id": currency_id,
+                "transaction_id": str(uuid.uuid4()),
+                "amount": 200.0,
+            },
         )
-        assert_status_code(response, 200, "Valid payment data should be accepted on update")
+        assert_status_code(
+            response, 200, "Valid payment data should be accepted on update"
+        )
         logger.info("✓ Valid payment data correctly accepted on update")

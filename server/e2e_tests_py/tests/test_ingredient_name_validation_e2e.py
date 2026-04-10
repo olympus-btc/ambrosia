@@ -50,7 +50,11 @@ class TestIngredientNameValidation:
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/ingredients",
-            json={"name": f"test_ingredient_{uid}", "category_id": category_id, **VALID_INGREDIENT},
+            json={
+                "name": f"test_ingredient_{uid}",
+                "category_id": category_id,
+                **VALID_INGREDIENT,
+            },
         )
         assert_status_code(response, 201, "Failed to create test ingredient fixture")
         ingredient_id = response.json()["id"]
@@ -58,7 +62,9 @@ class TestIngredientNameValidation:
         await admin_client.delete(f"/ingredients/{ingredient_id}")
 
     @pytest.mark.asyncio
-    async def test_create_ingredient_with_blank_name_returns_201_with_null_id(self, admin_client, category_id):
+    async def test_create_ingredient_with_blank_name_returns_201_with_null_id(
+        self, admin_client, category_id
+    ):
         """POST /ingredients with a blank name currently returns 201 with null id.
 
         The service returns null for blank names but the route has no null check,
@@ -69,35 +75,63 @@ class TestIngredientNameValidation:
             "/ingredients",
             json={"name": "", "category_id": category_id, **VALID_INGREDIENT},
         )
-        assert_status_code(response, 201, "Blank ingredient name on create currently returns 201 (known bug)")
-        assert response.json()["id"] is None, "Expected null id for blank ingredient name"
-        logger.info("✓ Blank ingredient name on create returns 201 with null id (current behaviour)")
+        assert_status_code(
+            response,
+            201,
+            "Blank ingredient name on create currently returns 201 (known bug)",
+        )
+        assert response.json()["id"] is None, (
+            "Expected null id for blank ingredient name"
+        )
+        logger.info(
+            "✓ Blank ingredient name on create returns 201 with null id (current behaviour)"
+        )
 
     @pytest.mark.asyncio
-    async def test_create_ingredient_with_whitespace_name_returns_201_with_null_id(self, admin_client, category_id):
+    async def test_create_ingredient_with_whitespace_name_returns_201_with_null_id(
+        self, admin_client, category_id
+    ):
         """POST /ingredients with a whitespace-only name currently returns 201 with null id."""
         response = await admin_client.post(
             "/ingredients",
             json={"name": "   ", "category_id": category_id, **VALID_INGREDIENT},
         )
-        assert_status_code(response, 201, "Whitespace-only ingredient name on create currently returns 201 (known bug)")
-        assert response.json()["id"] is None, "Expected null id for whitespace-only ingredient name"
-        logger.info("✓ Whitespace-only ingredient name on create returns 201 with null id (current behaviour)")
+        assert_status_code(
+            response,
+            201,
+            "Whitespace-only ingredient name on create currently returns 201 (known bug)",
+        )
+        assert response.json()["id"] is None, (
+            "Expected null id for whitespace-only ingredient name"
+        )
+        logger.info(
+            "✓ Whitespace-only ingredient name on create returns 201 with null id (current behaviour)"
+        )
 
     @pytest.mark.asyncio
-    async def test_create_ingredient_with_valid_name_succeeds(self, admin_client, category_id):
+    async def test_create_ingredient_with_valid_name_succeeds(
+        self, admin_client, category_id
+    ):
         """POST /ingredients with a valid name should return 201."""
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/ingredients",
-            json={"name": f"valid_ingredient_{uid}", "category_id": category_id, **VALID_INGREDIENT},
+            json={
+                "name": f"valid_ingredient_{uid}",
+                "category_id": category_id,
+                **VALID_INGREDIENT,
+            },
         )
-        assert_status_code(response, 201, "Valid ingredient name should be accepted on create")
+        assert_status_code(
+            response, 201, "Valid ingredient name should be accepted on create"
+        )
         await admin_client.delete(f"/ingredients/{response.json()['id']}")
         logger.info("✓ Valid ingredient name correctly accepted on create")
 
     @pytest.mark.asyncio
-    async def test_update_ingredient_with_blank_name_returns_404(self, admin_client, existing_ingredient, category_id):
+    async def test_update_ingredient_with_blank_name_returns_404(
+        self, admin_client, existing_ingredient, category_id
+    ):
         """PUT /ingredients/{id} with a blank name currently returns 404.
 
         The service returns false for blank names and the route maps all failures to 404.
@@ -107,26 +141,44 @@ class TestIngredientNameValidation:
             f"/ingredients/{existing_ingredient}",
             json={"name": "", "category_id": category_id, **VALID_INGREDIENT},
         )
-        assert_status_code(response, 404, "Blank ingredient name on update currently returns 404")
+        assert_status_code(
+            response, 404, "Blank ingredient name on update currently returns 404"
+        )
         logger.info("✓ Blank ingredient name on update returns 404 (current behaviour)")
 
     @pytest.mark.asyncio
-    async def test_update_ingredient_with_whitespace_name_returns_404(self, admin_client, existing_ingredient, category_id):
+    async def test_update_ingredient_with_whitespace_name_returns_404(
+        self, admin_client, existing_ingredient, category_id
+    ):
         """PUT /ingredients/{id} with a whitespace-only name currently returns 404."""
         response = await admin_client.put(
             f"/ingredients/{existing_ingredient}",
             json={"name": "   ", "category_id": category_id, **VALID_INGREDIENT},
         )
-        assert_status_code(response, 404, "Whitespace-only ingredient name on update currently returns 404")
-        logger.info("✓ Whitespace-only ingredient name on update returns 404 (current behaviour)")
+        assert_status_code(
+            response,
+            404,
+            "Whitespace-only ingredient name on update currently returns 404",
+        )
+        logger.info(
+            "✓ Whitespace-only ingredient name on update returns 404 (current behaviour)"
+        )
 
     @pytest.mark.asyncio
-    async def test_update_ingredient_with_valid_name_succeeds(self, admin_client, existing_ingredient, category_id):
+    async def test_update_ingredient_with_valid_name_succeeds(
+        self, admin_client, existing_ingredient, category_id
+    ):
         """PUT /ingredients/{id} with a valid name should return 200."""
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.put(
             f"/ingredients/{existing_ingredient}",
-            json={"name": f"updated_ingredient_{uid}", "category_id": category_id, **VALID_INGREDIENT},
+            json={
+                "name": f"updated_ingredient_{uid}",
+                "category_id": category_id,
+                **VALID_INGREDIENT,
+            },
         )
-        assert_status_code(response, 200, "Valid ingredient name should be accepted on update")
+        assert_status_code(
+            response, 200, "Valid ingredient name should be accepted on update"
+        )
         logger.info("✓ Valid ingredient name correctly accepted on update")

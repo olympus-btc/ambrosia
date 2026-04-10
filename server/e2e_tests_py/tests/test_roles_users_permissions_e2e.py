@@ -64,11 +64,15 @@ class TestRolesPermissions:
         """DELETE /roles/{id} returns 403 without roles_delete permission."""
         no_perm = await client_factory(permissions=[])
         response = await no_perm.delete(f"/roles/{DUMMY_ID}")
-        assert_status_code(response, 403, "DELETE /roles/{id} should require roles_delete")
+        assert_status_code(
+            response, 403, "DELETE /roles/{id} should require roles_delete"
+        )
 
         with_perm = await client_factory(permissions=["roles_delete"])
         response = await with_perm.delete(f"/roles/{DUMMY_ID}")
-        assert response.status_code != 403, "roles_delete should allow DELETE /roles/{id}"
+        assert response.status_code != 403, (
+            "roles_delete should allow DELETE /roles/{id}"
+        )
         logger.info("✓ roles_delete correctly gates DELETE /roles/{id}")
 
 
@@ -91,11 +95,15 @@ class TestUsersPermissions:
     async def test_users_create_required_for_post(self, client_factory):
         """POST /users returns 403 without users_create permission."""
         no_perm = await client_factory(permissions=[])
-        response = await no_perm.post("/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID})
+        response = await no_perm.post(
+            "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
+        )
         assert_status_code(response, 403, "POST /users should require users_create")
 
         with_perm = await client_factory(permissions=["users_create"])
-        response = await with_perm.post("/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID})
+        response = await with_perm.post(
+            "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
+        )
         assert response.status_code != 403, "users_create should allow POST /users"
         logger.info("✓ users_create correctly gates POST /users")
 
@@ -103,11 +111,15 @@ class TestUsersPermissions:
     async def test_users_update_required_for_put(self, client_factory):
         """PUT /users/{id} returns 403 without users_update permission."""
         no_perm = await client_factory(permissions=[])
-        response = await no_perm.put(f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"})
+        response = await no_perm.put(
+            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
+        )
         assert_status_code(response, 403, "PUT /users/{id} should require users_update")
 
         with_perm = await client_factory(permissions=["users_update"])
-        response = await with_perm.put(f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"})
+        response = await with_perm.put(
+            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
+        )
         assert response.status_code != 403, "users_update should allow PUT /users/{id}"
         logger.info("✓ users_update correctly gates PUT /users/{id}")
 
@@ -116,9 +128,13 @@ class TestUsersPermissions:
         """DELETE /users/{id} returns 403 without users_delete permission."""
         no_perm = await client_factory(permissions=[])
         response = await no_perm.delete(f"/users/{DUMMY_ID}")
-        assert_status_code(response, 403, "DELETE /users/{id} should require users_delete")
+        assert_status_code(
+            response, 403, "DELETE /users/{id} should require users_delete"
+        )
 
         with_perm = await client_factory(permissions=["users_delete"])
         response = await with_perm.delete(f"/users/{DUMMY_ID}")
-        assert response.status_code != 403, "users_delete should allow DELETE /users/{id}"
+        assert response.status_code != 403, (
+            "users_delete should allow DELETE /users/{id}"
+        )
         logger.info("✓ users_delete correctly gates DELETE /users/{id}")

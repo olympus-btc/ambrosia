@@ -62,10 +62,19 @@ class TestConfigPermissions:
     async def test_settings_update_required_for_put_config(self, client_factory):
         """PUT /config returns 403 without settings_update permission."""
         no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.put("/config", json={"businessName": "x", "businessType": "store"}), 403)
+        assert_status_code(
+            await no_perm.put(
+                "/config", json={"businessName": "x", "businessType": "store"}
+            ),
+            403,
+        )
 
         with_perm = await client_factory(permissions=["settings_update"])
-        assert (await with_perm.put("/config", json={"businessName": "x", "businessType": "store"})).status_code != 403
+        assert (
+            await with_perm.put(
+                "/config", json={"businessName": "x", "businessType": "store"}
+            )
+        ).status_code != 403
         logger.info("✓ settings_update correctly gates PUT /config")
 
 

@@ -12,7 +12,6 @@ CloseShiftRequest body is optional — final_amount and difference are both null
 """
 
 import logging
-import uuid
 
 import pytest
 
@@ -97,7 +96,9 @@ class TestShiftsFlow:
         logger.info("✓ Shift opened successfully")
 
     @pytest.mark.asyncio
-    async def test_open_second_shift_returns_409(self, admin_client, open_shift, user_id):
+    async def test_open_second_shift_returns_409(
+        self, admin_client, open_shift, user_id
+    ):
         """POST /shifts returns 409 when a shift is already open."""
         response = await admin_client.post("/shifts", json=_shift_payload(user_id))
         assert_status_code(response, 409, "Opening a second shift should return 409")
@@ -127,15 +128,21 @@ class TestShiftsFlow:
     async def test_close_shift_without_amounts_succeeds(self, admin_client, open_shift):
         """POST /shifts/{id}/close without a body also returns 200."""
         response = await admin_client.post(f"/shifts/{open_shift}/close")
-        assert_status_code(response, 200, "Closing a shift without amounts should return 200")
+        assert_status_code(
+            response, 200, "Closing a shift without amounts should return 200"
+        )
         logger.info("✓ Shift closed without amounts successfully")
 
     @pytest.mark.asyncio
-    async def test_close_already_closed_shift_returns_404(self, admin_client, open_shift):
+    async def test_close_already_closed_shift_returns_404(
+        self, admin_client, open_shift
+    ):
         """POST /shifts/{id}/close on an already-closed shift returns 404."""
         await admin_client.post(f"/shifts/{open_shift}/close")
         response = await admin_client.post(f"/shifts/{open_shift}/close")
-        assert_status_code(response, 404, "Closing an already-closed shift should return 404")
+        assert_status_code(
+            response, 404, "Closing an already-closed shift should return 404"
+        )
         logger.info("✓ Already-closed shift correctly returns 404")
 
     @pytest.mark.asyncio

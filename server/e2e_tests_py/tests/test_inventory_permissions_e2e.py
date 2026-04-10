@@ -35,20 +35,33 @@ class TestCategoriesPermissions:
     async def test_categories_create_required_for_post(self, client_factory):
         """POST /categories returns 403 without categories_create permission."""
         no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.post("/categories", json={"name": "x", "type": "dish"}), 403)
+        assert_status_code(
+            await no_perm.post("/categories", json={"name": "x", "type": "dish"}), 403
+        )
 
         with_perm = await client_factory(permissions=["categories_create"])
-        assert (await with_perm.post("/categories", json={"name": "x", "type": "dish"})).status_code != 403
+        assert (
+            await with_perm.post("/categories", json={"name": "x", "type": "dish"})
+        ).status_code != 403
         logger.info("✓ categories_create correctly gates POST /categories")
 
     @pytest.mark.asyncio
     async def test_categories_update_required_for_put(self, client_factory):
         """PUT /categories/{id} returns 403 without categories_update permission."""
         no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.put(f"/categories/{DUMMY_ID}", json={"name": "x", "type": "dish"}), 403)
+        assert_status_code(
+            await no_perm.put(
+                f"/categories/{DUMMY_ID}", json={"name": "x", "type": "dish"}
+            ),
+            403,
+        )
 
         with_perm = await client_factory(permissions=["categories_update"])
-        assert (await with_perm.put(f"/categories/{DUMMY_ID}", json={"name": "x", "type": "dish"})).status_code != 403
+        assert (
+            await with_perm.put(
+                f"/categories/{DUMMY_ID}", json={"name": "x", "type": "dish"}
+            )
+        ).status_code != 403
         logger.info("✓ categories_update correctly gates PUT /categories/{id}")
 
     @pytest.mark.asyncio
@@ -79,20 +92,40 @@ class TestDishesPermissions:
     async def test_dishes_create_required_for_post(self, client_factory):
         """POST /dishes returns 403 without dishes_create permission."""
         no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.post("/dishes", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID}), 403)
+        assert_status_code(
+            await no_perm.post(
+                "/dishes", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID}
+            ),
+            403,
+        )
 
         with_perm = await client_factory(permissions=["dishes_create"])
-        assert (await with_perm.post("/dishes", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID})).status_code != 403
+        assert (
+            await with_perm.post(
+                "/dishes", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID}
+            )
+        ).status_code != 403
         logger.info("✓ dishes_create correctly gates POST /dishes")
 
     @pytest.mark.asyncio
     async def test_dishes_update_required_for_put(self, client_factory):
         """PUT /dishes/{id} returns 403 without dishes_update permission."""
         no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.put(f"/dishes/{DUMMY_ID}", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID}), 403)
+        assert_status_code(
+            await no_perm.put(
+                f"/dishes/{DUMMY_ID}",
+                json={"name": "x", "price": 1.0, "category_id": DUMMY_ID},
+            ),
+            403,
+        )
 
         with_perm = await client_factory(permissions=["dishes_update"])
-        assert (await with_perm.put(f"/dishes/{DUMMY_ID}", json={"name": "x", "price": 1.0, "category_id": DUMMY_ID})).status_code != 403
+        assert (
+            await with_perm.put(
+                f"/dishes/{DUMMY_ID}",
+                json={"name": "x", "price": 1.0, "category_id": DUMMY_ID},
+            )
+        ).status_code != 403
         logger.info("✓ dishes_update correctly gates PUT /dishes/{id}")
 
     @pytest.mark.asyncio
@@ -136,7 +169,9 @@ class TestIngredientsPermissions:
         assert_status_code(await no_perm.put(f"/ingredients/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["ingredients_update"])
-        assert (await with_perm.put(f"/ingredients/{DUMMY_ID}", json={})).status_code != 403
+        assert (
+            await with_perm.put(f"/ingredients/{DUMMY_ID}", json={})
+        ).status_code != 403
         logger.info("✓ ingredients_update correctly gates PUT /ingredients/{id}")
 
     @pytest.mark.asyncio
@@ -180,7 +215,9 @@ class TestProductsPermissions:
         assert_status_code(await no_perm.put(f"/products/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["products_update"])
-        assert (await with_perm.put(f"/products/{DUMMY_ID}", json={})).status_code != 403
+        assert (
+            await with_perm.put(f"/products/{DUMMY_ID}", json={})
+        ).status_code != 403
         logger.info("✓ products_update correctly gates PUT /products/{id}")
 
     @pytest.mark.asyncio

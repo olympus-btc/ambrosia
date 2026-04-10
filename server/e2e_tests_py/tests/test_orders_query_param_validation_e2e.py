@@ -31,7 +31,9 @@ class TestOrdersQueryParamValidation:
     async def test_invalid_start_date_format_returns_400(self, admin_client):
         """start_date that is not YYYY-MM-DD should return 400."""
         response = await admin_client.get(f"{BASE}?start_date=01-01-2026")
-        assert_status_code(response, 400, "Invalid start_date format should be rejected")
+        assert_status_code(
+            response, 400, "Invalid start_date format should be rejected"
+        )
         logger.info("✓ Invalid start_date format correctly rejected")
 
     @pytest.mark.asyncio
@@ -44,14 +46,18 @@ class TestOrdersQueryParamValidation:
     @pytest.mark.asyncio
     async def test_start_date_after_end_date_returns_400(self, admin_client):
         """start_date later than end_date should return 400."""
-        response = await admin_client.get(f"{BASE}?start_date=2026-12-31&end_date=2026-01-01")
+        response = await admin_client.get(
+            f"{BASE}?start_date=2026-12-31&end_date=2026-01-01"
+        )
         assert_status_code(response, 400, "start_date > end_date should be rejected")
         logger.info("✓ start_date > end_date correctly rejected")
 
     @pytest.mark.asyncio
     async def test_valid_date_range_succeeds(self, admin_client):
         """Valid start_date and end_date should return 200."""
-        response = await admin_client.get(f"{BASE}?start_date=2026-01-01&end_date=2026-12-31")
+        response = await admin_client.get(
+            f"{BASE}?start_date=2026-01-01&end_date=2026-12-31"
+        )
         assert_status_code(response, 200, "Valid date range should be accepted")
         logger.info("✓ Valid date range correctly accepted")
 

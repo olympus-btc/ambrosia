@@ -79,11 +79,15 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 400, "Non-existent user_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Non-existent user_id should be rejected on create"
+        )
         logger.info("✓ Non-existent user_id correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_order_with_nonexistent_table_id_fails(self, admin_client, user_id):
+    async def test_create_order_with_nonexistent_table_id_fails(
+        self, admin_client, user_id
+    ):
         """POST /orders with a non-existent table_id should return 400."""
         response = await admin_client.post(
             "/orders",
@@ -96,7 +100,9 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 400, "Non-existent table_id should be rejected on create")
+        assert_status_code(
+            response, 400, "Non-existent table_id should be rejected on create"
+        )
         logger.info("✓ Non-existent table_id correctly rejected on create")
 
     @pytest.mark.asyncio
@@ -130,14 +136,18 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 201, "Valid order data should be accepted on create")
+        assert_status_code(
+            response, 201, "Valid order data should be accepted on create"
+        )
         await admin_client.delete(f"/orders/{response.json()['id']}")
         logger.info("✓ Valid order data correctly accepted on create")
 
     # --- PUT tests ---
 
     @pytest.mark.asyncio
-    async def test_update_order_with_nonexistent_user_id_returns_404(self, admin_client, existing_order):
+    async def test_update_order_with_nonexistent_user_id_returns_404(
+        self, admin_client, existing_order
+    ):
         """PUT /orders/{id} with a non-existent user_id currently returns 404.
 
         The service returns false for non-existent user_id and the route throws
@@ -155,11 +165,15 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 404, "Non-existent user_id on update currently returns 404")
+        assert_status_code(
+            response, 404, "Non-existent user_id on update currently returns 404"
+        )
         logger.info("✓ Non-existent user_id on update returns 404 (current behaviour)")
 
     @pytest.mark.asyncio
-    async def test_update_order_with_invalid_status_returns_404(self, admin_client, existing_order, user_id):
+    async def test_update_order_with_invalid_status_returns_404(
+        self, admin_client, existing_order, user_id
+    ):
         """PUT /orders/{id} with an invalid status currently returns 404."""
         response = await admin_client.put(
             f"/orders/{existing_order}",
@@ -172,11 +186,15 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 404, "Invalid status on update currently returns 404")
+        assert_status_code(
+            response, 404, "Invalid status on update currently returns 404"
+        )
         logger.info("✓ Invalid status on update returns 404 (current behaviour)")
 
     @pytest.mark.asyncio
-    async def test_update_order_with_valid_data_succeeds(self, admin_client, existing_order, user_id):
+    async def test_update_order_with_valid_data_succeeds(
+        self, admin_client, existing_order, user_id
+    ):
         """PUT /orders/{id} with valid data should return 200."""
         response = await admin_client.put(
             f"/orders/{existing_order}",
@@ -189,5 +207,7 @@ class TestOrderValidation:
                 "created_at": "2026-01-01T00:00:00",
             },
         )
-        assert_status_code(response, 200, "Valid order data should be accepted on update")
+        assert_status_code(
+            response, 200, "Valid order data should be accepted on update"
+        )
         logger.info("✓ Valid order data correctly accepted on update")

@@ -48,7 +48,9 @@ class TestPaymentsPermissions:
         assert_status_code(await no_perm.put(f"/payments/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["payments_update"])
-        assert (await with_perm.put(f"/payments/{DUMMY_ID}", json={})).status_code != 403
+        assert (
+            await with_perm.put(f"/payments/{DUMMY_ID}", json={})
+        ).status_code != 403
         logger.info("✓ payments_update correctly gates PUT /payments/{id}")
 
     @pytest.mark.asyncio
@@ -92,7 +94,9 @@ class TestSuppliersPermissions:
         assert_status_code(await no_perm.put(f"/suppliers/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["suppliers_update"])
-        assert (await with_perm.put(f"/suppliers/{DUMMY_ID}", json={})).status_code != 403
+        assert (
+            await with_perm.put(f"/suppliers/{DUMMY_ID}", json={})
+        ).status_code != 403
         logger.info("✓ suppliers_update correctly gates PUT /suppliers/{id}")
 
     @pytest.mark.asyncio

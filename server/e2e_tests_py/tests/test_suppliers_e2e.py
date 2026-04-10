@@ -66,13 +66,17 @@ class TestSuppliersEndpoint:
         assert_status_code(response, 200, "GET /suppliers should return 200")
         body = response.json()
         assert isinstance(body, list), "Response should be a list"
-        assert any(s["id"] == supplier_id for s in body), "Created supplier should be in the list"
+        assert any(s["id"] == supplier_id for s in body), (
+            "Created supplier should be in the list"
+        )
         logger.info("✓ GET /suppliers correctly includes created supplier")
 
     # --- GET by id ---
 
     @pytest.mark.asyncio
-    async def test_get_supplier_by_id_returns_correct_data(self, admin_client, supplier):
+    async def test_get_supplier_by_id_returns_correct_data(
+        self, admin_client, supplier
+    ):
         """GET /suppliers/{id} returns the supplier with correct fields."""
         supplier_id, uid = supplier
         response = await admin_client.get(f"/suppliers/{supplier_id}")
@@ -118,7 +122,9 @@ class TestSuppliersEndpoint:
         response = await admin_client.put(
             f"/suppliers/{NONEXISTENT_ID}", json=_supplier_payload("ghost")
         )
-        assert_status_code(response, 404, "Non-existent supplier update should return 404")
+        assert_status_code(
+            response, 404, "Non-existent supplier update should return 404"
+        )
         logger.info("✓ PUT /suppliers/{id} with non-existent ID correctly returns 404")
 
     # --- DELETE ---
@@ -151,5 +157,9 @@ class TestSuppliersEndpoint:
     async def test_delete_nonexistent_supplier_returns_404(self, admin_client):
         """DELETE /suppliers/{id} with a non-existent ID returns 404."""
         response = await admin_client.delete(f"/suppliers/{NONEXISTENT_ID}")
-        assert_status_code(response, 404, "Non-existent supplier delete should return 404")
-        logger.info("✓ DELETE /suppliers/{id} with non-existent ID correctly returns 404")
+        assert_status_code(
+            response, 404, "Non-existent supplier delete should return 404"
+        )
+        logger.info(
+            "✓ DELETE /suppliers/{id} with non-existent ID correctly returns 404"
+        )

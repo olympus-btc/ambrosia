@@ -35,12 +35,16 @@ class TestGetPermissionsEndpoint:
         assert_status_code(response, 200)
         for permission in response.json():
             for field in EXPECTED_PERMISSION_FIELDS:
-                assert field in permission, f"Permission missing expected field: {field}"
+                assert field in permission, (
+                    f"Permission missing expected field: {field}"
+                )
         logger.info("✓ All permissions have expected fields")
 
     @pytest.mark.asyncio
     async def test_get_permissions_requires_auth(self, public_client):
         """GET /permissions without a token returns 401."""
         response = await public_client.get("/permissions")
-        assert_status_code(response, 401, "GET /permissions should require authentication")
+        assert_status_code(
+            response, 401, "GET /permissions should require authentication"
+        )
         logger.info("✓ GET /permissions correctly requires authentication")

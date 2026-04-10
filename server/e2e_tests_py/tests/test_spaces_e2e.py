@@ -59,7 +59,9 @@ class TestSpacesEndpoint:
         assert_status_code(response, 200, "GET /spaces should return 200")
         body = response.json()
         assert isinstance(body, list), "Response should be a list"
-        assert any(s["id"] == space_id for s in body), "Created space should be in the list"
+        assert any(s["id"] == space_id for s in body), (
+            "Created space should be in the list"
+        )
         logger.info("✓ GET /spaces correctly includes created space")
 
     # --- GET by id ---
@@ -89,7 +91,9 @@ class TestSpacesEndpoint:
         """PUT /spaces/{id} updates the space and returns 200."""
         space_id, _ = space
         uid = str(uuid.uuid4())[:8]
-        response = await admin_client.put(f"/spaces/{space_id}", json={"name": f"e2e_space_{uid}_updated"})
+        response = await admin_client.put(
+            f"/spaces/{space_id}", json={"name": f"e2e_space_{uid}_updated"}
+        )
         assert_status_code(response, 200, "PUT /spaces/{id} should return 200")
         logger.info("✓ PUT /spaces/{id} correctly returns 200")
 

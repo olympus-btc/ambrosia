@@ -46,7 +46,11 @@ class TestOrderTotalCalculation:
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/dishes",
-            json={"name": f"e2e_dish_{uid}", "price": 50.0, "category_id": dish_category},
+            json={
+                "name": f"e2e_dish_{uid}",
+                "price": 50.0,
+                "category_id": dish_category,
+            },
         )
         assert_status_code(response, 201, "Failed to create dish fixture")
         dish_id = response.json()["id"]
@@ -77,7 +81,9 @@ class TestOrderTotalCalculation:
     # --- Tests ---
 
     @pytest.mark.asyncio
-    async def test_calculate_total_with_no_dishes_returns_zero(self, admin_client, order):
+    async def test_calculate_total_with_no_dishes_returns_zero(
+        self, admin_client, order
+    ):
         """PUT /orders/{id}/calculate-total on an order with no dishes returns total=0."""
         response = await admin_client.put(f"/orders/{order}/calculate-total")
         assert_status_code(response, 200, "Calculate total should return 200")
@@ -105,7 +111,9 @@ class TestOrderTotalCalculation:
         logger.info("✓ Calculate total correctly sums dish prices")
 
     @pytest.mark.asyncio
-    async def test_calculate_total_updates_persisted_total(self, admin_client, order, dish):
+    async def test_calculate_total_updates_persisted_total(
+        self, admin_client, order, dish
+    ):
         """After PUT /orders/{id}/calculate-total, GET /orders/{id} reflects the new total."""
         await admin_client.post(
             f"/orders/{order}/dishes",
@@ -115,7 +123,9 @@ class TestOrderTotalCalculation:
         await admin_client.put(f"/orders/{order}/calculate-total")
 
         get_response = await admin_client.get(f"/orders/{order}")
-        assert_status_code(get_response, 200, "Failed to fetch order after total update")
+        assert_status_code(
+            get_response, 200, "Failed to fetch order after total update"
+        )
         assert get_response.json()["total"] == 75.0, (
             f"Expected persisted total 75.0, got {get_response.json()['total']}"
         )
