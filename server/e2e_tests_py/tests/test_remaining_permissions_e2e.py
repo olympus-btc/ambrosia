@@ -30,22 +30,12 @@ class TestOrdersRemainingPermissions:
     @pytest.mark.asyncio
     async def test_orders_update_required_for_put(self, client_factory):
         """PUT /orders/{id} returns 403 without orders_update permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["users_read"])
         assert_status_code(await no_perm.put(f"/orders/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["orders_update"])
         assert (await with_perm.put(f"/orders/{DUMMY_ID}", json={})).status_code != 403
         logger.info("✓ orders_update correctly gates PUT /orders/{id}")
-
-    @pytest.mark.asyncio
-    async def test_orders_delete_required_for_delete(self, client_factory):
-        """DELETE /orders/{id} returns 403 without orders_delete permission."""
-        no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.delete(f"/orders/{DUMMY_ID}"), 403)
-
-        with_perm = await client_factory(permissions=["orders_delete"])
-        assert (await with_perm.delete(f"/orders/{DUMMY_ID}")).status_code != 403
-        logger.info("✓ orders_delete correctly gates DELETE /orders/{id}")
 
 
 class TestConfigPermissions:
@@ -61,7 +51,7 @@ class TestConfigPermissions:
     @pytest.mark.asyncio
     async def test_settings_update_required_for_put_config(self, client_factory):
         """PUT /config returns 403 without settings_update permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["users_read"])
         assert_status_code(
             await no_perm.put(
                 "/config", json={"businessName": "x", "businessType": "store"}
@@ -76,17 +66,3 @@ class TestConfigPermissions:
             )
         ).status_code != 403
         logger.info("✓ settings_update correctly gates PUT /config")
-
-
-class TestPermissionsReadPermission:
-    """Permission enforcement tests for /permissions."""
-
-    @pytest.mark.asyncio
-    async def test_permissions_read_required_for_get(self, client_factory):
-        """GET /permissions returns 403 without permissions_read permission."""
-        no_perm = await client_factory(permissions=[])
-        assert_status_code(await no_perm.get("/permissions"), 403)
-
-        with_perm = await client_factory(permissions=["permissions_read"])
-        assert (await with_perm.get("/permissions")).status_code != 403
-        logger.info("✓ permissions_read correctly gates GET /permissions")

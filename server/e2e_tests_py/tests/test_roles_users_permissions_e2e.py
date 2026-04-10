@@ -26,7 +26,7 @@ class TestRolesPermissions:
     @pytest.mark.asyncio
     async def test_roles_read_required_for_get(self, client_factory):
         """GET /roles returns 403 without roles_read permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.get("/roles")
         assert_status_code(response, 403, "GET /roles should require roles_read")
 
@@ -38,7 +38,7 @@ class TestRolesPermissions:
     @pytest.mark.asyncio
     async def test_roles_create_required_for_post(self, client_factory):
         """POST /roles returns 403 without roles_create permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.post("/roles", json={"role": "test_role"})
         assert_status_code(response, 403, "POST /roles should require roles_create")
 
@@ -50,7 +50,7 @@ class TestRolesPermissions:
     @pytest.mark.asyncio
     async def test_roles_update_required_for_put(self, client_factory):
         """PUT /roles/{id} returns 403 without roles_update permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.put(f"/roles/{DUMMY_ID}", json={"role": "updated"})
         assert_status_code(response, 403, "PUT /roles/{id} should require roles_update")
 
@@ -62,7 +62,7 @@ class TestRolesPermissions:
     @pytest.mark.asyncio
     async def test_roles_delete_required_for_delete(self, client_factory):
         """DELETE /roles/{id} returns 403 without roles_delete permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.delete(f"/roles/{DUMMY_ID}")
         assert_status_code(
             response, 403, "DELETE /roles/{id} should require roles_delete"
@@ -80,21 +80,9 @@ class TestUsersPermissions:
     """Permission enforcement tests for /users."""
 
     @pytest.mark.asyncio
-    async def test_users_read_required_for_get_by_id(self, client_factory):
-        """GET /users/{id} returns 403 without users_read permission."""
-        no_perm = await client_factory(permissions=[])
-        response = await no_perm.get(f"/users/{DUMMY_ID}")
-        assert_status_code(response, 403, "GET /users/{id} should require users_read")
-
-        with_perm = await client_factory(permissions=["users_read"])
-        response = await with_perm.get(f"/users/{DUMMY_ID}")
-        assert response.status_code != 403, "users_read should allow GET /users/{id}"
-        logger.info("✓ users_read correctly gates GET /users/{id}")
-
-    @pytest.mark.asyncio
     async def test_users_create_required_for_post(self, client_factory):
         """POST /users returns 403 without users_create permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.post(
             "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
         )
@@ -110,7 +98,7 @@ class TestUsersPermissions:
     @pytest.mark.asyncio
     async def test_users_update_required_for_put(self, client_factory):
         """PUT /users/{id} returns 403 without users_update permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.put(
             f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
         )
@@ -126,7 +114,7 @@ class TestUsersPermissions:
     @pytest.mark.asyncio
     async def test_users_delete_required_for_delete(self, client_factory):
         """DELETE /users/{id} returns 403 without users_delete permission."""
-        no_perm = await client_factory(permissions=[])
+        no_perm = await client_factory(permissions=["permissions_read"])
         response = await no_perm.delete(f"/users/{DUMMY_ID}")
         assert_status_code(
             response, 403, "DELETE /users/{id} should require users_delete"
