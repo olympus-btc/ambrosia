@@ -21,6 +21,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@heroui/react": "^2.8.5",
+    "@serwist/next": "^9.5.7",
     "driver.js": "^1.4.0",
     "framer-motion": "^12.23.12",
     "jsonwebtoken": "^9.0.2",
@@ -29,7 +30,8 @@
     "next-intl": "^4.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-qr-code": "^2.0.18"
+    "react-qr-code": "^2.0.18",
+    "serwist": "^9.5.7"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.3",

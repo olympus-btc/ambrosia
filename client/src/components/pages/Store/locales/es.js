@@ -649,6 +649,15 @@ const storeEs = {
     cardLanguage: {
       title: "Idioma",
     },
+    cardInstall: {
+      title: "Instalar App",
+      subtitle: "Instala Ambrosia POS en tu dispositivo para acceso rápido.",
+      button: "Instalar",
+      iosStep1: "Toca el ícono de compartir",
+      iosStep2: "Selecciona \"Agregar a pantalla de inicio\"",
+      androidStep1: "Toca el menú ⋮",
+      androidStep2: "Selecciona \"Agregar a pantalla de inicio\"",
+    },
     cardPrinters: {
       title: "Impresoras",
       subtitle: "Configura defaults y disponibilidad",
