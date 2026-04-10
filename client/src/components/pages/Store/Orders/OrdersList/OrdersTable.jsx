@@ -30,7 +30,7 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className="font-medium text-deep">
-                  {order.waiter || t("details.unassigned")}
+                  {order.user_name || t("details.unassigned")}
                 </span>
               </TableCell>
               <TableCell>

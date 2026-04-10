@@ -21,10 +21,11 @@ class ReportService(
             SELECT
                 t.ticket_date,
                 t.total_amount,
-                o.waiter,
+                u.name AS user_name,
                 pm.name AS payment_method_name
             FROM tickets t
             JOIN orders o           ON o.id  = t.order_id
+            LEFT JOIN users u       ON u.id  = o.user_id
             JOIN ticket_payments tp ON tp.ticket_id = t.id
             JOIN payments p         ON p.id  = tp.payment_id
             JOIN payment_methods pm ON pm.id = p.method_id
@@ -73,7 +74,7 @@ class ReportService(
                 ReportTicketItem(
                     amount = resultSet.getDouble("total_amount"),
                     paymentMethod = resultSet.getString("payment_method_name"),
-                    userName = resultSet.getString("waiter") ?: "Desconocido",
+                    userName = resultSet.getString("user_name") ?: "Desconocido",
                 )
             reportsByDate.getOrPut(date) { mutableListOf() }.add(item)
         }

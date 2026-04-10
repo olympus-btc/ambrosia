@@ -15,7 +15,6 @@ export async function processCheckout({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: user.user_id,
-      waiter: user.name || "",
       items: items.map((item) => ({
         product_id: String(item?.id ?? ""),
         quantity: Number(item?.quantity) || 0,
