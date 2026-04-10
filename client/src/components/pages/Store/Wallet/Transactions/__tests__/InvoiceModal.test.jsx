@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import * as formatters from "../../utils/formatters";
+import * as clipboard from "../../utils/copyToClipboard";
 import { InvoiceModal } from "../InvoiceModal";
 
 jest.mock("react-qr-code", () => ({
@@ -84,7 +84,7 @@ beforeEach(() => {
     originalError.call(console, ...args);
   };
 
-  copyToClipboardSpy = jest.spyOn(formatters, "copyToClipboard").mockResolvedValue();
+  copyToClipboardSpy = jest.spyOn(clipboard, "copyToClipboard").mockResolvedValue();
   jest.clearAllMocks();
 });
 
