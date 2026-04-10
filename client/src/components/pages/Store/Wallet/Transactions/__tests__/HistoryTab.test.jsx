@@ -211,14 +211,14 @@ describe("HistoryTab Component", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
       const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
-      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
+      expect(screen.getAllByText((_, el) => el?.textContent?.includes(formatted)).length).toBeGreaterThan(0);
     });
 
     it("shows transaction time", () => {
       renderHistoryTab({ transactions: [mockIncomingTransaction] });
 
       const formatted = new Date(mockIncomingTransaction.completedAt).toISOString();
-      expect(screen.getAllByText(formatted).length).toBeGreaterThan(0);
+      expect(screen.getAllByText((_, el) => el?.textContent?.includes(formatted)).length).toBeGreaterThan(0);
     });
 
     it("displays transaction fees", () => {

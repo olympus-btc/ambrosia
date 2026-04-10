@@ -1,8 +1,10 @@
 "use client";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
+import { PageHeader } from "@/components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
@@ -11,11 +13,12 @@ import { StoreLayout } from "../StoreLayout";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
-import { Summary } from "./Summary";
+import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 
 export function Cart() {
   const t = useTranslations("cart");
   const outOfStockTimeoutRef = useRef(null);
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
   const {
     cart,
     setCart,
@@ -62,6 +65,18 @@ export function Cart() {
       clearTimeout(outOfStockTimeoutRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (cart.length === 0) {
+      setTimeout(() => setShowMobileSummary(false), 0);
+    }
+  }, [cart.length]);
+
+  const cartTotal = useMemo(() => {
+    const sub = cart.reduce((sum, item) => sum + item.subtotal, 0);
+    const disc = Number(discount) || 0;
+    return sub - (sub * disc) / 100;
+  }, [cart, discount]);
 
   const getAvailableQuantity = (productId) => {
     const product = products.find((item) => item.id === productId);
@@ -147,20 +162,46 @@ export function Cart() {
 
   return (
     <StoreLayout>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-semibold text-green-800">{t("title")}</h1>
-          <p className=" text-gray-800 mt-4">
-            {t("subtitle")}
-          </p>
-        </div>
-      </header>
+      <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="lg:col-span-2">
-          <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
-        </section>
-        <Summary
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <section className="lg:col-span-2">
+            <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
+          </section>
+          <div className="hidden md:block">
+            <Summary
+              cartItems={cart}
+              discount={discount}
+              onRemoveProduct={removeProduct}
+              onUpdateQuantity={updateQuantity}
+              onPay={handlePay}
+              isPaying={isPaying}
+              paymentError={paymentError}
+              onClearPaymentError={clearPaymentError}
+              btcPaymentConfig={btcPaymentConfig}
+              onInvoiceReady={handleBtcInvoiceReady}
+              onBtcComplete={handleBtcComplete}
+              onCloseBtcPayment={clearBtcPaymentConfig}
+              cashPaymentConfig={cashPaymentConfig}
+              onCashComplete={handleCashComplete}
+              onCloseCashPayment={clearCashPaymentConfig}
+              cardPaymentConfig={cardPaymentConfig}
+              onCardComplete={handleCardComplete}
+              onCloseCardPayment={clearCardPaymentConfig}
+            />
+          </div>
+        </div>
+
+        <MobileSummaryBar
+          cart={cart}
+          total={cartTotal}
+          onCheckout={() => setShowMobileSummary(true)}
+        />
+
+        <SummaryModal
+          isOpen={showMobileSummary}
+          onClose={() => setShowMobileSummary(false)}
           cartItems={cart}
           discount={discount}
           onRemoveProduct={removeProduct}

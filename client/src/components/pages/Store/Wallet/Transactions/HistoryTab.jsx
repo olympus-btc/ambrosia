@@ -68,42 +68,35 @@ export function HistoryTab({ transactions, loading, filter, setFilter }) {
             {transactions.map((tx, i) => (
               <Card key={tx.paymentId || tx.txId || i} className="border" shadow="none">
                 <CardBody className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        {getTransactionIcon(tx.type)}
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-deep">
-                            {tx.type === "outgoing_payment"
-                              ? t("payments.history.sent")
-                              : t("payments.history.received")}
-                          </span>
-                          <span className={`text-lg font-bold ${tx.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
-                            {formatSats(
-                              tx.type === "outgoing_payment"
-                                ? tx.sent
-                                : tx.receivedSat,
-                            )}{" "}
-                            sats
-                          </span>
-                        </div>
-                        <p className="text-sm text-deep">
-                          {t("payments.history.fee")} {formatSats(Number(tx.fees) / 1000)} sats
-                        </p>
-                        {tx.description && (
-                        <p className="text-sm text-deep">{tx.description}</p>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex w-10 h-10 shrink-0 bg-gray-100 rounded-full items-center justify-center">
+                      {getTransactionIcon(tx.type)}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">
-                        {format.dateTime(new Date(tx.completedAt), { dateStyle: "short" })}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline gap-2">
+                        <span className="text-deep">
+                          {tx.type === "outgoing_payment"
+                            ? t("payments.history.sent")
+                            : t("payments.history.received")}
+                        </span>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          {format.dateTime(new Date(tx.completedAt), { dateStyle: "short" })}
+                          {" "}
+                          {format.dateTime(new Date(tx.completedAt), { timeStyle: "short" })}
+                        </span>
+                      </div>
+                      <p className={`text-lg font-bold ${tx.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
+                        {formatSats(
+                          tx.type === "outgoing_payment" ? tx.sent : tx.receivedSat,
+                        )}{" "}
+                        sats
                       </p>
-                      <p className="text-xs text-gray-400">
-                        {format.dateTime(new Date(tx.completedAt), { timeStyle: "short" })}
+                      <p className="text-sm text-deep">
+                        {t("payments.history.fee")} {formatSats(Number(tx.fees) / 1000)} sats
                       </p>
+                      {tx.description && (
+                        <p className="text-sm text-deep">{tx.description}</p>
+                      )}
                     </div>
                   </div>
                 </CardBody>

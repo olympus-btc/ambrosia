@@ -9,6 +9,14 @@ jest.mock("@/hooks/usePermission", () => ({
   usePermission: () => true,
 }));
 
+jest.mock("@/components/shared/EditButton", () => ({
+  EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
+}));
+
 const categories = [
   { id: "cat-1", name: "Hardware" },
   { id: "cat-2", name: "Gadgets" },
@@ -35,8 +43,8 @@ describe("Categories", () => {
   it("renders the categories table with existing categories", () => {
     renderCategories();
 
-    expect(screen.getByText("Hardware")).toBeInTheDocument();
-    expect(screen.getByText("Gadgets")).toBeInTheDocument();
+    expect(screen.getAllByText("Hardware").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Gadgets").length).toBeGreaterThan(0);
   });
 
   it("opens AddCategoriesModal when clicking add category button", async () => {
@@ -52,9 +60,8 @@ describe("Categories", () => {
   it("opens EditCategoriesModal with correct data when clicking edit", async () => {
     renderCategories();
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Category" });
     await act(async () => {
-      fireEvent.click(editButtons[0]);
+      fireEvent.click(screen.getAllByText("edit")[0].closest("button"));
     });
 
     expect(screen.getByText("modal.titleEdit")).toBeInTheDocument();
@@ -64,9 +71,8 @@ describe("Categories", () => {
   it("opens DeleteCategoriesModal when clicking delete", async () => {
     renderCategories();
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete Category" });
     await act(async () => {
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(screen.getAllByText("delete")[0].closest("button"));
     });
 
     expect(screen.getByText("modal.titleDelete")).toBeInTheDocument();
@@ -97,9 +103,8 @@ describe("Categories", () => {
     const updateCategory = jest.fn(() => Promise.resolve());
     renderCategories({ updateCategory });
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Category" });
     await act(async () => {
-      fireEvent.click(editButtons[0]);
+      fireEvent.click(screen.getAllByText("edit")[0].closest("button"));
     });
 
     const input = screen.getByLabelText("modal.categoryNameLabel");
@@ -118,9 +123,8 @@ describe("Categories", () => {
     const deleteCategory = jest.fn(() => Promise.resolve());
     renderCategories({ deleteCategory });
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete Category" });
     await act(async () => {
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(screen.getAllByText("delete")[0].closest("button"));
     });
 
     await act(async () => {

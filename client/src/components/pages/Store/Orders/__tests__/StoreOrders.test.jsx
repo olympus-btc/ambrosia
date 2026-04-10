@@ -58,8 +58,8 @@ jest.mock("../OrdersFilterBar", () => ({
   ),
 }));
 
-jest.mock("../OrdersTable", () => ({
-  OrdersTable: ({ orders, onViewOrder }) => (
+jest.mock("../OrdersList/OrdersList", () => ({
+  OrdersList: ({ orders, onViewOrder }) => (
     <div>
       {orders.map((order) => (
         <button key={order.id} type="button" onClick={() => onViewOrder(order)}>
@@ -70,7 +70,7 @@ jest.mock("../OrdersTable", () => ({
   ),
 }));
 
-jest.mock("../EmptyOrdersState", () => ({
+jest.mock("../OrdersList/EmptyOrdersState", () => ({
   EmptyOrdersState: ({ filter, searchTerm }) => (
     <div>{`empty-${filter}-${searchTerm}`}</div>
   ),

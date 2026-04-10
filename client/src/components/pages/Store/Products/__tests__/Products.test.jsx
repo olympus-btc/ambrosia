@@ -157,7 +157,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Product" });
+    const editButtons = screen.getAllByText("edit").map((el) => el.closest("button"));
     await act(async () => {
       fireEvent.click(editButtons[0]);
     });
@@ -175,8 +175,8 @@ describe("Products page", () => {
     });
     expect(screen.getByRole("heading", { level: 1, name: "title" })).toBeInTheDocument();
     expect(screen.getByText("addProduct")).toBeInTheDocument();
-    expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
-    expect(screen.getByText("Jade Plus")).toBeInTheDocument();
+    expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Jade Plus").length).toBeGreaterThan(0);
   });
 
   it("opens AddProductsModal when clicking Add Product", async () => {
@@ -195,9 +195,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const editButtons = screen.getAllByRole("button", {
-      name: "Edit Product",
-    });
+    const editButtons = screen.getAllByText("edit").map((el) => el.closest("button"));
 
     await act(async () => {
       fireEvent.click(editButtons[0]);
@@ -213,9 +211,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const deleteButtons = screen.getAllByRole("button", {
-      name: "Delete Product",
-    });
+    const deleteButtons = screen.getAllByText("delete").map((el) => el.closest("button"));
 
     await act(async () => {
       fireEvent.click(deleteButtons[1]);
@@ -229,8 +225,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const table = screen.getByText("Jade Wallet").closest("table");
-    expect(table).toBeInTheDocument();
+    expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
     expect(screen.queryByText("modal.titleDelete")).not.toBeInTheDocument();
   });
 
@@ -239,7 +234,7 @@ describe("Products page", () => {
       renderProducts();
     });
 
-    const deleteButtons = screen.getAllByRole("button", { name: "Delete Product" });
+    const deleteButtons = screen.getAllByText("delete").map((el) => el.closest("button"));
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
     });
@@ -268,9 +263,9 @@ describe("Products page", () => {
     await waitFor(() => expect(mockRefetchProducts).toHaveBeenCalled());
     expect(mockRefetchCategories).toHaveBeenCalled();
 
-    const editButtons = screen.getAllByRole("button", { name: "Edit Product" });
+    const editButtons2 = screen.getAllByText("edit").map((el) => el.closest("button"));
     await act(async () => {
-      fireEvent.click(editButtons[0]);
+      fireEvent.click(editButtons2[0]);
     });
     await act(async () => {
       fireEvent.click(screen.getByText("modal.editButton"));

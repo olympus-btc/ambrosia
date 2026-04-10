@@ -1,15 +1,16 @@
 "use client";
-import { Card, CardHeader, Button, Image } from "@heroui/react";
-import { Edit2 } from "lucide-react";
+import { Card, CardHeader, Image } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
+import { EditButton } from "@components/shared/EditButton";
 
 export function WizardSummary({ data, onEdit }) {
   const t = useTranslations();
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-foreground mb-2">{t("step4.title")}</h2>
-      <p className="text-muted-foreground mb-8">{t("step4.subtitle")}</p>
+      <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2">{t("step4.title")}</h2>
+      <p className="text-gray-500 mb-4 md:mb-8">{t("step4.subtitle")}</p>
       <div className="space-y-4">
 
         <Card>
@@ -22,15 +23,7 @@ export function WizardSummary({ data, onEdit }) {
                 }
               </p>
             </div>
-            <Button
-              isIconOnly
-              color="primary"
-              onPress={() => onEdit(1)}
-              className="p-2"
-              endContent={
-                <Edit2 className="w-4 h-4 text-muted-foreground" />
-              }
-            />
+            <EditButton onPress={() => onEdit(1)}>{t("buttons.edit")}</EditButton>
           </CardHeader>
         </Card>
 
@@ -41,15 +34,7 @@ export function WizardSummary({ data, onEdit }) {
               <p className="text-medium font-medium text-foreground mt-1">{t("step4.sections.adminAccount.userName")}: <span className="font-semibold">{data.userName}</span> </p>
               <p className="text-medium text-muted-foreground mt-1">{t("step4.sections.adminAccount.password")}: {"*".repeat(data.userPassword.length)}</p>
             </div>
-            <Button
-              isIconOnly
-              color="primary"
-              onPress={() => onEdit(2)}
-              className="p-2"
-              endContent={
-                <Edit2 className="w-4 h-4 text-muted-foreground" />
-              }
-            />
+            <EditButton onPress={() => onEdit(2)}>{t("buttons.edit")}</EditButton>
           </CardHeader>
         </Card>
 
@@ -95,21 +80,13 @@ export function WizardSummary({ data, onEdit }) {
                     <Image
                       src={URL.createObjectURL(data.businessLogo)}
                       alt="Business logo"
-                      className="w-32 h-32 object-contain"
+                      className="w-24 h-24 md:w-32 md:h-32 object-contain"
                     />
                   </div>
                 </div>
               )}
             </div>
-            <Button
-              isIconOnly
-              color="primary"
-              onPress={() => onEdit(3)}
-              className="p-2"
-              endContent={
-                <Edit2 className="w-4 h-4 text-muted-foreground" />
-              }
-            />
+            <EditButton onPress={() => onEdit(3)}>{t("buttons.edit")}</EditButton>
           </CardHeader>
         </Card>
       </div>

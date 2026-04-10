@@ -17,6 +17,11 @@ describe("paymentHandlers", () => {
 
   beforeEach(() => {
     addToast.mockClear();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    console.error.mockRestore();
   });
 
   it("notifies error when cart validation fails", async () => {

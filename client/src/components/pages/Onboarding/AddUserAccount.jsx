@@ -41,10 +41,10 @@ export function UserAccountStep({ data, onChange }) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-foreground mb-2">{t("step2.title")}</h2>
-      <p className="text-muted-foreground mb-8">{t("step2.subtitle")}</p>
+      <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2">{t("step2.title")}</h2>
+      <p className="text-gray-500 mb-4 md:mb-8">{t("step2.subtitle")}</p>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <Input
           label={t("step2.fields.userNameLabel")}
           type="text"

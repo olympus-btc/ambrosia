@@ -25,6 +25,11 @@ function TestComponent() {
 describe("usePermissions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("loads permissions on mount", async () => {

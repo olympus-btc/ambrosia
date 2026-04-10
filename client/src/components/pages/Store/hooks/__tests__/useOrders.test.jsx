@@ -33,6 +33,11 @@ function TestComponent() {
 describe("useOrders", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("loads orders on mount", async () => {

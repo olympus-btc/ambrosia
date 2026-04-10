@@ -19,6 +19,11 @@ export function useWalletTour(isAuth) {
 
   useEffect(() => {
     if (!pathname.startsWith("/store/wallet")) return;
+    if (localStorage.getItem(WALLET_TOUR_KEY) === "true") {
+      localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+      localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+    }
     if (driverRef.current) {
       driverRef.current.destroy();
       driverRef.current = null;
@@ -34,6 +39,8 @@ export function useWalletTour(isAuth) {
   const tourTitle = tTour("title");
   const tourDescription = tTour.raw("description");
   const tourClickWallet = tTour("clickWallet");
+  const tourNextButton = tTour("nextButton");
+  const tourMobileGoToWallet = tTour("mobileGoToWallet");
 
   useEffect(() => {
     if (!isAuth || tourStartedRef.current) return;
@@ -42,34 +49,49 @@ export function useWalletTour(isAuth) {
     tourStartedRef.current = true;
     localStorage.setItem(WALLET_TOUR_KEY, "true");
 
+    const isMobile = window.innerWidth < 768;
+    const walletButton = `<br/><br/><a href="/store/wallet" style="display:inline-block;margin-top:4px;padding:8px 16px;background:#166534;color:#fff;border-radius:8px;text-decoration:none;font-size:14px">${tourMobileGoToWallet}</a>`;
+
     const driverObj = driver({
       allowClose: true,
       overlayOpacity: 0.5,
-      steps: [
-        {
-          popover: {
-            title: tourTitle,
-            description: tourDescription,
-            showButtons: ["next"],
-          },
-        },
-        {
-          element: "#nav-wallet",
-          popover: {
-            description: tourClickWallet,
-            side: "right",
-            align: "center",
-            showButtons: ["close"],
-          },
-          onHighlighted: () => {
-            localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
-            localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
-          },
-        },
-      ],
+      nextBtnText: tourNextButton,
+      steps: isMobile
+        ? [
+            {
+              popover: {
+                title: tourTitle,
+                description: `${tourDescription}${walletButton}`,
+                showButtons: ["close"],
+              },
+            },
+          ]
+        : [
+            {
+              popover: {
+                title: tourTitle,
+                description: tourDescription,
+                showButtons: ["next"],
+              },
+            },
+            {
+              element: "#nav-wallet",
+              popover: {
+                description: tourClickWallet,
+                side: "right",
+                align: "center",
+                showButtons: ["close"],
+              },
+              onHighlighted: () => {
+                localStorage.setItem(WALLET_TOUR_KEY, "visited");
+                localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+                localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+              },
+            },
+          ],
     });
 
     driverRef.current = driverObj;
     driverObj.drive();
-  }, [isAuth, tourTitle, tourDescription, tourClickWallet]);
+  }, [isAuth, tourTitle, tourDescription, tourClickWallet, tourNextButton, tourMobileGoToWallet]);
 }

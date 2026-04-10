@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import WalletGuard from "@components/auth/WalletGuard";
+import { PageHeader } from "@components/shared/PageHeader";
 
 import { StoreLayout } from "../StoreLayout";
 
@@ -12,14 +13,7 @@ export function Wallet() {
   const t = useTranslations("wallet");
   return (
     <StoreLayout>
-      <header className="mb-6">
-        <h1 className="text-4xl font-semibold text-green-900">
-          {t("title")}
-        </h1>
-        <p className="text-gray-800 mt-4">
-          {t("subtitle")}
-        </p>
-      </header>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
       <WalletGuard
         placeholder={<div className="min-h-screen gradient-fresh p-4" />}
         title={t("access.title")}

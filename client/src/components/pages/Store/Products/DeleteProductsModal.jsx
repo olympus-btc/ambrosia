@@ -13,6 +13,7 @@ export function DeleteProductsModal({ product, deleteProductsShowModal, setDelet
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
       }}
+      placement="center"
     >
       <ModalContent>
         <ModalHeader>{t("modal.titleDelete")}</ModalHeader>

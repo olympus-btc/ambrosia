@@ -9,6 +9,7 @@ export function DeleteUsersModal({ user, deleteUsersShowModal, setDeleteUsersSho
     <Modal
       isOpen={deleteUsersShowModal}
       onOpenChange={setDeleteUsersShowModal}
+      placement="center"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",

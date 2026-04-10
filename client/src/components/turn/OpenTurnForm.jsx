@@ -67,6 +67,7 @@ export default function OpenTurnForm({ onOpened }) {
           value={initialAmount}
           onValueChange={handleAmountChange}
           step={0.1}
+          classNames={{ inputWrapper: "shadow-none" }}
         />
 
         <div className="flex justify-between">

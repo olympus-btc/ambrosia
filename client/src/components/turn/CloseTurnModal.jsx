@@ -83,7 +83,19 @@ export function CloseTurnModal({
   const difference = finalAmount - expectedTotal;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} backdrop="blur" size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      backdrop="blur"
+      size="md"
+      scrollBehavior="inside"
+      shouldBlockScroll={false}
+      classNames={{
+        backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto max-h-[90dvh] overflow-hidden",
+      }}
+    >
       <ModalContent>
         <ModalHeader>
           <div className="flex items-center space-x-2">
@@ -102,9 +114,12 @@ export function CloseTurnModal({
               startContent={<span className="text-default-400 text-small">$</span>}
               minValue={0}
               value={finalAmount}
-              onValueChange={setFinalAmount}
-              onChange={(e) => setFinalAmount(parseFloat(e.target.value) || 0)}
-              step={0.1}
+              onValueChange={(value) => setFinalAmount(value ?? 0)}
+              onChange={(e) => {
+                if (e?.target) setFinalAmount(parseFloat(e.target.value) || 0);
+              }}
+              step={0.10}
+              classNames={{ inputWrapper: "shadow-none" }}
             />
 
             {!ticketsLoading && (
