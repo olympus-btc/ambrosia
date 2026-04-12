@@ -20,8 +20,8 @@ from ambrosia.http_client import AmbrosiaHttpClient
 
 logger = logging.getLogger(__name__)
 
-FREE_ATTEMPTS = 5        # failures allowed before blocking kicks in
-FIBONACCI_FIRST_S = 60   # fib(1) = 1 minute expressed in seconds (Retry-After unit)
+FREE_ATTEMPTS = 5  # failures allowed before blocking kicks in
+FIBONACCI_FIRST_S = 60  # fib(1) = 1 minute expressed in seconds (Retry-After unit)
 INVALID_CREDS = {"name": "nonexistent_user", "pin": "9999"}
 
 
@@ -108,7 +108,9 @@ class TestLoginRateLimit:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    async def test_grace_period_then_block_shared_across_sessions(self, server_url: str):
+    async def test_grace_period_then_block_shared_across_sessions(
+        self, server_url: str
+    ):
         """First FREE_ATTEMPTS failures return 401; the next one triggers a 429 block.
 
         Also verifies:
