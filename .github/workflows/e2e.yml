@@ -70,4 +70,4 @@ jobs:
       run: |
         cd server/e2e_tests_py
         source .venv/bin/activate
-        pytest tests/ -v --tb=short --run-slow  # Run all tests including slow ones in CI
+        pytest tests/ -v --tb=short

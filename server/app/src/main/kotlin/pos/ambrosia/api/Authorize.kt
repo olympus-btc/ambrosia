@@ -24,52 +24,76 @@ import pos.ambrosia.models.UserResponse
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
-import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.InvalidTokenException
 import java.sql.Connection
 import java.util.concurrent.ConcurrentHashMap
 
 private object LoginRateLimiter {
-    private val failedAttempts = ConcurrentHashMap<String, Pair<Int, Long>>()
-    private const val MAX_FAILURES = 5
-    private val WINDOW_MS = 3 * 60 * 1000L
+    private data class IpState(
+        val failureCount: Int,
+        val blockUntil: Long,
+    )
+
+    private val state = ConcurrentHashMap<String, IpState>()
+    private const val FREE_ATTEMPTS = 5
+    private const val MINUTE_MS = 60_000L
+
+    // Precomputed Fibonacci sequence: FIB[n] = fib(n), 1-indexed (FIB[0] unused).
+    // Applied in minutes after FREE_ATTEMPTS consecutive failures.
+    // For failure counts beyond the array, the last entry (75_025 min ≈ 52 days) is reused.
+    private val FIB =
+        longArrayOf(
+            0, // index 0 — unused
+            1, // F1
+            1, // F2
+            2, // F3
+            3, // F4
+            5, // F5
+            8, // F6
+            13, // F7
+            21, // F8
+            34, // F9
+            55, // F10
+            89, // F11
+            144, // F12
+            233, // F13
+            377, // F14
+            610, // F15
+            987, // F16
+            1_597, // F17
+            2_584, // F18
+            4_181, // F19
+            6_765, // F20
+            10_946, // F21
+            17_711, // F22
+            28_657, // F23
+            46_368, // F24
+            75_025, // F25 ≈ 52 days
+        )
 
     fun isBlocked(ip: String): Boolean {
-        val (count, since) = failedAttempts[ip] ?: return false
-        return if (System.currentTimeMillis() - since >= WINDOW_MS) {
-            failedAttempts.remove(ip)
-            false
-        } else {
-            count >= MAX_FAILURES
-        }
+        val s = state[ip] ?: return false
+        return System.currentTimeMillis() < s.blockUntil
     }
 
     fun getRemainingSeconds(ip: String): Int {
-        val (_, since) = failedAttempts[ip] ?: return 0
-        val remaining = WINDOW_MS - (System.currentTimeMillis() - since)
+        val s = state[ip] ?: return 0
+        val remaining = s.blockUntil - System.currentTimeMillis()
         return if (remaining > 0) ((remaining + 999) / 1000).toInt() else 0
     }
 
     fun recordFailure(ip: String) {
         val now = System.currentTimeMillis()
-        failedAttempts.compute(ip) { _, existing ->
-            if (existing != null) {
-                val (count, since) = existing
-                if (now - since < WINDOW_MS) {
-                    val newCount = count + 1
-                    val newSince = if (newCount >= MAX_FAILURES) now else since
-                    Pair(newCount, newSince)
-                } else {
-                    Pair(1, now)
-                }
-            } else {
-                Pair(1, now)
-            }
+        state.compute(ip) { _, existing ->
+            val newCount = (existing?.failureCount ?: 0) + 1
+            val fibIndex = newCount - FREE_ATTEMPTS
+            val blockMs = if (fibIndex > 0) FIB.getOrElse(fibIndex) { FIB.last() } * MINUTE_MS else 0L
+            IpState(newCount, now + blockMs)
         }
     }
 
     fun reset(ip: String) {
-        failedAttempts.remove(ip)
+        state.remove(ip)
     }
 }
 
@@ -104,12 +128,12 @@ fun Route.auth(
 
         if (userInfo == null) {
             LoginRateLimiter.recordFailure(ip)
-            if (LoginRateLimiter.isBlocked(ip)) {
-                val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+            val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
+            if (retryAfter > 0) {
                 call.response.headers.append("Retry-After", retryAfter.toString())
                 call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
             } else {
-                throw InvalidCredentialsException()
+                call.respond(HttpStatusCode.Unauthorized, Message("Invalid credentials"))
             }
             return@post
         }
