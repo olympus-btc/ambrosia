@@ -1,101 +1,144 @@
 package pos.ambrosia.services
 
 import pos.ambrosia.logger
-import pos.ambrosia.models.DayReport
-import pos.ambrosia.models.ReportResponse
-import pos.ambrosia.models.ReportTicketItem
+import pos.ambrosia.models.ProductSaleItem
+import pos.ambrosia.models.ProductSalesReport
 import java.sql.Connection
-import java.time.Instant
+import java.sql.PreparedStatement
+import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.time.ZoneOffset
 
 class ReportService(
     private val connection: Connection,
 ) {
     companion object {
-        private val DAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
-        private const val GET_REPORT =
+        private const val GET_PRODUCT_SALES_BASE =
             """
-            SELECT
-                t.ticket_date,
-                t.total_amount,
-                u.name AS user_name,
-                pm.name AS payment_method_name
-            FROM tickets t
-            JOIN orders o           ON o.id  = t.order_id
-            LEFT JOIN users u       ON u.id  = o.user_id
+            SELECT p.name AS product_name,
+                   op.quantity,
+                   op.price_at_order,
+                   u.name AS user_name,
+                   pm.name AS payment_method,
+                   o.created_at AS sale_date
+            FROM order_products op
+            JOIN orders o           ON o.id  = op.order_id
+            JOIN products p         ON p.id  = op.product_id
+            JOIN users u            ON u.id  = o.user_id
+            JOIN tickets t          ON t.order_id = o.id
             JOIN ticket_payments tp ON tp.ticket_id = t.id
-            JOIN payments p         ON p.id  = tp.payment_id
-            JOIN payment_methods pm ON pm.id = p.method_id
-            WHERE CAST(t.ticket_date AS INTEGER) >= ?
-              AND CAST(t.ticket_date AS INTEGER) <= ?
-            ORDER BY CAST(t.ticket_date AS INTEGER) ASC
+            JOIN payments pay       ON pay.id = tp.payment_id
+            JOIN payment_methods pm ON pm.id = pay.method_id
+            WHERE o.status = 'paid'
+              AND o.is_deleted = 0
+              AND p.is_deleted = 0
             """
     }
 
-    fun getReport(
-        startDate: String,
-        endDate: String,
-    ): ReportResponse {
-        val zone = ZoneId.systemDefault()
-        val startMs =
-            LocalDate
-                .parse(startDate)
-                .atStartOfDay(zone)
-                .toInstant()
-                .toEpochMilli()
-        val endMs =
-            LocalDate
-                .parse(endDate)
-                .plusDays(1)
-                .atStartOfDay(zone)
-                .toInstant()
-                .toEpochMilli() - 1
+    private fun bindQueryParameters(
+        statement: PreparedStatement,
+        parameters: List<Any>,
+    ) {
+        parameters.forEachIndexed { index, value ->
+            when (value) {
+                is String -> statement.setString(index + 1, value)
+                is Double -> statement.setDouble(index + 1, value)
+                else -> error("Unsupported query parameter type: ${value::class.simpleName}")
+            }
+        }
+    }
 
-        val statement = connection.prepareStatement(GET_REPORT)
-        statement.setLong(1, startMs)
-        statement.setLong(2, endMs)
+    private fun resolveDateRange(
+        period: String?,
+        startDate: String?,
+        endDate: String?,
+    ): Pair<String, String>? {
+        if (period != null) {
+            val today = LocalDate.now(ZoneOffset.UTC)
+            val start =
+                when (period) {
+                    "week" -> today.with(DayOfWeek.MONDAY)
 
-        val resultSet = statement.executeQuery()
-        val reportsByDate = linkedMapOf<String, MutableList<ReportTicketItem>>()
+                    "month" -> today.withDayOfMonth(1)
 
-        while (resultSet.next()) {
-            val rawDate = resultSet.getString("ticket_date")
-            val date =
-                Instant
-                    .ofEpochMilli(rawDate.toLong())
-                    .atZone(zone)
-                    .toLocalDate()
-                    .format(DAY_FORMATTER)
+                    "year" -> today.withDayOfYear(1)
 
-            val item =
-                ReportTicketItem(
-                    amount = resultSet.getDouble("total_amount"),
-                    paymentMethod = resultSet.getString("payment_method_name"),
-                    userName = resultSet.getString("user_name") ?: "Desconocido",
-                )
-            reportsByDate.getOrPut(date) { mutableListOf() }.add(item)
+                    else -> throw IllegalArgumentException(
+                        "Invalid period: $period. Must be week, month, or year",
+                    )
+                }
+            return Pair(start.toString(), today.toString())
+        }
+        if (startDate != null && endDate != null) return Pair(startDate, endDate)
+        return null
+    }
+
+    fun getProductSalesReport(
+        period: String?,
+        startDate: String?,
+        endDate: String?,
+        productName: String?,
+        userId: String?,
+        paymentMethod: String?,
+    ): ProductSalesReport {
+        val dateRange = resolveDateRange(period, startDate, endDate)
+
+        val whereClauses = mutableListOf<String>()
+        val parameters = mutableListOf<Any>()
+
+        dateRange?.let { (start, end) ->
+            whereClauses.add("date(o.created_at) >= date(?)")
+            parameters.add(start)
+            whereClauses.add("date(o.created_at) <= date(?)")
+            parameters.add(end)
+        }
+        productName?.let {
+            whereClauses.add("p.name LIKE ?")
+            parameters.add("%$it%")
+        }
+        userId?.let {
+            whereClauses.add("o.user_id = ?")
+            parameters.add(it)
+        }
+        paymentMethod?.let {
+            whereClauses.add("lower(pm.name) = lower(?)")
+            parameters.add(it)
         }
 
-        val reports =
-            reportsByDate.map { (date, tickets) ->
-                DayReport(
-                    date = date,
-                    balance = tickets.sumOf { it.amount },
-                    tickets = tickets,
-                )
+        val query =
+            buildString {
+                append(GET_PRODUCT_SALES_BASE)
+                if (whereClauses.isNotEmpty()) {
+                    append("\n  AND ")
+                    append(whereClauses.joinToString("\n  AND "))
+                }
+                append("\nORDER BY o.created_at DESC")
             }
 
-        val totalBalance = reports.sumOf { it.balance }
-        logger.info("Report generated: ${reports.size} days, totalBalance=$totalBalance")
+        val statement = connection.prepareStatement(query)
+        bindQueryParameters(statement, parameters)
+        val resultSet = statement.executeQuery()
 
-        return ReportResponse(
-            startDate = startDate,
-            endDate = endDate,
-            totalBalance = totalBalance,
-            reports = reports,
+        val sales = mutableListOf<ProductSaleItem>()
+        while (resultSet.next()) {
+            sales.add(
+                ProductSaleItem(
+                    productName = resultSet.getString("product_name"),
+                    quantity = resultSet.getInt("quantity"),
+                    priceAtOrder = resultSet.getInt("price_at_order"),
+                    userName = resultSet.getString("user_name"),
+                    paymentMethod = resultSet.getString("payment_method"),
+                    saleDate = resultSet.getString("sale_date").replace(" ", "T"),
+                ),
+            )
+        }
+
+        logger.info("Product sales report: ${sales.size} line items")
+
+        return ProductSalesReport(
+            totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
+            totalItemsSold = sales.sumOf { it.quantity },
+            sales = sales,
         )
     }
 }

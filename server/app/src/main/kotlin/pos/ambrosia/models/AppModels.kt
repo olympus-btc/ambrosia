@@ -1,5 +1,6 @@
 package pos.ambrosia.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable data class AuthRequest(
@@ -397,25 +398,20 @@ data class SetBaseCurrencyRequest(
 )
 
 @Serializable
-data class ReportTicketItem(
-    val amount: Double,
-    val paymentMethod: String,
-    val userName: String,
+data class ProductSaleItem(
+    @SerialName("productName") val productName: String,
+    @SerialName("quantity") val quantity: Int,
+    @SerialName("priceAtOrder") val priceAtOrder: Int,
+    @SerialName("userName") val userName: String,
+    @SerialName("paymentMethod") val paymentMethod: String,
+    @SerialName("saleDate") val saleDate: String,
 )
 
 @Serializable
-data class DayReport(
-    val date: String,
-    val balance: Double,
-    val tickets: List<ReportTicketItem>,
-)
-
-@Serializable
-data class ReportResponse(
-    val startDate: String,
-    val endDate: String,
-    val totalBalance: Double,
-    val reports: List<DayReport>,
+data class ProductSalesReport(
+    @SerialName("totalRevenueCents") val totalRevenueCents: Long,
+    @SerialName("totalItemsSold") val totalItemsSold: Int,
+    @SerialName("sales") val sales: List<ProductSaleItem>,
 )
 
 @Serializable
