@@ -117,7 +117,7 @@ class OrderService(
             table_id = resultSet.getString("table_id"),
             status = resultSet.getString("status"),
             total = resultSet.getDouble("total"),
-            created_at = resultSet.getString("created_at"),
+            created_at = resultSet.getString("created_at").replace(" ", "T"),
         )
 
     private fun mapResultSetToOrderWithPayment(resultSet: java.sql.ResultSet): OrderWithPayment {
@@ -133,7 +133,7 @@ class OrderService(
             table_id = resultSet.getString("table_id"),
             status = resultSet.getString("status"),
             total = resultSet.getDouble("total"),
-            created_at = resultSet.getString("created_at"),
+            created_at = resultSet.getString("created_at").replace(" ", "T"),
             payment_method = paymentNames,
             payment_method_ids = paymentIds,
         )
@@ -515,7 +515,7 @@ class OrderService(
             user_name = rs.getString("user_name"),
             status = rs.getString("status"),
             total = rs.getInt("total"),
-            created_at = rs.getString("created_at"),
+            created_at = rs.getString("created_at").replace(" ", "T"),
             items = mapStoreItems(id),
         )
     }
