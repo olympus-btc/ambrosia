@@ -4,7 +4,7 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 import { useTranslations } from "next-intl";
 
 import { ViewButton } from "@/components/shared/ViewButton";
-import formatDate from "@/lib/formatDate";
+import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./StatusChip";
 

@@ -1,19 +1,11 @@
 const formatDate = (dateString) => {
-  // Manejar diferentes formatos de fecha
-  let date;
-  if (dateString.includes("Z") || dateString.includes("T")) {
-    // Formato ISO
-    date = new Date(dateString);
-  } else {
-    // Timestamp en milisegundos
-    date = new Date(parseInt(dateString));
-  }
+  const date = dateString?.includes("T") || dateString?.includes("Z")
+    ? new Date(dateString)
+    : new Date(parseInt(dateString, 10));
 
-  if (isNaN(date.getTime())) {
-    return "Fecha inválida";
-  }
+  if (isNaN(date.getTime())) return "—";
 
-  return date.toLocaleDateString("es-ES", {
+  return date.toLocaleString(undefined, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
