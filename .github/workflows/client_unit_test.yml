@@ -1,22 +1,28 @@
 name: Client Unit Tests
+
 on:
   pull_request:
-    branches: '**'
+    branches: ['**']
 
   workflow_dispatch:
-    
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [20]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
+
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm --prefix ./client install
-      - run: npm run test
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+        working-directory: ./client
+
+      - run: npm audit --audit-level=high
+        working-directory: ./client
+
+      - run: npm test
         working-directory: ./client
