@@ -1,15 +1,4 @@
-"""End-to-end tests for the shifts endpoint.
-
-Covers the full open/close business flow and input validation.
-
-Business rules enforced by the server:
-- Only one shift can be open at a time; POST /shifts returns 409 if one is already open
-- POST /shifts/{id}/close returns 404 if the shift is not found or already closed
-- GET /shifts/open returns 204 when no shift is open
-- user_id must reference an existing user
-
-CloseShiftRequest body is optional — final_amount and difference are both nullable.
-"""
+"""End-to-end tests for the shifts endpoint."""
 
 import logging
 
@@ -65,7 +54,6 @@ class TestShiftsFlow:
         await admin_client.post(f"/shifts/{shift_id}/close")
         await admin_client.delete(f"/shifts/{shift_id}")
 
-
     @pytest.mark.asyncio
     async def test_no_open_shift_returns_204(self, admin_client):
         """GET /shifts/open returns 204 when no shift is open."""
@@ -80,7 +68,6 @@ class TestShiftsFlow:
         assert_status_code(response, 200, "Open shift should be returned")
         assert response.json()["id"] == open_shift
         logger.info("✓ Open shift correctly returned")
-
 
     @pytest.mark.asyncio
     async def test_open_shift_succeeds(self, admin_client, user_id):
@@ -109,7 +96,6 @@ class TestShiftsFlow:
         response = await admin_client.post("/shifts", json=payload)
         assert_status_code(response, 400, "Non-existent user_id should return 400")
         logger.info("✓ Non-existent user_id correctly returns 400")
-
 
     @pytest.mark.asyncio
     async def test_close_shift_succeeds(self, admin_client, open_shift):
@@ -148,7 +134,6 @@ class TestShiftsFlow:
         response = await admin_client.post(f"/shifts/{NONEXISTENT_ID}/close")
         assert_status_code(response, 404, "Non-existent shift ID should return 404")
         logger.info("✓ Non-existent shift correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_get_shift_by_id_succeeds(self, admin_client, open_shift):

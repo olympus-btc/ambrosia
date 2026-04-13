@@ -1,12 +1,4 @@
-"""End-to-end tests for the suppliers CRUD endpoints.
-
-Covers the full create / read / update / delete happy path.
-
-Note: POST /suppliers does not validate duplicate names at the route level —
-if the service returns null (duplicate name), the route still responds 201 with
-{"id": null}. This is a known inconsistency shared with dishes and ingredients.
-These tests focus on the correct happy-path behaviour only.
-"""
+"""End-to-end tests for the suppliers CRUD endpoints."""
 
 import logging
 import uuid
@@ -43,7 +35,6 @@ class TestSuppliersEndpoint:
         yield supplier_id, uid
         await admin_client.delete(f"/suppliers/{supplier_id}")
 
-
     @pytest.mark.asyncio
     async def test_create_supplier_returns_201_with_id(self, admin_client):
         """POST /suppliers returns 201 with a valid id."""
@@ -54,7 +45,6 @@ class TestSuppliersEndpoint:
         assert body["id"] is not None, "Response should contain a non-null id"
         await admin_client.delete(f"/suppliers/{body['id']}")
         logger.info("✓ POST /suppliers correctly returns 201 with id")
-
 
     @pytest.mark.asyncio
     async def test_get_suppliers_returns_200(self, admin_client, supplier):
@@ -68,7 +58,6 @@ class TestSuppliersEndpoint:
             "Created supplier should be in the list"
         )
         logger.info("✓ GET /suppliers correctly includes created supplier")
-
 
     @pytest.mark.asyncio
     async def test_get_supplier_by_id_returns_correct_data(
@@ -89,7 +78,6 @@ class TestSuppliersEndpoint:
         response = await admin_client.get(f"/suppliers/{NONEXISTENT_ID}")
         assert_status_code(response, 404, "Non-existent supplier should return 404")
         logger.info("✓ GET /suppliers/{id} with non-existent ID correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_update_supplier_returns_200(self, admin_client, supplier):
@@ -122,7 +110,6 @@ class TestSuppliersEndpoint:
             response, 404, "Non-existent supplier update should return 404"
         )
         logger.info("✓ PUT /suppliers/{id} with non-existent ID correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_delete_supplier_returns_204(self, admin_client):

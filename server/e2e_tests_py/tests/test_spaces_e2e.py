@@ -1,14 +1,4 @@
-"""End-to-end tests for the spaces CRUD endpoints.
-
-Covers the full create / read / update / delete happy path.
-
-Note: POST /spaces does not validate duplicate names at the route level —
-if the service returns null (duplicate name), the route still responds 201 with
-{"id": null}. This is a known inconsistency shared with dishes and ingredients.
-
-Note: DELETE /spaces/{id} returns 400 (not 404) when the space is not found
-or has tables associated. This is a known inconsistency in the route handler.
-"""
+"""End-to-end tests for the spaces CRUD endpoints."""
 
 import logging
 import uuid
@@ -36,7 +26,6 @@ class TestSpacesEndpoint:
         yield space_id, name
         await admin_client.delete(f"/spaces/{space_id}")
 
-
     @pytest.mark.asyncio
     async def test_create_space_returns_201_with_id(self, admin_client):
         """POST /spaces returns 201 with a valid id."""
@@ -47,7 +36,6 @@ class TestSpacesEndpoint:
         assert body["id"] is not None, "Response should contain a non-null id"
         await admin_client.delete(f"/spaces/{body['id']}")
         logger.info("✓ POST /spaces correctly returns 201 with id")
-
 
     @pytest.mark.asyncio
     async def test_get_spaces_returns_200(self, admin_client, space):
@@ -61,7 +49,6 @@ class TestSpacesEndpoint:
             "Created space should be in the list"
         )
         logger.info("✓ GET /spaces correctly includes created space")
-
 
     @pytest.mark.asyncio
     async def test_get_space_by_id_returns_correct_data(self, admin_client, space):
@@ -80,7 +67,6 @@ class TestSpacesEndpoint:
         response = await admin_client.get(f"/spaces/{NONEXISTENT_ID}")
         assert_status_code(response, 404, "Non-existent space should return 404")
         logger.info("✓ GET /spaces/{id} with non-existent ID correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_update_space_returns_200(self, admin_client, space):
@@ -114,7 +100,6 @@ class TestSpacesEndpoint:
         )
         assert_status_code(response, 404, "Non-existent space update should return 404")
         logger.info("✓ PUT /spaces/{id} with non-existent ID correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_delete_space_returns_204(self, admin_client):

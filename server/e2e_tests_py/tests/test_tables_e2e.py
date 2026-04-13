@@ -1,15 +1,4 @@
-"""End-to-end tests for the tables CRUD endpoints.
-
-Covers the full create / read / update / delete happy path plus
-status transitions and the GET /tables/by-space/{id} endpoint.
-
-Tables require a valid space_id and names must be unique within a space.
-Valid statuses: "available", "occupied", "reserved".
-
-Note: POST /tables does not validate failures at the route level —
-if the service returns null (invalid space, duplicate name, invalid status),
-the route still responds 201 with {"id": null}. This is a known inconsistency.
-"""
+"""End-to-end tests for the tables CRUD endpoints."""
 
 import logging
 import uuid
@@ -50,7 +39,6 @@ class TestTablesEndpoint:
         yield table_id, name
         await admin_client.delete(f"/tables/{table_id}")
 
-
     @pytest.mark.asyncio
     async def test_create_table_returns_201_with_id(self, admin_client, space):
         """POST /tables returns 201 with a valid id."""
@@ -65,7 +53,6 @@ class TestTablesEndpoint:
         await admin_client.delete(f"/tables/{body['id']}")
         logger.info("✓ POST /tables correctly returns 201 with id")
 
-
     @pytest.mark.asyncio
     async def test_get_tables_returns_200(self, admin_client, table):
         """GET /tables returns 200 and includes the created table."""
@@ -78,7 +65,6 @@ class TestTablesEndpoint:
             "Created table should be in the list"
         )
         logger.info("✓ GET /tables correctly includes created table")
-
 
     @pytest.mark.asyncio
     async def test_get_table_by_id_returns_correct_data(
@@ -102,7 +88,6 @@ class TestTablesEndpoint:
         assert_status_code(response, 404, "Non-existent table should return 404")
         logger.info("✓ GET /tables/{id} with non-existent ID correctly returns 404")
 
-
     @pytest.mark.asyncio
     async def test_get_tables_by_space_returns_table(self, admin_client, table, space):
         """GET /tables/by-space/{id} returns tables belonging to the space."""
@@ -124,7 +109,6 @@ class TestTablesEndpoint:
         logger.info(
             "✓ GET /tables/by-space/{id} with non-existent space correctly returns 404"
         )
-
 
     @pytest.mark.asyncio
     async def test_update_table_returns_200(self, admin_client, table, space):
@@ -183,7 +167,6 @@ class TestTablesEndpoint:
         )
         assert_status_code(response, 404, "Non-existent table update should return 404")
         logger.info("✓ PUT /tables/{id} with non-existent ID correctly returns 404")
-
 
     @pytest.mark.asyncio
     async def test_delete_table_returns_204(self, admin_client, space):

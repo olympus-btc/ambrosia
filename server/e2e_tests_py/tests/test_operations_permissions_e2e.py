@@ -1,11 +1,4 @@
-"""End-to-end permission enforcement tests for operations endpoints.
-
-Covers /payments, /suppliers, /spaces, /tables, and /shifts.
-
-Pattern per endpoint:
-- No permission → 403
-- Correct permission → not 403 (even 400 means the permission check passed)
-"""
+"""End-to-end permission enforcement tests for operations endpoints."""
 
 import logging
 

@@ -1,9 +1,4 @@
-"""End-to-end tests for role name validation.
-
-Tests that the server rejects blank role names on both
-POST /roles (create) and PUT /roles/{id} (update) endpoints,
-and that valid names are accepted.
-"""
+"""End-to-end tests for role name validation."""
 
 import logging
 import uuid

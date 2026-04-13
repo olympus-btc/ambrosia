@@ -1,18 +1,4 @@
-"""End-to-end tests for product validation.
-
-Tests that the server enforces input validation on both
-POST /products (create) and PUT /products/{id} (update) endpoints.
-
-Unlike dishes/ingredients, Products.kt correctly returns 400 for all validation failures
-on both POST and PUT — no known inconsistencies.
-
-Validated fields (via ProductService.valid()):
-- name must not be blank
-- SKU must not be blank
-- cost_cents, price_cents, quantity, min_stock_threshold, max_stock_threshold must be >= 0
-- min_stock_threshold must not exceed max_stock_threshold (when max > 0)
-- category_ids must not be empty
-"""
+"""End-to-end tests for product validation."""
 
 import logging
 import uuid
@@ -67,7 +53,6 @@ class TestProductValidation:
         product_id = response.json()["id"]
         yield product_id
         await admin_client.delete(f"/products/{product_id}")
-
 
     @pytest.mark.asyncio
     async def test_create_product_with_blank_name_fails(
@@ -224,7 +209,6 @@ class TestProductValidation:
         )
         await admin_client.delete(f"/products/{response.json()['id']}")
         logger.info("✓ Valid product data correctly accepted on create")
-
 
     @pytest.mark.asyncio
     async def test_update_product_with_blank_name_fails(

@@ -1,16 +1,4 @@
-"""End-to-end tests for printer config validation.
-
-Tests that the server enforces uniqueness on both
-POST /printers/configs (create) and PUT /printers/configs/{id} (update) endpoints.
-
-A printer config is uniquely identified by its (printerType, printerName) pair.
-Duplicate detection is the only service-level validation — there is no blank name check.
-
-POST /printers/configs returns 409 Conflict when a config with the same type+name already exists.
-PUT /printers/configs/{id} returns:
-  - 409 Conflict when the new type+name is already taken by another config
-  - 404 Not Found when the config ID does not exist
-"""
+"""End-to-end tests for printer config validation."""
 
 import logging
 import uuid
@@ -48,7 +36,6 @@ class TestPrinterConfigValidation:
         config_id = response.json()["id"]
         yield config_id, printer_name
         await admin_client.delete(f"/printers/configs/{config_id}")
-
 
     @pytest.mark.asyncio
     async def test_create_printer_config_with_duplicate_type_and_name_fails(
@@ -88,7 +75,6 @@ class TestPrinterConfigValidation:
         )
         await admin_client.delete(f"/printers/configs/{response.json()['id']}")
         logger.info("✓ Valid printer config correctly accepted on create")
-
 
     @pytest.mark.asyncio
     async def test_update_printer_config_with_duplicate_type_and_name_fails(

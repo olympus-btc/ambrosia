@@ -1,15 +1,4 @@
-"""End-to-end tests for GET /orders/with-payments query parameter validation.
-
-The route parses and validates several query parameters before querying the database.
-Invalid values are rejected with 400 Bad Request.
-
-Validated parameters:
-- start_date / end_date — must be YYYY-MM-DD format; start_date cannot be > end_date
-- min_total / max_total — must be numeric; min_total cannot be > max_total
-- sort_by — must be one of: "date", "total"
-- sort_order — must be one of: "asc", "desc"
-- status — must be one of: "open", "closed", "paid" (already covered in test_orders_filtering_e2e.py)
-"""
+"""End-to-end tests for GET /orders/with-payments query parameter validation."""
 
 import logging
 
@@ -24,7 +13,6 @@ BASE = "/orders/with-payments"
 
 class TestOrdersQueryParamValidation:
     """Tests for query parameter validation on GET /orders/with-payments."""
-
 
     @pytest.mark.asyncio
     async def test_invalid_start_date_format_returns_400(self, admin_client):
@@ -60,7 +48,6 @@ class TestOrdersQueryParamValidation:
         assert_status_code(response, 200, "Valid date range should be accepted")
         logger.info("✓ Valid date range correctly accepted")
 
-
     @pytest.mark.asyncio
     async def test_invalid_sort_by_returns_400(self, admin_client):
         """sort_by value not in allowed set should return 400."""
@@ -75,7 +62,6 @@ class TestOrdersQueryParamValidation:
         assert_status_code(response, 200, "sort_by=date should be accepted")
         logger.info("✓ sort_by=date correctly accepted")
 
-
     @pytest.mark.asyncio
     async def test_invalid_sort_order_returns_400(self, admin_client):
         """sort_order value not in allowed set should return 400."""
@@ -89,7 +75,6 @@ class TestOrdersQueryParamValidation:
         response = await admin_client.get(f"{BASE}?sort_order=desc")
         assert_status_code(response, 200, "sort_order=desc should be accepted")
         logger.info("✓ sort_order=desc correctly accepted")
-
 
     @pytest.mark.asyncio
     async def test_nonnumeric_min_total_returns_400(self, admin_client):

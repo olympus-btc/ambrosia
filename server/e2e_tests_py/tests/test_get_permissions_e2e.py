@@ -1,8 +1,4 @@
-"""End-to-end tests for GET /permissions.
-
-Returns the full list of system permissions seeded in the database.
-Requires the permissions_read permission.
-"""
+"""End-to-end tests for GET /permissions."""
 
 import logging
 

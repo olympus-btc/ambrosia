@@ -1,15 +1,4 @@
-"""End-to-end tests for ticket template name validation.
-
-Tests that the server enforces name uniqueness on both
-POST /templates (create) and PUT /templates/{id} (update) endpoints.
-
-Unlike most other validation endpoints, TicketTemplateService only checks for
-duplicate names — there is no blank name validation at the service level.
-
-POST /templates returns 409 Conflict when the name is already taken.
-PUT /templates/{id} returns 409 Conflict when the name is taken by another template
-or when the template does not exist (both failures map to the same 409 response).
-"""
+"""End-to-end tests for ticket template name validation."""
 
 import logging
 import uuid
@@ -40,7 +29,6 @@ class TestTemplateNameValidation:
         yield template_id, name
         await admin_client.delete(f"/templates/{template_id}")
 
-
     @pytest.mark.asyncio
     async def test_create_template_with_duplicate_name_fails(
         self, admin_client, existing_template
@@ -69,7 +57,6 @@ class TestTemplateNameValidation:
         )
         await admin_client.delete(f"/templates/{response.json()['id']}")
         logger.info("✓ Valid template name correctly accepted on create")
-
 
     @pytest.mark.asyncio
     async def test_update_template_with_duplicate_name_fails(

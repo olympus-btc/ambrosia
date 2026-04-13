@@ -1,18 +1,4 @@
-"""End-to-end tests for payment validation.
-
-Tests that the server enforces input validation on both
-POST /payments (create) and PUT /payments/{id} (update) endpoints.
-
-Validated fields (via PaymentService):
-- method_id must not be blank and must reference an existing payment method
-- currency_id must not be blank and must reference an existing currency
-
-POST /payments correctly returns 400 for all validation failures — no known inconsistencies.
-
-PUT /payments/{id} returns 404 for all service failures (including validation failures).
-This is a known inconsistency — the route maps any false return from the service to 404.
-Tests assert current actual behaviour. If the route handler is fixed, update accordingly.
-"""
+"""End-to-end tests for payment validation."""
 
 import logging
 import uuid
@@ -59,7 +45,6 @@ class TestPaymentValidation:
         payment_id = response.json()["id"]
         yield payment_id
         await admin_client.delete(f"/payments/{payment_id}")
-
 
     @pytest.mark.asyncio
     async def test_create_payment_with_blank_method_id_fails(
@@ -156,7 +141,6 @@ class TestPaymentValidation:
         )
         await admin_client.delete(f"/payments/{response.json()['id']}")
         logger.info("✓ Valid payment data correctly accepted on create")
-
 
     @pytest.mark.asyncio
     async def test_update_payment_with_blank_method_id_returns_404(

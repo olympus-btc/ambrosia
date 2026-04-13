@@ -1,8 +1,4 @@
-"""End-to-end tests for the config endpoint.
-
-GET /config  — public, no auth required; returns current business config or 404
-PUT /config  — requires settings_update permission; updates all config fields
-"""
+"""End-to-end tests for the config endpoint."""
 
 import logging
 
@@ -31,7 +27,6 @@ class TestConfigEndpoint:
         yield config
         await admin_client.put("/config", json=config)
 
-
     @pytest.mark.asyncio
     async def test_get_config_returns_200(self, public_client):
         """GET /config is public and returns the business config."""
@@ -41,7 +36,6 @@ class TestConfigEndpoint:
         for field in EXPECTED_CONFIG_FIELDS:
             assert field in body, f"Response missing expected field: {field}"
         logger.info("✓ GET /config returns config with expected fields")
-
 
     @pytest.mark.asyncio
     async def test_update_config_succeeds(self, admin_client, original_config):

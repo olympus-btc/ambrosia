@@ -1,14 +1,4 @@
-"""End-to-end permission enforcement tests for remaining gated endpoints.
-
-Covers:
-- /orders update and delete (read/create already covered in test_permissions_e2e.py)
-- /config PUT (requires settings_update)
-- /permissions GET (requires permissions_read)
-
-Pattern per endpoint:
-- No permission → 403
-- Correct permission → not 403 (even 400 means the permission check passed)
-"""
+"""End-to-end permission enforcement tests for remaining gated endpoints."""
 
 import logging
 

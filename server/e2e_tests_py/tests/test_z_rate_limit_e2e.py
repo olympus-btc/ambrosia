@@ -153,7 +153,6 @@ class TestLoginRateLimit:
             f"Expected 429 after {MAX_FAILURES} failures, got {response.status_code}"
         )
 
-      
         body = response.json()
         assert "retryAfter" in body, f"429 body must contain 'retryAfter', got: {body}"
         retry_after_body = body["retryAfter"]
@@ -165,7 +164,6 @@ class TestLoginRateLimit:
         )
         logger.info(f"Body retryAfter: {retry_after_body}s ✓")
 
-      
         retry_after_header = response.headers.get("Retry-After")
         assert retry_after_header is not None, (
             "Retry-After header must be present on 429"

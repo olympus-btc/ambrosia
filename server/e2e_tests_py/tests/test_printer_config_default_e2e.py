@@ -1,10 +1,4 @@
-"""End-to-end tests for POST /printers/configs/{id}/default.
-
-Sets a printer config as the default for its printer type,
-clearing any previous default for that type first.
-
-Returns 200 on success, 404 if the config ID does not exist.
-"""
+"""End-to-end tests for POST /printers/configs/{id}/default."""
 
 import logging
 import uuid
@@ -39,7 +33,6 @@ class TestPrinterConfigDefault:
         config_id = response.json()["id"]
         yield config_id
         await admin_client.delete(f"/printers/configs/{config_id}")
-
 
     @pytest.mark.asyncio
     async def test_set_default_succeeds(self, admin_client, printer_config):

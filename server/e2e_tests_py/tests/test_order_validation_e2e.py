@@ -1,20 +1,4 @@
-"""End-to-end tests for order validation.
-
-Tests that the server enforces input validation on both
-POST /orders (create) and PUT /orders/{id} (update) endpoints.
-
-Validated fields (via OrderService):
-- user_id must reference an existing user
-- table_id must reference an existing table (when provided; null is allowed)
-- status must be one of: "open", "closed", "paid"
-
-POST /orders correctly returns 400 for all validation failures — no known inconsistencies.
-
-PUT /orders/{id} throws ResourceNotFoundException for all service failures (including
-validation failures), so all failures return 404. This is a known inconsistency —
-should ideally return 400 for validation errors vs 404 for not-found.
-Tests assert current actual behaviour. If the route handler is fixed, update accordingly.
-"""
+"""End-to-end tests for order validation."""
 
 import logging
 import uuid
@@ -62,7 +46,6 @@ class TestOrderValidation:
         order_id = response.json()["id"]
         yield order_id
         await admin_client.delete(f"/orders/{order_id}")
-
 
     @pytest.mark.asyncio
     async def test_create_order_with_nonexistent_user_id_fails(self, admin_client):
@@ -140,7 +123,6 @@ class TestOrderValidation:
         )
         await admin_client.delete(f"/orders/{response.json()['id']}")
         logger.info("✓ Valid order data correctly accepted on create")
-
 
     @pytest.mark.asyncio
     async def test_update_order_with_nonexistent_user_id_returns_404(

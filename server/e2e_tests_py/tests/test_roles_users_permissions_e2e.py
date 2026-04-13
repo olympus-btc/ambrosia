@@ -1,13 +1,4 @@
-"""End-to-end permission enforcement tests for /roles and /users endpoints.
-
-Verifies that the authorizePermission middleware correctly gates each
-HTTP method with the appropriate permission, returning 403 when the
-authenticated user lacks it.
-
-Pattern per endpoint:
-- No permission → 403
-- Correct permission → not 403 (even 400 means the permission check passed)
-"""
+"""End-to-end permission enforcement tests for /roles and /users endpoints."""
 
 import logging
 
