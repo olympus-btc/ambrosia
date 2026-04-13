@@ -38,37 +38,35 @@ private object LoginRateLimiter {
     private const val FREE_ATTEMPTS = 5
     private const val MINUTE_MS = 60_000L
 
-    // Precomputed Fibonacci sequence: FIB[n] = fib(n), 1-indexed (FIB[0] unused).
-    // Applied in minutes after FREE_ATTEMPTS consecutive failures.
-    // For failure counts beyond the array, the last entry (75_025 min ≈ 52 days) is reused.
+    // Fibonacci minutes of backoff after FREE_ATTEMPTS failures. Counts beyond the array reuse the last entry (≈ 52 days).
     private val FIB =
         longArrayOf(
             0, // index 0 — unused
-            1, // F1
-            1, // F2
-            2, // F3
-            3, // F4
-            5, // F5
-            8, // F6
-            13, // F7
-            21, // F8
-            34, // F9
-            55, // F10
-            89, // F11
-            144, // F12
-            233, // F13
-            377, // F14
-            610, // F15
-            987, // F16
-            1_597, // F17
-            2_584, // F18
-            4_181, // F19
-            6_765, // F20
-            10_946, // F21
-            17_711, // F22
-            28_657, // F23
-            46_368, // F24
-            75_025, // F25 ≈ 52 days
+            1,
+            1,
+            2,
+            3,
+            5,
+            8,
+            13,
+            21,
+            34,
+            55,
+            89,
+            144,
+            233,
+            377,
+            610,
+            987,
+            1_597,
+            2_584,
+            4_181,
+            6_765,
+            10_946,
+            17_711,
+            28_657,
+            46_368,
+            75_025,
         )
 
     fun isBlocked(ip: String): Boolean {

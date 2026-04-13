@@ -58,7 +58,6 @@ class TestLoginRateLimit:
         async with AmbrosiaHttpClient(server_url) as client:
             await reset_block(client)
 
-            # Exhaust the free attempts and trigger the first block
             for _ in range(FREE_ATTEMPTS):
                 r = await client.post("/auth/login", json=INVALID_CREDS)
                 assert r.status_code == 401, (
@@ -75,7 +74,6 @@ class TestLoginRateLimit:
             )
             logger.info(f"First block: 429 with retryAfter={retry_after}s ✓")
 
-            # Wait for the block to expire, then log in successfully to reset the counter
             await asyncio.sleep(retry_after + 0.5)
             response = await client.post("/auth/login", json=DEFAULT_TEST_USER)
             assert response.status_code == 200, (
@@ -83,14 +81,12 @@ class TestLoginRateLimit:
             )
             logger.info("Successful login after block expiry: 200 ✓")
 
-            # Counter was reset: next FREE_ATTEMPTS failures must return 401 again
             for i in range(FREE_ATTEMPTS):
                 r = await client.post("/auth/login", json=INVALID_CREDS)
                 assert r.status_code == 401, (
                     f"Post-reset free attempt {i + 1}: expected 401, got {r.status_code}"
                 )
 
-            # And the (FREE_ATTEMPTS+1)-th must start back at fib(1) == FIBONACCI_FIRST_S
             response = await client.post("/auth/login", json=INVALID_CREDS)
             assert response.status_code == 429, (
                 f"Post-reset block trigger: expected 429, got {response.status_code}"
@@ -120,7 +116,6 @@ class TestLoginRateLimit:
         async with AmbrosiaHttpClient(server_url) as client:
             await reset_block(client)
 
-            # First FREE_ATTEMPTS failures → 401 (grace period, no block)
             for i in range(FREE_ATTEMPTS):
                 response = await client.post("/auth/login", json=INVALID_CREDS)
                 assert response.status_code == 401, (
@@ -128,21 +123,18 @@ class TestLoginRateLimit:
                 )
             logger.info(f"First {FREE_ATTEMPTS} failures: all 401 (grace period ✓)")
 
-            # (FREE_ATTEMPTS+1)-th failure → 429
             response = await client.post("/auth/login", json=INVALID_CREDS)
             assert response.status_code == 429, (
                 f"Attempt {FREE_ATTEMPTS + 1}: expected 429, got {response.status_code}"
             )
             logger.info(f"Attempt {FREE_ATTEMPTS + 1}: 429 (blocked ✓)")
 
-            # Subsequent wrong attempts from blocked IP continue to return 429
             response = await client.post("/auth/login", json=INVALID_CREDS)
             assert response.status_code == 429, (
                 f"Wrong creds on blocked IP: expected 429, got {response.status_code}"
             )
             logger.info(f"Wrong creds on blocked IP: {response.status_code} ✓")
 
-        # New client session from the same IP also sees the block (bucket is per-IP)
         async with AmbrosiaHttpClient(server_url) as new_client:
             response = await new_client.post("/auth/login", json=INVALID_CREDS)
             assert response.status_code == 429, (
@@ -169,7 +161,6 @@ class TestLoginRateLimit:
         async with AmbrosiaHttpClient(server_url) as client:
             await reset_block(client)
 
-            # Send enough failures to exhaust the grace period and trigger a block
             response = None
             for _ in range(FREE_ATTEMPTS + 1):
                 response = await client.post("/auth/login", json=INVALID_CREDS)
@@ -180,7 +171,6 @@ class TestLoginRateLimit:
             f"got {response.status_code}"
         )
 
-        # Verify body contains retryAfter
         body = response.json()
         assert "retryAfter" in body, f"429 body must contain 'retryAfter', got: {body}"
         retry_after_body = body["retryAfter"]
@@ -192,7 +182,6 @@ class TestLoginRateLimit:
         )
         logger.info(f"Body retryAfter: {retry_after_body}s ✓")
 
-        # Verify Retry-After header is present and matches the body
         retry_after_header = response.headers.get("Retry-After")
         assert retry_after_header is not None, (
             "Retry-After header must be present on 429"
