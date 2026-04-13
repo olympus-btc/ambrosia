@@ -1,6 +1,8 @@
 # Build stage
 FROM node:22-slim AS builder
 WORKDIR /app
+ARG NEXT_PUBLIC_PORT_API=9154
+ENV NEXT_PUBLIC_PORT_API=${NEXT_PUBLIC_PORT_API}
 COPY package*.json ./
 COPY . .
 RUN npm i
