@@ -91,7 +91,7 @@ describe("useReports", () => {
     const { result } = renderHook(() => useReports());
 
     await expect(
-      act(async () => result.current.fetchReport({ period: "month" }))
+      act(async () => result.current.fetchReport({ period: "month" })),
     ).rejects.toThrow("fail");
   });
 

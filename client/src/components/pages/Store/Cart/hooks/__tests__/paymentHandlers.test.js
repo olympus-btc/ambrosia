@@ -1,5 +1,6 @@
 import { addToast } from "@heroui/react";
 
+import { processCheckout } from "../paymentFlows";
 import {
   buildHandlePay,
   buildHandleBtcInvoiceReady,
@@ -7,7 +8,6 @@ import {
   buildHandleCashComplete,
   buildHandleCardComplete,
 } from "../paymentHandlers";
-import { processCheckout } from "../paymentFlows";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),

@@ -2,6 +2,7 @@
 
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
 import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./OrdersList/StatusChip";

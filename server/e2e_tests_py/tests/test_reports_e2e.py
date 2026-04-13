@@ -10,8 +10,8 @@ class TestReportsEndpoint:
 
     @pytest.mark.asyncio
     async def test_happy_path_authenticated(self, client_factory):
-        """Authenticated user with tickets_read gets 200 with correct shape."""
-        client = await client_factory(permissions=["tickets_read"])
+        """Authenticated user with reports_read gets 200 with correct shape."""
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?startDate=2020-01-01&endDate=2099-12-31")
         assert_status_code(response, 200)
 
@@ -41,7 +41,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_period_week_returns_200(self, client_factory):
         """?period=week returns 200 with valid report shape."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?period=week")
         assert_status_code(response, 200)
 
@@ -53,7 +53,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_period_month_returns_200(self, client_factory):
         """?period=month returns 200 with valid report shape."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?period=month")
         assert_status_code(response, 200)
 
@@ -64,7 +64,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_period_year_returns_200(self, client_factory):
         """?period=year returns 200 with valid report shape."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?period=year")
         assert_status_code(response, 200)
 
@@ -75,42 +75,42 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_invalid_period_returns_400(self, client_factory):
         """?period with unsupported value returns 400."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?period=fortnight")
         assert_status_code(response, 400)
 
     @pytest.mark.asyncio
     async def test_invalid_date_format_returns_400(self, client_factory):
         """Non-ISO date string returns 400."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?startDate=not-a-date&endDate=2024-01-31")
         assert_status_code(response, 400)
 
     @pytest.mark.asyncio
     async def test_start_after_end_returns_400(self, client_factory):
         """startDate after endDate returns 400."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?startDate=2024-12-31&endDate=2024-01-01")
         assert_status_code(response, 400)
 
     @pytest.mark.asyncio
     async def test_missing_start_date_returns_400(self, client_factory):
         """Request with endDate only returns 400."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?endDate=2024-01-31")
         assert_status_code(response, 400)
 
     @pytest.mark.asyncio
     async def test_missing_end_date_returns_400(self, client_factory):
         """Request with startDate only returns 400."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?startDate=2024-01-01")
         assert_status_code(response, 400)
 
     @pytest.mark.asyncio
     async def test_no_permission_returns_403(self, client_factory):
-        """User without tickets_read permission is rejected with 403."""
-        client = await client_factory(permissions=[])
+        """User without reports_read permission is rejected with 403."""
+        client = await client_factory(permissions=["orders_read"])
         response = await client.get("/reports?startDate=2024-01-01&endDate=2024-12-31")
         assert_status_code(response, 403)
 
@@ -125,7 +125,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_no_filters_returns_200_with_all_data(self, client_factory):
         """Request without any filter returns 200 (all data)."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports")
         assert_status_code(response, 200)
 
@@ -136,7 +136,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_product_name_filter_returns_200(self, client_factory):
         """?productName filter is accepted and returns 200."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get(
             "/reports?period=year&productName=NonExistentProduct12345"
         )
@@ -150,7 +150,7 @@ class TestReportsEndpoint:
     @pytest.mark.asyncio
     async def test_payment_method_filter_returns_200(self, client_factory):
         """?paymentMethod filter is accepted and returns 200."""
-        client = await client_factory(permissions=["tickets_read"])
+        client = await client_factory(permissions=["reports_read"])
         response = await client.get("/reports?period=year&paymentMethod=UnknownMethod")
         assert_status_code(response, 200)
 
