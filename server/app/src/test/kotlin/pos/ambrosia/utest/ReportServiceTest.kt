@@ -48,8 +48,6 @@ class ReportServiceTest {
         whenever(mockResultSet.getString("sale_date")).thenReturn(saleDate)
     }
 
-    // ─── resolveDateRange (tested indirectly via SQL captured) ──────────────
-
     @Test
     fun `period=week agrega WHERE con fecha inicio lunes de la semana actual`() {
         val sqlCaptor = argumentCaptor<String>()
@@ -208,12 +206,9 @@ class ReportServiceTest {
             paymentMethod = null,
         )
 
-        // When period is given, it resolves its own date range ignoring startDate/endDate
         val expectedStart = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1).toString()
         verify(mockStatement).setString(1, expectedStart)
     }
-
-    // ─── filtros dinámicos ───────────────────────────────────────────────────
 
     @Test
     fun `sin filtros construye query sin cláusulas AND adicionales`() {
@@ -331,8 +326,6 @@ class ReportServiceTest {
         assertTrue(query.contains("lower(pm.name) = lower(?)"))
     }
 
-    // ─── cálculos de agregados ───────────────────────────────────────────────
-
     @Test
     fun `calcula totalRevenueCents como suma de priceAtOrder por quantity`() {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
@@ -356,7 +349,6 @@ class ReportServiceTest {
                 paymentMethod = null,
             )
 
-        // 3 * 1000 + 2 * 500 = 3000 + 1000 = 4000
         assertEquals(4000L, report.totalRevenueCents)
     }
 
@@ -383,7 +375,7 @@ class ReportServiceTest {
                 paymentMethod = null,
             )
 
-        assertEquals(5, report.totalItemsSold) // 3 + 2
+        assertEquals(5, report.totalItemsSold)
     }
 
     @Test
