@@ -3,6 +3,10 @@
   "version": "0.5.1",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "clean": "rimraf .next node_modules dist",
     "dev": "next dev",
