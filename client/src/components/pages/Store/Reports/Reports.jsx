@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Card, CardBody, CardHeader, addToast } from "@heroui/react";
-import { TrendingUp, DollarSign, Receipt, PieChart, AlertCircle, Calendar } from "lucide-react";
+import { AlertCircle, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -11,118 +11,76 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { StoreLayout } from "../StoreLayout";
 
 import { DateRangeCard } from "./components/DateRangeCard";
-import { DayReport } from "./components/DayReport";
+import { ReportsHeader } from "./components/ReportsHeader";
 import { ReportSkeleton } from "./components/ReportSkeleton";
+import { SalesTable } from "./components/SalesTable";
 import { SummaryStat } from "./components/SummaryStat";
 import { useReports } from "./hooks/useReports";
 
-const toLocalISO = (d) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+const DEFAULT_FILTERS = {
+  activePeriod: "month",
+  startDate: "",
+  endDate: "",
+  productName: "",
+  paymentMethod: "",
 };
-const todayISO = () => toLocalISO(new Date());
 
 export default function Reports() {
-  const [startDate, setStartDate] = useState(todayISO());
-  const [endDate, setEndDate] = useState(todayISO());
-  const [reportData, setReportData] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
   const { formatAmount, loading: currencyLoading } = useCurrency();
-  const { generateReportFromData } = useReports();
-  const displayError = error;
+  const { reportData, loading, error, fetchReport } = useReports();
   const t = useTranslations("reports");
 
-  const formatDate = useCallback((dateString) => {
-    const [year, month, day] = dateString.split("-");
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      timeZone: "UTC",
-    });
-  }, []);
-
-  const formatCurrency = useCallback(
-    (amount) => {
-      const numeric = Number(amount);
-      if (!Number.isFinite(numeric)) return amount;
-      return formatAmount(Math.round(numeric * 100));
-    },
-    [formatAmount],
-  );
+  const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
 
   const showError = useCallback(
     (message) => {
-      setError(message);
-      addToast({
-        title: t("statuses.errorTitle"),
-        description: message,
-        variant: "solid",
-        color: "danger",
-      });
+      addToast({ title: t("statuses.errorTitle"), description: message, variant: "solid", color: "danger" });
     },
     [t],
   );
 
-  const validateRange = useCallback(() => {
-    if (!startDate || !endDate) {
-      showError(t("errors.bothDates"));
-      return false;
-    }
-    if (new Date(startDate) > new Date(endDate)) {
+  const validateCustomRange = useCallback(() => {
+    if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
       showError(t("errors.invalidRange"));
       return false;
     }
+    if ((filters.startDate && !filters.endDate) || (!filters.startDate && filters.endDate)) {
+      showError(t("errors.bothDates"));
+      return false;
+    }
     return true;
-  }, [endDate, showError, startDate, t]);
+  }, [filters.startDate, filters.endDate, showError, t]);
 
   const generateReport = useCallback(async () => {
-    if (!validateRange()) return;
-    setGenerating(true);
-    setError("");
+    if (!filters.activePeriod && !validateCustomRange()) return;
     try {
-      const report = await generateReportFromData(startDate, endDate);
-      setReportData(report);
-      addToast({
-        title: t("statuses.generatedTitle"),
-        description: t("statuses.generatedDesc"),
-        variant: "solid",
-        color: "success",
+      await fetchReport({
+        period: filters.activePeriod || undefined,
+        startDate: filters.activePeriod ? undefined : filters.startDate || undefined,
+        endDate: filters.activePeriod ? undefined : filters.endDate || undefined,
+        productName: filters.productName || undefined,
+        paymentMethod: filters.paymentMethod || undefined,
       });
-    } catch (err) {
-      console.error(err);
+      addToast({ title: t("statuses.generatedTitle"), description: t("statuses.generatedDesc"), variant: "solid", color: "success" });
+    } catch {
       showError(t("statuses.errorGenerate"));
-    } finally {
-      setGenerating(false);
     }
-  }, [endDate, generateReportFromData, showError, startDate, t, validateRange]);
+  }, [filters, fetchReport, validateCustomRange, showError, t]);
 
-  const hasAutoGenerated = useRef(false);
   useEffect(() => {
-    if (!hasAutoGenerated.current) {
-      hasAutoGenerated.current = true;
-      generateReport();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchReport({ period: DEFAULT_FILTERS.activePeriod });
+  }, [fetchReport]);
+
+  const handleFiltersChange = useCallback((patch) => {
+    setFilters((f) => ({ ...f, ...patch }));
   }, []);
 
-  const setQuickDateRange = (days) => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days);
+  const handleClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
 
-    setStartDate(toLocalISO(start));
-    setEndDate(toLocalISO(end));
-  };
-
-  const totalTickets = useMemo(
-    () => reportData?.reports?.reduce((total, day) => total + day.tickets.length, 0) || 0,
-    [reportData],
-  );
+  const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);
+  const totalItems = useMemo(() => reportData?.totalItemsSold ?? 0, [reportData]);
 
   if (currencyLoading && !reportData) {
     return (
@@ -136,26 +94,30 @@ export default function Reports() {
     <StoreLayout>
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {displayError && (
+        <ReportsHeader
+          onBack={() => window.history.back()}
+          onRefresh={generateReport}
+          loading={loading}
+        />
+
+        {error && (
           <Card className="bg-red-50 border-red-200">
             <CardBody>
               <div className="flex items-center space-x-2">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <p className="text-red-600 font-semibold">{displayError}</p>
+                <p className="text-red-600 font-semibold">{t("statuses.errorGenerate")}</p>
               </div>
             </CardBody>
           </Card>
         )}
 
         <DateRangeCard
-          startDate={startDate}
-          endDate={endDate}
-          onChangeStart={(e) => setStartDate(e.target.value)}
-          onChangeEnd={(e) => setEndDate(e.target.value)}
-          onQuickRange={setQuickDateRange}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
           onGenerate={generateReport}
           disabled={currencyLoading}
-          generating={generating}
+          generating={loading}
         />
 
         {reportData && (
@@ -168,23 +130,11 @@ export default function Reports() {
                 </h3>
               </CardHeader>
               <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <SummaryStat
-                    icon={<Calendar className="w-6 h-6 text-blue-600" />}
-                    label={t("summary.period")}
-                    value={`${formatDate(reportData.startDate)} - ${formatDate(reportData.endDate)}`}
-                    tone={{
-                      bg: "bg-blue-50",
-                      border: "border-blue-200",
-                      iconBg: "bg-blue-100",
-                      text: "text-blue-700",
-                      value: "text-blue-900",
-                    }}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SummaryStat
                     icon={<DollarSign className="w-6 h-6 text-green-600" />}
-                    label={t("summary.balance")}
-                    value={formatCurrency(reportData.totalBalance)}
+                    label={t("summary.revenue")}
+                    value={formatCurrency(totalRevenue)}
                     tone={{
                       bg: "bg-green-50",
                       border: "border-green-200",
@@ -194,9 +144,9 @@ export default function Reports() {
                     }}
                   />
                   <SummaryStat
-                    icon={<Receipt className="w-6 h-6 text-purple-600" />}
-                    label={t("summary.tickets")}
-                    value={totalTickets}
+                    icon={<ShoppingCart className="w-6 h-6 text-purple-600" />}
+                    label={t("summary.items")}
+                    value={totalItems}
                     tone={{
                       bg: "bg-purple-50",
                       border: "border-purple-200",
@@ -212,16 +162,12 @@ export default function Reports() {
             <Card className="shadow-lg border-0 bg-white">
               <CardHeader>
                 <h3 className="text-lg font-bold text-deep flex items-center">
-                  <PieChart className="w-5 h-5 mr-2" />
-                  {t("breakdown.title")}
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  {t("sales.title")}
                 </h3>
               </CardHeader>
               <CardBody>
-                <div className="space-y-6 max-h-96 overflow-y-auto">
-                  {reportData.reports.map((report, idx) => (
-                    <DayReport key={`${report.date}-${idx}`} report={report} formatCurrency={formatCurrency} />
-                  ))}
-                </div>
+                <SalesTable sales={reportData.sales} formatCurrency={formatCurrency} />
               </CardBody>
             </Card>
           </div>
