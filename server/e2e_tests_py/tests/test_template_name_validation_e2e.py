@@ -40,7 +40,6 @@ class TestTemplateNameValidation:
         yield template_id, name
         await admin_client.delete(f"/templates/{template_id}")
 
-    # --- POST tests ---
 
     @pytest.mark.asyncio
     async def test_create_template_with_duplicate_name_fails(
@@ -71,7 +70,6 @@ class TestTemplateNameValidation:
         await admin_client.delete(f"/templates/{response.json()['id']}")
         logger.info("✓ Valid template name correctly accepted on create")
 
-    # --- PUT tests ---
 
     @pytest.mark.asyncio
     async def test_update_template_with_duplicate_name_fails(

@@ -65,7 +65,6 @@ class TestShiftsFlow:
         await admin_client.post(f"/shifts/{shift_id}/close")
         await admin_client.delete(f"/shifts/{shift_id}")
 
-    # --- GET /shifts/open ---
 
     @pytest.mark.asyncio
     async def test_no_open_shift_returns_204(self, admin_client):
@@ -82,7 +81,6 @@ class TestShiftsFlow:
         assert response.json()["id"] == open_shift
         logger.info("✓ Open shift correctly returned")
 
-    # --- POST /shifts (open) ---
 
     @pytest.mark.asyncio
     async def test_open_shift_succeeds(self, admin_client, user_id):
@@ -112,7 +110,6 @@ class TestShiftsFlow:
         assert_status_code(response, 400, "Non-existent user_id should return 400")
         logger.info("✓ Non-existent user_id correctly returns 400")
 
-    # --- POST /shifts/{id}/close ---
 
     @pytest.mark.asyncio
     async def test_close_shift_succeeds(self, admin_client, open_shift):
@@ -152,7 +149,6 @@ class TestShiftsFlow:
         assert_status_code(response, 404, "Non-existent shift ID should return 404")
         logger.info("✓ Non-existent shift correctly returns 404")
 
-    # --- GET /shifts/{id} ---
 
     @pytest.mark.asyncio
     async def test_get_shift_by_id_succeeds(self, admin_client, open_shift):

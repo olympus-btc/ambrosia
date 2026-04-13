@@ -31,7 +31,6 @@ class TestConfigEndpoint:
         yield config
         await admin_client.put("/config", json=config)
 
-    # --- GET ---
 
     @pytest.mark.asyncio
     async def test_get_config_returns_200(self, public_client):
@@ -43,7 +42,6 @@ class TestConfigEndpoint:
             assert field in body, f"Response missing expected field: {field}"
         logger.info("✓ GET /config returns config with expected fields")
 
-    # --- PUT ---
 
     @pytest.mark.asyncio
     async def test_update_config_succeeds(self, admin_client, original_config):

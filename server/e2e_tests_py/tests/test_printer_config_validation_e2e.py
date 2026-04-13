@@ -49,7 +49,6 @@ class TestPrinterConfigValidation:
         yield config_id, printer_name
         await admin_client.delete(f"/printers/configs/{config_id}")
 
-    # --- POST tests ---
 
     @pytest.mark.asyncio
     async def test_create_printer_config_with_duplicate_type_and_name_fails(
@@ -90,7 +89,6 @@ class TestPrinterConfigValidation:
         await admin_client.delete(f"/printers/configs/{response.json()['id']}")
         logger.info("✓ Valid printer config correctly accepted on create")
 
-    # --- PUT tests ---
 
     @pytest.mark.asyncio
     async def test_update_printer_config_with_duplicate_type_and_name_fails(

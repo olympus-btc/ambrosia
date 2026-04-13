@@ -40,7 +40,6 @@ class TestPrinterConfigDefault:
         yield config_id
         await admin_client.delete(f"/printers/configs/{config_id}")
 
-    # --- Tests ---
 
     @pytest.mark.asyncio
     async def test_set_default_succeeds(self, admin_client, printer_config):

@@ -25,7 +25,6 @@ BASE = "/orders/with-payments"
 class TestOrdersQueryParamValidation:
     """Tests for query parameter validation on GET /orders/with-payments."""
 
-    # --- Date format ---
 
     @pytest.mark.asyncio
     async def test_invalid_start_date_format_returns_400(self, admin_client):
@@ -61,7 +60,6 @@ class TestOrdersQueryParamValidation:
         assert_status_code(response, 200, "Valid date range should be accepted")
         logger.info("✓ Valid date range correctly accepted")
 
-    # --- sort_by ---
 
     @pytest.mark.asyncio
     async def test_invalid_sort_by_returns_400(self, admin_client):
@@ -77,7 +75,6 @@ class TestOrdersQueryParamValidation:
         assert_status_code(response, 200, "sort_by=date should be accepted")
         logger.info("✓ sort_by=date correctly accepted")
 
-    # --- sort_order ---
 
     @pytest.mark.asyncio
     async def test_invalid_sort_order_returns_400(self, admin_client):
@@ -93,7 +90,6 @@ class TestOrdersQueryParamValidation:
         assert_status_code(response, 200, "sort_order=desc should be accepted")
         logger.info("✓ sort_order=desc correctly accepted")
 
-    # --- min_total / max_total ---
 
     @pytest.mark.asyncio
     async def test_nonnumeric_min_total_returns_400(self, admin_client):

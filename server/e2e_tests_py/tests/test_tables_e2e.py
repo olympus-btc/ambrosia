@@ -50,7 +50,6 @@ class TestTablesEndpoint:
         yield table_id, name
         await admin_client.delete(f"/tables/{table_id}")
 
-    # --- POST ---
 
     @pytest.mark.asyncio
     async def test_create_table_returns_201_with_id(self, admin_client, space):
@@ -66,7 +65,6 @@ class TestTablesEndpoint:
         await admin_client.delete(f"/tables/{body['id']}")
         logger.info("✓ POST /tables correctly returns 201 with id")
 
-    # --- GET list ---
 
     @pytest.mark.asyncio
     async def test_get_tables_returns_200(self, admin_client, table):
@@ -81,7 +79,6 @@ class TestTablesEndpoint:
         )
         logger.info("✓ GET /tables correctly includes created table")
 
-    # --- GET by id ---
 
     @pytest.mark.asyncio
     async def test_get_table_by_id_returns_correct_data(
@@ -105,7 +102,6 @@ class TestTablesEndpoint:
         assert_status_code(response, 404, "Non-existent table should return 404")
         logger.info("✓ GET /tables/{id} with non-existent ID correctly returns 404")
 
-    # --- GET by space ---
 
     @pytest.mark.asyncio
     async def test_get_tables_by_space_returns_table(self, admin_client, table, space):
@@ -129,7 +125,6 @@ class TestTablesEndpoint:
             "✓ GET /tables/by-space/{id} with non-existent space correctly returns 404"
         )
 
-    # --- PUT / status transitions ---
 
     @pytest.mark.asyncio
     async def test_update_table_returns_200(self, admin_client, table, space):
@@ -189,7 +184,6 @@ class TestTablesEndpoint:
         assert_status_code(response, 404, "Non-existent table update should return 404")
         logger.info("✓ PUT /tables/{id} with non-existent ID correctly returns 404")
 
-    # --- DELETE ---
 
     @pytest.mark.asyncio
     async def test_delete_table_returns_204(self, admin_client, space):

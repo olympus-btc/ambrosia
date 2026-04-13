@@ -63,7 +63,6 @@ class TestOrderValidation:
         yield order_id
         await admin_client.delete(f"/orders/{order_id}")
 
-    # --- POST tests ---
 
     @pytest.mark.asyncio
     async def test_create_order_with_nonexistent_user_id_fails(self, admin_client):
@@ -142,7 +141,6 @@ class TestOrderValidation:
         await admin_client.delete(f"/orders/{response.json()['id']}")
         logger.info("✓ Valid order data correctly accepted on create")
 
-    # --- PUT tests ---
 
     @pytest.mark.asyncio
     async def test_update_order_with_nonexistent_user_id_returns_404(

@@ -60,7 +60,6 @@ class TestPaymentValidation:
         yield payment_id
         await admin_client.delete(f"/payments/{payment_id}")
 
-    # --- POST tests ---
 
     @pytest.mark.asyncio
     async def test_create_payment_with_blank_method_id_fails(
@@ -158,7 +157,6 @@ class TestPaymentValidation:
         await admin_client.delete(f"/payments/{response.json()['id']}")
         logger.info("✓ Valid payment data correctly accepted on create")
 
-    # --- PUT tests ---
 
     @pytest.mark.asyncio
     async def test_update_payment_with_blank_method_id_returns_404(

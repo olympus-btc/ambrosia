@@ -36,7 +36,6 @@ class TestSpacesEndpoint:
         yield space_id, name
         await admin_client.delete(f"/spaces/{space_id}")
 
-    # --- POST ---
 
     @pytest.mark.asyncio
     async def test_create_space_returns_201_with_id(self, admin_client):
@@ -49,7 +48,6 @@ class TestSpacesEndpoint:
         await admin_client.delete(f"/spaces/{body['id']}")
         logger.info("✓ POST /spaces correctly returns 201 with id")
 
-    # --- GET list ---
 
     @pytest.mark.asyncio
     async def test_get_spaces_returns_200(self, admin_client, space):
@@ -64,7 +62,6 @@ class TestSpacesEndpoint:
         )
         logger.info("✓ GET /spaces correctly includes created space")
 
-    # --- GET by id ---
 
     @pytest.mark.asyncio
     async def test_get_space_by_id_returns_correct_data(self, admin_client, space):
@@ -84,7 +81,6 @@ class TestSpacesEndpoint:
         assert_status_code(response, 404, "Non-existent space should return 404")
         logger.info("✓ GET /spaces/{id} with non-existent ID correctly returns 404")
 
-    # --- PUT ---
 
     @pytest.mark.asyncio
     async def test_update_space_returns_200(self, admin_client, space):
@@ -119,7 +115,6 @@ class TestSpacesEndpoint:
         assert_status_code(response, 404, "Non-existent space update should return 404")
         logger.info("✓ PUT /spaces/{id} with non-existent ID correctly returns 404")
 
-    # --- DELETE ---
 
     @pytest.mark.asyncio
     async def test_delete_space_returns_204(self, admin_client):

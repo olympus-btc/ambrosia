@@ -68,7 +68,6 @@ class TestProductValidation:
         yield product_id
         await admin_client.delete(f"/products/{product_id}")
 
-    # --- POST tests ---
 
     @pytest.mark.asyncio
     async def test_create_product_with_blank_name_fails(
@@ -226,7 +225,6 @@ class TestProductValidation:
         await admin_client.delete(f"/products/{response.json()['id']}")
         logger.info("✓ Valid product data correctly accepted on create")
 
-    # --- PUT tests ---
 
     @pytest.mark.asyncio
     async def test_update_product_with_blank_name_fails(
