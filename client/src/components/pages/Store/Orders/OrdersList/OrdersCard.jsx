@@ -4,7 +4,7 @@ import { Card, CardBody } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { ViewButton } from "@/components/shared/ViewButton";
-import formatDate from "@/lib/formatDate";
+import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./StatusChip";
 
