@@ -23,24 +23,9 @@ jest.mock("../usePaymentMethod", () => ({
   }),
 }));
 
-jest.mock("../../../hooks/useOrders", () => ({
-  useOrders: () => ({
-    createOrder: jest.fn(() => Promise.resolve({ id: "order-1" })),
-    updateOrder: jest.fn(() => Promise.resolve()),
-  }),
-}));
-
 jest.mock("../../../hooks/usePayments", () => ({
   usePayments: () => ({
-    createPayment: jest.fn(() => Promise.resolve({ id: "pay-1" })),
-    linkPaymentToTicket: jest.fn(() => Promise.resolve()),
     getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
-  }),
-}));
-
-jest.mock("../../../hooks/useTickets", () => ({
-  useTickets: () => ({
-    createTicket: jest.fn(() => Promise.resolve({ id: "ticket-1" })),
   }),
 }));
 
