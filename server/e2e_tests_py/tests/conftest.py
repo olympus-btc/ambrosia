@@ -59,6 +59,12 @@ def pytest_collection_modifyitems(config, items):
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
 
+    # Rate limit tests intentionally block 127.0.0.1 for 3 minutes.
+    # Run them last so they don't interfere with other tests that need to login.
+    rate_limit = [i for i in items if "test_rate_limit" in i.nodeid]
+    others = [i for i in items if "test_rate_limit" not in i.nodeid]
+    items[:] = others + rate_limit
+
 
 # Set up test environment variables
 os.environ.setdefault("TESTING", "true")
