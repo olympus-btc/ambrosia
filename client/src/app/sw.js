@@ -50,9 +50,8 @@ serwist.addEventListeners();
 
 self.addEventListener("install", (event) => {
   const requestPromises = Promise.all(
-    ["/"].map((entry) =>
-      serwist.handleRequest({ request: new Request(entry), event })
-    )
+    ["/"].map((entry) => serwist.handleRequest({ request: new Request(entry), event }),
+    ),
   );
   event.waitUntil(requestPromises);
 });
