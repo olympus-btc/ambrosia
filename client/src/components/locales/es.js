@@ -2,6 +2,11 @@ const componentsEs = {
   loadingCard: {
     message: "Cargando...",
   },
+  offlinePage: {
+    title: "Sin conexión",
+    message: "Revisa tu red e intenta de nuevo.",
+    retry: "Reintentar",
+  },
   updateBanner: {
     readyToInstall: "La versión {version} está lista para instalar.",
     newVersionAvailable: "Nueva versión ({version}) disponible.",

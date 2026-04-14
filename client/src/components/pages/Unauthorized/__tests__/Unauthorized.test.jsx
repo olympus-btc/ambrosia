@@ -14,8 +14,6 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("lucide-react", () => ({
   ShieldOff: () => <div>ShieldOff Icon</div>,
-  ArrowLeft: () => <div>ArrowLeft Icon</div>,
-  LogIn: () => <div>LogIn Icon</div>,
   Languages: () => <div>Languages Icon</div>,
 }));
 

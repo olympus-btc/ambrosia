@@ -15,6 +15,13 @@ jest.mock("@lib/isElectron", () => ({
   get isElectron() { return global.__mockIsElectron ?? false; },
 }));
 
+jest.mock("@hooks/usePWA", () => ({
+  useIsStandalone: () => false,
+  useIsIOS: () => false,
+  useIsAndroid: () => false,
+  useInstallPrompt: () => ({ isInstallable: false, promptInstall: jest.fn() }),
+}));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Select = ({ label, value, onChange, children }) => (

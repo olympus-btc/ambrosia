@@ -1,8 +1,15 @@
 {
   "name": "ambrosia-client",
-  "version": "0.5.1",
+  "version": "0.6.0-beta",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9.0.0"
+  },
+  "overrides": {
+    "@swc/helpers": ">=0.5.21"
+  },
   "scripts": {
     "clean": "rimraf .next node_modules dist",
     "dev": "next dev",
@@ -21,6 +28,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@heroui/react": "^2.8.5",
+    "@serwist/next": "^9.5.7",
     "driver.js": "^1.4.0",
     "framer-motion": "^12.23.12",
     "jsonwebtoken": "^9.0.2",
@@ -29,7 +37,8 @@
     "next-intl": "^4.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-qr-code": "^2.0.18"
+    "react-qr-code": "^2.0.18",
+    "serwist": "^9.5.7"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.3",
