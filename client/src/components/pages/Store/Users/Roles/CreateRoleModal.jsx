@@ -89,7 +89,7 @@ export function CreateRoleModal({
               <p className="text-sm text-default-500">
                 {t("roles.create.templateLegend")}
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {templates.map((template) => {
                   const Icon = template.icon;
                   const isSelected = selectedTemplate === template.key;
@@ -160,7 +160,7 @@ export function CreateRoleModal({
           )}
         </ModalBody>
 
-        <ModalFooter className="flex justify-between">
+        <ModalFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
           <div>
             {!advanced && (
               <Button
@@ -171,10 +171,10 @@ export function CreateRoleModal({
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex justify-between sm:justify-end gap-2">
             <Button
               variant="bordered"
-              className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
+              className="border border-border text-foreground hover:bg-muted transition-colors"
               onPress={handleClose}
             >
               {t("roles.actions.cancel")}
