@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function usePayments() {
   const [payments, setPayments] = useState([]);
@@ -13,15 +14,12 @@ export function usePayments() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/payments");
-      if (Array.isArray(res)) {
-        setPayments(res);
-      } else {
-        setPayments([]);
-      }
-    } catch (err) {
-      console.error("Error fetching payments:", err);
-      setError(err);
+      const payments = await httpClient("/payments");
+      const paymentsData = await parseJsonResponse(payments, []);
+      setPayments(toArray(paymentsData));
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -30,19 +28,25 @@ export function usePayments() {
   const createPayment = useCallback(
     async (paymentBody) => {
       try {
-        const created = await apiClient("/payments", {
+        const createPayment = await httpClient("/payments", {
           method: "POST",
-          body: paymentBody,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(paymentBody),
         });
-        if (created?.id) {
-          setPayments((prev) => (Array.isArray(prev) ? [...prev, created] : [created]),
+
+        const createdDataPayment = await parseJsonResponse(createPayment, null);
+
+        if (createdDataPayment?.id) {
+          setPayments((prev) => (Array.isArray(prev) ? [...prev, createdDataPayment] : [createdDataPayment]),
           );
         }
-        return created;
-      } catch (err) {
-        console.error("Error creating payment:", err);
-        setError(err);
-        throw err;
+        return createdDataPayment;
+      } catch (error) {
+        console.error("Error creating payment:", error);
+        setError(error);
+        throw error;
       }
     },
     [],
@@ -52,11 +56,12 @@ export function usePayments() {
     async (currencyId) => {
       if (!currencyId) return null;
       try {
-        return await apiClient(`/payments/currencies/${currencyId}`);
-      } catch (err) {
-        console.error("Error fetching payment currency:", err);
-        setError(err);
-        throw err;
+        const paymentCurrencyById = await httpClient(`/payments/currencies/${currencyId}`);
+        return await parseJsonResponse(paymentCurrencyById, null);
+      } catch (error) {
+        console.error("Error fetching payment currency:", error);
+        setError(error);
+        throw error;
       }
     },
     [],
@@ -69,24 +74,30 @@ export function usePayments() {
   const linkPaymentToTicket = useCallback(
     async (paymentId, ticketId) => {
       try {
-        const linked = await apiClient("/payments/ticket-payments", {
+        const linkPayment = await httpClient("/payments/ticket-payments", {
           method: "POST",
-          body: {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             payment_id: paymentId,
             ticket_id: ticketId,
-          },
+          }),
         });
-        if (linked?.payment_id && linked?.ticket_id) {
+
+        const linkedPayment = await parseJsonResponse(linkPayment, null);
+
+        if (linkedPayment?.payment_id && linkPayment?.ticket_id) {
           setTicketPayments((prev) => (Array.isArray(prev)
             ? [...prev, { payment_id: paymentId, ticket_id: ticketId }]
             : [{ payment_id: paymentId, ticket_id: ticketId }]),
           );
         }
-        return linked;
-      } catch (err) {
-        console.error("Error linking payment to ticket:", err);
-        setError(err);
-        throw err;
+        return linkPayment;
+      } catch (error) {
+        console.error("Error linking payment to ticket:", error);
+        setError(error);
+        throw error;
       }
     },
     [],

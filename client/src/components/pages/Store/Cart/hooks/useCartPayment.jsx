@@ -5,8 +5,8 @@ import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { useAuth } from "@/modules/auth/useAuth";
-import { apiClient } from "@/services/apiClient";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { httpClient } from "@/lib/http";
 
 import { useOrders } from "../../hooks/useOrders";
 import { usePayments } from "../../hooks/usePayments";
@@ -65,10 +65,12 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       }))
       .filter((adjustment) => adjustment.product_id && adjustment.quantity > 0);
     if (!adjustments.length) return;
-    await apiClient("/products/stock", {
+    await httpClient("/products/stock", {
       method: "POST",
-      body: adjustments,
-      notShowError: false,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(adjustments),
     });
   }, []);
 

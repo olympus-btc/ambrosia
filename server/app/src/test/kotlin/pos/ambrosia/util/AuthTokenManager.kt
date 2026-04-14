@@ -1,10 +1,13 @@
 package pos.ambrosia.test
 
-import io.ktor.client.call.*
-import io.ktor.client.request.*
 import io.ktor.client.HttpClient
-import io.ktor.http.*
-import io.ktor.server.testing.*
+import io.ktor.client.call.body
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import pos.ambrosia.models.AuthRequest
 import pos.ambrosia.models.AuthResponse
@@ -15,11 +18,12 @@ class AuthTokenManager {
     var refreshToken: String? = null
 
     suspend fun login(client: HttpClient) {
-        val response = client.post("/auth/login") {
-            contentType(ContentType.Application.Json)
-            setBody(AuthRequest("cool", "password123"))
-        }
-        
+        val response =
+            client.post("/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(AuthRequest("cool", "password123"))
+            }
+
         if (response.status == HttpStatusCode.OK) {
             val tokens = response.body<TokenResponse>()
             this.accessToken = tokens.accessToken
@@ -31,10 +35,11 @@ class AuthTokenManager {
 
     private suspend fun refresh(client: HttpClient) {
         println("💡 Token expirado, intentando refrescar...")
-        val response = client.post("/auth/refresh") {
-            bearerAuth(this@AuthTokenManager.refreshToken!!)
-        }
-        
+        val response =
+            client.post("/auth/refresh") {
+                bearerAuth(this@AuthTokenManager.refreshToken!!)
+            }
+
         if (response.status == HttpStatusCode.OK) {
             val newTokens = response.body<TokenResponse>()
             this.accessToken = newTokens.accessToken

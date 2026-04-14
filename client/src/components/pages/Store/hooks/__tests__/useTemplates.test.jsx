@@ -2,12 +2,13 @@ import { act, useEffect } from "react";
 
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { useTemplates } from "../useTemplates";
 
-jest.mock("@/services/apiClient", () => ({
-  apiClient: jest.fn(),
+jest.mock("@/lib/http", () => ({
+  httpClient: jest.fn(),
+  parseJsonResponse: jest.fn(),
 }));
 
 const handlers = {};
@@ -41,10 +42,16 @@ function TestComponent() {
 describe("useTemplates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("loads templates on mount", async () => {
-    apiClient.mockResolvedValueOnce([{ id: "t1", name: "Default" }]);
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce([{ id: "t1", name: "Default" }]);
 
     render(<TestComponent />);
 
@@ -55,7 +62,8 @@ describe("useTemplates", () => {
   });
 
   it("sets empty templates when apiClient returns non-array", async () => {
-    apiClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce({ ok: true });
 
     render(<TestComponent />);
 
@@ -65,7 +73,7 @@ describe("useTemplates", () => {
   });
 
   it("sets error when fetching templates fails", async () => {
-    apiClient.mockRejectedValueOnce(new Error("fetch-fail"));
+    httpClient.mockRejectedValueOnce(new Error("fetch-fail"));
 
     render(<TestComponent />);
 
@@ -75,8 +83,9 @@ describe("useTemplates", () => {
   });
 
   it("creates a template and appends it", async () => {
-    apiClient.mockResolvedValueOnce([]);
-    apiClient.mockResolvedValueOnce({ id: "t-2" });
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: "t-2" });
 
     render(<TestComponent />);
 
@@ -87,16 +96,19 @@ describe("useTemplates", () => {
       await handlers.createTemplate({ name: "Ticket A" });
     });
 
-    expect(apiClient).toHaveBeenCalledWith("/templates", {
+    expect(httpClient).toHaveBeenCalledWith("/templates", {
       method: "POST",
-      body: { name: "Ticket A" },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: "Ticket A" }),
     });
     expect(screen.getByTestId("count")).toHaveTextContent("1");
   });
 
   it("updates a template in state", async () => {
-    apiClient.mockResolvedValueOnce([{ id: "t-1", name: "Old" }]);
-    apiClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([{ id: "t-1", name: "Old" }]);
 
     render(<TestComponent />);
 
@@ -107,19 +119,22 @@ describe("useTemplates", () => {
       await handlers.updateTemplate("t-1", { name: "New" });
     });
 
-    expect(apiClient).toHaveBeenCalledWith("/templates/t-1", {
+    expect(httpClient).toHaveBeenCalledWith("/templates/t-1", {
       method: "PUT",
-      body: { name: "New" },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: "New" }),
     });
     expect(screen.getByTestId("first-name")).toHaveTextContent("New");
   });
 
   it("deletes a template from state", async () => {
-    apiClient.mockResolvedValueOnce([
+    httpClient.mockResolvedValue({});
+    parseJsonResponse.mockResolvedValueOnce([
       { id: "t-1", name: "A" },
       { id: "t-2", name: "B" },
     ]);
-    apiClient.mockResolvedValueOnce({ ok: true });
 
     render(<TestComponent />);
 
@@ -130,14 +145,15 @@ describe("useTemplates", () => {
       await handlers.deleteTemplate("t-1");
     });
 
-    expect(apiClient).toHaveBeenCalledWith("/templates/t-1", {
+    expect(httpClient).toHaveBeenCalledWith("/templates/t-1", {
       method: "DELETE",
     });
     expect(screen.getByTestId("count")).toHaveTextContent("1");
   });
 
   it("validates template id for update and delete", async () => {
-    apiClient.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValueOnce({});
+    parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
 

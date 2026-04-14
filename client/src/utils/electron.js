@@ -76,3 +76,42 @@ export function isWindows() {
 export function isLinux() {
   return getPlatform() === "linux";
 }
+
+/**
+ * Installs the downloaded update and restarts (Windows only)
+ */
+export async function installUpdate() {
+  const electronAPI = getElectronAPI();
+  if (electronAPI?.ipc?.invoke) {
+    return electronAPI.ipc.invoke("update:install");
+  }
+}
+
+/**
+ * Opens the GitHub release page for manual download (macOS/Linux)
+ */
+export async function openReleasePage() {
+  const electronAPI = getElectronAPI();
+  if (electronAPI?.ipc?.invoke) {
+    return electronAPI.ipc.invoke("update:open-release");
+  }
+}
+
+/**
+ * Subscribes to update events from the main process
+ * @param {string} event - update:available, update:downloaded
+ * @param {Function} callback - Event handler
+ * @returns {Function} Cleanup function to remove listener
+ */
+export function onUpdateEvent(event, callback) {
+  const electronAPI = getElectronAPI();
+  if (electronAPI?.ipc?.on) {
+    electronAPI.ipc.on(event, callback);
+    return () => {
+      if (electronAPI?.ipc?.removeListener) {
+        electronAPI.ipc.removeListener(event, callback);
+      }
+    };
+  }
+  return () => {};
+}

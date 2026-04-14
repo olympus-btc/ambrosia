@@ -1,30 +1,38 @@
 @import "tailwindcss";
+@import "driver.js/dist/driver.css";
+
+/* PWA safe area insets for notched devices in standalone mode */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
 @plugin './hero.ts';
-/* Note: You may need to change the path to fit your project structure */
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom-variant dark (&:is(.dark *));
 
-/*https://coolors.co/1c7c54-73e2a7-def4c6-1b512d-b1cf5f*/
-
 @theme {
-  /* Color Primario - Verde Bosque #1C7C54 */
+  /* Primary color - Forest Green #1C7C54 */
   --color-primary-50: #e8f5ef;
   --color-primary-100: #c5e7d7;
   --color-primary-200: #9ed8bc;
   --color-primary-300: #77c9a1;
   --color-primary-400: #59bd8d;
-  --color-primary-500: #1c7c54; /* Tu color base */
+  --color-primary-500: #1c7c54; /* Base color */
   --color-primary-600: #19704c;
   --color-primary-700: #166343;
   --color-primary-800: #145739;
   --color-primary-900: #0f4129;
   --color-primary-950: #0a2b1b;
 
-  /* Color Secundario - Verde Menta #73E2A7 */
+  /* Secondary color - Mint Green #73E2A7 */
   --color-secondary-50: #f0fcf5;
   --color-secondary-100: #dbf8e7;
   --color-secondary-200: #b9f1d0;
-  --color-secondary-300: #73e2a7; /* Tu color base */
+  --color-secondary-300: #73e2a7; /* Base color */
   --color-secondary-400: #5dd994;
   --color-secondary-500: #3dc874;
   --color-secondary-600: #2fb15d;
@@ -33,11 +41,11 @@
   --color-secondary-900: #1e6135;
   --color-secondary-950: #0d3a1e;
 
-  /* Color de Acento - Verde Lima #B1CF5F */
+  /* Accent color - Lime Green #B1CF5F */
   --color-accent-50: #f8fce8;
   --color-accent-100: #eff8c6;
   --color-accent-200: #e0f190;
-  --color-accent-300: #b1cf5f; /* Tu color base */
+  --color-accent-300: #b1cf5f; /* Base color */
   --color-accent-400: #a3c54a;
   --color-accent-500: #8db331;
   --color-accent-600: #729425;
@@ -46,11 +54,11 @@
   --color-accent-900: #3a4a1c;
   --color-accent-950: #1f290b;
 
-  /* Color Claro - Crema Verde #DEF4C6 */
+  /* Light color - Green Cream #DEF4C6 */
   --color-light-50: #fdfef8;
   --color-light-100: #fbfeef;
   --color-light-200: #f5fcdb;
-  --color-light-300: #def4c6; /* Tu color base */
+  --color-light-300: #def4c6; /* Base color */
   --color-light-400: #d1eeaa;
   --color-light-500: #bce482;
   --color-light-600: #a0d05f;
@@ -59,7 +67,7 @@
   --color-light-900: #537132;
   --color-light-950: #2a3a17;
 
-  /* Color Oscuro - Verde Profundo #1B512D */
+  /* Dark color - Deep Green #1B512D */
   --color-dark-50: #e9f2ec;
   --color-dark-100: #c8e0cf;
   --color-dark-200: #a3ccaf;
@@ -68,11 +76,11 @@
   --color-dark-500: #46985d;
   --color-dark-600: #347a48;
   --color-dark-700: #266139;
-  --color-dark-800: #1b512d; /* Tu color base */
+  --color-dark-800: #1b512d; /* Base color */
   --color-dark-900: #143d22;
   --color-dark-950: #0a1f11;
 
-  /* Colores neutros complementarios */
+  /* Neutral complementary colors */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -85,7 +93,7 @@
   --color-gray-900: #111827;
   --color-gray-950: #030712;
 
-  /* Configuración de diseño */
+  /* Design configuration */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
@@ -94,11 +102,11 @@
   --radius-full: 9999px;
 }
 
-/* Los colores ahora se manejan completamente por el plugin de HeroUI en hero.ts */
+/* Colors are fully managed by the HeroUI plugin in hero.ts */
 
-/* Utilidades personalizadas para tu paleta */
+/* Custom utilities for the color palette */
 @layer utilities {
-  /* Colores principales */
+  /* Main colors */
   .text-forest {
     color: var(--color-primary-500);
   }
@@ -149,7 +157,7 @@
     border-color: var(--color-dark-800);
   }
 
-  /* Gradientes personalizados */
+  /* Custom gradients */
   .gradient-forest {
     background: linear-gradient(
       135deg,
@@ -174,4 +182,91 @@
       var(--color-accent-300) 100%
     );
   }
+}
+
+/* ── DriverJS — Ambrosia design overrides ── */
+
+.driver-popover {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  min-width: 280px;
+  max-width: 360px;
+  border: none;
+  color: var(--color-gray-700);
+}
+
+.driver-popover-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-dark-800);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.driver-popover-description {
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.driver-popover-footer {
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+.driver-popover-navigation-btns {
+  gap: 8px;
+}
+
+.driver-popover-footer button {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 7px 18px;
+  line-height: 1.4;
+  text-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.driver-popover-footer button.driver-popover-next-btn {
+  background-color: var(--color-primary-500);
+  color: #ffffff;
+  border-color: var(--color-primary-500);
+}
+
+.driver-popover-footer button.driver-popover-next-btn:hover,
+.driver-popover-footer button.driver-popover-next-btn:focus {
+  background-color: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: #ffffff;
+}
+
+.driver-popover-footer button.driver-popover-prev-btn {
+  background-color: transparent;
+  color: var(--color-dark-800);
+  border-color: var(--color-dark-800);
+}
+
+.driver-popover-footer button.driver-popover-prev-btn:hover,
+.driver-popover-footer button.driver-popover-prev-btn:focus {
+  background-color: var(--color-gray-100);
+  color: var(--color-dark-800);
+}
+
+.driver-popover-close-btn {
+  color: var(--color-gray-400);
+  transition: color 0.15s ease;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus {
+  color: var(--color-gray-700);
 }

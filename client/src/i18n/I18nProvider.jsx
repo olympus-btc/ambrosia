@@ -8,24 +8,32 @@ import { NextIntlClientProvider } from "next-intl";
 
 import componentsEn from "../components/locales/en";
 import componentsEs from "../components/locales/es";
+import authEn from "../components/pages/Auth/locales/en";
+import authEs from "../components/pages/Auth/locales/es";
 import onboardingEn from "../components/pages/Onboarding/locales/en";
 import onboardingEs from "../components/pages/Onboarding/locales/es";
 import storeEn from "../components/pages/Store/locales/en";
 import storeEs from "../components/pages/Store/locales/es";
+import unauthorizedEn from "../components/pages/Unauthorized/locales/en";
+import unauthorizedEs from "../components/pages/Unauthorized/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
 
 const translations = {
   en: {
+    auth: authEn,
     components: componentsEn,
     onboarding: onboardingEn,
     store: storeEn,
+    unauthorized: unauthorizedEn,
   },
   es: {
+    auth: authEs,
     components: componentsEs,
     onboarding: onboardingEs,
     store: storeEs,
+    unauthorized: unauthorizedEs,
   },
 };
 
@@ -56,7 +64,7 @@ export function I18nProvider({ children }) {
       <NextIntlClientProvider
         locale={locale}
         messages={messages}
-        timeZone="UTC"
+        timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}
       >
         {children}
       </NextIntlClientProvider>
@@ -64,15 +72,22 @@ export function I18nProvider({ children }) {
   );
 }
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ compact = false }) {
   const { locale, changeLocale } = useI18n();
   return (
     <Button
       className="bg-slate-200 rounded-lg"
       onPress={() => changeLocale(locale === "es" ? "en" : "es")}
-      startContent={<Languages />}
+      startContent={<Languages className={compact ? "w-4 h-4" : undefined} />}
     >
-      {locale === "es" ? "Switch to English" : "Cambiar a Español"}
+      {compact ? (
+        <>
+          <span className="hidden md:inline">{locale === "es" ? "Switch to English" : "Cambiar a Español"}</span>
+          <span className="md:hidden">{locale === "es" ? "EN" : "ES"}</span>
+        </>
+      ) : (
+        locale === "es" ? "Switch to English" : "Cambiar a Español"
+      )}
     </Button>
   );
 }

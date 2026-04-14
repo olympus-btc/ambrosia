@@ -1,49 +1,150 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { usePermission } from "@/hooks/usePermission";
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
+function createHttpStatusError(response, errorMessage) {
+  const requestError = new Error(errorMessage);
+  requestError.status = response.status;
+  return requestError;
+}
+
+function ensureSuccessfulResponse(response, errorMessage) {
+  if (response.ok === false) {
+    throw createHttpStatusError(response, errorMessage);
+  }
+}
 
 export function useRoles() {
   const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+  const canRead = usePermission({ allOf: ["roles_read"] });
+  const [loading, setLoading] = useState(canRead);
+  const [error, setError] = useState(null);
+
   const fetchRoles = useCallback(async () => {
+    if (!canRead) return;
     setLoading(true);
     setError(null);
 
     try {
-      const res = await apiClient("/roles");
-      if (res === null) {
-        setRoles([]);
-      } else {
-        setRoles(res);
-      }
-    } catch (err) {
-      console.error("Error fetching roles:", err);
+      const rolesRequest = await httpClient("/roles");
+      const rolesData = await parseJsonResponse(rolesRequest, []);
+      setRoles(toArray(rolesData));
+    } catch (error) {
+      console.error("Error fetching roles:", error);
     } finally {
       setLoading(false);
     }
+  }, [canRead]);
+
+  const updateRole = useCallback(async (roleId, role) => {
+    try {
+      const updateRoleRequest = await httpClient(`/roles/${roleId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(role),
+      });
+      ensureSuccessfulResponse(updateRoleRequest, "Error updating role");
+      return updateRoleRequest;
+    } catch (error) {
+      console.error("Error updating role:", error);
+      throw error;
+    }
   }, []);
 
-  const updateRoles = async (role) => {
+  const assignPermissions = useCallback(async (roleId, permissions = []) => {
+    if (!roleId) return;
     try {
-      const updateRoleResponse = await apiClient(`/roles/${user.userId}`, {
+      await httpClient(`/roles/${roleId}/permissions`, {
         method: "PUT",
-        body: role,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ permissions }),
       });
-
-      await fetchRoles();
-      return updateRoleResponse;
     } catch (error) {
-      console.error(error);
+      console.error("Error assigning permissions:", error);
+      throw error;
     }
-  };
+  }, []);
+
+  const createRole = useCallback(
+    async ({ name, password, isAdmin = false, permissions = [] }) => {
+      try {
+        const roleRequestBody = { role: name, isAdmin };
+        if (password) roleRequestBody.password = password;
+        const createRoleRequest = await httpClient("/roles", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(roleRequestBody),
+        });
+        ensureSuccessfulResponse(createRoleRequest, "Error creating role");
+        const createdRoleData = await parseJsonResponse(createRoleRequest, []);
+        const createdRoleId = createdRoleData?.id || createdRoleData?.roleId;
+        if (permissions.length > 0) {
+          await assignPermissions(createdRoleId, permissions);
+        }
+        await fetchRoles();
+        return createdRoleId;
+      } catch (error) {
+        console.error("Error creating role:", error);
+        throw error;
+      }
+    },
+    [assignPermissions, fetchRoles],
+  );
+
+  const updateRoleWithPermissions = useCallback(
+    async (roleId, { name, isAdmin = false, password, permissions = [] }) => {
+      if (!roleId) return;
+      await updateRole(roleId, {
+        role: name,
+        isAdmin,
+        ...(password ? { password } : {}),
+      });
+      await assignPermissions(roleId, permissions);
+      await fetchRoles();
+    },
+    [assignPermissions, fetchRoles, updateRole],
+  );
+
+  const deleteRole = useCallback(async (roleId) => {
+    const deleteRoleResponse = await httpClient(`/roles/${roleId}`, { method: "DELETE" });
+    ensureSuccessfulResponse(deleteRoleResponse, "Error deleting role");
+    await fetchRoles();
+  }, [fetchRoles]);
+
+  const getRolePermissions = useCallback(async (roleId) => {
+    if (!roleId) return [];
+    try {
+      const rolePermissionsResponse = await httpClient(`/roles/${roleId}/permissions`);
+
+      const rolePermissionsData = await parseJsonResponse(rolePermissionsResponse);
+
+      return toArray(rolePermissionsData, []);
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
   return {
     roles,
-    updateRoles,
+    createRole,
+    deleteRole,
+    assignPermissions,
+    updateRoleWithPermissions,
+    getRolePermissions,
     loading,
     error,
     refetch: fetchRoles,

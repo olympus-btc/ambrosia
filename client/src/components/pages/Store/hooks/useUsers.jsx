@@ -4,22 +4,59 @@ import { useState, useEffect, useCallback } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
+async function buildHttpRequestError(response, fallbackMessage) {
+  const responsePayload = await parseJsonResponse(response, null);
+  const requestError = new Error(fallbackMessage);
+  requestError.status = response.status;
+  requestError.responseMessage = responsePayload?.message;
+  return requestError;
+}
+
+function isLastAdminConflict(requestError) {
+  return requestError?.status === 409 && requestError?.responseMessage?.includes("last admin");
+}
 
 export function useUsers() {
   const t = useTranslations("users");
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const showGenericMutationErrorToast = useCallback(() => {
+    addToast({
+      title: t("toasts.genericErrorTitle"),
+      description: t("toasts.genericErrorDescription"),
+      color: "danger",
+    });
+  }, [t]);
+
+  const showUserConflictToast = useCallback((requestError, fallbackConflictToast) => {
+    if (isLastAdminConflict(requestError)) {
+      addToast({
+        title: t("toasts.lastAdminTitle"),
+        description: t("toasts.lastAdminDescription"),
+        color: "warning",
+      });
+      return;
+    }
+
+    addToast(fallbackConflictToast);
+  }, [t]);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await apiClient("/users");
-      if (res === null) {
+      const users = await httpClient("/users");
+      const usersData = await parseJsonResponse(users, []);
+
+      if (usersData === null) {
         setUsers([]);
       } else {
-        setUsers(res);
+        setUsers(usersData);
       }
     } finally {
       setLoading(false);
@@ -28,95 +65,107 @@ export function useUsers() {
 
   const updateUser = async (user) => {
     try {
-      const body = {
+      const updateUserPayload = {
         name: user.userName,
-        role_id: user.userRole,
+        roleId: user.userRole,
         email: user.userEmail,
         phone: user.userPhone,
       };
 
       if (user.userPin && user.userPin.trim().length > 0) {
-        body.pin = user.userPin;
+        updateUserPayload.pin = user.userPin;
       }
 
-      const updateUserResponse = await apiClient(`/users/${user.userId}`, {
+      const updateUserResponse = await httpClient(`/users/${user.userId}`, {
         method: "PUT",
-        body,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateUserPayload),
       });
 
+      if (updateUserResponse.ok === false) {
+        throw await buildHttpRequestError(updateUserResponse, "Error updating user");
+      }
+
       await fetchUsers();
-      return updateUserResponse;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+
+      const updatedUserData = await parseJsonResponse(updateUserResponse, null);
+
+      return updatedUserData;
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.duplicateNameTitle"),
           description: t("toasts.duplicateNameDescription"),
           color: "danger",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 
   const addUser = async (user) => {
     try {
-      const addUserResponse = await apiClient(`/users`, {
+      const createUserResponse = await httpClient(`/users`, {
         method: "POST",
-        body: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           name: user.userName,
           pin: user.userPin,
           role: user.userRole,
           email: user.userEmail,
           phone: user.userPhone,
-        },
+        }),
       });
 
+      if (createUserResponse.ok === false) {
+        throw await buildHttpRequestError(createUserResponse, "Error adding user");
+      }
+
       await fetchUsers();
-      return addUserResponse;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+      return createUserResponse;
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.duplicateNameTitle"),
           description: t("toasts.duplicateNameDescription"),
           color: "danger",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 
   const deleteUser = async (userId) => {
     try {
-      const deleteUserResponse = await apiClient(`/users/${userId}`, {
+      const deleteUserResponse = await httpClient(`/users/${userId}`, {
         method: "DELETE",
       });
 
+      if (deleteUserResponse.ok === false) {
+        throw await buildHttpRequestError(deleteUserResponse, "Error deleting user");
+      }
+
       await fetchUsers();
       return deleteUserResponse;
-    } catch (error) {
-      if (error?.status === 409) {
-        addToast({
+    } catch (requestError) {
+      if (requestError?.status === 409) {
+        showUserConflictToast(requestError, {
           title: t("toasts.lastUserTitle"),
           description: t("toasts.lastUserDescription"),
           color: "warning",
         });
-      } else {
-        addToast({
-          title: t("toasts.genericErrorTitle"),
-          description: t("toasts.genericErrorDescription"),
-          color: "danger",
-        });
+        return;
       }
+
+      showGenericMutationErrorToast();
     }
   };
 

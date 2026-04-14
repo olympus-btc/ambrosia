@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -13,13 +13,26 @@ import {
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymentMethod";
 
 import { useOrders } from "../hooks/useOrders";
 
-import { EmptyOrdersState } from "./EmptyOrdersState";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { OrdersFilterBar } from "./OrdersFilterBar";
-import { OrdersTable } from "./OrdersTable";
+import { OrdersList } from "./OrdersList";
+import { EmptyOrdersState } from "./OrdersList/EmptyOrdersState";
+
+const DEFAULT_FILTERS = {
+  startDate: null,
+  endDate: null,
+  status: null,
+  userId: null,
+  paymentMethod: null,
+  minTotal: null,
+  maxTotal: null,
+  sortBy: "date",
+  sortOrder: "desc",
+};
 
 export default function StoreOrders() {
   const t = useTranslations("orders");
@@ -29,7 +42,9 @@ export default function StoreOrders() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const { orders } = useOrders();
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const { orders, fetchOrders, fetchOrdersFiltered } = useOrders();
+  const { paymentMethods } = usePaymentMethods();
   const { formatAmount } = useCurrency();
 
   const handleOrderClick = (order) => {
@@ -43,15 +58,36 @@ export default function StoreOrders() {
     setShowDetails(false);
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const searchMatch =
-      searchTerm === "" ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.waiter?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.table_id?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredOrders = useMemo(
+    () => orders.filter((order) => {
+      const normalizedSearch = searchTerm.toLowerCase();
+      return (
+        searchTerm === "" ||
+        order.id.toLowerCase().includes(normalizedSearch) ||
+        order.waiter?.toLowerCase().includes(normalizedSearch) ||
+        order.table_id?.toLowerCase().includes(normalizedSearch)
+      );
+    }),
+    [orders, searchTerm],
+  );
 
-    return searchMatch;
-  });
+  const handleFiltersChange = (partialFilters) => {
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      ...partialFilters,
+    }));
+  };
+
+  const handleApplyFilters = async () => {
+    await fetchOrdersFiltered(filters);
+    setPage(1);
+  };
+
+  const handleClearFilters = async () => {
+    setFilters(DEFAULT_FILTERS);
+    await fetchOrders();
+    setPage(1);
+  };
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
@@ -65,6 +101,8 @@ export default function StoreOrders() {
           <OrdersFilterBar
             searchTerm={searchTerm}
             rowsPerPage={rowsPerPage}
+            filters={filters}
+            paymentMethods={paymentMethods}
             onSearchChange={(value) => {
               setSearchTerm(value);
               setPage(1);
@@ -73,12 +111,14 @@ export default function StoreOrders() {
               setRowsPerPage(parseInt(value, 10));
               setPage(1);
             }}
-            onFilterChange={(value) => setFilter(String(value))}
+            onFiltersChange={handleFiltersChange}
+            onApplyFilters={handleApplyFilters}
+            onClearFilters={handleClearFilters}
           />
         </CardBody>
       </Card>
 
-      <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
+      <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8">
         <CardHeader>
           <h3 className="text-lg font-semibold text-green-900">
             {t("header.paid", { count: filteredOrders.length })}
@@ -86,10 +126,9 @@ export default function StoreOrders() {
         </CardHeader>
         <CardBody>
           {filteredOrders.length > 0 ? (
-            <div className="w-full overflow-x-auto">
-              <OrdersTable
+            <div className="w-full">
+              <OrdersList
                 orders={paginatedOrders}
-                formatAmount={formatAmount}
                 onViewOrder={handleOrderClick}
               />
 

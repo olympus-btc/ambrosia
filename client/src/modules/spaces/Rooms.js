@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getRooms } from "./spacesService";
-import { ChefHat, Home, Users, ArrowRight } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -9,9 +10,10 @@ import {
   Button,
   Badge,
   Spinner,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import { ChefHat, Home, Users, ArrowRight } from "lucide-react";
+
+import { getRooms } from "./spacesService";
 
 export default function Rooms() {
   const router = useRouter();

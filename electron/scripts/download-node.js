@@ -4,9 +4,14 @@ const https = require('https');
 const path = require('path');
 
 const { getBuildPlatform } = require('./platform-utils');
+const { verifySha256, fetchSha256SumsChecksum } = require('./verify-checksum');
 
 const NODE_VERSION = 'v20.11.0'; // LTS version compatible with Next.js 16
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'node');
+
+// Node.js publishes SHASUMS256.txt per release with all platform hashes.
+// When bumping NODE_VERSION, no hash changes needed — fetched at build time.
+const SHASUMS_URL = `https://nodejs.org/dist/${NODE_VERSION}/SHASUMS256.txt`;
 
 const ALL_DOWNLOADS = {
   'macos-x64': {
@@ -44,15 +49,21 @@ const ALL_DOWNLOADS = {
 const currentPlatform = getBuildPlatform();
 const DOWNLOADS = [ALL_DOWNLOADS[currentPlatform]];
 
-function downloadFile(url, destination) {
+const MAX_REDIRECTS = 5;
+
+function downloadFile(url, destination, redirectCount = 0) {
   return new Promise((resolve, reject) => {
     console.log(`Downloading: ${url}`);
     const file = fs.createWriteStream(destination);
 
     https.get(url, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
-        // Handle redirect
-        return downloadFile(response.headers.location, destination)
+        file.close();
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
+          return;
+        }
+        return downloadFile(response.headers.location, destination, redirectCount + 1)
           .then(resolve)
           .catch(reject);
       }
@@ -140,6 +151,16 @@ async function main() {
     // Download
     await downloadFile(download.url, archivePath);
 
+    // Verify integrity using Node.js official SHASUMS256.txt
+    try {
+      console.log(`Fetching checksums from: ${SHASUMS_URL}`);
+      const expectedHash = await fetchSha256SumsChecksum(SHASUMS_URL, download.filename);
+      await verifySha256(archivePath, expectedHash);
+    } catch (checksumError) {
+      fs.unlinkSync(archivePath);
+      throw new Error(`Integrity check failed: ${checksumError.message}`);
+    }
+
     // Create platform directory
     if (!fs.existsSync(platformDir)) {
       fs.mkdirSync(platformDir, { recursive: true });
@@ -164,7 +185,9 @@ async function main() {
   console.log('===========================================');
 }
 
-main().catch((error) => {
-  console.error('\n✗ Error:', error.message);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('\n✗ Error:', error.message);
+    process.exit(1);
+  });

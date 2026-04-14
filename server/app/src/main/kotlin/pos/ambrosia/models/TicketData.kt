@@ -10,7 +10,7 @@ data class TicketData(
     val date: String,
     val items: List<TicketDataItem>,
     val total: Double,
-    val invoice: String? = null
+    val invoice: String? = null,
 )
 
 @Serializable
@@ -18,5 +18,5 @@ data class TicketDataItem(
     val quantity: Int,
     val name: String,
     val price: Double,
-    val comments: List<String> = emptyList()
+    val comments: List<String> = emptyList(),
 )

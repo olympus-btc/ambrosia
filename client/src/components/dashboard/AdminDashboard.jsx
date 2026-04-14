@@ -1,5 +1,5 @@
 "use client";
-import { useModules } from '../../hooks/useModules';
+import { useModules } from "../../hooks/useModules";
 
 export function AdminDashboard() {
   const { availableModules, isAdmin, isAuthenticated } = useModules();
@@ -12,7 +12,7 @@ export function AdminDashboard() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          {isAdmin ? 'Panel de Administrador' : 'Panel de Usuario'}
+          {isAdmin ? "Panel de Administrador" : "Panel de Usuario"}
         </h1>
         <p className="text-gray-600">
           Módulos disponibles para tu rol
@@ -25,7 +25,7 @@ export function AdminDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {moduleConfig.name}
             </h3>
-            
+
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">Rutas disponibles:</p>
               <ul className="text-sm space-y-1">

@@ -1,6 +1,7 @@
 const { EventEmitter } = require('events');
 
 const { isPhoenixdRunning, isBackendRunning } = require('../utils/healthCheck');
+const logger = require('../utils/logger');
 const { allocatePorts, DEFAULT_PORTS } = require('../utils/portAllocator');
 const { isDevelopment } = require('../utils/resourcePaths');
 
@@ -26,58 +27,69 @@ class ServiceManager extends EventEmitter {
   }
 
   async startAll() {
+    const STARTUP_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Startup timed out after 2 minutes')), STARTUP_TIMEOUT_MS);
+    });
+
+    return Promise.race([this._startAll(), timeoutPromise]);
+  }
+
+  async _startAll() {
     try {
-      console.log('[ServiceManager] Starting all services...');
+      logger.log('[ServiceManager] Starting all services...');
 
       this.ports = await allocatePorts();
-      console.log('[ServiceManager] Allocated ports:', this.ports);
+      logger.log('[ServiceManager] Allocated ports:', this.ports);
 
-      console.log('[ServiceManager] Ensuring configurations...');
+      logger.log('[ServiceManager] Ensuring configurations...');
       this.configs = await ensureConfigurations(this.ports);
 
       const phoenixConfig = this.configs.phoenix;
 
       if (this.devMode) {
-        console.log('[ServiceManager] Development mode: skipping phoenixd and backend startup');
-        console.log('[ServiceManager] Assuming external services at:');
-        console.log('  - phoenixd: http://localhost:9740');
-        console.log('  - backend: http://localhost:9154');
+        logger.log('[ServiceManager] Development mode: skipping phoenixd and backend startup');
+        logger.log('[ServiceManager] Assuming external services at:');
+        logger.log('  - phoenixd: http://localhost:9740');
+        logger.log('  - backend: http://localhost:9154');
 
-        console.log('[ServiceManager] Starting Next.js service...');
+        logger.log('[ServiceManager] Starting Next.js service...');
         const result = await this.nextjsService.start(this.ports.nextjs, {
-          host: '127.0.0.1',
+          host: 'localhost',
           port: this.ports.backend,
         });
-        console.log('[ServiceManager] All services started successfully');
+        this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
+        logger.log('[ServiceManager] All services started successfully');
         return result.url;
       }
 
-      console.log('[ServiceManager] Production mode: starting all bundled services');
+      logger.log('[ServiceManager] Production mode: starting all bundled services');
 
       // Step 1: Check if phoenixd is already running on default port
-      console.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
+      logger.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
       const phoenixdAlreadyRunning = await isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
 
       if (phoenixdAlreadyRunning) {
-        console.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
+        logger.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
         this.ports.phoenixd = DEFAULT_PORTS.phoenixd;
         this.externalServices.phoenixd = true;
       } else {
-        console.log('[ServiceManager] Starting Phoenixd...');
+        logger.log('[ServiceManager] Starting Phoenixd...');
         await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
       }
       this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd });
 
       // Step 2: Check if backend is already running on default port
-      console.log('[ServiceManager] Step 2: Checking for existing Backend...');
+      logger.log('[ServiceManager] Step 2: Checking for existing Backend...');
       const backendAlreadyRunning = await isBackendRunning(DEFAULT_PORTS.backend);
 
       if (backendAlreadyRunning) {
-        console.log(`[ServiceManager] Backend already running on port ${DEFAULT_PORTS.backend}, reusing...`);
+        logger.log(`[ServiceManager] Backend already running on port ${DEFAULT_PORTS.backend}, reusing...`);
         this.ports.backend = DEFAULT_PORTS.backend;
         this.externalServices.backend = true;
       } else {
-        console.log('[ServiceManager] Starting Backend...');
+        logger.log('[ServiceManager] Starting Backend...');
         await this.backendService.start(this.ports.backend, {
           phoenixdPort: this.ports.phoenixd,
           phoenixPassword: phoenixConfig['http-password'],
@@ -87,62 +99,86 @@ class ServiceManager extends EventEmitter {
       this.emit('service:started', { service: 'backend', port: this.ports.backend });
 
       // Step 3: Start Next.js (always start our own)
-      console.log('[ServiceManager] Step 3: Starting Next.js...');
+      logger.log('[ServiceManager] Step 3: Starting Next.js...');
       const result = await this.nextjsService.start(this.ports.nextjs, {
         host: '127.0.0.1',
         port: this.ports.backend,
       });
       this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
 
-      console.log('[ServiceManager] All services started successfully');
+      logger.log('[ServiceManager] All services started successfully');
+      this.startHealthMonitor();
       this.emit('all:started');
 
       return result.url;
     } catch (error) {
-      console.error('[ServiceManager] Failed to start services:', error);
+      logger.error('[ServiceManager] Failed to start services:', error);
       this.emit('service:error', { error });
       await this.stopAll();
       throw error;
     }
   }
 
+  startHealthMonitor() {
+    const INTERVAL_MS = 30 * 1000; // 30 seconds
+
+    this._healthMonitor = setInterval(() => {
+      const statuses = this.getServiceStatuses();
+      for (const [service, status] of Object.entries(statuses)) {
+        if (this.externalServices[service]) continue;
+        if (status === 'error' || status === 'stopped') {
+          logger.warn(`[ServiceManager] Health monitor: ${service} is ${status}, emitting event`);
+          this.emit('service:error', { service, error: new Error(`${service} is ${status}`) });
+        }
+      }
+    }, INTERVAL_MS);
+  }
+
+  stopHealthMonitor() {
+    if (this._healthMonitor) {
+      clearInterval(this._healthMonitor);
+      this._healthMonitor = null;
+    }
+  }
+
   async stopAll() {
-    console.log('[ServiceManager] Stopping all services...');
+    this.stopHealthMonitor();
+    logger.log('[ServiceManager] Stopping all services...');
 
     try {
-      console.log('[ServiceManager] Stopping Next.js...');
+      logger.log('[ServiceManager] Stopping Next.js...');
       await this.nextjsService.stop();
     } catch (error) {
-      console.error('[ServiceManager] Error stopping Next.js:', error);
+      logger.error('[ServiceManager] Error stopping Next.js:', error);
     }
 
     if (!this.devMode) {
       // Only stop backend if we started it (not external)
       if (!this.externalServices.backend) {
         try {
-          console.log('[ServiceManager] Stopping Backend...');
+          logger.log('[ServiceManager] Stopping Backend...');
           await this.backendService.stop();
         } catch (error) {
-          console.error('[ServiceManager] Error stopping Backend:', error);
+          logger.error('[ServiceManager] Error stopping Backend:', error);
         }
       } else {
-        console.log('[ServiceManager] Backend is external, not stopping');
+        logger.log('[ServiceManager] Backend is external, not stopping');
       }
 
       // Only stop phoenixd if we started it (not external)
       if (!this.externalServices.phoenixd) {
         try {
-          console.log('[ServiceManager] Stopping Phoenixd...');
+          logger.log('[ServiceManager] Stopping Phoenixd...');
           await this.phoenixdService.stop();
         } catch (error) {
-          console.error('[ServiceManager] Error stopping Phoenixd:', error);
+          logger.error('[ServiceManager] Error stopping Phoenixd:', error);
         }
       } else {
-        console.log('[ServiceManager] Phoenixd is external, not stopping');
+        logger.log('[ServiceManager] Phoenixd is external, not stopping');
       }
     }
 
-    console.log('[ServiceManager] All services stopped');
+    logger.log('[ServiceManager] All services stopped');
     this.emit('all:stopped');
   }
 
@@ -163,13 +199,19 @@ class ServiceManager extends EventEmitter {
   }
 
   async restartService(serviceName) {
-    console.log(`[ServiceManager] Restarting ${serviceName}...`);
+    if (this.externalServices[serviceName]) {
+      logger.log(`[ServiceManager] Skipping restart of external service: ${serviceName}`);
+      return;
+    }
+
+    logger.log(`[ServiceManager] Restarting ${serviceName}...`);
 
     try {
       switch (serviceName) {
         case 'phoenixd':
           await this.phoenixdService.stop();
           await this.phoenixdService.start(this.ports.phoenixd, this.configs.phoenix);
+          this.externalServices.phoenixd = false;
           break;
         case 'backend':
           await this.backendService.stop();
@@ -182,17 +224,17 @@ class ServiceManager extends EventEmitter {
         case 'nextjs':
           await this.nextjsService.stop();
           await this.nextjsService.start(this.ports.nextjs, {
-            host: '127.0.0.1',
+            host: 'localhost',
             port: this.ports.backend,
           });
           break;
         default:
           throw new Error(`Unknown service: ${serviceName}`);
       }
-      console.log(`[ServiceManager] ${serviceName} restarted successfully`);
+      logger.log(`[ServiceManager] ${serviceName} restarted successfully`);
       this.emit('service:restarted', { service: serviceName });
     } catch (error) {
-      console.error(`[ServiceManager] Failed to restart ${serviceName}:`, error);
+      logger.error(`[ServiceManager] Failed to restart ${serviceName}:`, error);
       this.emit('service:error', { service: serviceName, error });
       throw error;
     }

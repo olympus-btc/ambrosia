@@ -1,5 +1,3 @@
-﻿import { apiClient } from "../../services/apiClient";
-
 export async function getAllOrders() {
   const response = await apiClient("/orders");
   return response ? response : [];
@@ -40,13 +38,8 @@ export async function getOrderById(orderId) {
   return response;
 }
 
-export async function createOrder(tableId = null) {
-  //localStorage.setItem('userId', "");
-  if (!localStorage.getItem("userId")) {
-    throw new Error("No hay usuario logeado");
-  }
-  const response = await getUserById(localStorage.getItem("userId"));
-  //const response = {id: localStorage.getItem('userId'), name: "JordyArreglaLaDBConnection"};
+export async function createOrder(tableId = null, userId) {
+  const response = await getUserById(userId);
   if (response) {
     const body = {
       user_id: response.id,
@@ -58,7 +51,7 @@ export async function createOrder(tableId = null) {
     if (tableId) body.table_id = tableId;
     return await apiClient("/orders", {
       method: "POST",
-      body: body,
+      body,
     });
   } else {
   }
@@ -71,12 +64,11 @@ export async function addDishToOrder(pedidoId, dishId, dishPrice) {
       {
         dish_id: dishId,
         price_at_order: dishPrice,
-        notes: null
-      }
+        notes: null,
+      },
     ],
   });
 }
-
 
 export async function removeDishToOrder(pedidoId, dish) {
   return await apiClient(`/orders/${pedidoId}/dishes/${dish}`, {
@@ -88,41 +80,6 @@ export async function getDishesByOrder(orderId) {
   const dishes = await apiClient(`/orders/${orderId}/dishes`);
   return dishes ? dishes : [];
 }
-
-/*export async function createOrder(pin, tableId = null) {
-    try {
-        const pinValidation = await validatePin(pin);
-        if (!pinValidation.authorized) {
-            throw new Error(pinValidation.error);
-        }
-
-        const orderId = Date.now();
-
-        const newOrder = {
-            id: Number(`${orderId}`),
-            userId: pinValidation.userId,
-            dishes: [],
-            estado: 'abierto',
-            createdAt: new Date().toISOString(),
-        };
-
-        const orderResponse = await addOrder(newOrder);
-
-        if (tableId) {
-            const tables = (await getTables()).data;
-            const table = tables.find((t) => t.id === Number(tableId));
-            if (!table) throw new Error('Mesa no encontrada');
-            if (table.estado !== 'libre') throw new Error('La mesa no está libre');
-            await updateTable(Number(tableId), { pedidoId: Number(`${orderResponse.id}`), estado: 'ocupada' });
-            console.log(orderId);
-        }
-
-        console.log(orderResponse);
-        return { data: orderResponse };
-    } catch (error) {
-        throw new Error(error.message || 'Error al crear el pedido');
-    }
-}*/
 
 export async function updateOrder(order) {
   return await apiClient(`/orders/${order.id}`, {
@@ -149,7 +106,7 @@ export async function updateOrderDish(orderId, dishId, orderDish) {
 
 export async function sendOrderDishes(orderId, dishIds) {
   return await apiClient(`/orders/${orderId}/dishes/send`, {
-    method: "PUT", 
+    method: "PUT",
     body: { dishIds },
   });
 }

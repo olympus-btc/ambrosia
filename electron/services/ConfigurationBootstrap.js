@@ -2,39 +2,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const bip39 = require('bip39');
-
+const logger = require('../utils/logger');
 const { getDataDirectory, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
-
-/**
- * Generates a secure 12-word mnemonic using BIP39 standard.
- * - Uses industry-standard BIP39 wordlist (2,048 words)
- * - Provides 128 bits of entropy (132 bits with checksum)
- * - Includes built-in checksum for error detection
- * - Compatible with Bitcoin wallets and other crypto applications
- *
- * @returns {string} A 12-word mnemonic phrase
- */
-function generateSecret() {
-  const mnemonic = bip39.generateMnemonic(); // 12 words by default (128 bits)
-  console.log('[ConfigurationBootstrap] Generated BIP39 mnemonic (132 bits entropy with checksum)');
-  return mnemonic;
-}
-
-/**
- * Validates a BIP39 mnemonic phrase.
- * Checks both word validity and checksum integrity.
- *
- * @param {string} mnemonic - The mnemonic phrase to validate
- * @returns {boolean} True if valid, false otherwise
- */
-function validateSecret(mnemonic) {
-  return bip39.validateMnemonic(mnemonic);
-}
-
-function hashSecret(secret) {
-  return crypto.createHash('sha256').update(secret).digest('hex');
-}
 
 function generateRandomHex(length) {
   return crypto.randomBytes(length).toString('hex');
@@ -43,7 +12,7 @@ function generateRandomHex(length) {
 function ensureDirectoryExists(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
-    console.log(`[ConfigurationBootstrap] Created directory: ${dir}`);
+    logger.log(`[ConfigurationBootstrap] Created directory: ${dir}`);
   }
 }
 
@@ -79,8 +48,8 @@ function readConfig(configPath) {
 
 function writeConfig(configPath, config) {
   const lines = Object.entries(config).map(([key, value]) => `${key}=${value}`);
-  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, 'utf-8');
-  console.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
+  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
+  logger.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
 async function ensureConfigurations(ports) {
@@ -101,9 +70,9 @@ async function ensureConfigurations(ports) {
   let needsUpdate = false;
 
   if (!fs.existsSync(ambrosiaConfigPath) || Object.keys(ambrosiaConfig).length === 0) {
-    console.log('[ConfigurationBootstrap] Generating Ambrosia configuration...');
-    const secret = generateSecret();
-    const secretHash = hashSecret(secret);
+    logger.log('[ConfigurationBootstrap] Generating Ambrosia configuration...');
+    const secret = generateRandomHex(32);
+    const secretHash = crypto.createHash('sha256').update(secret).digest('hex');
 
     ambrosiaConfig = {
       'http-bind-ip': '127.0.0.1',
@@ -121,7 +90,7 @@ async function ensureConfigurations(ports) {
   }
 
   if (!fs.existsSync(phoenixConfigPath) || Object.keys(phoenixConfig).length === 0) {
-    console.log('[ConfigurationBootstrap] Generating Phoenix configuration...');
+    logger.log('[ConfigurationBootstrap] Generating Phoenix configuration...');
     const httpPassword = generateRandomHex(32);
     const httpPasswordLimited = generateRandomHex(32);
     const webhookSecret = generateRandomHex(32);
@@ -157,7 +126,5 @@ module.exports = {
   ensureConfigurations,
   readConfig,
   writeConfig,
-  generateSecret,
-  validateSecret,
   generateRandomHex,
 };

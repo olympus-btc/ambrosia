@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { apiClient } from "../../services/apiClient";
-import { useUpload } from "../../components/hooks/useUpload";
+
+import { useUpload } from "@/components/hooks/useUpload";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export const ConfigurationsContext = createContext();
 
@@ -31,12 +32,14 @@ export function ConfigurationsProvider({ children }) {
   const fetchConfig = async () => {
     try {
       setIsLoading(true);
-      const data = await apiClient("/config", {
+      const configResponse = await httpClient("/config", {
         skipRefresh: true,
-        silentAuth: true,
       });
-      setConfig(data);
-    } catch (err) {
+
+      const configData = await parseJsonResponse(configResponse);
+
+      setConfig(configData);
+    } catch {
       setConfig(null);
     } finally {
       setIsLoading(false);
@@ -46,9 +49,6 @@ export function ConfigurationsProvider({ children }) {
   useEffect(() => {
     fetchConfig();
   }, []);
-
-
-
 
   const updateConfig = async (data) => {
     let logoUrl = null;
@@ -62,22 +62,24 @@ export function ConfigurationsProvider({ children }) {
     delete configDataToSend.productImage;
     delete configDataToSend.businessCurrency;
 
-
     try {
-      const updateConfigResponse = await apiClient(`/config`, {
+      const updateConfigResponse = await httpClient(`/config`, {
         method: "PUT",
-        body: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           ...configDataToSend,
           ...(logoUrl && { businessLogoUrl: logoUrl }),
-        },
+        }),
       });
 
       await fetchConfig();
       return updateConfigResponse;
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const value = {
     config,

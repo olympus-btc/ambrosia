@@ -1,3 +1,4 @@
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
@@ -29,6 +30,13 @@ function getBasePath() {
   return process.resourcesPath;
 }
 
+function assertExists(filePath, label) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Required resource not found — ${label}: ${filePath}`);
+  }
+  return filePath;
+}
+
 function getJavaPath() {
   if (isDevelopment()) {
     return 'java';
@@ -38,17 +46,23 @@ function getJavaPath() {
   const javaExecutable = process.platform === 'win32' ? 'java.exe' : 'java';
   const jrePath = path.join(getBasePath(), 'jre', platform, 'bin', javaExecutable);
 
-  return jrePath;
+  return assertExists(jrePath, 'Java runtime');
 }
 
 function getBackendJarPath() {
   if (isDevelopment()) {
-    const devJarPath = path.join(__dirname, '..', '..', 'server', 'app', 'build', 'libs', 'ambrosia-0.3.0-alpha.jar');
-    return devJarPath;
+    const libsDir = path.join(__dirname, '..', '..', 'server', 'app', 'build', 'libs');
+    const jars = fs.readdirSync(libsDir).filter(
+      (f) => f.startsWith('ambrosia-') && f.endsWith('.jar'),
+    );
+    if (jars.length === 0) {
+      throw new Error(`No backend JAR found in ${libsDir}. Run: cd server && ./gradlew jar`);
+    }
+    return path.join(libsDir, jars[0]);
   }
 
   const jarPath = path.join(getBasePath(), 'backend', 'ambrosia.jar');
-  return jarPath;
+  return assertExists(jarPath, 'Backend JAR');
 }
 
 function getPhoenixdPath() {
@@ -57,11 +71,10 @@ function getPhoenixdPath() {
   }
 
   const platform = getPlatform();
-  // Windows uses JVM version which has bin/phoenixd.bat structure
   const phoenixdExecutable = process.platform === 'win32' ? path.join('bin', 'phoenixd.bat') : 'phoenixd';
   const phoenixdPath = path.join(getBasePath(), 'phoenixd', platform, phoenixdExecutable);
 
-  return phoenixdPath;
+  return assertExists(phoenixdPath, 'Phoenixd binary');
 }
 
 function getClientPath() {
@@ -70,7 +83,7 @@ function getClientPath() {
   }
 
   const clientPath = path.join(getBasePath(), 'client');
-  return clientPath;
+  return assertExists(clientPath, 'Next.js client');
 }
 
 function getDataDirectory() {

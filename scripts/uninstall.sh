@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -o pipefail
+set -eo pipefail
 
 # This script is for uninstalling Ambrosia POS from a Linux system.
 
@@ -18,10 +18,16 @@ for arg in "$@"; do
   esac
 done
 
-INSTALL_DIR="$HOME/.local/ambrosia"
-CONFIG_DIR="$HOME/.Ambrosia-POS"
-BIN_DIR="$HOME/.local/bin"
-SERVICE_FILE="/etc/systemd/system/ambrosia.service"
+# --- Install locations (mirrors Makefile and install.sh) ---
+AMBROSIA_INSTALL_DIR="$HOME/.local/ambrosia"
+AMBROSIA_BIN_DIR="$HOME/.local/bin"
+AMBROSIA_CONFIG_DIR="$HOME/.Ambrosia-POS"
+AMBROSIA_SERVICE_FILE="/etc/systemd/system/ambrosia.service"
+AMBROSIA_CLIENT_SERVICE_FILE="/etc/systemd/system/ambrosia-client.service"
+CLIENT_DIST_DIR="/tmp/ambrosia-client-dist"
+
+PHOENIXD_BIN_DIR="/usr/local/bin"
+PHOENIXD_SERVICE_FILE="/etc/systemd/system/phoenixd.service"
 
 echo ""
 echo "🗑️  Ambrosia POS Uninstaller"
@@ -30,14 +36,11 @@ echo "This script will remove all Ambrosia POS components from your system."
 echo ""
 
 if [[ "$AUTO_YES" == true ]]; then
-  # Auto-yes mode
   REPLY="y"
 elif [[ -t 0 ]]; then
-  # Interactive mode
   echo "Are you sure you want to uninstall Ambrosia POS? This will remove all data. (y/n): "
   read -r REPLY
 else
-  # Non-interactive mode
   echo "Running in non-interactive mode. Proceeding with uninstallation."
   REPLY="y"
 fi
@@ -47,39 +50,52 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 0
 fi
 
-# Check if systemd service exists and stop/disable it
-if [ -f "$SERVICE_FILE" ]; then
+# --- Ambrosia server systemd service ---
+if [ -f "$AMBROSIA_SERVICE_FILE" ]; then
   echo "Stopping and disabling Ambrosia POS service..."
   sudo systemctl stop ambrosia 2>/dev/null || true
   sudo systemctl disable ambrosia 2>/dev/null || true
-  sudo rm -f "$SERVICE_FILE" 2>/dev/null || true
+  sudo rm -f "$AMBROSIA_SERVICE_FILE" 2>/dev/null || true
   sudo systemctl daemon-reload 2>/dev/null || true
-  echo "✅ Systemd service removed"
+  echo "✅ Ambrosia systemd service removed"
 fi
 
-# Remove ambrosia symlink
-if [ -L "$BIN_DIR/ambrosia" ]; then
-  echo "Removing binary symlink..."
-  rm -f "$BIN_DIR/ambrosia"
-  echo "✅ Ambrosia binary symlink removed"
+# --- Ambrosia client systemd service ---
+if [ -f "$AMBROSIA_CLIENT_SERVICE_FILE" ]; then
+  echo "Stopping and disabling Ambrosia POS Client service..."
+  sudo systemctl stop ambrosia-client 2>/dev/null || true
+  sudo systemctl disable ambrosia-client 2>/dev/null || true
+  sudo rm -f "$AMBROSIA_CLIENT_SERVICE_FILE" 2>/dev/null || true
+  sudo systemctl daemon-reload 2>/dev/null || true
+  echo "✅ Ambrosia client systemd service removed"
 fi
 
-# Remove ambrosia-client symlink
-if [ -L "$BIN_DIR/ambrosia-client" ]; then
-  echo "Removing client binary symlink..."
-  rm -f "$BIN_DIR/ambrosia-client"
-  echo "✅ Client binary symlink removed"
+# --- Symlinks ---
+if [ -L "$AMBROSIA_BIN_DIR/ambrosia" ]; then
+  rm -f "$AMBROSIA_BIN_DIR/ambrosia"
+  echo "✅ ambrosia symlink removed"
 fi
 
-# Remove installation directory
-if [ -d "$INSTALL_DIR" ]; then
+if [ -L "$AMBROSIA_BIN_DIR/ambrosia-client" ]; then
+  rm -f "$AMBROSIA_BIN_DIR/ambrosia-client"
+  echo "✅ ambrosia-client symlink removed"
+fi
+
+# --- Installation directory (includes server JAR, scripts, and client build) ---
+if [ -d "$AMBROSIA_INSTALL_DIR" ]; then
   echo "Removing installation directory..."
-  rm -rf "$INSTALL_DIR"
-  echo "✅ Installation directory removed"
+  rm -rf "$AMBROSIA_INSTALL_DIR"
+  echo "✅ Installation directory removed ($AMBROSIA_INSTALL_DIR)"
 fi
 
-# Ask about removing configuration directory
-if [ -d "$CONFIG_DIR" ]; then
+# --- Build artifacts ---
+if [ -d "$CLIENT_DIST_DIR" ]; then
+  rm -rf "$CLIENT_DIST_DIR"
+  echo "✅ Build artifacts removed ($CLIENT_DIST_DIR)"
+fi
+
+# --- Configuration directory (optional) ---
+if [ -d "$AMBROSIA_CONFIG_DIR" ]; then
   if [[ "$AUTO_YES" == true ]]; then
     REMOVE_CONFIG="y"
   elif [[ -t 0 ]]; then
@@ -91,11 +107,10 @@ if [ -d "$CONFIG_DIR" ]; then
   fi
 
   if [[ $REMOVE_CONFIG =~ ^[Yy]$ ]]; then
-    echo "Removing configuration directory..."
-    rm -rf "$CONFIG_DIR"
-    echo "✅ Configuration directory removed"
+    rm -rf "$AMBROSIA_CONFIG_DIR"
+    echo "✅ Configuration directory removed ($AMBROSIA_CONFIG_DIR)"
   else
-    echo "Configuration directory preserved at: $CONFIG_DIR"
+    echo "Configuration directory preserved at: $AMBROSIA_CONFIG_DIR"
   fi
 fi
 
@@ -106,10 +121,7 @@ echo "Note: Any PATH modifications made during installation were not removed."
 echo "If you'd like to remove them, please edit your ~/.bashrc and ~/.zshrc files."
 echo ""
 
-# Uninstall phoenixd
-BIN_DIR="/usr/local/bin"
-SERVICE_FILE="/etc/systemd/system/phoenixd.service"
-
+# --- phoenixd ---
 echo ""
 echo "🗑️  phoenixd Uninstaller"
 echo "-----------------------------------"
@@ -128,28 +140,26 @@ else
 fi
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-  echo "Uninstallation cancelled."
+  echo "phoenixd uninstallation cancelled."
   exit 0
 fi
 
-if [ -f "$SERVICE_FILE" ]; then
+if [ -f "$PHOENIXD_SERVICE_FILE" ]; then
   echo "Stopping and disabling phoenixd service..."
   sudo systemctl stop phoenixd 2>/dev/null || true
   sudo systemctl disable phoenixd 2>/dev/null || true
-  sudo rm -f "$SERVICE_FILE" 2>/dev/null || true
+  sudo rm -f "$PHOENIXD_SERVICE_FILE" 2>/dev/null || true
   sudo systemctl daemon-reload 2>/dev/null || true
-  echo "✅ Systemd service removed"
+  echo "✅ phoenixd systemd service removed"
 fi
 
-if [ -f "$BIN_DIR/phoenixd" ]; then
-  echo "Removing phoenixd binary..."
-  sudo rm -f "$BIN_DIR/phoenixd"
+if [ -f "$PHOENIXD_BIN_DIR/phoenixd" ]; then
+  sudo rm -f "$PHOENIXD_BIN_DIR/phoenixd"
   echo "✅ phoenixd binary removed"
 fi
 
-if [ -f "$BIN_DIR/phoenix-cli" ]; then
-  echo "Removing phoenix-cli binary..."
-  sudo rm -f "$BIN_DIR/phoenix-cli"
+if [ -f "$PHOENIXD_BIN_DIR/phoenix-cli" ]; then
+  sudo rm -f "$PHOENIXD_BIN_DIR/phoenix-cli"
   echo "✅ phoenix-cli binary removed"
 fi
 
@@ -163,51 +173,3 @@ echo ""
 echo "Note: If you manually added phoenixd to your PATH, please remove those entries"
 echo "from your ~/.bashrc, ~/.zshrc, or other shell configuration files."
 echo ""
-
-# Uninstall Ambrosia Client
-CLIENT_INSTALL_DIR="$HOME/.local/ambrosia/client"
-CLIENT_SERVICE_FILE="/etc/systemd/system/ambrosia-client.service"
-
-echo ""
-echo "🗑️  Ambrosia POS Client Uninstaller"
-echo "-----------------------------------"
-echo "This script will remove all Ambrosia POS Client components from your system."
-echo ""
-
-if [[ "$AUTO_YES" == true ]]; then
-  # Auto-yes mode
-  REPLY="y"
-elif [[ -t 0 ]]; then
-  # Interactive mode
-  echo "Are you sure you want to uninstall Ambrosia POS Client? (y/n): "
-  read -r REPLY
-else
-  # Non-interactive mode
-  echo "Running in non-interactive mode. Proceeding with uninstallation."
-  REPLY="y"
-fi
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-  echo "Client uninstallation cancelled."
-else
-  # Check if systemd service exists and stop/disable it
-  if [ -f "$CLIENT_SERVICE_FILE" ]; then
-    echo "Stopping and disabling Ambrosia POS Client service..."
-    sudo systemctl stop ambrosia-client 2>/dev/null || true
-    sudo systemctl disable ambrosia-client 2>/dev/null || true
-    sudo rm -f "$CLIENT_SERVICE_FILE" 2>/dev/null || true
-    sudo systemctl daemon-reload 2>/dev/null || true
-    echo "✅ Client systemd service removed"
-  fi
-
-  # Remove installation directory
-  if [ -d "$CLIENT_INSTALL_DIR" ]; then
-    echo "Removing client installation directory..."
-    rm -rf "$CLIENT_INSTALL_DIR"
-    echo "✅ Client installation directory removed"
-  fi
-
-  echo ""
-  echo "✅ Ambrosia POS Client has been uninstalled successfully!"
-  echo ""
-fi

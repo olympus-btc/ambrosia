@@ -1,0 +1,37 @@
+"use client";
+
+import { Input } from "@heroui/react";
+
+import { TemplateElementsEditor } from "./ElementsEditor";
+
+export function TicketTemplatesEditor({
+  name,
+  onNameChange,
+  elements,
+  onElementChange,
+  onElementAdd,
+  onElementReorder,
+  onElementRemove,
+  config,
+  t,
+}) {
+  return (
+    <div className="flex min-w-0 flex-2 flex-col gap-4">
+      <Input
+        label={t("templates.nameLabel")}
+        value={name}
+        onChange={onNameChange}
+      />
+
+      <TemplateElementsEditor
+        elements={elements}
+        onChange={onElementChange}
+        onAdd={onElementAdd}
+        onReorder={onElementReorder}
+        onRemove={onElementRemove}
+        config={config}
+        t={t}
+      />
+    </div>
+  );
+}

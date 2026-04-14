@@ -2,13 +2,21 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.TicketPayment
 import pos.ambrosia.services.TicketPaymentService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class TicketPaymentServiceTest {
     private val mockConnection: Connection = mock()
@@ -18,13 +26,20 @@ class TicketPaymentServiceTest {
     @Test
     fun `getTicketPaymentsByTicket returns list of payments when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val ticketCheckStatement: PreparedStatement = mock() // Arrange
+            val ticketResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("tickets"))).thenReturn(ticketCheckStatement) // Arrange
+            whenever(ticketCheckStatement.executeQuery()).thenReturn(ticketResultSet) // Arrange
+            whenever(ticketResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM ticket_payments WHERE ticket_id = ?"))).thenReturn(mockStatement)
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
             whenever(mockResultSet.getString("payment_id")).thenReturn("pay-1").thenReturn("pay-2") // Arrange
             whenever(mockResultSet.getString("ticket_id")).thenReturn("ticket-1").thenReturn("ticket-1") // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.getTicketPaymentsByTicket("ticket-1") // Act
+            assertNotNull(result) // Assert
             assertEquals(2, result.size) // Assert
             assertEquals("pay-1", result[0].payment_id) // Assert
         }
@@ -33,25 +48,54 @@ class TicketPaymentServiceTest {
     @Test
     fun `getTicketPaymentsByTicket returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val ticketCheckStatement: PreparedStatement = mock() // Arrange
+            val ticketResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("tickets"))).thenReturn(ticketCheckStatement) // Arrange
+            whenever(ticketCheckStatement.executeQuery()).thenReturn(ticketResultSet) // Arrange
+            whenever(ticketResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM ticket_payments WHERE ticket_id = ?"))).thenReturn(mockStatement)
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.getTicketPaymentsByTicket("ticket-2") // Act
+            assertNotNull(result) // Assert
             assertTrue(result.isEmpty()) // Assert
+        }
+    }
+
+    @Test
+    fun `getTicketPaymentsByTicket returns null when ticket not found`() {
+        runBlocking {
+            val ticketCheckStatement: PreparedStatement = mock() // Arrange
+            val ticketResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("tickets"))).thenReturn(ticketCheckStatement) // Arrange
+            whenever(ticketCheckStatement.executeQuery()).thenReturn(ticketResultSet) // Arrange
+            whenever(ticketResultSet.next()).thenReturn(false) // Arrange
+
+            val service = TicketPaymentService(mockConnection) // Arrange
+            val result = service.getTicketPaymentsByTicket("not-found") // Act
+            assertTrue(result == null) // Assert
         }
     }
 
     @Test
     fun `getTicketPaymentsByPayment returns list of tickets when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val paymentCheckStatement: PreparedStatement = mock() // Arrange
+            val paymentResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("payments"))).thenReturn(paymentCheckStatement) // Arrange
+            whenever(paymentCheckStatement.executeQuery()).thenReturn(paymentResultSet) // Arrange
+            whenever(paymentResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM ticket_payments WHERE payment_id = ?"))).thenReturn(mockStatement)
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
             whenever(mockResultSet.getString("payment_id")).thenReturn("pay-1").thenReturn("pay-1") // Arrange
             whenever(mockResultSet.getString("ticket_id")).thenReturn("ticket-1").thenReturn("ticket-2") // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.getTicketPaymentsByPayment("pay-1") // Act
+            assertNotNull(result) // Assert
             assertEquals(2, result.size) // Assert
             assertEquals("ticket-1", result[0].ticket_id) // Assert
         }
@@ -60,12 +104,34 @@ class TicketPaymentServiceTest {
     @Test
     fun `getTicketPaymentsByPayment returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            val paymentCheckStatement: PreparedStatement = mock() // Arrange
+            val paymentResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("payments"))).thenReturn(paymentCheckStatement) // Arrange
+            whenever(paymentCheckStatement.executeQuery()).thenReturn(paymentResultSet) // Arrange
+            whenever(paymentResultSet.next()).thenReturn(true) // Arrange
+
+            whenever(mockConnection.prepareStatement(contains("FROM ticket_payments WHERE payment_id = ?"))).thenReturn(mockStatement)
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.getTicketPaymentsByPayment("pay-2") // Act
+            assertNotNull(result) // Assert
             assertTrue(result.isEmpty()) // Assert
+        }
+    }
+
+    @Test
+    fun `getTicketPaymentsByPayment returns null when payment not found`() {
+        runBlocking {
+            val paymentCheckStatement: PreparedStatement = mock() // Arrange
+            val paymentResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("payments"))).thenReturn(paymentCheckStatement) // Arrange
+            whenever(paymentCheckStatement.executeQuery()).thenReturn(paymentResultSet) // Arrange
+            whenever(paymentResultSet.next()).thenReturn(false) // Arrange
+
+            val service = TicketPaymentService(mockConnection) // Arrange
+            val result = service.getTicketPaymentsByPayment("not-found") // Act
+            assertTrue(result == null) // Assert
         }
     }
 

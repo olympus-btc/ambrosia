@@ -18,6 +18,25 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store/users"),
 }));
 
+jest.mock("../UsersList", () => ({
+  UsersList: ({ users, onEditUser, onDeleteUser }) => (
+    <div>
+      {users.map((user) => (
+        <div key={user.id}>
+          <span>{user.name}</span>
+          <button aria-label="Edit User" onClick={() => onEditUser(user)}>edit</button>
+          <button aria-label="Delete User" onClick={() => onDeleteUser(user)}>delete</button>
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => true,
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("../AddUsersModal", () => ({
   AddUsersModal: ({ addUsersShowModal, data, onChange, addUser }) => (
     addUsersShowModal ? (

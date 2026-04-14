@@ -5,6 +5,7 @@ const spawn = require('cross-spawn');
 const treeKill = require('tree-kill');
 
 const { checkBackend } = require('../utils/healthCheck');
+const logger = require('../utils/logger');
 const { getJavaPath, getBackendJarPath, getLogsDirectory } = require('../utils/resourcePaths');
 
 class BackendService {
@@ -41,55 +42,66 @@ class BackendService {
         `--http-bind-ip=127.0.0.1`,
         `--http-bind-port=${port}`,
         `--phoenixd-url=http://localhost:${config.phoenixdPort}`,
-        `--phoenixd-password=${config.phoenixPassword}`,
-        `--phoenixd-webhook-secret=${config.webhookSecret}`,
       ];
 
-      console.log(`[BackendService] Starting backend at port ${port}...`);
-      console.log(`[BackendService] Command: ${javaPath} ${args.join(' ')}`);
+      // Secrets passed as env vars to avoid exposure in `ps aux` and log files
+      const env = {
+        ...process.env,
+        PHOENIXD_PASSWORD: config.phoenixPassword,
+        PHOENIXD_WEBHOOK_SECRET: config.webhookSecret,
+      };
 
-      this.process = spawn(javaPath, args, {
+      logger.log(`[BackendService] Starting backend at port ${port}...`);
+
+      const spawnedProcess = spawn(javaPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
+        env,
       });
 
-      this.process.stdout.on('data', (data) => {
+      this.process = spawnedProcess;
+
+      spawnedProcess.stdout.on('data', (data) => {
         const message = data.toString();
-        console.log(`[Backend] ${message.trim()}`);
+        logger.log(`[Backend] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ${message}`);
         }
       });
 
-      this.process.stderr.on('data', (data) => {
+      spawnedProcess.stderr.on('data', (data) => {
         const message = data.toString();
-        console.error(`[Backend ERROR] ${message.trim()}`);
+        logger.error(`[Backend ERROR] ${message.trim()}`);
         if (this.logStream) {
           this.logStream.write(`[${new Date().toISOString()}] ERROR: ${message}`);
         }
       });
 
-      this.process.on('error', (error) => {
-        console.error('[BackendService] Failed to start:', error);
-        this.status = 'error';
-        this.cleanup();
+      spawnedProcess.on('error', (error) => {
+        logger.error('[BackendService] Failed to start:', error);
+        if (this.process === spawnedProcess) {
+          this.status = 'error';
+          this.cleanup();
+        }
       });
 
-      this.process.on('close', (code) => {
-        console.log(`[BackendService] Process exited with code ${code}`);
-        this.status = 'stopped';
-        this.cleanup();
+      spawnedProcess.on('close', (code) => {
+        logger.log(`[BackendService] Process exited with code ${code}`);
+        if (this.process === spawnedProcess) {
+          this.status = 'stopped';
+          this.cleanup();
+        }
       });
 
-      console.log('[BackendService] Waiting for backend to be healthy...');
+      logger.log('[BackendService] Waiting for backend to be healthy...');
       await checkBackend(port);
 
       this.status = 'running';
-      console.log('[BackendService] Backend is running and healthy');
+      logger.log('[BackendService] Backend is running and healthy');
 
       return { port };
     } catch (error) {
-      console.error('[BackendService] Startup failed:', error);
+      logger.error('[BackendService] Startup failed:', error);
       this.status = 'error';
       await this.stop();
       throw error;
@@ -98,24 +110,24 @@ class BackendService {
 
   async stop() {
     if (!this.process) {
-      console.log('[BackendService] No process to stop');
+      logger.log('[BackendService] No process to stop');
       return;
     }
 
-    console.log('[BackendService] Stopping backend...');
+    logger.log('[BackendService] Stopping backend...');
 
     return new Promise((resolve) => {
       const pid = this.process.pid;
 
       treeKill(pid, 'SIGTERM', (err) => {
         if (err) {
-          console.error('[BackendService] Failed to kill process tree:', err);
+          logger.error('[BackendService] Failed to kill process tree:', err);
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();
           });
         } else {
-          console.log('[BackendService] Process tree killed successfully');
+          logger.log('[BackendService] Process tree killed successfully');
           this.cleanup();
           resolve();
         }
@@ -123,7 +135,7 @@ class BackendService {
 
       setTimeout(() => {
         if (this.process) {
-          console.warn('[BackendService] Force killing after timeout');
+          logger.warn('[BackendService] Force killing after timeout');
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();
@@ -134,6 +146,9 @@ class BackendService {
   }
 
   cleanup() {
+    if (this.process) {
+      this.process.removeAllListeners();
+    }
     this.process = null;
     this.status = 'stopped';
     if (this.logStream) {

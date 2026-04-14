@@ -9,7 +9,6 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Chip,
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
@@ -59,9 +58,12 @@ export function CashPaymentModal({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
+      scrollBehavior="inside"
       backdrop="blur"
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
+        wrapper: "items-start h-auto",
+        base: "my-auto overflow-hidden",
       }}
     >
       <ModalContent>
@@ -72,36 +74,36 @@ export function CashPaymentModal({
           </span>
         </ModalHeader>
         <ModalBody className="space-y-4">
-          <div className="border-b pb-3 mb-3">
+          <div className="border-b pb-3">
             <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{t("totalLabel")}</p>
-            <div className="flex items-center justify-between">
-              <p className="text-xl font-semibold text-green-900">
-                {formattedTotal}
-              </p>
-              <Chip
-                className="bg-green-200 text-xs text-green-800 border border-green-300"
-              >
-                {t("cash")}
-              </Chip>
-            </div>
+            <p className="text-xl font-semibold text-green-900">
+              {formattedTotal}
+            </p>
           </div>
 
           <NumberInput
             label={t("receivedLabel")}
             value={cashReceived}
             onValueChange={(value) => {
-              setCashReceived(value);
+              setCashReceived(value ?? 0);
               setError("");
+            }}
+            onChange={(e) => {
+              if (e?.target) {
+                setCashReceived(parseFloat(e.target.value) || 0);
+                setError("");
+              }
             }}
             minValue={0}
             step={0.10}
             size="lg"
+            classNames={{ inputWrapper: "shadow-none" }}
             startContent={
               <span className="text-default-400 text-small">$</span>
             }
           />
 
-          <div className="bg-white rounded-xl border border-gray-400 p-3 flex justify-between items-center shadow-sm">
+          <div className="bg-white rounded-lg border p-3 flex justify-between items-center">
             <span className="text-sm text-gray-600">{t("changeLabel")}</span>
             <span className={`text-lg font-semibold ${hasEnoughCash ? "text-green-700" : "text-red-600"}`}>
               {formattedChange}

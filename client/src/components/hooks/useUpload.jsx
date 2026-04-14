@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
 export function useUpload() {
   const [isUploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -10,14 +12,13 @@ export function useUpload() {
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append("files", f));
-      const res = await fetch("/api/uploads", {
+      const res = await httpClient("/uploads", {
         method: "POST",
         body: formData,
-        credentials: "include",
       });
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      const data = await res.json();
-      return data.uploads;
+      const data = await parseJsonResponse(res, { uploads: [] });
+      return data.uploads ?? [];
     } catch (e) {
       setError(e);
       throw e;

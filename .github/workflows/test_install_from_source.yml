@@ -1,0 +1,94 @@
+name: Test Install From Source
+
+on:
+  pull_request:
+    branches: '**'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install-from-source:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x server/gradlew
+
+      - name: Install unzip (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y unzip
+
+      - name: Run install-from-source
+        run: make install-from-source
+
+      - name: Verify phoenixd binary
+        run: |
+          export PATH="/usr/local/bin:$PATH"
+          which phoenixd
+          phoenixd --version || true
+
+      - name: Verify server installation
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+
+          if [ ! -f "$HOME/.local/ambrosia/ambrosia.jar" ]; then
+            echo "Error: ambrosia.jar not found"
+            exit 1
+          fi
+
+          if [ ! -x "$HOME/.local/ambrosia/run-server.sh" ]; then
+            echo "Error: run-server.sh not found or not executable"
+            exit 1
+          fi
+
+          which ambrosia
+          ls -l "$(which ambrosia)"
+
+      - name: Verify client installation
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+
+          if [ ! -d "$HOME/.local/ambrosia/client/.next" ]; then
+            echo "Error: .next directory not found"
+            exit 1
+          fi
+
+          if [ ! -d "$HOME/.local/ambrosia/client/node_modules" ]; then
+            echo "Error: node_modules not found — npm ci may have failed"
+            exit 1
+          fi
+
+          if [ ! -x "$HOME/.local/ambrosia/run-client.sh" ]; then
+            echo "Error: run-client.sh not found or not executable"
+            exit 1
+          fi
+
+          if [ ! -d "/tmp/ambrosia-client-dist" ]; then
+            echo "Error: CLIENT_DIST_DIR /tmp/ambrosia-client-dist not found — build-client may have failed"
+            exit 1
+          fi
+
+          which ambrosia-client
+          ls -l "$(which ambrosia-client)"

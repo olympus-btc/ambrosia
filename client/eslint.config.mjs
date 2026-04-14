@@ -10,29 +10,6 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "generate-env.cjs",
-      "src/app/**",
-      "src/hooks/**",
-      "src/lib/**",
-      "src/modules/**",
-      "src/providers/**",
-      "src/services/**",
-      "src/proxy.js",
-      "src/components/auth/**",
-      "src/components/dashboard/**",
-      "src/components/navigation/**",
-      "src/components/locales/**",
-      "src/i18n/**",
-      "src/components/spaces/**",
-      "src/components/utils/**",
-      "src/components/ConfirmationPopup.jsx",
-      "src/components/DynamicModuleRenderer.jsx",
-      "src/components/Headers.jsx",
-      "src/components/LoadingCard.jsx",
-      "src/components/ModuleNavigation.js",
-      "src/components/PaginatedTable.jsx",
-      "src/components/Tabs.js",
-      "src/components/VirtualKeyboard.js",
     ],
   },
   {
@@ -40,7 +17,6 @@ const eslintConfig = [
       import: importPlugin,
     },
     rules: {
-      // Airbnb-style code formatting rules
       indent: [
         "error",
         2,
@@ -142,7 +118,6 @@ const eslintConfig = [
       camelcase: ["error", { properties: "never", ignoreDestructuring: false }],
       "new-cap": ["error", { newIsCap: true, capIsNew: false }],
 
-      // React-specific Airbnb rules
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error",
       "react/jsx-key": "error",
@@ -153,8 +128,8 @@ const eslintConfig = [
       "react/no-deprecated": "error",
       "react/no-direct-mutation-state": "error",
       "react/no-unknown-property": "error",
-      "react/prop-types": "off", // Disabled as we might use TypeScript
-      "react/react-in-jsx-scope": "off", // Not needed in Next.js
+      "react/prop-types": "off",
+      "react/react-in-jsx-scope": "off",
       "react/self-closing-comp": "error",
       "react/jsx-boolean-value": ["error", "never"],
       "react/jsx-closing-bracket-location": ["error", "line-aligned"],
@@ -189,11 +164,9 @@ const eslintConfig = [
         },
       ],
 
-      // React Hooks rules (Airbnb style)
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
 
-      // Import organization (Airbnb style)
       "import/order": [
         "error",
         {
@@ -231,7 +204,7 @@ const eslintConfig = [
       ],
       "import/newline-after-import": "error",
       "import/no-duplicates": "error",
-      "import/no-unresolved": "off", // Next.js handles this
+      "import/no-unresolved": "off",
       "import/extensions": [
         "error",
         "ignorePackages",

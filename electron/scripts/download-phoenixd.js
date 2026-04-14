@@ -4,43 +4,56 @@ const https = require('https');
 const path = require('path');
 
 const { getBuildPlatform } = require('./platform-utils');
+const { verifySha256, fetchSha256SumsChecksum } = require('./verify-checksum');
 
-const PHOENIXD_VERSION = '0.7.1';
+const PHOENIXD_VERSION = '0.7.2';
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'phoenixd');
 
+const GITHUB_BASE = `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}`;
+
+// ACINQ publishes a single SHA256SUMS.asc per release with all hashes.
+// When bumping PHOENIXD_VERSION, no hash changes are needed — the file is fetched at build time.
+const SHA256SUMS_URL = `${GITHUB_BASE}/SHA256SUMS.asc`;
+
 // Phoenixd GitHub release URLs
+// The `archiveFilename` must match exactly what appears in SHA256SUMS.asc.
 const ALL_PHOENIXD_DOWNLOADS = {
   'macos-x64': {
     platform: 'macos-x64',
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-macos-x64.zip`,
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-macos-x64.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-macos-x64.zip`,
     filename: 'phoenixd-macos-x64.zip',
   },
   'macos-arm64': {
     platform: 'macos-arm64',
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-macos-arm64.zip`,
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-macos-arm64.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-macos-arm64.zip`,
     filename: 'phoenixd-macos-arm64.zip',
   },
   'win-x64': {
     platform: 'win-x64',
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
     filename: 'phoenixd-win-x64.zip',
   },
   'win-arm64': {
     platform: 'win-arm64',
-    // Note: phoenixd doesn't have native ARM64 support for Windows yet
-    // We use the JVM version which will run under x64 emulation
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
+    // Note: phoenixd doesn't have native ARM64 support for Windows yet.
+    // We use the JVM version which will run under x64 emulation.
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-jvm.zip`,
     filename: 'phoenixd-win-arm64.zip',
-    // This will be stored in win-arm64 folder but runs under emulation
   },
   'linux-x64': {
     platform: 'linux-x64',
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-linux-x64.zip`,
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-linux-x64.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-linux-x64.zip`,
     filename: 'phoenixd-linux-x64.zip',
   },
   'linux-arm64': {
     platform: 'linux-arm64',
-    url: `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}/phoenixd-${PHOENIXD_VERSION}-linux-arm64.zip`,
+    url: `${GITHUB_BASE}/phoenixd-${PHOENIXD_VERSION}-linux-arm64.zip`,
+    archiveFilename: `phoenixd-${PHOENIXD_VERSION}-linux-arm64.zip`,
     filename: 'phoenixd-linux-arm64.zip',
   },
 };
@@ -48,7 +61,8 @@ const ALL_PHOENIXD_DOWNLOADS = {
 const currentPlatform = getBuildPlatform();
 const PHOENIXD_DOWNLOADS = [ALL_PHOENIXD_DOWNLOADS[currentPlatform]];
 
-function downloadFile(url, dest) {
+function downloadFile(url, dest, redirectCount = 0) {
+  const MAX_REDIRECTS = 5;
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
 
@@ -60,10 +74,14 @@ function downloadFile(url, dest) {
       if (response.statusCode === 301 || response.statusCode === 302 ||
           response.statusCode === 307 || response.statusCode === 308) {
         const redirectUrl = response.headers.location;
-        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
         file.close();
         fs.unlinkSync(dest);
-        downloadFile(redirectUrl, dest).then(resolve).catch(reject);
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
+          return;
+        }
+        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
+        downloadFile(redirectUrl, dest, redirectCount + 1).then(resolve).catch(reject);
         return;
       }
 
@@ -155,7 +173,7 @@ function extractZip(zipPath, destDir) {
   }
 }
 
-async function downloadAndExtractPhoenixd(platform, url, filename) {
+async function downloadAndExtractPhoenixd(platform, url, archiveFilename, filename) {
   const platformDir = path.join(RESOURCES_DIR, platform);
   const downloadPath = path.join(RESOURCES_DIR, filename);
 
@@ -181,6 +199,16 @@ async function downloadAndExtractPhoenixd(platform, url, filename) {
 
     // Download
     await downloadFile(url, downloadPath);
+
+    // Verify integrity using ACINQ's SHA256SUMS.asc before extracting
+    try {
+      console.log(`Fetching checksums from: ${SHA256SUMS_URL}`);
+      const expectedHash = await fetchSha256SumsChecksum(SHA256SUMS_URL, archiveFilename);
+      await verifySha256(downloadPath, expectedHash);
+    } catch (checksumError) {
+      fs.unlinkSync(downloadPath);
+      throw new Error(`Integrity check failed: ${checksumError.message}`);
+    }
 
     // Extract
     extractZip(downloadPath, platformDir);
@@ -211,7 +239,7 @@ async function main() {
 
   for (const phoenixd of PHOENIXD_DOWNLOADS) {
     try {
-      await downloadAndExtractPhoenixd(phoenixd.platform, phoenixd.url, phoenixd.filename);
+      await downloadAndExtractPhoenixd(phoenixd.platform, phoenixd.url, phoenixd.archiveFilename, phoenixd.filename);
     } catch (error) {
       console.error(`Failed to download Phoenixd for ${phoenixd.platform}:`, error);
       process.exit(1);
@@ -221,6 +249,7 @@ async function main() {
   console.log('\n===========================================');
   console.log(`  ✓ Phoenixd download for ${currentPlatform} complete!`);
   console.log('===========================================');
+  process.exit(0);
 }
 
 main().catch((error) => {

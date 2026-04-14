@@ -21,13 +21,17 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
-    NumberInput: ({ label, value, onValueChange, minValue, startContent, size, ...props }) => (
+    NumberInput: ({ label, value, onValueChange, onChange, minValue, startContent, size, step, classNames, ...props }) => (
       <input
         type="number"
         aria-label={label}
         value={value}
-        onChange={(e) => onValueChange?.(parseFloat(e.target.value) || 0)}
+        onChange={(e) => {
+          onValueChange?.(parseFloat(e.target.value) || 0);
+          onChange?.(e);
+        }}
         min={minValue}
+        step={step}
         {...props}
       />
     ),
@@ -58,6 +62,15 @@ describe("CashPaymentModal", () => {
     await user.click(screen.getByText("confirm"));
 
     expect(screen.getByText("errors.insufficient")).toBeInTheDocument();
+  });
+
+  it("updates change in real-time while typing", () => {
+    render(<CashPaymentModal {...baseProps} />);
+
+    const input = screen.getByLabelText("receivedLabel");
+    fireEvent.change(input, { target: { value: "12" } });
+
+    expect(screen.getByText("$2.00")).toBeInTheDocument();
   });
 
   it("calls onComplete with cashReceived and change when sufficient", async () => {

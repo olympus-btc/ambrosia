@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useTemplates() {
   const [templates, setTemplates] = useState([]);
@@ -12,15 +13,12 @@ export function useTemplates() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/templates");
-      if (Array.isArray(res)) {
-        setTemplates(res);
-      } else {
-        setTemplates([]);
-      }
-    } catch (err) {
-      console.error("Error fetching templates:", err);
-      setError(err);
+      const templates = await httpClient("/templates");
+      const templatesData = await parseJsonResponse(templates, []);
+      setTemplates(toArray(templatesData));
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -28,30 +26,39 @@ export function useTemplates() {
 
   const createTemplate = useCallback(async (templateBody) => {
     try {
-      const created = await apiClient("/templates", {
+      const createTemplate = await httpClient("/templates", {
         method: "POST",
-        body: templateBody,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateBody),
       });
-      if (created?.id) {
+
+      const createdDataTemplate = await parseJsonResponse(createTemplate, null);
+
+      if (createdDataTemplate?.id) {
         setTemplates((prev) => (Array.isArray(prev)
-          ? [...prev, { ...templateBody, id: created.id }]
-          : [{ ...templateBody, id: created.id }]),
+          ? [...prev, { ...templateBody, id: createdDataTemplate.id }]
+          : [{ ...templateBody, id: createdDataTemplate.id }]),
         );
       }
-      return created;
-    } catch (err) {
-      console.error("Error creating template:", err);
-      setError(err);
-      throw err;
+      return createdDataTemplate;
+    } catch (error) {
+      console.error("Error creating template:", error);
+      setError(error);
+      throw error;
     }
   }, []);
 
   const updateTemplate = useCallback(async (templateId, templateBody) => {
     if (!templateId) throw new Error("templateId is required");
     try {
-      await apiClient(`/templates/${templateId}`, {
+      await httpClient(`/templates/${templateId}`, {
         method: "PUT",
-        body: templateBody,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateBody),
       });
       setTemplates((prev) => (Array.isArray(prev)
         ? prev.map((template) => (template.id === templateId ? { ...template, ...templateBody } : template),
@@ -69,7 +76,7 @@ export function useTemplates() {
   const deleteTemplate = useCallback(async (templateId) => {
     if (!templateId) throw new Error("templateId is required");
     try {
-      await apiClient(`/templates/${templateId}`, { method: "DELETE" });
+      await httpClient(`/templates/${templateId}`, { method: "DELETE" });
       setTemplates((prev) => (Array.isArray(prev) ? prev.filter((template) => template.id !== templateId) : prev),
       );
       return true;

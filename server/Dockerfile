@@ -29,4 +29,4 @@ COPY --from=builder /build/app/build/libs/ambrosia-*.jar ./ambrosia.jar
 
 EXPOSE 9154
 
-ENTRYPOINT ["java", "-jar", "ambrosia.jar", "--phoenixd-url=http://phoenixd:9740", "--http-bind-ip=0.0.0.0"]
+ENTRYPOINT ["java", "-jar", "ambrosia.jar", "--phoenixd-url=http://phoenixd:9740", "--http-bind-ip=0.0.0.0", "--docker"]

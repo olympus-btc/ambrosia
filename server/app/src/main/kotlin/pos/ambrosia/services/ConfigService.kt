@@ -1,13 +1,19 @@
 package pos.ambrosia.services
 
-import java.sql.Connection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Config
+import java.sql.Connection
 
-class ConfigService(private val connection: Connection) {
+class ConfigService(
+    private val connection: Connection,
+) {
     companion object {
-        private const val GET_CONFIG = "SELECT id, business_type, business_name, business_address, business_phone, business_email, business_tax_id, business_logo_url, business_type_confirmed FROM config WHERE id = 1"
-        private const val UPDATE_CONFIG = "INSERT OR REPLACE INTO config (id, business_type, business_name, business_address, business_phone, business_email, business_tax_id, business_logo_url, business_type_confirmed) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)"
+        private const val GET_CONFIG = """
+            SELECT id, business_type, business_name, business_address, business_phone, business_email, business_tax_id, business_logo_url, business_type_confirmed FROM config WHERE id = 1
+        """
+        private const val UPDATE_CONFIG = """
+            INSERT OR REPLACE INTO config (id, business_type, business_name, business_address, business_phone, business_email, business_tax_id, business_logo_url, business_type_confirmed) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
     }
 
     suspend fun getConfig(): Config? {

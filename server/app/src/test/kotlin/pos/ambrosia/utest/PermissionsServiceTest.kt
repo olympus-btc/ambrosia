@@ -2,13 +2,20 @@ package pos.ambrosia.utest
 
 import io.ktor.server.application.ApplicationEnvironment
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Permission
 import pos.ambrosia.services.PermissionsService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class PermissionsServiceTest {
     private val env: ApplicationEnvironment = mock()
@@ -53,21 +60,43 @@ class PermissionsServiceTest {
     @Test
     fun `getByRole returns list when found`() {
         // Arrange
-        val st: PreparedStatement = mock()
-        val rs: ResultSet = mock()
-        whenever(conn.prepareStatement(contains("FROM role_permissions"))).thenReturn(st)
-        whenever(st.executeQuery()).thenReturn(rs)
-        whenever(rs.next()).thenReturn(true).thenReturn(false)
-        whenever(rs.getString("id")).thenReturn("p1")
-        whenever(rs.getString("name")).thenReturn("perm.read")
-        whenever(rs.getString("description")).thenReturn("Read")
-        whenever(rs.getBoolean("enabled")).thenReturn(true)
-        val service = PermissionsService(env, conn)
+        val stRole: PreparedStatement = mock() // Arrange
+        val rsRole: ResultSet = mock() // Arrange
+        whenever(conn.prepareStatement(contains("FROM roles"))).thenReturn(stRole) // Arrange
+        whenever(stRole.executeQuery()).thenReturn(rsRole) // Arrange
+        whenever(rsRole.next()).thenReturn(true) // Arrange
+
+        val st: PreparedStatement = mock() // Arrange
+        val rs: ResultSet = mock() // Arrange
+        whenever(conn.prepareStatement(contains("FROM role_permissions"))).thenReturn(st) // Arrange
+        whenever(st.executeQuery()).thenReturn(rs) // Arrange
+        whenever(rs.next()).thenReturn(true).thenReturn(false) // Arrange
+        whenever(rs.getString("id")).thenReturn("p1") // Arrange
+        whenever(rs.getString("name")).thenReturn("perm.read") // Arrange
+        whenever(rs.getString("description")).thenReturn("Read") // Arrange
+        whenever(rs.getBoolean("enabled")).thenReturn(true) // Arrange
+        val service = PermissionsService(env, conn) // Arrange
         // Act
-        val list = service.getByRole("role-1")
+        val list = service.getByRole("role-1") // Act
         // Assert
-        assertEquals(1, list.size)
-        assertEquals("perm.read", list[0].name)
+        assertEquals(1, list?.size) // Assert
+        assertEquals("perm.read", list?.get(0)?.name) // Assert
+    }
+
+    @Test
+    fun `getByRole returns null when role does not exist`() {
+        // Arrange
+        val stRole: PreparedStatement = mock() // Arrange
+        val rsRole: ResultSet = mock() // Arrange
+        whenever(conn.prepareStatement(contains("FROM roles"))).thenReturn(stRole) // Arrange
+        whenever(stRole.executeQuery()).thenReturn(rsRole) // Arrange
+        whenever(rsRole.next()).thenReturn(false) // Arrange
+
+        val service = PermissionsService(env, conn) // Arrange
+        // Act
+        val list = service.getByRole("role-not-existent") // Act
+        // Assert
+        assertTrue(list == null) // Assert
     }
 
     @Test

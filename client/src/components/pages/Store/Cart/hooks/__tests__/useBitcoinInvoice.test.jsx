@@ -12,8 +12,8 @@ jest.mock("@/services/bitcoinPriceService", () => jest.fn().mockImplementation((
 })),
 );
 
-jest.mock("@/modules/cashier/cashierService", () => ({
-  createInvoice: (...args) => mockCreateInvoice(...args),
+jest.mock("@/services/walletService", () => ({
+  createInvoiceForCart: (...args) => mockCreateInvoice(...args),
 }));
 
 let latestState = {};

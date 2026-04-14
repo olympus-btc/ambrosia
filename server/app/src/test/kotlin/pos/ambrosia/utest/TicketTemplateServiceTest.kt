@@ -2,8 +2,15 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import org.mockito.kotlin.*
-import pos.ambrosia.models.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import pos.ambrosia.models.ElementStyle
+import pos.ambrosia.models.ElementType
+import pos.ambrosia.models.TicketElementCreateRequest
+import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -17,7 +24,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TicketTemplateServiceTest {
-
     private val mockConnection: Connection = mock()
     private val mockPreparedStatement: PreparedStatement = mock()
     private val mockStatement: Statement = mock()
@@ -28,13 +34,14 @@ class TicketTemplateServiceTest {
     @Test
     fun `addTemplate should return id on success`() {
         runBlocking {
-            
-            val request = TicketTemplateRequest(
-                name = "New Template",
-                elements = listOf(
-                    TicketElementCreateRequest(ElementType.TEXT, "Hello", ElementStyle())
+            val request =
+                TicketTemplateRequest(
+                    name = "New Template",
+                    elements =
+                        listOf(
+                            TicketElementCreateRequest(ElementType.TEXT, "Hello", ElementStyle()),
+                        ),
                 )
-            )
 
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
             whenever(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet)
@@ -50,7 +57,6 @@ class TicketTemplateServiceTest {
     @Test
     fun `addTemplate should return null if name exists`() {
         runBlocking {
-
             val request = TicketTemplateRequest(name = "Existing Template", elements = emptyList())
 
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
@@ -67,10 +73,9 @@ class TicketTemplateServiceTest {
     @Test
     fun `getTemplates should return list of templates`() {
         runBlocking {
-
             whenever(mockConnection.createStatement()).thenReturn(mockStatement)
             whenever(mockStatement.executeQuery(any())).thenReturn(mockResultSet)
-            
+
             whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
             val uuid = UUID.randomUUID()
             whenever(mockResultSet.getBytes("id")).thenReturn(uuid.toBytes())
@@ -79,7 +84,7 @@ class TicketTemplateServiceTest {
             val mockElementsStmt: PreparedStatement = mock()
             val mockElementsRs: ResultSet = mock()
 
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockElementsStmt) 
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockElementsStmt)
             whenever(mockElementsStmt.executeQuery()).thenReturn(mockElementsRs)
             whenever(mockElementsRs.next()).thenReturn(false)
 
@@ -89,16 +94,16 @@ class TicketTemplateServiceTest {
             assertEquals("My Template", templates[0].name)
         }
     }
-    
+
     @Test
     fun `updateTemplate should return true on success`() {
         runBlocking {
-
             val id = UUID.randomUUID().toString()
-            val request = TicketTemplateRequest(
-                name = "Updated Name",
-                elements = emptyList()
-            )
+            val request =
+                TicketTemplateRequest(
+                    name = "Updated Name",
+                    elements = emptyList(),
+                )
 
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
             whenever(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet)
@@ -114,12 +119,11 @@ class TicketTemplateServiceTest {
     @Test
     fun `deleteTemplate should return true if deleted`() {
         runBlocking {
-
             val id = UUID.randomUUID().toString()
-            
+
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeUpdate()).thenReturn(1) 
-            
+            whenever(mockPreparedStatement.executeUpdate()).thenReturn(1)
+
             val success = service.deleteTemplate(id)
 
             assertTrue(success)
@@ -129,9 +133,8 @@ class TicketTemplateServiceTest {
     @Test
     fun `deleteTemplate should return false if not found`() {
         runBlocking {
-
             val id = UUID.randomUUID().toString()
-            
+
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
             whenever(mockPreparedStatement.executeUpdate()).thenReturn(0)
 

@@ -4,14 +4,19 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { toArray } from "@/components/utils/array";
+import { RequirePermission } from "@/hooks/usePermission";
+import { PageHeader } from "@components/shared/PageHeader";
+
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 import { StoreLayout } from "../StoreLayout";
 
 import { AddProductsModal } from "./AddProductsModal";
+import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
-import { ProductsTable } from "./ProductsTable";
+import { ProductsList } from "./ProductsList";
 
 export function Products() {
   const [addProductsShowModal, setAddProductsShowModal] = useState(false);
@@ -21,7 +26,7 @@ export function Products() {
     productId: "",
     productName: "",
     productDescription: "",
-    productCategory: "",
+    productCategories: [],
     productSKU: "",
     productPrice: "",
     productStock: 1,
@@ -37,6 +42,8 @@ export function Products() {
     categories,
     loading: categoriesLoading,
     createCategory,
+    updateCategory,
+    deleteCategory,
     refetch: refetchCategories,
   } = useCategories("product");
 
@@ -51,7 +58,7 @@ export function Products() {
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
-      productCategory: product.category_id,
+      productCategories: toArray(product.category_ids),
       productSKU: product.SKU,
       productPrice: product.price_cents ? product.price_cents / 100 : "",
       productStock: product.quantity,
@@ -77,23 +84,23 @@ export function Products() {
 
   return (
     <StoreLayout>
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-4xl font-semibold text-green-900">{t("title")}</h1>
-          <p className="text-gray-800 mt-4">
-            {t("subtitle")}
-          </p>
-        </div>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={() => setAddProductsShowModal(true)}
-        >
-          {t("addProduct")}
-        </Button>
-      </header>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={(
+          <RequirePermission allOf={["products_create"]}>
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => setAddProductsShowModal(true)}
+            >
+              {t("addProduct")}
+            </Button>
+          </RequirePermission>
+        )}
+      />
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
-        <ProductsTable
+        <ProductsList
           products={products}
           categories={categories}
           onEditProduct={handleEditProduct}
@@ -138,6 +145,14 @@ export function Products() {
           setDeleteProductsShowModal(false);
           deleteProduct(productToDelete);
         }}
+      />
+
+      <Categories
+        categories={categories}
+        createCategory={createCategory}
+        updateCategory={updateCategory}
+        deleteCategory={deleteCategory}
+        refetch={refetchCategories}
       />
     </StoreLayout>
   );

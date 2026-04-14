@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 const DEFAULT_CURRENCY = {
   id: null,
@@ -40,27 +40,27 @@ function parseCurrencyData(base) {
 export function useCurrency() {
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
 
-  const fetchCurrency = useCallback(async () => {
+  const fetchCurrency = useCallback(async ({ isCancelled } = {}) => {
     try {
-      const base = await apiClient("/base-currency");
-      setCurrency(parseCurrencyData(base));
+      const response = await httpClient("/base-currency");
+      const base = await parseJsonResponse(response, null);
+      if (!isCancelled?.()) setCurrency(parseCurrencyData(base));
     } catch {
-      setCurrency(DEFAULT_CURRENCY);
+      if (!isCancelled?.()) setCurrency(DEFAULT_CURRENCY);
     }
   }, []);
 
   useEffect(() => {
-    const loadCurrency = async () => {
-      try {
-        const base = await apiClient("/base-currency");
-        setCurrency(parseCurrencyData(base));
-      } catch {
-        setCurrency(DEFAULT_CURRENCY);
-      }
-    };
+    let cancelled = false;
 
-    loadCurrency();
-  }, []);
+    (async () => {
+      await fetchCurrency({ isCancelled: () => cancelled });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchCurrency]);
 
   const formatAmount = useCallback(
     (cents) => {
@@ -95,13 +95,16 @@ export function useCurrency() {
           ? acronymOrObj
           : acronymOrObj?.acronym || DEFAULT_CURRENCY.acronym;
 
-      const updateConfigResponse = await apiClient(`/base-currency`, {
+      const updateConfigResponse = await httpClient(`/base-currency`, {
         method: "PUT",
-        body: { acronym },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ acronym }),
       });
 
       fetchCurrency();
-      return updateConfigResponse;
+      return await parseJsonResponse(updateConfigResponse, null);
     },
     [fetchCurrency],
   );

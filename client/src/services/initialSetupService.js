@@ -1,18 +1,19 @@
-import { apiClient } from "./apiClient";
+import { httpClient } from "@/lib/http";
 
 export async function getInitialSetupStatus() {
-  return await apiClient("/initial-setup", {
+  return await httpClient("/initial-setup", {
     method: "GET",
-    silentAuth: true,
     skipRefresh: true,
   });
 }
 
 export async function submitInitialSetup(payload) {
-  return await apiClient("/initial-setup", {
+  return await httpClient("/initial-setup", {
     method: "POST",
-    body: payload,
-    silentAuth: true,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
     skipRefresh: true,
   });
 }

@@ -1,20 +1,5 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import {
-  addDishToOrder,
-  addPaymentToTicket,
-  createPayment,
-  createTicket,
-  getDishesByOrder,
-  getOrderById,
-  getPaymentCurrencies,
-  getPaymentMethods,
-  getTables,
-  removeDishToOrder,
-  updateOrder,
-  updateOrderDish,
-  updateTable,
-} from "./ordersService";
 
 const STATUS_CONFIG = {
   pending: {
@@ -43,15 +28,25 @@ const STATUS_CONFIG = {
     className: "bg-red-100 text-red-800 border-red-300",
   },
 };
-import { getCategories, getDishes } from "../dishes/dishesService";
-import ConfirmationPopup from "../../components/ConfirmationPopup";
-import LoadingCard from "../../components/LoadingCard";
-import VirtualKeyboard from "../../components/VirtualKeyboard";
-import BitcoinPriceService from "../../services/bitcoinPriceService";
-import { apiClient } from "../../services/apiClient";
-import { createInvoice } from "../cashier/cashierService";
-import { QRCode } from "react-qr-code";
 import { useRouter } from "next/navigation";
+
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Spinner,
+  Divider,
+  Chip,
+  Input,
+  Switch,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  addToast } from "@heroui/react";
 import {
   ChefHat,
   ArrowLeft,
@@ -69,24 +64,31 @@ import {
   Trash2,
   Lock,
 } from "lucide-react";
+import { QRCode } from "react-qr-code";
+
+import { createInvoice } from "@/services/walletService";
+
+import ConfirmationPopup from "../../components/ConfirmationPopup";
+import LoadingCard from "../../components/LoadingCard";
+import VirtualKeyboard from "../../components/VirtualKeyboard";
+import BitcoinPriceService from "../../services/bitcoinPriceService";
+import { getCategories, getDishes } from "../dishes/dishesService";
+
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Spinner,
-  Divider,
-  Chip,
-  Input,
-  Switch,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@heroui/react";
-import { addToast } from "@heroui/react";
+  addDishToOrder,
+  addPaymentToTicket,
+  createPayment,
+  createTicket,
+  getDishesByOrder,
+  getOrderById,
+  getPaymentCurrencies,
+  getPaymentMethods,
+  getTables,
+  removeDishToOrder,
+  updateOrder,
+  updateOrderDish,
+  updateTable,
+} from "./ordersService";
 
 const priceService = new BitcoinPriceService();
 
@@ -102,7 +104,7 @@ export default function EditOrder({ dynamicParams }) {
   //const [undoStack, setUndoStack] = useState([]);
   const [createdInvoice, setCreatedInvoice] = useState(null);
   const [generatedCashInfo, setGeneratedCashInfo] = useState(null);
-  const [cashReceived, setCashReceived] = useState('');
+  const [cashReceived, setCashReceived] = useState("");
   //const [showCurrencyDialog, setShowCurrencyDialog] = useState(false);
   const [showPaymentMethodDialog, setShowPaymentMethodDialog] = useState(false);
   //const [selectedCurrency, setSelectedCurrency] = useState("");
@@ -136,7 +138,7 @@ export default function EditOrder({ dynamicParams }) {
       console.error(err);
     } finally {
     }
-  }, [pedidoId])
+  }, [pedidoId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -165,7 +167,7 @@ export default function EditOrder({ dynamicParams }) {
         setPaymentMethods(paymentMethodsResponse);
         //setPaymentCurrencies(paymentCurrenciesResponse);
       } catch (err) {
-        console.log(err)
+        console.error(err);
         setError("Error al cargar el pedido");
       } finally {
         setIsLoading(false);
@@ -178,7 +180,6 @@ export default function EditOrder({ dynamicParams }) {
   useEffect(() => {
     if (order) fetchOrderDishes();
   }, [order, fetchOrderDishes]);
-
 
   /*const handleAddDish = async (dish) => {
     if (order.status !== "open") return;
@@ -215,7 +216,7 @@ export default function EditOrder({ dynamicParams }) {
       setOrderDishes(orderDishesResponse);
       setOrder(orderResponse);
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setError("Error al eliminar el platillo");
     } finally {
       setIsLoading(false);
@@ -251,13 +252,11 @@ export default function EditOrder({ dynamicParams }) {
 
     setIsLoading(true);
     try {
-      console.log(pendingDishes);
       pendingDishes.map(
-        async (dish) =>
-          await updateOrderDish(pedidoId, dish.id, {
-            ...dish,
-            status: dish.status === "pending" ? "sent" : dish.status,
-          }),
+        async (dish) => await updateOrderDish(pedidoId, dish.id, {
+          ...dish,
+          status: dish.status === "pending" ? "sent" : dish.status,
+        }),
       );
       const orderResponse = await getOrderById(pedidoId);
       const orderDishesResponse = await getDishesByOrder(pedidoId);
@@ -269,7 +268,7 @@ export default function EditOrder({ dynamicParams }) {
         description: `${pendingDishes.length} platillos enviados a cocina`,
       });
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setError("Error al enviar platillos");
       addToast({
         color: "danger",
@@ -321,7 +320,6 @@ export default function EditOrder({ dynamicParams }) {
   };
 
   const handleAddMultipleDishes = async (dish, quantity) => {
-    console.log(order.status);
     if (order.status == "paid") {
       addToast({
         description: "No se puede agregar platillos a un pedido pagado",
@@ -346,7 +344,7 @@ export default function EditOrder({ dynamicParams }) {
         description: `${quantity} ${dish.name} agregados al pedido`,
       });
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setError("Error al agregar platillos");
       addToast({
         color: "danger",
@@ -405,7 +403,7 @@ export default function EditOrder({ dynamicParams }) {
         description: "Platillo actualizado correctamente",
       });
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setError("Error al actualizar el platillo");
       addToast({
         color: "danger",
@@ -443,7 +441,7 @@ export default function EditOrder({ dynamicParams }) {
         router.push("/all-orders");
       }
     } catch (err) {
-      console.log(err)
+      console.error(err);
       setError("Error al cambiar el estado del pedido");
     } finally {
       setIsLoading(false);
@@ -462,7 +460,6 @@ export default function EditOrder({ dynamicParams }) {
     try {
       const total = order.total;
       const currencyBase = await apiClient(`/base-currency`);
-      console.log("Selected Currency ID:", currencyBase.currency_id);
       const ticket = {
         order_id: order.id,
         user_id: order.user_id,
@@ -489,8 +486,6 @@ export default function EditOrder({ dynamicParams }) {
       const paymentMethodData = await apiClient(
         `/payments/methods/${selectedPaymentMethod}`,
       );
-      console.log("Currency Data:", paymentMethodData);
-
       if (paymentMethodData.name === "Efectivo") {
         const cashInfo = {
           order_id: order.id,
@@ -505,47 +500,36 @@ export default function EditOrder({ dynamicParams }) {
         const currencyBaseData = await apiClient(
           `/payments/currencies/${currencyBase.currency_id}`,
         );
-        console.log("Currency Data:", currencyBaseData);
-
         const currencyAcronym = currencyBaseData.acronym.toLowerCase();
-        console.log("Currency Acronym:", currencyAcronym);
 
         const priceConverted = await priceService.fiatToSatoshis(
           total,
           currencyAcronym,
         );
 
-        console.log("Price in Satoshis:", priceConverted);
-
         const invoice = await createInvoice(priceConverted, order.id);
 
-        console.log(invoice);
         setCreatedInvoice(invoice);
-
-        console.log("Formatted:", priceService.formatSatoshis(priceConverted));
         setShowPaymentMethodDialog(false);
         return;
       }
 
       await handleChangeOrderStatus("paid");
       setShowPaymentMethodDialog(false);
-
     } catch (err) {
       console.error("Error en handleConfirmPaymentMethod:", err);
-      setError("Error al cerrar el pedido: " + err.message);
+      setError(`Error al cerrar el pedido: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePaymentConfirm = async () => {
-    console.log("Cliente confirmó el pago");
     await handleChangeOrderStatus("paid");
     setCreatedInvoice(null);
   };
 
   const handlePaymentCancel = () => {
-    console.log("Cliente no pagó");
     setCreatedInvoice(null);
   };
 
@@ -712,8 +696,7 @@ export default function EditOrder({ dynamicParams }) {
                                     isIconOnly
                                     size="lg"
                                     variant="ghost"
-                                    onPress={() =>
-                                      handleQuantityChange(dish.id, -1)
+                                    onPress={() => handleQuantityChange(dish.id, -1)
                                     }
                                     isDisabled={quantity <= 1}
                                     className="h-12 w-12"
@@ -727,8 +710,7 @@ export default function EditOrder({ dynamicParams }) {
                                     isIconOnly
                                     size="lg"
                                     variant="ghost"
-                                    onPress={() =>
-                                      handleQuantityChange(dish.id, 1)
+                                    onPress={() => handleQuantityChange(dish.id, 1)
                                     }
                                     className="h-12 w-12"
                                   >
@@ -739,8 +721,7 @@ export default function EditOrder({ dynamicParams }) {
                                 <Button
                                   size="lg"
                                   color="primary"
-                                  onPress={() =>
-                                    handleAddMultipleDishes(dish, quantity)
+                                  onPress={() => handleAddMultipleDishes(dish, quantity)
                                   }
                                   className="font-semibold h-12"
                                 >
@@ -833,13 +814,12 @@ export default function EditOrder({ dynamicParams }) {
                                           isSelected={
                                             item.should_prepare !== false
                                           }
-                                          onValueChange={(value) =>
-                                            handleUpdateDishNotes(
-                                              item.id,
-                                              item.notes,
-                                              value,
-                                              false,
-                                            )
+                                          onValueChange={(value) => handleUpdateDishNotes(
+                                            item.id,
+                                            item.notes,
+                                            value,
+                                            false,
+                                          )
                                           }
                                           size="lg"
                                           isDisabled={item.status !== "pending"}
@@ -863,7 +843,7 @@ export default function EditOrder({ dynamicParams }) {
                                           <Trash2 />
                                         </Button>
                                       </div>
-                                    )}
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -917,17 +897,17 @@ export default function EditOrder({ dynamicParams }) {
                       {orderDishes.some(
                         (dish) => dish.status === "pending",
                       ) && (
-                          <Button
-                            variant="bordered"
-                            color="warning"
-                            size="lg"
-                            onPress={handleSendDishes}
-                            className="h-14"
-                            startContent={<Send className="w-6 h-6" />}
-                          >
-                            Enviar a Cocina
-                          </Button>
-                        )}
+                      <Button
+                        variant="bordered"
+                        color="warning"
+                        size="lg"
+                        onPress={handleSendDishes}
+                        className="h-14"
+                        startContent={<Send className="w-6 h-6" />}
+                      >
+                        Enviar a Cocina
+                      </Button>
+                      )}
                     </div>
                   )}
 
@@ -987,9 +967,9 @@ export default function EditOrder({ dynamicParams }) {
         <ConfirmationPopup
           isOpen={showPaymentMethodDialog}
           title="Seleccionar Método de Pago"
-          hideDefaultButtons={true}
+          hideDefaultButtons
           type="info"
-          customBody={
+          customBody={(
             <div className="space-y-6">
               {/* Grid de métodos de pago */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1046,7 +1026,7 @@ export default function EditOrder({ dynamicParams }) {
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Procesando...</span>
                     </div>
                   ) : (
@@ -1055,7 +1035,7 @@ export default function EditOrder({ dynamicParams }) {
                 </button>
               </div>
             </div>
-          }
+          )}
           onClose={handleCancelDialog}
         />
         {/* Modal de Pago Efectivo */}
@@ -1064,9 +1044,9 @@ export default function EditOrder({ dynamicParams }) {
           <ConfirmationPopup
             isOpen={!!generatedCashInfo}
             title="Pago en Efectivo"
-            hideDefaultButtons={true}
+            hideDefaultButtons
             type="info"
-            customBody={
+            customBody={(
               <div className="flex flex-col items-center space-y-6">
                 {/* Header */}
                 <div className="text-center">
@@ -1109,7 +1089,7 @@ export default function EditOrder({ dynamicParams }) {
                   {cashReceived && (
                     <p className="text-sm text-gray-600 mt-2">
                       Cambio a devolver: <span className="font-bold">
-                        ${(cashReceived ? (parseFloat(cashReceived) - order.total).toFixed(2) : '0.00')}
+                        ${(cashReceived ? (parseFloat(cashReceived) - order.total).toFixed(2) : "0.00")}
                       </span>
                     </p>
                   )}
@@ -1133,7 +1113,7 @@ export default function EditOrder({ dynamicParams }) {
                         alert(`Payment confirmed! Change to give: $${(parseFloat(cashReceived) - order.total).toFixed(2)}`);
                         handlePaymentConfirm();
                       } else {
-                        alert('Insufficient cash received!');
+                        alert("Insufficient cash received!");
                       }
                     }}
                   >
@@ -1144,7 +1124,7 @@ export default function EditOrder({ dynamicParams }) {
                   </button>
                 </div>
               </div>
-            }
+            )}
             onClose={handleCancelDialog}
           />
         )}
@@ -1154,9 +1134,9 @@ export default function EditOrder({ dynamicParams }) {
           <ConfirmationPopup
             isOpen={!!createdInvoice}
             title="Pago con Bitcoin"
-            hideDefaultButtons={true}
+            hideDefaultButtons
             type="info"
-            customBody={
+            customBody={(
               <div className="flex flex-col items-center space-y-6">
                 {/* Header con ícono */}
                 <div className="text-center">
@@ -1213,7 +1193,7 @@ export default function EditOrder({ dynamicParams }) {
                   </button>
                 </div>
               </div>
-            }
+            )}
             onClose={handleCancelDialog}
           />
         )}

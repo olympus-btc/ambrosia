@@ -1,7 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Spinner,
+  Tabs,
+  Tab,
+  addToast } from "@heroui/react";
+import {
+  ChefHat,
+  Utensils,
+  Home,
+  Cookie,
+  Tags,
+} from "lucide-react";
+
 import CategoryManager from "./CategoryManager";
-import DishManager from "./DishManager";
 import {
   getDishes,
   addDish,
@@ -12,24 +31,7 @@ import {
   deleteCategory,
   updateCategory,
 } from "./dishesService";
-import {
-  ChefHat,
-  Utensils,
-  Home,
-  Cookie,
-  Tags,
-} from "lucide-react";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Spinner,
-  Tabs,
-  Tab,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+import DishManager from "./DishManager";
 
 export default function Dishes() {
   const router = useRouter();
@@ -308,7 +310,7 @@ export default function Dishes() {
             >
               <Tab
                 key="categories"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <Tags className="w-4 h-4" />
                     <span>Categorías</span>
@@ -316,11 +318,11 @@ export default function Dishes() {
                       {categories.length}
                     </div>
                   </div>
-                }
+                )}
               />
               <Tab
                 key="dishes"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <Cookie className="w-4 h-4" />
                     <span>Platillos</span>
@@ -328,7 +330,7 @@ export default function Dishes() {
                       {dishes.length}
                     </div>
                   </div>
-                }
+                )}
               />
             </Tabs>
           </CardBody>

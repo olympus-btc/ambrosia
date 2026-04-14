@@ -1,14 +1,21 @@
+export function buildPermissionSet(permissions = []) {
+  return new Set((permissions || []).map((permission) => permission.name));
+}
+
 export const modules = {
   auth: {
     enabled: true,
     name: "Autenticación",
+    componentBase: "components/pages",
+    componentPath: "Auth",
     routes: [
       { path: "/auth", component: "PinLogin", requiresAuth: false },
       {
         path: "/restaurant/roles",
         component: "Roles",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["roles_read"],
       },
       {
         path: "/restaurant/users",
@@ -34,48 +41,16 @@ export const modules = {
       },
     ],
   },
-  dishes: {
-    enabled: true,
-    name: "Platillos",
-    routes: [
-      {
-        path: "/restaurant/dishes",
-        component: "Dishes",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/dishes/dishesService"),
-    navItems: [
-      {
-        path: "/restaurant/dishes",
-        label: "Platillos",
-        icon: "salad",
-        showInNavbar: true,
-      },
-    ],
-  },
   cashier: {
     enabled: true,
     name: "Wallet",
     routes: [
       {
-        path: "/open-turn",
-        component: "OpenTurn",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
-        path: "/close-turn",
-        component: "CloseTurn",
-        requiresAuth: true,
-        requiresAdmin: false,
-      },
-      {
         path: "/reports",
         component: "Reports",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["reports_read"],
       },
       {
         path: "/wallet",
@@ -87,22 +62,10 @@ export const modules = {
     services: () => import("../modules/cashier/cashierService"),
     navItems: [
       {
-        path: "/open-turn",
-        label: "Abrir Turno",
-        icon: "play-circle",
-        showInNavbar: false,
-      },
-      {
-        path: "/close-turn",
-        label: "Cerrar Turno",
-        icon: "pause-circle",
-        showInNavbar: false,
-      },
-      {
         path: "/reports",
         label: "Reportes",
         icon: "chart-line",
-        showInNavbar: false, // Oculto del navbar pero accesible por URL
+        showInNavbar: false,
       },
     ],
   },
@@ -116,12 +79,14 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         default: true,
+        requiresOpenTurn: true,
       },
       {
         path: "/restaurant/modify-order/:pedidoId",
         component: "EditOrder",
         requiresAuth: true,
         requiresAdmin: false,
+        requiresOpenTurn: true,
       },
     ],
     services: () => import("../modules/orders/ordersService"),
@@ -165,33 +130,6 @@ export const modules = {
         icon: "building",
         showInNavbar: false,
       },
-      {
-        path: "/restaurant/spaces",
-        label: "Administrar Espacios",
-        icon: "door-open",
-        showInNavbar: true,
-      },
-    ],
-  },
-  "color-test": {
-    enabled: false,
-    name: "Color Test",
-    routes: [
-      {
-        path: "/color-test",
-        component: "ColorTest",
-        requiresAuth: true,
-        requiresAdmin: true,
-      },
-    ],
-    services: () => import("../modules/spaces/spacesService"),
-    navItems: [
-      {
-        path: "/color-test",
-        label: "Ver colores",
-        icon: "building",
-        showInNavbar: true,
-      },
     ],
   },
   store: {
@@ -214,6 +152,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["users_read"],
         default: false,
       },
       {
@@ -222,6 +161,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["products_read"],
         default: false,
       },
       {
@@ -229,7 +169,9 @@ export const modules = {
         component: "Cart",
         requiresAuth: true,
         requiresAdmin: false,
+        requiresOpenTurn: true,
         types: ["store"],
+        permissions: ["orders_create"],
         default: false,
       },
       {
@@ -238,6 +180,7 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["orders_read"],
         default: false,
       },
       {
@@ -246,13 +189,32 @@ export const modules = {
         requiresAuth: true,
         requiresAdmin: false,
         types: ["store"],
+        permissions: ["wallet_read"],
+        default: false,
+      },
+      {
+        path: "/store/reports",
+        component: "Reports",
+        requiresAuth: true,
+        requiresAdmin: true,
+        types: ["store"],
+        permissions: ["wallet_read"],
+        default: false,
+      },
+      {
+        path: "/store/reports",
+        component: "Reports",
+        requiresAuth: true,
+        requiresAdmin: true,
+        types: ["store"],
         default: false,
       },
       {
         path: "/store/settings",
         component: "Settings",
         requiresAuth: true,
-        requiresAdmin: true,
+        requiresAdmin: false,
+        permissions: ["settings_update"],
         types: ["store"],
         default: false,
       },
@@ -269,24 +231,36 @@ export const modules = {
         label: "products",
         icon: "box",
         showInNavbar: true,
+        showInBottomNav: true,
+        bottomNavOrder: 2,
       },
       {
         path: "/store/cart",
         label: "cart",
         icon: "shopping-cart",
         showInNavbar: true,
+        showInBottomNav: true,
+        bottomNavOrder: 1,
       },
       {
         path: "/store/orders",
         label: "orders",
         icon: "clipboard-clock",
         showInNavbar: true,
+        showInBottomNav: true,
+        bottomNavOrder: 3,
       },
       {
         path: "/store/wallet",
         label: "wallet",
         icon: "wallet",
         showInNavbar: true,
+      },
+      {
+        path: "/store/reports",
+        label: "reports",
+        icon: "chart-line",
+        showInNavbar: false,
       },
       {
         path: "/store/settings",
@@ -375,9 +349,8 @@ export function getNavigationItems(
   businessType = null,
 ) {
   const navItems = [];
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
 
-  console.log(permNames);
   Object.entries(modules).forEach(([moduleKey, config]) => {
     if (!config.enabled) return;
 
@@ -412,7 +385,7 @@ export function getAvailableModules(
   permissions = [],
   businessType = null,
 ) {
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const availableModules = {};
 
   Object.entries(modules).forEach(([moduleKey, moduleConfig]) => {
@@ -502,7 +475,7 @@ export function hasAccessToRoute(
   if (!routeConfig) return false;
   if (!matchesBusiness(routeConfig.route || {}, businessType)) return false;
 
-  const permNames = new Set((permissions || []).map((p) => p.name));
+  const permNames = buildPermissionSet(permissions);
   const route = routeConfig.route;
 
   if (!route.requiresAuth) return true;

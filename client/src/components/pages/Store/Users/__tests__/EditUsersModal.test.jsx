@@ -58,6 +58,15 @@ const renderModal = (props = {}) => render(
   </I18nProvider>,
 );
 
+beforeEach(() => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("EditUsersModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,10 +75,10 @@ describe("EditUsersModal", () => {
   it("renders user data and translations", () => {
     renderModal();
 
-    expect(screen.getByText("modal.titleEdit")).toBeInTheDocument();
+    expect(screen.getByText("users.modal.titleEdit")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Jane Doe")).toBeInTheDocument();
     expect(screen.getByDisplayValue("0987654321")).toBeInTheDocument();
-    expect(screen.getByLabelText("modal.userPinLabel")).toBeInTheDocument();
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toBeInTheDocument();
   });
 
   it("closes and resets data on cancel", () => {
@@ -78,7 +87,7 @@ describe("EditUsersModal", () => {
 
     renderModal({ setData, setEditUsersShowModal });
 
-    fireEvent.click(screen.getByText("modal.cancelButton"));
+    fireEvent.click(screen.getByText("users.modal.cancelButton"));
 
     expect(setData).toHaveBeenCalledWith({
       userId: "",
@@ -98,7 +107,7 @@ describe("EditUsersModal", () => {
 
     renderModal({ setData, setEditUsersShowModal, updateUser });
 
-    fireEvent.click(screen.getByText("modal.editButton"));
+    fireEvent.click(screen.getByText("users.modal.editButton"));
 
     expect(updateUser).toHaveBeenCalledWith(baseData);
     expect(setData).toHaveBeenCalledWith({
@@ -117,13 +126,13 @@ describe("EditUsersModal", () => {
 
     renderModal({ onChange });
 
-    fireEvent.change(screen.getByLabelText("modal.userPhoneLabel"), { target: { value: "55-6a" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userPhoneLabel"), { target: { value: "55-6a" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userPhone: "556" });
 
-    fireEvent.change(screen.getByLabelText("modal.userPinLabel"), { target: { value: "9x8y" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userPinLabel"), { target: { value: "9x8y" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userPin: "98" });
 
-    const pinInput = screen.getByLabelText("modal.userPinLabel");
+    const pinInput = screen.getByLabelText("users.modal.userPinLabel");
     expect(pinInput).toHaveAttribute("type", "password");
 
     fireEvent.click(screen.getByRole("button", { name: "Show PIN" }));
@@ -134,13 +143,13 @@ describe("EditUsersModal", () => {
     const onChange = jest.fn();
     renderModal({ onChange });
 
-    fireEvent.change(screen.getByLabelText("modal.userNameLabel"), { target: { value: "Updated Name" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userNameLabel"), { target: { value: "Updated Name" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userName: "Updated Name" });
 
-    fireEvent.change(screen.getByLabelText("modal.userEmailLabel"), { target: { value: "updated@test.com" } });
+    fireEvent.change(screen.getByLabelText("users.modal.userEmailLabel"), { target: { value: "updated@test.com" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userEmail: "updated@test.com" });
 
-    const roleSelect = screen.getAllByLabelText("modal.userRoleLabel")[0];
+    const roleSelect = screen.getAllByLabelText("users.modal.userRoleLabel")[0];
     fireEvent.change(roleSelect, { target: { value: "seller" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...baseData, userRole: "seller" });
   });
@@ -158,12 +167,33 @@ describe("EditUsersModal", () => {
       roles: [],
     });
 
-    expect(screen.getByLabelText("modal.userNameLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userEmailLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userPhoneLabel")).toHaveValue("");
-    expect(screen.getByLabelText("modal.userPinLabel")).toHaveValue("");
-    const roleSelect = screen.getAllByLabelText("modal.userRoleLabel")[0];
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userEmailLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userPhoneLabel")).toHaveValue("");
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveValue("");
+    const roleSelect = screen.getAllByLabelText("users.modal.userRoleLabel")[0];
     expect(roleSelect).toHaveValue("");
+  });
+
+  it("name is required but pin is optional and enforces min length when provided", () => {
+    renderModal();
+
+    const pinInput = screen.getByLabelText("users.modal.userPinLabel");
+    expect(pinInput).toHaveAttribute("minlength", "4");
+    expect(pinInput).not.toHaveAttribute("required");
+    expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
+  });
+
+  it("submit button is disabled when role is empty", () => {
+    renderModal({ data: { ...baseData, userRole: "" } });
+
+    expect(screen.getByText("users.modal.editButton").closest("button")).toBeDisabled();
+  });
+
+  it("submit button is enabled when role is selected", () => {
+    renderModal();
+
+    expect(screen.getByText("users.modal.editButton").closest("button")).not.toBeDisabled();
   });
 
   it("resets role to empty when no roles are available", () => {
@@ -172,7 +202,7 @@ describe("EditUsersModal", () => {
 
     renderModal({ roles: [], setData, setEditUsersShowModal });
 
-    fireEvent.click(screen.getByText("modal.cancelButton"));
+    fireEvent.click(screen.getByText("users.modal.cancelButton"));
 
     expect(setData).toHaveBeenCalledWith({
       userId: "",

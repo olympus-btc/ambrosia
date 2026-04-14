@@ -14,6 +14,7 @@ jest.mock("@heroui/react", () => {
     errorMessage,
     startContent,
     minValue,
+    maxValue,
     ...props
   }) => (
     <input
@@ -46,7 +47,7 @@ const baseData = {
   productId: "1",
   productName: "Jade Wallet",
   productDescription: "Hardware wallet",
-  productCategory: "cat-1",
+  productCategories: ["cat-1"],
   productSKU: "jade-wallet",
   productPrice: 10,
   productStock: 5,
@@ -137,8 +138,7 @@ describe("EditProductsModal", () => {
     expect(onChange).toHaveBeenCalledWith({ productImage: file, productImageRemoved: false });
     expect(await screen.findByAltText("Image preview")).toBeInTheDocument();
 
-    const removeButton = document.querySelector("button.bg-red-400");
-    expect(removeButton).not.toBeNull();
+    const removeButton = screen.getByTestId("remove-image-button");
     fireEvent.click(removeButton);
 
     const lastCall = onChange.mock.calls.at(-1)?.[0];
@@ -156,13 +156,10 @@ describe("EditProductsModal", () => {
   });
 
   it("handles category select with empty value and loading", () => {
-    const onChange = jest.fn();
-    renderModal({ onChange, categories: [], categoriesLoading: true, data: { ...baseData, productCategory: "" } });
+    renderModal({ categories: [], categoriesLoading: true, data: { ...baseData, productCategories: [] } });
 
     const select = screen.getAllByLabelText("modal.productCategoryLabel")[0];
     expect(select).toBeInTheDocument();
-    fireEvent.change(select, { target: { value: "" } });
-    expect(onChange).toHaveBeenLastCalledWith({ productCategory: "" });
   });
 
   it("closes modal via onOpenChange", () => {
@@ -176,7 +173,7 @@ describe("EditProductsModal", () => {
       productId: "",
       productName: "",
       productDescription: "",
-      productCategory: "",
+      productCategories: [],
       productSKU: "",
       productPrice: "",
       productStock: "",
@@ -231,7 +228,7 @@ describe("EditProductsModal", () => {
       productId: "",
       productName: "",
       productDescription: "",
-      productCategory: "",
+      productCategories: [],
       productSKU: "",
       productPrice: "",
       productStock: "",

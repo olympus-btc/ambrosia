@@ -9,14 +9,14 @@ data class PrintRequest(
     val printerType: PrinterType,
     val printerId: String? = null,
     val broadcast: Boolean = false,
-    val forceTemplateName: Boolean = false
+    val forceTemplateName: Boolean = false,
 )
 
 @Serializable
 data class TicketTemplate(
     val id: String,
     val name: String,
-    val elements: List<TicketElement>
+    val elements: List<TicketElement>,
 )
 
 @Serializable
@@ -26,7 +26,7 @@ data class TicketElement(
     val order: Int,
     val type: ElementType,
     val value: String, // Can be a literal string or a placeholder like {{ticket.total}}
-    val style: ElementStyle? = null
+    val style: ElementStyle? = null,
 )
 
 @Serializable
@@ -37,15 +37,16 @@ enum class ElementType {
     SEPARATOR,
     TABLE_HEADER,
     TABLE_ROW,
+    TOTAL_ROW,
     FOOTER,
-    QRCODE
+    QRCODE,
 }
 
 @Serializable
 data class ElementStyle(
     val bold: Boolean = false,
     val justification: Justification = Justification.LEFT,
-    val fontSize: FontSize = FontSize.NORMAL
+    val fontSize: FontSize = FontSize.NORMAL,
 )
 
 @Serializable
@@ -60,12 +61,12 @@ enum class ImageSize { SMALL, MEDIUM, LARGE }
 @Serializable
 data class TicketTemplateRequest(
     val name: String,
-    val elements: List<TicketElementCreateRequest>
+    val elements: List<TicketElementCreateRequest>,
 )
 
 @Serializable
 data class TicketElementCreateRequest(
     val type: ElementType,
     val value: String,
-    val style: ElementStyle? = null
+    val style: ElementStyle? = null,
 )

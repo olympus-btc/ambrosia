@@ -1,19 +1,23 @@
 const path = require('path');
 
-const { app, BrowserWindow, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
 
+const AutoUpdater = require('./services/AutoUpdater');
+const { readConfig, writeConfig } = require('./services/ConfigurationBootstrap');
 const ServiceManager = require('./services/ServiceManager');
+const logger = require('./utils/logger');
+const { getPhoenixDataDirectory } = require('./utils/resourcePaths');
 
 // To prevent multiple instances of the application
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  console.log('[Electron] Another instance is already running. Exiting...');
+  logger.log('[Electron] Another instance is already running. Exiting...');
   app.quit();
 } else {
   app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
     // If someone tries to open a second instance, focus the existing window
-    console.log('[Electron] Second instance detected, focusing existing window');
+    logger.log('[Electron] Second instance detected, focusing existing window');
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -25,6 +29,23 @@ if (!gotTheLock) {
 let mainWindow = null;
 let splashWindow = null;
 let serviceManager = null;
+let autoUpdaterService = null;
+let updateMenuItem = null;
+
+function updateMenuItemState({ label, enabled, click }) {
+  if (!updateMenuItem) return;
+  updateMenuItem.label = label;
+  updateMenuItem.enabled = enabled;
+  if (click) {
+    updateMenuItem.click = click;
+  } else {
+    updateMenuItem.click = () => {
+      if (autoUpdaterService) {
+        autoUpdaterService.checkForUpdatesManual();
+      }
+    };
+  }
+}
 
 // Splash Screen Creation
 function createSplashScreen() {
@@ -36,8 +57,9 @@ function createSplashScreen() {
     alwaysOnTop: true,
     resizable: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, 'splash-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
 
@@ -94,7 +116,7 @@ function createWindow(url) {
 
   // Handle loading errors
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('[Electron] Error Loading Page:', errorCode, errorDescription);
+    logger.error('[Electron] Error Loading Page:', errorCode, errorDescription);
 
     dialog.showErrorBox(
       'Loading Error',
@@ -105,7 +127,7 @@ function createWindow(url) {
 
 // Handle global errors
 async function handleStartupError(error) {
-  console.error('[Electron] Startup Error:', error);
+  logger.error('[Electron] Startup Error:', error);
 
   // Close splash window if it exists
   if (splashWindow && !splashWindow.isDestroyed()) {
@@ -131,6 +153,105 @@ async function handleStartupError(error) {
     setTimeout(() => app.quit(), 500);
   } else {
     app.quit();
+  }
+}
+
+// Application Menu
+function createAppMenu() {
+  const isMac = process.platform === 'darwin';
+
+  const updateItem = {
+    label: 'Check for Updates...',
+    click: () => {
+      if (autoUpdaterService) {
+        autoUpdaterService.checkForUpdatesManual();
+      }
+    },
+  };
+
+  const template = [
+    ...(isMac
+      ? [{
+          label: app.name,
+          submenu: [
+            { role: 'about' },
+            updateItem,
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' },
+          ],
+        }]
+      : []),
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac
+          ? [{ type: 'separator' }, { role: 'front' }]
+          : [{ role: 'close' }]),
+      ],
+    },
+    ...(!isMac
+      ? [{
+          label: 'Help',
+          submenu: [
+            updateItem,
+            { type: 'separator' },
+            {
+              label: 'About Ambrosia POS',
+              click: () => {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'About Ambrosia POS',
+                  message: `Ambrosia POS v${app.getVersion()}`,
+                  buttons: ['OK'],
+                });
+              },
+            },
+          ],
+        }]
+      : []),
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
+  // Store reference to update menu item for dynamic updates
+  if (isMac) {
+    updateMenuItem = menu.items[0].submenu.items[1];
+  } else {
+    const helpMenu = menu.items[menu.items.length - 1];
+    updateMenuItem = helpMenu.submenu.items[0];
   }
 }
 
@@ -163,19 +284,56 @@ ipcMain.handle('services:get-logs', () => {
   return { logsDir };
 });
 
+const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
+
+let phoenixdRestartInProgress = false;
+
+ipcMain.handle('phoenixd:get-auto-liquidity', () => {
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  return phoenixConfig['auto-liquidity'] ?? 'off';
+});
+
+ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
+  if (!serviceManager) {
+    throw new Error('ServiceManager not initialized');
+  }
+  if (phoenixdRestartInProgress) {
+    throw new Error('A restart is already in progress');
+  }
+
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  phoenixConfig['auto-liquidity'] = value;
+  writeConfig(phoenixConfigPath, phoenixConfig);
+
+  if (!serviceManager.isDevMode()) {
+    if (serviceManager.configs?.phoenix) {
+      serviceManager.configs.phoenix['auto-liquidity'] = value;
+    }
+    phoenixdRestartInProgress = true;
+    try {
+      await serviceManager.restartService('phoenixd');
+    } finally {
+      phoenixdRestartInProgress = false;
+    }
+  }
+
+  return true;
+});
+
 // App initialization
 app.whenReady().then(async () => {
   try {
-    console.log('[Electron] Initializing Ambrosia POS...');
+    logger.log('[Electron] Initializing Ambrosia POS...');
 
-    // Show splash screen immediately
+    // Show splash screen and wait for it to finish loading before sending IPC
     createSplashScreen();
+    await new Promise((resolve) => splashWindow.webContents.once('did-finish-load', resolve));
 
     // SPLASH ONLY MODE: For design/testing purposes
     if (process.env.SPLASH_ONLY === 'true') {
-      console.log('[Electron] SPLASH ONLY MODE: Showing splash for design purposes');
-      console.log('[Electron] Edit splash.html and reload the window to see changes');
-      console.log('[Electron] Press Ctrl+R in the splash window to reload');
+      logger.log('[Electron] SPLASH ONLY MODE: Showing splash for design purposes');
+      logger.log('[Electron] Edit splash.html and reload the window to see changes');
+      logger.log('[Electron] Press Ctrl+R in the splash window to reload');
 
       // Enable DevTools for splash window in splash-only mode
       if (splashWindow && !splashWindow.isDestroyed()) {
@@ -204,7 +362,7 @@ app.whenReady().then(async () => {
     updateSplash(null, 0, 'Initializing...');
 
     serviceManager.on('service:started', ({ service, port }) => {
-      console.log(`[Electron] Service started: ${service} on port ${port}`);
+      logger.log(`[Electron] Service started: ${service} on port ${port}`);
 
       // Update progress based on service
       let progress = 0;
@@ -230,12 +388,17 @@ app.whenReady().then(async () => {
     });
 
     serviceManager.on('service:error', ({ service, error }) => {
-      console.error(`[Electron] Service error: ${service}`, error);
-      updateSplash(null, null, `Error starting ${service || 'service'}`);
+      logger.error(`[Electron] Service error: ${service}`, error);
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash:error', {
+          service,
+          message: error ? error.message || String(error) : `Failed to start ${service || 'service'}`,
+        });
+      }
     });
 
     serviceManager.on('all:started', () => {
-      console.log('[Electron] All services are running');
+      logger.log('[Electron] All services are running');
     });
 
     // Start with initial message
@@ -250,11 +413,29 @@ app.whenReady().then(async () => {
 
     createWindow(url);
 
-    console.log('[Electron] Application initialized successfully');
+    createAppMenu();
+
+    // Start auto-update checks (production only)
+    if (app.isPackaged) {
+      autoUpdaterService = new AutoUpdater(mainWindow, {
+        onMenuUpdate: updateMenuItemState,
+        releaseUrl: 'https://github.com/olympus-btc/ambrosia/releases',
+      });
+      autoUpdaterService.startPeriodicChecks();
+    }
+
+    logger.log('[Electron] Application initialized successfully');
   } catch (error) {
-    // Close splash on error
+    // Show error state in splash before closing
     if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
+      splashWindow.webContents.send('splash:error', {
+        service: null,
+        message: error ? error.message || String(error) : 'Unexpected startup error',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+      }
     }
     await handleStartupError(error);
   }
@@ -272,9 +453,13 @@ app.on('activate', () => {
 
 // Clean shutdown
 app.on('before-quit', async (event) => {
+  if (autoUpdaterService) {
+    autoUpdaterService.destroy();
+    autoUpdaterService = null;
+  }
   if (serviceManager) {
     event.preventDefault();
-    console.log('[Electron] Shutting down services...');
+    logger.log('[Electron] Shutting down services...');
     await serviceManager.stopAll();
     serviceManager = null;
     setTimeout(() => app.quit(), 500);
@@ -282,6 +467,10 @@ app.on('before-quit', async (event) => {
 });
 
 app.on('window-all-closed', async () => {
+  if (autoUpdaterService) {
+    autoUpdaterService.destroy();
+    autoUpdaterService = null;
+  }
   if (serviceManager) {
     await serviceManager.stopAll();
     serviceManager = null;
@@ -293,10 +482,10 @@ app.on('window-all-closed', async () => {
 
 // Crash handler
 process.on('uncaughtException', (error) => {
-  console.error('[Electron] Uncaught Exception:', error);
+  logger.error('[Electron] Uncaught Exception:', error);
   dialog.showErrorBox('Unexpected Error', error.message || error.toString());
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Electron] Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('[Electron] Unhandled Rejection at:', promise, 'reason:', reason);
 });

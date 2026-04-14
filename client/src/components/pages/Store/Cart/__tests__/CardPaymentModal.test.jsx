@@ -31,7 +31,7 @@ describe("CardPaymentModal", () => {
     render(<CardPaymentModal {...baseProps} />);
     expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText("$10.00")).toBeInTheDocument();
-    expect(screen.getAllByText("Credit Card")).toHaveLength(2);
+    expect(screen.getByText("Credit Card")).toBeInTheDocument();
   });
 
   it("calls onClose when cancel is pressed", async () => {
@@ -56,7 +56,7 @@ describe("CardPaymentModal", () => {
 
   it("uses default method label when none is provided", () => {
     render(<CardPaymentModal {...baseProps} methodLabel={undefined} />);
-    expect(screen.getAllByText("defaultMethod")).toHaveLength(2);
+    expect(screen.getByText("defaultMethod")).toBeInTheDocument();
   });
 
   it("formats amount due when displayTotal is missing", () => {

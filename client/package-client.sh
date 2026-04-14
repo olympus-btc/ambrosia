@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-TAG="0.5.1-alpha"
+TAG="0.6.0-beta"
 
 echo "=== Packaging Next.js application for distribution ==="
 
@@ -34,7 +34,6 @@ cp -r public "/tmp/$PACKAGE_NAME/"
 cp package.json "/tmp/$PACKAGE_NAME/"
 cp package-lock.json "/tmp/$PACKAGE_NAME/"
 cp next.config.mjs "/tmp/$PACKAGE_NAME/"
-cp generate-env.cjs "/tmp/$PACKAGE_NAME/"
 
 # 6. Copy installation script
 echo "Copying installation script..."

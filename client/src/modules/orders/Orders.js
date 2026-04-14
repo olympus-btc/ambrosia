@@ -1,23 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createOrder, getAllOrders } from "./ordersService";
-import { useCurrency } from "../../lib/currencyUtils";
-import formatDate from "../../lib/formatDate";
+
 import { useRouter } from "next/navigation";
-import {
-  ClipboardList,
-  Plus,
-  Eye,
-  Clock,
-  CheckCircle,
-  Users,
-  Calendar,
-  Home,
-  Filter,
-  Search,
-  AlertCircle,
-  Receipt,
-} from "lucide-react";
+
 import {
   Card,
   CardBody,
@@ -42,8 +27,26 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-} from "@heroui/react";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  ClipboardList,
+  Plus,
+  Eye,
+  Clock,
+  CheckCircle,
+  Users,
+  Calendar,
+  Home,
+  Filter,
+  Search,
+  AlertCircle,
+  Receipt,
+} from "lucide-react";
+
+import { useCurrency } from "../../lib/currencyUtils";
+import formatDate from "../../lib/formatDate";
+
+import { createOrder, getAllOrders } from "./ordersService";
 
 export default function Orders() {
   const router = useRouter();
@@ -330,7 +333,7 @@ export default function Orders() {
               >
                 <Tab
                   key="en-curso"
-                  title={
+                  title={(
                     <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4" />
                       <span>En Curso</span>
@@ -342,11 +345,11 @@ export default function Orders() {
                         }
                       </div>
                     </div>
-                  }
+                  )}
                 />
                 <Tab
                   key="pagados"
-                  title={
+                  title={(
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4" />
                       <span>Pagadas</span>
@@ -354,7 +357,7 @@ export default function Orders() {
                         {orders.filter((o) => o.status === "paid").length}
                       </div>
                     </div>
-                  }
+                  )}
                 />
               </Tabs>
             </div>

@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { apiClient } from "@/services/apiClient";
+import { toArray } from "@/components/utils/array";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useCategories(type = "product") {
   const [categories, setCategories] = useState([]);
@@ -13,31 +14,56 @@ export function useCategories(type = "product") {
     setError(null);
 
     try {
-      const res = await apiClient(`/categories?type=${type}`);
-
-      if (Array.isArray(res)) {
-        setCategories(res);
-      } else {
-        setCategories([]);
-      }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(err);
+      const response = await httpClient(`/categories?type=${type}`);
+      const data = await parseJsonResponse(response, []);
+      setCategories(toArray(data));
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
   }, [type]);
 
   const createCategory = useCallback(
-    async (name) => {
-      const response = await apiClient("/categories", {
+    async (name, categoryType) => {
+      const response = await httpClient("/categories", {
         method: "POST",
-        body: { name, type },
+        body: JSON.stringify({ name, type: categoryType || type }),
+        headers: {
+          "Content-Type": "application/json",
+        },
         notShowError: false,
       });
 
       await fetchCategories();
       return response?.id;
+    },
+    [fetchCategories, type],
+  );
+
+  const updateCategory = useCallback(
+    async (category) => {
+      await httpClient(`/categories/${category.categoryId}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: category.categoryName, type: "product" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
+  const deleteCategory = useCallback(
+    async (categoryId) => {
+      await httpClient(`/categories/${categoryId}?type=${type}`, {
+        method: "DELETE",
+      });
+
+      await fetchCategories();
     },
     [fetchCategories, type],
   );
@@ -49,6 +75,8 @@ export function useCategories(type = "product") {
   return {
     categories,
     createCategory,
+    updateCategory,
+    deleteCategory,
     loading,
     error,
     refetch: fetchCategories,

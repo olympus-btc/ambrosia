@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export const useInvoiceState = () => {
   const [invoiceState, setInvoiceState] = useState({
@@ -9,7 +9,7 @@ export const useInvoiceState = () => {
     showModal: false,
   });
 
-  const actions = {
+  const actions = useMemo(() => ({
     createInvoice: (invoice) => {
       setInvoiceState({
         created: invoice,
@@ -30,12 +30,13 @@ export const useInvoiceState = () => {
     },
 
     closeModal: () => {
-      setInvoiceState((prev) => ({
-        ...prev,
-        showModal: false,
+      setInvoiceState({
+        created: null,
+        paid: false,
         awaitingPayment: false,
         completedAt: null,
-      }));
+        showModal: false,
+      });
     },
 
     openModal: () => {
@@ -61,7 +62,7 @@ export const useInvoiceState = () => {
         showModal: false,
       });
     },
-  };
+  }), []);
 
   return { invoiceState, actions };
 };

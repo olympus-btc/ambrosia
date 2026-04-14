@@ -2,13 +2,22 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Space
 import pos.ambrosia.services.SpaceService
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SpaceServiceTest {
     private val mockConnection: Connection = mock()
@@ -150,7 +159,9 @@ class SpaceServiceTest {
             val spaceToUpdate = Space(id = "space-1", name = "New Valid Name") // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?"))).thenReturn(nameCheckStatement) // Arrange
+            whenever(
+                mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?")),
+            ).thenReturn(nameCheckStatement) // Arrange
             whenever(mockConnection.prepareStatement(contains("UPDATE spaces"))).thenReturn(updateStatement) // Arrange
             val nameCheckResultSet: ResultSet = mock() // Arrange
             whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
@@ -168,7 +179,9 @@ class SpaceServiceTest {
             val spaceToUpdate = Space(id = "space-1", name = "New Valid Name") // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?"))).thenReturn(nameCheckStatement) // Arrange
+            whenever(
+                mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?")),
+            ).thenReturn(nameCheckStatement) // Arrange
             whenever(mockConnection.prepareStatement(contains("UPDATE spaces"))).thenReturn(updateStatement) // Arrange
             val nameCheckResultSet: ResultSet = mock() // Arrange
             whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange

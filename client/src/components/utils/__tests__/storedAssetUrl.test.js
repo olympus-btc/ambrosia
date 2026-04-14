@@ -1,5 +1,13 @@
 import { storedAssetUrl } from "../storedAssetUrl";
 
+beforeEach(() => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("storedAssetUrl", () => {
   it("returns null when url is falsy", () => {
     expect(storedAssetUrl("")).toBeNull();

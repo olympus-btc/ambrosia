@@ -1,29 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import WalletGuard from "../../components/auth/WalletGuard";
-import {
-  createInvoice,
-  getIncomingTransactions,
-  getInfo,
-  getOutgoingTransactions,
-  payInvoiceFromService,
-} from "./cashierService";
-import { QRCode } from "react-qr-code";
-import {
-  Zap,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Copy,
-  Send,
-  QrCode,
-  Bitcoin,
-  CreditCard,
-  History,
-  Home,
-  CheckCircle,
-  AlertCircle,
-  Info,
-} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardBody,
@@ -41,9 +20,34 @@ import {
   ModalFooter,
   Chip,
   Progress,
-} from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+  addToast } from "@heroui/react";
+import {
+  Zap,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Copy,
+  Send,
+  QrCode,
+  Bitcoin,
+  CreditCard,
+  History,
+  Home,
+  CheckCircle,
+  AlertCircle,
+  Info,
+} from "lucide-react";
+import { QRCode } from "react-qr-code";
+
+import { getWsUrl } from "@/config/api";
+import {
+  createInvoice,
+  getIncomingTransactions,
+  getInfo,
+  getOutgoingTransactions,
+  payInvoiceFromService,
+} from "@/services/walletService";
+
+import WalletGuard from "../../components/auth/WalletGuard";
 
 function WalletInner() {
   const router = useRouter();
@@ -125,27 +129,14 @@ function WalletInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const resolveWsUrl = () => {
-      const envWs = process.env.NEXT_PUBLIC_WS_URL;
-      if (envWs) return envWs;
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (apiUrl) return `${apiUrl.replace(/^http/i, "ws")}/ws/payments`;
-
-      const host = window.location.hostname;
-      const port = process.env.NEXT_PUBLIC_PORT_API || window.location.port || "9154";
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      return `${protocol}://${host}${port ? `:${port}` : ""}/ws/payments`;
-    };
-
     let ws;
     let shouldReconnect = true;
     const connect = () => {
-      const url = resolveWsUrl();
+      const url = getWsUrl();
       ws = new WebSocket(url);
 
       ws.onopen = () => {
-        console.info("WS payments conectado", url);
+        console.warn("WS payments conectado", url);
       };
 
       ws.onmessage = (event) => {
@@ -297,22 +288,18 @@ function WalletInner() {
     document.body.removeChild(textarea);
   };
 
-  const formatSats = (amount) => {
-    return new Intl.NumberFormat().format(amount);
-  };
+  const formatSats = (amount) => new Intl.NumberFormat().format(amount);
 
   const getTotalBalance = () => {
     if (!info?.channels) return 0;
     return info.channels.reduce((total, ch) => total + ch.balanceSat, 0);
   };
 
-  const getTransactionIcon = (type) => {
-    return type === "outgoing_payment" ? (
-      <ArrowUpRight className="w-4 h-4 text-red-600" />
-    ) : (
-      <ArrowDownLeft className="w-4 h-4 text-green-600" />
-    );
-  };
+  const getTransactionIcon = (type) => (type === "outgoing_payment" ? (
+    <ArrowUpRight className="w-4 h-4 text-red-600" />
+  ) : (
+    <ArrowDownLeft className="w-4 h-4 text-green-600" />
+  ));
 
   if (!info) {
     return (
@@ -439,7 +426,7 @@ function WalletInner() {
                         <div className="flex items-center space-x-1 mt-1">
                           <span
                             className={`w-2 h-2 rounded-full ${channel.state === "NORMAL" ? "bg-green-500" : "bg-red-500"}`}
-                          ></span>
+                          />
                           <span className="text-sm text-forest">
                             {channel.state}
                           </span>
@@ -497,12 +484,12 @@ function WalletInner() {
             >
               <Tab
                 key="receive"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <ArrowDownLeft className="w-4 h-4" />
                     <span>Recibir</span>
                   </div>
-                }
+                )}
               >
                 <div className="p-6 space-y-6">
                   <div className="space-y-4">
@@ -562,12 +549,12 @@ function WalletInner() {
 
               <Tab
                 key="send"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <ArrowUpRight className="w-4 h-4" />
                     <span>Enviar</span>
                   </div>
-                }
+                )}
               >
                 <div className="p-6 space-y-6">
                   <div className="space-y-4">
@@ -645,8 +632,7 @@ function WalletInner() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onPress={() =>
-                                  copyToClipboard(paymentResult.paymentHash)
+                                onPress={() => copyToClipboard(paymentResult.paymentHash)
                                 }
                               >
                                 <Copy className="w-3 h-3 mr-1" />
@@ -666,12 +652,12 @@ function WalletInner() {
 
               <Tab
                 key="history"
-                title={
+                title={(
                   <div className="flex items-center space-x-2">
                     <History className="w-4 h-4" />
                     <span>Historial</span>
                   </div>
-                }
+                )}
               >
                 <div className="p-6 space-y-6">
                   <div className="flex space-x-2">
@@ -814,8 +800,7 @@ function WalletInner() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onPress={() =>
-                            copyToClipboard(createdInvoice.serialized)
+                          onPress={() => copyToClipboard(createdInvoice.serialized)
                           }
                         >
                           <Copy className="w-3 h-3 mr-1" />
@@ -835,8 +820,7 @@ function WalletInner() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onPress={() =>
-                            copyToClipboard(createdInvoice.paymentHash)
+                          onPress={() => copyToClipboard(createdInvoice.paymentHash)
                           }
                         >
                           <Copy className="w-3 h-3 mr-1" />

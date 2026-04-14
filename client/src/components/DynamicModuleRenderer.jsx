@@ -1,7 +1,26 @@
 "use client";
 
+/**
+ * DynamicModuleRenderer — lazy-loads feature components by path at runtime.
+ *
+ * Supported componentBase values and their resolution conventions:
+ *
+ * "modules" (legacy feature modules)
+ *   - Resolves: src/modules/{componentPath}/{componentFile}
+ *   - Export:   default export or named export matching componentFile
+ *   - Example:  componentBase="modules" componentPath="auth" componentFile="AuthProvider"
+ *
+ * "components/pages" (page-level components)
+ *   - Resolves: src/components/pages/{componentPath}/{componentFile}/index  (preferred)
+ *              src/components/pages/{componentPath}/{componentFile}         (fallback)
+ *   - Export:   default, named matching componentFile, or named matching {componentFile}Page
+ *   - Example:  componentBase="components/pages" componentPath="Store" componentFile="Store"
+ */
+
 import React from "react";
+
 import dynamic from "next/dynamic";
+
 import LoadingCard from "./LoadingCard";
 
 export default function DynamicModuleRenderer({
@@ -13,54 +32,32 @@ export default function DynamicModuleRenderer({
 }) {
   const Component = React.useMemo(() => {
     const loaderMap = {
-      modules: () =>
-        import(`../modules/${componentPath}/${componentFile}`).then((mod) => {
-          const Comp = mod.default || mod[componentFile];
-          if (!Comp)
-            throw new Error(
+      modules: () => import(`../modules/${componentPath}/${componentFile}`).then((mod) => {
+        const Comp = mod.default || mod[componentFile];
+        if (!Comp)
+          throw new Error(
               `DynamicModuleRenderer: component export not found for "${componentBase}/${componentPath}/${componentFile}"`,
-            );
-          return Comp;
-        }),
+          );
+        return Comp;
+      }),
       "components/pages": async () => {
+        let mod;
         try {
-          const mod = await import(
+          mod = await import(
+            `./pages/${componentPath}/${componentFile}/index`
+          );
+        } catch {
+          mod = await import(
             `./pages/${componentPath}/${componentFile}`
           );
-          const Comp =
-            mod.default || mod[componentFile] || mod[`${componentFile}Page`];
-          if (Comp) return Comp;
-        } catch (error) {
-          console.error(error)
         }
-
-        try {
-          const modNested = await import(
-            `./pages/${componentPath}/${componentFile}/${componentFile}Page`
+        const Comp =
+          mod.default || mod[componentFile] || mod[`${componentFile}Page`];
+        if (!Comp)
+          throw new Error(
+            `DynamicModuleRenderer: component export not found for "${componentBase}/${componentPath}/${componentFile}"`,
           );
-          const CompNested =
-            modNested.default ||
-            modNested[`${componentFile}Page`] ||
-            modNested[componentFile];
-          if (CompNested) return CompNested;
-        } catch (error) {
-          console.error(error)
-          try {
-            const modIndex = await import(
-              `./pages/${componentPath}/${componentFile}/index`
-            );
-            const CompIndex =
-              modIndex.default ||
-              modIndex[`${componentFile}Page`] ||
-              modIndex[componentFile];
-            if (CompIndex) return CompIndex;
-          } catch (error) { }
-          console.error(error)
-        }
-
-        throw new Error(
-          `DynamicModuleRenderer: could not resolve component at "${componentBase}/${componentPath}/${componentFile}". Tried flat, nested <Name>Page, and index patterns.`,
-        );
+        return Comp;
       },
     };
 

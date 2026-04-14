@@ -207,7 +207,7 @@ describe("useInvoiceState", () => {
       expect(result.current.invoiceState.completedAt).toBeNull();
     });
 
-    it("preserves created invoice and paid status", () => {
+    it("clears created invoice and paid status on close", () => {
       const { result } = renderHook(() => useInvoiceState());
 
       const invoice = { serialized: "lnbc..." };
@@ -224,8 +224,8 @@ describe("useInvoiceState", () => {
         result.current.actions.closeModal();
       });
 
-      expect(result.current.invoiceState.created).toEqual(invoice);
-      expect(result.current.invoiceState.paid).toBe(true);
+      expect(result.current.invoiceState.created).toBeNull();
+      expect(result.current.invoiceState.paid).toBe(false);
     });
   });
 
@@ -440,7 +440,7 @@ describe("useInvoiceState", () => {
       });
     });
 
-    it("handles reopening modal after payment", () => {
+    it("resets state on close so reopening shows a fresh modal", () => {
       const { result } = renderHook(() => useInvoiceState());
 
       act(() => {
@@ -455,14 +455,13 @@ describe("useInvoiceState", () => {
         result.current.actions.closeModal();
       });
 
-      expect(result.current.invoiceState.showModal).toBe(false);
-
-      act(() => {
-        result.current.actions.openModal();
+      expect(result.current.invoiceState).toMatchObject({
+        created: null,
+        paid: false,
+        awaitingPayment: false,
+        completedAt: null,
+        showModal: false,
       });
-
-      expect(result.current.invoiceState.showModal).toBe(true);
-      expect(result.current.invoiceState.paid).toBe(true);
     });
   });
 });

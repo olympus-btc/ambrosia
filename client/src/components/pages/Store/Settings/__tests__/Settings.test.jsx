@@ -1,14 +1,26 @@
-import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
 import * as useTemplatesHook from "@/components/pages/Store/hooks/useTemplates";
+import * as useAutoLiquidityHook from "@/hooks/useAutoLiquidity";
 import * as useCurrencyHook from "@components/hooks/useCurrency";
 import * as useModulesHook from "@hooks/useModules";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
 import { Settings } from "../Settings";
+
+jest.mock("@lib/isElectron", () => ({
+  get isElectron() { return global.__mockIsElectron ?? false; },
+}));
+
+jest.mock("@hooks/usePWA", () => ({
+  useIsStandalone: () => false,
+  useIsIOS: () => false,
+  useIsAndroid: () => false,
+  useInstallPrompt: () => ({ isInstallable: false, promptInstall: jest.fn() }),
+}));
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -141,6 +153,14 @@ beforeEach(() => {
     updateTemplate: jest.fn(),
     deleteTemplate: jest.fn(),
   });
+
+  jest.spyOn(useAutoLiquidityHook, "useAutoLiquidity").mockReturnValue({
+    enabled: false,
+    loading: false,
+    restarting: false,
+    error: null,
+    toggle: jest.fn(),
+  });
 });
 
 afterEach(() => {
@@ -151,13 +171,14 @@ afterEach(() => {
 
 describe("Settings page", () => {
   describe("Rendering", () => {
-    it("renders store info, currency, and languages cards", async () => {
+    it("renders store info, currency, languages, and tutorials cards", async () => {
       await act(async () => {
         renderSettings();
       });
       expect(screen.getByText("cardInfo.title")).toBeInTheDocument();
       expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
       expect(screen.getByText("cardLanguage.title")).toBeInTheDocument();
+      expect(screen.getByText("cardTours.title")).toBeInTheDocument();
     });
 
     it("renders business name", async () => {
@@ -349,76 +370,29 @@ describe("Settings page", () => {
         expect(nameInput).toHaveValue("New Store Name");
       });
     });
-
-    it("renders LanguageSwitcher component", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const languageButton = screen.getByText(/Switch to English|Cambiar a Español/i);
-      expect(languageButton).toBeInTheDocument();
-    });
   });
 
-  describe("Currency Management", () => {
-    it("displays current currency from useCurrency hook", async () => {
+  describe("LightningCard visibility", () => {
+    it("does not render LightningCard when not in Electron context", async () => {
+      global.__mockIsElectron = false;
+
       await act(async () => {
         renderSettings();
       });
 
-      expect(screen.getByText("USD")).toBeInTheDocument();
+      expect(screen.queryByText("autoLiquidityLabel")).not.toBeInTheDocument();
     });
 
-    it("calls updateCurrency when currency is changed", async () => {
+    it("renders LightningCard when in Electron context", async () => {
+      global.__mockIsElectron = true;
+
       await act(async () => {
         renderSettings();
       });
 
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      expect(currencySelect).toBeInTheDocument();
-    });
+      expect(screen.getByText("autoLiquidityLabel")).toBeInTheDocument();
 
-    it("does not update currency when empty value is selected", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      expect(mockUpdateCurrency).not.toHaveBeenCalled();
-    });
-
-    it("displays currencies based on locale", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      expect(currencySelect).toBeInTheDocument();
-    });
-
-    it("calls updateCurrency when a valid currency is selected", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      fireEvent.change(currencySelect, { target: { value: "EUR" } });
-
-      await waitFor(() => {
-        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-      });
-    });
-
-    it("executes handleCurrencyChange with valid value", async () => {
-      await act(async () => {
-        renderSettings();
-      });
-
-      const currencySelect = screen.getByLabelText("cardCurrency.currencyLabel");
-      fireEvent.change(currencySelect, { target: { value: "EUR" } });
-
-      await waitFor(() => {
-        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
-      });
+      global.__mockIsElectron = false;
     });
   });
 

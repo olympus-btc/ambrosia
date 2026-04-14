@@ -7,6 +7,7 @@ const onboardingEn = {
     next: "Next",
     back: "Back",
     finish: "Finish",
+    edit: "Edit",
   },
   step1: {
     title: "What type of business do you have?",
