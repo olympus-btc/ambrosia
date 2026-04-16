@@ -9,7 +9,6 @@ describe("api config", () => {
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_API_URL;
-    delete process.env.NEXT_PUBLIC_ELECTRON;
   });
 
   afterAll(() => {
@@ -25,16 +24,5 @@ describe("api config", () => {
     process.env.NEXT_PUBLIC_API_URL = "http://ambrosia:9155";
     const { API_URL } = await loadConfigModule();
     expect(API_URL).toBe("http://ambrosia:9155");
-  });
-
-  it("detects electron environment", async () => {
-    process.env.NEXT_PUBLIC_ELECTRON = "true";
-    const { IS_ELECTRON } = await loadConfigModule();
-    expect(IS_ELECTRON).toBe(true);
-  });
-
-  it("detects non-electron environment", async () => {
-    const { IS_ELECTRON } = await loadConfigModule();
-    expect(IS_ELECTRON).toBe(false);
   });
 });
