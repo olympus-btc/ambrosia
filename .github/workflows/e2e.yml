@@ -2,7 +2,8 @@ name: E2E Tests
 
 on:
   pull_request:
-    branches: '**'
+    branches:
+      - '**'
 
   workflow_dispatch:
 
@@ -12,10 +13,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Java 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
