@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import { QRCode } from "react-qr-code";
 
-import { getWsUrl } from "@/config/api";
 import {
   createInvoice,
   getIncomingTransactions,
@@ -129,17 +128,16 @@ function WalletInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let ws;
+    let es;
     let shouldReconnect = true;
     const connect = () => {
-      const url = getWsUrl();
-      ws = new WebSocket(url);
+      es = new EventSource("/api/ws-payments");
 
-      ws.onopen = () => {
-        console.warn("WS payments conectado", url);
+      es.onopen = () => {
+        console.warn("SSE payments conectado");
       };
 
-      ws.onmessage = (event) => {
+      es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data?.type === "payment_received") {
@@ -153,15 +151,12 @@ function WalletInner() {
             fetchInfo();
           }
         } catch (err) {
-          console.warn("WS payments mensaje no procesado", err);
+          console.warn("SSE payments mensaje no procesado", err);
         }
       };
 
-      ws.onerror = (err) => {
-        console.warn("WS payments error", err);
-      };
-
-      ws.onclose = () => {
+      es.onerror = () => {
+        es.close();
         if (shouldReconnect) {
           setTimeout(connect, 3000);
         }
@@ -172,9 +167,7 @@ function WalletInner() {
 
     return () => {
       shouldReconnect = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
+      if (es) es.close();
     };
   }, [fetchInfo]);
 

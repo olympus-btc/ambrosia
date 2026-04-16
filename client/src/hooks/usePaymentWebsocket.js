@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 
-import { getWsUrl } from "@/config/api";
-
 export function usePaymentWebsocket() {
   const [connected, setConnected] = useState(false);
   const invoiceHashRef = useRef(null);
@@ -27,18 +25,17 @@ export function usePaymentWebsocket() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let ws;
+    let es;
     let shouldReconnect = true;
 
     const connect = () => {
-      const url = getWsUrl();
-      ws = new WebSocket(url);
+      es = new EventSource("/api/ws-payments");
 
-      ws.onopen = () => {
+      es.onopen = () => {
         setConnected(true);
       };
 
-      ws.onmessage = (event) => {
+      es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data?.type === "payment_received") {
@@ -59,16 +56,13 @@ export function usePaymentWebsocket() {
             }
           }
         } catch (err) {
-          console.warn("WS payments mensaje no procesado", err);
+          console.warn("SSE payments mensaje no procesado", err);
         }
       };
 
-      ws.onerror = (err) => {
-        console.warn("WS payments error", err);
-      };
-
-      ws.onclose = () => {
+      es.onerror = () => {
         setConnected(false);
+        es.close();
         if (shouldReconnect) {
           setTimeout(async () => {
             try {
@@ -84,9 +78,7 @@ export function usePaymentWebsocket() {
 
     return () => {
       shouldReconnect = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
+      if (es) es.close();
     };
   }, []);
 
