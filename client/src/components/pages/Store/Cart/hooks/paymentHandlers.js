@@ -119,7 +119,6 @@ export function buildHandlePay({
         return;
       }
 
-      // Other payment methods — process immediately
       const result = await processCheckout({
         items,
         amounts,

@@ -39,7 +39,6 @@ class OrderService(
         private const val GET_TOTAL_SALES_BY_DATE =
             "SELECT SUM(total) AS total_sales FROM orders WHERE DATE(created_at) = ? AND status = 'paid' AND is_deleted = 0"
 
-        // ── Store-specific queries ────────────────────────────────────────────
         private const val STORE_GET_ORDER =
             "SELECT o.id, o.user_id, u.name as user_name, o.status, CAST(o.total AS INTEGER) as total, o.created_at FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ? AND o.is_deleted = 0 AND o.table_id IS NULL"
         private const val STORE_GET_ORDERS =
@@ -101,7 +100,7 @@ class OrderService(
     }
 
     private fun tableExists(tableId: String?): Boolean {
-        if (tableId == null) return true // table_id es opcional
+        if (tableId == null) return true
         val statement = connection.prepareStatement(CHECK_TABLE_EXISTS)
         statement.setString(1, tableId)
         val resultSet = statement.executeQuery()
@@ -487,8 +486,6 @@ class OrderService(
         val updatedOrder = order.copy(total = newTotal)
         return updateOrder(updatedOrder)
     }
-
-    // ── Store orders ─────────────────────────────────────────────────────────
 
     private fun mapStoreItems(orderId: String): List<StoreOrderItem> {
         val st = connection.prepareStatement(STORE_GET_ITEMS)
