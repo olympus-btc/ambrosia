@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { QRCode } from "react-qr-code";
 
-import { getWsUrl } from "@/config/api";
+import { usePaymentWebsocket } from "@/hooks/usePaymentWebsocket";
 import {
   createInvoice,
   getIncomingTransactions,
@@ -126,57 +126,21 @@ function WalletInner() {
     fetchTransactionsRef.current = fetchTransactions;
   }, [fetchTransactions]);
 
+  const { onPayment } = usePaymentWebsocket();
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let ws;
-    let shouldReconnect = true;
-    const connect = () => {
-      const url = getWsUrl();
-      ws = new WebSocket(url);
-
-      ws.onopen = () => {
-        console.warn("WS payments conectado", url);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data?.type === "payment_received") {
-            addToast({
-              title: "Pago recibido",
-              description: `Hash: ${data.paymentHash || ""}`,
-              variant: "solid",
-              color: "success",
-            });
-            fetchTransactionsRef.current?.();
-            fetchInfo();
-          }
-        } catch (err) {
-          console.warn("WS payments mensaje no procesado", err);
-        }
-      };
-
-      ws.onerror = (err) => {
-        console.warn("WS payments error", err);
-      };
-
-      ws.onclose = () => {
-        if (shouldReconnect) {
-          setTimeout(connect, 3000);
-        }
-      };
-    };
-
-    connect();
-
-    return () => {
-      shouldReconnect = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [fetchInfo]);
+    const cleanup = onPayment(() => {
+      addToast({
+        title: "Pago recibido",
+        description: "",
+        variant: "solid",
+        color: "success",
+      });
+      fetchTransactionsRef.current?.();
+      fetchInfo();
+    });
+    return cleanup;
+  }, [fetchInfo, onPayment]);
 
   const handleCreateInvoice = async () => {
     if (!invoiceAmount) {
