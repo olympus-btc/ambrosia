@@ -2,7 +2,8 @@ name: Server Unit Tests
 
 on:
   pull_request:
-    branches: '**'
+    branches:
+      - '**'
 
   workflow_dispatch:
 
@@ -15,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
