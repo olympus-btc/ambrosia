@@ -2,8 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrderDetailsModal } from "../OrderDetailsModal";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
-
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Modal = ({ isOpen, children }) => (isOpen ? <div>{children}</div> : null);
@@ -36,7 +34,7 @@ describe("OrderDetailsModal", () => {
     const formatAmount = jest.fn((value) => `fmt-${value}`);
     const order = {
       id: "order-1",
-      waiter: "Luis",
+      user_name: "Luis",
       status: "paid",
       payment_method: "Cash",
       total: 25,
@@ -58,7 +56,7 @@ describe("OrderDetailsModal", () => {
     expect(screen.getByText("order-1")).toBeInTheDocument();
     expect(screen.getByText("Luis")).toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
-    expect(screen.getByText("formatted-date")).toBeInTheDocument();
+    expect(screen.getByText(/2024/)).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(2500);
 
     fireEvent.click(screen.getByText("details.close"));

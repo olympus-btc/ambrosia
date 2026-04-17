@@ -4,7 +4,7 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 import { useTranslations } from "next-intl";
 
 import { ViewButton } from "@/components/shared/ViewButton";
-import formatDate from "@/lib/formatDate";
+import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./StatusChip";
 
@@ -30,7 +30,7 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className="font-medium text-deep">
-                  {order.waiter || t("details.unassigned")}
+                  {order.user_name || t("details.unassigned")}
                 </span>
               </TableCell>
               <TableCell>

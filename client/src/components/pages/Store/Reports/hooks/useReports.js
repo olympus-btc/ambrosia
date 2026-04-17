@@ -1,133 +1,40 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { addToast } from "@heroui/react";
-import { useTranslations } from "next-intl";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
-import { getOrders, getPaymentMethods, getPayments, getTickets, getPaymentByTicketId } from "@/modules/orders/ordersService";
-
-function parseLocalDate(dateStr, isStart = true) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(
-    year,
-    month - 1,
-    day,
-    isStart ? 0 : 23,
-    isStart ? 0 : 59,
-    isStart ? 0 : 59,
-    isStart ? 0 : 999,
-  );
-}
-
-function formatTimeStamp(timestamp) {
-  const date = new Date(Number(timestamp));
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+function buildReportsQueryString(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.period) params.set("period", filters.period);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+  if (filters.productName?.trim()) params.set("productName", filters.productName.trim());
+  if (filters.paymentMethod?.trim()) params.set("paymentMethod", filters.paymentMethod.trim());
+  const query = params.toString();
+  return `/reports${query ? `?${query}` : ""}`;
 }
 
 export function useReports() {
-  const [tickets, setTickets] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const t = useTranslations("reports");
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const loadData = useCallback(async () => {
+  const fetchReport = useCallback(async (filters = {}) => {
     setLoading(true);
-    setError("");
+    setError(null);
     try {
-      const [ticketsResponse, ordersResponse, paymentsResponse, paymentMethodsResponse] =
-        await Promise.all([getTickets(), getOrders(), getPayments(), getPaymentMethods()]);
-
-      setTickets(ticketsResponse || []);
-      setOrders(ordersResponse || []);
-      setPayments(paymentsResponse || []);
-      setPaymentMethods(paymentMethodsResponse || []);
+      const endpoint = buildReportsQueryString(filters);
+      const response = await httpClient(endpoint);
+      const data = await parseJsonResponse(response, null);
+      setReportData(data);
+      return data;
     } catch (err) {
-      console.error(err);
-      const resolved = t("statuses.errorLoad");
-      setError(resolved);
-      addToast({
-        title: t("statuses.errorTitle"),
-        description: resolved,
-        variant: "solid",
-        color: "danger",
-      });
+      setError(err);
+      throw err;
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const generateReportFromData = useCallback(
-    async (startDate, endDate) => {
-      const start = parseLocalDate(startDate, true);
-      const end = parseLocalDate(endDate, false);
-
-      const filteredTickets = tickets.filter((ticket) => {
-        const ticketDate = new Date(Number(ticket.ticket_date));
-        return ticketDate >= start && ticketDate <= end;
-      });
-
-      const reportsByDate = {};
-
-      for (const ticket of filteredTickets) {
-        const date = formatTimeStamp(ticket.ticket_date);
-
-        const order = orders.find((o) => o.id === ticket.order_id);
-        const userName = order?.waiter || "Desconocido";
-
-        const ticketPayment = await getPaymentByTicketId(ticket.id);
-        const payment = payments.find((p) => p.id === ticketPayment[0].payment_id);
-        const paymentMethodName = paymentMethods.find(
-          (method) => method.id === payment.method_id,
-        )?.name;
-
-        const ticketInfo = {
-          amount: ticket.total_amount,
-          paymentMethod: paymentMethodName,
-          userName,
-        };
-
-        if (!reportsByDate[date]) {
-          reportsByDate[date] = {
-            date,
-            balance: 0,
-            tickets: [],
-          };
-        }
-
-        reportsByDate[date].balance += ticket.total_amount;
-        reportsByDate[date].tickets.push(ticketInfo);
-      }
-
-      const reports = Object.values(reportsByDate);
-      const totalBalance = reports.reduce((sum, r) => sum + r.balance, 0);
-
-      return {
-        startDate,
-        endDate,
-        totalBalance,
-        reports,
-      };
-    },
-    [orders, paymentMethods, payments, tickets],
-  );
-
-  return useMemo(
-    () => ({
-      loading,
-      error,
-      loadData,
-      generateReportFromData,
-    }),
-    [error, generateReportFromData, loadData, loading],
-  );
+  return { reportData, loading, error, fetchReport };
 }

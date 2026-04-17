@@ -1,7 +1,5 @@
 """End-to-end coverage for server-side order filtering and sorting."""
 
-import time
-
 import pytest
 
 from ambrosia.api_utils import assert_status_code
@@ -19,7 +17,6 @@ async def _create_order(
     payload = {
         "user_id": user_id,
         "table_id": None,
-        "waiter": f"e2e-{int(time.time() * 1000)}",
         "status": status,
         "total": total,
         "created_at": created_at,

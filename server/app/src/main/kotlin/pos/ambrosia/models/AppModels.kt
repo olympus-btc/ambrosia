@@ -1,5 +1,6 @@
 package pos.ambrosia.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable data class AuthRequest(
@@ -136,7 +137,6 @@ data class Order(
     val id: String? = null,
     val user_id: String,
     val table_id: String? = null,
-    val waiter: String,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -146,8 +146,8 @@ data class Order(
 data class OrderWithPayment(
     val id: String,
     val user_id: String,
+    val user_name: String? = null,
     val table_id: String? = null,
-    val waiter: String? = null,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -395,4 +395,75 @@ data class InitialSetupStatus(
 @Serializable
 data class SetBaseCurrencyRequest(
     val acronym: String,
+)
+
+@Serializable
+data class ProductSaleItem(
+    @SerialName("productName") val productName: String,
+    @SerialName("quantity") val quantity: Int,
+    @SerialName("priceAtOrder") val priceAtOrder: Int,
+    @SerialName("userName") val userName: String,
+    @SerialName("paymentMethod") val paymentMethod: String,
+    @SerialName("saleDate") val saleDate: String,
+)
+
+@Serializable
+data class ProductSalesReport(
+    @SerialName("totalRevenueCents") val totalRevenueCents: Long,
+    @SerialName("totalItemsSold") val totalItemsSold: Int,
+    @SerialName("sales") val sales: List<ProductSaleItem>,
+)
+
+@Serializable
+data class CreateStoreOrderItemRequest(
+    val product_id: String,
+    val quantity: Int,
+)
+
+@Serializable
+data class CreateStoreOrderRequest(
+    val items: List<CreateStoreOrderItemRequest>,
+)
+
+@Serializable
+data class StoreOrderItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreOrder(
+    val id: String,
+    val user_id: String,
+    val user_name: String? = null,
+    val status: String,
+    val total: Int,
+    val created_at: String,
+    val items: List<StoreOrderItem>,
+)
+
+@Serializable
+data class StoreCheckoutItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreCheckoutRequest(
+    val user_id: String,
+    val items: List<StoreCheckoutItem>,
+    val payment_method_id: String,
+    val currency_id: String,
+    val amount: Double,
+    val transaction_id: String? = null,
+    val ticket_notes: String = "",
+)
+
+@Serializable
+data class StoreCheckoutResponse(
+    val order_id: String,
+    val ticket_id: String,
+    val payment_id: String,
 )

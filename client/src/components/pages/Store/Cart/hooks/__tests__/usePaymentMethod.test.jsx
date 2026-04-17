@@ -22,7 +22,7 @@ function TestComponent() {
 
 describe("usePaymentMethods", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it("loads payment methods when response returns array", async () => {
