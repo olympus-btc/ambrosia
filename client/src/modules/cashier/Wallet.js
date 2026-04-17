@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { QRCode } from "react-qr-code";
 
+import { usePaymentWebsocket } from "@/hooks/usePaymentWebsocket";
 import {
   createInvoice,
   getIncomingTransactions,
@@ -125,51 +126,21 @@ function WalletInner() {
     fetchTransactionsRef.current = fetchTransactions;
   }, [fetchTransactions]);
 
+  const { onPayment } = usePaymentWebsocket();
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let eventSource;
-    let shouldReconnect = true;
-    const connect = () => {
-      eventSource = new EventSource("/api/ws-payments");
-
-      eventSource.onopen = () => {
-        console.warn("SSE payments conectado");
-      };
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data?.type === "payment_received") {
-            addToast({
-              title: "Pago recibido",
-              description: `Hash: ${data.paymentHash || ""}`,
-              variant: "solid",
-              color: "success",
-            });
-            fetchTransactionsRef.current?.();
-            fetchInfo();
-          }
-        } catch (err) {
-          console.warn("SSE payments mensaje no procesado", err);
-        }
-      };
-
-      eventSource.onerror = () => {
-        eventSource.close();
-        if (shouldReconnect) {
-          setTimeout(connect, 3000);
-        }
-      };
-    };
-
-    connect();
-
-    return () => {
-      shouldReconnect = false;
-      if (eventSource) eventSource.close();
-    };
-  }, [fetchInfo]);
+    const cleanup = onPayment(() => {
+      addToast({
+        title: "Pago recibido",
+        description: "",
+        variant: "solid",
+        color: "success",
+      });
+      fetchTransactionsRef.current?.();
+      fetchInfo();
+    });
+    return cleanup;
+  }, [fetchInfo, onPayment]);
 
   const handleCreateInvoice = async () => {
     if (!invoiceAmount) {
