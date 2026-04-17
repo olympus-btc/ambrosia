@@ -60,7 +60,7 @@ class Api {
         AppConfig.loadConfig() // Load the configuration
         val config = environment.config // Configure the application
         handler() // Install exception handlers
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        install(ContentNegotiation) { json() }
         install(CORS) {
             allowCredentials = true
             anyHost()

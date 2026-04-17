@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import * as formatters from "@/components/pages/Store/Wallet/utils/formatters";
+import * as clipboard from "@/components/pages/Store/Wallet/utils/copyToClipboard";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { CopyButton } from "../CopyButton";
 
-jest.mock("@/components/pages/Store/Wallet/utils/formatters", () => ({
+jest.mock("@/components/pages/Store/Wallet/utils/copyToClipboard", () => ({
   copyToClipboard: jest.fn(),
 }));
 
@@ -35,7 +35,7 @@ describe("CopyButton", () => {
   it("calls copyToClipboard with the value on press", () => {
     renderCopyButton({ value: "lnbc123abc", label: "Copy" });
     fireEvent.click(screen.getByRole("button"));
-    expect(formatters.copyToClipboard).toHaveBeenCalledWith("lnbc123abc", expect.any(Function));
+    expect(clipboard.copyToClipboard).toHaveBeenCalledWith("lnbc123abc", expect.any(Function));
   });
 
   it("applies bordered variant by default", () => {

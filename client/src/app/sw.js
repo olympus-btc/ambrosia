@@ -5,7 +5,7 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  navigationPreload: false,
   fallbacks: {
     entries: [
       {
@@ -47,3 +47,11 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+self.addEventListener("install", (event) => {
+  const requestPromises = Promise.all(
+    ["/"].map((entry) => serwist.handleRequest({ request: new Request(entry), event }),
+    ),
+  );
+  event.waitUntil(requestPromises);
+});

@@ -43,15 +43,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            client/package-lock.json
+            electron/package-lock.json
 
       - name: Setup Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -61,7 +65,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rpm
 
       - name: Install client dependencies
-        run: npm install
+        run: npm ci
         working-directory: ./client
 
       - name: Build client for Electron
@@ -69,7 +73,7 @@ jobs:
         working-directory: ./client
 
       - name: Install Electron dependencies
-        run: npm install
+        run: npm ci
         working-directory: ./electron
 
       - name: Build distributables
@@ -79,7 +83,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist-${{ matrix.artifact_name }}
           path: |
@@ -99,7 +103,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
           merge-multiple: true
@@ -108,7 +112,7 @@ jobs:
         run: ls -la artifacts/
 
       - name: Create Release & Upload
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
           name: Release ${{ github.event.inputs.tag_name || github.ref_name }}
