@@ -137,11 +137,11 @@ describe("usePaymentWebsocket", () => {
 
     it("closes the EventSource on unmount", () => {
       const { unmount } = renderHook(() => usePaymentWebsocket());
-      const es = MockEventSource.latest();
+      const mockEventSource = MockEventSource.latest();
 
       unmount();
 
-      expect(es.readyState).toBe(MockEventSource.CLOSED);
+      expect(mockEventSource.readyState).toBe(MockEventSource.CLOSED);
     });
   });
 

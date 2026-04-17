@@ -128,16 +128,16 @@ function WalletInner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let es;
+    let eventSource;
     let shouldReconnect = true;
     const connect = () => {
-      es = new EventSource("/api/ws-payments");
+      eventSource = new EventSource("/api/ws-payments");
 
-      es.onopen = () => {
+      eventSource.onopen = () => {
         console.warn("SSE payments conectado");
       };
 
-      es.onmessage = (event) => {
+      eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data?.type === "payment_received") {
@@ -155,8 +155,8 @@ function WalletInner() {
         }
       };
 
-      es.onerror = () => {
-        es.close();
+      eventSource.onerror = () => {
+        eventSource.close();
         if (shouldReconnect) {
           setTimeout(connect, 3000);
         }
@@ -167,7 +167,7 @@ function WalletInner() {
 
     return () => {
       shouldReconnect = false;
-      if (es) es.close();
+      if (eventSource) eventSource.close();
     };
   }, [fetchInfo]);
 

@@ -25,17 +25,17 @@ export function usePaymentWebsocket() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let es;
+    let eventSource;
     let shouldReconnect = true;
 
     const connect = () => {
-      es = new EventSource("/api/ws-payments");
+      eventSource = new EventSource("/api/ws-payments");
 
-      es.onopen = () => {
+      eventSource.onopen = () => {
         setConnected(true);
       };
 
-      es.onmessage = (event) => {
+      eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data?.type === "payment_received") {
@@ -49,10 +49,10 @@ export function usePaymentWebsocket() {
               data.paymentHash &&
               data.paymentHash === invoiceHashRef.current
             ) {
-              const evt = new CustomEvent("wallet:invoicePaid", {
+              const customEvent = new CustomEvent("wallet:invoicePaid", {
                 detail: { paymentHash: data.paymentHash },
               });
-              window.dispatchEvent(evt);
+              window.dispatchEvent(customEvent);
             }
           }
         } catch (err) {
@@ -60,9 +60,9 @@ export function usePaymentWebsocket() {
         }
       };
 
-      es.onerror = () => {
+      eventSource.onerror = () => {
         setConnected(false);
-        es.close();
+        eventSource.close();
         if (shouldReconnect) {
           setTimeout(async () => {
             try {
@@ -78,7 +78,7 @@ export function usePaymentWebsocket() {
 
     return () => {
       shouldReconnect = false;
-      if (es) es.close();
+      if (eventSource) eventSource.close();
     };
   }, []);
 
