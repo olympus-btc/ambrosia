@@ -37,6 +37,7 @@ import pos.ambrosia.api.configureRoles
 import pos.ambrosia.api.configureRouting
 import pos.ambrosia.api.configureShifts
 import pos.ambrosia.api.configureSpaces
+import pos.ambrosia.api.configureStoreOrders
 import pos.ambrosia.api.configureSuppliers
 import pos.ambrosia.api.configureTables
 import pos.ambrosia.api.configureTicketTemplates
@@ -154,6 +155,7 @@ class Api {
         configureConfig()
         configureTicketTemplates()
         configureProducts()
+        configureStoreOrders()
         configureCategories()
         configureCurrency()
         configureInitialSetup()
