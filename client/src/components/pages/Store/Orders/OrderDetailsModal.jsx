@@ -9,7 +9,7 @@ import { StatusChip } from "./OrdersList/StatusChip";
 
 export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
   const t = useTranslations("orders");
-  const waiterLabel = order?.waiter ?? t("details.unassigned");
+  const userLabel = order?.user_name ?? t("details.unassigned");
 
   return (
     <Modal
@@ -29,7 +29,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
         <ModalBody>
           <div className="space-y-3 text-sm text-deep">
             <DetailRow label={t("details.id")} value={order?.id} />
-            <DetailRow label={t("details.user")} value={waiterLabel} />
+            <DetailRow label={t("details.user")} value={userLabel} />
             <DetailRow
               label={t("details.status")}
               value={order ? <StatusChip status={order.status} /> : t("details.unassigned")}

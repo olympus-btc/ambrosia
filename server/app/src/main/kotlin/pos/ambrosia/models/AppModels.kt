@@ -136,7 +136,6 @@ data class Order(
     val id: String? = null,
     val user_id: String,
     val table_id: String? = null,
-    val waiter: String,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -146,8 +145,8 @@ data class Order(
 data class OrderWithPayment(
     val id: String,
     val user_id: String,
+    val user_name: String? = null,
     val table_id: String? = null,
-    val waiter: String? = null,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -419,6 +418,7 @@ data class StoreOrderItem(
 data class StoreOrder(
     val id: String,
     val user_id: String,
+    val user_name: String? = null,
     val status: String,
     val total: Int,
     val created_at: String,
@@ -435,7 +435,6 @@ data class StoreCheckoutItem(
 @Serializable
 data class StoreCheckoutRequest(
     val user_id: String,
-    val waiter: String,
     val items: List<StoreCheckoutItem>,
     val payment_method_id: String,
     val currency_id: String,

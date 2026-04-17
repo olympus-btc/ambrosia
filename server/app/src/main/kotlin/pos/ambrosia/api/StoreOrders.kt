@@ -13,21 +13,21 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
-import pos.ambrosia.services.StoreOrderService
+import pos.ambrosia.services.OrderService
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
 
 fun Application.configureStoreOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
-    val service = StoreOrderService(connection)
+    val service = OrderService(connection)
     routing { route("/store/orders") { storeOrders(service) } }
 }
 
-fun Route.storeOrders(service: StoreOrderService) {
+fun Route.storeOrders(service: OrderService) {
     authorizePermission("orders_read") {
         get("") {
             val status = call.request.queryParameters["status"]
-            val orders = service.getOrders(status)
+            val orders = service.getStoreOrders(status)
             call.respond(HttpStatusCode.OK, orders)
         }
         get("/{id}") {
@@ -35,7 +35,7 @@ fun Route.storeOrders(service: StoreOrderService) {
                 call.parameters["id"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
             val order =
-                service.getOrderById(id)
+                service.getStoreOrderById(id)
                     ?: return@get call.respond(HttpStatusCode.NotFound, Message("Order not found"))
             call.respond(HttpStatusCode.OK, order)
         }
@@ -59,7 +59,7 @@ fun Route.storeOrders(service: StoreOrderService) {
             val id =
                 call.parameters["id"]
                     ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
-            val cancelled = service.cancelOrder(id)
+            val cancelled = service.cancelStoreOrder(id)
             if (!cancelled) {
                 return@delete call.respond(
                     HttpStatusCode.NotFound,
