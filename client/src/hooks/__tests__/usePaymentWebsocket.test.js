@@ -2,44 +2,38 @@ import { act, renderHook } from "@testing-library/react";
 
 import { usePaymentWebsocket } from "../usePaymentWebsocket";
 
-jest.mock("@/config/api", () => ({
-  getWsUrl: () => "ws://localhost:9154/ws/payments",
-}));
-
-class MockWebSocket {
+class MockEventSource {
   constructor(url) {
     this.url = url;
-    this.readyState = MockWebSocket.CONNECTING;
+    this.readyState = MockEventSource.CONNECTING;
     this.onopen = null;
-    this.onclose = null;
     this.onerror = null;
     this.onmessage = null;
-    MockWebSocket.instances.push(this);
+    MockEventSource.instances.push(this);
   }
 
   close() {
-    this.readyState = MockWebSocket.CLOSED;
+    this.readyState = MockEventSource.CLOSED;
   }
 
   static CONNECTING = 0;
   static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
+  static CLOSED = 2;
   static instances = [];
 
   static reset() {
-    MockWebSocket.instances = [];
+    MockEventSource.instances = [];
   }
 
   static latest() {
-    return MockWebSocket.instances[MockWebSocket.instances.length - 1];
+    return MockEventSource.instances[MockEventSource.instances.length - 1];
   }
 }
 
 describe("usePaymentWebsocket", () => {
   beforeEach(() => {
-    MockWebSocket.reset();
-    global.WebSocket = MockWebSocket;
+    MockEventSource.reset();
+    global.EventSource = MockEventSource;
     jest.clearAllMocks();
     jest.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -54,37 +48,37 @@ describe("usePaymentWebsocket", () => {
       expect(result.current.connected).toBe(false);
     });
 
-    it("sets connected to true when WebSocket opens", () => {
+    it("sets connected to true when EventSource opens", () => {
       const { result } = renderHook(() => usePaymentWebsocket());
 
       act(() => {
-        MockWebSocket.latest().readyState = MockWebSocket.OPEN;
-        MockWebSocket.latest().onopen?.();
+        MockEventSource.latest().readyState = MockEventSource.OPEN;
+        MockEventSource.latest().onopen?.();
       });
 
       expect(result.current.connected).toBe(true);
     });
 
-    it("sets connected to false when WebSocket closes", () => {
+    it("sets connected to false on error", () => {
       const { result } = renderHook(() => usePaymentWebsocket());
 
       act(() => {
-        MockWebSocket.latest().readyState = MockWebSocket.OPEN;
-        MockWebSocket.latest().onopen?.();
+        MockEventSource.latest().readyState = MockEventSource.OPEN;
+        MockEventSource.latest().onopen?.();
       });
 
       expect(result.current.connected).toBe(true);
 
       act(() => {
-        MockWebSocket.latest().onclose?.();
+        MockEventSource.latest().onerror?.();
       });
 
       expect(result.current.connected).toBe(false);
     });
 
-    it("connects to the URL returned by getWsUrl", () => {
+    it("connects to /api/ws-payments", () => {
       renderHook(() => usePaymentWebsocket());
-      expect(MockWebSocket.latest().url).toBe("ws://localhost:9154/ws/payments");
+      expect(MockEventSource.latest().url).toBe("/api/ws-payments");
     });
   });
 
@@ -97,26 +91,26 @@ describe("usePaymentWebsocket", () => {
       jest.useRealTimers();
     });
 
-    it("reconnects after 3 seconds when WebSocket closes", async () => {
+    it("reconnects after 3 seconds on error", async () => {
       renderHook(() => usePaymentWebsocket());
-      expect(MockWebSocket.instances).toHaveLength(1);
+      expect(MockEventSource.instances).toHaveLength(1);
 
       act(() => {
-        MockWebSocket.latest().onclose?.();
+        MockEventSource.latest().onerror?.();
       });
 
       await act(async () => {
         await jest.runAllTimersAsync();
       });
 
-      expect(MockWebSocket.instances).toHaveLength(2);
+      expect(MockEventSource.instances).toHaveLength(2);
     });
 
     it("calls /api/auth/refresh before reconnecting", async () => {
       renderHook(() => usePaymentWebsocket());
 
       act(() => {
-        MockWebSocket.latest().onclose?.();
+        MockEventSource.latest().onerror?.();
       });
 
       await act(async () => {
@@ -130,7 +124,7 @@ describe("usePaymentWebsocket", () => {
 
     it("does not reconnect after unmount", async () => {
       const { unmount } = renderHook(() => usePaymentWebsocket());
-      expect(MockWebSocket.instances).toHaveLength(1);
+      expect(MockEventSource.instances).toHaveLength(1);
 
       unmount();
 
@@ -138,21 +132,16 @@ describe("usePaymentWebsocket", () => {
         await jest.runAllTimersAsync();
       });
 
-      expect(MockWebSocket.instances).toHaveLength(1);
+      expect(MockEventSource.instances).toHaveLength(1);
     });
 
-    it("closes the WebSocket on unmount if it is open", () => {
+    it("closes the EventSource on unmount", () => {
       const { unmount } = renderHook(() => usePaymentWebsocket());
-      const ws = MockWebSocket.latest();
-
-      act(() => {
-        ws.readyState = MockWebSocket.OPEN;
-        ws.onopen?.();
-      });
+      const mockEventSource = MockEventSource.latest();
 
       unmount();
 
-      expect(ws.readyState).toBe(MockWebSocket.CLOSED);
+      expect(mockEventSource.readyState).toBe(MockEventSource.CLOSED);
     });
   });
 
@@ -167,7 +156,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "abc" }),
         });
       });
@@ -187,7 +176,7 @@ describe("usePaymentWebsocket", () => {
       const paymentData = { type: "payment_received", paymentHash: "abc123" };
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({ data: JSON.stringify(paymentData) });
+        MockEventSource.latest().onmessage?.({ data: JSON.stringify(paymentData) });
       });
 
       expect(listener).toHaveBeenCalledWith(paymentData);
@@ -204,7 +193,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "matching-hash" }),
         });
       });
@@ -226,7 +215,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "other-hash" }),
         });
       });
@@ -243,7 +232,7 @@ describe("usePaymentWebsocket", () => {
       renderHook(() => usePaymentWebsocket());
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "some-hash" }),
         });
       });
@@ -265,7 +254,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "other_event", paymentHash: "abc" }),
         });
       });
@@ -280,7 +269,7 @@ describe("usePaymentWebsocket", () => {
 
       expect(() => {
         act(() => {
-          MockWebSocket.latest().onmessage?.({ data: "not-valid-json{{" });
+          MockEventSource.latest().onmessage?.({ data: "not-valid-json{{" });
         });
       }).not.toThrow();
     });
@@ -301,7 +290,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "abc" }),
         });
       });
@@ -320,7 +309,7 @@ describe("usePaymentWebsocket", () => {
       });
 
       act(() => {
-        MockWebSocket.latest().onmessage?.({
+        MockEventSource.latest().onmessage?.({
           data: JSON.stringify({ type: "payment_received", paymentHash: "abc" }),
         });
       });

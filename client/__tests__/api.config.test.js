@@ -6,41 +6,23 @@ async function loadConfigModule() {
 }
 
 describe("api config", () => {
-  const spies = [];
-
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
     delete process.env.NEXT_PUBLIC_API_URL;
-    delete process.env.NEXT_PUBLIC_PORT_API;
-    delete process.env.NEXT_PUBLIC_WS_URL;
-  });
-
-  afterEach(() => {
-    spies.forEach((s) => s.mockRestore());
-    spies.length = 0;
   });
 
   afterAll(() => {
     process.env = ORIGINAL_ENV;
   });
 
-  it("builds the websocket URL from the browser host and published API port", async () => {
-    process.env.NEXT_PUBLIC_API_URL = "http://ambrosia:9154";
-    process.env.NEXT_PUBLIC_PORT_API = "9155";
-    const { getWsUrl } = await loadConfigModule();
-
-    expect(getWsUrl({ hostname: "caja-1.local", protocol: "http:" })).toBe(
-      "ws://caja-1.local:9155/ws/payments",
-    );
+  it("returns default API URL when no env var is set", async () => {
+    const { API_URL } = await loadConfigModule();
+    expect(API_URL).toBe("http://localhost:9154");
   });
 
-  it("prefers an explicit websocket URL when provided", async () => {
-    process.env.NEXT_PUBLIC_WS_URL = "wss://payments.example.com/ws/payments";
-    process.env.NEXT_PUBLIC_API_URL = "http://ambrosia:9154";
-    process.env.NEXT_PUBLIC_PORT_API = "9155";
-
-    const { getWsUrl } = await loadConfigModule();
-
-    expect(getWsUrl()).toBe("wss://payments.example.com/ws/payments");
+  it("uses NEXT_PUBLIC_API_URL when set", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "http://ambrosia:9155";
+    const { API_URL } = await loadConfigModule();
+    expect(API_URL).toBe("http://ambrosia:9155");
   });
 });

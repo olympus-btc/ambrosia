@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 
-import { getWsUrl } from "@/config/api";
-
 export function usePaymentWebsocket() {
   const [connected, setConnected] = useState(false);
   const invoiceHashRef = useRef(null);
@@ -27,18 +25,17 @@ export function usePaymentWebsocket() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let ws;
+    let eventSource;
     let shouldReconnect = true;
 
     const connect = () => {
-      const url = getWsUrl();
-      ws = new WebSocket(url);
+      eventSource = new EventSource("/api/ws-payments");
 
-      ws.onopen = () => {
+      eventSource.onopen = () => {
         setConnected(true);
       };
 
-      ws.onmessage = (event) => {
+      eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data?.type === "payment_received") {
@@ -52,23 +49,20 @@ export function usePaymentWebsocket() {
               data.paymentHash &&
               data.paymentHash === invoiceHashRef.current
             ) {
-              const evt = new CustomEvent("wallet:invoicePaid", {
+              const customEvent = new CustomEvent("wallet:invoicePaid", {
                 detail: { paymentHash: data.paymentHash },
               });
-              window.dispatchEvent(evt);
+              window.dispatchEvent(customEvent);
             }
           }
         } catch (err) {
-          console.warn("WS payments mensaje no procesado", err);
+          console.warn("SSE payments mensaje no procesado", err);
         }
       };
 
-      ws.onerror = (err) => {
-        console.warn("WS payments error", err);
-      };
-
-      ws.onclose = () => {
+      eventSource.onerror = () => {
         setConnected(false);
+        eventSource.close();
         if (shouldReconnect) {
           setTimeout(async () => {
             try {
@@ -84,9 +78,7 @@ export function usePaymentWebsocket() {
 
     return () => {
       shouldReconnect = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
+      if (eventSource) eventSource.close();
     };
   }, []);
 
