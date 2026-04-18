@@ -17,6 +17,7 @@ import io.ktor.server.plugins.origin
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import pos.ambrosia.api.configureAuth
 import pos.ambrosia.api.configureCategories
@@ -37,6 +38,7 @@ import pos.ambrosia.api.configureRoles
 import pos.ambrosia.api.configureRouting
 import pos.ambrosia.api.configureShifts
 import pos.ambrosia.api.configureSpaces
+import pos.ambrosia.api.configureStoreOrders
 import pos.ambrosia.api.configureSuppliers
 import pos.ambrosia.api.configureTables
 import pos.ambrosia.api.configureTicketTemplates
@@ -154,6 +156,7 @@ class Api {
         configureConfig()
         configureTicketTemplates()
         configureProducts()
+        configureStoreOrders()
         configureCategories()
         configureCurrency()
         configureInitialSetup()

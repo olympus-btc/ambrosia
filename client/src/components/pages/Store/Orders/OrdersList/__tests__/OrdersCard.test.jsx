@@ -2,8 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrdersCard } from "../OrdersCard";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
-
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Card = ({ children }) => <div>{children}</div>;
@@ -28,7 +26,7 @@ describe("OrdersCard", () => {
 
   const order = {
     id: "abc-123",
-    waiter: "Ana",
+    user_name: "Ana",
     status: "paid",
     payment_method: "Cash",
     total: 15,
@@ -39,18 +37,18 @@ describe("OrdersCard", () => {
     jest.clearAllMocks();
   });
 
-  it("renders waiter, status, payment method, date and total", () => {
+  it("renders user name, status, payment method, date and total", () => {
     render(<OrdersCard order={order} formatAmount={formatAmount} onViewOrder={onViewOrder} />);
 
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("status-paid")).toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
-    expect(screen.getByText("formatted-date")).toBeInTheDocument();
+    expect(screen.getByText(/2024/)).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(1500);
   });
 
-  it("shows unassigned when no waiter", () => {
-    render(<OrdersCard order={{ ...order, waiter: null }} formatAmount={formatAmount} onViewOrder={onViewOrder} />);
+  it("shows unassigned when no user_name", () => {
+    render(<OrdersCard order={{ ...order, user_name: null }} formatAmount={formatAmount} onViewOrder={onViewOrder} />);
     expect(screen.getByText("details.unassigned")).toBeInTheDocument();
   });
 
