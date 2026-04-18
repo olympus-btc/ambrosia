@@ -1,7 +1,6 @@
 """End-to-end tests for order validation."""
 
 import logging
-import uuid
 
 import pytest
 
@@ -36,7 +35,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
                 "status": VALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -55,7 +53,6 @@ class TestOrderValidation:
             json={
                 "user_id": NONEXISTENT_ID,
                 "table_id": None,
-                "waiter": "e2e_test",
                 "status": VALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -76,7 +73,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": NONEXISTENT_ID,
-                "waiter": "e2e_test",
                 "status": VALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -95,7 +91,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": None,
-                "waiter": "e2e_test",
                 "status": INVALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -112,7 +107,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
                 "status": VALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -139,7 +133,6 @@ class TestOrderValidation:
             json={
                 "user_id": NONEXISTENT_ID,
                 "table_id": None,
-                "waiter": "e2e_test",
                 "status": VALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -160,7 +153,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": None,
-                "waiter": "e2e_test",
                 "status": INVALID_STATUS,
                 "total": 0.0,
                 "created_at": "2026-01-01T00:00:00",
@@ -181,7 +173,6 @@ class TestOrderValidation:
             json={
                 "user_id": user_id,
                 "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
                 "status": "closed",
                 "total": 50.0,
                 "created_at": "2026-01-01T00:00:00",
