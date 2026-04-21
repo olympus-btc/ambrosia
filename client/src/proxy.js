@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+const INTERNAL_ORIGIN =
+  process.env.INTERNAL_ORIGIN || `http://127.0.0.1:${process.env.PORT || 3000}`;
+
 export default async function proxy(request) {
   const { pathname } = new URL(request.url);
   const refreshToken = request.cookies.get("refreshToken");
@@ -20,7 +23,7 @@ export default async function proxy(request) {
   let needsBusinessType = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
-    const initialSetupUrl = new URL("/api/initial-setup", request.url);
+    const initialSetupUrl = new URL("/api/initial-setup", INTERNAL_ORIGIN);
 
     const setupResponse = await fetch(initialSetupUrl, { headers });
     if (setupResponse.ok) {
@@ -56,7 +59,7 @@ export default async function proxy(request) {
   let shouldClearBusinessTypeCookie = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
-    const configurationUrl = new URL("/api/config", request.url);
+    const configurationUrl = new URL("/api/config", INTERNAL_ORIGIN);
     const configResponse = await fetch(configurationUrl, { headers });
     if (configResponse.ok) {
       const configData = await configResponse.json();
@@ -95,6 +98,7 @@ export default async function proxy(request) {
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
+    upgrade-insecure-requests;
   `.replace(/\s{2,}/g, " ").trim();
 
   const requestHeaders = new Headers(request.headers);
