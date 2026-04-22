@@ -41,6 +41,7 @@ let setItemSpy;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useFakeTimers();
   localStorage.clear();
   capturedConfig = {};
   setDesktop();
@@ -50,6 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   setItemSpy.mockRestore();
 });
 
@@ -96,6 +98,7 @@ describe("useWalletTour", () => {
 
     it("starts tour when authenticated for the first time", () => {
       renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
       expect(mockDrive).toHaveBeenCalledTimes(1);
     });
 
@@ -107,6 +110,7 @@ describe("useWalletTour", () => {
 
     it("sets WALLET_TOUR_KEY in localStorage when starting", () => {
       renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "true");
     });
   });
