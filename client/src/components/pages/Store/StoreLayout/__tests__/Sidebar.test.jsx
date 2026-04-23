@@ -81,7 +81,7 @@ describe("SidebarContent", () => {
 
   it("adds nav-wallet id to wallet item when withTourIds is true", () => {
     const navWithWallet = [
-      { path: "/store/wallet", label: "wallet", icon: "users", showInNavbar: true },
+      { path: "/store/wallet", label: "wallet", icon: "users", showInNavbar: true, tourId: "nav-wallet" },
     ];
     renderSidebar({ availableNavigation: navWithWallet, withTourIds: true });
     expect(screen.getByText("wallet").closest("a")).toHaveAttribute("id", "nav-wallet");
