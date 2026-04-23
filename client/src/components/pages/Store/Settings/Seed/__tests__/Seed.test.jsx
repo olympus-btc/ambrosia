@@ -17,7 +17,7 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
+  useTranslations: () => Object.assign((key) => key, { raw: (key) => key }),
 }));
 
 jest.mock("@components/auth/WalletGuard", () => function MockWalletGuard({ children, onAuthorized, onCancel }) {
