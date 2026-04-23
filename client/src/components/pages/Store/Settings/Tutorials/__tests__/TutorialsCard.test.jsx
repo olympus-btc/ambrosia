@@ -18,7 +18,9 @@ function renderCard(props = {}) {
   return render(
     <TutorialsCard
       walletTourSeen={false}
-      onReplay={jest.fn()}
+      seedTourSeen={false}
+      onReplayWallet={jest.fn()}
+      onReplaySeed={jest.fn()}
       t={t}
       {...props}
     />,
@@ -43,23 +45,35 @@ describe("TutorialsCard", () => {
       expect(screen.getByText("cardTours.walletTour.description")).toBeInTheDocument();
     });
 
-    it("renders the replay button", () => {
+    it("renders the seed tour name and description", () => {
       renderCard();
-      expect(screen.getByText("cardTours.replayButton")).toBeInTheDocument();
+      expect(screen.getByText("cardTours.seedTour.name")).toBeInTheDocument();
+      expect(screen.getByText("cardTours.seedTour.description")).toBeInTheDocument();
+    });
+
+    it("renders two replay buttons", () => {
+      renderCard();
+      expect(screen.getAllByText("cardTours.replayButton")).toHaveLength(2);
     });
   });
 
-  describe("Tour status badge", () => {
-    it("shows 'pending' badge when walletTourSeen is false", () => {
-      renderCard({ walletTourSeen: false });
-      expect(screen.getByText("cardTours.pending")).toBeInTheDocument();
+  describe("Tour status badges", () => {
+    it("shows two 'pending' badges when both tours unseen", () => {
+      renderCard({ walletTourSeen: false, seedTourSeen: false });
       expect(screen.queryByText("cardTours.seen")).not.toBeInTheDocument();
+      expect(screen.getAllByText("cardTours.pending")).toHaveLength(2);
     });
 
-    it("shows 'seen' badge when walletTourSeen is true", () => {
-      renderCard({ walletTourSeen: true });
+    it("shows 'seen' for wallet when walletTourSeen is true", () => {
+      renderCard({ walletTourSeen: true, seedTourSeen: false });
       expect(screen.getByText("cardTours.seen")).toBeInTheDocument();
-      expect(screen.queryByText("cardTours.pending")).not.toBeInTheDocument();
+      expect(screen.getAllByText("cardTours.pending")).toHaveLength(1);
+    });
+
+    it("shows 'seen' for seed when seedTourSeen is true", () => {
+      renderCard({ walletTourSeen: false, seedTourSeen: true });
+      expect(screen.getByText("cardTours.seen")).toBeInTheDocument();
+      expect(screen.getAllByText("cardTours.pending")).toHaveLength(1);
     });
 
     it("renders 'seen' badge with green style", () => {
@@ -68,17 +82,24 @@ describe("TutorialsCard", () => {
     });
 
     it("renders 'pending' badge with amber style", () => {
-      renderCard({ walletTourSeen: false });
-      expect(screen.getByText("cardTours.pending").className).toContain("bg-amber-100");
+      renderCard();
+      expect(screen.getAllByText("cardTours.pending")[0].className).toContain("bg-amber-100");
     });
   });
 
   describe("Interaction", () => {
-    it("calls onReplay when replay button is pressed", () => {
-      const onReplay = jest.fn();
-      renderCard({ onReplay });
-      fireEvent.click(screen.getByText("cardTours.replayButton"));
-      expect(onReplay).toHaveBeenCalledTimes(1);
+    it("calls onReplayWallet when wallet replay button is pressed", () => {
+      const onReplayWallet = jest.fn();
+      renderCard({ onReplayWallet });
+      fireEvent.click(screen.getAllByText("cardTours.replayButton")[0]);
+      expect(onReplayWallet).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls onReplaySeed when seed replay button is pressed", () => {
+      const onReplaySeed = jest.fn();
+      renderCard({ onReplaySeed });
+      fireEvent.click(screen.getAllByText("cardTours.replayButton")[1]);
+      expect(onReplaySeed).toHaveBeenCalledTimes(1);
     });
   });
 });
