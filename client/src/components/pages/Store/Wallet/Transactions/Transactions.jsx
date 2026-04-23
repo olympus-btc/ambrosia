@@ -32,7 +32,7 @@ export function Transactions({
     key: WALLET_RECEIVE_TOUR_KEY,
     delay: 500,
     driverOptions: {
-      allowClose: true,
+      allowClose: false,
       overlayOpacity: 0.5,
       showProgress: true,
       steps: [

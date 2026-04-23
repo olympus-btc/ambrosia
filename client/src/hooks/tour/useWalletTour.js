@@ -15,18 +15,7 @@ export function useWalletTour(isAuth) {
   const pathname = usePathname();
   const tTour = useTranslations("walletTour");
   const driverRef = useRef(null);
-  const tourStartedRef = useRef(false);
   const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (pathname === "/store" && !localStorage.getItem(WALLET_TOUR_KEY)) {
-      tourStartedRef.current = false;
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-  }, [pathname]);
 
   useEffect(() => {
     if (!pathname.startsWith("/store/wallet")) return;
@@ -50,7 +39,7 @@ export function useWalletTour(isAuth) {
 
   useEffect(() => {
     if (!isAuth || timerRef.current) return;
-    if (localStorage.getItem(WALLET_TOUR_KEY)) return;
+    if (localStorage.getItem(WALLET_TOUR_KEY) !== "true") return;
 
     const isMobile = window.innerWidth < 768;
     const walletButton = `<br/><br/><a href="/store/wallet" style="display:inline-block;margin-top:4px;padding:8px 16px;background:#166534;color:#fff;border-radius:8px;text-decoration:none;font-size:14px">${tourMobileGoToWallet}</a>`;
@@ -103,13 +92,15 @@ export function useWalletTour(isAuth) {
     driverRef.current = driverObj;
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
-      localStorage.setItem(WALLET_TOUR_KEY, "true");
-      tourStartedRef.current = true;
+      localStorage.removeItem(WALLET_TOUR_KEY);
       driverObj.drive();
     }, 800);
   }, [isAuth, tourTitle, tourDescription, tourClickWallet, tourNextButton, tourMobileGoToWallet]);
 
   useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 }
