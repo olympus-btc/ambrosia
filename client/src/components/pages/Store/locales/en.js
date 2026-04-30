@@ -879,6 +879,15 @@ const storeEn = {
         paySuccessDescription: "Lightning payment sent successfully",
         paymentError: "Error paying the invoice",
         paymentErrorDescription: "Could not process the payment",
+        errors: {
+          invoiceAlreadyPaid: "This invoice has already been paid",
+          invoiceExpired: "This invoice has expired",
+          recipientRejectedPayment: "The recipient node rejected the payment",
+          invalidInvoice: "This Lightning invoice is invalid",
+          insufficientFunds: "There are not enough funds to complete this payment",
+          nodeUnavailable: "The Lightning node is not available right now",
+          unknown: "Could not process the payment",
+        },
         closeButton: "Close",
       },
       history: {

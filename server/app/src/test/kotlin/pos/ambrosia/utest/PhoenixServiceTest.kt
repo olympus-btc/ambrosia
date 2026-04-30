@@ -300,6 +300,206 @@ class PhoenixServiceTest {
     }
 
     @Test
+    fun `payInvoice preserves phoenix error details for already paid invoice`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Invoice already paid"}"""),
+                    status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient = HttpClient(mockEngine)
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("invoice_already_paid", exception.code)
+        assertEquals(409, exception.statusCode)
+        assertEquals("Invoice already paid", exception.message)
+    }
+
+    @Test
+    fun `payInvoice handles phoenix error payload returned with 200 status`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Invoice already paid"}"""),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("invoice_already_paid", exception.code)
+        assertEquals(409, exception.statusCode)
+        assertEquals("Invoice already paid", exception.message)
+    }
+
+    @Test
+    fun `payInvoice classifies expired invoice error`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Invoice expired"}"""),
+                    status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("invoice_expired", exception.code)
+        assertEquals(410, exception.statusCode)
+        assertEquals("Invoice expired", exception.message)
+    }
+
+    @Test
+    fun `payInvoice classifies recipient rejected payment error`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Recipient node rejected the payment"}"""),
+                    status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("recipient_rejected_payment", exception.code)
+        assertEquals(422, exception.statusCode)
+        assertEquals("Recipient node rejected the payment", exception.message)
+    }
+
+    @Test
+    fun `payInvoice maps unknown phoenix error payload with 200 status to bad gateway`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Unexpected phoenix payment failure"}"""),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("unknown", exception.code)
+        assertEquals(502, exception.statusCode)
+        assertEquals("Unexpected phoenix payment failure", exception.message)
+    }
+
+    @Test
     fun `payInvoice throws PhoenixServiceException on network error`() {
         // Arrange
         val mockEngine =

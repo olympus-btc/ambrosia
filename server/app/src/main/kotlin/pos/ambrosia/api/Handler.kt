@@ -9,6 +9,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import pos.ambrosia.logger
 import pos.ambrosia.models.Message
+import pos.ambrosia.models.WalletErrorResponse
 import pos.ambrosia.utils.AdminOnlyException
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.DuplicateProductSkuException
@@ -104,7 +105,15 @@ fun Application.handler() {
         }
         exception<PhoenixServiceException> { call, cause ->
             logger.error("Phoenix service error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
+            val statusCode = cause.statusCode?.let(HttpStatusCode::fromValue) ?: HttpStatusCode.ServiceUnavailable
+            call.respond(
+                statusCode,
+                WalletErrorResponse(
+                    message = cause.message ?: "Lightning node service error",
+                    code = cause.code,
+                    source = cause.source,
+                ),
+            )
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

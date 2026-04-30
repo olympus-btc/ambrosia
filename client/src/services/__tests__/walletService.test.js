@@ -151,7 +151,11 @@ describe("walletService", () => {
   describe("payInvoiceFromService", () => {
     it("calls /wallet/payinvoice with trimmed invoice", async () => {
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue({});
+      parseJsonResponse.mockResolvedValue({
+        recipientAmountSat: 1000,
+        routingFeeSat: 5,
+        paymentHash: "hash-123",
+      });
 
       await payInvoiceFromService("  lnbc...  ");
 
@@ -161,11 +165,41 @@ describe("walletService", () => {
 
     it("uses POST method", async () => {
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue({});
+      parseJsonResponse.mockResolvedValue({
+        recipientAmountSat: 1000,
+        routingFeeSat: 5,
+        paymentHash: "hash-123",
+      });
 
       await payInvoiceFromService("lnbc...");
 
       expect(httpClient.mock.calls[0][1].method).toBe("POST");
+    });
+
+    it("throws structured error when response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(409, false));
+      parseJsonResponse.mockResolvedValue({
+        message: "This invoice has already been paid",
+        code: "invoice_already_paid",
+        source: "phoenixd",
+      });
+
+      await expect(payInvoiceFromService("lnbc...")).rejects.toMatchObject({
+        message: "This invoice has already been paid",
+        status: 409,
+        code: "invoice_already_paid",
+        source: "phoenixd",
+      });
+    });
+
+    it("throws when successful response body is invalid", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ paymentHash: "" });
+
+      await expect(payInvoiceFromService("lnbc...")).rejects.toMatchObject({
+        message: "Invalid payment response",
+        code: "invalid_payment_response",
+      });
     });
   });
 

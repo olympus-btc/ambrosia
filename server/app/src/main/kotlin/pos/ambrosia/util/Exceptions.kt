@@ -28,6 +28,10 @@ class PhoenixBalanceException(
 
 class PhoenixServiceException(
     message: String = "Phoenix Lightning node service error",
+    val code: String = "unknown",
+    val statusCode: Int? = null,
+    val source: String = "phoenixd",
+    val upstreamMessage: String? = null,
 ) : RuntimeException(message)
 
 class InvalidTokenException(

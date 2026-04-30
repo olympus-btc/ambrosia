@@ -1,6 +1,24 @@
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
+function createWalletServiceError(message, errorDetails = {}) {
+  const error = new Error(message);
+  error.status = errorDetails.status;
+  error.code = errorDetails.code ?? "unknown";
+  error.source = errorDetails.source ?? "ambrosia";
+  return error;
+}
+
+function isValidPaymentResponse(responseBody) {
+  return (
+    responseBody &&
+    typeof responseBody.recipientAmountSat === "number" &&
+    typeof responseBody.routingFeeSat === "number" &&
+    typeof responseBody.paymentHash === "string" &&
+    responseBody.paymentHash.trim() !== ""
+  );
+}
+
 export const loginWallet = async (password) => {
   const response = await httpClient("/wallet/auth", {
     method: "POST",
@@ -58,7 +76,31 @@ export async function payInvoiceFromService(invoice) {
     },
     body: JSON.stringify({ invoice: invoice.trim() }),
   });
-  return await parseJsonResponse(response, null);
+  const responseBody = await parseJsonResponse(response, null);
+
+  if (!response.ok) {
+    throw createWalletServiceError(
+      responseBody?.message ?? "Could not process the payment",
+      {
+        status: response.status,
+        code: responseBody?.code,
+        source: responseBody?.source,
+      },
+    );
+  }
+
+  if (!isValidPaymentResponse(responseBody)) {
+    throw createWalletServiceError(
+      "Invalid payment response",
+      {
+        status: response.status,
+        code: "invalid_payment_response",
+        source: "ambrosia",
+      },
+    );
+  }
+
+  return responseBody;
 }
 
 export async function getIncomingTransactions() {

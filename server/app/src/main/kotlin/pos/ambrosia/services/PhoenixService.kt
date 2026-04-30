@@ -17,6 +17,9 @@ import io.ktor.http.Parameters
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.ApplicationEnvironment
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CloseChannelResponse
@@ -43,9 +46,21 @@ class PhoenixService(
     app: ApplicationEnvironment,
     private val httpClient: HttpClient,
 ) {
+    private data class PhoenixPaymentErrorResolution(
+        val code: String,
+        val statusCode: Int,
+    )
+
+    companion object {
+        private val phoenixJson =
+            Json {
+                ignoreUnknownKeys = true
+                prettyPrint = true
+            }
+    }
+
     private val config = app.config
     private val phoenixdUrl = config.property("phoenixd-url").getString()
-    private val phoenixdPassword = config.property("phoenixd-password").getString()
     constructor(app: ApplicationEnvironment) : this(
         app,
         HttpClient(CIO) {
@@ -60,12 +75,7 @@ class PhoenixService(
                 }
             }
             install(ContentNegotiation) {
-                json(
-                    Json {
-                        ignoreUnknownKeys = true
-                        prettyPrint = true
-                    },
-                )
+                json(phoenixJson)
             }
         },
     )
@@ -133,11 +143,22 @@ class PhoenixService(
                         },
                 )
             if (response.status.value != 200) {
-                throw PhoenixServiceException("Phoenix node returned ${response.status.value}")
+                throw buildPhoenixServiceException(
+                    response = response,
+                    fallbackMessage = "Failed to pay invoice on Phoenix",
+                )
             }
-            return response.body<PaymentResponse>()
+            val rawBody = response.bodyAsText().trim()
+            return parsePaymentResponse(rawBody)
+        } catch (e: PhoenixServiceException) {
+            throw e
         } catch (e: Exception) {
-            throw PhoenixServiceException("Failed to pay invoice on Phoenix: ${e.message}")
+            throw PhoenixServiceException(
+                message = "Failed to pay invoice on Phoenix: ${e.message}",
+                code = "node_unavailable",
+                statusCode = 503,
+                upstreamMessage = e.message,
+            )
         }
     }
 
@@ -395,6 +416,127 @@ class PhoenixService(
         }
     }
     //endregion
+
+    private suspend fun buildPhoenixServiceException(
+        response: HttpResponse,
+        fallbackMessage: String,
+    ): PhoenixServiceException {
+        val rawBody = response.bodyAsText().trim()
+        val message =
+            extractPhoenixErrorMessage(rawBody)
+                ?: "$fallbackMessage: Phoenix node returned ${response.status.value}"
+        val errorResolution = resolvePhoenixPaymentError(message)
+
+        return PhoenixServiceException(
+            message = message,
+            code = errorResolution.code,
+            statusCode = errorResolution.statusCode,
+            upstreamMessage = rawBody.ifBlank { null },
+        )
+    }
+
+    private fun extractPhoenixErrorMessage(rawBody: String): String? {
+        if (rawBody.isBlank()) return null
+
+        return try {
+            phoenixJson
+                .parseToJsonElement(rawBody)
+                .jsonObject["message"]
+                ?.jsonPrimitive
+                ?.contentOrNull
+                ?: rawBody
+        } catch (_: Exception) {
+            rawBody
+        }
+    }
+
+    private fun parsePaymentResponse(rawBody: String): PaymentResponse {
+        if (rawBody.isBlank()) {
+            throw PhoenixServiceException(
+                message = "Failed to pay invoice on Phoenix: Empty response body",
+                code = "unknown",
+                statusCode = 502,
+            )
+        }
+
+        return try {
+            phoenixJson.decodeFromString<PaymentResponse>(rawBody)
+        } catch (_: Exception) {
+            val message = extractPhoenixErrorMessage(rawBody)
+            if (message != null) {
+                val errorResolution = resolvePhoenixPaymentError(message)
+                throw PhoenixServiceException(
+                    message = message,
+                    code = errorResolution.code,
+                    statusCode = errorResolution.statusCode,
+                    upstreamMessage = rawBody,
+                )
+            }
+
+            throw PhoenixServiceException(
+                message = "Failed to pay invoice on Phoenix: Invalid payment response",
+                code = "unknown",
+                statusCode = 502,
+                upstreamMessage = rawBody,
+            )
+        }
+    }
+
+    private fun resolvePhoenixPaymentError(message: String): PhoenixPaymentErrorResolution {
+        val normalizedMessage = message.lowercase()
+
+        return when {
+            "already paid" in normalizedMessage || "already been paid" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invoice_already_paid",
+                    statusCode = 409,
+                )
+            }
+
+            "expired" in normalizedMessage && "invoice" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invoice_expired",
+                    statusCode = 410,
+                )
+            }
+
+            "recipient node rejected the payment" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "recipient_rejected_payment",
+                    statusCode = 422,
+                )
+            }
+
+            "invalid" in normalizedMessage && ("invoice" in normalizedMessage || "bolt11" in normalizedMessage) -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invalid_invoice",
+                    statusCode = 400,
+                )
+            }
+
+            ("insufficient" in normalizedMessage || "not enough" in normalizedMessage) &&
+                ("fund" in normalizedMessage || "balance" in normalizedMessage || "liquidity" in normalizedMessage) -> {
+                PhoenixPaymentErrorResolution(
+                    code = "insufficient_funds",
+                    statusCode = 402,
+                )
+            }
+
+            "timeout" in normalizedMessage || "unavailable" in normalizedMessage || "connection" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "node_unavailable",
+                    statusCode = 503,
+                )
+            }
+
+            else -> {
+                PhoenixPaymentErrorResolution(
+                    code = "unknown",
+                    statusCode = 502,
+                )
+            }
+        }
+    }
 
     /** Get seed from Phoenix */
     suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()

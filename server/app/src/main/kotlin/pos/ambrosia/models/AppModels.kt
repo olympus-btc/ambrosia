@@ -52,6 +52,13 @@ data class LoginResponse(
 )
 
 @Serializable
+data class WalletErrorResponse(
+    val message: String,
+    val code: String,
+    val source: String,
+)
+
+@Serializable
 data class WalletAuthResponse(
     val message: String,
     val walletTokenExpiresAt: Long,
