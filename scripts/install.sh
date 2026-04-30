@@ -11,15 +11,20 @@ IFS=$'\n\t'
 # --- Argument validation ---
 AUTO_YES=false
 INSTALL_SYSTEMD=true
+EXPOSE_LAN=false
 
 for arg in "$@"; do
   case $arg in
-    --yes|-y) 
+    --yes|-y)
       AUTO_YES=true
       shift
       ;;
     --no-service)
       INSTALL_SYSTEMD=false
+      shift
+      ;;
+    --expose-lan)
+      EXPOSE_LAN=true
       shift
       ;;
     *)
@@ -229,6 +234,29 @@ AMBROSIA_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${AMBRO
 AMBROSIA_INSTALL_DIR="$HOME/.local/ambrosia"
 AMBROSIA_BIN_DIR="$HOME/.local/bin"
 
+ambrosia_write_initial_config() {
+  local datadir="$HOME/.Ambrosia-POS"
+  local conf_file="$datadir/ambrosia.conf"
+  mkdir -p "$datadir"
+
+  if [[ -f "$conf_file" ]]; then
+    log_info "ambrosia.conf already exists, skipping initial config write."
+    return
+  fi
+
+  local bind_ip="127.0.0.1"
+  if [[ "$EXPOSE_LAN" == "true" ]]; then
+    bind_ip="0.0.0.0"
+    log_info "LAN exposure enabled: http-bind-ip will be set to 0.0.0.0"
+  fi
+
+  cat > "$conf_file" << EOF
+http-bind-ip=$bind_ip
+http-bind-port=9154
+EOF
+  log_info "Wrote initial config to $conf_file"
+}
+
 ambrosia_install() {
   echo "➡️  Starting Ambrosia POS Server installation..."
   if command -v ambrosia >/dev/null 2>&1; then
@@ -241,7 +269,8 @@ ambrosia_install() {
   fi
 
   mkdir -p "$AMBROSIA_BIN_DIR" "$AMBROSIA_INSTALL_DIR"
-  
+  ambrosia_write_initial_config
+
   download_file "${AMBROSIA_URL}/ambrosia-${AMBROSIA_TAG}.jar" "$AMBROSIA_INSTALL_DIR/ambrosia.jar"
   download_file "https://raw.githubusercontent.com/olympus-btc/ambrosia/v${AMBROSIA_TAG}/scripts/run-server.sh" "$AMBROSIA_INSTALL_DIR/run-server.sh"
   
