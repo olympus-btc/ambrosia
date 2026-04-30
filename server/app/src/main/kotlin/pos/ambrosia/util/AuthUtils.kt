@@ -107,11 +107,11 @@ suspend fun ApplicationCall.requirePermission(name: String) {
   WHERE u.id = ? AND p.name = ? AND p.enabled = 1 AND u.is_deleted = 0
   """
     val connection: Connection = DatabaseConnection.getConnection()
-    connection.prepareStatement(sql).use { st ->
-        st.setString(1, userId)
-        st.setString(2, name)
-        val rs = st.executeQuery()
-        if (!rs.next()) throw PermissionDeniedException()
+    connection.prepareStatement(sql).use { statement ->
+        statement.setString(1, userId)
+        statement.setString(2, name)
+        val resultSet = statement.executeQuery()
+        if (!resultSet.next()) throw PermissionDeniedException()
     }
 }
 

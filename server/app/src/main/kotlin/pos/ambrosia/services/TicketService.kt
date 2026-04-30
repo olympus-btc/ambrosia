@@ -54,15 +54,15 @@ class TicketService(
         return null
     }
 
-    private fun mapResultSetToTicket(rs: java.sql.ResultSet): Ticket =
+    private fun mapResultSetToTicket(resultSet: java.sql.ResultSet): Ticket =
         Ticket(
-            id = rs.getString("id"),
-            order_id = rs.getString("order_id"),
-            user_id = rs.getString("user_id"),
-            ticket_date = rs.getString("ticket_date"),
-            status = rs.getInt("status"),
-            total_amount = rs.getDouble("total_amount"),
-            notes = rs.getString("notes"),
+            id = resultSet.getString("id"),
+            order_id = resultSet.getString("order_id"),
+            user_id = resultSet.getString("user_id"),
+            ticket_date = resultSet.getString("ticket_date"),
+            status = resultSet.getInt("status"),
+            total_amount = resultSet.getDouble("total_amount"),
+            notes = resultSet.getString("notes"),
         )
 
     suspend fun addTicket(ticket: Ticket): String? {

@@ -21,17 +21,17 @@ class CurrencyService(
     }
 
     fun getByAcronym(acronym: String): Currency? {
-        connection.prepareStatement(SELECT_BY_ACRONYM).use { st ->
-            st.setString(1, acronym)
-            val rs = st.executeQuery()
-            return if (rs.next()) {
+        connection.prepareStatement(SELECT_BY_ACRONYM).use { statement ->
+            statement.setString(1, acronym)
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) {
                 Currency(
-                    id = rs.getString("id"),
-                    acronym = rs.getString("acronym"),
-                    name = rs.getString("name"),
-                    symbol = rs.getString("symbol"),
-                    country_name = rs.getString("country_name"),
-                    country_code = rs.getString("country_code"),
+                    id = resultSet.getString("id"),
+                    acronym = resultSet.getString("acronym"),
+                    name = resultSet.getString("name"),
+                    symbol = resultSet.getString("symbol"),
+                    country_name = resultSet.getString("country_name"),
+                    country_code = resultSet.getString("country_code"),
                 )
             } else {
                 null
@@ -41,17 +41,17 @@ class CurrencyService(
 
     fun list(): List<Currency> {
         val out = mutableListOf<Currency>()
-        connection.prepareStatement(SELECT_ALL).use { st ->
-            val rs = st.executeQuery()
-            while (rs.next()) {
+        connection.prepareStatement(SELECT_ALL).use { statement ->
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
                 out.add(
                     Currency(
-                        id = rs.getString("id"),
-                        acronym = rs.getString("acronym"),
-                        name = rs.getString("name"),
-                        symbol = rs.getString("symbol"),
-                        country_name = rs.getString("country_name"),
-                        country_code = rs.getString("country_code"),
+                        id = resultSet.getString("id"),
+                        acronym = resultSet.getString("acronym"),
+                        name = resultSet.getString("name"),
+                        symbol = resultSet.getString("symbol"),
+                        country_name = resultSet.getString("country_name"),
+                        country_code = resultSet.getString("country_code"),
                     ),
                 )
             }
@@ -60,9 +60,9 @@ class CurrencyService(
     }
 
     fun setBaseCurrencyById(id: String): Boolean {
-        connection.prepareStatement(UPSERT_BASE).use { st ->
-            st.setString(1, id)
-            val n = st.executeUpdate()
+        connection.prepareStatement(UPSERT_BASE).use { statement ->
+            statement.setString(1, id)
+            val n = statement.executeUpdate()
             if (n <= 0) logger.error("Failed to upsert base currency with id=$id")
             return n > 0
         }
@@ -74,16 +74,16 @@ class CurrencyService(
     }
 
     fun getBaseCurrency(): Currency? {
-        connection.prepareStatement(SELECT_BASE_JOIN).use { st ->
-            val rs = st.executeQuery()
-            return if (rs.next()) {
+        connection.prepareStatement(SELECT_BASE_JOIN).use { statement ->
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) {
                 Currency(
-                    id = rs.getString("id"),
-                    acronym = rs.getString("acronym"),
-                    name = rs.getString("name"),
-                    symbol = rs.getString("symbol"),
-                    country_name = rs.getString("country_name"),
-                    country_code = rs.getString("country_code"),
+                    id = resultSet.getString("id"),
+                    acronym = resultSet.getString("acronym"),
+                    name = resultSet.getString("name"),
+                    symbol = resultSet.getString("symbol"),
+                    country_name = resultSet.getString("country_name"),
+                    country_code = resultSet.getString("country_code"),
                 )
             } else {
                 null

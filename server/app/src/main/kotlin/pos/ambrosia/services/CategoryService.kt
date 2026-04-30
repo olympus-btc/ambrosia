@@ -19,22 +19,23 @@ class CategoryService(
             else -> throw IllegalArgumentException("Invalid type")
         }
 
-    private fun map(rs: java.sql.ResultSet): CategoryItem = CategoryItem(id = rs.getString("id"), name = rs.getString("name"))
+    private fun map(resultSet: java.sql.ResultSet): CategoryItem =
+        CategoryItem(id = resultSet.getString("id"), name = resultSet.getString("name"))
 
     private fun nameExists(
         name: String,
         type: String,
         excludeId: String? = null,
     ): Boolean {
-        val st =
+        val statement =
             connection.prepareStatement(
                 "SELECT id FROM categories WHERE name = ? AND type = ? AND is_deleted = 0 AND id != ?",
             )
-        st.setString(1, name)
-        st.setString(2, type)
-        st.setString(3, excludeId ?: "")
-        val rs = st.executeQuery()
-        return rs.next()
+        statement.setString(1, name)
+        statement.setString(2, type)
+        statement.setString(3, excludeId ?: "")
+        val resultSet = statement.executeQuery()
+        return resultSet.next()
     }
 
     private fun categoryInUse(
@@ -43,10 +44,10 @@ class CategoryService(
     ): Boolean {
         val table = usageTable(type)
         val sql = "SELECT COUNT(*) as count FROM $table WHERE category_id = ? AND is_deleted = 0"
-        val st = connection.prepareStatement(sql)
-        st.setString(1, categoryId)
-        val rs = st.executeQuery()
-        return if (rs.next()) rs.getInt("count") > 0 else false
+        val statement = connection.prepareStatement(sql)
+        statement.setString(1, categoryId)
+        val resultSet = statement.executeQuery()
+        return if (resultSet.next()) resultSet.getInt("count") > 0 else false
     }
 
     suspend fun addCategory(
@@ -61,14 +62,14 @@ class CategoryService(
             java.util.UUID
                 .randomUUID()
                 .toString()
-        val st =
+        val statement =
             connection.prepareStatement(
                 "INSERT INTO categories (id, name, type, is_deleted) VALUES (?, ?, ?, 0)",
             )
-        st.setString(1, id)
-        st.setString(2, category.name)
-        st.setString(3, type)
-        val rows = st.executeUpdate()
+        statement.setString(1, id)
+        statement.setString(2, category.name)
+        statement.setString(3, type)
+        val rows = statement.executeUpdate()
         return if (rows > 0) {
             logger.info("Category created: $id type=$type")
             id
@@ -79,14 +80,14 @@ class CategoryService(
 
     suspend fun getCategories(type: String): List<CategoryItem>? {
         if (!validateType(type)) return null
-        val st =
+        val statement =
             connection.prepareStatement(
                 "SELECT id, name FROM categories WHERE type = ? AND is_deleted = 0",
             )
-        st.setString(1, type)
-        val rs = st.executeQuery()
+        statement.setString(1, type)
+        val resultSet = statement.executeQuery()
         val out = mutableListOf<CategoryItem>()
-        while (rs.next()) out.add(map(rs))
+        while (resultSet.next()) out.add(map(resultSet))
         return out
     }
 
@@ -95,14 +96,14 @@ class CategoryService(
         type: String,
     ): CategoryItem? {
         if (!validateType(type)) return null
-        val st =
+        val statement =
             connection.prepareStatement(
                 "SELECT id, name FROM categories WHERE id = ? AND type = ? AND is_deleted = 0",
             )
-        st.setString(1, id)
-        st.setString(2, type)
-        val rs = st.executeQuery()
-        return if (rs.next()) map(rs) else null
+        statement.setString(1, id)
+        statement.setString(2, type)
+        val resultSet = statement.executeQuery()
+        return if (resultSet.next()) map(resultSet) else null
     }
 
     suspend fun updateCategory(
@@ -113,14 +114,14 @@ class CategoryService(
         if (category.id == null) return false
         if (category.name.isBlank()) return false
         if (nameExists(category.name, type, category.id)) return false
-        val st =
+        val statement =
             connection.prepareStatement(
                 "UPDATE categories SET name = ? WHERE id = ? AND type = ?",
             )
-        st.setString(1, category.name)
-        st.setString(2, category.id)
-        st.setString(3, type)
-        val rows = st.executeUpdate()
+        statement.setString(1, category.name)
+        statement.setString(2, category.id)
+        statement.setString(3, type)
+        val rows = statement.executeUpdate()
         if (rows > 0) logger.info("Category updated: ${category.id} type=$type")
         return rows > 0
     }
@@ -133,21 +134,21 @@ class CategoryService(
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
-            val clearSt =
-                connection.prepareStatement(
-                    "DELETE FROM product_categories WHERE category_id = ?",
-                )
-            clearSt.setString(1, id)
-            clearSt.executeUpdate()
+            connection.prepareStatement(
+                "DELETE FROM product_categories WHERE category_id = ?",
+            ).use { statement ->
+                statement.setString(1, id)
+                statement.executeUpdate()
+            }
 
-            val st =
-                connection.prepareStatement(
-                    "UPDATE categories SET name = ?, is_deleted = 1 WHERE id = ? AND type = ?",
-                )
-            st.setString(1, "DELETED-$id")
-            st.setString(2, id)
-            st.setString(3, type)
-            val rows = st.executeUpdate()
+            val rows = connection.prepareStatement(
+                "UPDATE categories SET name = ?, is_deleted = 1 WHERE id = ? AND type = ?",
+            ).use { statement ->
+                statement.setString(1, "DELETED-$id")
+                statement.setString(2, id)
+                statement.setString(3, type)
+                statement.executeUpdate()
+            }
             connection.commit()
             if (rows > 0) logger.info("Category deleted: $id type=$type")
             return rows > 0

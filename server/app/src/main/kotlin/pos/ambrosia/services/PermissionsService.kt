@@ -31,15 +31,15 @@ class PermissionsService(
 
     fun getAll(): List<Permission> {
         val statement = connection.prepareStatement(SELECT_ALL)
-        val rs = statement.executeQuery()
+        val resultSet = statement.executeQuery()
         val list = mutableListOf<Permission>()
-        while (rs.next()) {
+        while (resultSet.next()) {
             list.add(
                 Permission(
-                    id = rs.getString("id"),
-                    name = rs.getString("name"),
-                    description = rs.getString("description"),
-                    enabled = rs.getBoolean("enabled"),
+                    id = resultSet.getString("id"),
+                    name = resultSet.getString("name"),
+                    description = resultSet.getString("description"),
+                    enabled = resultSet.getBoolean("enabled"),
                 ),
             )
         }
@@ -50,15 +50,15 @@ class PermissionsService(
         if (roleId == null || !roleExists(roleId)) return null
         val statement = connection.prepareStatement(SELECT_BY_ROLE)
         statement.setString(1, roleId)
-        val rs = statement.executeQuery()
+        val resultSet = statement.executeQuery()
         val list = mutableListOf<Permission>()
-        while (rs.next()) {
+        while (resultSet.next()) {
             list.add(
                 Permission(
-                    id = rs.getString("id"),
-                    name = rs.getString("name"),
-                    description = rs.getString("description"),
-                    enabled = rs.getBoolean("enabled"),
+                    id = resultSet.getString("id"),
+                    name = resultSet.getString("name"),
+                    description = resultSet.getString("description"),
+                    enabled = resultSet.getBoolean("enabled"),
                 ),
             )
         }
@@ -66,10 +66,10 @@ class PermissionsService(
     }
 
     fun roleExists(roleId: String): Boolean {
-        val st = connection.prepareStatement(ROLE_EXISTS)
-        st.setString(1, roleId)
-        val rs = st.executeQuery()
-        return rs.next()
+        val statement = connection.prepareStatement(ROLE_EXISTS)
+        statement.setString(1, roleId)
+        val resultSet = statement.executeQuery()
+        return resultSet.next()
     }
 
     fun replaceRolePermissions(
@@ -79,9 +79,9 @@ class PermissionsService(
         if (!roleExists(roleId)) return 0
         connection.autoCommit = false
         try {
-            connection.prepareStatement(DELETE_ROLE_PERMS).use { st ->
-                st.setString(1, roleId)
-                st.executeUpdate()
+            connection.prepareStatement(DELETE_ROLE_PERMS).use { statement ->
+                statement.setString(1, roleId)
+                statement.executeUpdate()
             }
 
             if (permissionKeys.isEmpty()) {
@@ -92,18 +92,18 @@ class PermissionsService(
             val placeholders = permissionKeys.joinToString(",") { "?" }
             val sql = String.format(SELECT_BY_NAMES, placeholders)
             val ids = mutableListOf<String>()
-            connection.prepareStatement(sql).use { st ->
-                permissionKeys.forEachIndexed { idx, key -> st.setString(idx + 1, key) }
-                val rs = st.executeQuery()
-                while (rs.next()) ids.add(rs.getString("id"))
+            connection.prepareStatement(sql).use { statement ->
+                permissionKeys.forEachIndexed { idx, key -> statement.setString(idx + 1, key) }
+                val resultSet = statement.executeQuery()
+                while (resultSet.next()) ids.add(resultSet.getString("id"))
             }
 
             var count = 0
-            connection.prepareStatement(INSERT_ROLE_PERM).use { st ->
+            connection.prepareStatement(INSERT_ROLE_PERM).use { statement ->
                 ids.forEach { id ->
-                    st.setString(1, roleId)
-                    st.setString(2, id)
-                    count += st.executeUpdate()
+                    statement.setString(1, roleId)
+                    statement.setString(2, id)
+                    count += statement.executeUpdate()
                 }
             }
             connection.commit()
@@ -126,17 +126,17 @@ class PermissionsService(
     fun assignAllEnabledToRole(roleId: String): Int {
         if (!roleExists(roleId)) return 0
         val ids = mutableListOf<String>()
-        connection.prepareStatement(SELECT_ENABLED_PERMISSION_IDS).use { st ->
-            val rs = st.executeQuery()
-            while (rs.next()) ids.add(rs.getString("id"))
+        connection.prepareStatement(SELECT_ENABLED_PERMISSION_IDS).use { statement ->
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) ids.add(resultSet.getString("id"))
         }
 
         var count = 0
-        connection.prepareStatement(INSERT_ROLE_PERM).use { st ->
+        connection.prepareStatement(INSERT_ROLE_PERM).use { statement ->
             ids.forEach { id ->
-                st.setString(1, roleId)
-                st.setString(2, id)
-                count += st.executeUpdate()
+                statement.setString(1, roleId)
+                statement.setString(2, id)
+                count += statement.executeUpdate()
             }
         }
         return count

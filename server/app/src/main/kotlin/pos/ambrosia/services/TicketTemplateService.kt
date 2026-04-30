@@ -40,10 +40,10 @@ open class TicketTemplateService(
     }
 
     private fun templateNameExists(name: String): Boolean {
-        connection.prepareStatement(CHECK_TEMPLATE_NAME_EXISTS).use { stmt ->
-            stmt.setString(1, name)
-            val rs = stmt.executeQuery()
-            return rs.next()
+        connection.prepareStatement(CHECK_TEMPLATE_NAME_EXISTS).use { statement ->
+            statement.setString(1, name)
+            val resultSet = statement.executeQuery()
+            return resultSet.next()
         }
     }
 
@@ -51,11 +51,11 @@ open class TicketTemplateService(
         name: String,
         excludeId: UUID,
     ): Boolean {
-        connection.prepareStatement(CHECK_TEMPLATE_NAME_EXISTS_EXCLUDING_ID).use { stmt ->
-            stmt.setString(1, name)
-            stmt.setBytes(2, excludeId.toBytes())
-            val rs = stmt.executeQuery()
-            return rs.next()
+        connection.prepareStatement(CHECK_TEMPLATE_NAME_EXISTS_EXCLUDING_ID).use { statement ->
+            statement.setString(1, name)
+            statement.setBytes(2, excludeId.toBytes())
+            val resultSet = statement.executeQuery()
+            return resultSet.next()
         }
     }
 
@@ -64,16 +64,16 @@ open class TicketTemplateService(
         elements: List<pos.ambrosia.models.TicketElementCreateRequest>,
     ) {
         elements.forEachIndexed { index, elementRequest ->
-            connection.prepareStatement(ADD_ELEMENT).use { stmt ->
-                stmt.setBytes(1, UUID.randomUUID().toBytes())
-                stmt.setBytes(2, templateId.toBytes())
-                stmt.setInt(3, index)
-                stmt.setString(4, elementRequest.type.name)
-                stmt.setString(5, elementRequest.value)
-                stmt.setBoolean(6, elementRequest.style?.bold ?: false)
-                stmt.setString(7, (elementRequest.style?.justification ?: Justification.LEFT).name)
-                stmt.setString(8, (elementRequest.style?.fontSize ?: FontSize.NORMAL).name)
-                stmt.executeUpdate()
+            connection.prepareStatement(ADD_ELEMENT).use { statement ->
+                statement.setBytes(1, UUID.randomUUID().toBytes())
+                statement.setBytes(2, templateId.toBytes())
+                statement.setInt(3, index)
+                statement.setString(4, elementRequest.type.name)
+                statement.setString(5, elementRequest.value)
+                statement.setBoolean(6, elementRequest.style?.bold ?: false)
+                statement.setString(7, (elementRequest.style?.justification ?: Justification.LEFT).name)
+                statement.setString(8, (elementRequest.style?.fontSize ?: FontSize.NORMAL).name)
+                statement.executeUpdate()
             }
         }
     }
@@ -86,10 +86,10 @@ open class TicketTemplateService(
 
         val templateId = UUID.randomUUID()
         return executeInTransaction(connection) {
-            connection.prepareStatement(ADD_TEMPLATE).use { stmt ->
-                stmt.setBytes(1, templateId.toBytes())
-                stmt.setString(2, request.name)
-                stmt.executeUpdate()
+            connection.prepareStatement(ADD_TEMPLATE).use { statement ->
+                statement.setBytes(1, templateId.toBytes())
+                statement.setString(2, request.name)
+                statement.executeUpdate()
             }
 
             insertElements(templateId, request.elements)
@@ -100,11 +100,11 @@ open class TicketTemplateService(
     }
 
     suspend fun getTemplates(): List<TicketTemplate> {
-        connection.createStatement().use { stmt ->
-            val rs = stmt.executeQuery(GET_TEMPLATES)
+        connection.createStatement().use { statement ->
+            val resultSet = statement.executeQuery(GET_TEMPLATES)
             val templates = mutableListOf<TicketTemplate>()
-            while (rs.next()) {
-                templates.add(mapTemplate(rs))
+            while (resultSet.next()) {
+                templates.add(mapTemplate(resultSet))
             }
             logger.info("Retrieved ${templates.size} templates")
             return templates
@@ -114,11 +114,11 @@ open class TicketTemplateService(
     suspend fun getTemplateById(id: String): TicketTemplate? {
         try {
             val uuid = UUID.fromString(id)
-            connection.prepareStatement(GET_TEMPLATE_BY_ID).use { stmt ->
-                stmt.setBytes(1, uuid.toBytes())
-                val rs = stmt.executeQuery()
-                return if (rs.next()) {
-                    mapTemplate(rs)
+            connection.prepareStatement(GET_TEMPLATE_BY_ID).use { statement ->
+                statement.setBytes(1, uuid.toBytes())
+                val resultSet = statement.executeQuery()
+                return if (resultSet.next()) {
+                    mapTemplate(resultSet)
                 } else {
                     logger.warn("Template not found with ID: $id")
                     null
@@ -131,11 +131,11 @@ open class TicketTemplateService(
     }
 
     open suspend fun getTemplateByName(name: String): TicketTemplate? {
-        connection.prepareStatement(GET_TEMPLATE_BY_NAME).use { stmt ->
-            stmt.setString(1, name)
-            val rs = stmt.executeQuery()
-            return if (rs.next()) {
-                mapTemplate(rs)
+        connection.prepareStatement(GET_TEMPLATE_BY_NAME).use { statement ->
+            statement.setString(1, name)
+            val resultSet = statement.executeQuery()
+            return if (resultSet.next()) {
+                mapTemplate(resultSet)
             } else {
                 logger.warn("Template not found with name: $name")
                 null
@@ -161,15 +161,15 @@ open class TicketTemplateService(
         }
 
         return executeInTransaction(connection) {
-            connection.prepareStatement(UPDATE_TEMPLATE).use { stmt ->
-                stmt.setString(1, request.name)
-                stmt.setBytes(2, templateId.toBytes())
-                stmt.executeUpdate()
+            connection.prepareStatement(UPDATE_TEMPLATE).use { statement ->
+                statement.setString(1, request.name)
+                statement.setBytes(2, templateId.toBytes())
+                statement.executeUpdate()
             }
 
-            connection.prepareStatement(DELETE_ELEMENTS_BY_TEMPLATE_ID).use { stmt ->
-                stmt.setBytes(1, templateId.toBytes())
-                stmt.executeUpdate()
+            connection.prepareStatement(DELETE_ELEMENTS_BY_TEMPLATE_ID).use { statement ->
+                statement.setBytes(1, templateId.toBytes())
+                statement.executeUpdate()
             }
 
             insertElements(templateId, request.elements)
@@ -188,9 +188,9 @@ open class TicketTemplateService(
                 return false
             }
 
-        connection.prepareStatement(DELETE_TEMPLATE).use { stmt ->
-            stmt.setBytes(1, templateId.toBytes())
-            val rowsDeleted = stmt.executeUpdate()
+        connection.prepareStatement(DELETE_TEMPLATE).use { statement ->
+            statement.setBytes(1, templateId.toBytes())
+            val rowsDeleted = statement.executeUpdate()
             return if (rowsDeleted > 0) {
                 logger.info("Template deleted successfully: $id")
                 true
@@ -202,38 +202,38 @@ open class TicketTemplateService(
     }
 
     private fun getElementsForTemplate(templateIdBytes: ByteArray): List<TicketElement> {
-        connection.prepareStatement(GET_ELEMENTS_BY_TEMPLATE_ID).use { stmt ->
-            stmt.setBytes(1, templateIdBytes)
-            val rs = stmt.executeQuery()
+        connection.prepareStatement(GET_ELEMENTS_BY_TEMPLATE_ID).use { statement ->
+            statement.setBytes(1, templateIdBytes)
+            val resultSet = statement.executeQuery()
             val elements = mutableListOf<TicketElement>()
-            while (rs.next()) {
-                elements.add(mapElement(rs))
+            while (resultSet.next()) {
+                elements.add(mapElement(resultSet))
             }
             return elements
         }
     }
 
-    private fun mapTemplate(rs: ResultSet): TicketTemplate {
-        val idBytes = rs.getBytes("id")
+    private fun mapTemplate(resultSet: ResultSet): TicketTemplate {
+        val idBytes = resultSet.getBytes("id")
         return TicketTemplate(
             id = idBytes.toUUID().toString(),
-            name = rs.getString("name"),
+            name = resultSet.getString("name"),
             elements = getElementsForTemplate(idBytes),
         )
     }
 
-    private fun mapElement(rs: ResultSet): TicketElement =
+    private fun mapElement(resultSet: ResultSet): TicketElement =
         TicketElement(
-            id = rs.getBytes("id").toUUID().toString(),
-            templateId = rs.getBytes("template_id").toUUID().toString(),
-            order = rs.getInt("element_order"),
-            type = ElementType.valueOf(rs.getString("type")),
-            value = rs.getString("value"),
+            id = resultSet.getBytes("id").toUUID().toString(),
+            templateId = resultSet.getBytes("template_id").toUUID().toString(),
+            order = resultSet.getInt("element_order"),
+            type = ElementType.valueOf(resultSet.getString("type")),
+            value = resultSet.getString("value"),
             style =
                 ElementStyle(
-                    bold = rs.getBoolean("style_bold"),
-                    justification = Justification.valueOf(rs.getString("style_justification")),
-                    fontSize = FontSize.valueOf(rs.getString("style_font_size")),
+                    bold = resultSet.getBoolean("style_bold"),
+                    justification = Justification.valueOf(resultSet.getString("style_justification")),
+                    fontSize = FontSize.valueOf(resultSet.getString("style_font_size")),
                 ),
         )
 }

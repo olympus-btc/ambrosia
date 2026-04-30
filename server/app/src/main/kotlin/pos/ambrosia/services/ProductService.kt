@@ -49,11 +49,11 @@ class ProductService(
     }
 
     private fun getCategoryIds(productId: String): List<String> {
-        val st = connection.prepareStatement(GET_CATEGORY_IDS)
-        st.setString(1, productId)
-        val rs = st.executeQuery()
+        val statement = connection.prepareStatement(GET_CATEGORY_IDS)
+        statement.setString(1, productId)
+        val resultSet = statement.executeQuery()
         val ids = mutableListOf<String>()
-        while (rs.next()) ids.add(rs.getString("category_id"))
+        while (resultSet.next()) ids.add(resultSet.getString("category_id"))
         return ids
     }
 
@@ -61,13 +61,13 @@ class ProductService(
         productId: String,
         categoryIds: List<String>,
     ) {
-        val st = connection.prepareStatement(INSERT_CATEGORY)
+        val statement = connection.prepareStatement(INSERT_CATEGORY)
         for (categoryId in categoryIds) {
-            st.setString(1, productId)
-            st.setString(2, categoryId)
-            st.addBatch()
+            statement.setString(1, productId)
+            statement.setString(2, categoryId)
+            statement.addBatch()
         }
-        st.executeBatch()
+        statement.executeBatch()
     }
 
     private fun valid(p: Product): Boolean {
@@ -94,18 +94,18 @@ class ProductService(
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
-            val st = connection.prepareStatement(ADD_PRODUCT)
-            st.setString(1, id)
-            st.setString(2, product.SKU)
-            st.setString(3, product.name)
-            st.setString(4, product.description)
-            st.setString(5, product.image_url)
-            st.setInt(6, product.cost_cents)
-            st.setInt(7, product.quantity)
-            st.setInt(8, product.min_stock_threshold)
-            st.setInt(9, product.max_stock_threshold)
-            st.setInt(10, product.price_cents)
-            val rows = st.executeUpdate()
+            val statement = connection.prepareStatement(ADD_PRODUCT)
+            statement.setString(1, id)
+            statement.setString(2, product.SKU)
+            statement.setString(3, product.name)
+            statement.setString(4, product.description)
+            statement.setString(5, product.image_url)
+            statement.setInt(6, product.cost_cents)
+            statement.setInt(7, product.quantity)
+            statement.setInt(8, product.min_stock_threshold)
+            statement.setInt(9, product.max_stock_threshold)
+            statement.setInt(10, product.price_cents)
+            val rows = statement.executeUpdate()
             if (rows == 0) {
                 connection.rollback()
                 return null
@@ -127,33 +127,33 @@ class ProductService(
     }
 
     suspend fun getProducts(): List<Product> {
-        val st = connection.prepareStatement(GET_PRODUCTS)
-        val rs = st.executeQuery()
+        val statement = connection.prepareStatement(GET_PRODUCTS)
+        val resultSet = statement.executeQuery()
         val out = mutableListOf<Product>()
-        while (rs.next()) out.add(map(rs))
+        while (resultSet.next()) out.add(map(resultSet))
         return out
     }
 
     suspend fun getProductById(id: String): Product? {
-        val st = connection.prepareStatement(GET_PRODUCT_BY_ID)
-        st.setString(1, id)
-        val rs = st.executeQuery()
-        return if (rs.next()) map(rs) else null
+        val statement = connection.prepareStatement(GET_PRODUCT_BY_ID)
+        statement.setString(1, id)
+        val resultSet = statement.executeQuery()
+        return if (resultSet.next()) map(resultSet) else null
     }
 
     suspend fun getProductBySKU(sku: String): Product? {
-        val st = connection.prepareStatement(GET_PRODUCT_BY_SKU)
-        st.setString(1, sku)
-        val rs = st.executeQuery()
-        return if (rs.next()) map(rs) else null
+        val statement = connection.prepareStatement(GET_PRODUCT_BY_SKU)
+        statement.setString(1, sku)
+        val resultSet = statement.executeQuery()
+        return if (resultSet.next()) map(resultSet) else null
     }
 
     suspend fun getProductsByCategory(category: String): List<Product> {
-        val st = connection.prepareStatement(GET_PRODUCTS_BY_CATEGORY)
-        st.setString(1, category)
-        val rs = st.executeQuery()
+        val statement = connection.prepareStatement(GET_PRODUCTS_BY_CATEGORY)
+        statement.setString(1, category)
+        val resultSet = statement.executeQuery()
         val out = mutableListOf<Product>()
-        while (rs.next()) out.add(map(rs))
+        while (resultSet.next()) out.add(map(resultSet))
         return out
     }
 
@@ -165,25 +165,27 @@ class ProductService(
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
-            val st = connection.prepareStatement(UPDATE_PRODUCT)
-            st.setString(1, product.SKU)
-            st.setString(2, product.name)
-            st.setString(3, product.description)
-            st.setString(4, product.image_url)
-            st.setInt(5, product.cost_cents)
-            st.setInt(6, product.quantity)
-            st.setInt(7, product.min_stock_threshold)
-            st.setInt(8, product.max_stock_threshold)
-            st.setInt(9, product.price_cents)
-            st.setString(10, product.id)
-            val rows = st.executeUpdate()
+            val rows = connection.prepareStatement(UPDATE_PRODUCT).use { statement ->
+                statement.setString(1, product.SKU)
+                statement.setString(2, product.name)
+                statement.setString(3, product.description)
+                statement.setString(4, product.image_url)
+                statement.setInt(5, product.cost_cents)
+                statement.setInt(6, product.quantity)
+                statement.setInt(7, product.min_stock_threshold)
+                statement.setInt(8, product.max_stock_threshold)
+                statement.setInt(9, product.price_cents)
+                statement.setString(10, product.id)
+                statement.executeUpdate()
+            }
             if (rows == 0) {
                 connection.rollback()
                 return false
             }
-            val deleteSt = connection.prepareStatement(DELETE_CATEGORIES)
-            deleteSt.setString(1, product.id)
-            deleteSt.executeUpdate()
+            connection.prepareStatement(DELETE_CATEGORIES).use { statement ->
+                statement.setString(1, product.id)
+                statement.executeUpdate()
+            }
             insertCategories(product.id, product.category_ids)
             connection.commit()
             logger.info("Product updated: ${product.id}")
@@ -201,10 +203,10 @@ class ProductService(
     }
 
     suspend fun deleteProduct(id: String): Boolean {
-        val st = connection.prepareStatement(DELETE_PRODUCT)
-        st.setString(1, deletedSku(id))
-        st.setString(2, id)
-        val rows = st.executeUpdate()
+        val statement = connection.prepareStatement(DELETE_PRODUCT)
+        statement.setString(1, deletedSku(id))
+        statement.setString(2, id)
+        val rows = statement.executeUpdate()
         if (rows > 0) logger.info("Product deleted: $id")
         return rows > 0
     }

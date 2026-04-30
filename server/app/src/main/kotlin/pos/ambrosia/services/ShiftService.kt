@@ -187,9 +187,7 @@ class ShiftService(
     suspend fun getOpenShift(userId: String? = null): Shift? {
         val statement =
             if (userId != null) {
-                val st = connection.prepareStatement(GET_OPEN_SHIFT_BY_USER)
-                st.setString(1, userId)
-                st
+                connection.prepareStatement(GET_OPEN_SHIFT_BY_USER).also { it.setString(1, userId) }
             } else {
                 connection.prepareStatement(GET_OPEN_SHIFT)
             }
