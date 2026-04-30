@@ -120,4 +120,24 @@ describe("PinLogin", () => {
 
     expect(screen.queryByText(/lockout\.message/)).not.toBeInTheDocument();
   });
+
+  it("shows the specific error message when the user's role is deleted", async () => {
+    const specificMessage = "No assigned role for this user, contact Admin";
+    const err = new Error(specificMessage);
+    mockLogin.mockRejectedValue(err);
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText(specificMessage)).toBeInTheDocument();
+  });
 });
