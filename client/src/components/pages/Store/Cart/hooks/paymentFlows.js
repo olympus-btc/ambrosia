@@ -27,9 +27,9 @@ export async function processCheckout({
     }),
   });
 
-  const result = await parseJsonResponse(response, null);
-  if (!result?.order_id) {
+  const checkoutResponse = await parseJsonResponse(response, null);
+  if (!checkoutResponse?.order_id) {
     throw new Error(t("errors.checkout"));
   }
-  return result;
+  return checkoutResponse;
 }

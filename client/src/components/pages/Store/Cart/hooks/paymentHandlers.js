@@ -119,7 +119,7 @@ export function buildHandlePay({
         return;
       }
 
-      const result = await processCheckout({
+      const checkoutResponse = await processCheckout({
         items,
         amounts,
         selectedPaymentMethod,
@@ -131,12 +131,12 @@ export function buildHandlePay({
       await printCustomerReceipt?.({
         items,
         totalCents: amounts.total,
-        ticketId: result.ticket_id,
+        ticketId: checkoutResponse.ticket_id,
       });
 
       addToast({ color: "success", description: t("success.paid") });
       onResetCart?.();
-      onPay?.({ items, ...amounts, paymentMethod: selectedPaymentMethod, ...result });
+      onPay?.({ items, ...amounts, paymentMethod: selectedPaymentMethod, ...checkoutResponse });
     } catch (err) {
       console.error("Error processing payment:", err);
       notifyError(err?.message || t("errors.process"));
@@ -170,7 +170,7 @@ export function buildHandleBtcComplete({
     if (!btcPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const result = await processCheckout({
+      const checkoutResponse = await processCheckout({
         items: btcPaymentConfig.items,
         amounts: {
           amountFiat: btcPaymentConfig.amountFiat,
@@ -189,7 +189,7 @@ export function buildHandleBtcComplete({
       await printCustomerReceipt?.({
         items: btcPaymentConfig.items,
         totalCents: btcPaymentConfig.total,
-        ticketId: result.ticket_id,
+        ticketId: checkoutResponse.ticket_id,
         invoice: data?.invoice?.serialized || "",
       });
 
@@ -201,7 +201,7 @@ export function buildHandleBtcComplete({
         total: btcPaymentConfig.total,
         amount: btcPaymentConfig.amountFiat,
         paymentMethod: btcPaymentConfig.selectedPaymentMethod,
-        ...result,
+        ...checkoutResponse,
         ...data,
       });
       onResetCart?.();
@@ -234,7 +234,7 @@ export function buildHandleCashComplete({
     if (!cashPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const result = await processCheckout({
+      const checkoutResponse = await processCheckout({
         items: cashPaymentConfig.items || [],
         amounts: cashPaymentConfig.amounts,
         selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
@@ -246,14 +246,14 @@ export function buildHandleCashComplete({
       await printCustomerReceipt?.({
         items: cashPaymentConfig.items,
         totalCents: cashPaymentConfig.amounts.total,
-        ticketId: result.ticket_id,
+        ticketId: checkoutResponse.ticket_id,
       });
 
       onPay?.({
         items: cashPaymentConfig.items,
         ...cashPaymentConfig.amounts,
         paymentMethod: cashPaymentConfig.selectedPaymentMethod,
-        ...result,
+        ...checkoutResponse,
         cashReceived,
         change,
       });
@@ -284,7 +284,7 @@ export function buildHandleCardComplete({
     if (!cardPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const result = await processCheckout({
+      const checkoutResponse = await processCheckout({
         items: cardPaymentConfig.items || [],
         amounts: cardPaymentConfig.amounts,
         selectedPaymentMethod: cardPaymentConfig.selectedPaymentMethod,
@@ -296,14 +296,14 @@ export function buildHandleCardComplete({
       await printCustomerReceipt?.({
         items: cardPaymentConfig.items,
         totalCents: cardPaymentConfig.amounts.total,
-        ticketId: result.ticket_id,
+        ticketId: checkoutResponse.ticket_id,
       });
 
       onPay?.({
         items: cardPaymentConfig.items,
         ...cardPaymentConfig.amounts,
         paymentMethod: cardPaymentConfig.selectedPaymentMethod,
-        ...result,
+        ...checkoutResponse,
         methodLabel: cardPaymentConfig.methodLabel,
       });
       onResetCart?.();
