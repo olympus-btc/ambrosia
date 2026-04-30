@@ -12,14 +12,15 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@heroui/react";
-import { CheckCircle, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { CopyButton } from "@/components/shared/CopyButton";
 
 import { formatSats } from "../utils/formatters";
 
+import { formatFiat as formatFiatValue } from "./formatFiat";
+import { PaymentSuccessContent } from "./PaymentSuccessContent";
 import { usePaymentAmountInput } from "./usePaymentAmountInput";
 
 export function PaymentConfirmModal({
@@ -55,53 +56,11 @@ export function PaymentConfirmModal({
           {isPaid ? t("payments.send.paymentDone") : t("payments.send.confirmModal.title")}
         </ModalHeader>
         {isPaid ? (
-          <>
-            <ModalBody className="gap-0">
-              <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                <CheckCircle className="h-16 w-16 text-forest" />
-                <p className="text-xl font-semibold text-deep">
-                  {t("payments.send.paySuccessTitle")}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t("payments.send.amountSent")}</span>
-                  <span className="font-medium">{formatSats(paymentResult?.recipientAmountSat)} sats</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t("payments.send.routingFee")}</span>
-                  <span className="font-medium">{formatSats(paymentResult?.routingFeeSat)} sats</span>
-                </div>
-              </div>
-
-              <Divider />
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">{t("payments.send.paymentHash")}</span>
-                  <CopyButton
-                    value={paymentResult?.paymentHash ?? ""}
-                    label={t("payments.send.copyButton")}
-                    size="sm"
-                  />
-                </div>
-                <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
-                  {paymentResult?.paymentHash}
-                </div>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant="bordered"
-                type="button"
-                className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
-                onPress={onClose}
-              >
-                {t("payments.send.closeButton")}
-              </Button>
-            </ModalFooter>
-          </>
+          <PaymentSuccessContent
+            isOpen={isOpen}
+            result={paymentResult}
+            onClose={onClose}
+          />
         ) : (
           <PendingPaymentModalContent
             key={`${isOpen}-${sessionKey}`}
@@ -158,16 +117,11 @@ function PendingPaymentModalContent({
   }, [getConfirmAmount, onConfirm]);
 
   const formatFiat = useCallback(
-    (value) => {
-      try {
-        return new Intl.NumberFormat(currency.locale || "en-US", {
-          style: "currency",
-          currency: currency.acronym || "USD",
-        }).format(value);
-      } catch {
-        return `${currency.acronym || "USD"} ${value.toFixed(2)}`;
-      }
-    },
+    (value) => formatFiatValue({
+      value,
+      currencyAcronym: currency.acronym,
+      locale: currency.locale,
+    }),
     [currency],
   );
 

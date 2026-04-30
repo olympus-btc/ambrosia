@@ -870,6 +870,7 @@ const storeEs = {
         payLightningLoading: "Procesando Pago...",
         paymentDone: "Pago Realizado",
         amountSent: "Monto enviado:",
+        estimatedLabel: "Estimado:",
         routingFee: "Tarifa de enrutamiento:",
         paymentHash: "Payment Hash:",
         copyButton: "Copiar",

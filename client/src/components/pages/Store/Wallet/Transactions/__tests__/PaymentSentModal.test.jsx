@@ -1,8 +1,30 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
+import BitcoinPriceService from "@/services/bitcoinPriceService";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { PaymentSentModal } from "../PaymentSentModal";
+
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({
+    currency: { acronym: "USD", symbol: "$", locale: "en-US" },
+  }),
+}));
+
+jest.mock("@/services/bitcoinPriceService", () => {
+  const satoshisToFiat = jest.fn(() => new Promise(() => {}));
+  const MockedBitcoinPriceService = jest.fn().mockImplementation(() => ({
+    satoshisToFiat,
+  }));
+  MockedBitcoinPriceService.__mockSatoshisToFiat = satoshisToFiat;
+
+  return {
+    __esModule: true,
+    default: MockedBitcoinPriceService,
+  };
+});
+
+const mockSatoshisToFiat = BitcoinPriceService.__mockSatoshisToFiat;
 
 const mockResult = {
   recipientAmountSat: 1000,
@@ -19,6 +41,11 @@ function renderModal(props = {}) {
 }
 
 describe("PaymentSentModal", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSatoshisToFiat.mockImplementation(() => new Promise(() => {}));
+  });
+
   describe("Visibility", () => {
     it("is open when result is provided", () => {
       renderModal({ result: mockResult });
@@ -74,6 +101,17 @@ describe("PaymentSentModal", () => {
       renderModal();
 
       expect(screen.getByText("payments.send.routingFee")).toBeInTheDocument();
+    });
+
+    it("shows estimated fiat", async () => {
+      mockSatoshisToFiat.mockResolvedValueOnce(0.62);
+      renderModal();
+
+      expect(screen.getByText("payments.send.estimatedLabel")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("$0.62")).toBeInTheDocument();
+      });
     });
 
     it("shows payment hash label", () => {

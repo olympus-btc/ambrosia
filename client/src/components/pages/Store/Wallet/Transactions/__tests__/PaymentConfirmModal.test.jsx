@@ -143,6 +143,17 @@ describe("PaymentConfirmModal", () => {
       expect(screen.getByText("1,000 sats")).toBeInTheDocument();
     });
 
+    it("renders estimated fiat in success state", async () => {
+      mockSatoshisToFiat.mockResolvedValueOnce(0.62);
+      renderModal({ paymentResult: mockPaymentResult });
+
+      expect(screen.getByText("payments.send.estimatedLabel")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("$0.62")).toBeInTheDocument();
+      });
+    });
+
     it("renders routing fee in success state", () => {
       renderModal({ paymentResult: mockPaymentResult });
       expect(screen.getByText("5 sats")).toBeInTheDocument();
