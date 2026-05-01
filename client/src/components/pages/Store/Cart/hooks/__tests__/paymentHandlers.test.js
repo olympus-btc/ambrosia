@@ -101,7 +101,7 @@ describe("paymentHandlers", () => {
         amountFiat: 1,
         currencyAcronym: "usd",
         displayTotal: 100,
-        items: [{ id: 1 }],
+        cartItems: [{ id: 1 }],
         selectedPaymentMethod: "btc",
       }),
     );
@@ -149,7 +149,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
+        cartItems: [{ id: 1 }],
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
       }),
@@ -198,7 +198,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
+        cartItems: [{ id: 1 }],
         selectedPaymentMethod: "card",
         currencyId: "cur-1",
         methodLabel: "Card",
@@ -285,9 +285,9 @@ describe("paymentHandlers", () => {
     const setBtcPaymentConfig = jest.fn((fn) => fn({ paymentCompleted: false }));
 
     processCheckout.mockResolvedValueOnce({
-      order_id: "order-1",
-      ticket_id: "ticket-1",
-      payment_id: "pay-1",
+      orderId: "order-1",
+      ticketId: "ticket-1",
+      paymentId: "pay-1",
     });
 
     const handler = buildHandleBtcComplete({
@@ -295,7 +295,7 @@ describe("paymentHandlers", () => {
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
-        items: [{ id: 1 }],
+        cartItems: [{ id: 1 }],
         subtotal: 1,
         discount: 0,
         discountAmount: 0,
@@ -317,7 +317,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({ transactionId: "ln" }),
     );
     expect(onPay).toHaveBeenCalledWith(
-      expect.objectContaining({ order_id: "order-1" }),
+      expect.objectContaining({ orderId: "order-1" }),
     );
     expect(onResetCart).toHaveBeenCalled();
     expect(addToast).toHaveBeenCalledWith({
@@ -337,7 +337,7 @@ describe("paymentHandlers", () => {
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
-        items: [{ id: 1 }],
+        cartItems: [{ id: 1 }],
         subtotal: 1,
         discount: 0,
         discountAmount: 0,
@@ -366,17 +366,17 @@ describe("paymentHandlers", () => {
     const setCashPaymentConfig = jest.fn();
 
     processCheckout.mockResolvedValueOnce({
-      order_id: "order-1",
-      ticket_id: "ticket-1",
-      payment_id: "pay-1",
+      orderId: "order-1",
+      ticketId: "ticket-1",
+      paymentId: "pay-1",
     });
 
     const handler = buildHandleCashComplete({
       cashPaymentConfig: {
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
-        amounts: {
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
           amountFiat: 1,
           displayTotal: 100,
           subtotal: 100,
@@ -401,7 +401,7 @@ describe("paymentHandlers", () => {
 
     expect(processCheckout).toHaveBeenCalled();
     expect(onPay).toHaveBeenCalledWith(
-      expect.objectContaining({ order_id: "order-1", cashReceived: 10, change: 2 }),
+      expect.objectContaining({ orderId: "order-1", cashReceived: 10, change: 2 }),
     );
     expect(onResetCart).toHaveBeenCalled();
     expect(setCashPaymentConfig).toHaveBeenCalledWith(null);
@@ -421,8 +421,8 @@ describe("paymentHandlers", () => {
       cashPaymentConfig: {
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
-        amounts: {
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
           amountFiat: 1,
           displayTotal: 100,
           subtotal: 100,
@@ -456,17 +456,17 @@ describe("paymentHandlers", () => {
     const setCardPaymentConfig = jest.fn();
 
     processCheckout.mockResolvedValueOnce({
-      order_id: "order-1",
-      ticket_id: "ticket-1",
-      payment_id: "pay-1",
+      orderId: "order-1",
+      ticketId: "ticket-1",
+      paymentId: "pay-1",
     });
 
     const handler = buildHandleCardComplete({
       cardPaymentConfig: {
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
-        amounts: {
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
           amountFiat: 1,
           displayTotal: 100,
           subtotal: 100,
@@ -492,7 +492,7 @@ describe("paymentHandlers", () => {
 
     expect(processCheckout).toHaveBeenCalled();
     expect(onPay).toHaveBeenCalledWith(
-      expect.objectContaining({ order_id: "order-1", methodLabel: "Credit Card" }),
+      expect.objectContaining({ orderId: "order-1", methodLabel: "Credit Card" }),
     );
     expect(onResetCart).toHaveBeenCalled();
     expect(setCardPaymentConfig).toHaveBeenCalledWith(null);
@@ -512,8 +512,8 @@ describe("paymentHandlers", () => {
       cardPaymentConfig: {
         amountDue: 1,
         displayTotal: 100,
-        items: [{ id: 1 }],
-        amounts: {
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
           amountFiat: 1,
           displayTotal: 100,
           subtotal: 100,

@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrdersCard } from "../OrdersCard";
 
+jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Card = ({ children }) => <div>{children}</div>;
@@ -30,7 +32,7 @@ describe("OrdersCard", () => {
     status: "paid",
     payment_method: "Cash",
     total: 15,
-    created_at: "2024-01-01T10:00:00Z",
+    createdAt: "2024-01-01T10:00:00Z",
   };
 
   beforeEach(() => {
@@ -43,7 +45,7 @@ describe("OrdersCard", () => {
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("status-paid")).toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
-    expect(screen.getByText(/2024/)).toBeInTheDocument();
+    expect(screen.getByText("formatted-date")).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(1500);
   });
 

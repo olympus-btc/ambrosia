@@ -42,16 +42,16 @@ fun Route.storeOrders(service: OrderService) {
     }
     authorizePermission("orders_create") {
         post("/checkout") {
-            val body = call.receive<StoreCheckoutRequest>()
-            val result = service.checkout(body)
-            if (result == null) {
+            val checkoutRequest = call.receive<StoreCheckoutRequest>()
+            val checkoutResponse = service.checkout(checkoutRequest)
+            if (checkoutResponse == null) {
                 call.respond(
                     HttpStatusCode.BadRequest,
                     Message("Checkout failed: check items, stock levels, and payment details"),
                 )
                 return@post
             }
-            call.respond(HttpStatusCode.Created, result)
+            call.respond(HttpStatusCode.Created, checkoutResponse)
         }
     }
     authorizePermission("orders_delete") {

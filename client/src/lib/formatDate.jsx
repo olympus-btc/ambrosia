@@ -1,11 +1,11 @@
 export function parseUtcDate(dateString) {
   if (!dateString) return new Date(NaN);
   if (/^\d+$/.test(String(dateString))) return new Date(parseInt(dateString, 10));
-  const s = String(dateString);
-  if (s.includes("T") && !s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) {
-    return new Date(`${s}Z`);
+  const normalizedDateString = String(dateString);
+  if (normalizedDateString.includes("T") && !normalizedDateString.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(normalizedDateString)) {
+    return new Date(`${normalizedDateString}Z`);
   }
-  return new Date(s);
+  return new Date(normalizedDateString);
 }
 
 const formatDate = (dateString) => {
