@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrdersTable } from "../OrdersTable";
 
+jest.mock("@/lib/formatDate", () => ({
+  __esModule: true,
+  default: jest.fn(() => "formatted-date"),
+}));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Table = ({ children }) => <table>{children}</table>;
@@ -69,7 +74,7 @@ describe("OrdersTable", () => {
     expect(screen.getByText("abcd1234efgh")).toBeInTheDocument();
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("details.noPayment")).toBeInTheDocument();
-    expect(screen.getAllByText(/2024/)).toHaveLength(2);
+    expect(screen.getAllByText("formatted-date")).toHaveLength(2);
     expect(formatAmount).toHaveBeenCalledWith(1500);
     expect(formatAmount).toHaveBeenCalledWith(2000);
 

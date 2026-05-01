@@ -2,7 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrderDetailsModal } from "../OrderDetailsModal";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
+jest.mock("@/lib/formatDate", () => ({
+  __esModule: true,
+  default: jest.fn(() => "formatted-date"),
+}));
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -40,7 +43,7 @@ describe("OrderDetailsModal", () => {
       status: "paid",
       payment_method: "Cash",
       total: 25,
-      createdAt: "2024-01-01T10:00:00Z",
+      created_at: "2024-01-01T10:00:00Z",
       table_id: "T1",
     };
 

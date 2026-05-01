@@ -120,8 +120,8 @@ export function buildHandlePay({
       }
 
       const storeCheckoutResult = await processCheckout({
-        items: cartItems,
-        amounts: paymentAmounts,
+        cartItems,
+        paymentAmounts,
         selectedPaymentMethod,
         currencyId,
         user,
@@ -171,8 +171,8 @@ export function buildHandleBtcComplete({
     dispatch({ type: "start" });
     try {
       const storeCheckoutResult = await processCheckout({
-        items: btcPaymentConfig.cartItems,
-        amounts: {
+        cartItems: btcPaymentConfig.cartItems,
+        paymentAmounts: {
           amountFiat: btcPaymentConfig.amountFiat,
           subtotal: btcPaymentConfig.subtotal,
           discount: btcPaymentConfig.discount,
@@ -235,8 +235,8 @@ export function buildHandleCashComplete({
     dispatch({ type: "start" });
     try {
       const storeCheckoutResult = await processCheckout({
-        items: cashPaymentConfig.cartItems || [],
-        amounts: cashPaymentConfig.paymentAmounts,
+        cartItems: cashPaymentConfig.cartItems || [],
+        paymentAmounts: cashPaymentConfig.paymentAmounts,
         selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
         currencyId: cashPaymentConfig.currencyId,
         user,
@@ -285,8 +285,8 @@ export function buildHandleCardComplete({
     dispatch({ type: "start" });
     try {
       const storeCheckoutResult = await processCheckout({
-        items: cardPaymentConfig.cartItems || [],
-        amounts: cardPaymentConfig.paymentAmounts,
+        cartItems: cardPaymentConfig.cartItems || [],
+        paymentAmounts: cardPaymentConfig.paymentAmounts,
         selectedPaymentMethod: cardPaymentConfig.selectedPaymentMethod,
         currencyId: cardPaymentConfig.currencyId,
         user,

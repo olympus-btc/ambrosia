@@ -2,8 +2,8 @@ import { httpClient } from "@/lib/http";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
 export async function processCheckout({
-  items,
-  amounts,
+  cartItems,
+  paymentAmounts,
   selectedPaymentMethod,
   currencyId,
   user,
@@ -15,14 +15,14 @@ export async function processCheckout({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: user.user_id,
-      items: items.map((item) => ({
+      items: cartItems.map((item) => ({
         product_id: String(item?.id ?? ""),
         quantity: Number(item?.quantity) || 0,
         price_at_order: Number(item?.price) || 0,
       })),
       payment_method_id: selectedPaymentMethod,
       currency_id: currencyId,
-      amount: amounts.amountFiat,
+      amount: paymentAmounts.amountFiat,
       transaction_id: transactionId || "",
     }),
   });

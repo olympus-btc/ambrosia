@@ -2,7 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrdersCard } from "../OrdersCard";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
+jest.mock("@/lib/formatDate", () => ({
+  __esModule: true,
+  default: jest.fn(() => "formatted-date"),
+}));
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
