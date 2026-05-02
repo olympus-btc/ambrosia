@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import BitcoinPriceService from "@/services/bitcoinPriceService";
 import { I18nProvider } from "@i18n/I18nProvider";
 
-import { PaymentConfirmModal } from "../../Payment";
+import { PaymentConfirmModal } from "../Payment";
 
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({

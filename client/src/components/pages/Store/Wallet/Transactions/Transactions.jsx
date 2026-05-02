@@ -8,11 +8,10 @@ import { useTranslations } from "next-intl";
 
 import { useTour } from "@/hooks/tour/useTour";
 
-import { PaymentTab } from "../Payment";
-
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
 
 import { HistoryTab } from "./HistoryTab";
+import { PaymentTab } from "./Payment";
 import { ReceiveTab } from "./ReceiveTab";
 
 export function Transactions({

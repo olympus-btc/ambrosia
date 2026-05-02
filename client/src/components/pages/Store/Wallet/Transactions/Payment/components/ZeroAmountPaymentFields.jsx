@@ -3,7 +3,7 @@
 import { Button, NumberInput } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { formatSats } from "../../utils/formatters";
+import { formatSats } from "../../../utils/formatters";
 
 export function ZeroAmountPaymentFields({
   amountInputMode,

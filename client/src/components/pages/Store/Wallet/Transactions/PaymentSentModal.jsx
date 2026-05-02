@@ -7,7 +7,7 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { PaymentSuccessContent } from "../Payment";
+import { PaymentSuccessContent } from "./Payment";
 
 export function PaymentSentModal({ result, onClose }) {
   const t = useTranslations("wallet");
