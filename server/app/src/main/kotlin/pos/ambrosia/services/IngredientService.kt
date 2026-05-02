@@ -84,8 +84,8 @@ class IngredientService(
         statement.setString(1, generatedId)
         statement.setString(2, ingredient.name)
         statement.setString(3, ingredient.categoryId)
-            statement.setDouble(4, ingredient.quantity)
-            statement.setString(5, ingredient.unit)
+        statement.setDouble(4, ingredient.quantity)
+        statement.setString(5, ingredient.unit)
         statement.setDouble(6, ingredient.lowStockThreshold)
         statement.setDouble(7, ingredient.costPerUnit)
 

@@ -62,7 +62,7 @@ export async function addDishToOrder(pedidoId, dishId, dishPrice) {
     method: "POST",
     body: [
       {
-        dishId: dishId,
+        dishId,
         priceAtOrder: dishPrice,
         notes: null,
       },
@@ -147,8 +147,8 @@ export async function addPaymentToTicket(ticketId, paymentId) {
   return await apiClient("/payments/ticket-payments", {
     method: "POST",
     body: {
-      paymentId: paymentId,
-      ticketId: ticketId,
+      paymentId,
+      ticketId,
     },
   });
 }

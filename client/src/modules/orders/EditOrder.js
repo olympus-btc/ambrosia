@@ -387,7 +387,7 @@ export default function EditOrder({ dynamicParams }) {
         priceAtOrder: currentDish.priceAtOrder,
         notes: notes || null,
         status: currentDish.status,
-        shouldPrepare: shouldPrepare,
+        shouldPrepare,
       };
 
       await updateOrderDish(pedidoId, dishId, orderDishUpdate);

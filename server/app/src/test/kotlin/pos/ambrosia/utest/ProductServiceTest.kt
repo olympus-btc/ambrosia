@@ -455,8 +455,8 @@ class ProductServiceTest {
             val service = ProductService(mockConnection) // Arrange
             val adjustments =
                 listOf(
-                    ProductStockAdjustment(productId ="p-1", quantity = 2),
-                    ProductStockAdjustment(productId ="p-2", quantity = 1),
+                    ProductStockAdjustment(productId = "p-1", quantity = 2),
+                    ProductStockAdjustment(productId = "p-2", quantity = 1),
                 )
             val result = service.adjustStock(adjustments) // Act
             assertTrue(result) // Assert
@@ -471,7 +471,7 @@ class ProductServiceTest {
             whenever(mockConnection.prepareStatement(contains("UPDATE products SET quantity = quantity -"))).thenReturn(updateStatement)
             whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
             val service = ProductService(mockConnection) // Arrange
-            val adjustments = listOf(ProductStockAdjustment(productId ="p-1", quantity = 2))
+            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", quantity = 2))
             val result = service.adjustStock(adjustments) // Act
             assertFalse(result) // Assert
             verify(mockConnection).rollback() // Assert
