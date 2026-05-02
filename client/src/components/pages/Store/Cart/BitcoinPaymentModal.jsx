@@ -13,6 +13,7 @@ import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QRCode } from "react-qr-code";
 
+import { CopyButton } from "@/components/shared/CopyButton";
 import { usePaymentWebsocket } from "@/hooks/usePaymentWebsocket";
 
 import { useBitcoinInvoice } from "./hooks/useBitcoinInvoice";
@@ -131,12 +132,25 @@ export function BitcoinPaymentModal({
 
           {!loading && !paymentReceived && !error && invoice && (
             <>
-              <div className="flex justify-center">
+              <div className="flex flex-col space-y-4 justify-center items-center">
                 <div className="bg-white p-4 rounded-lg border w-full max-w-60 sm:max-w-[280px] mx-auto">
                   <QRCode
                     value={invoice?.serialized || ""}
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
+                </div>
+                <div className="flex items-center justify-between w-full max-w-60 sm:max-w-[280px]">
+                  <span className="text-sm text-gray-500 font-medium">
+                    {t("invoice")}
+                  </span>
+                  <CopyButton
+                    value={invoice.serialized}
+                    label={t("copyButton")}
+                    size="sm"
+                  />
+                </div>
+                <div className="bg-gray-100 rounded p-2 text-xs font-mono w-full max-w-60 sm:max-w-[280px] truncate select-none">
+                  {invoice.serialized}
                 </div>
               </div>
               <div className="text-center">
