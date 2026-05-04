@@ -70,6 +70,20 @@ export function PaymentSuccessContent({
 
         <div className="pt-4">
           <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500">{t("payments.send.paymentPreImage")}</span>
+            <CopyButton
+              value={result?.paymentPreimage ?? ""}
+              label={t("payments.send.copyButton")}
+              size="sm"
+            />
+          </div>
+          <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
+            {result?.paymentPreimage}
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-500">{t("payments.send.paymentHash")}</span>
             <CopyButton
               value={result?.paymentHash ?? ""}

@@ -873,6 +873,7 @@ const storeEn = {
         estimatedLabel: "Estimated:",
         routingFee: "Routing Fee:",
         paymentHash: "Payment Hash:",
+        paymentPreImage: "Payment Preimage",
         copyButton: "Copy",
         noInvoiceToPay: "You must enter an invoice to pay",
         invalidInvoiceFormat: "Invalid BOLT11 invoice format",
