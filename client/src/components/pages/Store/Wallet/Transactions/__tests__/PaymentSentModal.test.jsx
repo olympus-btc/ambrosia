@@ -30,6 +30,7 @@ const mockResult = {
   recipientAmountSat: 1000,
   routingFeeSat: 5,
   paymentHash: "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
+  paymentPreimage: "def456abc123def456abc123def456abc123def456abc123def456abc123def4",
 };
 
 function renderModal(props = {}) {
@@ -85,10 +86,16 @@ describe("PaymentSentModal", () => {
       expect(screen.getByText(mockResult.paymentHash)).toBeInTheDocument();
     });
 
+    it("displays payment preimage", () => {
+      renderModal();
+
+      expect(screen.getByText(mockResult.paymentPreimage)).toBeInTheDocument();
+    });
+
     it("shows copy button for payment hash", () => {
       renderModal();
 
-      expect(screen.getByText("payments.send.copyButton")).toBeInTheDocument();
+      expect(screen.getAllByText("payments.send.copyButton")).toHaveLength(2);
     });
 
     it("shows amount sent label", () => {
@@ -118,6 +125,12 @@ describe("PaymentSentModal", () => {
       renderModal();
 
       expect(screen.getByText("payments.send.paymentHash")).toBeInTheDocument();
+    });
+
+    it("shows payment preimage label", () => {
+      renderModal();
+
+      expect(screen.getByText("payments.send.paymentPreImage")).toBeInTheDocument();
     });
   });
 
