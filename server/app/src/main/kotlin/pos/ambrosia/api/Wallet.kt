@@ -152,9 +152,7 @@ fun Route.wallet(
             call.respond(HttpStatusCode.OK, seed)
         }
 
-        // Payments endpoints
         route("/payments") {
-            // List incoming payments
             get("/incoming") {
                 val from = call.request.queryParameters["from"]?.toLongOrNull() ?: 0L
                 val to = call.request.queryParameters["to"]?.toLongOrNull()
@@ -167,7 +165,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payments)
             }
 
-            // Get specific incoming payment
             get("/incoming/{paymentHash}") {
                 val paymentHash =
                     call.parameters["paymentHash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentHash")
@@ -175,7 +172,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payment)
             }
 
-            // List outgoing payments
             get("/outgoing") {
                 val from = call.request.queryParameters["from"]?.toLongOrNull() ?: 0L
                 val to = call.request.queryParameters["to"]?.toLongOrNull()
@@ -187,7 +183,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payments)
             }
 
-            // Get specific outgoing payment by ID
             get("/outgoing/{paymentId}") {
                 val paymentId =
                     call.parameters["paymentId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentId")
@@ -195,7 +190,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payment)
             }
 
-            // Get specific outgoing payment by hash
             get("/outgoingbyhash/{paymentHash}") {
                 val paymentHash =
                     call.parameters["paymentHash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentHash")

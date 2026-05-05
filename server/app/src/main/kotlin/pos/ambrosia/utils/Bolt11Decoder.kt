@@ -11,8 +11,8 @@ object Bolt11Decoder {
     fun extractDescription(invoice: String?): String? {
         if (invoice.isNullOrBlank()) return null
         return try {
-            val parsed = Bolt11Invoice.read(invoice).get()
-            parsed.description
+            val parsedInvoice = Bolt11Invoice.read(invoice).get()
+            parsedInvoice.description
         } catch (e: Exception) {
             null
         }
@@ -21,10 +21,10 @@ object Bolt11Decoder {
     fun decodeInvoice(invoice: String?): DecodedInvoice? {
         if (invoice.isNullOrBlank()) return null
         return try {
-            val parsed = Bolt11Invoice.read(invoice).get()
+            val parsedInvoice = Bolt11Invoice.read(invoice).get()
             DecodedInvoice(
-                amountSat = parsed.amount?.truncateToSatoshi()?.toLong(),
-                description = parsed.description,
+                amountSat = parsedInvoice.amount?.truncateToSatoshi()?.toLong(),
+                description = parsedInvoice.description,
             )
         } catch (e: Exception) {
             null
