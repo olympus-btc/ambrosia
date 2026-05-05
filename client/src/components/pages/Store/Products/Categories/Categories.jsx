@@ -102,6 +102,7 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
         onConfirm={async () => {
           if (categoryToDelete?.id) {
             await deleteCategory(categoryToDelete.id);
+            await refetch();
           }
           setDeleteCategoriesShowModal(false);
         }}

@@ -22,12 +22,17 @@ export function CategorySelector({
   const [searchValue, setSearchValue] = useState("");
   const comboboxInputRef = useRef(null);
   const closeFrameRef = useRef(null);
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((category) => [String(category.id), category.name])),
+    [categories],
+  );
 
   const selectedCategoryNames = useMemo(
-    () => selectedCategories.map((categoryId) => (
-      categories.find((category) => category.id === categoryId) ?? { id: categoryId, name: categoryId }
-    )),
-    [categories, selectedCategories],
+    () => selectedCategories.flatMap((categoryId) => {
+      const categoryName = categoryNameById.get(String(categoryId));
+      return categoryName ? [{ id: categoryId, name: categoryName }] : [];
+    }),
+    [categoryNameById, selectedCategories],
   );
 
   const appendSelectedCategory = (categoryId) => {
@@ -38,6 +43,15 @@ export function CategorySelector({
   useEffect(() => {
     setSearchValue("");
   }, [selectedCategories]);
+
+  useEffect(() => {
+    if (categoriesLoading || selectedCategories.length === 0) return;
+
+    const filteredCategoryIds = selectedCategories.filter((categoryId) => categoryNameById.has(String(categoryId)));
+    if (filteredCategoryIds.length !== selectedCategories.length) {
+      onSelectionChange(filteredCategoryIds);
+    }
+  }, [categoriesLoading, categoryNameById, onSelectionChange, selectedCategories]);
 
   useEffect(() => () => {
     if (closeFrameRef.current !== null) {

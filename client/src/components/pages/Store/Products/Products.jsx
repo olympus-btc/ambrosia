@@ -40,7 +40,6 @@ export function Products() {
   const [editProductsShowModal, setEditProductsShowModal] = useState(false);
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
   const [data, setData] = useState(createEmptyProductForm);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
   const {
@@ -58,7 +57,6 @@ export function Products() {
 
   const resetProductForm = () => {
     setData(createEmptyProductForm());
-    setSelectedProduct(null);
   };
 
   const handleCloseAddProductsModal = () => {
@@ -72,8 +70,6 @@ export function Products() {
   };
 
   const handleEditProduct = (product) => {
-    setSelectedProduct(product);
-
     setData({
       productId: product.id,
       productName: product.name,
@@ -146,7 +142,6 @@ export function Products() {
 
       <EditProductsModal
         data={data}
-        product={selectedProduct}
         onChange={handleDataChange}
         updateProduct={updateProduct}
         isUploading={isUploading}
@@ -173,7 +168,7 @@ export function Products() {
         createCategory={createCategory}
         updateCategory={updateCategory}
         deleteCategory={deleteCategory}
-        refetch={refetchCategories}
+        refetch={handleRefreshData}
       />
     </StoreLayout>
   );

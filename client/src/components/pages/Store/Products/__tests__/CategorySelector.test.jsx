@@ -58,37 +58,6 @@ jest.mock("@heroui/react", () => ({
       {children}
     </button>
   ),
-  Button: ({ children, onPress, isLoading, ...props }) => (
-    <button onClick={onPress} disabled={isLoading} {...props}>
-      {isLoading ? "loading" : children}
-    </button>
-  ),
-  Input: ({ label, value, onChange, placeholder }) => (
-    <input
-      aria-label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-    />
-  ),
-  Select: ({ children, label, selectedKeys, onSelectionChange, isLoading, isRequired }) => (
-    <div>
-      <label>{label}</label>
-      <select
-        aria-label={label}
-        multiple
-        required={isRequired}
-        disabled={isLoading}
-        onChange={(e) => onSelectionChange(new Set([e.target.value]))}
-        value={Array.from(selectedKeys || [])}
-      >
-        {children}
-      </select>
-    </div>
-  ),
-  SelectItem: ({ children, value }) => (
-    <option value={value}>{children}</option>
-  ),
 }));
 
 const categories = [
@@ -226,5 +195,16 @@ describe("CategorySelector", () => {
     fireEvent.click(screen.getAllByText("Category 1")[1]);
 
     expect(onSelectionChange).toHaveBeenCalledWith(["cat-2"]);
+  });
+
+  it("prunes deleted category ids from selection when categories change", async () => {
+    const onSelectionChange = jest.fn();
+    renderSelector({
+      onSelectionChange,
+      selectedCategories: ["cat-1", "deleted-cat"],
+    });
+
+    await waitFor(() => expect(onSelectionChange).toHaveBeenCalledWith(["cat-1"]));
+    expect(screen.queryByText("deleted-cat")).not.toBeInTheDocument();
   });
 });

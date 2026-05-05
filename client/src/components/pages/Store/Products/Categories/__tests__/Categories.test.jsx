@@ -121,7 +121,8 @@ describe("Categories", () => {
 
   it("calls deleteCategory and closes modal when confirming deletion", async () => {
     const deleteCategory = jest.fn(() => Promise.resolve());
-    renderCategories({ deleteCategory });
+    const refetch = jest.fn(() => Promise.resolve());
+    renderCategories({ deleteCategory, refetch });
 
     await act(async () => {
       fireEvent.click(screen.getAllByText("delete")[0].closest("button"));
@@ -132,6 +133,7 @@ describe("Categories", () => {
     });
 
     await waitFor(() => expect(deleteCategory).toHaveBeenCalledWith("cat-1"));
+    expect(refetch).toHaveBeenCalled();
     expect(screen.queryByText("modal.titleDelete")).not.toBeInTheDocument();
   });
 });
