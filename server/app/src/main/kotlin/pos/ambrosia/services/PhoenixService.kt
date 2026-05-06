@@ -59,7 +59,6 @@ class PhoenixService(
             }
     }
 
-
     private val config = app.config
     private val phoenixdUrl = config.property("phoenixd-url").getString()
     constructor(app: ApplicationEnvironment) : this(

@@ -183,7 +183,7 @@ class NwcServiceTest {
                         type = "incoming",
                         paymentHash = "hash1",
                         amount = 10_000_000L, // 10 000 sat in msat
-                        feesPaid = 1_000L,    // 1 sat in msat — must not appear as 1000
+                        feesPaid = 1_000L, // 1 sat in msat — must not appear as 1000
                         settledAt = 1700000000L,
                     ),
                 ),
@@ -204,7 +204,7 @@ class NwcServiceTest {
                         type = "outgoing",
                         paymentHash = "hash2",
                         amount = 5_000_000L, // 5 000 sat in msat
-                        feesPaid = 3_000L,   // 3 sat in msat
+                        feesPaid = 3_000L, // 3 sat in msat
                         settledAt = 1700000001L,
                     ),
                 ),
