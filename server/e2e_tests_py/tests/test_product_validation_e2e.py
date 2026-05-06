@@ -148,8 +148,8 @@ class TestProductValidation:
         logger.info("✓ Negative quantity correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_product_with_empty_category_ids_fails(self, admin_client):
-        """POST /products with empty category_ids should return 400."""
+    async def test_create_product_with_empty_category_ids_succeeds(self, admin_client):
+        """POST /products with empty category_ids should return 201."""
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/products",
@@ -161,9 +161,10 @@ class TestProductValidation:
             },
         )
         assert_status_code(
-            response, 400, "Empty category_ids should be rejected on create"
+            response, 201, "Empty category_ids should be accepted on create"
         )
-        logger.info("✓ Empty category_ids correctly rejected on create")
+        await admin_client.delete(f"/products/{response.json()['id']}")
+        logger.info("✓ Empty category_ids correctly accepted on create")
 
     @pytest.mark.asyncio
     async def test_create_product_with_min_threshold_exceeding_max_fails(
@@ -237,18 +238,18 @@ class TestProductValidation:
         logger.info("✓ Blank SKU correctly rejected on update")
 
     @pytest.mark.asyncio
-    async def test_update_product_with_empty_category_ids_fails(
+    async def test_update_product_with_empty_category_ids_succeeds(
         self, admin_client, existing_product
     ):
-        """PUT /products/{id} with empty category_ids should return 400."""
+        """PUT /products/{id} with empty category_ids should return 200."""
         response = await admin_client.put(
             f"/products/{existing_product}",
             json={**VALID_PRODUCT, "categoryIds": []},
         )
         assert_status_code(
-            response, 400, "Empty category_ids should be rejected on update"
+            response, 200, "Empty category_ids should be accepted on update"
         )
-        logger.info("✓ Empty category_ids correctly rejected on update")
+        logger.info("✓ Empty category_ids correctly accepted on update")
 
     @pytest.mark.asyncio
     async def test_update_product_with_valid_data_succeeds(
