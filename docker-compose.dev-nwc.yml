@@ -21,7 +21,7 @@ services:
       - ./client:/app
       - client_dev_modules:/app/node_modules
     ports:
-      - "127.0.0.1:3001:3001"
+      - "localhost:3001:3001"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:9155
       INTERNAL_API_URL: http://ambrosia-dev:9155
@@ -36,8 +36,10 @@ services:
     container_name: ambrosia-dev-nwc
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9155:9155"
-      - "127.0.0.1:9445:9445"
+      - "localhost:9155:9155"
+      - "localhost:9445:9445"
+    environment:
+      NWC_URI: ${NWC_URI:-}
     volumes:
       - ambrosia_dev_nwc_datadir:/root/.Ambrosia-POS
     entrypoint:
