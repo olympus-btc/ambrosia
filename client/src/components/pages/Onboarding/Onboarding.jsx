@@ -109,7 +109,7 @@ export function Onboarding() {
         logoUrl = uploaded?.url ?? uploaded?.path;
       }
 
-      const res = await submitInitialSetup({
+      const setupResponse = await submitInitialSetup({
         ...data,
         businessLogoUrl: logoUrl,
         businessLogo: undefined,
@@ -123,7 +123,7 @@ export function Onboarding() {
         color: "success",
       });
       try {
-        const body = await res.json();
+        const body = await setupResponse.json();
         if (body?.nwcSaved) {
           addToast({
             title: t("submitOnboardingToast.nwcSavedTitle"),

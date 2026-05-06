@@ -18,6 +18,14 @@ function renderOnboarding() {
   );
 }
 
+async function navigateToStep(button, targetStep) {
+  for (let i = 1; i < targetStep; i++) {
+    await act(async () => {
+      fireEvent.click(button);
+    });
+  }
+}
+
 const originalError = console.error;
 const originalWarn = console.warn;
 
@@ -96,12 +104,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
-    });
-    await act(async () => {
-      fireEvent.click(nextButton); // step 2 → step 3 (user account)
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -136,12 +139,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
-    });
-    await act(async () => {
-      fireEvent.click(nextButton); // step 2 → step 3 (user account)
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -268,12 +266,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
-    });
-    await act(async () => {
-      fireEvent.click(nextButton); // step 2 → step 3 (user account)
-    });
+    await navigateToStep(nextButton, 3);
 
     await act(async () => {
       const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
@@ -286,7 +279,7 @@ describe("Onboarding Wizard", () => {
       fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
       fireEvent.change(confirmPasswordInput, { target: { value: "Abcd123$" } });
 
-      fireEvent.click(nextButton); // step 3 → step 4 (business details)
+      fireEvent.click(nextButton);
     });
 
     const phoneInput = screen.getByPlaceholderText("step3.fields.businessPhonePlaceholder");
