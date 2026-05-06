@@ -14,6 +14,7 @@ import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CreateOffer
 import pos.ambrosia.models.phoenix.CsvExport
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
+import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.nwc.Nip47Balance
 import pos.ambrosia.nwc.Nip47Info
 import pos.ambrosia.nwc.Nip47PayResult
@@ -122,6 +123,24 @@ class NwcServiceTest {
             assertEquals(nwcPubkey, service.getNodeInfo().nodeId)
         }
 
+    @Test
+    fun `getNodeInfo returns empty channel list`() =
+        runBlocking {
+            whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = "mainnet"))
+            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
+
+            assertEquals(emptyList(), service.getNodeInfo().channels)
+        }
+
+    @Test
+    fun `getNodeInfo returns unknown chain when network field is absent`() =
+        runBlocking {
+            whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = null))
+            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
+
+            assertEquals("unknown", service.getNodeInfo().chain)
+        }
+
     // endregion
 
     // region payInvoice
@@ -137,6 +156,64 @@ class NwcServiceTest {
 
             assertEquals("preimage123", response.paymentPreimage)
             assertEquals(3L, response.routingFeeSat)
+        }
+
+    @Test
+    fun `payInvoice uses explicit amountSat when provided`() =
+        runBlocking {
+            whenever(mockClient.payInvoice(any(), any())).thenReturn(
+                Nip47PayResult(preimage = "abc", feesPaid = 0L),
+            )
+
+            val response = service.payInvoice(PayInvoiceRequest(invoice = "lnbc...", amountSat = 42L))
+
+            assertEquals(42L, response.recipientAmountSat)
+        }
+
+    // endregion
+
+    // region listIncomingPayments / listOutgoingPayments — regression for I1 (feesPaid was 1000x too large)
+
+    @Test
+    fun `listIncomingPayments converts feesPaid from millisats to sats`() =
+        runBlocking {
+            whenever(mockClient.listTransactions(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+                listOf(
+                    Nip47Transaction(
+                        type = "incoming",
+                        paymentHash = "hash1",
+                        amount = 10_000_000L, // 10 000 sat in msat
+                        feesPaid = 1_000L,    // 1 sat in msat — must not appear as 1000
+                        settledAt = 1700000000L,
+                    ),
+                ),
+            )
+
+            val payments = service.listIncomingPayments(from = 0, to = null, limit = 20, offset = 0, all = false, externalId = null)
+
+            assertEquals(1, payments.size)
+            assertEquals(1L, payments[0].fees) // 1 000 msat → 1 sat
+        }
+
+    @Test
+    fun `listOutgoingPayments converts feesPaid from millisats to sats`() =
+        runBlocking {
+            whenever(mockClient.listTransactions(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+                listOf(
+                    Nip47Transaction(
+                        type = "outgoing",
+                        paymentHash = "hash2",
+                        amount = 5_000_000L, // 5 000 sat in msat
+                        feesPaid = 3_000L,   // 3 sat in msat
+                        settledAt = 1700000001L,
+                    ),
+                ),
+            )
+
+            val payments = service.listOutgoingPayments(from = 0, to = null, limit = 20, offset = 0, all = false)
+
+            assertEquals(1, payments.size)
+            assertEquals(3L, payments[0].fees) // 3 000 msat → 3 sat
         }
 
     // endregion
@@ -207,6 +284,20 @@ class NwcServiceTest {
     fun `closeChannel throws UnsupportedBackendOperationException`() {
         assertFailsWith<UnsupportedBackendOperationException> {
             runBlocking { service.closeChannel(CloseChannelRequest("cid", "bc1q...", 5L)) }
+        }
+    }
+
+    @Test
+    fun `getOutgoingPaymentByHash throws UnsupportedBackendOperationException`() {
+        assertFailsWith<UnsupportedBackendOperationException> {
+            runBlocking { service.getOutgoingPaymentByHash("abc123") }
+        }
+    }
+
+    @Test
+    fun `payOffer throws UnsupportedBackendOperationException`() {
+        assertFailsWith<UnsupportedBackendOperationException> {
+            runBlocking { service.payOffer(PayOfferRequest(offer = "lno...", amountSat = 100, message = null)) }
         }
     }
 
