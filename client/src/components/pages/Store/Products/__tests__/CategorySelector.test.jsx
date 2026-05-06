@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { CategorySelector } from "../CategorySelector";
 
@@ -20,20 +21,34 @@ jest.mock("@heroui/react", () => ({
     onInputChange,
     onSelectionChange,
     isLoading,
+    menuTrigger,
   }) => {
     const React = jest.requireActual("react");
+    const [isOpen, setIsOpen] = React.useState(false);
     const items = React.Children.toArray(children);
+    const visibleItems = isOpen ? items : [];
 
     return (
       <div>
         <input
           aria-label={label}
           value={inputValue}
-          onChange={(e) => onInputChange?.(e.target.value)}
+          onFocus={() => {
+            if (menuTrigger === "focus") {
+              setIsOpen(true);
+            }
+          }}
+          onBlur={() => setIsOpen(false)}
+          onChange={(e) => {
+            onInputChange?.(e.target.value);
+            if (menuTrigger === "input" || menuTrigger === "focus") {
+              setIsOpen(true);
+            }
+          }}
           disabled={isLoading}
         />
         <div>
-          {items.map((child) => (
+          {visibleItems.map((child) => (
             <button
               key={child.key}
               type="button"
@@ -43,6 +58,7 @@ jest.mock("@heroui/react", () => ({
                     ? `create:${child.props["data-create-value"]}`
                     : child.props["data-category-id"],
                 );
+                setIsOpen(false);
               }}
             >
               {child.props.children}
@@ -88,8 +104,12 @@ describe("CategorySelector", () => {
     expect(screen.getByLabelText("modal.productCategoryLabel")).toBeInTheDocument();
   });
 
-  it("renders categories as options", () => {
+  it("opens categories when the combobox receives focus", async () => {
     renderSelector();
+
+    expect(screen.queryByText("Category 1")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByLabelText("modal.productCategoryLabel"));
 
     expect(screen.getByText("Category 1")).toBeInTheDocument();
     expect(screen.getByText("Category 2")).toBeInTheDocument();
@@ -106,6 +126,7 @@ describe("CategorySelector", () => {
     const onSelectionChange = jest.fn();
     renderSelector({ onSelectionChange });
 
+    fireEvent.focus(screen.getByLabelText("modal.productCategoryLabel"));
     fireEvent.click(screen.getByText("Category 1"));
 
     expect(onSelectionChange).toHaveBeenCalledWith(["cat-1"]);
@@ -118,6 +139,7 @@ describe("CategorySelector", () => {
       selectedCategories: ["cat-1", "cat-2"],
     });
 
+    fireEvent.focus(screen.getByLabelText("modal.productCategoryLabel"));
     fireEvent.click(screen.getAllByText("Category 1")[0]);
 
     expect(onSelectionChange).toHaveBeenCalledWith(["cat-2"]);
@@ -162,6 +184,7 @@ describe("CategorySelector", () => {
     fireEvent.change(screen.getByLabelText("modal.productCategoryLabel"), { target: { value: "   " } });
 
     await act(async () => {
+      fireEvent.focus(screen.getByLabelText("modal.productCategoryLabel"));
       fireEvent.click(screen.getByText("Category 1"));
     });
 
@@ -193,13 +216,14 @@ describe("CategorySelector", () => {
   it("renders selected categories as removable chips", () => {
     renderSelector({ selectedCategories: ["cat-1", "cat-2"] });
 
-    expect(screen.getAllByText("Category 1")).toHaveLength(2);
-    expect(screen.getAllByText("Category 2")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Category 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Category 2" })).toBeInTheDocument();
   });
 
   it("shows checkmarks for categories that are already selected", () => {
     renderSelector({ selectedCategories: ["cat-1"] });
 
+    fireEvent.focus(screen.getByLabelText("modal.productCategoryLabel"));
     expect(screen.getByText("✓")).toBeInTheDocument();
   });
 
@@ -210,7 +234,7 @@ describe("CategorySelector", () => {
       selectedCategories: ["cat-1", "cat-2"],
     });
 
-    fireEvent.click(screen.getAllByText("Category 1")[1]);
+    fireEvent.click(screen.getByRole("button", { name: "Category 1" }));
 
     expect(onSelectionChange).toHaveBeenCalledWith(["cat-2"]);
   });

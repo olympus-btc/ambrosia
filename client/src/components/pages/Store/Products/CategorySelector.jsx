@@ -70,7 +70,9 @@ export function CategorySelector({
     }
   }, []);
 
-  const scheduleComboboxClose = ({ clearSearch = false } = {}) => {
+  // HeroUI keeps the popover open through the current selection/click event.
+  // Deferring the blur avoids interrupting the option press before the listbox closes.
+  const closeAutocompletePopover = ({ clearSearch = false } = {}) => {
     if (closeFrameRef.current !== null) {
       cancelAnimationFrame(closeFrameRef.current);
     }
@@ -89,7 +91,7 @@ export function CategorySelector({
     if (!trimmedCategoryName || isCreatingCategory) return;
 
     try {
-      scheduleComboboxClose({ clearSearch: true });
+      closeAutocompletePopover({ clearSearch: true });
       setIsCreatingCategory(true);
       const newId = await createCategory(trimmedCategoryName);
 
@@ -120,7 +122,7 @@ export function CategorySelector({
         allowsCustomValue
         allowsEmptyCollection
         isClearable
-        menuTrigger="input"
+        menuTrigger="focus"
         onInputChange={setSearchValue}
         onSelectionChange={(key) => {
           if (!key) {
@@ -134,7 +136,7 @@ export function CategorySelector({
           }
 
           toggleSelectedCategory(key);
-          scheduleComboboxClose({ clearSearch: true });
+          closeAutocompletePopover({ clearSearch: true });
         }}
         onClear={() => {
           setSearchValue("");
