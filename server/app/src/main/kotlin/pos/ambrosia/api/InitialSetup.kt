@@ -149,10 +149,11 @@ private fun Route.initialSetupRoutes(connection: Connection) {
                     try {
                         val confFile = java.io.File(datadir.toString(), "ambrosia.conf")
                         confFile.appendText("\nnwc-uri=$uri\n")
-                        logger.info("NWC URI saved to ambrosia.conf — restart required to activate")
+                        logger.info("NWC URI saved to ambrosia.conf — hot-reloading backend")
+                        reinitializeNwcBackend(uri, call.application)
                         true
                     } catch (e: Exception) {
-                        logger.error("Failed to save NWC URI: ${e.message}")
+                        logger.error("Failed to save or activate NWC URI: ${e.message}")
                         false
                     }
                 } ?: false
