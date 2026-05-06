@@ -25,7 +25,11 @@ import pos.ambrosia.utils.NwcConnectionException
 import pos.ambrosia.utils.NwcServiceException
 import java.util.concurrent.ConcurrentHashMap
 
-private val lenientJson = Json { ignoreUnknownKeys = true }
+private val lenientJson =
+    Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
 private const val NWC_REQUEST_KIND = 23194
 private const val NWC_RESPONSE_KIND = 23195
 private const val REQUEST_TIMEOUT_MS = 30_000L

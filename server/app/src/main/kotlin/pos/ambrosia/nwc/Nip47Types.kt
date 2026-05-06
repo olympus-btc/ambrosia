@@ -65,8 +65,6 @@ data class Nip47Info(
     val network: String? = null,
     @SerialName("block_height")
     val blockHeight: Int? = null,
-    @SerialName("block_hash")
-    val blockHash: String? = null,
     val methods: List<String>? = null,
     val notifications: List<String>? = null,
 )
