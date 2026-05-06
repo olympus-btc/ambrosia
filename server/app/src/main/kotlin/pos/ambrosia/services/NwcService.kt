@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import pos.ambrosia.api.PaymentNotification
 import pos.ambrosia.api.PaymentNotifier
 import pos.ambrosia.logger
-import pos.ambrosia.models.phoenix.Channel
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CloseChannelResponse
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
@@ -33,6 +32,7 @@ import pos.ambrosia.nwc.Nip47Transaction
 import pos.ambrosia.nwc.NwcClient
 import pos.ambrosia.nwc.NwcClientPort
 import pos.ambrosia.nwc.parseNwcUri
+import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.NwcServiceException
 import pos.ambrosia.utils.UnsupportedBackendOperationException
 import java.util.concurrent.ConcurrentHashMap
@@ -127,20 +127,15 @@ class NwcService(
         val balance = nwcClient.getBalance()
         val balanceSat = balance.balance / 1000
 
+        val chain =
+            info.network ?: run {
+                logger.warn("NWC wallet did not return 'network' field — chain is unknown")
+                "unknown"
+            }
         return NodeInfo(
             nodeId = info.pubkey ?: walletPubkeyHex,
-            channels =
-                listOf(
-                    Channel(
-                        state = "NORMAL",
-                        channelId = "nwc-virtual",
-                        balanceSat = balanceSat,
-                        inboundLiquiditySat = 0,
-                        capacitySat = balanceSat,
-                        fundingTxId = "nwc",
-                    ),
-                ),
-            chain = info.network ?: "mainnet",
+            channels = emptyList(),
+            chain = chain,
             blockHeight = info.blockHeight,
             version = "NWC",
         )
@@ -149,11 +144,16 @@ class NwcService(
     override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse {
         val amountMsat = request.amountSat?.let { it * 1000 }
         val result = nwcClient.payInvoice(request.invoice, amountMsat)
+        val paidAmountSat =
+            request.amountSat
+                ?: Bolt11Decoder.extractAmountSat(request.invoice)
+                ?: 0L
+        val paymentHash = Bolt11Decoder.extractPaymentHash(request.invoice) ?: ""
         return PaymentResponse(
-            recipientAmountSat = request.amountSat ?: 0,
+            recipientAmountSat = paidAmountSat,
             routingFeeSat = (result.feesPaid ?: 0) / 1000,
             paymentId = result.preimage ?: "",
-            paymentHash = "",
+            paymentHash = paymentHash,
             paymentPreimage = result.preimage ?: "",
         )
     }
@@ -221,10 +221,8 @@ class NwcService(
     override suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment =
         throw UnsupportedBackendOperationException("Outgoing payment lookup by ID is not supported with NWC backend")
 
-    override suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment {
-        val tx = nwcClient.lookupInvoice(paymentHash = paymentHash)
-        return tx.toOutgoingPayment()
-    }
+    override suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment =
+        throw UnsupportedBackendOperationException("Outgoing payment lookup by hash is not supported with NWC backend")
 
     override suspend fun csvExport(request: CsvExport): String =
         throw UnsupportedBackendOperationException("CSV export is not supported with NWC backend")
@@ -287,7 +285,7 @@ private fun Nip47Transaction.toIncomingPayment(): IncomingPayment {
             },
         requestedSat = amountMsat / 1000,
         receivedSat = if (isPaid) amountMsat / 1000 else 0,
-        fees = feesPaid ?: 0,
+        fees = (feesPaid ?: 0) / 1000,
         payerKey = null,
         expiresAt = expiresAt,
         completedAt = settledAt,
@@ -307,7 +305,7 @@ private fun Nip47Transaction.toOutgoingPayment(): OutgoingPayment {
         preimage = preimage,
         isPaid = isPaid,
         sent = amountMsat / 1000,
-        fees = feesPaid ?: 0,
+        fees = (feesPaid ?: 0) / 1000,
         invoice = invoice,
         completedAt = settledAt,
         createdAt = createdAt ?: (System.currentTimeMillis() / 1000),
