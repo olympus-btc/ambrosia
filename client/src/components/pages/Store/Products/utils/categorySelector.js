@@ -1,7 +1,5 @@
 const CREATE_OPTION_PREFIX = "create:";
 
-export const CATEGORY_CHIP_CLOSE_BUTTON_STYLES = "text-red-600 hover:text-red-700";
-
 export function normalizeCategoryId(categoryId) {
   return String(categoryId);
 }

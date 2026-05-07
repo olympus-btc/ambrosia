@@ -1,7 +1,5 @@
 import { Chip } from "@heroui/react";
 
-import { CATEGORY_CHIP_CLOSE_BUTTON_STYLES } from "./utils/categorySelector";
-
 export function SelectedCategoryChips({ categories, onRemove }) {
   if (categories.length === 0) return null;
 
@@ -12,7 +10,7 @@ export function SelectedCategoryChips({ categories, onRemove }) {
           key={category.id}
           variant="flat"
           classNames={{
-            closeButton: CATEGORY_CHIP_CLOSE_BUTTON_STYLES,
+            closeButton: "text-red-600 hover:text-red-700",
           }}
           onClose={() => onRemove(category.id)}
         >
