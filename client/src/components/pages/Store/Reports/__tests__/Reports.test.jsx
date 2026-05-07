@@ -3,8 +3,6 @@ import { render, screen, act, waitFor, fireEvent } from "@testing-library/react"
 
 import Reports from "../Reports";
 
-// ─── Mocks ───────────────────────────────────────────────────────────────────
-
 const mockFetchReport = jest.fn();
 const mockUseReports = jest.fn();
 
@@ -109,8 +107,6 @@ jest.mock("@heroui/react", () => {
   return { Card, CardHeader, CardBody, addToast };
 });
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const mockReport = {
   totalRevenueCents: 15000,
   totalItemsSold: 7,
@@ -134,8 +130,6 @@ function renderReports() {
   return render(<Reports />);
 }
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
-
 describe("Reports", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -143,9 +137,7 @@ describe("Reports", () => {
     mockUseReports.mockReturnValue(makeHookReturn());
   });
 
-  // ─── comportamiento inicial ────────────────────────────────────────────────
-
-  it("auto-genera el reporte al montar el componente", async () => {
+  it("auto-generates the report on mount", async () => {
     renderReports();
 
     await waitFor(() => {
@@ -153,7 +145,7 @@ describe("Reports", () => {
     });
   });
 
-  it("auto-genera con period=month por defecto", async () => {
+  it("auto-generates with period=month by default", async () => {
     renderReports();
 
     await waitFor(() => {
@@ -163,7 +155,7 @@ describe("Reports", () => {
     });
   });
 
-  it("no auto-genera el reporte más de una vez al montar", async () => {
+  it("does not auto-generate the report more than once on mount", async () => {
     renderReports();
 
     await waitFor(() => {
@@ -174,16 +166,14 @@ describe("Reports", () => {
     expect(mockFetchReport).toHaveBeenCalledTimes(1);
   });
 
-  it("renderiza el layout base sin datos de reporte", async () => {
+  it("renders the base layout without report data", async () => {
     renderReports();
 
     expect(screen.getByTestId("store-layout")).toBeInTheDocument();
     expect(screen.getByTestId("date-range-card")).toBeInTheDocument();
   });
 
-  // ─── datos del reporte ─────────────────────────────────────────────────────
-
-  it("muestra los datos del reporte cuando reportData no es null", () => {
+  it("shows report data when reportData is not null", () => {
     mockUseReports.mockReturnValue(makeHookReturn({ reportData: mockReport }));
     renderReports();
 
@@ -191,16 +181,14 @@ describe("Reports", () => {
     expect(screen.getAllByTestId("sale-item")).toHaveLength(2);
   });
 
-  it("no muestra SalesTable cuando reportData es null", () => {
+  it("does not show SalesTable when reportData is null", () => {
     renderReports();
 
     expect(screen.queryByTestId("sales-table")).not.toBeInTheDocument();
   });
 
-  // ─── manejo de errores ─────────────────────────────────────────────────────
-
-  it("muestra toast de error cuando fetchReport lanza excepción al refrescar", async () => {
-    mockFetchReport.mockResolvedValueOnce(null); // auto-fetch ok
+  it("shows error toast when fetchReport throws an exception on refresh", async () => {
+    mockFetchReport.mockResolvedValueOnce(null);
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -217,7 +205,7 @@ describe("Reports", () => {
     });
   });
 
-  it("muestra el banner de error cuando el hook expone error", () => {
+  it("shows error banner when hook exposes error", () => {
     mockUseReports.mockReturnValue(makeHookReturn({ error: new Error("fail") }));
     renderReports();
 
@@ -225,9 +213,7 @@ describe("Reports", () => {
     expect(redCards.length).toBeGreaterThan(0);
   });
 
-  // ─── auto-fetch por período ────────────────────────────────────────────────
-
-  it("auto-genera al seleccionar el período week", async () => {
+  it("auto-generates when selecting week period", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -243,7 +229,7 @@ describe("Reports", () => {
     });
   });
 
-  it("el botón de período limpia las fechas y establece activePeriod", async () => {
+  it("period button clears dates and sets activePeriod", async () => {
     renderReports();
 
     await act(async () => {
@@ -262,9 +248,7 @@ describe("Reports", () => {
     expect(screen.getByTestId("active-period")).toHaveTextContent("week");
   });
 
-  // ─── auto-fetch por rango custom ───────────────────────────────────────────
-
-  it("auto-genera cuando se completa un rango custom válido", async () => {
+  it("auto-generates when a valid custom range is completed", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -286,7 +270,7 @@ describe("Reports", () => {
     });
   });
 
-  it("no auto-genera cuando solo se proporciona startDate", async () => {
+  it("does not auto-generate when only startDate is provided", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -298,7 +282,7 @@ describe("Reports", () => {
     expect(mockFetchReport).not.toHaveBeenCalled();
   });
 
-  it("no auto-genera cuando solo se proporciona endDate", async () => {
+  it("does not auto-generate when only endDate is provided", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -310,7 +294,7 @@ describe("Reports", () => {
     expect(mockFetchReport).not.toHaveBeenCalled();
   });
 
-  it("no genera reporte y muestra error cuando startDate > endDate", async () => {
+  it("does not generate report and shows error when startDate > endDate", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -328,9 +312,7 @@ describe("Reports", () => {
     );
   });
 
-  // ─── auto-fetch por paymentMethod dropdown ────────────────────────────────
-
-  it("auto-genera inmediatamente al seleccionar un método de pago", async () => {
+  it("auto-generates immediately when a payment method is selected", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -346,7 +328,7 @@ describe("Reports", () => {
     });
   });
 
-  it("envía paymentMethod undefined al seleccionar 'all'", async () => {
+  it("sends paymentMethod undefined when selecting 'all'", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
@@ -362,9 +344,7 @@ describe("Reports", () => {
     });
   });
 
-  // ─── auto-fetch debounced por text filters ─────────────────────────────────
-
-  it("auto-genera con debounce al cambiar productName", async () => {
+  it("auto-generates with debounce when productName changes", async () => {
     jest.useFakeTimers();
     renderReports();
     await act(async () => { jest.runAllTimers(); });
@@ -385,9 +365,7 @@ describe("Reports", () => {
     jest.useRealTimers();
   });
 
-  // ─── refresh button ────────────────────────────────────────────────────────
-
-  it("el botón de refresh vuelve a llamar a fetchReport", async () => {
+  it("refresh button calls fetchReport again", async () => {
     mockFetchReport.mockResolvedValue(null);
     renderReports();
 

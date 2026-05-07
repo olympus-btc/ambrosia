@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 
 const PERIODS = ["week", "month", "year"];
 
-// keys must match the server's payment_methods.name values (case-insensitive)
 const PAYMENT_OPTIONS = [
   { key: "all", localeKey: "all", icon: <Search className="w-4 h-4" /> },
   { key: "Cash", localeKey: "cash", icon: <Banknote className="w-4 h-4" /> },
@@ -44,7 +43,6 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
       </CardHeader>
       <CardBody>
         <div className="space-y-6">
-          {/* Period quick buttons */}
           <div className="grid grid-cols-3 gap-3">
             {PERIODS.map((p) => (
               <Button
@@ -64,7 +62,6 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
             ))}
           </div>
 
-          {/* Custom date range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="date"
@@ -90,7 +87,6 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
             />
           </div>
 
-          {/* Text + dropdown filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label={t("filters.productName")}

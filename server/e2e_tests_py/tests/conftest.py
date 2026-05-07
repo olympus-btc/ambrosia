@@ -54,8 +54,6 @@ def pytest_collection_modifyitems(config, items):
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
 
-    # Rate limit tests intentionally block 127.0.0.1 for 3 minutes.
-    # Run them last so they don't interfere with other tests that need to login.
     rate_limit = [i for i in items if "test_rate_limit" in i.nodeid]
     others = [i for i in items if "test_rate_limit" not in i.nodeid]
     items[:] = others + rate_limit
@@ -79,7 +77,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
 
     async def setup():
         async with AmbrosiaHttpClient(server_url) as client:
-            # Check if database is initialized
             setup_check = await client.get("/initial-setup")
 
             if setup_check.status_code == 200:
@@ -89,7 +86,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                     logger.info("✓ Database already initialized")
                     return
 
-            # Database not initialized - try to create default user
             logger.info(
                 "Attempting to initialize database with default user for tests..."
             )
@@ -109,12 +105,10 @@ def initialize_database(manage_server_lifecycle, server_url: str):
 
             if setup_response.status_code == 201:
                 logger.info("✓ Database initialized successfully with default user")
-                # Give database a moment to commit
                 await asyncio.sleep(1.0)
             elif setup_response.status_code == 409:
                 logger.info("✓ Database already initialized (409 Conflict)")
             elif setup_response.status_code == 500:
-                # Check if it's a UNIQUE constraint error (user already exists)
                 try:
                     error_data = setup_response.json()
                     error_message = error_data.get("message", "")
@@ -130,7 +124,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                         logger.error(error_msg)
                         raise RuntimeError(error_msg)
                 except (KeyError, ValueError) as e:
-                    # If we can't parse the JSON, re-raise with context
                     error_msg = f"Initial setup failed with status 500, could not parse error: {e}"
                     logger.error(error_msg)
                     raise RuntimeError(error_msg) from e

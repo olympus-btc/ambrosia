@@ -83,5 +83,4 @@ export function setupFetchMocks() {
   });
 }
 
-// Ensure the mock is registered when this file is loaded globally by Jest setupFiles
 setupFetchMocks();

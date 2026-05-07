@@ -59,7 +59,6 @@ export default function Orders() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Hook personalizado para manejar monedas
   const { systemCurrency, formatAmount } = useCurrency();
 
   useEffect(() => {
@@ -113,13 +112,11 @@ export default function Orders() {
   };
 
   const filteredOrders = orders.filter((order) => {
-    // Filtro por estado
     const statusMatch =
       filter === "en-curso"
         ? order.status === "open" || order.status === "closed"
         : order.status === "paid";
 
-    // Filtro por búsqueda
     const searchMatch =
       searchTerm === "" ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,7 +165,6 @@ export default function Orders() {
     }
   };
 
-  // Componente para mostrar precio formateado
   const FormattedPrice = ({ amount }) => {
     const [formattedPrice, setFormattedPrice] = useState("");
 
@@ -178,7 +174,6 @@ export default function Orders() {
           const formatted = await formatAmount(amount);
           setFormattedPrice(formatted);
         } else {
-          // Fallback mientras carga la moneda del sistema
           const fallback = new Intl.NumberFormat("es-ES", {
             style: "currency",
             currency: systemCurrency?.baseCurrency?.acronym || "MXN",
@@ -198,7 +193,6 @@ export default function Orders() {
     );
   };
 
-  // Paginación
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
@@ -222,7 +216,6 @@ export default function Orders() {
   return (
     <div className="min-h-screen gradient-fresh p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <Card className="mb-6 shadow-lg border-0 bg-white">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between w-full">
@@ -272,11 +265,9 @@ export default function Orders() {
           </Card>
         )}
 
-        {/* Controles y Filtros */}
         <Card className="mb-6 shadow-lg border-0 bg-white">
           <CardBody>
             <div className="space-y-4">
-              {/* Búsqueda */}
               <div className="flex flex-col md:flex-row gap-4">
                 <Input
                   placeholder="Buscar por ID, mesero o mesa..."
@@ -318,7 +309,6 @@ export default function Orders() {
                 </Select>
               </div>
 
-              {/* Tabs de filtros */}
               <Tabs
                 selectedKey={filter}
                 onSelectionChange={setFilter}
@@ -364,7 +354,6 @@ export default function Orders() {
           </CardBody>
         </Card>
 
-        {/* Tabla de Órdenes */}
         <Card className="shadow-lg border-0 bg-white">
           <CardHeader>
             <h3 className="text-lg font-bold text-deep flex items-center">
@@ -467,7 +456,6 @@ export default function Orders() {
                   </TableBody>
                 </Table>
 
-                {/* Paginación */}
                 {totalPages > 1 && (
                   <div className="flex justify-center mt-6">
                     <Pagination
@@ -511,7 +499,6 @@ export default function Orders() {
           </CardBody>
         </Card>
 
-        {/* Modal de Confirmación */}
         <Modal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}

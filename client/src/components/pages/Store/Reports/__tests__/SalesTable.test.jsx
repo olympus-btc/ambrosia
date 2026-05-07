@@ -19,26 +19,22 @@ describe("SalesTable", () => {
     jest.clearAllMocks();
   });
 
-  // ─── estado vacío ─────────────────────────────────────────────────────────
-
-  it("renderiza estado vacío cuando sales es array vacío", () => {
+  it("renders empty state when sales is an empty array", () => {
     render(<SalesTable sales={[]} formatCurrency={mockFormatCurrency} />);
     expect(screen.getByText("sales.empty")).toBeInTheDocument();
   });
 
-  it("renderiza estado vacío cuando sales es undefined", () => {
+  it("renders empty state when sales is undefined", () => {
     render(<SalesTable sales={undefined} formatCurrency={mockFormatCurrency} />);
     expect(screen.getByText("sales.empty")).toBeInTheDocument();
   });
 
-  it("no renderiza items cuando la lista está vacía", () => {
+  it("does not render items when the list is empty", () => {
     render(<SalesTable sales={[]} formatCurrency={mockFormatCurrency} />);
     expect(screen.queryByTestId("payment-badge")).not.toBeInTheDocument();
   });
 
-  // ─── renderizado de items ─────────────────────────────────────────────────
-
-  it("renderiza el nombre del producto y del usuario", () => {
+  it("renders the product name and user name", () => {
     const sales = [
       {
         productName: "Raspberry Pi",
@@ -56,7 +52,7 @@ describe("SalesTable", () => {
     expect(screen.getByText("alice")).toBeInTheDocument();
   });
 
-  it("renderiza la cantidad con prefijo ×", () => {
+  it("renders the quantity with × prefix", () => {
     const sales = [
       {
         productName: "Widget",
@@ -73,7 +69,7 @@ describe("SalesTable", () => {
     expect(screen.getByText("×5")).toBeInTheDocument();
   });
 
-  it("llama a formatCurrency con priceAtOrder para el precio unitario", () => {
+  it("calls formatCurrency with priceAtOrder for the unit price", () => {
     const sales = [
       {
         productName: "Widget",
@@ -90,7 +86,7 @@ describe("SalesTable", () => {
     expect(mockFormatCurrency).toHaveBeenCalledWith(1500);
   });
 
-  it("llama a formatCurrency con priceAtOrder * quantity para el total de línea", () => {
+  it("calls formatCurrency with priceAtOrder * quantity for the line total", () => {
     const sales = [
       {
         productName: "Widget",
@@ -103,12 +99,10 @@ describe("SalesTable", () => {
     ];
 
     render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
-
-    // total = 1500 * 3 = 4500
     expect(mockFormatCurrency).toHaveBeenCalledWith(4500);
   });
 
-  it("muestra el badge de método de pago", () => {
+  it("shows the payment method badge", () => {
     const sales = [
       {
         productName: "Widget",
@@ -125,7 +119,7 @@ describe("SalesTable", () => {
     expect(screen.getByTestId("payment-badge")).toHaveTextContent("BTC");
   });
 
-  it("renderiza múltiples items de venta", () => {
+  it("renders multiple sale items", () => {
     const sales = [
       { productName: "Prod A", quantity: 1, priceAtOrder: 100, userName: "u1", paymentMethod: "Cash", saleDate: "2024-01-01 00:00:00" },
       { productName: "Prod B", quantity: 2, priceAtOrder: 200, userName: "u2", paymentMethod: "BTC", saleDate: "2024-01-02 00:00:00" },
@@ -137,9 +131,7 @@ describe("SalesTable", () => {
     expect(screen.getByText("Prod B")).toBeInTheDocument();
   });
 
-  // ─── renderizado de fecha ─────────────────────────────────────────────────
-
-  it("renderiza la fecha de venta usando la API nativa del browser", () => {
+  it("renders the sale date using the native browser API", () => {
     const sales = [
       {
         productName: "Widget",
@@ -153,12 +145,10 @@ describe("SalesTable", () => {
 
     render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
 
-    // Verifica que se renderiza una fecha que contiene el año — el formato exacto
-    // lo determina el locale del browser (no hardcodeado).
     expect(screen.getByText(/2024/)).toBeInTheDocument();
   });
 
-  it("muestra guion cuando saleDate es null", () => {
+  it("shows dash when saleDate is null", () => {
     const sales = [
       {
         productName: "Widget",
@@ -175,7 +165,7 @@ describe("SalesTable", () => {
     expect(screen.getByText("-")).toBeInTheDocument();
   });
 
-  it("muestra guion cuando saleDate es cadena vacía", () => {
+  it("shows dash when saleDate is an empty string", () => {
     const sales = [
       {
         productName: "Widget",

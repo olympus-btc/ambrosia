@@ -49,7 +49,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `period=week agrega WHERE con fecha inicio lunes de la semana actual`() {
+    fun `period=week adds WHERE with start date as Monday of the current week`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -76,7 +76,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `period=month agrega WHERE con primer dia del mes actual`() {
+    fun `period=month adds WHERE with first day of the current month`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -103,7 +103,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `period=year agrega WHERE con primer dia del año actual`() {
+    fun `period=year adds WHERE with first day of the current year`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -130,7 +130,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `period invalido lanza IllegalArgumentException`() {
+    fun `invalid period throws IllegalArgumentException`() {
         val service = ReportService(mockConnection)
         assertFailsWith<IllegalArgumentException> {
             service.getProductSalesReport(
@@ -145,7 +145,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `startDate y endDate sin period usa las fechas proporcionadas`() {
+    fun `startDate and endDate without period uses the provided dates`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -169,7 +169,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `sin period ni fechas no agrega WHERE de rango de fecha`() {
+    fun `without period or dates does not add date range WHERE`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -190,7 +190,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `period toma precedencia sobre startDate y endDate`() {
+    fun `period takes precedence over startDate and endDate`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -211,7 +211,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `sin filtros construye query sin cláusulas AND adicionales`() {
+    fun `without filters builds query without additional AND clauses`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -229,14 +229,13 @@ class ReportServiceTest {
 
         val query = sqlCaptor.firstValue
         assertFalse(query.contains("LIKE"), "Sin productName no debe haber LIKE")
-        // "o.user_id" aparece en el JOIN base (JOIN users u ON u.id = o.user_id); verificar solo el predicado WHERE
         assertFalse(query.contains("o.user_id = ?"), "Sin userId no debe haber filtro WHERE de usuario")
         assertFalse(query.contains("lower(pm.name)"), "Sin paymentMethod no debe haber filtro de método de pago")
         assertTrue(query.contains("ORDER BY o.created_at DESC"), "Siempre debe ordenar DESC")
     }
 
     @Test
-    fun `con productName agrega clausula LIKE case-insensitive`() {
+    fun `with productName adds case-insensitive LIKE clause`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -258,7 +257,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `con paymentMethod agrega clausula lower() = lower()`() {
+    fun `with paymentMethod adds lower() = lower() clause`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -280,7 +279,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `con userId agrega clausula de igualdad exacta`() {
+    fun `with userId adds exact equality clause`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -302,7 +301,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `todos los filtros juntos generan cuatro clausulas AND`() {
+    fun `all filters together generate four AND clauses`() {
         val sqlCaptor = argumentCaptor<String>()
         whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
@@ -327,7 +326,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `calcula totalRevenueCents como suma de priceAtOrder por quantity`() {
+    fun `calculates totalRevenueCents as the sum of priceAtOrder times quantity`() {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
@@ -353,7 +352,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `calcula totalItemsSold como suma de quantities`() {
+    fun `calculates totalItemsSold as the sum of quantities`() {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
@@ -379,7 +378,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `devuelve lista vacia y ceros cuando no hay datos`() {
+    fun `returns empty list and zeros when there is no data`() {
         setupEmptyResultSet()
 
         val service = ReportService(mockConnection)
@@ -399,7 +398,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `mapea correctamente los campos del ResultSet a ProductSaleItem`() {
+    fun `correctly maps ResultSet fields to ProductSaleItem`() {
         setupSingleRowResultSet(
             productName = "Raspberry Pi",
             quantity = 4,
@@ -431,7 +430,7 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `totalRevenueCents evita overflow con valores grandes usando Long`() {
+    fun `totalRevenueCents avoids overflow with large values using Long`() {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
