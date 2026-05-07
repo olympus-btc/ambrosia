@@ -44,12 +44,15 @@ class BackendService {
         `--phoenixd-url=http://localhost:${config.phoenixdPort}`,
       ];
 
-      // Secrets passed as env vars to avoid exposure in `ps aux` and log files
-      const env = {
-        ...process.env,
-        PHOENIXD_PASSWORD: config.phoenixPassword,
-        PHOENIXD_WEBHOOK_SECRET: config.webhookSecret,
-      };
+      // Secrets passed as env vars to avoid exposure in `ps aux` and log files.
+      // Java-related env vars are stripped to prevent interference from other JDK/JRE
+      // installations on the system (e.g. JAVA_TOOL_OPTIONS set by Oracle JDK on Windows).
+      const env = { ...process.env };
+      ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS', 'JAVA_OPTS', 'JAVA_HOME'].forEach(
+        (key) => delete env[key],
+      );
+      env.PHOENIXD_PASSWORD = config.phoenixPassword;
+      env.PHOENIXD_WEBHOOK_SECRET = config.webhookSecret;
 
       logger.log(`[BackendService] Starting backend at port ${port}...`);
 
