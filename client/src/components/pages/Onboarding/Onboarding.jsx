@@ -23,6 +23,7 @@ export function Onboarding() {
     businessType: "store",
     userName: "",
     userPassword: "",
+    userPasswordConfirmation: "",
     userPin: "",
     businessName: "",
     businessAddress: "",
@@ -107,6 +108,7 @@ export function Onboarding() {
         ...data,
         businessLogoUrl: logoUrl,
         businessLogo: undefined,
+        userPasswordConfirmation: undefined,
       });
       addToast({
         title: t("submitOnboardingToast.title"),
@@ -167,6 +169,7 @@ export function Onboarding() {
               data={{
                 userName: data.userName,
                 userPassword: data.userPassword,
+                userPasswordConfirmation: data.userPasswordConfirmation,
                 userPin: data.userPin,
               }}
               onChange={(userData) => handleDataChange(userData)}
@@ -220,7 +223,14 @@ export function Onboarding() {
                   onPress={handleNext}
                   isDisabled={
                     (step === 1 && !data.businessType) ||
-                    (step === 2 && (!data.userName || !data.userPassword || !isPasswordStrong(data.userPassword) || !isPinValid(data.userPin))) ||
+                    (step === 2 && (
+                      !data.userName ||
+                      !data.userPassword ||
+                      !data.userPasswordConfirmation ||
+                      data.userPassword !== data.userPasswordConfirmation ||
+                      !isPasswordStrong(data.userPassword) ||
+                      !isPinValid(data.userPin)
+                    )) ||
                     (step === 3 && (!data.businessName || !data.businessCurrency))
                   }
                   className="bg-green-800"

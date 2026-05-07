@@ -30,9 +30,12 @@ const onboardingEn = {
       userNamePlaceholder: "Enter your user name",
       passwordLabel: "Password",
       passwordPlaceholder: "Enter a secure password",
+      confirmPasswordLabel: "Confirm Password",
+      confirmPasswordPlaceholder: "Confirm your secure password",
       userPinLabel: "PIN",
       userPinPlaceholder: "Enter a 4-digit PIN",
     },
+    passwordsDoNotMatch: "Passwords do not match",
     tooltips: {
       userPin: "To access the application.",
       userPassword: "To access the wallet.",

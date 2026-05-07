@@ -31,9 +31,12 @@ const onboardingEs = {
       userNamePlaceholder: "Ingresa tu nombre de usuario",
       passwordLabel: "Contraseña",
       passwordPlaceholder: "Ingresa una contraseña segura",
+      confirmPasswordLabel: "Confirmar Contraseña",
+      confirmPasswordPlaceholder: "Confirma tu contraseña segura",
       userPinLabel: "PIN",
       userPinPlaceholder: "Ingresa un PIN de 4 dígitos",
     },
+    passwordsDoNotMatch: "Las contraseñas no coinciden",
     tooltips: {
       userPin: "Sirve para accesar a la aplicación.",
       userPassword: "Requerida para acceder a la wallet.",
