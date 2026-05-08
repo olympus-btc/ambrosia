@@ -3,7 +3,7 @@ import { useMemo } from "react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 
-import { getAvailableModules, getAvailableNavigation } from "../lib/features";
+import { getAvailableFeatures, getAvailableNavigation } from "../lib/features";
 import { useConfigurations } from "../providers/configurations/configurationsProvider";
 
 export function useNavigation() {
@@ -12,9 +12,9 @@ export function useNavigation() {
   const isAdmin = user?.isAdmin || false;
   const { businessType } = useConfigurations();
 
-  const availableModules = useMemo(() => {
+  const availableFeatures = useMemo(() => {
     if (isLoading) return {};
-    return getAvailableModules(isAuth, isAdmin, permissions, businessType);
+    return getAvailableFeatures(isAuth, isAdmin, permissions, businessType);
   }, [isAuth, isAdmin, isLoading, permissions, businessType]);
 
   const availableNavigation = useMemo(() => {
@@ -23,7 +23,7 @@ export function useNavigation() {
   }, [isAuth, isAdmin, isLoading, permissions, businessType]);
 
   return {
-    availableModules,
+    availableFeatures,
     availableNavigation,
     isAuth,
     isAdmin,

@@ -2,183 +2,44 @@ export function buildPermissionSet(permissions = []) {
   return new Set((permissions || []).map((permission) => permission.name));
 }
 
-export const modules = {
+export const features = {
   auth: {
     enabled: true,
     name: "Autenticación",
-    componentBase: "components/pages",
-    componentPath: "Auth",
     routes: [
-      { path: "/auth", component: "PinLogin", requiresAuth: false },
-      {
-        path: "/restaurant/roles",
-        component: "Roles",
-        requiresAuth: true,
-        requiresAdmin: false,
-        permissions: ["roles_read"],
-      },
-      {
-        path: "/restaurant/users",
-        component: "Users",
-        requiresAuth: true,
-        requiresAdmin: false,
-        permissions: ["users_read"],
-      },
+      { path: "/auth", requiresAuth: false },
+      { path: "/restaurant/roles", requiresAuth: true, requiresAdmin: false, permissions: ["roles_read"] },
+      { path: "/restaurant/users", requiresAuth: true, requiresAdmin: false, permissions: ["users_read"] },
     ],
     navItems: [
-      {
-        path: "/restaurant/roles",
-        label: "Roles",
-        icon: "user-lock",
-        showInNavbar: true,
-      },
-      {
-        path: "/restaurant/users",
-        label: "Usuarios",
-        icon: "users",
-        showInNavbar: true,
-      },
+      { path: "/restaurant/roles", label: "Roles", icon: "user-lock", showInNavbar: true },
+      { path: "/restaurant/users", label: "Usuarios", icon: "users", showInNavbar: true },
     ],
   },
   store: {
     enabled: true,
     name: "Store",
-    componentBase: "components/pages",
-    componentPath: "Store",
     routes: [
-      {
-        path: "/store",
-        component: "Store",
-        requiresAuth: true,
-        requiresAdmin: false,
-        types: ["store"],
-        default: true,
-      },
-      {
-        path: "/store/users",
-        component: "Users",
-        requiresAuth: true,
-        requiresAdmin: false,
-        types: ["store"],
-        permissions: ["users_read"],
-        default: false,
-      },
-      {
-        path: "/store/products",
-        component: "Products",
-        requiresAuth: true,
-        requiresAdmin: false,
-        types: ["store"],
-        permissions: ["products_read"],
-        default: false,
-      },
-      {
-        path: "/store/cart",
-        component: "Cart",
-        requiresAuth: true,
-        requiresAdmin: false,
-        requiresOpenTurn: true,
-        types: ["store"],
-        permissions: ["orders_create"],
-        default: false,
-      },
-      {
-        path: "/store/orders",
-        component: "Orders",
-        requiresAuth: true,
-        requiresAdmin: false,
-        types: ["store"],
-        permissions: ["orders_read"],
-        default: false,
-      },
-      {
-        path: "/store/wallet",
-        component: "Wallet",
-        requiresAuth: true,
-        requiresAdmin: false,
-        types: ["store"],
-        permissions: ["wallet_read"],
-        default: false,
-      },
-      {
-        path: "/store/reports",
-        component: "Reports",
-        requiresAuth: true,
-        requiresAdmin: true,
-        types: ["store"],
-        permissions: ["wallet_read"],
-        default: false,
-      },
-      {
-        path: "/store/settings",
-        component: "Settings",
-        requiresAuth: true,
-        requiresAdmin: false,
-        permissions: ["settings_update"],
-        types: ["store"],
-        default: false,
-      },
+      { path: "/store", requiresAuth: true, requiresAdmin: false, types: ["store"], default: true },
+      { path: "/store/users", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["users_read"] },
+      { path: "/store/products", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["products_read"] },
+      { path: "/store/cart", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["orders_create"] },
+      { path: "/store/orders", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["orders_read"] },
+      { path: "/store/wallet", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["wallet_read"] },
+      { path: "/store/reports", requiresAuth: true, requiresAdmin: true, types: ["store"], permissions: ["wallet_read"] },
+      { path: "/store/settings", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["settings_update"] },
     ],
     navItems: [
-      {
-        path: "/store/users",
-        label: "users",
-        icon: "users",
-        showInNavbar: true,
-      },
-      {
-        path: "/store/products",
-        label: "products",
-        icon: "box",
-        showInNavbar: true,
-        showInBottomNav: true,
-        bottomNavOrder: 2,
-      },
-      {
-        path: "/store/cart",
-        label: "cart",
-        icon: "shopping-cart",
-        showInNavbar: true,
-        showInBottomNav: true,
-        bottomNavOrder: 1,
-      },
-      {
-        path: "/store/orders",
-        label: "orders",
-        icon: "clipboard-clock",
-        showInNavbar: true,
-        showInBottomNav: true,
-        bottomNavOrder: 3,
-      },
-      {
-        path: "/store/wallet",
-        label: "wallet",
-        icon: "wallet",
-        showInNavbar: true,
-        tourId: "nav-wallet",
-      },
-      {
-        path: "/store/reports",
-        label: "reports",
-        icon: "chart-line",
-        showInNavbar: true,
-      },
-      {
-        path: "/store/settings",
-        label: "settings",
-        icon: "settings",
-        showInNavbar: true,
-        tourId: "nav-settings",
-      },
+      { path: "/store/users", label: "users", icon: "users", showInNavbar: true },
+      { path: "/store/products", label: "products", icon: "box", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 2 },
+      { path: "/store/cart", label: "cart", icon: "shopping-cart", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 1 },
+      { path: "/store/orders", label: "orders", icon: "clipboard-clock", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 3 },
+      { path: "/store/wallet", label: "wallet", icon: "wallet", showInNavbar: true, tourId: "nav-wallet" },
+      { path: "/store/reports", label: "reports", icon: "chart-line", showInNavbar: true },
+      { path: "/store/settings", label: "settings", icon: "settings", showInNavbar: true, tourId: "nav-settings" },
     ],
   },
 };
-
-export function getActiveModules() {
-  return Object.entries(modules)
-    .filter(([, config]) => config.enabled)
-    .map(([key, config]) => ({ key, ...config }));
-}
 
 export function matchesBusiness(target, businessType) {
   if (!businessType) return true;
@@ -200,99 +61,54 @@ export function matchesBusiness(target, businessType) {
   return true;
 }
 
-export function getNavigationItems(
-  permissions = [],
-  isAdmin = false,
-  businessType = null,
-) {
-  const navItems = [];
-  const permNames = buildPermissionSet(permissions);
-
-  Object.entries(modules).forEach(([moduleKey, config]) => {
-    if (!config.enabled) return;
-
-    config.navItems?.forEach((item) => {
-      if (item.showInNavbar === false) return;
-      if (!matchesBusiness(item.path, businessType)) return;
-
-      const route =
-        (config.routes || []).find((r) => r.path === item.path) || {};
-      const requiresAdmin = item.requiresAdmin || route.requiresAdmin || false;
-      if (requiresAdmin && !isAdmin) return;
-
-      const requiredPerms = item.permissions || route.permissions;
-      const passesPerms =
-        !requiredPerms || requiredPerms.every((k) => permNames.has(k));
-
-      if (passesPerms) {
-        navItems.push({
-          ...item,
-          module: moduleKey,
-        });
-      }
-    });
-  });
-
-  return navItems;
-}
-
-export function getAvailableModules(
+export function getAvailableFeatures(
   isAuthenticated = false,
   isAdmin = false,
   permissions = [],
   businessType = null,
 ) {
   const permNames = buildPermissionSet(permissions);
-  const availableModules = {};
+  const available = {};
 
-  Object.entries(modules).forEach(([moduleKey, moduleConfig]) => {
-    if (!moduleConfig.enabled) return;
+  Object.entries(features).forEach(([featureKey, featureConfig]) => {
+    if (!featureConfig.enabled) return;
 
-    const availableRoutes = moduleConfig.routes.filter((route) => {
+    const availableRoutes = featureConfig.routes.filter((route) => {
       if (!matchesBusiness(route, businessType)) return false;
       if (!route.requiresAuth) return true;
-
       if (route.requiresAuth && !isAuthenticated) return false;
-
       if (route.requiresAdmin && !isAdmin) return false;
-
       if (route.permissions && route.permissions.length > 0) {
         return route.permissions.every((k) => permNames.has(k));
       }
-
       return true;
     });
 
-    const availableNavItems = (moduleConfig.navItems || []).filter(
-      (navItem) => {
-        if (!isAuthenticated) return false;
-        if (navItem.showInNavbar === false) return false;
-        const route =
-          (moduleConfig.routes || []).find((r) => r.path === navItem.path) ||
-          {};
-        if (!matchesBusiness(navItem, businessType)) return false;
-        if (!matchesBusiness(route, businessType)) return false;
-        const requiresAdmin =
-          navItem.requiresAdmin || route.requiresAdmin || false;
-        if (requiresAdmin && !isAdmin) return false;
-        const requiredPerms = navItem.permissions || route.permissions;
-        if (requiredPerms && requiredPerms.length > 0) {
-          return requiredPerms.every((k) => permNames.has(k));
-        }
-        return true;
-      },
-    );
+    const availableNavItems = (featureConfig.navItems || []).filter((navItem) => {
+      if (!isAuthenticated) return false;
+      if (navItem.showInNavbar === false) return false;
+      const route = (featureConfig.routes || []).find((r) => r.path === navItem.path) || {};
+      if (!matchesBusiness(navItem, businessType)) return false;
+      if (!matchesBusiness(route, businessType)) return false;
+      const requiresAdmin = navItem.requiresAdmin || route.requiresAdmin || false;
+      if (requiresAdmin && !isAdmin) return false;
+      const requiredPerms = navItem.permissions || route.permissions;
+      if (requiredPerms && requiredPerms.length > 0) {
+        return requiredPerms.every((k) => permNames.has(k));
+      }
+      return true;
+    });
 
     if (availableRoutes.length > 0 || availableNavItems.length > 0) {
-      availableModules[moduleKey] = {
-        ...moduleConfig,
+      available[featureKey] = {
+        ...featureConfig,
         routes: availableRoutes,
         navItems: availableNavItems,
       };
     }
   });
 
-  return availableModules;
+  return available;
 }
 
 export function getAvailableNavigation(
@@ -301,23 +117,14 @@ export function getAvailableNavigation(
   permissions = [],
   businessType = null,
 ) {
-  const availableModules = getAvailableModules(
-    isAuthenticated,
-    isAdmin,
-    permissions,
-    businessType,
-  );
+  const available = getAvailableFeatures(isAuthenticated, isAdmin, permissions, businessType);
   const navItems = [];
 
-  Object.entries(availableModules).forEach(([moduleKey, config]) => {
+  Object.entries(available).forEach(([featureKey, config]) => {
     config.navItems?.forEach((item) => {
-      navItems.push({
-        ...item,
-        module: moduleKey,
-      });
+      navItems.push({ ...item, feature: featureKey });
     });
   });
 
   return navItems;
 }
-

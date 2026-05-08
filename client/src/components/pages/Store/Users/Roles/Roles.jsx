@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { usePermissions } from "@/components/pages/Store/hooks/usePermissions";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RequirePermission } from "@/hooks/usePermission";
-import { buildPermissionSet } from "@/lib/modules";
+import { buildPermissionSet } from "@/lib/features";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import { CreateRoleModal } from "./CreateRoleModal";
