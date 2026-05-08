@@ -6,16 +6,18 @@ import { Button } from "@heroui/react";
 import { Languages } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 
-import componentsEn from "../components/locales/en";
-import componentsEs from "../components/locales/es";
-import authEn from "../components/pages/Auth/locales/en";
-import authEs from "../components/pages/Auth/locales/es";
-import onboardingEn from "../components/pages/Onboarding/locales/en";
-import onboardingEs from "../components/pages/Onboarding/locales/es";
-import storeEn from "../components/pages/Store/locales/en";
-import storeEs from "../components/pages/Store/locales/es";
-import unauthorizedEn from "../components/pages/Unauthorized/locales/en";
-import unauthorizedEs from "../components/pages/Unauthorized/locales/es";
+import componentsEn from "@/components/locales/en";
+import componentsEs from "@/components/locales/es";
+import authEn from "@/components/pages/Auth/locales/en";
+import authEs from "@/components/pages/Auth/locales/es";
+import notFoundEn from "@/components/pages/NotFound/locales/en";
+import notFoundEs from "@/components/pages/NotFound/locales/es";
+import onboardingEn from "@/components/pages/Onboarding/locales/en";
+import onboardingEs from "@/components/pages/Onboarding/locales/es";
+import storeEn from "@/components/pages/Store/locales/en";
+import storeEs from "@/components/pages/Store/locales/es";
+import unauthorizedEn from "@/components/pages/Unauthorized/locales/en";
+import unauthorizedEs from "@/components/pages/Unauthorized/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
@@ -24,6 +26,7 @@ const translations = {
   en: {
     auth: authEn,
     components: componentsEn,
+    notFound: notFoundEn,
     onboarding: onboardingEn,
     store: storeEn,
     unauthorized: unauthorizedEn,
@@ -31,6 +34,7 @@ const translations = {
   es: {
     auth: authEs,
     components: componentsEs,
+    notFound: notFoundEs,
     onboarding: onboardingEs,
     store: storeEs,
     unauthorized: unauthorizedEs,
