@@ -3,10 +3,10 @@ import { useMemo } from "react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 
-import { getAvailableModules, getAvailableNavigation, hasAccessToRoute } from "../lib/modules";
+import { getAvailableModules, getAvailableNavigation } from "../lib/features";
 import { useConfigurations } from "../providers/configurations/configurationsProvider";
 
-export function useModules() {
+export function useNavigation() {
   const { isAuth, user, permissions, logout, isLoading } = useAuth();
 
   const isAdmin = user?.isAdmin || false;
@@ -22,12 +22,9 @@ export function useModules() {
     return getAvailableNavigation(isAuth, isAdmin, permissions, businessType);
   }, [isAuth, isAdmin, isLoading, permissions, businessType]);
 
-  const checkRouteAccess = (pathname) => hasAccessToRoute(pathname, isAuth, isAdmin, permissions, businessType);
-
   return {
     availableModules,
     availableNavigation,
-    checkRouteAccess,
     isAuth,
     isAdmin,
     isLoading,

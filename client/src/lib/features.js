@@ -25,7 +25,6 @@ export const modules = {
         permissions: ["users_read"],
       },
     ],
-    services: () => import("../modules/auth/authService"),
     navItems: [
       {
         path: "/restaurant/roles",
@@ -181,51 +180,6 @@ export function getActiveModules() {
     .map(([key, config]) => ({ key, ...config }));
 }
 
-export function getModuleRoutes() {
-  const routes = [];
-  Object.entries(modules).forEach(([moduleKey, config]) => {
-    if (config.enabled) {
-      config.routes.forEach((route) => {
-        routes.push({
-          ...route,
-          module: moduleKey,
-          fullPath: route.path,
-        });
-      });
-    }
-  });
-  return routes;
-}
-
-export function findRouteConfig(pathname) {
-  for (const [moduleKey, moduleConfig] of Object.entries(modules)) {
-    if (!moduleConfig.enabled) continue;
-
-    const route = moduleConfig.routes.find((r) => {
-      if (r.path === pathname) return true;
-
-      const pathSegments = pathname.split("/").filter(Boolean);
-      const routeSegments = r.path.split("/").filter(Boolean);
-
-      if (pathSegments.length !== routeSegments.length) return false;
-
-      return routeSegments.every((segment, i) => {
-        if (segment.startsWith(":")) return true;
-        return segment === pathSegments[i];
-      });
-    });
-
-    if (route) {
-      return {
-        module: moduleKey,
-        route,
-        moduleConfig,
-      };
-    }
-  }
-  return null;
-}
-
 export function matchesBusiness(target, businessType) {
   if (!businessType) return true;
   if (target && typeof target === "object") {
@@ -367,29 +321,3 @@ export function getAvailableNavigation(
   return navItems;
 }
 
-export function hasAccessToRoute(
-  pathname,
-  isAuthenticated = false,
-  isAdmin = false,
-  permissions = [],
-  businessType = null,
-) {
-  const routeConfig = findRouteConfig(pathname);
-  if (!routeConfig) return false;
-  if (!matchesBusiness(routeConfig.route || {}, businessType)) return false;
-
-  const permNames = buildPermissionSet(permissions);
-  const route = routeConfig.route;
-
-  if (!route.requiresAuth) return true;
-
-  if (route.requiresAuth && !isAuthenticated) return false;
-
-  if (route.requiresAdmin && !isAdmin) return false;
-
-  if (route.permissions && route.permissions.length > 0) {
-    return route.permissions.every((k) => permNames.has(k));
-  }
-
-  return true;
-}
