@@ -41,15 +41,15 @@ export function AmountUnitInputFields({
 
   const estimatedStateText = amountInputMode === "fiat"
     ? (fiatToSatIsLoading
-      ? loadingText
-      : fiatToSatHasError
-        ? conversionErrorText
-        : estimatedValue)
+        ? loadingText
+        : fiatToSatHasError
+          ? conversionErrorText
+          : estimatedValue)
     : (estimatedFiatIsLoading
-      ? loadingText
-      : estimatedFiatHasError
-        ? estimatedFiatErrorText
-        : estimatedValue);
+        ? loadingText
+        : estimatedFiatHasError
+          ? estimatedFiatErrorText
+          : estimatedValue);
 
   const estimatedStateColor = (
     (amountInputMode === "fiat" && !fiatToSatIsLoading && !fiatToSatHasError) ||

@@ -12,6 +12,7 @@ import { Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+
 import { formatFiat, formatSats } from "../../utils/formatters";
 
 import { usePaymentAmountInput } from "./hooks/usePaymentAmountInput";
