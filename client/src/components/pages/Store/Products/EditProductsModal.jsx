@@ -82,8 +82,6 @@ export function EditProductsModal({
             <Textarea
               label={t("modal.productDescriptionLabel")}
               placeholder={t("modal.productDescriptionPlaceholder")}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               value={data.productDescription}
               onChange={(e) => onChange({ productDescription: e.target.value })
               }
@@ -100,8 +98,6 @@ export function EditProductsModal({
             <Input
               label={t("modal.productSKULabel")}
               placeholder={t("modal.productSKUPlaceholder")}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               value={data.productSKU}
               onChange={(e) => onChange({ productSKU: e.target.value })
               }

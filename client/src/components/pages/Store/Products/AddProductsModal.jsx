@@ -84,8 +84,6 @@ export function AddProductsModal({
               label={t("modal.productDescriptionLabel")}
               placeholder={t("modal.productDescriptionPlaceholder")}
               value={data.productDescription}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               onChange={(e) => onChange({ productDescription: e.target.value })
               }
             />
@@ -101,8 +99,6 @@ export function AddProductsModal({
             <Input
               label={t("modal.productSKULabel")}
               placeholder={t("modal.productSKUPlaceholder")}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               value={data.productSKU}
               onChange={(e) => onChange({ productSKU: e.target.value })
               }

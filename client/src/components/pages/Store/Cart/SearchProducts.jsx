@@ -20,7 +20,7 @@ export function SearchProducts({ products, onAddProduct, categories }) {
       .join(" ");
 
     const searchMatch = product.name.toLowerCase().includes(search.toLowerCase())
-      || product.SKU.toLowerCase().includes(search.toLowerCase())
+      || product.SKU?.toLowerCase().includes(search.toLowerCase())
       || categoryNames.toLowerCase().includes(search.toLowerCase());
     const categoryMatch = !categoryFilter || categoryIds.includes(categoryFilter);
     return searchMatch && categoryMatch;
