@@ -71,7 +71,6 @@ class ProductService(
     }
 
     private fun valid(p: Product): Boolean {
-        if (p.SKU.isBlank()) return false
         if (p.name.isBlank()) return false
         if (p.costCents < 0) return false
         if (p.priceCents < 0) return false
@@ -84,8 +83,10 @@ class ProductService(
 
     suspend fun addProduct(product: Product): String? {
         if (!valid(product)) return null
-        val existing = getProductBySKU(product.SKU)
-        if (existing != null) throw DuplicateProductSkuException()
+        if (!product.SKU.isNullOrBlank()) {
+            val existing = getProductBySKU(product.SKU)
+            if (existing != null) throw DuplicateProductSkuException()
+        }
         val id =
             java.util.UUID
                 .randomUUID()
@@ -140,7 +141,8 @@ class ProductService(
         return if (resultSet.next()) map(resultSet) else null
     }
 
-    suspend fun getProductBySKU(sku: String): Product? {
+    suspend fun getProductBySKU(sku: String?): Product? {
+        if (sku == null) return null
         val statement = connection.prepareStatement(GET_PRODUCT_BY_SKU)
         statement.setString(1, sku)
         val resultSet = statement.executeQuery()
@@ -159,8 +161,10 @@ class ProductService(
     suspend fun updateProduct(product: Product): Boolean {
         if (product.id == null) return false
         if (!valid(product)) return false
-        val current = getProductBySKU(product.SKU)
-        if (current != null && current.id != product.id) throw DuplicateProductSkuException()
+        if (!product.SKU.isNullOrBlank()) {
+            val current = getProductBySKU(product.SKU)
+            if (current != null && current.id != product.id) throw DuplicateProductSkuException()
+        }
         val prev = connection.autoCommit
         connection.autoCommit = false
         try {
