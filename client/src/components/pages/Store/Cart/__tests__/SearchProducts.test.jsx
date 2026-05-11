@@ -44,6 +44,13 @@ const products = [
     categoryIds: ["missing"],
     quantity: 1,
   },
+  {
+    id: 5,
+    name: "No SKU Product",
+    SKU: null,
+    categoryIds: ["cat-1"],
+    quantity: 10,
+  },
 ];
 
 const categories = [
@@ -95,6 +102,21 @@ describe("SearchProducts", () => {
       target: { value: "hardware" },
     });
     expect(screen.getByTestId("product-list").textContent).toContain("Jade Wallet");
+  });
+
+  it("handles products with null SKU during search", () => {
+    render(
+      <SearchProducts
+        products={products}
+        categories={categories}
+        onAddProduct={jest.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("search.label"), {
+      target: { value: "No SKU" },
+    });
+    expect(screen.getByTestId("product-list").textContent).toContain("No SKU Product");
   });
 
   it("filters by category selection", () => {
