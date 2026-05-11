@@ -190,7 +190,7 @@ class ProductServiceTest {
                 Product(
                     id = null,
                     SKU = " ",
-                    name = "",
+                    name = "Valid Name",
                     description = null,
                     imageUrl = null,
                     costCents = -1,
@@ -336,7 +336,7 @@ class ProductServiceTest {
                 Product(
                     id = "p-1",
                     SKU = "",
-                    name = " ",
+                    name = "Valid Name",
                     description = null,
                     imageUrl = null,
                     costCents = -1,
