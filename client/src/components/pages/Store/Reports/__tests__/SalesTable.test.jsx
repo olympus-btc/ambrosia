@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 
-import { SalesTable } from "../components/SalesTable";
+import { SalesTable } from "../Sales/SalesTable";
 
-jest.mock("../components/PaymentBadge", () => ({
+jest.mock("../Sales/PaymentBadge", () => ({
   PaymentBadge: ({ method }) => <span data-testid="payment-badge">{method}</span>,
 }));
 
