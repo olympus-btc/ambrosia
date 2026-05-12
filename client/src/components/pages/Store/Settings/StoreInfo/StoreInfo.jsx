@@ -52,7 +52,7 @@ export function StoreInfo() {
       });
     } catch (error) {
       addToast({
-        title: "Error",
+        title: t("modal.errorTitle"),
         description: error.message,
         color: "danger",
       });

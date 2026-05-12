@@ -1,0 +1,105 @@
+const cartEn = {
+  cart: {
+    title: "Sale",
+    subtitle: "Product payment system",
+    search: {
+      label: "Search",
+      placeholder: "Type to search...",
+      filterAll: "All",
+    },
+    card: {
+      add: "Add",
+      stock: "in stock",
+      errors: {
+        unknownCategory: "Unknown category",
+      },
+    },
+    summary: {
+      clearCart: "Remove All Items",
+      title: "Summary",
+      total: "Total",
+      subtotal: "Subtotal",
+      discount: "Discount",
+      quantity: "Quantity",
+      paymentMethodLabel: "Payment Method",
+      paymentMethodSelectPlaceholder: "Choose a payment method",
+      errorMsgSelectEmpty: "Please select an item in the list.",
+      pay: "Pay",
+      each: "each",
+      viewCart: "Checkout",
+    },
+    payment: {
+      errors: {
+        selectMethod: "Please select a payment method.",
+        emptyCart: "Add products before charging.",
+        noUser: "No authenticated user to register the sale.",
+        noCurrency: "Could not fetch the base currency.",
+        checkout: "Could not complete the checkout",
+        process: "Error processing the payment",
+        btcComplete: "Error completing the BTC payment",
+        cashComplete: "Error completing the cash payment",
+        cardComplete: "Error completing the card payment",
+        printCustomer: "Ticket printed failed. Check printer settings.",
+      },
+      success: {
+        paid: "Payment registered successfully",
+        btcPaid: "Bitcoin payment marked as completed",
+        cashPaid: "Cash payment registered successfully",
+        cardPaid: "Card payment registered successfully",
+      },
+      receipt: {
+        tableName: "Counter",
+      },
+    },
+    errors: {
+      outOfStock: "Not enough stock available for this product.",
+    },
+    paymentModal: {
+      bitcoin: {
+        title: "Pay with Bitcoin (Lightning)",
+        subtitle: "Ask the customer to scan the QR to complete the payment",
+        generating: "Generating invoice...",
+        retry: "Retry",
+        totalLabel: "Total",
+        cancel: "Cancel",
+        copyButton: "Copy",
+        confirm: "Confirm payment",
+        close: "Close",
+        complete: "Payment received",
+        confirmed: "Payment confirmed",
+        invoice: "BOLT11 Invoice:",
+        waitingPayment: "Waiting for payment confirmation...",
+        markAsPaid: "Mark as paid",
+        paidAt: "Confirmed at {time}",
+        websocket: {
+          paymentReceivedTitle: "Payment received",
+          paymentReceivedDescription: "Hash: {hash}",
+        },
+      },
+      cash: {
+        title: "Cash Payment",
+        subtitle: "Enter the cash received to calculate change.",
+        totalLabel: "Total due",
+        receivedLabel: "Cash received",
+        changeLabel: "Change",
+        cash: "Cash",
+        cancel: "Cancel",
+        confirm: "Confirm payment",
+        errors: {
+          insufficient: "Cash received is insufficient.",
+        },
+      },
+      card: {
+        title: "Card Payment",
+        subtitle: "Confirm the card payment to complete the sale.",
+        totalLabel: "Total due",
+        methodLabel: "Payment method",
+        defaultMethod: "Card",
+        cancel: "Cancel",
+        confirm: "Confirm payment",
+      },
+    },
+  },
+};
+
+export default cartEn;

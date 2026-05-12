@@ -1,0 +1,105 @@
+const cartEs = {
+  cart: {
+    title: "Venta",
+    subtitle: "Sistema de pago de productos",
+    search: {
+      label: "Buscar",
+      placeholder: "Buscar producto...",
+      filterAll: "Todos",
+    },
+    card: {
+      add: "Agregar",
+      stock: "en almacén",
+      errors: {
+        unknownCategory: "Categoría desconocida",
+      },
+    },
+    summary: {
+      clearCart: "Remover Todo",
+      title: "Resumen",
+      total: "Total",
+      subtotal: "Subtotal",
+      discount: "Descuento",
+      quantity: "Cantidad",
+      paymentMethodLabel: "Metodo de pago",
+      paymentMethodSelectPlaceholder: "Elige un metodo de pago",
+      errorMsgSelectEmpty: "Por favor, seleccione un elemento de la lista.",
+      pay: "Pagar",
+      each: "c/u",
+      viewCart: "Cobrar",
+    },
+    payment: {
+      errors: {
+        selectMethod: "Por favor, selecciona un método de pago.",
+        emptyCart: "Agrega productos antes de cobrar.",
+        noUser: "No hay usuario autenticado para registrar la venta.",
+        noCurrency: "No se pudo obtener la moneda base.",
+        checkout: "No se pudo completar el pago",
+        process: "Error al procesar el pago",
+        btcComplete: "Error al completar el pago BTC",
+        cashComplete: "Error al completar el pago en efectivo",
+        cardComplete: "Error al completar el pago con tarjeta",
+        printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
+      },
+      success: {
+        paid: "Pago registrado correctamente",
+        btcPaid: "Pago con Bitcoin marcado como completado",
+        cashPaid: "Pago en efectivo registrado correctamente",
+        cardPaid: "Pago con tarjeta registrado correctamente",
+      },
+      receipt: {
+        tableName: "Caja",
+      },
+    },
+    errors: {
+      outOfStock: "No hay stock suficiente para este producto.",
+    },
+    paymentModal: {
+      bitcoin: {
+        title: "Pago con Bitcoin (Lightning)",
+        subtitle: "Pídele al cliente que escanee el QR para completar el pago",
+        generating: "Generando invoice...",
+        retry: "Reintentar",
+        totalLabel: "Total",
+        cancel: "Cancelar",
+        confirm: "Confirmar pago",
+        copyButton: "Copiar",
+        close: "Cerrar",
+        complete: "Pago recibido",
+        confirmed: "Pago confirmado",
+        invoice: "Factura BOLT11:",
+        waitingPayment: "Esperando la confirmación del pago...",
+        markAsPaid: "Marcar como pagado",
+        paidAt: "Confirmado a las {time}",
+        websocket: {
+          paymentReceivedTitle: "Pago recibido",
+          paymentReceivedDescription: "Hash: {hash}",
+        },
+      },
+      cash: {
+        title: "Pago en Efectivo",
+        subtitle: "Ingresa el efectivo recibido para calcular el cambio.",
+        totalLabel: "Total a cobrar",
+        receivedLabel: "Efectivo recibido",
+        changeLabel: "Cambio",
+        cash: "Efectivo",
+        cancel: "Cancelar",
+        confirm: "Confirmar pago",
+        errors: {
+          insufficient: "El efectivo recibido es insuficiente.",
+        },
+      },
+      card: {
+        title: "Pago con tarjeta",
+        subtitle: "Confirma el pago con tarjeta para completar la venta.",
+        totalLabel: "Total a cobrar",
+        methodLabel: "Método de pago",
+        defaultMethod: "Tarjeta",
+        cancel: "Cancelar",
+        confirm: "Confirmar pago",
+      },
+    },
+  },
+};
+
+export default cartEs;

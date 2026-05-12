@@ -62,7 +62,7 @@ export function ReceiveTab({ invoiceActions }) {
     } catch (err) {
       console.error(err);
       addToast({
-        title: "Error",
+        title: t("errorTitle"),
         description: t("payments.receive.invoiceCreateError"),
         variant: "solid",
         color: "danger",
