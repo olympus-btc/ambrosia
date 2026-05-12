@@ -23,12 +23,38 @@ function resolveEffectiveAmount({
   return estimatedSatsResult.value;
 }
 
-export function usePaymentAmountInput({
+function resolveInvalidAmountMessage({ invalidAmountMessage, t }) {
+  if (invalidAmountMessage) return invalidAmountMessage;
+  if (t) return t("payments.send.confirmModal.zeroAmountError");
+  return "";
+}
+
+function parseSatAmount(value) {
+  const normalizedValue = value.trim();
+  if (!/^\d+$/.test(normalizedValue)) {
+    return {
+      parsedValue: Number.NaN,
+      isValid: false,
+      isTooLarge: false,
+    };
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return {
+    parsedValue,
+    isValid: Number.isSafeInteger(parsedValue) && parsedValue > 0,
+    isTooLarge: !Number.isSafeInteger(parsedValue),
+  };
+}
+
+export function useWalletAmountInput({
   isOpen,
   isPaid,
   invoiceSats,
   currencyAcronym,
   t,
+  invalidAmountMessage,
+  amountTooLargeMessage,
 }) {
   const [customEstimateSat, setCustomEstimateSat] = useState("");
   const [customEstimateFiat, setCustomEstimateFiat] = useState("");
@@ -37,8 +63,12 @@ export function usePaymentAmountInput({
   const [estimatedSatsResult, setEstimatedSatsResult] = useState(null);
 
   const isZeroAmount = invoiceSats == null;
-  const parsedSatAmount = parseInt(customEstimateSat, 10);
-  const parsedFiatAmount = parseFloat(customEstimateFiat);
+  const {
+    parsedValue: parsedSatAmount,
+    isValid: isValidSatAmount,
+    isTooLarge: isSatAmountTooLarge,
+  } = parseSatAmount(customEstimateSat);
+  const parsedFiatAmount = Number.parseFloat(customEstimateFiat);
   const estimatedSats = resolveEffectiveAmount({
     isZeroAmount,
     amountInputMode,
@@ -47,7 +77,6 @@ export function usePaymentAmountInput({
     estimatedSatsResult,
     customEstimateFiat,
   });
-  const isValidSatAmount = Number.isInteger(parsedSatAmount) && parsedSatAmount > 0;
   const isValidFiatAmount = Number.isFinite(parsedFiatAmount) && parsedFiatAmount > 0;
 
   useEffect(() => {
@@ -102,6 +131,14 @@ export function usePaymentAmountInput({
     estimatedSatsResult?.error &&
     estimatedSatsResult?.forValue === customEstimateFiat;
 
+  const resetAmounts = useCallback(() => {
+    setCustomEstimateSat("");
+    setCustomEstimateFiat("");
+    setCustomEstimateError("");
+    setAmountInputMode(DEFAULT_AMOUNT_MODE);
+    setEstimatedSatsResult(null);
+  }, []);
+
   const handleAmountModeChange = useCallback((nextMode) => {
     setAmountInputMode(nextMode);
     setCustomEstimateError("");
@@ -119,25 +156,35 @@ export function usePaymentAmountInput({
   }, [amountInputMode]);
 
   const getConfirmAmount = useCallback(() => {
+    const fallbackInvalidAmountMessage = resolveInvalidAmountMessage({ invalidAmountMessage, t });
+
     if (!isZeroAmount) return null;
 
     if (amountInputMode === "fiat") {
       if (!isValidFiatAmount || !estimatedSats || estimatedSats <= 0) {
-        setCustomEstimateError(t("payments.send.confirmModal.zeroAmountError"));
+        setCustomEstimateError(fallbackInvalidAmountMessage);
         return undefined;
       }
       return estimatedSats;
     }
 
+    if (isSatAmountTooLarge) {
+      setCustomEstimateError(amountTooLargeMessage || fallbackInvalidAmountMessage);
+      return undefined;
+    }
+
     if (!isValidSatAmount) {
-      setCustomEstimateError(t("payments.send.confirmModal.zeroAmountError"));
+      setCustomEstimateError(fallbackInvalidAmountMessage);
       return undefined;
     }
 
     return parsedSatAmount;
   }, [
     amountInputMode,
+    amountTooLargeMessage,
     estimatedSats,
+    invalidAmountMessage,
+    isSatAmountTooLarge,
     isValidFiatAmount,
     isValidSatAmount,
     isZeroAmount,
@@ -155,13 +202,15 @@ export function usePaymentAmountInput({
     estimatedSats,
     fiatToSatHasError,
     fiatToSatIsLoading,
+    getConfirmAmount,
     handleAmountChange,
     handleAmountModeChange,
-    getConfirmAmount,
     isConfirmDisabled: isZeroAmount && (
       amountInputMode === "fiat"
         ? !isValidFiatAmount || fiatToSatIsLoading || !estimatedSats
         : !isValidSatAmount
     ),
+    isSatAmountTooLarge,
+    resetAmounts,
   };
 }
