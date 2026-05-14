@@ -20,7 +20,6 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
     {
       key: "user",
       label: t("table.user"),
-      hiddenOn: "md",
       render: (o) => (
         <span className="font-medium text-deep">{o.userName || t("details.unassigned")}</span>
       ),
@@ -33,7 +32,6 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
     {
       key: "payment",
       label: t("table.paymentMethod"),
-      hiddenOn: "md",
       render: (o) => (
         <span className="text-sm text-gray-700">{o.paymentMethod || t("details.noPayment")}</span>
       ),

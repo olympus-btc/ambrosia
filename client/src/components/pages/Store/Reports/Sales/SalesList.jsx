@@ -30,8 +30,7 @@ export function SalesList({ sales, formatCurrency }) {
     {
       key: "user",
       label: t("sales.user"),
-      hiddenOn: "md",
-      render: (s) => <span className="text-sm text-gray-700">{s.userName}</span>,
+      render: (s) => <span className="text-sm text-gray-700">{s.userName ?? "—"}</span>,
     },
     {
       key: "qty",
