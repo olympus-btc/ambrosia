@@ -26,6 +26,11 @@ const withSerwist = withSerwistInit({
 const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: __dirname,
+  ...(isElectron && {
+    outputFileTracingIncludes: {
+      "/**": ["./node_modules/@swc/helpers/**"],
+    },
+  }),
   images: {
     unoptimized: true,
   },
