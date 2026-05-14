@@ -51,9 +51,13 @@ const reportsEs = {
     sales: {
       title: "Detalle de Ventas",
       empty: "No se encontraron ventas con los filtros seleccionados",
+      product: "Producto",
+      user: "Usuario",
       quantity: "Cant.",
       price: "Precio Unitario",
       total: "Total",
+      paymentMethod: "Método de Pago",
+      date: "Fecha",
     },
     close: {
       sectionTitle: "Cerrar turno",
