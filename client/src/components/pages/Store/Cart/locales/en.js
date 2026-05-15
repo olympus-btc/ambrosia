@@ -16,6 +16,7 @@ const cartEn = {
     },
     summary: {
       clearCart: "Remove All Items",
+      removeItem: "Remove item",
       title: "Summary",
       total: "Total",
       subtotal: "Subtotal",

@@ -5,6 +5,7 @@ const usersEs = {
     title: "Usuarios",
     subtitle: "Gestiona el personal de tu tienda",
     addUser: "Agregar Usuario",
+    tableAriaLabel: "Tabla de usuarios",
     noRole: "Sin rol asignado",
     name: "Nombre",
     role: "Rol",
