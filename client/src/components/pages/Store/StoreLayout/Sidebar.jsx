@@ -45,7 +45,8 @@ export function SidebarContent({
             alt="ambrosia"
             width={160}
             height={160}
-            className="object-contain max-h-40 w-auto"
+            className="object-contain max-h-40"
+            style={{ width: "auto", height: "auto" }}
             priority
           />
         </Link>
