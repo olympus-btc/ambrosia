@@ -9,6 +9,8 @@ const ordersEn = {
       searchLabel: "Search",
       searchPlaceholder: "Search by ID or user...",
       rowsPerPage: "Rows per page",
+      paginationAria: "Orders pagination",
+      tableAriaLabel: "Orders table",
       rowsOption: "{count} rows",
       tabPaid: "Paid",
       statusLabel: "Status",

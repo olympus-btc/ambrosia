@@ -41,6 +41,13 @@ const componentsEs = {
     downloadFromGitHub: "Descargar desde GitHub",
     dismiss: "Cerrar",
   },
+  actions: {
+    edit: "Editar",
+    delete: "Eliminar",
+  },
+  imageUploader: {
+    removeImage: "Eliminar imagen",
+  },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",
     requiredOpenShiftMessage: "Para continuar, abre un turno registrando el efectivo inicial en caja.",

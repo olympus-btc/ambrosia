@@ -1,11 +1,13 @@
 "use client";
 
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 export function DataTable({ columns, items, getKey, emptyState }) {
+  const t = useTranslations("orders");
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[600px]" removeWrapper>
+      <Table className="min-w-[600px]" removeWrapper aria-label={t("filter.tableAriaLabel")}>
         <TableHeader>
           {columns.map((col) => (
             <TableColumn

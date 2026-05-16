@@ -41,6 +41,13 @@ const componentsEn = {
     downloadFromGitHub: "Download from GitHub",
     dismiss: "Dismiss",
   },
+  actions: {
+    edit: "Edit",
+    delete: "Delete",
+  },
+  imageUploader: {
+    removeImage: "Remove image",
+  },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",
     requiredOpenShiftMessage: "To continue, please open a shift by entering the starting amount of cash.",

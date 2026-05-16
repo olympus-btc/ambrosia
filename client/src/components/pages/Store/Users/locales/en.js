@@ -5,6 +5,7 @@ const usersEn = {
     title: "Users",
     subtitle: "Manage your store staff",
     addUser: "Add User",
+    tableAriaLabel: "Users table",
     noRole: "No role assigned",
     name: "Name",
     role: "Role",

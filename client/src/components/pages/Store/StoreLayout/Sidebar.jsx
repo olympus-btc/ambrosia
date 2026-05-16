@@ -46,6 +46,7 @@ export function SidebarContent({
             width={160}
             height={160}
             className="object-contain max-h-40 w-auto"
+            priority
           />
         </Link>
         <p className="text-slate-100 text-center mt-4">

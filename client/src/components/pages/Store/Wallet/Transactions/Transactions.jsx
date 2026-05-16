@@ -83,6 +83,7 @@ export function Transactions({
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={setActiveTab}
+          aria-label={t("payments.title")}
           variant="underlined"
           classNames={{
             tabList: "gap-2 sm:gap-6 relative rounded-none px-4 sm:px-6 py-0 overflow-x-auto flex-nowrap w-full",
