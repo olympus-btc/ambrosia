@@ -28,6 +28,8 @@ function authReducer(state, action) {
         isLoading: false,
         error: action.payload || null,
       };
+    case "SILENT_REFRESH_ERROR":
+      return { ...state, error: action.payload || null };
     case "LOGIN_SUCCESS":
       return {
         ...state,

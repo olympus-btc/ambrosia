@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
       return session;
     } catch (error) {
       if (isMountedRef.current) {
-        dispatch({ type: "INIT_ERROR", payload: error });
+        dispatch({ type: silent ? "SILENT_REFRESH_ERROR" : "INIT_ERROR", payload: error });
       }
       return null;
     } finally {

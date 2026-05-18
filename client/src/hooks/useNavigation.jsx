@@ -12,15 +12,9 @@ export function useNavigation() {
   const isAdmin = user?.isAdmin || false;
   const { businessType } = useConfigurations();
 
-  const availableFeatures = useMemo(() => {
-    if (isLoading) return {};
-    return getAvailableFeatures(isAuth, isAdmin, permissions, businessType);
-  }, [isAuth, isAdmin, isLoading, permissions, businessType]);
+  const availableFeatures = useMemo(() => getAvailableFeatures(isAuth, isAdmin, permissions, businessType), [isAuth, isAdmin, permissions, businessType]);
 
-  const availableNavigation = useMemo(() => {
-    if (isLoading) return [];
-    return getAvailableNavigation(isAuth, isAdmin, permissions, businessType);
-  }, [isAuth, isAdmin, isLoading, permissions, businessType]);
+  const availableNavigation = useMemo(() => getAvailableNavigation(isAuth, isAdmin, permissions, businessType), [isAuth, isAdmin, permissions, businessType]);
 
   return {
     availableFeatures,
