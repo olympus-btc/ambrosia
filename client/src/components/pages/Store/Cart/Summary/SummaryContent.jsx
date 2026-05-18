@@ -19,17 +19,10 @@ export function SummaryContent({
   onPay,
   isPaying,
   paymentError,
-  btcPaymentConfig,
-  onInvoiceReady,
-  onBtcComplete,
-  onCloseBtcPayment,
-  cashPaymentConfig,
-  onCashComplete,
-  onCloseCashPayment,
-  cardPaymentConfig,
-  onCardComplete,
-  onCloseCardPayment,
   onClearPaymentError,
+  btcPayment,
+  cashPayment,
+  cardPayment,
 }) {
   const t = useTranslations("cart");
   const { formatAmount } = useCurrency();
@@ -162,32 +155,32 @@ export function SummaryContent({
       </div>
 
       <BitcoinPaymentModal
-        isOpen={!!btcPaymentConfig}
-        amountFiat={btcPaymentConfig?.amountFiat}
-        currencyAcronym={btcPaymentConfig?.currencyAcronym}
-        paymentId={btcPaymentConfig?.paymentId}
-        invoiceDescription={btcPaymentConfig?.invoiceDescription}
-        displayTotal={btcPaymentConfig?.displayTotal}
-        onClose={onCloseBtcPayment}
-        onInvoiceReady={onInvoiceReady}
-        onComplete={onBtcComplete}
+        isOpen={!!btcPayment?.config}
+        amountFiat={btcPayment?.config?.amountFiat}
+        currencyAcronym={btcPayment?.config?.currencyAcronym}
+        paymentId={btcPayment?.config?.paymentId}
+        invoiceDescription={btcPayment?.config?.invoiceDescription}
+        displayTotal={btcPayment?.config?.displayTotal}
+        onClose={btcPayment?.onClose}
+        onInvoiceReady={btcPayment?.onInvoiceReady}
+        onComplete={btcPayment?.onComplete}
       />
 
       <CashPaymentModal
-        isOpen={!!cashPaymentConfig}
-        amountDue={cashPaymentConfig?.amountDue}
-        displayTotal={cashPaymentConfig?.displayTotal}
-        onClose={onCloseCashPayment}
-        onComplete={onCashComplete}
+        isOpen={!!cashPayment?.config}
+        amountDue={cashPayment?.config?.amountDue}
+        displayTotal={cashPayment?.config?.displayTotal}
+        onClose={cashPayment?.onClose}
+        onComplete={cashPayment?.onComplete}
       />
 
       <CardPaymentModal
-        isOpen={!!cardPaymentConfig}
-        amountDue={cardPaymentConfig?.amountDue}
-        displayTotal={cardPaymentConfig?.displayTotal}
-        methodLabel={cardPaymentConfig?.methodLabel}
-        onClose={onCloseCardPayment}
-        onComplete={onCardComplete}
+        isOpen={!!cardPayment?.config}
+        amountDue={cardPayment?.config?.amountDue}
+        displayTotal={cardPayment?.config?.displayTotal}
+        methodLabel={cardPayment?.config?.methodLabel}
+        onClose={cardPayment?.onClose}
+        onComplete={cardPayment?.onComplete}
       />
     </>
   );

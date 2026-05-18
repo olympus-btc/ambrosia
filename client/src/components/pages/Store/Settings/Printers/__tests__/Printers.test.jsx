@@ -16,7 +16,7 @@ jest.mock("../PrintersCard", () => ({
   PrintersCard: (props) => {
     capturedProps = props;
     return (
-      <button type="button" onClick={props.onAdd}>
+      <button type="button" onClick={props.state?.onAdd}>
         add-printer
       </button>
     );
@@ -59,7 +59,7 @@ describe("Printers", () => {
 
       render(<Printers />);
 
-      await waitFor(() => expect(capturedProps?.printerName).toBe("Printer A"));
+      await waitFor(() => expect(capturedProps?.formState?.printerName).toBe("Printer A"));
     });
 
     it("initializes templateName from first template", async () => {
@@ -70,7 +70,7 @@ describe("Printers", () => {
 
       render(<Printers />);
 
-      await waitFor(() => expect(capturedProps?.templateName).toBe("Template A"));
+      await waitFor(() => expect(capturedProps?.formState?.templateName).toBe("Template A"));
     });
 
     it("auto-sets isDefault to true when no configs exist", async () => {
@@ -82,7 +82,7 @@ describe("Printers", () => {
 
       render(<Printers />);
 
-      await waitFor(() => expect(capturedProps?.isDefault).toBe(true));
+      await waitFor(() => expect(capturedProps?.formState?.isDefault).toBe(true));
     });
   });
 
@@ -101,7 +101,7 @@ describe("Printers", () => {
 
       render(<Printers />);
 
-      await waitFor(() => expect(capturedProps?.printerName).toBe("Printer A"));
+      await waitFor(() => expect(capturedProps?.formState?.printerName).toBe("Printer A"));
 
       fireEvent.click(screen.getByText("add-printer"));
 
@@ -129,7 +129,7 @@ describe("Printers", () => {
 
       render(<Printers />);
 
-      expect(capturedProps?.configRows.map((r) => r.printerName)).toEqual([
+      expect(capturedProps?.data?.configRows.map((r) => r.printerName)).toEqual([
         "Bravo",
         "Alpha",
         "Zebra",

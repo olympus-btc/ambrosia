@@ -34,15 +34,15 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("../OrdersFilterBar", () => ({
-  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange, onFiltersChange, onApplyFilters, onClearFilters }) => (
+  OrdersFilterBar: ({ search, pagination, onFiltersChange, onApplyFilters, onClearFilters }) => (
     <div>
-      <button type="button" onClick={() => onSearchChange("order-1")}>
+      <button type="button" onClick={() => search.onChange("order-1")}>
         search-match
       </button>
-      <button type="button" onClick={() => onSearchChange("missing")}>
+      <button type="button" onClick={() => search.onChange("missing")}>
         search-empty
       </button>
-      <button type="button" onClick={() => onRowsPerPageChange("1")}>
+      <button type="button" onClick={() => pagination.onChange("1")}>
         rows-1
       </button>
       <button type="button" onClick={() => onFiltersChange({ status: "paid" })}>

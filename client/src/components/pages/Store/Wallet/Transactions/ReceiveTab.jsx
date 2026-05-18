@@ -72,36 +72,30 @@ export function ReceiveTab({ invoiceActions }) {
     }
   };
 
+  const fieldLabels = {
+    title: t("payments.receive.invoiceAmountTitle"),
+    satLabel: t("payments.receive.invoiceAmountSatLabel"),
+    satsOptionLabel: t("payments.receive.satsOption"),
+    satPlaceholder: t("payments.receive.invoiceAmountSatPlaceholder"),
+    fiatLabel: t("payments.receive.invoiceAmountFiatLabel", { currency: currency.acronym }),
+    fiatOptionLabel: t("payments.receive.fiatOption", { currency: currency.acronym }),
+    fiatPlaceholder: t("payments.receive.invoiceAmountFiatPlaceholder"),
+    estimatedLabel: t("payments.receive.invoiceEstimatedLabel"),
+    loadingText: t("payments.receive.invoiceFiatLoading"),
+    estimatedFiatErrorText: t("payments.receive.invoiceSatsToFiatError"),
+    conversionErrorText: t("payments.receive.invoiceFiatToSatsError"),
+  };
+
   return (
     <div className="p-6">
       <div className="mx-auto max-w-2xl space-y-5">
         <div id="wallet-receive-amount" className="mx-auto w-full max-w-xl">
           <AmountUnitInputFields
-            amountInputMode={amountInputMode}
-            currencyAcronym={currency.acronym}
-            currencyLocale={currency.locale}
+            labels={fieldLabels}
+            amountState={{ amountInputMode, inputValue: customEstimateValue, onAmountChange: handleAmountChange, onAmountModeChange: handleAmountModeChange }}
+            conversionState={{ estimatedFiat, estimatedFiatHasError, estimatedFiatIsLoading, estimatedSats, fiatToSatHasError, fiatToSatIsLoading }}
             errorMessage={customEstimateError}
-            estimatedFiat={estimatedFiat}
-            estimatedFiatErrorText={t("payments.receive.invoiceSatsToFiatError")}
-            estimatedFiatHasError={estimatedFiatHasError}
-            estimatedFiatIsLoading={estimatedFiatIsLoading}
-            estimatedLabel={t("payments.receive.invoiceEstimatedLabel")}
-            estimatedSats={estimatedSats}
-            fiatLabel={t("payments.receive.invoiceAmountFiatLabel", { currency: currency.acronym })}
-            fiatOptionLabel={t("payments.receive.fiatOption", { currency: currency.acronym })}
-            fiatPlaceholder={t("payments.receive.invoiceAmountFiatPlaceholder")}
-            fiatToSatHasError={fiatToSatHasError}
-            fiatToSatIsLoading={fiatToSatIsLoading}
-            inputValue={customEstimateValue}
             isDisabled={isLoading}
-            loadingText={t("payments.receive.invoiceFiatLoading")}
-            onAmountChange={handleAmountChange}
-            onAmountModeChange={handleAmountModeChange}
-            satLabel={t("payments.receive.invoiceAmountSatLabel")}
-            satsOptionLabel={t("payments.receive.satsOption")}
-            satPlaceholder={t("payments.receive.invoiceAmountSatPlaceholder")}
-            title={t("payments.receive.invoiceAmountTitle")}
-            conversionErrorText={t("payments.receive.invoiceFiatToSatsError")}
           />
         </div>
         <div id="wallet-receive-description" className="mx-auto w-full max-w-xl">

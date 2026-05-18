@@ -2,6 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { PrintersCard } from "../PrintersCard";
 
+jest.mock("next-intl", () => ({
+  useTranslations: () => (key) => key,
+}));
+
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
     <button type="button" onClick={onPress} {...props}>
@@ -15,7 +19,7 @@ jest.mock("@heroui/react", () => ({
 
 jest.mock("../PrinterAddForm", () => ({
   PrinterAddForm: (props) => (
-    <button type="button" onClick={props.onSubmit}>
+    <button type="button" onClick={props.formState?.onSubmit}>
       add-form-submit
     </button>
   ),
@@ -41,32 +45,24 @@ jest.mock("../PrinterConfigRow", () => ({
   ),
 }));
 
-const t = (key) => key;
+const defaultFormState = {
+  printerType: "CUSTOMER", printerName: "", templateName: "",
+  isDefault: false, enabled: true,
+  onPrinterTypeChange: jest.fn(), onPrinterNameChange: jest.fn(),
+  onTemplateNameChange: jest.fn(), onDefaultChange: jest.fn(), onEnabledChange: jest.fn(),
+};
+const defaultData = { availablePrinters: [], configRows: [], templates: [] };
+const defaultLoading = { available: false, configs: false, templates: false };
+const defaultState = {
+  error: null, saving: false,
+  onAdd: jest.fn(), onUpdateConfig: jest.fn(), onDeleteConfig: jest.fn(), onSetDefaultConfig: jest.fn(),
+};
 
 const defaultProps = {
-  printerType: "CUSTOMER",
-  printerName: "",
-  templateName: "",
-  isDefault: false,
-  enabled: true,
-  availablePrinters: [],
-  configRows: [],
-  loadingAvailable: false,
-  loadingConfigs: false,
-  loadingTemplates: false,
-  templates: [],
-  error: null,
-  saving: false,
-  onPrinterTypeChange: jest.fn(),
-  onPrinterNameChange: jest.fn(),
-  onTemplateNameChange: jest.fn(),
-  onDefaultChange: jest.fn(),
-  onEnabledChange: jest.fn(),
-  onAdd: jest.fn(),
-  onUpdateConfig: jest.fn(),
-  onDeleteConfig: jest.fn(),
-  onSetDefaultConfig: jest.fn(),
-  t,
+  formState: defaultFormState,
+  data: defaultData,
+  loading: defaultLoading,
+  state: defaultState,
 };
 
 describe("PrintersCard", () => {
@@ -77,17 +73,17 @@ describe("PrintersCard", () => {
   });
 
   it("shows error message when error prop is truthy", () => {
-    render(<PrintersCard {...defaultProps} error />);
+    render(<PrintersCard {...defaultProps} state={{ ...defaultState, error: true }} />);
     expect(screen.getByText("cardPrinters.error")).toBeInTheDocument();
   });
 
   it("shows empty message when configRows is empty and not loading", () => {
-    render(<PrintersCard {...defaultProps} configRows={[]} loadingConfigs={false} />);
+    render(<PrintersCard {...defaultProps} data={{ ...defaultData, configRows: [] }} loading={{ ...defaultLoading, configs: false }} />);
     expect(screen.getByText("cardPrinters.empty")).toBeInTheDocument();
   });
 
   it("shows loading message when loadingConfigs is true", () => {
-    render(<PrintersCard {...defaultProps} loadingConfigs />);
+    render(<PrintersCard {...defaultProps} loading={{ ...defaultLoading, configs: true }} />);
     expect(screen.getByText("cardPrinters.loading")).toBeInTheDocument();
   });
 
@@ -96,14 +92,14 @@ describe("PrintersCard", () => {
       { id: "cfg-1", printerName: "Alpha", printerType: "KITCHEN", isDefault: false },
       { id: "cfg-2", printerName: "Bravo", printerType: "BAR", isDefault: false },
     ];
-    render(<PrintersCard {...defaultProps} configRows={configRows} />);
+    render(<PrintersCard {...defaultProps} data={{ ...defaultData, configRows }} />);
     expect(screen.getByTestId("row-cfg-1")).toBeInTheDocument();
     expect(screen.getByTestId("row-cfg-2")).toBeInTheDocument();
   });
 
   it("calls onAdd when add form is submitted", () => {
     const onAdd = jest.fn();
-    render(<PrintersCard {...defaultProps} onAdd={onAdd} />);
+    render(<PrintersCard {...defaultProps} state={{ ...defaultState, onAdd }} />);
     fireEvent.click(screen.getByText("add-form-submit"));
     expect(onAdd).toHaveBeenCalled();
   });
@@ -117,10 +113,8 @@ describe("PrintersCard", () => {
     render(
       <PrintersCard
         {...defaultProps}
-        configRows={configRows}
-        onUpdateConfig={onUpdateConfig}
-        onDeleteConfig={onDeleteConfig}
-        onSetDefaultConfig={onSetDefaultConfig}
+        data={{ ...defaultData, configRows }}
+        state={{ ...defaultState, onUpdateConfig, onDeleteConfig, onSetDefaultConfig }}
       />,
     );
 

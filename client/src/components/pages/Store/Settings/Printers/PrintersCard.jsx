@@ -1,35 +1,19 @@
 "use client";
 
 import { Card, CardBody, CardHeader } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { PrinterAddForm } from "./PrinterAddForm";
 import { PrinterConfigRow } from "./PrinterConfigRow";
 
-export function PrintersCard({
-  printerType,
-  printerName,
-  templateName,
-  isDefault,
-  enabled,
-  availablePrinters,
-  configRows,
-  loadingAvailable,
-  loadingConfigs,
-  loadingTemplates,
-  templates,
-  error,
-  saving,
-  onPrinterTypeChange,
-  onPrinterNameChange,
-  onTemplateNameChange,
-  onDefaultChange,
-  onEnabledChange,
-  onAdd,
-  onUpdateConfig,
-  onDeleteConfig,
-  onSetDefaultConfig,
-  t,
-}) {
+export function PrintersCard({ formState, data, loading, state }) {
+  const t = useTranslations("settings");
+  const { configRows } = data;
+  const { configs: loadingConfigs } = loading;
+  const { error, saving, onAdd, onUpdateConfig, onDeleteConfig, onSetDefaultConfig } = state;
+
+  const addFormState = { ...formState, onSubmit: onAdd };
+
   return (
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-0">
@@ -44,23 +28,10 @@ export function PrintersCard({
       <CardBody>
         <div className="flex flex-col gap-6">
           <PrinterAddForm
-            printerType={printerType}
-            printerName={printerName}
-            templateName={templateName}
-            isDefault={isDefault}
-            enabled={enabled}
-            availablePrinters={availablePrinters}
-            templates={templates}
-            loadingAvailable={loadingAvailable}
-            loadingTemplates={loadingTemplates}
+            formState={addFormState}
+            data={data}
+            loading={loading}
             saving={saving}
-            onPrinterTypeChange={onPrinterTypeChange}
-            onPrinterNameChange={onPrinterNameChange}
-            onTemplateNameChange={onTemplateNameChange}
-            onDefaultChange={onDefaultChange}
-            onEnabledChange={onEnabledChange}
-            onSubmit={onAdd}
-            t={t}
           />
 
           {error && (
@@ -92,14 +63,13 @@ export function PrintersCard({
               <PrinterConfigRow
                 key={config.id}
                 config={config}
-                templates={templates}
-                loadingTemplates={loadingTemplates}
+                templates={data.templates}
+                loadingTemplates={loading.templates}
                 onTemplateChange={(value) => onUpdateConfig(config.id, { templateName: value })}
                 onSetDefault={() => onSetDefaultConfig(config.id)}
                 onToggleDefault={(value) => onUpdateConfig(config.id, { isDefault: value })}
                 onToggleEnabled={(value) => onUpdateConfig(config.id, { enabled: value })}
                 onRemove={() => onDeleteConfig(config.id)}
-                t={t}
               />
             ))}
           </div>

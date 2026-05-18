@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardBody, Select, SelectItem, Switch } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@components/shared/DeleteButton";
 
@@ -13,8 +14,8 @@ export function PrinterConfigRow({
   onToggleDefault,
   onToggleEnabled,
   onRemove,
-  t,
 }) {
+  const t = useTranslations("settings");
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-col gap-3 p-4">
