@@ -1,0 +1,35 @@
+const printersEn = {
+  cardPrinters: {
+    title: "Printers",
+    subtitle: "Configure defaults and availability",
+    typeLabel: "Type",
+    nameLabel: "Printer",
+    templateLabel: "Template",
+    templateNone: "No template",
+    addButton: "Add",
+    manageTemplates: "Manage templates",
+    addTitle: "Add printer",
+    addDescription: "Choose a type, select the system printer, and attach a template.",
+    listTitle: "Configured printers",
+    listHint: "Each printer can have its own template and default status.",
+    defaultLabel: "Default printer",
+    enabledLabel: "Enabled",
+    loading: "Loading printers...",
+    empty: "No printers configured yet.",
+    error: "Could not load printers.",
+    noAvailable: "No printers found",
+    setDefault: "Set default",
+    disable: "Disable",
+    enable: "Enable",
+    remove: "Remove",
+    defaultBadge: "Default",
+    disabledBadge: "Disabled",
+    types: {
+      KITCHEN: "Kitchen",
+      CUSTOMER: "Customer",
+      BAR: "Bar",
+    },
+  },
+};
+
+export default printersEn;

@@ -1,133 +1,165 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { getOrders, getPaymentMethods, getPayments, getTickets, getPaymentByTicketId } from "@/modules/orders/ordersService";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
-function parseLocalDate(dateStr, isStart = true) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(
-    year,
-    month - 1,
-    day,
-    isStart ? 0 : 23,
-    isStart ? 0 : 59,
-    isStart ? 0 : 59,
-    isStart ? 0 : 999,
-  );
-}
+export const defaultFilters = {
+  activePeriod: "month",
+  startDate: "",
+  endDate: "",
+  productName: "",
+  paymentMethod: "",
+};
 
-function formatTimeStamp(timestamp) {
-  const date = new Date(Number(timestamp));
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+function buildReportsQueryString(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.period) params.set("period", filters.period);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+  if (filters.productName?.trim()) params.set("productName", filters.productName.trim());
+  if (filters.paymentMethod?.trim()) params.set("paymentMethod", filters.paymentMethod.trim());
+  const query = params.toString();
+  return `/reports${query ? `?${query}` : ""}`;
 }
 
 export function useReports() {
-  const [tickets, setTickets] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const t = useTranslations("reports");
+  const [filters, setFilters] = useState(defaultFilters);
+  const latestFiltersRef = useRef(defaultFilters);
+  const debounceTimerRef = useRef(null);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => { latestFiltersRef.current = filters; });
+
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchReport = useCallback(async (params = {}) => {
     setLoading(true);
-    setError("");
+    setError(null);
     try {
-      const [ticketsResponse, ordersResponse, paymentsResponse, paymentMethodsResponse] =
-        await Promise.all([getTickets(), getOrders(), getPayments(), getPaymentMethods()]);
-
-      setTickets(ticketsResponse || []);
-      setOrders(ordersResponse || []);
-      setPayments(paymentsResponse || []);
-      setPaymentMethods(paymentMethodsResponse || []);
-    } catch (err) {
-      console.error(err);
-      const resolved = t("statuses.errorLoad");
-      setError(resolved);
-      addToast({
-        title: t("statuses.errorTitle"),
-        description: resolved,
-        variant: "solid",
-        color: "danger",
-      });
+      const endpoint = buildReportsQueryString(params);
+      const response = await httpClient(endpoint);
+      const data = await parseJsonResponse(response, null);
+      setReportData(data);
+      return data;
+    } catch (error) {
+      setError(error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
+
+  const showError = useCallback(
+    (message) => {
+      addToast({ title: t("statuses.errorTitle"), description: message, variant: "solid", color: "danger" });
+    },
+    [t],
+  );
+
+  const validateDateRange = useCallback(
+    (startDate, endDate) => {
+      if (startDate && endDate && startDate > endDate) {
+        showError(t("errors.invalidRange"));
+        return false;
+      }
+      if ((startDate && !endDate) || (!startDate && endDate)) {
+        showError(t("errors.bothDates"));
+        return false;
+      }
+      return true;
+    },
+    [showError, t],
+  );
+
+  const generateReport = useCallback(async () => {
+    const currentFilters = latestFiltersRef.current;
+    if (!currentFilters.activePeriod && !validateDateRange(currentFilters.startDate, currentFilters.endDate)) return;
+    try {
+      await fetchReport({
+        period: currentFilters.activePeriod || undefined,
+        startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
+        endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
+        productName: currentFilters.productName || undefined,
+        paymentMethod: currentFilters.paymentMethod || undefined,
+      });
+    } catch {
+      showError(t("statuses.errorGenerate"));
+    }
+  }, [fetchReport, validateDateRange, showError, t]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    fetchReport({ period: defaultFilters.activePeriod });
+  }, [fetchReport]);
 
-  const generateReportFromData = useCallback(
-    async (startDate, endDate) => {
-      const start = parseLocalDate(startDate, true);
-      const end = parseLocalDate(endDate, false);
+  useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-      const filteredTickets = tickets.filter((ticket) => {
-        const ticketDate = new Date(Number(ticket.ticketDate));
-        return ticketDate >= start && ticketDate <= end;
-      });
+  const handleFiltersChange = useCallback(
+    (patch) => {
+      const prev = latestFiltersRef.current;
+      const next = { ...prev, ...patch };
+      setFilters(next);
 
-      const reportsByDate = {};
-
-      for (const ticket of filteredTickets) {
-        const date = formatTimeStamp(ticket.ticketDate);
-
-        const order = orders.find((o) => o.id === ticket.orderId);
-        const userName = order?.waiter || "Desconocido";
-
-        const ticketPayment = await getPaymentByTicketId(ticket.id);
-        const payment = payments.find((p) => p.id === ticketPayment[0].paymentId);
-        const paymentMethodName = paymentMethods.find(
-          (method) => method.id === payment.methodId,
-        )?.name;
-
-        const ticketInfo = {
-          amount: ticket.totalAmount,
-          paymentMethod: paymentMethodName,
-          userName,
-        };
-
-        if (!reportsByDate[date]) {
-          reportsByDate[date] = {
-            date,
-            balance: 0,
-            tickets: [],
-          };
+      if ("activePeriod" in patch && patch.activePeriod) {
+        fetchReport({
+          period: next.activePeriod,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else if ("startDate" in patch || "endDate" in patch) {
+        if (next.startDate && next.endDate) {
+          if (next.startDate <= next.endDate) {
+            fetchReport({
+              startDate: next.startDate,
+              endDate: next.endDate,
+              productName: next.productName || undefined,
+              paymentMethod: next.paymentMethod || undefined,
+            });
+          } else {
+            showError(t("errors.invalidRange"));
+          }
         }
-
-        reportsByDate[date].balance += ticket.totalAmount;
-        reportsByDate[date].tickets.push(ticketInfo);
+      } else if ("paymentMethod" in patch) {
+        fetchReport({
+          period: next.activePeriod || undefined,
+          startDate: next.activePeriod ? undefined : next.startDate || undefined,
+          endDate: next.activePeriod ? undefined : next.endDate || undefined,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          const currentFilters = latestFiltersRef.current;
+          fetchReport({
+            period: currentFilters.activePeriod || undefined,
+            startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
+            endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
+            productName: currentFilters.productName || undefined,
+            paymentMethod: currentFilters.paymentMethod || undefined,
+          });
+        }, 500);
       }
-
-      const reports = Object.values(reportsByDate);
-      const totalBalance = reports.reduce((sum, r) => sum + r.balance, 0);
-
-      return {
-        startDate,
-        endDate,
-        totalBalance,
-        reports,
-      };
     },
-    [orders, paymentMethods, payments, tickets],
+    [fetchReport, showError, t],
   );
 
-  return useMemo(
-    () => ({
-      loading,
-      error,
-      loadData,
-      generateReportFromData,
-    }),
-    [error, generateReportFromData, loadData, loading],
-  );
+  const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);
+  const totalItems = useMemo(() => reportData?.totalItemsSold ?? 0, [reportData]);
+
+  return {
+    reportData,
+    loading,
+    error,
+    filters,
+    totalRevenue,
+    totalItems,
+    fetchReport,
+    handleFiltersChange,
+    generateReport,
+  };
 }

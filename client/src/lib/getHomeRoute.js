@@ -1,28 +1,26 @@
+import { features, matchesBusiness } from "./features";
 import { homeRoutesByUserType, homeRoutePriority } from "./homeRoutes";
-import { modules, matchesBusiness } from "./modules";
 
-function firstRouteForModule(moduleKey, businessType = null) {
-  const mod = modules[moduleKey];
-  if (!mod || !mod.enabled) return null;
-  const route = (mod.routes || []).find((r) => matchesBusiness(r, businessType),
-  );
+function firstRouteForFeature(featureKey, businessType = null) {
+  const feature = features[featureKey];
+  if (!feature || !feature.enabled) return null;
+  const route = (feature.routes || []).find((r) => matchesBusiness(r, businessType));
   return route ? route.path : null;
 }
 
 function fallbackAnyRoute(businessType = null) {
-  for (const [, mod] of Object.entries(modules)) {
-    if (!mod.enabled) continue;
-    const route = (mod.routes || []).find((r) => matchesBusiness(r, businessType));
+  for (const [, feature] of Object.entries(features)) {
+    if (!feature.enabled) continue;
+    const route = (feature.routes || []).find((r) => matchesBusiness(r, businessType));
     if (route) return route.path;
   }
   return "/";
 }
 
 export function getHomeRoute(user = null, businessType = null) {
-  // Prefer an explicit default route flagged in modules
-  for (const [, mod] of Object.entries(modules)) {
-    if (!mod?.enabled) continue;
-    const def = (mod.routes || []).find(
+  for (const [, feature] of Object.entries(features)) {
+    if (!feature?.enabled) continue;
+    const def = (feature.routes || []).find(
       (r) => r?.default === true && matchesBusiness(r, businessType),
     );
     if (def) return def.path;
@@ -30,12 +28,12 @@ export function getHomeRoute(user = null, businessType = null) {
 
   if (!user) {
     for (const entry of homeRoutePriority) {
-      if (entry.module === "default") {
+      if (entry.feature === "default") {
         if (!entry.route || matchesBusiness(entry.route, businessType)) {
           return entry.route || fallbackAnyRoute(businessType);
         }
-      } else if (modules[entry.module]?.enabled) {
-        const path = firstRouteForModule(entry.module, businessType);
+      } else if (features[entry.feature]?.enabled) {
+        const path = firstRouteForFeature(entry.feature, businessType);
         if (path) return path;
       }
     }
@@ -55,15 +53,13 @@ export function getHomeRoute(user = null, businessType = null) {
   }
 
   for (const entry of userRoutes) {
-    if (entry.module === "default") {
+    if (entry.feature === "default") {
       if (!entry.route || matchesBusiness(entry.route, businessType)) {
         return entry.route || fallbackAnyRoute(businessType);
       }
-    } else if (modules[entry.module]?.enabled) {
-      const path = firstRouteForModule(entry.module, businessType);
-      if (path) {
-        return path;
-      }
+    } else if (features[entry.feature]?.enabled) {
+      const path = firstRouteForFeature(entry.feature, businessType);
+      if (path) return path;
     }
   }
 

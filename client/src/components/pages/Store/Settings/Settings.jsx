@@ -5,8 +5,6 @@ import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { isElectron } from "@lib/isElectron";
 
-import { StoreLayout } from "../StoreLayout";
-
 import { Currency } from "./Currency";
 import { InstallPWA } from "./InstallPWA";
 import { Language } from "./Language";
@@ -21,7 +19,7 @@ export function Settings() {
   const t = useTranslations("settings");
 
   return (
-    <StoreLayout>
+    <>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -41,6 +39,6 @@ export function Settings() {
           {!isElectron && <InstallPWA />}
         </div>
       </div>
-    </StoreLayout>
+    </>
   );
 }

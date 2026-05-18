@@ -8,8 +8,6 @@ import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RequirePermission } from "@/hooks/usePermission";
 
-import { StoreLayout } from "../StoreLayout";
-
 import { useRoles } from "./../hooks/useRoles";
 import { useUsers } from "./../hooks/useUsers";
 import { AddUsersModal } from "./AddUsersModal";
@@ -68,7 +66,7 @@ export function Users() {
   const t = useTranslations("users");
 
   return (
-    <StoreLayout>
+    <>
       <PageHeader
         title={t("title")}
         subtitle={t("subtitle")}
@@ -146,6 +144,6 @@ export function Users() {
           setDeleteUsersShowModal(false);
         }}
       />
-    </StoreLayout>
+    </>
   );
 }

@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE order_products (
     order_id BLOB NOT NULL,
     product_id BLOB NOT NULL,

@@ -71,6 +71,15 @@ export default async function proxy(request) {
     console.error(error);
   }
 
+  if (businessType) {
+    if (pathname.startsWith("/store") && businessType === "restaurant") {
+      return NextResponse.redirect(new URL("/restaurant/all-orders", request.url));
+    }
+    if (pathname.startsWith("/restaurant") && businessType === "store") {
+      return NextResponse.redirect(new URL("/store", request.url));
+    }
+  }
+
   const next = NextResponse.next();
   if (businessType) {
     next.headers.set("x-business-type", businessType);

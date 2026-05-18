@@ -128,7 +128,7 @@ describe("walletService", () => {
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue({ serialized: "lnbc..." });
 
-      await createInvoice(2000, "Wallet invoice");
+      await createInvoice({ amountSat: 2000, description: "Wallet invoice" });
 
       expect(httpClient).toHaveBeenCalledWith("/wallet/createinvoice", {
         method: "POST",
@@ -137,12 +137,22 @@ describe("walletService", () => {
       });
     });
 
+    it("parses amountSat as integer", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue(null);
+
+      await createInvoice({ amountSat: "2500", description: "Wallet invoice" });
+
+      const body = JSON.parse(httpClient.mock.calls[0][1].body);
+      expect(body.amountSat).toBe(2500);
+    });
+
     it("returns the created invoice", async () => {
       const invoice = { serialized: "lnbc...", paymentHash: "hash-xyz" };
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue(invoice);
 
-      const result = await createInvoice(2000, "desc");
+      const result = await createInvoice({ amountSat: 2000, description: "desc" });
 
       expect(result).toEqual(invoice);
     });

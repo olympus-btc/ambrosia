@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { getHomeRoute } from "@/lib/getHomeRoute";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   const router = useRouter();
   const { user, isLoading, isAuth } = useAuth();

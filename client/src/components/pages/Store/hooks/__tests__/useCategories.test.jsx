@@ -85,8 +85,9 @@ describe("useCategories", () => {
   });
 
   it("creates a category, refetches, and returns the new id", async () => {
-    httpClient.mockResolvedValue({ id: "cat-3" });
+    httpClient.mockResolvedValue({});
     parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: "cat-3", message: "Category added successfully" });
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-3", name: "Electronics" }]);
 
     render(<TestComponent />);
@@ -108,8 +109,9 @@ describe("useCategories", () => {
   });
 
   it("creates a category with an explicit type override", async () => {
-    httpClient.mockResolvedValue({ id: "cat-4" });
+    httpClient.mockResolvedValue({});
     parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: "cat-4", message: "Category added successfully" });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);

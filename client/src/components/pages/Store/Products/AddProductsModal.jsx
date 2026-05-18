@@ -22,7 +22,6 @@ import { CategorySelector } from "./CategorySelector";
 
 export function AddProductsModal({
   data,
-  setData,
   addProduct,
   onChange,
   onProductCreated,
@@ -31,7 +30,7 @@ export function AddProductsModal({
   categoriesLoading = false,
   createCategory,
   addProductsShowModal,
-  setAddProductsShowModal,
+  onClose,
 }) {
   const t = useTranslations("products");
   const { currency } = useCurrency();
@@ -43,19 +42,7 @@ export function AddProductsModal({
     try {
       setIsSubmitting(true);
       await addProduct(data);
-      setData({
-        productName: "",
-        productDescription: "",
-        productCategories: [],
-        productSKU: "",
-        productPrice: "",
-        productStock: 1,
-        productMinStock: 0,
-        productMaxStock: 0,
-        productImage: null,
-        productImageUrl: "",
-      });
-      setAddProductsShowModal(false);
+      onClose?.();
       onProductCreated?.();
     } finally {
       setIsSubmitting(false);
@@ -65,7 +52,9 @@ export function AddProductsModal({
   return (
     <Modal
       isOpen={addProductsShowModal}
-      onOpenChange={setAddProductsShowModal}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose?.();
+      }}
       backdrop="blur"
       shouldBlockScroll={false}
       classNames={{
@@ -95,8 +84,6 @@ export function AddProductsModal({
               label={t("modal.productDescriptionLabel")}
               placeholder={t("modal.productDescriptionPlaceholder")}
               value={data.productDescription}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               onChange={(e) => onChange({ productDescription: e.target.value })
               }
             />
@@ -107,14 +94,11 @@ export function AddProductsModal({
               selectedCategories={data.productCategories}
               onSelectionChange={(keys) => onChange({ productCategories: keys })}
               createCategory={createCategory}
-              isRequired
             />
 
             <Input
               label={t("modal.productSKULabel")}
               placeholder={t("modal.productSKUPlaceholder")}
-              isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
               value={data.productSKU}
               onChange={(e) => onChange({ productSKU: e.target.value })
               }
@@ -173,7 +157,7 @@ export function AddProductsModal({
                 variant="bordered"
                 type="button"
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                onPress={() => setAddProductsShowModal(false)}
+                onPress={() => onClose?.()}
               >
                 {t("modal.cancelButton")}
               </Button>

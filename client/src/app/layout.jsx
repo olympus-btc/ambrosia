@@ -2,7 +2,6 @@ import { Geist, Geist_Mono as GeistMono } from "next/font/google";
 
 import "./globals.css";
 import Providers from "@/providers";
-import ModuleNavigation from "@components/ModuleNavigation";
 import UpdateBanner from "@components/UpdateBanner";
 
 const geistSans = Geist({
@@ -49,7 +48,7 @@ export default function RootLayout({ children }) {
       >
         <Providers>
           <UpdateBanner />
-          <ModuleNavigation show="none">{children}</ModuleNavigation>
+          {children}
         </Providers>
       </body>
     </html>

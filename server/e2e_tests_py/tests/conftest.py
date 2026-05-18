@@ -20,14 +20,11 @@ from ambrosia.auth_utils import (
 )
 from ambrosia.http_client import AmbrosiaHttpClient
 
-# Add the project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Load fixtures from test_server module (avoids circular imports and F811 errors)
 pytest_plugins = ["ambrosia.test_server"]
 
-# Configure logging for tests
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -35,7 +32,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# Pytest hooks for custom CLI options
 def pytest_addoption(parser):
     """Add custom command-line options."""
     parser.addoption(
@@ -51,7 +47,6 @@ def pytest_collection_modifyitems(config, items):
     run_slow = config.getoption("--run-slow")
 
     if not run_slow:
-        # Mark slow tests to be skipped
         skip_slow = pytest.mark.skipif(
             True, reason="Slow test skipped (use --run-slow to include)"
         )
@@ -59,8 +54,11 @@ def pytest_collection_modifyitems(config, items):
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
 
+    rate_limit = [i for i in items if "test_rate_limit" in i.nodeid]
+    others = [i for i in items if "test_rate_limit" not in i.nodeid]
+    items[:] = others + rate_limit
 
-# Set up test environment variables
+
 os.environ.setdefault("TESTING", "true")
 os.environ.setdefault("LOG_LEVEL", "INFO")
 
@@ -79,7 +77,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
 
     async def setup():
         async with AmbrosiaHttpClient(server_url) as client:
-            # Check if database is initialized
             setup_check = await client.get("/initial-setup")
 
             if setup_check.status_code == 200:
@@ -89,7 +86,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                     logger.info("✓ Database already initialized")
                     return
 
-            # Database not initialized - try to create default user
             logger.info(
                 "Attempting to initialize database with default user for tests..."
             )
@@ -109,12 +105,10 @@ def initialize_database(manage_server_lifecycle, server_url: str):
 
             if setup_response.status_code == 201:
                 logger.info("✓ Database initialized successfully with default user")
-                # Give database a moment to commit
                 await asyncio.sleep(1.0)
             elif setup_response.status_code == 409:
                 logger.info("✓ Database already initialized (409 Conflict)")
             elif setup_response.status_code == 500:
-                # Check if it's a UNIQUE constraint error (user already exists)
                 try:
                     error_data = setup_response.json()
                     error_message = error_data.get("message", "")
@@ -130,7 +124,6 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                         logger.error(error_msg)
                         raise RuntimeError(error_msg)
                 except (KeyError, ValueError) as e:
-                    # If we can't parse the JSON, re-raise with context
                     error_msg = f"Initial setup failed with status 500, could not parse error: {e}"
                     logger.error(error_msg)
                     raise RuntimeError(error_msg) from e
@@ -145,13 +138,9 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 logger.error(error_msg)
                 raise RuntimeError(error_msg)
 
-    # Run the async setup function
     asyncio.run(setup())
 
-    # Yield control to tests
     yield
-
-    # Teardown (if needed) would go here
 
 
 @pytest.fixture
@@ -197,19 +186,15 @@ async def client_factory(server_url: str, admin_client):
         user_name = f"user_{uid}"
         user_pin = "1234"
 
-        # Create role
         role_id = await create_role(admin_client, role_name)
         roles.append(role_id)
 
-        # Assign permissions if requested
         if permissions:
             await grant_permissions(admin_client, role_id, permissions)
 
-        # Create user with that role
         user_id = await create_user(admin_client, user_name, user_pin, role_id)
         users.append(user_id)
 
-        # Create client and login
         client = AmbrosiaHttpClient(server_url)
         await client.__aenter__()
         await login_user(client, {"name": user_name, "pin": user_pin})
@@ -219,11 +204,9 @@ async def client_factory(server_url: str, admin_client):
 
     yield _factory
 
-    # Cleanup in reverse order
     for client in clients:
         await client.__aexit__(None, None, None)
 
-    # We use admin_client for cleanup. Note: admin_client fixture handles its own close.
     for user_id in users:
         try:
             await admin_client.delete(f"/users/{user_id}")

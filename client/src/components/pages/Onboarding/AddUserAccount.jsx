@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 export function UserAccountStep({ data, onChange }) {
   const t = useTranslations();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
 
@@ -22,6 +23,8 @@ export function UserAccountStep({ data, onChange }) {
     if (/[^a-zA-Z\d]/.test(password)) strength++;
     setPasswordStrength(strength);
   };
+
+  const passwordsMatch = data.userPassword === data.userPasswordConfirmation;
 
   const getPasswordStrengthColor = () => {
     if (passwordStrength === 0) return "bg-muted";
@@ -119,6 +122,28 @@ export function UserAccountStep({ data, onChange }) {
             />
           </div>
         </Tooltip>
+
+        <div className="relative">
+          <Input
+            aria-label="confirm-password"
+            label={t("step2.fields.confirmPasswordLabel")}
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder={t("step2.fields.confirmPasswordPlaceholder")}
+            value={data.userPasswordConfirmation}
+            onChange={(e) => onChange({ ...data, userPasswordConfirmation: e.target.value })}
+            isInvalid={data.userPasswordConfirmation && !passwordsMatch}
+            errorMessage={data.userPasswordConfirmation && !passwordsMatch ? t("step2.passwordsDoNotMatch") : ""}
+            endContent={(
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            )}
+          />
+        </div>
 
         <div>
           {data.userPassword && (

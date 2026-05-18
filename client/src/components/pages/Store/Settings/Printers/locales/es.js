@@ -1,0 +1,35 @@
+const printersEs = {
+  cardPrinters: {
+    title: "Impresoras",
+    subtitle: "Configura defaults y disponibilidad",
+    typeLabel: "Tipo",
+    nameLabel: "Impresora",
+    templateLabel: "Plantilla",
+    templateNone: "Sin plantilla",
+    addButton: "Agregar",
+    addDescription: "Elige el tipo, la impresora del sistema y asigna una plantilla.",
+    manageTemplates: "Administrar plantillas",
+    addTitle: "Agregar impresora",
+    listTitle: "Impresoras configuradas",
+    listHint: "Cada impresora puede tener su template y estado default.",
+    defaultLabel: "Impresora por defecto",
+    enabledLabel: "Habilitada",
+    loading: "Cargando impresoras...",
+    empty: "Aun no hay impresoras configuradas.",
+    error: "No se pudieron cargar las impresoras.",
+    noAvailable: "No hay impresoras disponibles",
+    setDefault: "Definir default",
+    disable: "Deshabilitar",
+    enable: "Habilitar",
+    remove: "Eliminar",
+    defaultBadge: "Default",
+    disabledBadge: "Deshabilitada",
+    types: {
+      KITCHEN: "Cocina",
+      CUSTOMER: "Cliente",
+      BAR: "Barra",
+    },
+  },
+};
+
+export default printersEs;

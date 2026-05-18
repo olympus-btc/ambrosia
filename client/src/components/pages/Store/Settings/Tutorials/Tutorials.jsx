@@ -15,14 +15,13 @@ const SEED_SEEN_KEY = "ambrosia:tour:seed-seen";
 
 export function Tutorials({ onNavigate = (url) => window.location.assign(url) }) {
   const t = useTranslations("settings");
-  const [walletTourSeen] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem(WALLET_TOUR_KEY) === "visited",
-  );
-  const [seedTourSeen, setSeedTourSeen] = useState(
-    () => typeof window !== "undefined" && Boolean(localStorage.getItem(SEED_SEEN_KEY)),
-  );
+  const [walletTourSeen, setWalletTourSeen] = useState(false);
+  const [seedTourSeen, setSeedTourSeen] = useState(false);
 
   useEffect(() => {
+    setWalletTourSeen(localStorage.getItem(WALLET_TOUR_KEY) === "visited");
+    setSeedTourSeen(Boolean(localStorage.getItem(SEED_SEEN_KEY)));
+
     const handler = () => setSeedTourSeen(true);
     window.addEventListener("seed-tour:seen", handler);
     return () => window.removeEventListener("seed-tour:seen", handler);

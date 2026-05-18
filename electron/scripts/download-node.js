@@ -6,7 +6,7 @@ const path = require('path');
 const { getBuildPlatform } = require('./platform-utils');
 const { verifySha256, fetchSha256SumsChecksum } = require('./verify-checksum');
 
-const NODE_VERSION = 'v20.11.0'; // LTS version compatible with Next.js 16
+const NODE_VERSION = 'v24.15.0';
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'node');
 
 // Node.js publishes SHASUMS256.txt per release with all platform hashes.

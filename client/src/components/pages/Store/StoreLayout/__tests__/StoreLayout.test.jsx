@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within, act } from "@testing-library/react";
 
-import * as useModulesHook from "@hooks/useModules";
+import * as useNavigationHook from "@hooks/useNavigation";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
@@ -72,10 +72,10 @@ describe("StoreLayout", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-      availableModules: {},
+    jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+      availableFeatures: {},
       availableNavigation: defaultNavigation,
-      checkRouteAccess: jest.fn(),
+
       isAuth: true,
       isAdmin: false,
       isLoading: false,
@@ -151,10 +151,10 @@ describe("StoreLayout", () => {
     });
 
     it("does not render navigation items when not authenticated", () => {
-      jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-        availableModules: {},
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
         availableNavigation: [],
-        checkRouteAccess: jest.fn(),
+
         isAuth: false,
         isAdmin: false,
         isLoading: false,
@@ -195,10 +195,10 @@ describe("StoreLayout", () => {
         },
       ];
 
-      jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-        availableModules: {},
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
         availableNavigation: customNavigation,
-        checkRouteAccess: jest.fn(),
+
         isAuth: true,
         isAdmin: true,
         isLoading: false,
@@ -436,10 +436,10 @@ describe("StoreLayout", () => {
         },
       ];
 
-      jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-        availableModules: {},
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
         availableNavigation: customNavigation,
-        checkRouteAccess: jest.fn(),
+
         isAuth: true,
         isAdmin: false,
         isLoading: false,
@@ -467,10 +467,10 @@ describe("StoreLayout", () => {
     });
 
     it("renders layout when modules are loading", () => {
-      jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-        availableModules: {},
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
         availableNavigation: [],
-        checkRouteAccess: jest.fn(),
+
         isAuth: true,
         isAdmin: false,
         isLoading: true,
@@ -543,9 +543,9 @@ describe("StoreLayout", () => {
       expect(screen.getAllByText("Custom Store Name")[0]).toBeInTheDocument();
     });
 
-    it("integrates with useModules hook for navigation", () => {
+    it("integrates with useNavigation() hook for navigation", () => {
       renderStoreLayout();
-      expect(useModulesHook.useModules).toHaveBeenCalled();
+      expect(useNavigationHook.useNavigation).toHaveBeenCalled();
       expect(within(getDesktopSidebar()).getByText("users")).toBeInTheDocument();
     });
   });

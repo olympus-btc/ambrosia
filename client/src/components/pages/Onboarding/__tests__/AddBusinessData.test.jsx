@@ -4,6 +4,31 @@ import { I18nProvider } from "@i18n/I18nProvider";
 
 import { BusinessDetailsStep } from "../AddBusinessData";
 
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  Autocomplete: ({
+    children, label, onSelectionChange, selectedKey,
+  }) => (
+    <div data-testid="autocomplete-wrapper">
+      <label htmlFor="currency-select">{label}</label>
+      <select
+        id="currency-select"
+        aria-label={label}
+        value={selectedKey}
+        onChange={(e) => onSelectionChange(e.target.value)}
+      >
+        <option value="">Select currency</option>
+        {children}
+      </select>
+    </div>
+  ),
+  AutocompleteItem: ({ children, textValue }) => (
+    <option value={children.toString().split(" ")[0]}>
+      {textValue || children}
+    </option>
+  ),
+}));
+
 describe("Step 3 Business Details", () => {
   const mockChange = jest.fn();
   const defaultData = {
@@ -62,10 +87,11 @@ describe("Step 3 Business Details", () => {
     );
   });
 
-  it("calls onChange when currency changes", () => {
+  it("calls onChange when currency changes", async () => {
     remderBusinessDetails();
-    const select = screen.getAllByLabelText("step3.fields.businessCurrency");
-    fireEvent.change(select[0], { target: { value: "USD" } });
+    const select = screen.getByRole("combobox");
+    fireEvent.change(select, { target: { value: "USD" } });
+
     expect(mockChange).toHaveBeenCalledWith(
       expect.objectContaining({ businessCurrency: "USD" }),
     );

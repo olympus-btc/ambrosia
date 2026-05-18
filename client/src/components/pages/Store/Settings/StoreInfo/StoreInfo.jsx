@@ -15,8 +15,10 @@ export function StoreInfo() {
   const t = useTranslations("settings");
   const { config, updateConfig } = useConfigurations();
   const { upload } = useUpload();
-  const [data, setData] = useState(config);
+  const [data, setData] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  if (!config) return null;
 
   const handleDataChange = (newData) => {
     setData((prev) => ({ ...prev, ...newData }));
@@ -50,7 +52,7 @@ export function StoreInfo() {
       });
     } catch (error) {
       addToast({
-        title: "Error",
+        title: t("modal.errorTitle"),
         description: error.message,
         color: "danger",
       });
@@ -59,7 +61,7 @@ export function StoreInfo() {
 
   return (
     <>
-      <StoreInfoCard data={data} onEdit={() => setShowModal(true)} />
+      <StoreInfoCard data={config} onEdit={() => { setData(config); setShowModal(true); }} />
       <EditStoreInfoModal
         data={data}
         setData={setData}

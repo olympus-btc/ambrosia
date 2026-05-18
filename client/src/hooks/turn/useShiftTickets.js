@@ -8,7 +8,7 @@ import {
   getPayments,
   getPaymentMethods,
   getPaymentByTicketId,
-} from "@/modules/orders/ordersService";
+} from "@/services/ticketsService";
 
 export function useShiftTickets(shiftData) {
   const ts = useTranslations("shifts");

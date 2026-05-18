@@ -54,10 +54,10 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
         {canManageProducts && (
           <div className="flex flex-col gap-2 shrink-0">
             <RequirePermission allOf={["products_update"]}>
-              <EditButton onPress={() => onEditProduct(product)} />
+              <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
             </RequirePermission>
             <RequirePermission allOf={["products_delete"]}>
-              <DeleteButton onPress={() => onDeleteProduct(product)} />
+              <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
             </RequirePermission>
           </div>
         )}

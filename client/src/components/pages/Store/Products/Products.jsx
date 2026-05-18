@@ -10,7 +10,6 @@ import { PageHeader } from "@components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
-import { StoreLayout } from "../StoreLayout";
 
 import { AddProductsModal } from "./AddProductsModal";
 import { Categories } from "./Categories";
@@ -18,11 +17,8 @@ import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
 import { ProductsList } from "./ProductsList";
 
-export function Products() {
-  const [addProductsShowModal, setAddProductsShowModal] = useState(false);
-  const [editProductsShowModal, setEditProductsShowModal] = useState(false);
-  const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
-  const [data, setData] = useState({
+function createEmptyProductForm() {
+  return {
     productId: "",
     productName: "",
     productDescription: "",
@@ -34,8 +30,15 @@ export function Products() {
     productMaxStock: 0,
     productImage: null,
     productImageUrl: "",
-  });
-  const [selectedProduct, setSelectedProduct] = useState(null);
+    productImageRemoved: false,
+  };
+}
+
+export function Products() {
+  const [addProductsShowModal, setAddProductsShowModal] = useState(false);
+  const [editProductsShowModal, setEditProductsShowModal] = useState(false);
+  const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
+  const [productForm, setProductForm] = useState(createEmptyProductForm);
   const [productToDelete, setProductToDelete] = useState(null);
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
   const {
@@ -47,14 +50,26 @@ export function Products() {
     refetch: refetchCategories,
   } = useCategories("product");
 
-  const handleDataChange = (newData) => {
-    setData((prev) => ({ ...prev, ...newData }));
+  const handleProductFormChange = (newData) => {
+    setProductForm((prev) => ({ ...prev, ...newData }));
+  };
+
+  const resetProductForm = () => {
+    setProductForm(createEmptyProductForm());
+  };
+
+  const handleCloseAddProductsModal = () => {
+    resetProductForm();
+    setAddProductsShowModal(false);
+  };
+
+  const handleCloseEditProductsModal = () => {
+    resetProductForm();
+    setEditProductsShowModal(false);
   };
 
   const handleEditProduct = (product) => {
-    setSelectedProduct(product);
-
-    setData({
+    setProductForm({
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
@@ -83,7 +98,7 @@ export function Products() {
   const t = useTranslations("products");
 
   return (
-    <StoreLayout>
+    <>
       <PageHeader
         title={t("title")}
         subtitle={t("subtitle")}
@@ -92,7 +107,10 @@ export function Products() {
             <Button
               color="primary"
               className="bg-green-800"
-              onPress={() => setAddProductsShowModal(true)}
+              onPress={() => {
+                resetProductForm();
+                setAddProductsShowModal(true);
+              }}
             >
               {t("addProduct")}
             </Button>
@@ -110,23 +128,20 @@ export function Products() {
 
       <AddProductsModal
         addProductsShowModal={addProductsShowModal}
-        setAddProductsShowModal={setAddProductsShowModal}
-        data={data}
-        setData={setData}
+        onClose={handleCloseAddProductsModal}
+        data={productForm}
         addProduct={addProduct}
         isUploading={isUploading}
         categories={categories}
         categoriesLoading={categoriesLoading}
         createCategory={createCategory}
-        onChange={handleDataChange}
+        onChange={handleProductFormChange}
         onProductCreated={handleRefreshData}
       />
 
       <EditProductsModal
-        data={data}
-        setData={setData}
-        product={selectedProduct}
-        onChange={handleDataChange}
+        data={productForm}
+        onChange={handleProductFormChange}
         updateProduct={updateProduct}
         isUploading={isUploading}
         onProductUpdated={handleRefreshData}
@@ -134,7 +149,7 @@ export function Products() {
         categoriesLoading={categoriesLoading}
         createCategory={createCategory}
         editProductsShowModal={editProductsShowModal}
-        setEditProductsShowModal={setEditProductsShowModal}
+        onClose={handleCloseEditProductsModal}
       />
 
       <DeleteProductsModal
@@ -152,8 +167,8 @@ export function Products() {
         createCategory={createCategory}
         updateCategory={updateCategory}
         deleteCategory={deleteCategory}
-        refetch={refetchCategories}
+        refreshData={handleRefreshData}
       />
-    </StoreLayout>
+    </>
   );
 }

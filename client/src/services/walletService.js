@@ -54,15 +54,18 @@ export async function createInvoiceForCart(invoiceAmount, invoiceDesc) {
   return await parseJsonResponse(response, null);
 }
 
-export async function createInvoice(invoiceAmount, invoiceDesc) {
+export async function createInvoice({
+  amountSat,
+  description,
+}) {
   const response = await httpClient("/wallet/createinvoice", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      description: invoiceDesc,
-      amountSat: parseInt(invoiceAmount),
+      description,
+      amountSat: Number.parseInt(amountSat, 10),
     }),
   });
   return await parseJsonResponse(response, null);

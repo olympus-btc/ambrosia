@@ -141,6 +141,7 @@ export default function StoreOrders() {
                     color="primary"
                     showControls
                     showShadow
+                    aria-label={t("filter.paginationAria")}
                   />
                 </div>
               )}

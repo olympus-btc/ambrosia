@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-import * as useModulesHook from "@/hooks/useModules";
+import * as useNavigationHook from "@/hooks/useNavigation";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import * as configurationsProvider from "@/providers/configurations/configurationsProvider";
 
@@ -159,10 +159,10 @@ beforeEach(() => {
     { id: "seller", role: "Seller" },
   ];
 
-  jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-    availableModules: {},
+  jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+    availableFeatures: {},
     availableNavigation: defaultNavigation,
-    checkRouteAccess: jest.fn(),
+
     isAuth: true,
     isAdmin: false,
     isLoading: false,

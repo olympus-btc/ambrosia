@@ -11,6 +11,8 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
   const t = useTranslations("settings");
   const [rfcError, setRfcError] = useState("");
 
+  if (!data) return null;
+
   const handleOnClose = () => {
     setData(data);
     setIsOpen(false);

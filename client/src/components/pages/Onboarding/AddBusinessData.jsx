@@ -1,7 +1,8 @@
 "use client";
+
 import { useState, useMemo } from "react";
 
-import { Input, Select, SelectItem } from "@heroui/react";
+import { Input, Autocomplete, AutocompleteItem } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
 
 import { ImageUploader } from "@components/shared/ImageUploader";
@@ -29,6 +30,12 @@ export function BusinessDetailsStep({ data, onChange }) {
     }
 
     onChange({ ...data, businessRFC: upperValue });
+  };
+
+  const handleCurrencyChange = (key) => {
+    if (key) {
+      onChange({ ...data, businessCurrency: key });
+    }
   };
 
   return (
@@ -87,20 +94,26 @@ export function BusinessDetailsStep({ data, onChange }) {
           errorMessage={rfcError}
         />
 
-        <Select
+        <Autocomplete
           label={t("step3.fields.businessCurrency")}
-          defaultSelectedKeys={[data.businessCurrency]}
-          value={data.businessCurrency}
+          defaultSelectedKey={data.businessCurrency}
           isInvalid={!data.businessCurrency}
           errorMessage={t("step3.fields.businessCurrencyError")}
-          onChange={(e) => onChange({ ...data, businessCurrency: e.target.value })}
+          onSelectionChange={handleCurrencyChange}
+          isClearable
+          allowsCustomValue={false}
+          menuTrigger="focus"
+          inputProps={{
+            onClick: (e) => e.target.select(),
+          }}
+          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
         >
           {CURRENCIES.map((currency) => (
-            <SelectItem key={currency.code}>
+            <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
               {`${currency.code}  -  ${currency.name}`}
-            </SelectItem>
+            </AutocompleteItem>
           ))}
-        </Select>
+        </Autocomplete>
 
         <ImageUploader
           title={data.businessType === "store" ? t("step3.fields.businessLogoLabelStore") : t("step3.fields.businessLogoLabelRestaurant")}

@@ -4,8 +4,8 @@ import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 import { I18nProvider } from "@/i18n/I18nProvider";
-import { getUsers } from "@/modules/auth/authService";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
+import { getUsers } from "@/services/authService";
 
 import PinLogin from "../PinLogin";
 
@@ -23,7 +23,7 @@ jest.mock("../EmployeeSelect", () => ({
   ),
 }));
 
-jest.mock("@/modules/auth/authService", () => ({ getUsers: jest.fn() }));
+jest.mock("@/services/authService", () => ({ getUsers: jest.fn() }));
 jest.mock("@/hooks/auth/useAuth", () => ({ useAuth: jest.fn() }));
 jest.mock("@/providers/configurations/configurationsProvider", () => ({ useConfigurations: jest.fn() }));
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));

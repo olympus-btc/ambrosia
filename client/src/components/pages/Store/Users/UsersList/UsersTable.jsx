@@ -21,7 +21,7 @@ export function UsersTable({ users, canManageUsers, onEditUser, onDeleteUser }) 
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[400px]" removeWrapper>
+      <Table className="min-w-[400px]" removeWrapper aria-label={t("users.tableAriaLabel")}>
         <TableHeader>
           <TableColumn className="py-2 px-3 w-[120px]">{t("users.name")}</TableColumn>
           <TableColumn className="py-2 px-3 w-20">{t("users.role")}</TableColumn>

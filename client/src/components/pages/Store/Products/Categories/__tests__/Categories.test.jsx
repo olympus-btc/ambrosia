@@ -29,7 +29,7 @@ const renderCategories = (props = {}) => render(
       createCategory={jest.fn(() => Promise.resolve("cat-3"))}
       updateCategory={jest.fn(() => Promise.resolve())}
       deleteCategory={jest.fn(() => Promise.resolve())}
-      refetch={jest.fn(() => Promise.resolve())}
+      refreshData={jest.fn(() => Promise.resolve())}
       {...props}
     />
   </I18nProvider>,
@@ -80,8 +80,8 @@ describe("Categories", () => {
 
   it("calls createCategory and refetch when adding a new category", async () => {
     const createCategory = jest.fn(() => Promise.resolve("cat-3"));
-    const refetch = jest.fn(() => Promise.resolve());
-    renderCategories({ createCategory, refetch });
+    const refreshData = jest.fn(() => Promise.resolve());
+    renderCategories({ createCategory, refreshData });
 
     await act(async () => {
       fireEvent.click(screen.getByText("addCategory"));
@@ -96,7 +96,7 @@ describe("Categories", () => {
     });
 
     await waitFor(() => expect(createCategory).toHaveBeenCalledWith("New Category", "product"));
-    expect(refetch).toHaveBeenCalled();
+    expect(refreshData).toHaveBeenCalled();
   });
 
   it("calls updateCategory when saving an edited category", async () => {
@@ -121,7 +121,8 @@ describe("Categories", () => {
 
   it("calls deleteCategory and closes modal when confirming deletion", async () => {
     const deleteCategory = jest.fn(() => Promise.resolve());
-    renderCategories({ deleteCategory });
+    const refreshData = jest.fn(() => Promise.resolve());
+    renderCategories({ deleteCategory, refreshData });
 
     await act(async () => {
       fireEvent.click(screen.getAllByText("delete")[0].closest("button"));
@@ -132,6 +133,7 @@ describe("Categories", () => {
     });
 
     await waitFor(() => expect(deleteCategory).toHaveBeenCalledWith("cat-1"));
+    expect(refreshData).toHaveBeenCalled();
     expect(screen.queryByText("modal.titleDelete")).not.toBeInTheDocument();
   });
 });

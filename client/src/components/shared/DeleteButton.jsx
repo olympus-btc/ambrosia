@@ -2,13 +2,16 @@
 
 import { Button } from "@heroui/react";
 import { Trash } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function DeleteButton({
   onPress,
   children,
   size = "sm",
   showLabelOnMobile = false,
+  "aria-label": ariaLabel,
 }) {
+  const t = useTranslations("actions");
   const hasLabel = Boolean(children);
   const buttonClassName = hasLabel
     ? showLabelOnMobile
@@ -22,6 +25,7 @@ export function DeleteButton({
       onPress={onPress}
       size={size}
       variant="outline"
+      aria-label={ariaLabel ?? t("delete")}
     >
       <Trash className="w-4 h-4" />
       {hasLabel && (

@@ -5,9 +5,9 @@ const mockProducts = [
     name: "Jade Wallet",
     description: "Blockstream hardware wallet",
     categoryId: "cat-hw",
-    price_cents: 1600,
+    priceCents: 1600,
     quantity: 20,
-    image_url:
+    imageUrl:
       "https://store.blockstream.com/cdn/shop/files/Jade_Bitcoin_Hardware_Wallet_-_Green_-_Front.png",
   },
   {
@@ -16,9 +16,9 @@ const mockProducts = [
     name: "Jade Plus",
     description: "Introducing Jade Plus",
     categoryId: "cat-hw",
-    price_cents: 4000,
+    priceCents: 4000,
     quantity: 10,
-    image_url:
+    imageUrl:
       "https://store.blockstream.com/cdn/shop/files/Blockstream_Jade_Plus_Bitcoin_Wallet_Angled_Back_Grey.jpg",
   },
 ];
@@ -83,5 +83,4 @@ export function setupFetchMocks() {
   });
 }
 
-// Ensure the mock is registered when this file is loaded globally by Jest setupFiles
 setupFetchMocks();

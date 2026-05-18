@@ -12,26 +12,26 @@ import { CategoriesList } from "./CategoriesList";
 import { DeleteCategoriesModal } from "./DeleteCategoriesModal";
 import { EditCategoriesModal } from "./EditCategoriesModal";
 
-export function Categories({ categories, createCategory, updateCategory, deleteCategory, refetch }) {
+export function Categories({ categories, createCategory, updateCategory, deleteCategory, refreshData }) {
   const [addCategoriesShowModal, setAddCategoriesShowModal] = useState(false);
   const [editCategoriesShowModal, setEditCategoriesShowModal] = useState(false);
   const [deleteCategoriesShowModal, setDeleteCategoriesShowModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [data, setData] = useState({
+  const [categoryForm, setCategoryForm] = useState({
     categoryId: "",
     categoryName: "",
   });
 
   const t = useTranslations("categories");
 
-  const handleDataChange = (newData) => {
-    setData((prev) => ({ ...prev, ...newData }));
+  const handleCategoryFormChange = (newData) => {
+    setCategoryForm((prev) => ({ ...prev, ...newData }));
   };
 
   const handleEditCategory = (category) => {
     setSelectedCategory(category);
-    setData({
+    setCategoryForm({
       categoryId: category.id,
       categoryName: category.name,
     });
@@ -43,9 +43,9 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
     setDeleteCategoriesShowModal(true);
   };
 
-  const handleAddCategory = async (data) => {
-    await createCategory(data.categoryName, "product");
-    await refetch();
+  const handleAddCategory = async (formData) => {
+    await createCategory(formData.categoryName, "product");
+    await refreshData();
   };
 
   return (
@@ -60,7 +60,7 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
             color="primary"
             className="bg-green-800"
             onPress={() => {
-              setData({ categoryId: "", categoryName: "" });
+              setCategoryForm({ categoryId: "", categoryName: "" });
               setAddCategoriesShowModal(true);
             }}
           >
@@ -77,19 +77,19 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
       </div>
 
       <AddCategoriesModal
-        data={data}
-        setData={setData}
+        data={categoryForm}
+        setData={setCategoryForm}
         addCategory={handleAddCategory}
-        onChange={handleDataChange}
+        onChange={handleCategoryFormChange}
         addCategoriesShowModal={addCategoriesShowModal}
         setAddCategoriesShowModal={setAddCategoriesShowModal}
       />
 
       <EditCategoriesModal
-        data={data}
-        setData={setData}
+        data={categoryForm}
+        setData={setCategoryForm}
         category={selectedCategory}
-        onChange={handleDataChange}
+        onChange={handleCategoryFormChange}
         updateCategory={updateCategory}
         editCategoriesShowModal={editCategoriesShowModal}
         setEditCategoriesShowModal={setEditCategoriesShowModal}
@@ -102,6 +102,7 @@ export function Categories({ categories, createCategory, updateCategory, deleteC
         onConfirm={async () => {
           if (categoryToDelete?.id) {
             await deleteCategory(categoryToDelete.id);
+            await refreshData();
           }
           setDeleteCategoriesShowModal(false);
         }}

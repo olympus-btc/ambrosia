@@ -42,7 +42,7 @@ export function StoreWallet() {
       console.error(err);
       setError(t("nodeInfo.fetchInfoError"));
       addToast({
-        title: "Error",
+        title: t("errorTitle"),
         description: t("nodeInfo.getInfoErrorDescription"),
         variant: "solid",
         color: "danger",
@@ -71,7 +71,7 @@ export function StoreWallet() {
         setTransactions(allTx);
       } catch {
         addToast({
-          title: "Error",
+          title: t("errorTitle"),
           description: t("payments.history.getTransactionsErrorDescription"),
           variant: "solid",
           color: "danger",

@@ -49,6 +49,7 @@ export function LightningCard() {
               isSelected={enabled}
               isDisabled={loading || restarting}
               onValueChange={handleToggle}
+              aria-label={t("autoLiquidityLabel")}
             />
           </div>
 

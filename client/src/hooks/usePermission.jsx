@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
-import { buildPermissionSet } from "@/lib/modules";
+import { buildPermissionSet } from "@/lib/features";
 
 function usePermissionNames() {
   const { permissions } = useAuth();

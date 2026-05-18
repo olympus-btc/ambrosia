@@ -1,0 +1,30 @@
+name: Electron ESLint
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: electron/package-lock.json
+
+      - run: npm ci
+        working-directory: ./electron
+
+      - run: npm audit --audit-level=high
+        working-directory: ./electron
+
+      - run: npm run lint
+        working-directory: ./electron

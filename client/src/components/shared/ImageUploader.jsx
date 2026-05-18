@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from "react";
 
 import { Button, Image } from "@heroui/react";
 import { Upload, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function ImageUploader({ title, uploadText, uploadDescription, onChange, value }) {
+  const t = useTranslations("imageUploader");
   const [filePreview, setFilePreview] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -60,6 +62,7 @@ export function ImageUploader({ title, uploadText, uploadDescription, onChange, 
               isIconOnly
               size="sm"
               color="danger"
+              aria-label={t("removeImage")}
               data-testid="remove-image-button"
               className="absolute top-1 right-1 z-10 min-w-0 w-6 h-6"
               onPress={handleRemoveImage}

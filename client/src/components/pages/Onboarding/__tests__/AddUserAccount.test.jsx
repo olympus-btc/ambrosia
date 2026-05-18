@@ -8,19 +8,21 @@ describe("Step 2 User Account", () => {
   const defaultData = {
     userName: "",
     userPassword: "",
+    userPasswordConfirmation: "",
   };
 
   beforeEach(() => {
     mockChange.mockClear();
   });
 
-  it("renders username and password fields", async () => {
+  it("renders username, password, and confirmation fields", async () => {
     await act(async () => {
       render(<UserAccountStep data={defaultData} onChange={mockChange} />);
     });
 
     expect(screen.getByPlaceholderText("step2.fields.userNamePlaceholder")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("step2.fields.passwordPlaceholder")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("step2.fields.confirmPasswordPlaceholder")).toBeInTheDocument();
   });
 
   it("calls onChange when username is typed", async () => {
@@ -37,6 +39,7 @@ describe("Step 2 User Account", () => {
     expect(mockChange).toHaveBeenCalledWith({
       userName: "Ivan",
       userPassword: "",
+      userPasswordConfirmation: "",
     });
   });
 
@@ -61,10 +64,24 @@ describe("Step 2 User Account", () => {
     expect(mockChange).toHaveBeenCalledWith({
       userName: "",
       userPassword: "abc123!!",
+      userPasswordConfirmation: "",
     });
 
     expect(screen.getByText(/step2.strength.title:/)).toBeInTheDocument();
     expect(screen.getByText(/step2.strength.weak|step2.strength.regular|step2.strength.good|step2.strength.strong/)).toBeInTheDocument();
+  });
+
+  it("shows error when passwords do not match", async () => {
+    await act(async () => {
+      render(
+        <UserAccountStep
+          data={{ ...defaultData, userPassword: "password123", userPasswordConfirmation: "different" }}
+          onChange={mockChange}
+        />,
+      );
+    });
+
+    expect(screen.getByText("step2.passwordsDoNotMatch")).toBeInTheDocument();
   });
 
   it("toggles pin visibility when clicking the eye icon", async () => {

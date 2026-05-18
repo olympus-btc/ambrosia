@@ -4,6 +4,14 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { AddProductsModal } from "../AddProductsModal";
 
+jest.mock("../CategorySelector", () => ({
+  CategorySelector: () => (
+    <div aria-label="modal.productCategoryLabel">
+      category-selector
+    </div>
+  ),
+}));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const NumberInput = ({
@@ -70,7 +78,6 @@ const renderModal = (props = {}) => render(
   <I18nProvider>
     <AddProductsModal
       data={baseData}
-      setData={jest.fn()}
       addProduct={jest.fn()}
       onChange={jest.fn()}
       onProductCreated={jest.fn()}
@@ -78,7 +85,7 @@ const renderModal = (props = {}) => render(
       categoriesLoading={false}
       createCategory={jest.fn()}
       addProductsShowModal
-      setAddProductsShowModal={jest.fn()}
+      onClose={jest.fn()}
       {...props}
     />
   </I18nProvider>,
@@ -168,53 +175,16 @@ describe("AddProductsModal", () => {
   });
 
   it("cancels and closes modal", () => {
-    const setAddProductsShowModal = jest.fn();
-    renderModal({ setAddProductsShowModal });
+    const onClose = jest.fn();
+    renderModal({ onClose });
     fireEvent.click(screen.getByText("modal.cancelButton"));
-    expect(setAddProductsShowModal).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalled();
   });
 
-  it("does not create category when input is empty and prevents duplicate while loading", async () => {
-    const createCategory = jest.fn(() => new Promise(() => { }));
-    const onChange = jest.fn();
-    renderModal({ createCategory, onChange });
+  it("renders the category selector", () => {
+    renderModal();
 
-    const addButton = screen.getByText("modal.createCategoryButton");
-    fireEvent.click(addButton);
-    expect(createCategory).not.toHaveBeenCalled();
-
-    const input = screen.getByLabelText("modal.createCategoryLabel");
-    fireEvent.change(input, { target: { value: "New Cat" } });
-
-    fireEvent.click(addButton);
-    fireEvent.click(addButton);
-    await waitFor(() => expect(createCategory).toHaveBeenCalledTimes(1));
-  });
-
-  it("does not update category when createCategory returns falsy", async () => {
-    const createCategory = jest.fn(() => Promise.resolve(undefined));
-    const onChange = jest.fn();
-    renderModal({ createCategory, onChange });
-
-    const input = screen.getByLabelText("modal.createCategoryLabel");
-    fireEvent.change(input, { target: { value: "New Cat" } });
-    fireEvent.click(screen.getByText("modal.createCategoryButton"));
-
-    await waitFor(() => expect(createCategory).toHaveBeenCalledWith("New Cat"));
-    expect(onChange).not.toHaveBeenCalled();
-    expect(input.value).toBe("");
-  });
-
-  it("creates category when clicking add category", async () => {
-    const createCategory = jest.fn(() => Promise.resolve("cat-2"));
-    const onChange = jest.fn();
-    renderModal({ createCategory, onChange });
-
-    fireEvent.change(screen.getByLabelText("modal.createCategoryLabel"), { target: { value: "New Cat" } });
-    fireEvent.click(screen.getByText("modal.createCategoryButton"));
-
-    await waitFor(() => expect(createCategory).toHaveBeenCalledWith("New Cat"));
-    expect(onChange).toHaveBeenCalledWith({ productCategories: ["cat-1", "cat-2"] });
+    expect(screen.getByLabelText("modal.productCategoryLabel")).toBeInTheDocument();
   });
 
   it("does not submit when uploading", () => {
@@ -234,35 +204,21 @@ describe("AddProductsModal", () => {
     expect(addProduct).toHaveBeenCalledTimes(1);
   });
 
-  it("submits form, calls addProduct, resets data and closes", async () => {
+  it("submits form, calls addProduct and closes", async () => {
     const addProduct = jest.fn(() => Promise.resolve());
-    const setData = jest.fn();
-    const setAddProductsShowModal = jest.fn();
+    const onClose = jest.fn();
     const onProductCreated = jest.fn();
 
     renderModal({
       addProduct,
-      setData,
-      setAddProductsShowModal,
+      onClose,
       onProductCreated,
     });
 
     fireEvent.click(screen.getByText("modal.submitButton"));
 
     await waitFor(() => expect(addProduct).toHaveBeenCalledWith(baseData));
-    expect(setData).toHaveBeenCalledWith({
-      productName: "",
-      productDescription: "",
-      productCategories: [],
-      productSKU: "",
-      productPrice: "",
-      productStock: 1,
-      productMinStock: 0,
-      productMaxStock: 0,
-      productImage: null,
-      productImageUrl: "",
-    });
-    expect(setAddProductsShowModal).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalled();
     expect(onProductCreated).toHaveBeenCalled();
   });
 });

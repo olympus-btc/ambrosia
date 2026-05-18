@@ -9,7 +9,6 @@ import { PageHeader } from "@components/shared/PageHeader";
 import { useOrders } from "./hooks/useOrders";
 import { useProducts } from "./hooks/useProducts";
 import { useUsers } from "./hooks/useUsers";
-import { StoreLayout } from "./StoreLayout";
 
 export function Store() {
   const t = useTranslations("dashboard");
@@ -41,7 +40,7 @@ export function Store() {
   ];
 
   return (
-    <StoreLayout>
+    <>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8">
@@ -63,6 +62,6 @@ export function Store() {
           ))}
         </div>
       </div>
-    </StoreLayout>
+    </>
   );
 }

@@ -134,11 +134,16 @@ async function handleStartupError(error) {
     splashWindow.close();
   }
 
+  const isBackendTimeout = error.message && error.message.includes('Timed out waiting for');
+  const javaHint = process.platform === 'win32' && isBackendTimeout
+    ? '\n\nIf you have another Java version installed (Oracle JDK, OpenJDK, etc.), it may be conflicting with the bundled runtime. Try uninstalling other Java versions.'
+    : '';
+
   const response = await dialog.showMessageBox({
     type: 'error',
     title: 'Startup Error',
     message: 'The application Ambrosia could not be started',
-    detail: error.message || error.toString(),
+    detail: (error.message || error.toString()) + javaHint,
     buttons: ['Retry', 'Logs', 'Exit'],
     defaultId: 0,
     cancelId: 2,

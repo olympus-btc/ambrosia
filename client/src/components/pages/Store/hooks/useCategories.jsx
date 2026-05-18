@@ -15,8 +15,8 @@ export function useCategories(type = "product") {
 
     try {
       const response = await httpClient(`/categories?type=${type}`);
-      const data = await parseJsonResponse(response, []);
-      setCategories(toArray(data));
+      const categoryList = await parseJsonResponse(response, []);
+      setCategories(toArray(categoryList));
     } catch (error) {
       console.error("Error fetching categories:", error);
       setError(error);
@@ -27,7 +27,7 @@ export function useCategories(type = "product") {
 
   const createCategory = useCallback(
     async (name, categoryType) => {
-      const response = await httpClient("/categories", {
+      const createCategoryResponse = await httpClient("/categories", {
         method: "POST",
         body: JSON.stringify({ name, type: categoryType || type }),
         headers: {
@@ -35,9 +35,10 @@ export function useCategories(type = "product") {
         },
         notShowError: false,
       });
+      const createdCategory = await parseJsonResponse(createCategoryResponse, {});
 
       await fetchCategories();
-      return response?.id;
+      return createdCategory?.id;
     },
     [fetchCategories, type],
   );

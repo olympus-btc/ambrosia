@@ -45,24 +45,27 @@ class PhoenixdService {
 
       logger.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
 
-      // Set JAVA_HOME for phoenixd when using JVM version
-      // Windows ARM64 uses JVM version and needs x64 JRE
-      // Linux ARM64 has native binary and doesn't need JRE
-      // Other platforms use their native binaries
+      // Set JAVA_HOME for phoenixd when using JVM version.
+      // Windows (both x64 and ARM64) uses the JVM version of phoenixd (phoenixd.bat calls java
+      // internally), so we must point it at the bundled JRE and strip any system Java env vars
+      // that could override it (e.g. a stale JAVA_HOME left by an uninstalled JDK).
       const env = { ...process.env };
 
-      if (process.platform === 'win32' && process.arch === 'arm64') {
-        // Windows ARM64: phoenixd uses JVM version with x64 JRE (emulation)
+      if (process.platform === 'win32') {
+        // Both win-x64 and win-arm64 use the JVM phoenixd version with the bundled x64 JRE.
         const { getBasePath } = require('../utils/resourcePaths');
-        const javaPath = path.join(getBasePath(), 'jre', 'win-x64', 'bin', 'java.exe');
-        env.JAVA_HOME = path.dirname(path.dirname(javaPath));
-        logger.log(`[PhoenixdService] Using x64 JRE for phoenixd JVM version (Windows ARM64)`);
-        logger.log(`[PhoenixdService] JAVA_HOME: ${env.JAVA_HOME}`);
+        const bundledJreHome = path.join(getBasePath(), 'jre', 'win-x64');
+        ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS', 'JAVA_OPTS', 'JAVA_HOME'].forEach(
+          (key) => delete env[key],
+        );
+        env.JAVA_HOME = bundledJreHome;
+        logger.log(`[PhoenixdService] Using bundled x64 JRE for phoenixd JVM version (${process.arch})`);
+        logger.log(`[PhoenixdService] JAVA_HOME: ${bundledJreHome}`);
       } else if (process.platform === 'linux' && process.arch === 'arm64') {
         // Linux ARM64: phoenixd has native ARM64 binary, no JRE needed
         logger.log(`[PhoenixdService] Using native ARM64 phoenixd binary (Linux ARM64)`);
       } else {
-        // Other platforms: native binaries (macOS ARM64/x64, Linux x64, Windows x64)
+        // Other platforms: native binaries (macOS ARM64/x64, Linux x64)
         logger.log(`[PhoenixdService] Using native phoenixd binary for ${process.platform}-${process.arch}`);
       }
 

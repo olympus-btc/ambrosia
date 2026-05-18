@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 
-jest.mock("@/modules/orders/ordersService", () => ({
+jest.mock("@/services/ticketsService", () => ({
   getTickets: jest.fn(),
   getPayments: jest.fn(),
   getPaymentMethods: jest.fn(),
@@ -12,7 +12,7 @@ import {
   getPayments,
   getPaymentMethods,
   getPaymentByTicketId,
-} from "@/modules/orders/ordersService";
+} from "@/services/ticketsService";
 
 import { useShiftTickets } from "../useShiftTickets";
 
