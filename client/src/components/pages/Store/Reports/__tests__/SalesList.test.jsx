@@ -2,10 +2,6 @@ import { render, screen } from "@testing-library/react";
 
 import { SalesList } from "../Sales/SalesList";
 
-jest.mock("../Sales/PaymentBadge", () => ({
-  PaymentBadge: ({ method }) => <span data-testid="payment-badge">{method}</span>,
-}));
-
 jest.mock("../Sales/SalesCard", () => ({
   SalesCard: ({ sale }) => <div data-testid="sales-card">{`card-${sale.productName}`}</div>,
 }));
@@ -51,7 +47,7 @@ describe("SalesList", () => {
 
   it("does not render items when the list is empty", () => {
     render(<SalesList sales={[]} formatCurrency={mockFormatCurrency} />);
-    expect(screen.queryByTestId("payment-badge")).not.toBeInTheDocument();
+    expect(screen.queryByText("Raspberry Pi")).not.toBeInTheDocument();
   });
 
   it("renders the product name and user name", () => {
@@ -122,7 +118,7 @@ describe("SalesList", () => {
     expect(mockFormatCurrency).toHaveBeenCalledWith(4500);
   });
 
-  it("shows the payment method badge", () => {
+  it("shows the payment method", () => {
     const sales = [
       {
         productName: "Widget",
@@ -136,7 +132,7 @@ describe("SalesList", () => {
 
     render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
-    expect(screen.getByTestId("payment-badge")).toHaveTextContent("BTC");
+    expect(screen.getByText("BTC")).toBeInTheDocument();
   });
 
   it("renders multiple sale items", () => {

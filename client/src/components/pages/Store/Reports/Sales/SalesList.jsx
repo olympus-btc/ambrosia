@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { DataTable } from "@/components/shared/DataTable";
 import formatDate from "@lib/formatDate";
 
-import { PaymentBadge } from "./PaymentBadge";
 import { SalesCard } from "./SalesCard";
 
 export function SalesList({ sales, formatCurrency }) {
@@ -54,7 +53,7 @@ export function SalesList({ sales, formatCurrency }) {
     {
       key: "payment",
       label: t("sales.paymentMethod"),
-      render: (sale) => <PaymentBadge method={sale.paymentMethod} />,
+      render: (sale) => <span className="text-sm text-gray-700">{sale.paymentMethod || t("payment.unknown")}</span>,
     },
     {
       key: "date",

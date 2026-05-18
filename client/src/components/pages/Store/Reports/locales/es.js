@@ -42,6 +42,12 @@ const reportsEs = {
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
     },
+    charts: {
+      title: "Analítica",
+      revenueOverTime: "Ingresos por Día",
+      topProducts: "Top Productos por Ingresos",
+      paymentSplit: "Distribución de Métodos de Pago",
+    },
     payment: {
       unknown: "Desconocido",
     },

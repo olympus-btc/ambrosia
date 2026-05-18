@@ -448,8 +448,7 @@ describe("useDateRangeFilters", () => {
   const baseFilters = { activePeriod: "", startDate: "", endDate: "", productName: "", paymentMethod: "" };
 
   it("activeFilterCount counts non-empty filter values", () => {
-    const { result } = renderHook(() =>
-      useDateRangeFilters({ ...baseFilters, activePeriod: "month", productName: "cake" }, jest.fn()),
+    const { result } = renderHook(() => useDateRangeFilters({ ...baseFilters, activePeriod: "month", productName: "cake" }, jest.fn()),
     );
     expect(result.current.activeFilterCount).toBe(2);
   });
@@ -460,8 +459,7 @@ describe("useDateRangeFilters", () => {
   });
 
   it("dateRangeValue returns CalendarDate objects when both dates are set", () => {
-    const { result } = renderHook(() =>
-      useDateRangeFilters({ ...baseFilters, startDate: "2024-01-01", endDate: "2024-01-31" }, jest.fn()),
+    const { result } = renderHook(() => useDateRangeFilters({ ...baseFilters, startDate: "2024-01-01", endDate: "2024-01-31" }, jest.fn()),
     );
     expect(result.current.dateRangeValue.start.toString()).toBe("2024-01-01");
     expect(result.current.dateRangeValue.end.toString()).toBe("2024-01-31");

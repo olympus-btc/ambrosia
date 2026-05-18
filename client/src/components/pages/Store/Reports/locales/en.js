@@ -42,6 +42,12 @@ const reportsEn = {
       revenue: "Total Revenue",
       items: "Items Sold",
     },
+    charts: {
+      title: "Analytics",
+      revenueOverTime: "Revenue Over Time",
+      topProducts: "Top Products by Revenue",
+      paymentSplit: "Payment Method Distribution",
+    },
     payment: {
       unknown: "Unknown",
     },

@@ -9,10 +9,6 @@ jest.mock("@heroui/react", () => {
   return { ...actual, Card, CardBody };
 });
 
-jest.mock("../Sales/PaymentBadge", () => ({
-  PaymentBadge: ({ method }) => <span data-testid="payment-badge">{method}</span>,
-}));
-
 const baseSale = {
   productName: "Widget A",
   userName: "alice",
@@ -45,9 +41,9 @@ describe("SalesCard", () => {
     expect(screen.getByText("$3000")).toBeInTheDocument();
   });
 
-  it("renders PaymentBadge with the correct method", () => {
+  it("renders the payment method", () => {
     render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} />);
-    expect(screen.getByTestId("payment-badge")).toHaveTextContent("Cash");
+    expect(screen.getByText("Cash")).toBeInTheDocument();
   });
 
   it("shows '-' when saleDate is null", () => {

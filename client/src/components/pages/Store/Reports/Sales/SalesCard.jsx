@@ -6,8 +6,6 @@ import { useTranslations } from "next-intl";
 
 import formatDate from "@lib/formatDate";
 
-import { PaymentBadge } from "./PaymentBadge";
-
 export function SalesCard({ sale, formatCurrency }) {
   const t = useTranslations("reports");
   return (
@@ -23,7 +21,7 @@ export function SalesCard({ sale, formatCurrency }) {
             <span className="truncate">{sale.userName}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <PaymentBadge method={sale.paymentMethod} />
+            <span className="text-sm text-gray-700">{sale.paymentMethod}</span>
             <span className="text-xs text-gray-400">
               {sale.saleDate ? formatDate(sale.saleDate) : "-"}
             </span>

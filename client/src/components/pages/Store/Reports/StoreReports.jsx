@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 
+import { PaymentMethodPieChart, RevenueAreaChart, TopProductsBarChart } from "./Charts";
 import { DateRangeCard } from "./Filters";
 import { useReports } from "./hooks/useReports";
 import { SalesList } from "./Sales";
@@ -16,7 +17,7 @@ const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 const DEFAULT_ROWS_PER_PAGE = 10;
 
 export function StoreReports() {
-  const { reportData, error, filters, totalRevenue, totalItems, handleFiltersChange } =
+  const { reportData, error, filters, totalRevenue, totalItems, revenueByDay, topProducts, paymentMethodSplit, handleFiltersChange } =
     useReports();
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const t = useTranslations("reports");
@@ -67,6 +68,24 @@ export function StoreReports() {
 
       {reportData && (
         <div className="space-y-6">
+          {(revenueByDay.length > 0 || topProducts.length > 0) && (
+            <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
+              <CardHeader>
+                <h3 className="text-lg font-bold text-deep flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2" />
+                  {t("charts.title")}
+                </h3>
+              </CardHeader>
+              <CardBody className="space-y-8">
+                <RevenueAreaChart dailyRevenue={revenueByDay} formatCurrency={formatCurrency} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <TopProductsBarChart products={topProducts} formatCurrency={formatCurrency} />
+                  <PaymentMethodPieChart paymentMethods={paymentMethodSplit} formatCurrency={formatCurrency} />
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
           <Card className="shadow-lg border-0 bg-white">
             <CardHeader>
               <h3 className="text-lg font-bold text-deep flex items-center">
