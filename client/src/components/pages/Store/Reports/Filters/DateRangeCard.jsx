@@ -5,7 +5,7 @@ import { Button, DateRangePicker, Input, Select, SelectItem } from "@heroui/reac
 import { Bitcoin, Banknote, CreditCard, Calendar, Search, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { useDateRangeFilters } from "../hooks/useReports";
+import { useDateRangeFilters } from "../hooks/useFilters";
 
 const PERIODS = ["week", "month", "year"];
 

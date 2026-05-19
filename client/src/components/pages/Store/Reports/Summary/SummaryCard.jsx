@@ -3,10 +3,13 @@ import { Card, CardBody } from "@heroui/react";
 import { DollarSign, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useSummaryData } from "../hooks/useSummaryData";
+
 import { SummaryStat } from "./SummaryStat";
 
-export function SummaryCard({ totalRevenue, totalItems, formatCurrency }) {
+export function SummaryCard({ reportData, formatCurrency }) {
   const t = useTranslations("reports");
+  const { totalRevenue, totalItems } = useSummaryData(reportData);
   return (
     <Card className="shadow-lg border-0 bg-white">
       <CardBody>

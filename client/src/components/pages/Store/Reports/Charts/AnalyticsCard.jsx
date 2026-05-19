@@ -1,11 +1,14 @@
 "use client";
 import { Card, CardBody } from "@heroui/react";
 
+import { useChartData } from "../hooks/useChartData";
+
 import { PaymentMethodPieChart } from "./PaymentMethodPieChart";
 import { RevenueAreaChart } from "./RevenueAreaChart";
 import { TopProductsBarChart } from "./TopProductsBarChart";
 
-export function AnalyticsCard({ revenueByDay, topProducts, paymentMethodSplit, formatCurrency }) {
+export function AnalyticsCard({ sales, formatCurrency }) {
+  const { revenueByDay, topProducts, paymentMethodSplit } = useChartData(sales);
   return (
     <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
       <CardBody className="space-y-8">

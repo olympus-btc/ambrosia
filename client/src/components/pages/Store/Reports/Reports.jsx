@@ -1,26 +1,27 @@
 "use client";
+import { useCallback, useMemo } from "react";
+
 import { Card, CardBody } from "@heroui/react";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
 import { PageHeader } from "@components/shared/PageHeader";
 
 import { AnalyticsCard } from "./Charts";
 import { FiltersCard } from "./Filters";
+import { useFiltersState } from "./hooks/useFilters";
 import { useReports } from "./hooks/useReports";
 import { SalesDetailCard } from "./Sales";
 import { ReportSkeleton, SummaryCard } from "./Summary";
 
 export default function Reports() {
   const t = useTranslations("reports");
-  const {
-    reportData, error, filters,
-    currencyLoading, formatCurrency,
-    sales, paginatedSales, totalPages, page, setPage, rowsPerPage,
-    totalRevenue, totalItems,
-    revenueByDay, topProducts, paymentMethodSplit,
-    handleFilters, handleRowsPerPageChange, exportToCsv,
-  } = useReports();
+  const { fetchReport, reportData, error } = useReports();
+  const { filters, handleFilters } = useFiltersState(fetchReport);
+  const { formatAmount, loading: currencyLoading } = useCurrency();
+  const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
+  const sales = useMemo(() => reportData?.sales ?? [], [reportData]);
 
   if (currencyLoading && !reportData) return <ReportSkeleton />;
 
@@ -42,35 +43,20 @@ export default function Reports() {
 
       <FiltersCard filters={filters} onFiltersChange={handleFilters} disabled={currencyLoading} />
 
-      {reportData && (revenueByDay.length > 0 || topProducts.length > 0) && (
+      {reportData && sales.length > 0 && (
         <>
           <PageHeader title={t("charts.title")} subtitle={t("charts.subtitle")} />
-          <AnalyticsCard
-            revenueByDay={revenueByDay}
-            topProducts={topProducts}
-            paymentMethodSplit={paymentMethodSplit}
-            formatCurrency={formatCurrency}
-          />
+          <AnalyticsCard sales={sales} formatCurrency={formatCurrency} />
         </>
       )}
 
       {reportData && (
         <>
           <PageHeader title={t("summary.title")} subtitle={t("summary.subtitle")} />
-          <SummaryCard totalRevenue={totalRevenue} totalItems={totalItems} formatCurrency={formatCurrency} />
+          <SummaryCard reportData={reportData} formatCurrency={formatCurrency} />
 
           <PageHeader title={t("sales.title")} subtitle={t("sales.subtitle")} />
-          <SalesDetailCard
-            sales={sales}
-            paginatedSales={paginatedSales}
-            formatCurrency={formatCurrency}
-            totalPages={totalPages}
-            page={page}
-            setPage={setPage}
-            rowsPerPage={rowsPerPage}
-            handleRowsPerPageChange={handleRowsPerPageChange}
-            exportToCsv={exportToCsv}
-          />
+          <SalesDetailCard sales={sales} formatCurrency={formatCurrency} />
         </>
       )}
 

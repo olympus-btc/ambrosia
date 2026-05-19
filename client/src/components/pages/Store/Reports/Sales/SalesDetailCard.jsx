@@ -3,16 +3,16 @@ import { Card, CardBody, Pagination } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useSalesData } from "../hooks/useSalesData";
+
 import { SalesList } from "./SalesList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function SalesDetailCard({
-  sales, paginatedSales, formatCurrency,
-  totalPages, page, setPage,
-  rowsPerPage, handleRowsPerPageChange, exportToCsv,
-}) {
+export function SalesDetailCard({ sales, formatCurrency }) {
   const t = useTranslations("reports");
+  const { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
+    useSalesData(sales, formatCurrency);
   return (
     <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
       <CardBody className="space-y-4">
