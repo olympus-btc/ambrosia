@@ -7,9 +7,11 @@ import { useTranslations } from "next-intl";
 import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function useProducts() {
   const t = useTranslations("products");
+  const { fetchList } = useFetchList();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -72,8 +74,8 @@ export function useProducts() {
     setError(null);
 
     try {
-      const response = await httpClient("/products");
-      const productsData = await parseJsonResponse(response, []);
+      const productsData = await fetchList("/products");
+      if (productsData === null) return;
       setProducts(toArray(productsData));
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -81,7 +83,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const addProduct = async (product) => {
     try {

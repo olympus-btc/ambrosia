@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function usePaymentMethods() {
+  const { fetchList } = useFetchList();
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,10 +14,8 @@ export function usePaymentMethods() {
     setError(null);
 
     try {
-      const paymentMethodsResponse = await httpClient("/payments/methods");
-
-      const paymentMethodsData = await parseJsonResponse(paymentMethodsResponse, []);
-
+      const paymentMethodsData = await fetchList("/payments/methods");
+      if (paymentMethodsData === null) return;
       if (Array.isArray(paymentMethodsData)) {
         const sorted = [...paymentMethodsData].sort((a, b) => {
           const nameA = a?.name || "";
@@ -33,7 +32,7 @@ export function usePaymentMethods() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   useEffect(() => {
     fetchPaymentMethods();
