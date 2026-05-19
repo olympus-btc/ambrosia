@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 jest.mock("@/services/ticketsService", () => ({
   getTickets: jest.fn(),
@@ -18,11 +18,13 @@ import { useShiftTickets } from "../useShiftTickets";
 
 const SHIFT_DATE = "2026-03-04";
 const START_TIME = "08:00:00";
-const SHIFT_START_MS = new Date(`${SHIFT_DATE}T${START_TIME}`).getTime();
+const shiftStartMs = new Date(`${SHIFT_DATE}T${START_TIME}`).getTime();
 
-const ticketAfter1 = { id: 1, ticketDate: String(SHIFT_START_MS + 1000), totalAmount: 5.0 };
-const ticketAfter2 = { id: 2, ticketDate: String(SHIFT_START_MS + 2000), totalAmount: 3.0 };
-const ticketBefore = { id: 3, ticketDate: String(SHIFT_START_MS - 5000), totalAmount: 10.0 };
+const toSqliteUtc = (epochMilliseconds) => new Date(epochMilliseconds).toISOString().replace("T", " ").slice(0, 19);
+
+const ticketAfter1 = { id: 1, ticketDate: toSqliteUtc(shiftStartMs + 1000), totalAmount: 5.0 };
+const ticketAfter2 = { id: 2, ticketDate: toSqliteUtc(shiftStartMs + 2000), totalAmount: 3.0 };
+const ticketBefore = { id: 3, ticketDate: toSqliteUtc(shiftStartMs - 5000), totalAmount: 10.0 };
 
 const SHIFT_DATA = { shiftDate: SHIFT_DATE, startTime: START_TIME };
 
@@ -79,6 +81,30 @@ describe("useShiftTickets", () => {
       expect(result.current.totalTickets).toBe(0);
     });
 
+    it("counts ticket at exact shift start boundary", async () => {
+      const ticketAtBoundary = { id: 4, ticketDate: toSqliteUtc(shiftStartMs), totalAmount: 7.0 };
+      getTickets.mockResolvedValue([ticketAtBoundary]);
+
+      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.totalTickets).toBe(1);
+      expect(result.current.totalBalance).toBe(7.0);
+    });
+
+    it("filters ticket from previous shift that would appear in new shift due to UTC offset", async () => {
+      const oldShiftTicket = { id: 5, ticketDate: toSqliteUtc(shiftStartMs - 240000), totalAmount: 3.0 };
+      const newShiftTicket = { id: 6, ticketDate: toSqliteUtc(shiftStartMs + 60000), totalAmount: 1.0 };
+
+      getTickets.mockResolvedValue([oldShiftTicket, newShiftTicket]);
+
+      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.totalTickets).toBe(1);
+      expect(result.current.totalBalance).toBe(1.0);
+    });
+
     it("sets error message when getTickets fails", async () => {
       getTickets.mockRejectedValue(new Error("network error"));
 
@@ -94,6 +120,39 @@ describe("useShiftTickets", () => {
 
       const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
       await waitFor(() => expect(result.current.error).toBe("loadError"));
+    });
+
+    it("refetches when ticket:created event is dispatched", async () => {
+      getTickets
+        .mockResolvedValueOnce([ticketAfter1])
+        .mockResolvedValueOnce([ticketAfter1, ticketAfter2]);
+
+      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.totalTickets).toBe(1));
+
+      act(() => {
+        window.dispatchEvent(new Event("ticket:created"));
+      });
+
+      await waitFor(() => expect(result.current.totalTickets).toBe(2));
+      expect(result.current.totalBalance).toBe(8.0);
+      expect(getTickets).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not refetch after unmount when ticket:created fires", async () => {
+      getTickets.mockResolvedValue([ticketAfter1]);
+
+      const { result, unmount } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      unmount();
+      jest.clearAllMocks();
+
+      act(() => {
+        window.dispatchEvent(new Event("ticket:created"));
+      });
+
+      expect(getTickets).not.toHaveBeenCalled();
     });
 
     it("computes byPaymentMethod breakdown from ticket payments", async () => {

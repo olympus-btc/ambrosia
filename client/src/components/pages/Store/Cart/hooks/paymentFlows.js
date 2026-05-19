@@ -31,5 +31,8 @@ export async function processCheckout({
   if (!storeCheckoutResult?.orderId) {
     throw new Error(t("errors.checkout"));
   }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("ticket:created"));
+  }
   return storeCheckoutResult;
 }

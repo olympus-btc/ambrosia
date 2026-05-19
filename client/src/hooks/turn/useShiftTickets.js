@@ -18,6 +18,13 @@ export function useShiftTickets(shiftData) {
   const [loading, setLoading] = useState(false);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setRefreshKey((count) => count + 1);
+    window.addEventListener("ticket:created", handler);
+    return () => window.removeEventListener("ticket:created", handler);
+  }, []);
 
   useEffect(() => {
     if (!shiftData?.shiftDate || !shiftData?.startTime) return;
@@ -66,12 +73,12 @@ export function useShiftTickets(shiftData) {
 
         const tickets = await getTickets();
         const shiftTickets = tickets.filter(
-          (t) => Number(t.ticketDate) >= shiftStartMs,
+          (ticket) => new Date(`${ticket.ticketDate.replace(" ", "T")}Z`).getTime() >= shiftStartMs,
         );
 
         if (cancelled) return;
 
-        setTotalBalance(shiftTickets.reduce((sum, t) => sum + t.totalAmount, 0));
+        setTotalBalance(shiftTickets.reduce((total, ticket) => total + ticket.totalAmount, 0));
         setTotalTickets(shiftTickets.length);
 
         fetchBreakdown(shiftTickets).catch(() => {});
@@ -84,7 +91,7 @@ export function useShiftTickets(shiftData) {
 
     fetchData();
     return () => { cancelled = true; };
-  }, [shiftData?.shiftDate, shiftData?.startTime, ts]);
+  }, [shiftData?.shiftDate, shiftData?.startTime, ts, refreshKey]);
 
   return { totalBalance, totalTickets, byPaymentMethod, loading, breakdownLoading, error };
 }
