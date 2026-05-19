@@ -39,11 +39,13 @@ const reportsEn = {
     },
     summary: {
       title: "Summary",
+      subtitle: "Consolidated totals for the selected period",
       revenue: "Total Revenue",
       items: "Items Sold",
     },
     charts: {
       title: "Analytics",
+      subtitle: "Visualize revenue trends and sales distribution",
       revenueOverTime: "Revenue Over Time",
       topProducts: "Top Products by Revenue",
       paymentSplit: "Payment Method Distribution",
@@ -53,6 +55,7 @@ const reportsEn = {
     },
     sales: {
       title: "Sales Detail",
+      subtitle: "Complete transaction log for the selected period",
       empty: "No sales found for the selected filters",
       export: "Export CSV",
       product: "Product",

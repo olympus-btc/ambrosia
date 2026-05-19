@@ -39,11 +39,13 @@ const reportsEs = {
     },
     summary: {
       title: "Resumen",
+      subtitle: "Totales consolidados del período seleccionado",
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
     },
     charts: {
       title: "Analítica",
+      subtitle: "Visualiza tendencias de ingresos y distribución de ventas",
       revenueOverTime: "Ingresos por Día",
       topProducts: "Top Productos por Ingresos",
       paymentSplit: "Distribución de Métodos de Pago",
@@ -53,6 +55,7 @@ const reportsEs = {
     },
     sales: {
       title: "Detalle de Ventas",
+      subtitle: "Registro completo de transacciones del período",
       empty: "No se encontraron ventas con los filtros seleccionados",
       export: "Exportar CSV",
       product: "Producto",
