@@ -11,6 +11,15 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 const handlers = {};
 
 function TestComponent() {
@@ -82,7 +91,7 @@ describe("usePrinters", () => {
   });
 
   it("loads printers and configs on mount", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce(["Printer A"]);
     parseJsonResponse.mockResolvedValueOnce([{ id: "cfg-1" }]);
 
@@ -96,7 +105,7 @@ describe("usePrinters", () => {
   });
 
   it("sets empty lists when apiClient returns non-array values", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce(null);
 
@@ -122,7 +131,7 @@ describe("usePrinters", () => {
   });
 
   it("creates a printer config and appends it", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "cfg-9" });
@@ -150,7 +159,7 @@ describe("usePrinters", () => {
   });
 
   it("updates a printer config in state", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([
       { id: "cfg-1", printerName: "Old", printerType: "KITCHEN" },
@@ -176,7 +185,7 @@ describe("usePrinters", () => {
   });
 
   it("deletes a printer config from state", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([
       { id: "cfg-1", printerName: "A" },
@@ -199,7 +208,7 @@ describe("usePrinters", () => {
   });
 
   it("sets default printer config for a type", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([
       { id: "cfg-1", printerName: "A", printerType: "KITCHEN", isDefault: true },
@@ -222,7 +231,7 @@ describe("usePrinters", () => {
   });
 
   it("validates required args when setting default by name", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -237,7 +246,7 @@ describe("usePrinters", () => {
   });
 
   it("prints a ticket with the provided body", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -260,7 +269,7 @@ describe("usePrinters", () => {
   });
 
   it("refetches all printer data", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
@@ -366,7 +375,7 @@ describe("usePrinters", () => {
   });
 
   it("keeps defaults when config id is not found", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([
       { id: "cfg-1", printerName: "A", printerType: "KITCHEN", isDefault: true },

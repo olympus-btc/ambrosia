@@ -11,6 +11,15 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 const handlers = {};
 
 function TestComponent() {
@@ -50,7 +59,7 @@ describe("useCategories", () => {
   });
 
   it("loads categories on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([
       { id: "cat-1", name: "Hardware" },
       { id: "cat-2", name: "Gadgets" },
@@ -66,7 +75,7 @@ describe("useCategories", () => {
   });
 
   it("sets empty categories when api returns non-array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce(null);
 
     render(<TestComponent />);
@@ -85,7 +94,7 @@ describe("useCategories", () => {
   });
 
   it("creates a category, refetches, and returns the new id", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "cat-3", message: "Category added successfully" });
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-3", name: "Electronics" }]);
@@ -109,7 +118,7 @@ describe("useCategories", () => {
   });
 
   it("creates a category with an explicit type override", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "cat-4", message: "Category added successfully" });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -127,7 +136,7 @@ describe("useCategories", () => {
   });
 
   it("updates a category and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware" }]);
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware Updated" }]);
 
@@ -147,7 +156,7 @@ describe("useCategories", () => {
   });
 
   it("deletes a category and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware" }]);
     parseJsonResponse.mockResolvedValueOnce([]);
 

@@ -11,6 +11,15 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 const handlers = {};
 
 function TestComponent() {
@@ -50,7 +59,7 @@ describe("useTemplates", () => {
   });
 
   it("loads templates on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "t1", name: "Default" }]);
 
     render(<TestComponent />);
@@ -62,7 +71,7 @@ describe("useTemplates", () => {
   });
 
   it("sets empty templates when apiClient returns non-array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ ok: true });
 
     render(<TestComponent />);
@@ -83,7 +92,7 @@ describe("useTemplates", () => {
   });
 
   it("creates a template and appends it", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "t-2" });
 
@@ -107,7 +116,7 @@ describe("useTemplates", () => {
   });
 
   it("updates a template in state", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "t-1", name: "Old" }]);
 
     render(<TestComponent />);
@@ -130,7 +139,7 @@ describe("useTemplates", () => {
   });
 
   it("deletes a template from state", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([
       { id: "t-1", name: "A" },
       { id: "t-2", name: "B" },
@@ -152,7 +161,7 @@ describe("useTemplates", () => {
   });
 
   it("validates template id for update and delete", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);

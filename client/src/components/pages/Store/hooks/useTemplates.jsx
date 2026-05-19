@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function useTemplates() {
+  const { fetchList } = useFetchList();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +15,8 @@ export function useTemplates() {
     setLoading(true);
     setError(null);
     try {
-      const templates = await httpClient("/templates");
-      const templatesData = await parseJsonResponse(templates, []);
+      const templatesData = await fetchList("/templates");
+      if (templatesData === null) return;
       setTemplates(toArray(templatesData));
     } catch (error) {
       console.error("Error fetching templates:", error);
@@ -22,7 +24,7 @@ export function useTemplates() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const createTemplate = useCallback(async (templateBody) => {
     try {

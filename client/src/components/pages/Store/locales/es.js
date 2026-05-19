@@ -7,6 +7,10 @@ import usersEs from "../Users/locales/es";
 import walletEs from "../Wallet/locales/es";
 
 const storeEs = {
+  errors: {
+    connectionErrorTitle: "Error de conexión",
+    connectionErrorDescription: "No se pudo conectar al servidor. Verifica tu conexión.",
+  },
   navbar: {
     users: "Usuarios",
     roles: "Roles",

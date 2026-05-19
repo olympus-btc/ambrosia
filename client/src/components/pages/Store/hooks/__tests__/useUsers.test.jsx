@@ -16,9 +16,10 @@ jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
 }));
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
 
 const handlers = {};
 
@@ -47,7 +48,7 @@ describe("useUsers", () => {
   });
 
   it("loads users on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1, name: "Ana" }]);
     render(<TestComponent />);
 
@@ -57,7 +58,7 @@ describe("useUsers", () => {
   });
 
   it("sets empty users when apiClient returns null", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce(null);
     render(<TestComponent />);
 
@@ -66,7 +67,7 @@ describe("useUsers", () => {
   });
 
   it("adds a user and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([{ id: 9, name: "Luis" }]);
 
@@ -85,7 +86,7 @@ describe("useUsers", () => {
       });
     });
 
-    expect(response).toEqual({});
+    expect(response).toEqual({ ok: true });
     expect(httpClient).toHaveBeenCalledWith("/users", {
       method: "POST",
       headers: {
@@ -104,7 +105,7 @@ describe("useUsers", () => {
   });
 
   it("updates a user and includes pin when provided", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 3, name: "Paula" }]);
     parseJsonResponse.mockResolvedValueOnce([{ id: 3, name: "Paula" }]);
     parseJsonResponse.mockResolvedValueOnce({ id: 3, name: "Paula" });
@@ -140,7 +141,7 @@ describe("useUsers", () => {
   });
 
   it("updates a user without pin when blank", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 4, name: "Rosa" }]);
     parseJsonResponse.mockResolvedValueOnce([{ id: 4, name: "Rosa" }]);
     parseJsonResponse.mockResolvedValueOnce({ id: 4, name: "Rosa" });
@@ -175,7 +176,7 @@ describe("useUsers", () => {
   });
 
   it("deletes a user and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 6, name: "Tomas" }]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -193,7 +194,7 @@ describe("useUsers", () => {
   });
 
   it("shows last admin toast when deleting user returns conflict", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 6, name: "Tomas" }]);
     httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
     parseJsonResponse.mockResolvedValueOnce({ message: "Cannot remove the last admin user" });

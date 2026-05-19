@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
-import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 function buildOrdersQueryString(filters = {}) {
   const queryParams = new URLSearchParams();
@@ -30,6 +30,7 @@ function buildOrdersQueryString(filters = {}) {
 }
 
 export function useOrders() {
+  const { fetchList } = useFetchList();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,30 +41,21 @@ export function useOrders() {
 
     try {
       const endpoint = buildOrdersQueryString(filters);
-      const ordersResponse = await httpClient(endpoint);
-      if (ordersResponse?.ok === false) {
-        const errorResponse = await parseJsonResponse(ordersResponse, null);
-        throw new Error(errorResponse?.message || "Failed to fetch orders");
-      }
-      const ordersData = await parseJsonResponse(ordersResponse, []);
+      const ordersData = await fetchList(endpoint);
+      if (ordersData === null) return null;
       setOrders(toArray(ordersData));
       return toArray(ordersData);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setError(error);
+    } catch (err) {
+      setError(err);
       setOrders([]);
-      throw error;
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const fetchOrders = useCallback(async () => {
-    try {
-      await fetchOrdersRequest();
-    } catch {
-      return [];
-    }
+    await fetchOrdersRequest();
   }, [fetchOrdersRequest]);
 
   const fetchOrdersFiltered = useCallback(
