@@ -16,7 +16,7 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
           {imageUrl ? (
             <Image
               removeWrapper

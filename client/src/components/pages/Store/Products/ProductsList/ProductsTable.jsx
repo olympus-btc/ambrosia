@@ -41,7 +41,7 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
           return (
             <TableRow key={product.id}>
               <TableCell>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
                   {imageUrl ? (
                     <Image
                       removeWrapper

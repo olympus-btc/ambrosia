@@ -47,13 +47,13 @@ export function ProductList({ products, onAddProduct, categories }) {
             className="bg-white rounded-lg"
             key={product.id}
           >
-            <div className="h-28 md:h-36 bg-gray-100 rounded-t-lg overflow-hidden flex items-center justify-center">
+            <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
               {imageUrl ? (
                 <Image
                   removeWrapper
                   alt={product.name}
                   src={imageUrl}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-none"
                 />
               ) : (
                 <div data-testid={`product-image-placeholder-${product.id}`}>

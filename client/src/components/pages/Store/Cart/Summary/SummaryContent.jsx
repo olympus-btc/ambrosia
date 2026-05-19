@@ -74,7 +74,7 @@ export function SummaryContent({
               <CardHeader>
                 <div className="flex w-full items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
                       {imageUrl ? (
                         <Image
                           removeWrapper
