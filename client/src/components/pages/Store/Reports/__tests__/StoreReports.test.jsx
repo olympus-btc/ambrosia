@@ -2,16 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { StoreReports } from "../StoreReports";
 
-const mockHandleFiltersChange = jest.fn();
 const mockUseReports = jest.fn();
-const mockUseCurrency = jest.fn();
 
 jest.mock("../hooks/useReports", () => ({
   useReports: (...args) => mockUseReports(...args),
-}));
-
-jest.mock("@/components/hooks/useCurrency", () => ({
-  useCurrency: (...args) => mockUseCurrency(...args),
 }));
 
 jest.mock("../Summary", () => ({
@@ -48,6 +42,12 @@ jest.mock("../Sales", () => ({
   ),
 }));
 
+jest.mock("../Charts", () => ({
+  RevenueAreaChart: () => null,
+  TopProductsBarChart: () => null,
+  PaymentMethodPieChart: () => null,
+}));
+
 jest.mock("@heroui/react", () => {
   const Card = ({ children, className }) => <div className={className}>{children}</div>;
   const CardHeader = ({ children }) => <div>{children}</div>;
@@ -78,9 +78,22 @@ function makeHookReturn(overrides = {}) {
     reportData: null,
     error: null,
     filters: DEFAULT_FILTERS,
+    currencyLoading: false,
+    formatCurrency: (cents) => `$${cents}`,
+    sales: [],
+    paginatedSales: [],
+    totalPages: 0,
+    page: 1,
+    setPage: jest.fn(),
+    rowsPerPage: 10,
     totalRevenue: 0,
     totalItems: 0,
-    handleFiltersChange: mockHandleFiltersChange,
+    revenueByDay: [],
+    topProducts: [],
+    paymentMethodSplit: [],
+    handleFilters: jest.fn(),
+    handleRowsPerPageChange: jest.fn(),
+    exportToCsv: jest.fn(),
     ...overrides,
   };
 }
@@ -89,7 +102,6 @@ describe("StoreReports", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseReports.mockReturnValue(makeHookReturn());
-    mockUseCurrency.mockReturnValue({ formatAmount: (cents) => `$${cents}`, loading: false });
   });
 
   it("renders date range card", () => {
@@ -99,7 +111,7 @@ describe("StoreReports", () => {
 
   it("shows report data when reportData is not null", () => {
     mockUseReports.mockReturnValue(
-      makeHookReturn({ reportData: mockReport, totalRevenue: 15000, totalItems: 7 }),
+      makeHookReturn({ reportData: mockReport, paginatedSales: mockReport.sales, totalRevenue: 15000, totalItems: 7 }),
     );
     render(<StoreReports />);
     expect(screen.getByTestId("sales-table")).toBeInTheDocument();
@@ -119,15 +131,13 @@ describe("StoreReports", () => {
   });
 
   it("shows skeleton when currencyLoading and no reportData", () => {
-    mockUseCurrency.mockReturnValue({ formatAmount: (c) => `$${c}`, loading: true });
-    mockUseReports.mockReturnValue(makeHookReturn({ reportData: null }));
+    mockUseReports.mockReturnValue(makeHookReturn({ currencyLoading: true, reportData: null }));
     render(<StoreReports />);
     expect(screen.getByTestId("report-skeleton")).toBeInTheDocument();
   });
 
   it("does not show skeleton when reportData exists despite currencyLoading", () => {
-    mockUseCurrency.mockReturnValue({ formatAmount: (c) => `$${c}`, loading: true });
-    mockUseReports.mockReturnValue(makeHookReturn({ reportData: mockReport }));
+    mockUseReports.mockReturnValue(makeHookReturn({ currencyLoading: true, reportData: mockReport }));
     render(<StoreReports />);
     expect(screen.queryByTestId("report-skeleton")).not.toBeInTheDocument();
   });
@@ -138,11 +148,40 @@ describe("StoreReports", () => {
     expect(screen.getByTestId("active-period")).toHaveTextContent("week");
   });
 
-  it("forwards filter changes to handleFiltersChange from hook", () => {
+  it("forwards filter changes to handleFilters from hook", () => {
+    const mockHandleFilters = jest.fn();
+    mockUseReports.mockReturnValue(makeHookReturn({ handleFilters: mockHandleFilters }));
     render(<StoreReports />);
     fireEvent.click(screen.getByTestId("period-week-btn"));
-    expect(mockHandleFiltersChange).toHaveBeenCalledWith(
+    expect(mockHandleFilters).toHaveBeenCalledWith(
       expect.objectContaining({ activePeriod: "week" }),
     );
+  });
+
+  describe("export CSV button", () => {
+    const salesFixture = [
+      { productName: "Widget A", quantity: 2, priceAtOrder: 1000, userName: "alice", paymentMethod: "Cash", saleDate: "2024-01-01" },
+      { productName: "Widget B", quantity: 1, priceAtOrder: 3000, userName: "bob", paymentMethod: "BTC", saleDate: "2024-01-02" },
+    ];
+
+    it("renders the export button when sales exist", () => {
+      mockUseReports.mockReturnValue(makeHookReturn({ reportData: mockReport, sales: salesFixture }));
+      render(<StoreReports />);
+      expect(screen.getByRole("button", { name: /export/i })).toBeInTheDocument();
+    });
+
+    it("export button is disabled when there are no sales", () => {
+      mockUseReports.mockReturnValue(makeHookReturn({ reportData: mockReport, sales: [] }));
+      render(<StoreReports />);
+      expect(screen.getByRole("button", { name: /export/i })).toBeDisabled();
+    });
+
+    it("clicking export calls exportToCsv from hook", () => {
+      const mockExportToCsv = jest.fn();
+      mockUseReports.mockReturnValue(makeHookReturn({ reportData: mockReport, sales: salesFixture, exportToCsv: mockExportToCsv }));
+      render(<StoreReports />);
+      fireEvent.click(screen.getByRole("button", { name: /export/i }));
+      expect(mockExportToCsv).toHaveBeenCalled();
+    });
   });
 });

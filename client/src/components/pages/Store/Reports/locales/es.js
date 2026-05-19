@@ -54,6 +54,7 @@ const reportsEs = {
     sales: {
       title: "Detalle de Ventas",
       empty: "No se encontraron ventas con los filtros seleccionados",
+      export: "Exportar CSV",
       product: "Producto",
       user: "Usuario",
       quantity: "Cant.",
