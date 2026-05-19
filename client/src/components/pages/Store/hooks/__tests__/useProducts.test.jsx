@@ -70,7 +70,7 @@ describe("useProducts", () => {
 
   it("loads products on mount", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
 
     renderWithProvider();
@@ -82,7 +82,7 @@ describe("useProducts", () => {
 
   it("sets empty products when apiClient returns non-array", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ data: [] });
 
     renderWithProvider();

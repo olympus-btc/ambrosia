@@ -11,6 +11,16 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+const mockAddToast = jest.fn();
+jest.mock("@heroui/react", () => ({
+  addToast: (...args) => mockAddToast(...args),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 const handlers = {};
 
 function TestComponent() {
@@ -33,15 +43,10 @@ function TestComponent() {
 describe("useOrders", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("loads orders on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
     render(<TestComponent />);
 
@@ -60,7 +65,7 @@ describe("useOrders", () => {
   });
 
   it("sets empty orders when apiClient returns non-array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ data: [] });
     render(<TestComponent />);
 
@@ -69,7 +74,7 @@ describe("useOrders", () => {
   });
 
   it("fetchOrdersFiltered sends status query params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -85,7 +90,7 @@ describe("useOrders", () => {
   });
 
   it("fetchOrdersFiltered sends sorting query params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -101,7 +106,7 @@ describe("useOrders", () => {
   });
 
   it("fetchOrdersFiltered omits empty params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -116,17 +121,22 @@ describe("useOrders", () => {
     expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments");
   });
 
-  it("sets error when filtered fetch returns non-ok response", async () => {
-    httpClient.mockResolvedValueOnce({});
+  it("shows connection toast and returns null when filtered fetch returns non-ok response", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: false });
     parseJsonResponse.mockResolvedValueOnce([]);
-    parseJsonResponse.mockResolvedValueOnce({ message: "bad request" });
 
     render(<TestComponent />);
 
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
 
-    await expect(handlers.fetchOrdersFiltered({ status: "paid" })).rejects.toThrow("bad request");
-    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"));
+    let result;
+    await act(async () => {
+      result = await handlers.fetchOrdersFiltered({ status: "paid" });
+    });
+
+    expect(result).toBeNull();
+    expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
+    expect(screen.getByTestId("error")).toHaveTextContent("no");
   });
 });
