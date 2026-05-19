@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 async function buildHttpRequestError(response, fallbackMessage) {
   const responsePayload = await parseJsonResponse(response, null);
@@ -20,6 +22,7 @@ function isLastAdminConflict(requestError) {
 
 export function useUsers() {
   const t = useTranslations("users");
+  const { fetchList } = useFetchList();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,18 +53,13 @@ export function useUsers() {
     setError(null);
 
     try {
-      const users = await httpClient("/users");
-      const usersData = await parseJsonResponse(users, []);
-
-      if (usersData === null) {
-        setUsers([]);
-      } else {
-        setUsers(usersData);
-      }
+      const usersData = await fetchList("/users");
+      if (usersData === null) return;
+      setUsers(toArray(usersData));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const updateUser = async (user) => {
     try {
