@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 jest.mock("@/services/ticketsService", () => ({
   getTickets: jest.fn(),
@@ -14,7 +14,7 @@ import {
   getPaymentByTicketId,
 } from "@/services/ticketsService";
 
-import { useShiftTickets } from "../useShiftTickets";
+import { useShiftTicketMetrics } from "../useShiftTicketMetrics";
 
 const SHIFT_DATE = "2026-03-04";
 const START_TIME = "08:00:00";
@@ -35,37 +35,36 @@ beforeEach(() => {
   getPaymentByTicketId.mockResolvedValue([]);
 });
 
-describe("useShiftTickets", () => {
-  describe("when shiftData is null", () => {
+describe("useShiftTicketMetrics", () => {
+  describe("when openShiftData is null", () => {
     it("returns initial state without fetching", () => {
-      const { result } = renderHook(() => useShiftTickets(null));
+      const { result } = renderHook(() => useShiftTicketMetrics(null));
       expect(result.current.totalBalance).toBe(0);
       expect(result.current.totalTickets).toBe(0);
       expect(result.current.byPaymentMethod).toEqual([]);
-      expect(result.current.loading).toBe(false);
+      expect(result.current.ticketsLoading).toBe(false);
       expect(result.current.breakdownLoading).toBe(false);
-      expect(result.current.error).toBeNull();
       expect(getTickets).not.toHaveBeenCalled();
     });
   });
 
-  describe("when shiftData is provided", () => {
-    it("sets loading true while fetching", async () => {
+  describe("when openShiftData is provided", () => {
+    it("sets ticketsLoading true while fetching", async () => {
       let resolveTickets;
       getTickets.mockReturnValue(new Promise((res) => { resolveTickets = res; }));
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      expect(result.current.loading).toBe(true);
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      expect(result.current.ticketsLoading).toBe(true);
 
       resolveTickets([]);
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
     });
 
     it("computes totalBalance summing only tickets after shift start", async () => {
       getTickets.mockResolvedValue([ticketAfter1, ticketAfter2, ticketBefore]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.totalBalance).toBe(8.0);
       expect(result.current.totalTickets).toBe(2);
@@ -74,8 +73,8 @@ describe("useShiftTickets", () => {
     it("filters out tickets before shift start", async () => {
       getTickets.mockResolvedValue([ticketBefore]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.totalBalance).toBe(0);
       expect(result.current.totalTickets).toBe(0);
@@ -85,8 +84,8 @@ describe("useShiftTickets", () => {
       const ticketAtBoundary = { id: 4, ticketDate: toSqliteUtc(shiftStartMs), totalAmount: 7.0 };
       getTickets.mockResolvedValue([ticketAtBoundary]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.totalTickets).toBe(1);
       expect(result.current.totalBalance).toBe(7.0);
@@ -98,28 +97,21 @@ describe("useShiftTickets", () => {
 
       getTickets.mockResolvedValue([oldShiftTicket, newShiftTicket]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.totalTickets).toBe(1);
       expect(result.current.totalBalance).toBe(1.0);
     });
 
-    it("sets error message when getTickets fails", async () => {
+    it("continues silently when getTickets fails", async () => {
       getTickets.mockRejectedValue(new Error("network error"));
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.error).toBe("network error"));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
-      expect(result.current.loading).toBe(false);
       expect(result.current.totalBalance).toBe(0);
-    });
-
-    it("uses loadError translation key when error has no message", async () => {
-      getTickets.mockRejectedValue({});
-
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.error).toBe("loadError"));
+      expect(result.current.totalTickets).toBe(0);
     });
 
     it("computes byPaymentMethod breakdown from ticket payments", async () => {
@@ -136,7 +128,7 @@ describe("useShiftTickets", () => {
         .mockResolvedValueOnce([{ paymentId: 10 }])
         .mockResolvedValueOnce([{ paymentId: 11 }]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
       await waitFor(() => expect(result.current.byPaymentMethod).toHaveLength(2));
 
       expect(result.current.byPaymentMethod).toEqual(
@@ -153,7 +145,7 @@ describe("useShiftTickets", () => {
       getPaymentMethods.mockResolvedValue([]);
       getPaymentByTicketId.mockResolvedValueOnce([{ paymentId: 10 }]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
       await waitFor(() => expect(result.current.byPaymentMethod).toHaveLength(1));
 
       expect(result.current.byPaymentMethod[0].name).toBe("other");
@@ -165,8 +157,8 @@ describe("useShiftTickets", () => {
       getPaymentMethods.mockResolvedValue([{ id: 20, name: "Cash" }]);
       getPaymentByTicketId.mockResolvedValueOnce([]);
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.byPaymentMethod).toEqual([]);
     });
@@ -176,8 +168,8 @@ describe("useShiftTickets", () => {
       getTickets.mockResolvedValue([ticketAfter1]);
       getPayments.mockReturnValue(new Promise((res) => { resolvePayments = res; }));
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.breakdownLoading).toBe(true);
 
@@ -189,7 +181,7 @@ describe("useShiftTickets", () => {
       getTickets.mockResolvedValue([ticketAfter1]);
       getPayments.mockRejectedValue(new Error("payments down"));
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
       await waitFor(() => expect(result.current.breakdownLoading).toBe(false));
     });
 
@@ -197,12 +189,28 @@ describe("useShiftTickets", () => {
       getTickets.mockResolvedValue([ticketAfter1]);
       getPayments.mockRejectedValue(new Error("payments down"));
 
-      const { result } = renderHook(() => useShiftTickets(SHIFT_DATA));
-      await waitFor(() => expect(result.current.loading).toBe(false));
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
 
       expect(result.current.totalBalance).toBe(5.0);
       expect(result.current.totalTickets).toBe(1);
-      expect(result.current.error).toBeNull();
+    });
+
+    it("reset clears all metrics to initial state", async () => {
+      getTickets.mockResolvedValue([ticketAfter1, ticketAfter2]);
+
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.totalTickets).toBe(2));
+
+      act(() => {
+        result.current.reset();
+      });
+
+      await waitFor(() => {
+        expect(result.current.totalBalance).toBe(0);
+        expect(result.current.totalTickets).toBe(0);
+        expect(result.current.byPaymentMethod).toEqual([]);
+      });
     });
   });
 });
