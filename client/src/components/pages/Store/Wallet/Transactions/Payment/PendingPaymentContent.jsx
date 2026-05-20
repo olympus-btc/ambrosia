@@ -64,6 +64,20 @@ export function PendingPaymentContent({
     locale: currency.locale,
   });
 
+  const zeroAmountState = {
+    amountInputMode,
+    customEstimateError,
+    customEstimateValue,
+    estimatedFiat,
+    estimatedFiatHasError,
+    estimatedFiatIsLoading,
+    estimatedSats,
+    fiatToSatHasError,
+    fiatToSatIsLoading,
+    onAmountChange: handleAmountChange,
+    onAmountModeChange: handleAmountModeChange,
+  };
+
   return (
     <>
       <ModalBody className="gap-0">
@@ -77,19 +91,8 @@ export function PendingPaymentContent({
         <div className="space-y-3">
           {isZeroAmount ? (
             <ZeroAmountPaymentFields
-              amountInputMode={amountInputMode}
-              currencyAcronym={currency.acronym}
-              currencyLocale={currency.locale}
-              customEstimateError={customEstimateError}
-              customEstimateValue={customEstimateValue}
-              estimatedFiat={estimatedFiat}
-              estimatedFiatHasError={estimatedFiatHasError}
-              estimatedFiatIsLoading={estimatedFiatIsLoading}
-              estimatedSats={estimatedSats}
-              fiatToSatHasError={fiatToSatHasError}
-              fiatToSatIsLoading={fiatToSatIsLoading}
-              onAmountChange={handleAmountChange}
-              onAmountModeChange={handleAmountModeChange}
+              amountState={zeroAmountState}
+              isDisabled={isLoading}
             />
           ) : (
             <>

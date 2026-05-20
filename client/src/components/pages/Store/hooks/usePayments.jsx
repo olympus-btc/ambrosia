@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function usePayments() {
+  const { fetchList } = useFetchList();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +15,8 @@ export function usePayments() {
     setLoading(true);
     setError(null);
     try {
-      const payments = await httpClient("/payments");
-      const paymentsData = await parseJsonResponse(payments, []);
+      const paymentsData = await fetchList("/payments");
+      if (paymentsData === null) return;
       setPayments(toArray(paymentsData));
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -22,7 +24,7 @@ export function usePayments() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const getPaymentCurrencyById = useCallback(
     async (currencyId) => {

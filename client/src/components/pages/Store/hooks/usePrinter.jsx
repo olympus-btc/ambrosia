@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function usePrinters() {
+  const { fetchList } = useFetchList();
   const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [loadingConfigs, setLoadingConfigs] = useState(true);
   const [error, setError] = useState(null);
@@ -16,8 +18,8 @@ export function usePrinters() {
     setError(null);
 
     try {
-      const printers = await httpClient("/printers/available");
-      const printersData = await parseJsonResponse(printers, []);
+      const printersData = await fetchList("/printers/available");
+      if (printersData === null) return;
       setAvailablePrinters(toArray(printersData));
     } catch (error) {
       console.error("Error fetching printers:", error);
@@ -25,15 +27,15 @@ export function usePrinters() {
     } finally {
       setLoadingAvailable(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const fetchPrinterConfigs = useCallback(async () => {
     setLoadingConfigs(true);
     setError(null);
 
     try {
-      const printerConfigs = await httpClient("/printers/configs");
-      const printerDataConfigs = await parseJsonResponse(printerConfigs, []);
+      const printerDataConfigs = await fetchList("/printers/configs");
+      if (printerDataConfigs === null) return;
       setPrinterConfigs(toArray(printerDataConfigs));
     } catch (error) {
       console.error("Error fetching printer configs:", error);
@@ -41,7 +43,7 @@ export function usePrinters() {
     } finally {
       setLoadingConfigs(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const createPrinterConfig = useCallback(async (configBody) => {
     try {

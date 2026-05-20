@@ -1,28 +1,19 @@
 "use client";
 
 import { Button, Card, CardBody, Select, SelectItem, Switch } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 const PRINTER_TYPES = ["CUSTOMER"];
 
-export function PrinterAddForm({
-  printerType,
-  printerName,
-  templateName,
-  isDefault,
-  enabled,
-  availablePrinters,
-  templates,
-  loadingAvailable,
-  loadingTemplates,
-  saving,
-  onPrinterTypeChange,
-  onPrinterNameChange,
-  onTemplateNameChange,
-  onDefaultChange,
-  onEnabledChange,
-  onSubmit,
-  t,
-}) {
+export function PrinterAddForm({ formState, data, loading, saving }) {
+  const t = useTranslations("settings");
+  const {
+    printerType, printerName, templateName, isDefault, enabled,
+    onPrinterTypeChange, onPrinterNameChange, onTemplateNameChange,
+    onDefaultChange, onEnabledChange, onSubmit,
+  } = formState;
+  const { availablePrinters, templates } = data;
+  const { available: loadingAvailable, templates: loadingTemplates } = loading;
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-col gap-4 p-4">

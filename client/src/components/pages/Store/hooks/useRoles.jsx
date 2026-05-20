@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { toArray } from "@/components/utils/array";
 import { usePermission } from "@/hooks/usePermission";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 function createHttpStatusError(response, errorMessage) {
   const requestError = new Error(errorMessage);
@@ -18,6 +19,7 @@ function ensureSuccessfulResponse(response, errorMessage) {
 }
 
 export function useRoles() {
+  const { fetchList } = useFetchList();
   const [roles, setRoles] = useState([]);
   const canRead = usePermission({ allOf: ["roles_read"] });
   const [loading, setLoading] = useState(canRead);
@@ -29,15 +31,15 @@ export function useRoles() {
     setError(null);
 
     try {
-      const rolesRequest = await httpClient("/roles");
-      const rolesData = await parseJsonResponse(rolesRequest, []);
+      const rolesData = await fetchList("/roles");
+      if (rolesData === null) return;
       setRoles(toArray(rolesData));
     } catch (error) {
       console.error("Error fetching roles:", error);
     } finally {
       setLoading(false);
     }
-  }, [canRead]);
+  }, [canRead, fetchList]);
 
   const updateRole = useCallback(async (roleId, role) => {
     try {

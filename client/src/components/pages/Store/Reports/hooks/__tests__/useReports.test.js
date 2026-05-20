@@ -36,8 +36,9 @@ describe("useReports — fetch", () => {
     parseJsonResponse.mockResolvedValue(successReport);
   });
 
-  it("exposes fetchReport as a function", () => {
+  it("exposes fetchReport as a function", async () => {
     const { result } = renderHook(() => useReports());
+    await act(async () => {});
     expect(typeof result.current.fetchReport).toBe("function");
   });
 
@@ -289,8 +290,9 @@ describe("useReports — filters", () => {
     parseJsonResponse.mockResolvedValue(successReport);
   });
 
-  it("initial filters match defaultFilters", () => {
+  it("initial filters match defaultFilters", async () => {
     const { result } = renderHook(() => useReports());
+    await act(async () => {});
     expect(result.current.filters).toEqual(defaultFilters);
   });
 
@@ -425,13 +427,15 @@ describe("useReports — derived values", () => {
     httpClient.mockResolvedValue({});
   });
 
-  it("totalRevenue is 0 when reportData is null", () => {
+  it("totalRevenue is 0 when reportData is null", async () => {
     const { result } = renderHook(() => useReports());
+    await act(async () => {});
     expect(result.current.totalRevenue).toBe(0);
   });
 
-  it("totalItems is 0 when reportData is null", () => {
+  it("totalItems is 0 when reportData is null", async () => {
     const { result } = renderHook(() => useReports());
+    await act(async () => {});
     expect(result.current.totalItems).toBe(0);
   });
 

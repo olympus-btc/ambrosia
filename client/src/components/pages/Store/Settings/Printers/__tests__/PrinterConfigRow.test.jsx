@@ -2,6 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { PrinterConfigRow } from "../PrinterConfigRow";
 
+jest.mock("next-intl", () => ({
+  useTranslations: () => (key) => key,
+}));
+
 jest.mock("@components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress }) => (
     <button type="button" onClick={onPress} aria-label="delete">delete</button>
@@ -43,8 +47,6 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
-const t = (key) => key;
-
 describe("PrinterConfigRow", () => {
   it("renders badges and handles actions", () => {
     const onTemplateChange = jest.fn();
@@ -72,7 +74,6 @@ describe("PrinterConfigRow", () => {
         onToggleDefault={onToggleDefault}
         onToggleEnabled={onToggleEnabled}
         onRemove={onRemove}
-        t={t}
       />,
     );
 
@@ -115,7 +116,6 @@ describe("PrinterConfigRow", () => {
         onToggleDefault={onToggleDefault}
         onToggleEnabled={jest.fn()}
         onRemove={jest.fn()}
-        t={t}
       />,
     );
 

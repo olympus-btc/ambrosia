@@ -1,5 +1,15 @@
 import { httpWrapper } from "./httpWrapper";
 
+let refreshPromise = null;
+
+async function refreshToken() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = httpWrapper("/auth/refresh", { method: "POST" }).finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
 export async function httpClient(endpoint, options = {}) {
   const { skipRefresh = false, ...httpOptions } = options;
 
@@ -13,9 +23,7 @@ export async function httpClient(endpoint, options = {}) {
   const response = await httpWrapper(endpoint, httpOptions);
 
   if (shouldRefreshToken(response.status, endpoint, skipRefresh)) {
-    const refreshResponse = await httpWrapper("/auth/refresh", {
-      method: "POST",
-    });
+    const refreshResponse = await refreshToken();
 
     if (refreshResponse.status === 401) {
       window.dispatchEvent(new Event("auth:expired"));

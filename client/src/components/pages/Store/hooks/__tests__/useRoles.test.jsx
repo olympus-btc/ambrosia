@@ -11,6 +11,15 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 jest.mock("@/hooks/usePermission", () => ({
   usePermission: () => true,
 }));
@@ -44,7 +53,7 @@ describe("useRoles", () => {
   });
 
   it("loads roles on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "cashier" }]);
 
     render(<TestComponent />);
@@ -55,7 +64,7 @@ describe("useRoles", () => {
   });
 
   it("sets empty roles when response is null", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce(null);
 
     render(<TestComponent />);
@@ -65,7 +74,7 @@ describe("useRoles", () => {
   });
 
   it("creates a role without permissions and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "abc" });
     parseJsonResponse.mockResolvedValueOnce([{ id: "abc", role: "seller" }]);
@@ -86,7 +95,7 @@ describe("useRoles", () => {
   });
 
   it("creates a role with password and permissions", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: "xyz" });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -111,7 +120,7 @@ describe("useRoles", () => {
   });
 
   it("updates role with permissions and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "cashier" }]);
     parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "updated" }]);
 
@@ -139,7 +148,7 @@ describe("useRoles", () => {
   });
 
   it("deletes a role and refetches", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "cashier" }]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -155,7 +164,7 @@ describe("useRoles", () => {
   });
 
   it("throws conflict when deleting role is rejected", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "admin" }]);
     httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
 
@@ -175,7 +184,7 @@ describe("useRoles", () => {
   });
 
   it("fetches role permissions by id", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([{ name: "orders_read" }, { name: "products_read" }]);
 
@@ -192,7 +201,7 @@ describe("useRoles", () => {
   });
 
   it("returns empty array when getRolePermissions called with no id", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);
@@ -207,7 +216,7 @@ describe("useRoles", () => {
   });
 
   it("does nothing when assignPermissions called with no roleId", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     render(<TestComponent />);

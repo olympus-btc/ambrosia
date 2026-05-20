@@ -2,41 +2,35 @@
 
 import { Button, NumberInput } from "@heroui/react";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
+
 import { formatFiat, formatSats } from "../utils/formatters";
 
 export function AmountUnitInputFields({
-  amountInputMode,
-  currencyAcronym,
-  currencyLocale,
+  labels,
+  amountState,
+  conversionState,
   errorMessage,
-  estimatedFiat,
-  estimatedFiatErrorText,
-  estimatedFiatHasError,
-  estimatedFiatIsLoading,
-  estimatedLabel,
-  estimatedSats,
-  fiatLabel,
-  fiatOptionLabel,
-  fiatPlaceholder,
-  fiatToSatHasError,
-  fiatToSatIsLoading,
-  inputValue,
   isDisabled = false,
-  loadingText,
-  onAmountChange,
-  onAmountModeChange,
-  satLabel,
-  satsOptionLabel,
-  satPlaceholder,
-  title,
-  conversionErrorText,
 }) {
+  const { currency } = useCurrency();
+  const { amountInputMode, inputValue, onAmountChange, onAmountModeChange } = amountState;
+  const {
+    estimatedFiat, estimatedFiatHasError, estimatedFiatIsLoading,
+    estimatedSats, fiatToSatHasError, fiatToSatIsLoading,
+  } = conversionState;
+  const {
+    title, satLabel, satsOptionLabel, satPlaceholder,
+    fiatLabel, fiatOptionLabel, fiatPlaceholder,
+    estimatedLabel, loadingText, estimatedFiatErrorText, conversionErrorText,
+  } = labels;
+
   const estimatedValue = amountInputMode === "fiat"
     ? `${formatSats(estimatedSats ?? 0)} sats`
     : formatFiat({
       value: estimatedFiat ?? 0,
-      currencyAcronym,
-      locale: currencyLocale,
+      currencyAcronym: currency.acronym,
+      locale: currency.locale,
     });
 
   const estimatedStateText = amountInputMode === "fiat"

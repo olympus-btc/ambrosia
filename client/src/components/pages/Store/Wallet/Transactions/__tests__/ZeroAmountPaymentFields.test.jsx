@@ -4,11 +4,15 @@ import { I18nProvider } from "@i18n/I18nProvider";
 
 import { ZeroAmountPaymentFields } from "../Payment/ZeroAmountPaymentFields";
 
-function renderZeroAmountPaymentFields(props = {}) {
-  const defaultProps = {
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({
+    currency: { acronym: "USD", symbol: "$", locale: "en-US" },
+  }),
+}));
+
+function renderZeroAmountPaymentFields(amountStateOverrides = {}) {
+  const defaultAmountState = {
     amountInputMode: "sat",
-    currencyAcronym: "USD",
-    currencyLocale: "en-US",
     customEstimateError: "",
     customEstimateValue: "",
     estimatedFiat: null,
@@ -23,7 +27,7 @@ function renderZeroAmountPaymentFields(props = {}) {
 
   return render(
     <I18nProvider>
-      <ZeroAmountPaymentFields {...defaultProps} {...props} />
+      <ZeroAmountPaymentFields amountState={{ ...defaultAmountState, ...amountStateOverrides }} />
     </I18nProvider>,
   );
 }
@@ -69,11 +73,7 @@ describe("ZeroAmountPaymentFields", () => {
   });
 
   it("renders fiat labels and estimated sats when in fiat mode", () => {
-    renderZeroAmountPaymentFields({
-      amountInputMode: "fiat",
-      customEstimateValue: "1.5",
-      estimatedSats: 5000,
-    });
+    renderZeroAmountPaymentFields({ amountInputMode: "fiat", customEstimateValue: "1.5", estimatedSats: 5000 });
 
     expect(screen.getByLabelText("payments.send.confirmModal.zeroAmountFiatLabel")).toBeInTheDocument();
     expect(screen.getByText("payments.send.confirmModal.estimatedLabel")).toBeInTheDocument();
@@ -81,22 +81,14 @@ describe("ZeroAmountPaymentFields", () => {
   });
 
   it("renders 0 sats when fiat mode has no estimated value yet", () => {
-    renderZeroAmountPaymentFields({
-      amountInputMode: "fiat",
-      customEstimateValue: "",
-      estimatedSats: null,
-    });
+    renderZeroAmountPaymentFields({ amountInputMode: "fiat", customEstimateValue: "", estimatedSats: null });
 
     expect(screen.getByText("payments.send.confirmModal.estimatedLabel")).toBeInTheDocument();
     expect(screen.getByText("0 sats")).toBeInTheDocument();
   });
 
   it("renders fiat estimate when sat mode has a converted value", () => {
-    renderZeroAmountPaymentFields({
-      amountInputMode: "sat",
-      customEstimateValue: "1000",
-      estimatedFiat: 1.5,
-    });
+    renderZeroAmountPaymentFields({ amountInputMode: "sat", customEstimateValue: "1000", estimatedFiat: 1.5 });
 
     expect(screen.getByText("payments.send.confirmModal.estimatedLabel")).toBeInTheDocument();
     expect(screen.getByText("$1.50")).toBeInTheDocument();

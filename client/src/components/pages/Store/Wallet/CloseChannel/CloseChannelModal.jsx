@@ -74,6 +74,14 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
 
   if (!channel) return null;
 
+  const modalForm = {
+    address,
+    feerate,
+    errors,
+    onAddressChange: setAddress,
+    onFeerateChange: setFeerate,
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -95,12 +103,8 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
           <ModalSuccess txId={txId} onClose={onClose} />
         ) : step === "form" ? (
           <ModalForm
-            address={address}
-            feerate={feerate}
-            errors={errors}
+            form={modalForm}
             isLoading={isLoading}
-            onAddressChange={setAddress}
-            onFeerateChange={setFeerate}
             onCancel={onClose}
             onNext={handleNext}
           />

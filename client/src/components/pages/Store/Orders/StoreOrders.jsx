@@ -89,28 +89,33 @@ export default function StoreOrders() {
     setPage(1);
   };
 
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
+  const handleRowsPerPageChange = (value) => {
+    setRowsPerPage(parseInt(value, 10));
+    setPage(1);
+  };
+
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  const filterSearch = { term: searchTerm, onChange: handleSearchChange };
+  const filterPagination = { rowsPerPage, onChange: handleRowsPerPageChange };
 
   return (
     <div className="max-w-7xl mx-auto">
       <Card shadow="none" className="mb-6 shadow-lg bg-white rounded-lg p-4 lg:p-8">
         <CardBody>
           <OrdersFilterBar
-            searchTerm={searchTerm}
-            rowsPerPage={rowsPerPage}
+            search={filterSearch}
+            pagination={filterPagination}
             filters={filters}
             paymentMethods={paymentMethods}
-            onSearchChange={(value) => {
-              setSearchTerm(value);
-              setPage(1);
-            }}
-            onRowsPerPageChange={(value) => {
-              setRowsPerPage(parseInt(value, 10));
-              setPage(1);
-            }}
             onFiltersChange={handleFiltersChange}
             onApplyFilters={handleApplyFilters}
             onClearFilters={handleClearFilters}

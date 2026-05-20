@@ -163,6 +163,25 @@ export function Cart() {
     setCart([]);
   };
 
+  const btcPayment = {
+    config: btcPaymentConfig,
+    onInvoiceReady: handleBtcInvoiceReady,
+    onComplete: handleBtcComplete,
+    onClose: clearBtcPaymentConfig,
+  };
+
+  const cashPayment = {
+    config: cashPaymentConfig,
+    onComplete: handleCashComplete,
+    onClose: clearCashPaymentConfig,
+  };
+
+  const cardPayment = {
+    config: cardPaymentConfig,
+    onComplete: handleCardComplete,
+    onClose: clearCardPaymentConfig,
+  };
+
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
@@ -182,16 +201,9 @@ export function Cart() {
             isPaying={isPaying}
             paymentError={paymentError}
             onClearPaymentError={clearPaymentError}
-            btcPaymentConfig={btcPaymentConfig}
-            onInvoiceReady={handleBtcInvoiceReady}
-            onBtcComplete={handleBtcComplete}
-            onCloseBtcPayment={clearBtcPaymentConfig}
-            cashPaymentConfig={cashPaymentConfig}
-            onCashComplete={handleCashComplete}
-            onCloseCashPayment={clearCashPaymentConfig}
-            cardPaymentConfig={cardPaymentConfig}
-            onCardComplete={handleCardComplete}
-            onCloseCardPayment={clearCardPaymentConfig}
+            btcPayment={btcPayment}
+            cashPayment={cashPayment}
+            cardPayment={cardPayment}
           />
         </div>
       </div>
@@ -214,16 +226,9 @@ export function Cart() {
         isPaying={isPaying}
         paymentError={paymentError}
         onClearPaymentError={clearPaymentError}
-        btcPaymentConfig={btcPaymentConfig}
-        onInvoiceReady={handleBtcInvoiceReady}
-        onBtcComplete={handleBtcComplete}
-        onCloseBtcPayment={clearBtcPaymentConfig}
-        cashPaymentConfig={cashPaymentConfig}
-        onCashComplete={handleCashComplete}
-        onCloseCashPayment={clearCashPaymentConfig}
-        cardPaymentConfig={cardPaymentConfig}
-        onCardComplete={handleCardComplete}
-        onCloseCardPayment={clearCardPaymentConfig}
+        btcPayment={btcPayment}
+        cashPayment={cashPayment}
+        cardPayment={cardPayment}
       />
     </div>
   );

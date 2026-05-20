@@ -3,8 +3,9 @@
 import { Button, Input, ModalBody, ModalFooter } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-export function ModalForm({ address, feerate, errors, isLoading, onAddressChange, onFeerateChange, onCancel, onNext }) {
+export function ModalForm({ form, isLoading, onCancel, onNext }) {
   const t = useTranslations("wallet");
+  const { address, feerate, errors, onAddressChange, onFeerateChange } = form;
 
   return (
     <>

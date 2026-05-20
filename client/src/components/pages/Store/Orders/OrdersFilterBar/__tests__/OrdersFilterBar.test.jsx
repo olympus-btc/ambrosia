@@ -71,12 +71,10 @@ describe("OrdersFilterBar", () => {
 
     render(
       <OrdersFilterBar
-        searchTerm=""
-        rowsPerPage={10}
+        search={{ term: "", onChange: onSearchChange }}
+        pagination={{ rowsPerPage: 10, onChange: onRowsPerPageChange }}
         filters={defaultFilters}
         paymentMethods={[{ id: "cash", name: "Cash" }]}
-        onSearchChange={onSearchChange}
-        onRowsPerPageChange={onRowsPerPageChange}
         onFiltersChange={jest.fn()}
         onApplyFilters={jest.fn()}
         onClearFilters={jest.fn()}
@@ -97,12 +95,10 @@ describe("OrdersFilterBar", () => {
   it("renders the more filters toggle button", () => {
     render(
       <OrdersFilterBar
-        searchTerm=""
-        rowsPerPage={10}
+        search={{ term: "", onChange: jest.fn() }}
+        pagination={{ rowsPerPage: 10, onChange: jest.fn() }}
         filters={defaultFilters}
         paymentMethods={[]}
-        onSearchChange={jest.fn()}
-        onRowsPerPageChange={jest.fn()}
         onFiltersChange={jest.fn()}
         onApplyFilters={jest.fn()}
         onClearFilters={jest.fn()}
@@ -115,12 +111,10 @@ describe("OrdersFilterBar", () => {
   it("shows active filter count in trigger", () => {
     render(
       <OrdersFilterBar
-        searchTerm=""
-        rowsPerPage={10}
+        search={{ term: "", onChange: jest.fn() }}
+        pagination={{ rowsPerPage: 10, onChange: jest.fn() }}
         filters={{ ...defaultFilters, status: "paid", paymentMethod: "Cash" }}
         paymentMethods={[{ id: "cash", name: "Cash" }]}
-        onSearchChange={jest.fn()}
-        onRowsPerPageChange={jest.fn()}
         onFiltersChange={jest.fn()}
         onApplyFilters={jest.fn()}
         onClearFilters={jest.fn()}
@@ -136,12 +130,10 @@ describe("OrdersFilterBar", () => {
 
     render(
       <OrdersFilterBar
-        searchTerm=""
-        rowsPerPage={10}
+        search={{ term: "", onChange: jest.fn() }}
+        pagination={{ rowsPerPage: 10, onChange: jest.fn() }}
         filters={defaultFilters}
         paymentMethods={[]}
-        onSearchChange={jest.fn()}
-        onRowsPerPageChange={jest.fn()}
         onFiltersChange={jest.fn()}
         onApplyFilters={onApplyFilters}
         onClearFilters={onClearFilters}

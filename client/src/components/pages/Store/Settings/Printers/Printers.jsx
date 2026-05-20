@@ -2,15 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useTranslations } from "next-intl";
-
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
 
 import { PrintersCard } from "./PrintersCard";
 
 export function Printers() {
-  const t = useTranslations("settings");
   const {
     availablePrinters,
     printerConfigs,
@@ -83,31 +80,30 @@ export function Printers() {
     }
   };
 
+  const printerFormState = {
+    printerType, printerName, templateName, isDefault, enabled,
+    onPrinterTypeChange: setPrinterType,
+    onPrinterNameChange: setPrinterName,
+    onTemplateNameChange: setTemplateName,
+    onDefaultChange: setIsDefault,
+    onEnabledChange: setEnabled,
+  };
+  const printerData = { availablePrinters, configRows, templates };
+  const printerLoading = { available: loadingAvailable, configs: loadingConfigs, templates: loadingTemplates };
+  const printerState = {
+    error, saving,
+    onAdd: handleAdd,
+    onUpdateConfig: updatePrinterConfig,
+    onDeleteConfig: deletePrinterConfig,
+    onSetDefaultConfig: setDefaultPrinterConfig,
+  };
+
   return (
     <PrintersCard
-      printerType={printerType}
-      printerName={printerName}
-      templateName={templateName}
-      isDefault={isDefault}
-      enabled={enabled}
-      availablePrinters={availablePrinters}
-      configRows={configRows}
-      loadingAvailable={loadingAvailable}
-      loadingConfigs={loadingConfigs}
-      loadingTemplates={loadingTemplates}
-      templates={templates}
-      error={error}
-      saving={saving}
-      onPrinterTypeChange={setPrinterType}
-      onPrinterNameChange={setPrinterName}
-      onTemplateNameChange={setTemplateName}
-      onDefaultChange={setIsDefault}
-      onEnabledChange={setEnabled}
-      onAdd={handleAdd}
-      onUpdateConfig={updatePrinterConfig}
-      onDeleteConfig={deletePrinterConfig}
-      onSetDefaultConfig={setDefaultPrinterConfig}
-      t={t}
+      formState={printerFormState}
+      data={printerData}
+      loading={printerLoading}
+      state={printerState}
     />
   );
 }

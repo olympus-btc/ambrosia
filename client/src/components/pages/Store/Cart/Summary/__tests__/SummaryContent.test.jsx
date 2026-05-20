@@ -147,9 +147,9 @@ describe("SummaryContent", () => {
     render(
       <SummaryContent
         {...defaultProps}
-        btcPaymentConfig={{ paymentId: "btc-1" }}
-        cashPaymentConfig={{ paymentId: "cash-1" }}
-        cardPaymentConfig={{ paymentId: "card-1" }}
+        btcPayment={{ config: { paymentId: "btc-1" } }}
+        cashPayment={{ config: { paymentId: "cash-1" } }}
+        cardPayment={{ config: { paymentId: "card-1" } }}
       />,
     );
 
