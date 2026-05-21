@@ -17,10 +17,7 @@ export function useProducts() {
   const [error, setError] = useState(null);
   const { upload, isUploading } = useUpload();
 
-  const normalizeSku = (sku) => {
-    const trimmed = typeof sku === "string" ? sku.trim() : sku;
-    return trimmed ? trimmed : null;
-  };
+  const normalizeSku = (sku) => sku?.trim() || null;
 
   const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
     const priceNumber = Number(product.productPrice ?? 0);
