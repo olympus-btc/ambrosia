@@ -51,7 +51,14 @@ export async function createInvoiceForCart(invoiceAmount, invoiceDesc) {
       amountSat: parseInt(invoiceAmount),
     }),
   });
-  return await parseJsonResponse(response, null);
+  const invoice = await parseJsonResponse(response, null);
+  if (!response.ok) {
+    throw createWalletServiceError(
+      invoice?.message,
+      { status: response.status },
+    );
+  }
+  return invoice;
 }
 
 export async function createInvoice({
