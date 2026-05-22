@@ -61,6 +61,7 @@ const cartEn = {
         subtitle: "Ask the customer to scan the QR to complete the payment",
         generating: "Generating invoice...",
         retry: "Retry",
+        serviceUnavailable: "Lightning payment service is unavailable. Please try again.",
         totalLabel: "Total",
         cancel: "Cancel",
         copyButton: "Copy",

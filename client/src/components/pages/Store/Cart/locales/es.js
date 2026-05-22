@@ -61,6 +61,7 @@ const cartEs = {
         subtitle: "Pídele al cliente que escanee el QR para completar el pago",
         generating: "Generando invoice...",
         retry: "Reintentar",
+        serviceUnavailable: "El servicio de pago Lightning no está disponible. Por favor, inténtalo de nuevo.",
         totalLabel: "Total",
         cancel: "Cancelar",
         confirm: "Confirmar pago",

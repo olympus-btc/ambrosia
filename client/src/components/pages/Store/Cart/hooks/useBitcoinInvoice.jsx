@@ -47,9 +47,8 @@ export function useBitcoinInvoice({
       onInvoiceReady?.({ invoice: createdInvoice, satoshis: sats, paymentId });
 
       return createdInvoice;
-    } catch (err) {
-      const message = err?.message;
-      setError(message);
+    } catch (caughtError) {
+      setError(caughtError?.message);
       return null;
     } finally {
       setLoading(false);
