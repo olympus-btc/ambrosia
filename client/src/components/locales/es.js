@@ -47,6 +47,7 @@ const componentsEs = {
   },
   imageUploader: {
     removeImage: "Eliminar imagen",
+    takePhoto: "Tomar una foto",
   },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",
