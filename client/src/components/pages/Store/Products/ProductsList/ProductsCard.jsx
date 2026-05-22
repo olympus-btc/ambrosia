@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardBody, Chip, Image } from "@heroui/react";
+import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
@@ -10,17 +11,25 @@ import { RequirePermission } from "@/hooks/usePermission";
 
 export function ProductsCard({ product, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct }) {
   const t = useTranslations("products");
+  const imageUrl = storedAssetUrl(product?.imageUrl);
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
-        <Image
-          src={storedAssetUrl(product?.imageUrl)}
-          width={56}
-          height={56}
-          alt={product.name}
-          className="rounded-md object-cover shrink-0"
-        />
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
+          {imageUrl ? (
+            <Image
+              removeWrapper
+              src={imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div data-testid={`product-card-image-placeholder-${product.id}`}>
+              <ImageIcon aria-hidden="true" className="h-6 w-6 text-gray-400" />
+            </div>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate text-sm">{product.name}</p>
           <p className="text-green-800 font-semibold text-sm mt-0.5">{formatAmount(product.priceCents)}</p>

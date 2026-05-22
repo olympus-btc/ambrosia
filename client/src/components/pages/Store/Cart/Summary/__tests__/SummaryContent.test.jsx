@@ -55,7 +55,7 @@ jest.mock("../../CardPaymentModal", () => ({
   CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
 }));
 
-const cartItems = [{ id: 1, name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
+const cartItems = [{ id: 1, imageUrl: "/uploads/jade-wallet.png", name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
 
 const defaultProps = {
   cartItems,
@@ -77,8 +77,20 @@ describe("SummaryContent", () => {
     render(<SummaryContent {...defaultProps} />);
 
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Jade Wallet" })).toHaveAttribute("src", "/uploads/jade-wallet.png");
     expect(screen.getByText(/fmt-1000/)).toBeInTheDocument();
     expect(screen.getAllByText("fmt-2000")).toHaveLength(2);
+  });
+
+  it("renders a placeholder when an item image is missing", () => {
+    render(
+      <SummaryContent
+        {...defaultProps}
+        cartItems={[{ id: 2, name: "M5 Stick", price: 500, quantity: 1, subtotal: 500 }]}
+      />,
+    );
+
+    expect(screen.getByTestId("summary-image-placeholder-2")).toBeInTheDocument();
   });
 
   it("renders computed totals with discount", () => {

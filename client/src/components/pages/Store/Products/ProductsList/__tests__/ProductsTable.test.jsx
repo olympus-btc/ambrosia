@@ -29,7 +29,7 @@ jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
 
-const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
+const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({
   __esModule: true,
   storedAssetUrl: (...args) => mockStoredAssetUrl(...args),
@@ -137,6 +137,14 @@ describe("ProductsTable", () => {
 
     expect(mockStoredAssetUrl).toHaveBeenCalledWith("/images/jade.png");
     expect(screen.getByRole("img", { name: "Jade Wallet" }).getAttribute("data-src")).toBe("cdn/images/jade.png");
+  });
+
+  it("renders an image placeholder when imageUrl is missing", () => {
+    renderTable({
+      products: [{ ...products[0], imageUrl: null }],
+    });
+
+    expect(screen.getByTestId("product-table-image-placeholder-1")).toBeInTheDocument();
   });
 
   it("calls onEditProduct when edit button is clicked", () => {

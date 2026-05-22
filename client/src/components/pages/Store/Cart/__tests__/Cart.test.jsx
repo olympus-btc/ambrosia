@@ -15,10 +15,10 @@ const mockHandlePay = jest.fn();
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
     <div>
-      <button onClick={() => onAddProduct({ id: 1, name: "Jade Wallet", priceCents: 100 })}>
+      <button onClick={() => onAddProduct({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 })}>
         add-existing
       </button>
-      <button onClick={() => onAddProduct({ id: 2, name: "M5 Stick", priceCents: 200 })}>
+      <button onClick={() => onAddProduct({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 })}>
         add-new
       </button>
     </div>
@@ -175,13 +175,13 @@ describe("Cart page", () => {
 
     fireEvent.click(screen.getByText("add-existing"));
     expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
+      { id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
     ]);
 
     fireEvent.click(screen.getByText("add-new"));
     expect(mockSetCart).toHaveBeenCalledWith([
       { id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
-      { id: 2, name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
+      { id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
     ]);
   });
 

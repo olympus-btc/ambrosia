@@ -100,6 +100,7 @@ export function Cart() {
         cart.map((item) => (item.id === product.id
           ? {
               ...item,
+              imageUrl: item.imageUrl ?? product.imageUrl,
               quantity: item.quantity + 1,
               subtotal: (item.quantity + 1) * item.price,
             }
@@ -111,6 +112,7 @@ export function Cart() {
         ...cart,
         {
           id: product.id,
+          imageUrl: product.imageUrl,
           name: product.name,
           price: product.priceCents,
           quantity: 1,
