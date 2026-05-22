@@ -1,9 +1,9 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
 
-import formatDate from "@lib/formatDate";
-
 import { useTranslations } from "next-intl";
+
+import formatDate from "@lib/formatDate";
 
 const DEFAULT_ROWS_PER_PAGE = 10;
 
