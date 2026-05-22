@@ -84,18 +84,32 @@ export function CashPaymentModal({
           <NumberInput
             label={t("receivedLabel")}
             value={cashReceived}
-            onValueChange={(value) => {
-              setCashReceived(value ?? 0);
+            onValueChange={(receivedAmount) => {
+              setCashReceived(receivedAmount ?? 0);
               setError("");
             }}
             onChange={(e) => {
               if (e?.target) {
-                setCashReceived(parseFloat(e.target.value) || 0);
+                const parsedAmount = parseFloat(e.target.value.replace(/[^0-9.]/g, "")) || 0;
+                setCashReceived(Math.min(parsedAmount, 9999999));
                 setError("");
               }
             }}
+            onKeyDown={(e) => {
+              if (!/^[0-9]$/.test(e.key)) return;
+              const currentInputText = (e.target.value || "").replace(/[^0-9.]/g, "");
+              if (parseFloat(currentInputText + e.key) > 9999999) {
+                e.preventDefault();
+              }
+            }}
             minValue={0}
-            step={0.10}
+            maxValue={9999999}
+            formatOptions={{
+              useGrouping: true,
+              maximumFractionDigits: 2,
+            }}
+
+            step={0.01}
             size="lg"
             classNames={{ inputWrapper: "shadow-none" }}
             startContent={
