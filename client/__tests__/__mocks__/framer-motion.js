@@ -12,6 +12,13 @@ const cleanMotionProps = (props) => {
     "whileHover",
     "onAnimationComplete",
     "onAnimationStart",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "dragTransition",
+    "dragDirectionLock",
+    "whileDrag",
+    "onDragEnd",
   ].forEach((key) => delete sanitized[key]);
   return sanitized;
 };
@@ -20,6 +27,15 @@ const Mock = React.forwardRef(({ children, ...props }, ref) => (
   <div ref={ref} {...cleanMotionProps(props)}>{children}</div>
 ));
 Mock.displayName = "FramerMotionMock";
+
+export const useMotionValue = (initial) => ({
+  get: () => initial,
+  set: jest.fn(),
+});
+
+export const useTransform = () => ({ get: () => 0 });
+
+export const animate = jest.fn(() => Promise.resolve());
 
 export const AnimatePresence = ({ children }) => children;
 export const LazyMotion = ({ children }) => children;
