@@ -13,6 +13,8 @@ import { CardPaymentModal } from "../CardPaymentModal";
 import { CashPaymentModal } from "../CashPaymentModal";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
+import { SwipeableCartItem } from "./SwipeableCartItem";
+
 export function SummaryContent({
   cartItems,
   discount,
@@ -30,6 +32,9 @@ export function SummaryContent({
   const { formatAmount } = useCurrency();
   const { paymentMethods } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [isTouchDevice] = useState(
+    () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
+  );
   const items = cartItems || [];
 
   const effectivePaymentMethod = useMemo(() => {
@@ -70,53 +75,59 @@ export function SummaryContent({
         {items.map((item) => {
           const imageUrl = storedAssetUrl(item.imageUrl);
           return (
-            <Card key={item.id} className="shadow-none border-1 border-green-600">
-              <CardHeader>
-                <div className="flex w-full items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
-                      {imageUrl ? (
-                        <Image
-                          removeWrapper
-                          alt={item.name}
-                          src={imageUrl}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div data-testid={`summary-image-placeholder-${item.id}`}>
-                          <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+            <SwipeableCartItem
+              key={item.id}
+              onRemove={() => onRemoveProduct(item.id)}
+              isTouchDevice={isTouchDevice}
+            >
+              <Card className="shadow-none border-1 border-green-600">
+                <CardHeader>
+                  <div className="flex w-full items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
+                        {imageUrl ? (
+                          <Image
+                            removeWrapper
+                            alt={item.name}
+                            src={imageUrl}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div data-testid={`summary-image-placeholder-${item.id}`}>
+                            <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-col">
+                        <h3 className="text-sm font-medium text-green-900">
+                          {item.name}
+                        </h3>
+                        <div className="text-xs text-gray-700">
+                          {formatAmount(item.price)} {t("summary.each")}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex min-w-0 flex-col">
-                      <h3 className="text-sm font-medium text-green-900">
-                        {item.name}
-                      </h3>
-                      <div className="text-xs text-gray-700">
-                        {formatAmount(item.price)} {t("summary.each")}
                       </div>
                     </div>
+                    {!isTouchDevice && <DeleteButton onPress={() => onRemoveProduct(item.id)} />}
                   </div>
-                  <DeleteButton onPress={() => onRemoveProduct(item.id)} />
-                </div>
-              </CardHeader>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <NumberInput
-                    className="w-1/2"
-                    label={t("summary.quantity")}
-                    minValue={1}
-                    size="sm"
-                    placeholder="Enter the amount"
-                    value={item.quantity}
-                    onChange={(value) => onUpdateQuantity(item.id, Number(value))}
-                  />
-                  <div className="text-sm font-semibold text-green-900">
-                    {formatAmount(item.subtotal)}
+                </CardHeader>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <NumberInput
+                      className="w-1/2"
+                      label={t("summary.quantity")}
+                      minValue={1}
+                      size="sm"
+                      placeholder="Enter the amount"
+                      value={item.quantity}
+                      onChange={(value) => onUpdateQuantity(item.id, Number(value))}
+                    />
+                    <div className="text-sm font-semibold text-green-900">
+                      {formatAmount(item.subtotal)}
+                    </div>
                   </div>
-                </div>
-              </CardBody>
-            </Card>
+                </CardBody>
+              </Card>
+            </SwipeableCartItem>
           );
         })}
 
