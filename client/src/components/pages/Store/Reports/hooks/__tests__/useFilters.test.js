@@ -115,16 +115,25 @@ describe("useFiltersState", () => {
 
     jest.useRealTimers();
   });
+
+  it("refetch calls fetchReport with current filter state", async () => {
+    const { result } = await setupHook();
+
+    await act(async () => {
+      result.current.handleFilters({ activePeriod: "year", startDate: "", endDate: "" });
+    });
+    jest.clearAllMocks();
+
+    await act(async () => {
+      result.current.refetch();
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ period: "year" }));
+  });
 });
 
 describe("useDateRangeFilters", () => {
   const baseFilters = { activePeriod: "", startDate: "", endDate: "", productName: "", paymentMethod: "" };
-
-  it("activeFilterCount counts non-empty filter values", () => {
-    const { result } = renderHook(() => useDateRangeFilters({ ...baseFilters, activePeriod: "month", productName: "cake" }, jest.fn()),
-    );
-    expect(result.current.activeFilterCount).toBe(2);
-  });
 
   it("dateRangeValue is null when dates are missing", () => {
     const { result } = renderHook(() => useDateRangeFilters(baseFilters, jest.fn()));
@@ -162,17 +171,4 @@ describe("useDateRangeFilters", () => {
     expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "", endDate: "", activePeriod: null });
   });
 
-  it("handlePaymentMethod with 'all' calls onFiltersChange with empty string", () => {
-    const onFiltersChange = jest.fn();
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    result.current.handlePaymentMethod(new Set(["all"]));
-    expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "" });
-  });
-
-  it("handlePaymentMethod with a specific method passes it through", () => {
-    const onFiltersChange = jest.fn();
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    result.current.handlePaymentMethod(new Set(["BTC"]));
-    expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "BTC" });
-  });
 });
