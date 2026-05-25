@@ -1,0 +1,29 @@
+version: "3.8"
+
+# Dev overlay — añade nostr relay y Alby Hub al stack base
+# Uso: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  nostr-relay:
+    image: scsibug/nostr-rs-relay:latest
+    ports:
+      - "7777:8080"
+    volumes:
+      - nostr_data:/usr/src/app/db
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped
+
+  alby-hub:
+    image: ghcr.io/getalby/hub:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - alby_data:/app/data
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+
+volumes:
+  nostr_data:
+  alby_data:

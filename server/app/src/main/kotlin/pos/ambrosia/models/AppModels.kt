@@ -391,6 +391,15 @@ data class InitialSetupRequest(
     val businessCurrency: String? = null,
     val businessLogo: String? = null,
     val businessLogoUrl: String? = null,
+    val nwcUri: String? = null,
+)
+
+@Serializable
+data class InitialSetupResponse(
+    val message: String,
+    val userId: String,
+    val roleId: String,
+    val nwcSaved: Boolean = false,
 )
 
 @Serializable

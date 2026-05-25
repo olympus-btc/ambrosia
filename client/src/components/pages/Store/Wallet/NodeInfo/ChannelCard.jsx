@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { formatSats } from "../utils/formatters";
 
-const CHANNEL_STATE_NORMAL = "Normal";
+const CHANNEL_STATE_NORMAL = "NORMAL";
 
 const CLOSING_STATES = {
   ShuttingDown: "stateShuttingDown",

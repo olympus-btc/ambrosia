@@ -97,7 +97,10 @@ describe("Onboarding Wizard", () => {
 
     const nextButton = screen.getByText("buttons.next");
     await act(async () => {
-      fireEvent.click(nextButton);
+      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
+    });
+    await act(async () => {
+      fireEvent.click(nextButton); // step 2 → step 3 (user account)
     });
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
@@ -134,7 +137,10 @@ describe("Onboarding Wizard", () => {
 
     const nextButton = screen.getByText("buttons.next");
     await act(async () => {
-      fireEvent.click(nextButton);
+      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
+    });
+    await act(async () => {
+      fireEvent.click(nextButton); // step 2 → step 3 (user account)
     });
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
@@ -263,7 +269,10 @@ describe("Onboarding Wizard", () => {
 
     const nextButton = screen.getByText("buttons.next");
     await act(async () => {
-      fireEvent.click(nextButton);
+      fireEvent.click(nextButton); // step 1 → step 2 (wallet)
+    });
+    await act(async () => {
+      fireEvent.click(nextButton); // step 2 → step 3 (user account)
     });
 
     await act(async () => {
@@ -277,7 +286,7 @@ describe("Onboarding Wizard", () => {
       fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
       fireEvent.change(confirmPasswordInput, { target: { value: "Abcd123$" } });
 
-      fireEvent.click(nextButton);
+      fireEvent.click(nextButton); // step 3 → step 4 (business details)
     });
 
     const phoneInput = screen.getByPlaceholderText("step3.fields.businessPhonePlaceholder");

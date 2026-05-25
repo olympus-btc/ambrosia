@@ -14,6 +14,7 @@ import { BusinessDetailsStep } from "./AddBusinessData";
 import { UserAccountStep } from "./AddUserAccount";
 import { BusinessTypeStep } from "./SelectBusiness";
 import { WizardSummary } from "./StepsSummary";
+import { WalletBackendStep } from "./WalletBackendStep";
 
 export function Onboarding() {
   const t = useTranslations();
@@ -21,6 +22,8 @@ export function Onboarding() {
   const [setupStatus, setSetupStatus] = useState(null);
   const [data, setData] = useState({
     businessType: "store",
+    walletBackend: "phoenixd",
+    nwcUri: "",
     userName: "",
     userPassword: "",
     userPasswordConfirmation: "",
@@ -67,8 +70,10 @@ export function Onboarding() {
     return /^\d{4}$/.test(pin);
   }
 
+  const NWC_URI_REGEX = /^nostr\+walletconnect:\/\/[0-9a-f]{64}\?/;
+
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     }
   };
@@ -104,17 +109,31 @@ export function Onboarding() {
         logoUrl = uploaded?.url ?? uploaded?.path;
       }
 
-      await submitInitialSetup({
+      const res = await submitInitialSetup({
         ...data,
         businessLogoUrl: logoUrl,
         businessLogo: undefined,
         userPasswordConfirmation: undefined,
+        walletBackend: undefined,
+        nwcUri: data.walletBackend === "nwc" && data.nwcUri ? data.nwcUri : undefined,
       });
       addToast({
         title: t("submitOnboardingToast.title"),
         description: t("submitOnboardingToast.description"),
         color: "success",
       });
+      try {
+        const body = await res.json();
+        if (body?.nwcSaved) {
+          addToast({
+            title: t("submitOnboardingToast.nwcSavedTitle"),
+            description: t("submitOnboardingToast.nwcSavedDescription"),
+            color: "primary",
+          });
+        }
+      } catch {
+        // ignore parse errors
+      }
       window.location.reload();
     } catch (error) {
       addToast({
@@ -125,7 +144,7 @@ export function Onboarding() {
     }
   };
 
-  const totalSteps = needsBusinessType ? 1 : 4;
+  const totalSteps = needsBusinessType ? 1 : 5;
   const progressValue = totalSteps === 1 ? 100 : ((step - 1) / (totalSteps - 1)) * 100;
 
   return (
@@ -144,7 +163,7 @@ export function Onboarding() {
                 className="absolute top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-green-800 z-0 transition-all duration-300 left-0"
                 style={{ width: `${progressValue}%` }}
               />
-              {[1, 2, 3, 4].map((num) => (
+              {[1, 2, 3, 4, 5].map((num) => (
                 <div
                   key={num}
                   className={`relative z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-semibold transition-all ${num <= step ? "bg-green-800 text-white" : "bg-gray-300 text-gray-500"}`}
@@ -165,6 +184,13 @@ export function Onboarding() {
           )}
 
           {step === 2 && (
+            <WalletBackendStep
+              data={{ walletBackend: data.walletBackend, nwcUri: data.nwcUri }}
+              onChange={(walletData) => handleDataChange(walletData)}
+            />
+          )}
+
+          {step === 3 && (
             <UserAccountStep
               data={{
                 userName: data.userName,
@@ -176,7 +202,7 @@ export function Onboarding() {
             />
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <BusinessDetailsStep
               data={{
                 businessType: data.businessType,
@@ -192,7 +218,7 @@ export function Onboarding() {
             />
           )}
 
-          {step === 4 && <WizardSummary data={data} onEdit={(stepNum) => setStep(stepNum)} />}
+          {step === 5 && <WizardSummary data={data} onEdit={(stepNum) => setStep(stepNum)} />}
 
           <Divider className="hidden md:block my-8 bg-gray-400" />
 
@@ -217,13 +243,14 @@ export function Onboarding() {
                 >
                   {t("buttons.finish")}
                 </Button>
-              ) : step < 4 ? (
+              ) : step < 5 ? (
                 <Button
                   color="primary"
                   onPress={handleNext}
                   isDisabled={
                     (step === 1 && !data.businessType) ||
-                    (step === 2 && (
+                    (step === 2 && data.walletBackend === "nwc" && (!data.nwcUri || !NWC_URI_REGEX.test(data.nwcUri))) ||
+                    (step === 3 && (
                       !data.userName ||
                       !data.userPassword ||
                       !data.userPasswordConfirmation ||
@@ -231,7 +258,7 @@ export function Onboarding() {
                       !isPasswordStrong(data.userPassword) ||
                       !isPinValid(data.userPin)
                     )) ||
-                    (step === 3 && (!data.businessName || !data.businessCurrency))
+                    (step === 4 && (!data.businessName || !data.businessCurrency))
                   }
                   className="bg-green-800"
                 >

@@ -9,10 +9,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import pos.ambrosia.datadir
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Config
 import pos.ambrosia.models.InitialSetupRequest
+import pos.ambrosia.models.InitialSetupResponse
 import pos.ambrosia.models.InitialSetupStatus
 import pos.ambrosia.models.Role
 import pos.ambrosia.models.User
@@ -141,7 +143,29 @@ private fun Route.initialSetupRoutes(connection: Connection) {
             if (!currencyService.setBaseCurrencyById(currencyId)) throw InitialSetupException("Failed to set base currency")
 
             connection.commit()
-            call.respond(HttpStatusCode.Created, mapOf("message" to "Initial setup completed", "userId" to userId, "roleId" to roleId))
+
+            val nwcSaved =
+                req.nwcUri?.takeIf { it.isNotBlank() }?.let { uri ->
+                    try {
+                        val confFile = java.io.File(datadir.toString(), "ambrosia.conf")
+                        confFile.appendText("\nnwc-uri=$uri\n")
+                        logger.info("NWC URI saved to ambrosia.conf — restart required to activate")
+                        true
+                    } catch (e: Exception) {
+                        logger.error("Failed to save NWC URI: ${e.message}")
+                        false
+                    }
+                } ?: false
+
+            call.respond(
+                HttpStatusCode.Created,
+                InitialSetupResponse(
+                    message = "Initial setup completed",
+                    userId = userId,
+                    roleId = roleId,
+                    nwcSaved = nwcSaved,
+                ),
+            )
         } catch (e: Exception) {
             logger.error("Initial setup failed: ${e.message}")
             try {

@@ -22,14 +22,14 @@ const mockNodeInfo = {
       balanceSat: 50000,
       capacitySat: 100000,
       inboundLiquiditySat: 50000,
-      state: "Normal",
+      state: "NORMAL",
     },
     {
       channelId: "channel-2",
       balanceSat: 30000,
       capacitySat: 80000,
       inboundLiquiditySat: 50000,
-      state: "Normal",
+      state: "NORMAL",
     },
   ],
 };
@@ -151,7 +151,7 @@ describe("NodeInfo Component", () => {
     it("displays channel state", () => {
       renderNodeInfo(mockNodeInfo);
 
-      const stateElements = screen.getAllByText("Normal");
+      const stateElements = screen.getAllByText("NORMAL");
       expect(stateElements).toHaveLength(2);
     });
 
@@ -290,7 +290,7 @@ describe("NodeInfo Component", () => {
       const info = {
         ...mockNodeInfo,
         channels: [
-          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "NORMAL" },
           { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
         ],
       };
@@ -316,7 +316,7 @@ describe("NodeInfo Component", () => {
       const info = {
         ...mockNodeInfo,
         channels: [
-          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "Normal" },
+          { channelId: "ch-1", balanceSat: 50000, capacitySat: 100000, inboundLiquiditySat: 50000, state: "NORMAL" },
           { channelId: "ch-2", balanceSat: 30000, capacitySat: 80000, inboundLiquiditySat: 50000, state: "Closing" },
         ],
       };
