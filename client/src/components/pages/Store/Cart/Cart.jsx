@@ -14,6 +14,21 @@ import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 
+function reconcileCartWithProducts(cart, products) {
+  const reconciledItems = cart.reduce((reconciledItems, item) => {
+    const catalogProduct = products.find((product) => product.id === item.id);
+    if (!catalogProduct) return reconciledItems;
+    if (catalogProduct.priceCents === item.price) return [...reconciledItems, item];
+    return [...reconciledItems, { ...item, price: catalogProduct.priceCents, subtotal: item.quantity * catalogProduct.priceCents }];
+  }, []);
+
+  const hasChanges =
+    reconciledItems.length !== cart.length ||
+    reconciledItems.some((item, index) => item !== cart[index]);
+
+  return hasChanges ? reconciledItems : cart;
+}
+
 export function Cart() {
   const t = useTranslations("cart");
   const outOfStockTimeoutRef = useRef(null);
@@ -30,21 +45,7 @@ export function Cart() {
 
   useEffect(() => {
     if (!hydrated || products.length === 0) return;
-    setCart((currentCart) => {
-      let changed = false;
-      const reconciled = currentCart.reduce((acc, item) => {
-        const product = products.find((p) => p.id === item.id);
-        if (!product) { changed = true; return acc; }
-        if (product.priceCents !== item.price) {
-          changed = true;
-          acc.push({ ...item, price: product.priceCents, subtotal: item.quantity * product.priceCents });
-        } else {
-          acc.push(item);
-        }
-        return acc;
-      }, []);
-      return changed ? reconciled : currentCart;
-    });
+    setCart((currentCart) => reconcileCartWithProducts(currentCart, products));
   }, [products, hydrated, setCart]);
 
   const {
@@ -92,9 +93,9 @@ export function Cart() {
   }, [cart.length]);
 
   const cartTotal = useMemo(() => {
-    const sub = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const disc = Number(discount) || 0;
-    return sub - (sub * disc) / 100;
+    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+    const discountRate = Number(discount) || 0;
+    return subtotal - (subtotal * discountRate) / 100;
   }, [cart, discount]);
 
   const getAvailableQuantity = (productId) => {
