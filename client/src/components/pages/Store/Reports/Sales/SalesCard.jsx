@@ -20,7 +20,7 @@ export function SalesCard({ sale, formatCurrency }) {
             <Users aria-hidden="true" className="w-3 h-3 shrink-0" />
             <span className="truncate">{sale.userName}</span>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
             <span className="text-sm text-gray-700">{sale.paymentMethod}</span>
             <span className="text-xs text-gray-400">
               {sale.saleDate ? formatDate(sale.saleDate) : "-"}

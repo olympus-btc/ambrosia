@@ -4,7 +4,19 @@ import { ShoppingBag } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DataTable } from "@/components/shared/DataTable";
-import formatDate from "@lib/formatDate";
+import { parseUtcDate } from "@lib/formatDate";
+
+const formatDateOnly = (dateString) => {
+  const d = parseUtcDate(dateString);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+};
+
+const formatTimeOnly = (dateString) => {
+  const d = parseUtcDate(dateString);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
+};
 
 import { SalesCard } from "./SalesCard";
 
@@ -59,7 +71,14 @@ export function SalesList({ sales, formatCurrency }) {
       key: "date",
       label: t("sales.date"),
       render: (sale) => (
-        <span className="text-xs text-gray-400">{sale.saleDate ? formatDate(sale.saleDate) : "-"}</span>
+        <span className="text-xs text-gray-400">{sale.saleDate ? formatDateOnly(sale.saleDate) : "-"}</span>
+      ),
+    },
+    {
+      key: "time",
+      label: t("sales.time"),
+      render: (sale) => (
+        <span className="text-xs text-gray-400">{sale.saleDate ? formatTimeOnly(sale.saleDate) : ""}</span>
       ),
     },
   ];
@@ -71,7 +90,7 @@ export function SalesList({ sales, formatCurrency }) {
           <SalesCard key={i} sale={sale} formatCurrency={formatCurrency} />
         ))}
       </div>
-      <div className="hidden md:block">
+      <div className="hidden md:block overflow-x-auto">
         <DataTable
           columns={columns}
           items={sales}
