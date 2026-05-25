@@ -34,8 +34,8 @@ jest.mock("../Filters", () => ({
 jest.mock("../Charts", () => ({
   AnalyticsCard: ({ sales }) => (
     <div data-testid="analytics-card">
-      {sales.map((s, i) => (
-        <span key={i} data-testid="chart-sale">{s.productName}</span>
+      {sales.map((sale, saleIndex) => (
+        <span key={saleIndex} data-testid="chart-sale">{sale.productName}</span>
       ))}
     </div>
   ),
@@ -44,8 +44,8 @@ jest.mock("../Charts", () => ({
 jest.mock("../Sales", () => ({
   SalesDetailCard: ({ sales, filters, onFiltersChange }) => (
     <div data-testid="sales-detail-card">
-      {sales.map((s, i) => (
-        <span key={i} data-testid="sale-item">{s.productName}</span>
+      {sales.map((sale, saleIndex) => (
+        <span key={saleIndex} data-testid="sale-item">{sale.productName}</span>
       ))}
       {filters && <span data-testid="sales-active-period">{filters.activePeriod}</span>}
       {onFiltersChange && (
@@ -211,7 +211,7 @@ describe("Reports", () => {
     });
 
     it("passes disabled=true to PeriodFilter when currency is loading", () => {
-      mockUseCurrency = () => makeUseCurrency({ loading: true, formatAmount: (c) => `$${c}` });
+      mockUseCurrency = () => makeUseCurrency({ loading: true, formatAmount: (amountInCents) => `$${amountInCents}` });
       mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
       render(<Reports />);
       expect(screen.getByTestId("period-filter")).toHaveAttribute("data-disabled", "true");

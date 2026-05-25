@@ -19,9 +19,9 @@ async function setupHook() {
 
 describe("useFiltersState", () => {
   it("initial filters match defaultFilters", async () => {
-    const { result } = renderHook(() => useFiltersState(mockFetch));
+    const { result: filtersStateHook } = renderHook(() => useFiltersState(mockFetch));
     await act(async () => {});
-    expect(result.current.filters).toEqual(defaultFilters);
+    expect(filtersStateHook.current.filters).toEqual(defaultFilters);
   });
 
   it("auto-fetches with default period on mount", async () => {
@@ -33,65 +33,65 @@ describe("useFiltersState", () => {
   });
 
   it("handleFilters with activePeriod fetches immediately", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
-      result.current.handleFilters({ activePeriod: "week", startDate: "", endDate: "" });
+      filtersStateHook.current.handleFilters({ activePeriod: "week", startDate: "", endDate: "" });
     });
 
     expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ period: "week" }));
   });
 
   it("handleFilters with activePeriod updates filters state", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
-      result.current.handleFilters({ activePeriod: "year", startDate: "", endDate: "" });
+      filtersStateHook.current.handleFilters({ activePeriod: "year", startDate: "", endDate: "" });
     });
 
-    expect(result.current.filters.activePeriod).toBe("year");
+    expect(filtersStateHook.current.filters.activePeriod).toBe("year");
   });
 
   it("handleFilters with only startDate does not fetch", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     act(() => {
-      result.current.handleFilters({ startDate: "2024-01-01", activePeriod: null });
+      filtersStateHook.current.handleFilters({ startDate: "2024-01-01", activePeriod: null });
     });
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("handleFilters with only endDate does not fetch", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     act(() => {
-      result.current.handleFilters({ endDate: "2024-12-31", activePeriod: null });
+      filtersStateHook.current.handleFilters({ endDate: "2024-12-31", activePeriod: null });
     });
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("handleFilters fetches when both startDate and endDate are valid", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
-      result.current.handleFilters({ startDate: "2024-01-01", activePeriod: null });
+      filtersStateHook.current.handleFilters({ startDate: "2024-01-01", activePeriod: null });
     });
     await act(async () => {
-      result.current.handleFilters({ endDate: "2024-01-31", activePeriod: null });
+      filtersStateHook.current.handleFilters({ endDate: "2024-01-31", activePeriod: null });
     });
 
-    const calls = mockFetch.mock.calls.map((c) => c[0]);
-    expect(calls.some((p) => p.startDate === "2024-01-01")).toBe(true);
-    expect(calls.some((p) => p.endDate === "2024-01-31")).toBe(true);
+    const calls = mockFetch.mock.calls.map((call) => call[0]);
+    expect(calls.some((fetchParams) => fetchParams.startDate === "2024-01-01")).toBe(true);
+    expect(calls.some((fetchParams) => fetchParams.endDate === "2024-01-31")).toBe(true);
   });
 
   it("handleFilters with paymentMethod fetches immediately", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
-      result.current.handleFilters({ paymentMethod: "Cash" });
+      filtersStateHook.current.handleFilters({ paymentMethod: "Cash" });
     });
 
     expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "Cash" }));
@@ -99,12 +99,12 @@ describe("useFiltersState", () => {
 
   it("handleFilters with productName debounces 500ms", async () => {
     jest.useFakeTimers();
-    const { result } = renderHook(() => useFiltersState(mockFetch));
+    const { result: filtersStateHook } = renderHook(() => useFiltersState(mockFetch));
     await act(async () => { jest.runAllTimers(); });
     jest.clearAllMocks();
 
     act(() => {
-      result.current.handleFilters({ productName: "Widget" });
+      filtersStateHook.current.handleFilters({ productName: "Widget" });
     });
     expect(mockFetch).not.toHaveBeenCalled();
 
@@ -117,15 +117,15 @@ describe("useFiltersState", () => {
   });
 
   it("refetch calls fetchReport with current filter state", async () => {
-    const { result } = await setupHook();
+    const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
-      result.current.handleFilters({ activePeriod: "year", startDate: "", endDate: "" });
+      filtersStateHook.current.handleFilters({ activePeriod: "year", startDate: "", endDate: "" });
     });
     jest.clearAllMocks();
 
     await act(async () => {
-      result.current.refetch();
+      filtersStateHook.current.refetch();
     });
 
     expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ period: "year" }));
@@ -136,28 +136,28 @@ describe("useDateRangeFilters", () => {
   const baseFilters = { activePeriod: "", startDate: "", endDate: "", productName: "", paymentMethod: "" };
 
   it("dateRangeValue is null when dates are missing", () => {
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, jest.fn()));
-    expect(result.current.dateRangeValue).toBeNull();
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, jest.fn()));
+    expect(dateRangeFiltersHook.current.dateRangeValue).toBeNull();
   });
 
   it("dateRangeValue returns CalendarDate objects when both dates are set", () => {
-    const { result } = renderHook(() => useDateRangeFilters({ ...baseFilters, startDate: "2024-01-01", endDate: "2024-01-31" }, jest.fn()),
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters({ ...baseFilters, startDate: "2024-01-01", endDate: "2024-01-31" }, jest.fn()),
     );
-    expect(result.current.dateRangeValue.start.toString()).toBe("2024-01-01");
-    expect(result.current.dateRangeValue.end.toString()).toBe("2024-01-31");
+    expect(dateRangeFiltersHook.current.dateRangeValue.start.toString()).toBe("2024-01-01");
+    expect(dateRangeFiltersHook.current.dateRangeValue.end.toString()).toBe("2024-01-31");
   });
 
   it("handlePeriodChange calls onFiltersChange with period and clears dates", () => {
     const onFiltersChange = jest.fn();
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    result.current.handlePeriodChange("week");
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    dateRangeFiltersHook.current.handlePeriodChange("week");
     expect(onFiltersChange).toHaveBeenCalledWith({ activePeriod: "week", startDate: "", endDate: "" });
   });
 
   it("handleDateRangeChange with a range calls onFiltersChange with stringified dates", () => {
     const onFiltersChange = jest.fn();
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    result.current.handleDateRangeChange({
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    dateRangeFiltersHook.current.handleDateRangeChange({
       start: { toString: () => "2024-03-01" },
       end: { toString: () => "2024-03-31" },
     });
@@ -166,8 +166,8 @@ describe("useDateRangeFilters", () => {
 
   it("handleDateRangeChange with null clears dates and activePeriod", () => {
     const onFiltersChange = jest.fn();
-    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    result.current.handleDateRangeChange(null);
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    dateRangeFiltersHook.current.handleDateRangeChange(null);
     expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "", endDate: "", activePeriod: null });
   });
 });

@@ -70,7 +70,7 @@ describe("PeriodFilter", () => {
   it("disables buttons when disabled prop is true", () => {
     render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} disabled />);
     const buttons = screen.getAllByRole("button");
-    buttons.forEach((btn) => expect(btn).toBeDisabled());
+    buttons.forEach((button) => expect(button).toBeDisabled());
   });
 
   it("shows custom date range as label when no activePeriod", () => {
