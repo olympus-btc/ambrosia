@@ -8,6 +8,7 @@ const reportsEs = {
       title: "Seleccionar Período",
       subtitle: "Filtra y analiza tus ventas por período y producto",
       filtersActive: "{count} filtros activos",
+      refresh: "Actualizar",
       period: {
         week: "Esta Semana",
         month: "Este Mes",
@@ -42,6 +43,8 @@ const reportsEs = {
       subtitle: "Totales consolidados del período seleccionado",
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
+      transactions: "Transacciones",
+      avgTicket: "Ticket Promedio",
     },
     charts: {
       title: "Analítica",
@@ -56,6 +59,7 @@ const reportsEs = {
     sales: {
       title: "Detalle de Ventas",
       subtitle: "Registro completo de transacciones del período",
+      transactions: "Transacciones",
       empty: "No se encontraron ventas con los filtros seleccionados",
       export: "Exportar CSV",
       product: "Producto",
@@ -65,7 +69,12 @@ const reportsEs = {
       total: "Total",
       paymentMethod: "Método de Pago",
       date: "Fecha",
+      time: "Hora",
       rowsPerPage: "Filas por página",
+      records: "registros",
+      show: "Mostrar",
+      perPage: "por página",
+      pageOf: "Página {page} de {total}",
       paginationAria: "Paginación de ventas",
       tableAriaLabel: "Detalle de ventas",
     },

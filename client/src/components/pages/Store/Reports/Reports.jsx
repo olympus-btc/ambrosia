@@ -9,7 +9,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { PageHeader } from "@components/shared/PageHeader";
 
 import { AnalyticsCard } from "./Charts";
-import { FiltersCard } from "./Filters";
+import { PeriodFilter } from "./Filters";
 import { useFiltersState } from "./hooks/useFilters";
 import { useReports } from "./hooks/useReports";
 import { SalesDetailCard } from "./Sales";
@@ -28,7 +28,17 @@ export default function Reports() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
 
-      <PageHeader title={t("header.title")} subtitle={t("header.subtitle")} />
+      <PageHeader
+        title={t("header.title")}
+        subtitle={t("header.subtitle")}
+        actions={(
+          <PeriodFilter
+            filters={filters}
+            onFiltersChange={handleFilters}
+            disabled={currencyLoading}
+          />
+        )}
+      />
 
       {error && (
         <Card className="bg-red-50 border-red-200">
@@ -41,22 +51,21 @@ export default function Reports() {
         </Card>
       )}
 
-      <FiltersCard filters={filters} onFiltersChange={handleFilters} disabled={currencyLoading} />
-
-      {reportData && sales.length > 0 && (
-        <>
-          <PageHeader title={t("charts.title")} subtitle={t("charts.subtitle")} />
-          <AnalyticsCard sales={sales} formatCurrency={formatCurrency} />
-        </>
-      )}
-
       {reportData && (
         <>
-          <PageHeader title={t("summary.title")} subtitle={t("summary.subtitle")} />
           <SummaryCard reportData={reportData} formatCurrency={formatCurrency} />
 
-          <PageHeader title={t("sales.title")} subtitle={t("sales.subtitle")} />
-          <SalesDetailCard sales={sales} formatCurrency={formatCurrency} />
+          {sales.length > 0 && (
+            <AnalyticsCard sales={sales} formatCurrency={formatCurrency} />
+          )}
+
+          <SalesDetailCard
+            sales={sales}
+            formatCurrency={formatCurrency}
+            filters={filters}
+            onFiltersChange={handleFilters}
+            disabled={currencyLoading}
+          />
         </>
       )}
 

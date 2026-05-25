@@ -8,6 +8,7 @@ const reportsEn = {
       title: "Select Period",
       subtitle: "Filter and analyze your sales by period and product",
       filtersActive: "{count} filters active",
+      refresh: "Refresh",
       period: {
         week: "This Week",
         month: "This Month",
@@ -42,6 +43,8 @@ const reportsEn = {
       subtitle: "Consolidated totals for the selected period",
       revenue: "Total Revenue",
       items: "Items Sold",
+      transactions: "Transactions",
+      avgTicket: "Avg. Ticket",
     },
     charts: {
       title: "Analytics",
@@ -56,6 +59,7 @@ const reportsEn = {
     sales: {
       title: "Sales Detail",
       subtitle: "Complete transaction log for the selected period",
+      transactions: "Transactions",
       empty: "No sales found for the selected filters",
       export: "Export CSV",
       product: "Product",
@@ -65,7 +69,12 @@ const reportsEn = {
       total: "Total",
       paymentMethod: "Payment Method",
       date: "Date",
+      time: "Time",
       rowsPerPage: "Rows per page",
+      records: "records",
+      show: "Show",
+      perPage: "per page",
+      pageOf: "Page {page} of {total}",
       paginationAria: "Sales pagination",
       tableAriaLabel: "Sales detail",
     },

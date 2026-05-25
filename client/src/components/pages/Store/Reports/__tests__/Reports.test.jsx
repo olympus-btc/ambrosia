@@ -18,8 +18,8 @@ jest.mock("@/components/hooks/useCurrency", () => ({
 }));
 
 jest.mock("../Filters", () => ({
-  FiltersCard: ({ filters, onFiltersChange, disabled }) => (
-    <div data-testid="filters-card" data-disabled={String(disabled)}>
+  PeriodFilter: ({ filters, onFiltersChange, disabled }) => (
+    <div data-testid="period-filter" data-disabled={String(disabled)}>
       <button
         data-testid="change-filters-btn"
         onClick={() => onFiltersChange({ activePeriod: "week" })}
@@ -42,11 +42,20 @@ jest.mock("../Charts", () => ({
 }));
 
 jest.mock("../Sales", () => ({
-  SalesDetailCard: ({ sales }) => (
+  SalesDetailCard: ({ sales, filters, onFiltersChange }) => (
     <div data-testid="sales-detail-card">
       {sales.map((s, i) => (
         <span key={i} data-testid="sale-item">{s.productName}</span>
       ))}
+      {filters && <span data-testid="sales-active-period">{filters.activePeriod}</span>}
+      {onFiltersChange && (
+        <button
+          data-testid="sales-change-filters-btn"
+          onClick={() => onFiltersChange({ productName: "test" })}
+        >
+          change sales filter
+        </button>
+      )}
     </div>
   ),
 }));
@@ -57,10 +66,11 @@ jest.mock("../Summary", () => ({
 }));
 
 jest.mock("@components/shared/PageHeader", () => ({
-  PageHeader: ({ title, subtitle }) => (
+  PageHeader: ({ title, subtitle, actions }) => (
     <div data-testid="page-header">
       <span>{title}</span>
       <span>{subtitle}</span>
+      {actions && <div data-testid="page-header-actions">{actions}</div>}
     </div>
   ),
 }));
@@ -188,30 +198,31 @@ describe("Reports", () => {
     });
   });
 
-  describe("FiltersCard", () => {
-    it("always renders FiltersCard", () => {
+  describe("PeriodFilter", () => {
+    it("always renders PeriodFilter in the page header", () => {
       render(<Reports />);
-      expect(screen.getByTestId("filters-card")).toBeInTheDocument();
+      expect(screen.getByTestId("period-filter")).toBeInTheDocument();
     });
 
-    it("passes current filters to FiltersCard", () => {
+    it("passes current filters to PeriodFilter", () => {
       mockUseFiltersState = () => makeUseFiltersState({ filters: { ...DEFAULT_FILTERS, activePeriod: "week" } });
       render(<Reports />);
       expect(screen.getByTestId("active-period")).toHaveTextContent("week");
     });
 
-    it("passes disabled=true to FiltersCard when currency is loading", () => {
+    it("passes disabled=true to PeriodFilter when currency is loading", () => {
       mockUseCurrency = () => makeUseCurrency({ loading: true, formatAmount: (c) => `$${c}` });
       mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
       render(<Reports />);
-      expect(screen.getByTestId("filters-card")).toHaveAttribute("data-disabled", "true");
+      expect(screen.getByTestId("period-filter")).toHaveAttribute("data-disabled", "true");
     });
 
-    it("forwards filter changes to handleFilters", () => {
+    it("forwards period filter changes to handleFilters", () => {
       render(<Reports />);
       fireEvent.click(screen.getByTestId("change-filters-btn"));
       expect(mockHandleFilters).toHaveBeenCalledWith(expect.objectContaining({ activePeriod: "week" }));
     });
+
   });
 
   describe("charts section", () => {
@@ -221,10 +232,11 @@ describe("Reports", () => {
       expect(screen.getByTestId("analytics-card")).toBeInTheDocument();
     });
 
-    it("renders charts section header when reportData has sales", () => {
+    it("renders AnalyticsCard directly without a section header", () => {
       mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
       render(<Reports />);
-      expect(screen.getByText("charts.title")).toBeInTheDocument();
+      expect(screen.getByTestId("analytics-card")).toBeInTheDocument();
+      expect(screen.queryByText("charts.title")).not.toBeInTheDocument();
     });
 
     it("does not render AnalyticsCard when sales list is empty", () => {
@@ -259,11 +271,13 @@ describe("Reports", () => {
       expect(screen.getByTestId("sales-detail-card")).toBeInTheDocument();
     });
 
-    it("renders summary section headers when reportData is set", () => {
+    it("renders SummaryCard and SalesDetailCard without section headers", () => {
       mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
       render(<Reports />);
-      expect(screen.getByText("summary.title")).toBeInTheDocument();
-      expect(screen.getByText("sales.title")).toBeInTheDocument();
+      expect(screen.getByTestId("summary-card")).toBeInTheDocument();
+      expect(screen.getByTestId("sales-detail-card")).toBeInTheDocument();
+      expect(screen.queryByText("summary.title")).not.toBeInTheDocument();
+      expect(screen.queryByText("sales.title")).not.toBeInTheDocument();
     });
 
     it("does not render SummaryCard when reportData is null", () => {
