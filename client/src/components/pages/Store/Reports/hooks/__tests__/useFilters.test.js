@@ -170,5 +170,4 @@ describe("useDateRangeFilters", () => {
     result.current.handleDateRangeChange(null);
     expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "", endDate: "", activePeriod: null });
   });
-
 });

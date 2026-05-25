@@ -14,8 +14,8 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
         <AreaChart aria-label={t("charts.revenueOverTime")} data={dailyRevenue} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+              <stop offset="5%" stopColor="#1c7c54" stopOpacity={0.45} />
+              <stop offset="95%" stopColor="#9ed8bc" stopOpacity={0.05} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -40,9 +40,9 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
             contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13 }}
           />
           <Area
-            type="monotone"
+            type="natural"
             dataKey="revenue"
-            stroke="#0ea5e9"
+            stroke="#1c7c54"
             strokeWidth={2}
             fill="url(#revenueGradient)"
             dot={false}

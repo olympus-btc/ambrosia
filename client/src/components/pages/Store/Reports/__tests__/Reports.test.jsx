@@ -222,7 +222,6 @@ describe("Reports", () => {
       fireEvent.click(screen.getByTestId("change-filters-btn"));
       expect(mockHandleFilters).toHaveBeenCalledWith(expect.objectContaining({ activePeriod: "week" }));
     });
-
   });
 
   describe("charts section", () => {

@@ -35,7 +35,7 @@ export function TopProductsBarChart({ products, formatCurrency }) {
           />
           <Bar dataKey="revenue" radius={[0, 4, 4, 0]} maxBarSize={20}>
             {products.map((_, index) => (
-              <Cell key={index} fill={index === 0 ? "#6366f1" : "#a5b4fc"} />
+              <Cell key={index} fill={index === 0 ? "#1c7c54" : "#9ed8bc"} />
             ))}
           </Bar>
         </BarChart>

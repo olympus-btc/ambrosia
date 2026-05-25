@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-const COLORS = ["#22c55e", "#f59e0b", "#0ea5e9", "#8b5cf6", "#ef4444"];
+const COLORS = ["#1c7c54", "#59bd8d", "#9ed8bc", "#c5e7d7", "#46985d"];
 
 export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
   const t = useTranslations("reports");

@@ -8,9 +8,8 @@ import { SummaryStat } from "./SummaryStat";
 const TONE = {
   bg: "bg-white",
   border: "border-default-100",
-  iconBg: "bg-green-100",
-  text: "text-default-500",
-  value: "text-default-900",
+  text: "text-forest",
+  value: "text-deep",
 };
 
 export function SummaryCard({ reportData, formatCurrency }) {

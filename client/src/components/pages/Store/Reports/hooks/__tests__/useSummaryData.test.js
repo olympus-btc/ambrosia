@@ -41,23 +41,17 @@ describe("useSummaryData", () => {
   });
 
   it("transactionCount equals sales.length", () => {
-    const { result } = renderHook(() =>
-      useSummaryData({ totalRevenueCents: 0, totalItemsSold: 3, sales: SALES }),
-    );
+    const { result } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 3, sales: SALES }));
     expect(result.current.transactionCount).toBe(2);
   });
 
   it("avgTicket is 0 when there are no sales", () => {
-    const { result } = renderHook(() =>
-      useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 5, sales: [] }),
-    );
+    const { result } = renderHook(() => useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 5, sales: [] }));
     expect(result.current.avgTicket).toBe(0);
   });
 
   it("avgTicket is round(totalRevenueCents / sales.length)", () => {
-    const { result } = renderHook(() =>
-      useSummaryData({ totalRevenueCents: 1000, totalItemsSold: 3, sales: SALES }),
-    );
+    const { result } = renderHook(() => useSummaryData({ totalRevenueCents: 1000, totalItemsSold: 3, sales: SALES }));
     expect(result.current.avgTicket).toBe(500);
   });
 });
