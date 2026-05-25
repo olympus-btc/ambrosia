@@ -15,7 +15,7 @@ import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.models.phoenix.PaymentResponse
 import pos.ambrosia.models.phoenix.PhoenixBalance
 
-interface LightningBackend {
+interface LightningBackend : AutoCloseable {
     suspend fun getNodeInfo(): NodeInfo
 
     suspend fun getBalance(): PhoenixBalance
@@ -60,4 +60,6 @@ interface LightningBackend {
     suspend fun csvExport(request: CsvExport): String
 
     suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse
+
+    override fun close() = Unit
 }

@@ -4,10 +4,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.server.application.Application
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -52,6 +54,17 @@ class NwcService(
 
     private val pendingInvoices = ConcurrentHashMap<String, PendingInvoice>()
     private var pollingJob: Job? = null
+    internal val ready = CompletableDeferred<Unit>()
+
+    internal fun markReady() {
+        ready.complete(Unit)
+    }
+
+    internal fun markFailed(cause: Throwable) {
+        ready.completeExceptionally(cause)
+    }
+
+    private suspend fun awaitReady() = ready.await()
 
     fun startPolling() {
         pollingJob =
@@ -69,29 +82,43 @@ class NwcService(
         pendingInvoices.entries.removeIf { (_, v) -> now - v.createdAt > INVOICE_TTL_MS }
 
         val entries = pendingInvoices.entries.toList()
-        for ((paymentHash, _) in entries) {
+        if (entries.isEmpty()) return
+
+        // Single round-trip for the whole batch: list settled incoming txs since the
+        // oldest still-pending invoice and reconcile against pendingInvoices.
+        val fromSec = entries.minOf { it.value.createdAt } / 1000
+        val transactions =
             try {
-                val tx = nwcClient.lookupInvoice(paymentHash = paymentHash)
-                if (tx.settledAt != null) {
-                    pendingInvoices.remove(paymentHash)
-                    val amountSat = (tx.amount ?: 0L) / 1000
-                    logger.info("NWC payment detected: hash={}, amount={}sat", paymentHash, amountSat)
-                    PaymentNotifier.broadcast(
-                        PaymentNotification(
-                            type = "payment_received",
-                            timestamp = tx.settledAt,
-                            amountSat = amountSat,
-                            paymentHash = paymentHash,
-                        ),
-                    )
-                }
+                nwcClient.listTransactions(
+                    from = fromSec,
+                    type = "incoming",
+                    unpaid = false,
+                )
             } catch (e: Exception) {
-                logger.debug("Error polling invoice {}: {}", paymentHash, e.message)
+                logger.debug("Error batch-polling NWC list_transactions: {}", e.message)
+                return
+            }
+
+        for (tx in transactions) {
+            val paymentHash = tx.paymentHash ?: continue
+            val settledAt = tx.settledAt ?: continue
+            if (pendingInvoices.remove(paymentHash) != null) {
+                val amountSat = (tx.amount ?: 0L) / 1000
+                logger.info("NWC payment detected: hash={}, amount={}sat", paymentHash, amountSat)
+                PaymentNotifier.broadcast(
+                    PaymentNotification(
+                        type = "payment_received",
+                        timestamp = settledAt,
+                        amountSat = amountSat,
+                        paymentHash = paymentHash,
+                    ),
+                )
             }
         }
     }
 
     override suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
+        awaitReady()
         val amountMsat = (request.amountSat ?: 0L) * 1000
         val expiry = request.expirySeconds
         val tx =
@@ -117,12 +144,14 @@ class NwcService(
     }
 
     override suspend fun getBalance(): PhoenixBalance {
+        awaitReady()
         val balance = nwcClient.getBalance()
         val balanceSat = balance.balance / 1000
         return PhoenixBalance(balanceSat = balanceSat, feeCreditSat = 0)
     }
 
     override suspend fun getNodeInfo(): NodeInfo {
+        awaitReady()
         val info = nwcClient.getInfo()
         val balance = nwcClient.getBalance()
         val balanceSat = balance.balance / 1000
@@ -142,6 +171,7 @@ class NwcService(
     }
 
     override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse {
+        awaitReady()
         val amountMsat = request.amountSat?.let { it * 1000 }
         val result = nwcClient.payInvoice(request.invoice, amountMsat)
         val paidAmountSat =
@@ -166,6 +196,7 @@ class NwcService(
         all: Boolean,
         externalId: String?,
     ): List<IncomingPayment> {
+        awaitReady()
         val transactions =
             nwcClient.listTransactions(
                 from = if (from > 0) from else null,
@@ -179,6 +210,7 @@ class NwcService(
     }
 
     override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
+        awaitReady()
         val tx = nwcClient.lookupInvoice(paymentHash = paymentHash)
         return tx.toIncomingPayment()
     }
@@ -206,6 +238,7 @@ class NwcService(
         offset: Int,
         all: Boolean,
     ): List<OutgoingPayment> {
+        awaitReady()
         val transactions =
             nwcClient.listTransactions(
                 from = if (from > 0) from else null,
@@ -230,6 +263,13 @@ class NwcService(
     override suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse =
         throw UnsupportedBackendOperationException("Channel management is not supported with NWC backend")
 
+    override fun close() {
+        logger.info("Shutting down NWC backend")
+        pollingJob?.cancel()
+        scope.cancel()
+        nwcClient.close()
+    }
+
     companion object {
         fun create(
             nwcUri: String,
@@ -248,14 +288,17 @@ class NwcService(
 
             val service = NwcService(nwcClient, connectionInfo.walletPubkeyHex, scope)
 
-            // Connect and start polling in background
+            // Connect and start polling in background. Wallet routes block on
+            // service.ready until the relay handshake + subscription complete.
             scope.launch {
                 try {
                     nwcClient.connect(scope)
                     service.startPolling()
+                    service.markReady()
                     logger.info("NWC backend ready")
                 } catch (e: Exception) {
                     logger.error("Failed to initialize NWC backend: {}", e.message)
+                    service.markFailed(e)
                 }
             }
 

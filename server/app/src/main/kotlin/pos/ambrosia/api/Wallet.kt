@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.header
@@ -51,6 +52,12 @@ fun Application.configureWallet() {
             PhoenixService(environment)
         }
     walletBackendRef.set(backend)
+    monitor.subscribe(ApplicationStopping) {
+        walletBackendRef
+            .getAndSet(null)
+            ?.runCatching { close() }
+            ?.onFailure { logger.warn("Error closing Lightning backend on shutdown: {}", it.message) }
+    }
     val authService = AuthService(environment, connection)
     val tokenService = TokenService(environment, connection)
 
@@ -62,7 +69,10 @@ internal fun reinitializeNwcBackend(
     application: Application,
 ) {
     val newBackend = NwcService.create(nwcUri, application)
-    walletBackendRef.set(newBackend)
+    val previous = walletBackendRef.getAndSet(newBackend)
+    previous
+        ?.runCatching { close() }
+        ?.onFailure { logger.warn("Error closing previous Lightning backend: {}", it.message) }
     logger.info("NWC backend hot-reloaded — no restart required")
 }
 

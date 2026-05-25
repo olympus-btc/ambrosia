@@ -45,16 +45,19 @@ class NwcClient(
     private val pendingRequests = ConcurrentHashMap<String, CompletableDeferred<Nip47Response>>()
 
     override suspend fun connect(scope: CoroutineScope) {
-        relay.connect(scope)
-
-        // Subscribe for NIP-47 response events directed at us
         val subId = "nwc-${System.currentTimeMillis()}"
         val filter =
             buildJsonObject {
                 put("kinds", buildJsonArray { add(NWC_RESPONSE_KIND) })
                 put("#p", buildJsonArray { add(clientPubkeyHex) })
             }
-        relay.subscribe(subId, filter)
+
+        // Re-emit the NIP-47 response subscription on every (re)connection — the relay
+        // forgets filters after disconnect, so without this, responses are lost on reconnect.
+        relay.connect(scope) {
+            relay.subscribe(subId, filter)
+            logger.info("NWC subscription (re)issued: sub={}", subId)
+        }
 
         // Process incoming relay messages
         scope.launch {
@@ -240,5 +243,6 @@ class NwcClient(
 
     override fun close() {
         relay.close()
+        httpClient.close()
     }
 }

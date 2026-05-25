@@ -2,6 +2,7 @@ package pos.ambrosia.utest
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -30,7 +31,7 @@ import kotlin.test.assertFailsWith
 class NwcServiceTest {
     private val mockClient: NwcClientPort = mock()
     private val walletPubkey = "b889ff5b1513b641e2a139f661a661364979c5beee91842f8f0ef42ab558e9d4"
-    private val service = NwcService(mockClient, walletPubkey, CoroutineScope(SupervisorJob()))
+    private val service = NwcService(mockClient, walletPubkey, CoroutineScope(SupervisorJob())).also { it.markReady() }
 
     // region createInvoice
 
@@ -218,42 +219,85 @@ class NwcServiceTest {
 
     // endregion
 
-    // region invoice polling TTL
+    // region invoice polling — batched via list_transactions (I6 regression)
 
     @Test
-    fun `pollPendingInvoices removes settled invoices and does not re-lookup them`() {
+    fun `pollPendingInvoices removes settled invoices found in batch list_transactions`() {
         runBlocking {
             whenever(mockClient.makeInvoice(any(), any(), anyOrNull())).thenReturn(
                 Nip47Transaction(paymentHash = "settled_hash", invoice = "lnbc..."),
             )
-            whenever(mockClient.lookupInvoice(paymentHash = "settled_hash")).thenReturn(
-                Nip47Transaction(paymentHash = "settled_hash", amount = 10_000L, settledAt = 1700000000L),
+            whenever(mockClient.listTransactions(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+                listOf(Nip47Transaction(paymentHash = "settled_hash", amount = 10_000L, settledAt = 1700000000L)),
             )
 
             service.createInvoice(CreateInvoiceRequest(amountSat = 10, description = ""))
             service.pollPendingInvoices()
 
-            // Second poll must not call lookupInvoice again — invoice removed after settlement
+            // After settlement the entry is gone, so next poll has no pending entries
+            // and must short-circuit before calling list_transactions again.
             service.pollPendingInvoices()
-            verify(mockClient, org.mockito.kotlin.times(1)).lookupInvoice(paymentHash = "settled_hash")
+            verify(mockClient, org.mockito.kotlin.times(1)).listTransactions(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+            )
         }
     }
 
     @Test
-    fun `pollPendingInvoices keeps unsettled invoices for next poll`() {
+    fun `pollPendingInvoices keeps unsettled invoices for next poll cycle`() {
         runBlocking {
             whenever(mockClient.makeInvoice(any(), any(), anyOrNull())).thenReturn(
                 Nip47Transaction(paymentHash = "pending_hash", invoice = "lnbc..."),
             )
-            whenever(mockClient.lookupInvoice(paymentHash = "pending_hash")).thenReturn(
-                Nip47Transaction(paymentHash = "pending_hash", settledAt = null),
+            // list_transactions returns no settled tx for our pending invoice
+            whenever(mockClient.listTransactions(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+                emptyList(),
             )
 
             service.createInvoice(CreateInvoiceRequest(amountSat = 10, description = ""))
             service.pollPendingInvoices()
             service.pollPendingInvoices()
 
-            verify(mockClient, org.mockito.kotlin.times(2)).lookupInvoice(paymentHash = "pending_hash")
+            // Both polls hit list_transactions — exactly one round-trip per cycle, not N.
+            verify(mockClient, org.mockito.kotlin.times(2)).listTransactions(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+            )
+        }
+    }
+
+    @Test
+    fun `pollPendingInvoices issues a single list_transactions per cycle regardless of pending count`() {
+        runBlocking {
+            whenever(mockClient.makeInvoice(any(), any(), anyOrNull()))
+                .thenReturn(Nip47Transaction(paymentHash = "h1", invoice = "lnbc1..."))
+                .thenReturn(Nip47Transaction(paymentHash = "h2", invoice = "lnbc2..."))
+                .thenReturn(Nip47Transaction(paymentHash = "h3", invoice = "lnbc3..."))
+            whenever(mockClient.listTransactions(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+                emptyList(),
+            )
+
+            repeat(3) { service.createInvoice(CreateInvoiceRequest(amountSat = 10, description = "")) }
+            service.pollPendingInvoices()
+
+            // The whole point of I6: one round-trip even with 3 pending invoices.
+            verify(mockClient, org.mockito.kotlin.times(1)).listTransactions(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+            )
         }
     }
 
@@ -299,6 +343,38 @@ class NwcServiceTest {
         assertFailsWith<UnsupportedBackendOperationException> {
             runBlocking { service.payOffer(PayOfferRequest(offer = "lno...", amountSat = 100, message = null)) }
         }
+    }
+
+    // endregion
+
+    // region readiness gate (I4)
+
+    @Test
+    fun `routes block until backend is ready and surface the failure when init fails`() =
+        runBlocking<Unit> {
+            val client: NwcClientPort = mock()
+            val notReady = NwcService(client, walletPubkey, CoroutineScope(SupervisorJob()))
+            val cause = RuntimeException("relay handshake failed")
+            notReady.markFailed(cause)
+
+            val thrown = assertFailsWith<RuntimeException> { notReady.getBalance() }
+            assertEquals("relay handshake failed", thrown.message)
+        }
+
+    // endregion
+
+    // region resource cleanup (I2)
+
+    @Test
+    fun `close cancels coroutine scope and closes underlying NWC client`() {
+        val client: NwcClientPort = mock()
+        val scope = CoroutineScope(SupervisorJob())
+        val svc = NwcService(client, walletPubkey, scope).also { it.markReady() }
+
+        svc.close()
+
+        verify(client).close()
+        assertEquals(false, scope.isActive)
     }
 
     // endregion

@@ -32,7 +32,10 @@ class NostrRelay(
 
     @Volatile private var session: DefaultClientWebSocketSession? = null
 
-    suspend fun connect(scope: CoroutineScope) {
+    suspend fun connect(
+        scope: CoroutineScope,
+        onConnected: (suspend () -> Unit)? = null,
+    ) {
         val connected = CompletableDeferred<Unit>()
         scope.launch {
             var delayMs = 1_000L
@@ -43,6 +46,11 @@ class NostrRelay(
                         logger.info("Connected to Nostr relay: {}", url)
                         if (!connected.isCompleted) connected.complete(Unit)
                         delayMs = 1_000L
+                        try {
+                            onConnected?.invoke()
+                        } catch (e: Exception) {
+                            logger.warn("onConnected callback failed: {}", e.message)
+                        }
                         for (frame in incoming) {
                             if (frame is Frame.Text) {
                                 _messages.emit(frame.readText())
