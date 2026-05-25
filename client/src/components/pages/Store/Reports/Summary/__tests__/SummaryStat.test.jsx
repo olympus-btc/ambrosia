@@ -10,42 +10,36 @@ jest.mock("@heroui/react", () => {
 });
 
 const tone = {
-  bg: "bg-green-50",
-  border: "border-green-200",
+  bg: "bg-white",
+  border: "border-default-100",
   iconBg: "bg-green-100",
-  text: "text-green-700",
-  value: "text-green-900",
+  text: "text-default-500",
+  value: "text-default-900",
 };
 
 describe("SummaryStat", () => {
   it("renders the label and value", () => {
-    render(<SummaryStat icon={null} label="Total Revenue" value="$150.00" tone={tone} />);
+    render(<SummaryStat label="Total Revenue" value="$150.00" tone={tone} />);
     expect(screen.getByText("Total Revenue")).toBeInTheDocument();
     expect(screen.getByText("$150.00")).toBeInTheDocument();
   });
 
   it("applies tone.bg class to the card", () => {
     const { container } = render(
-      <SummaryStat icon={null} label="Revenue" value="$0" tone={tone} />,
+      <SummaryStat label="Revenue" value="$0" tone={tone} />,
     );
-    expect(container.firstChild).toHaveClass("bg-green-50");
+    expect(container.firstChild).toHaveClass("bg-white");
   });
 
   it("applies tone.value class to the value element", () => {
-    render(<SummaryStat icon={null} label="Revenue" value="$42" tone={tone} />);
+    render(<SummaryStat label="Revenue" value="$42" tone={tone} />);
     const valueEl = screen.getByText("$42");
-    expect(valueEl).toHaveClass("text-green-900");
+    expect(valueEl).toHaveClass("text-default-900");
   });
 
-  it("renders the icon when provided", () => {
-    render(
-      <SummaryStat
-        icon={<span data-testid="test-icon" />}
-        label="Items"
-        value={7}
-        tone={tone}
-      />,
-    );
-    expect(screen.getByTestId("test-icon")).toBeInTheDocument();
+  it("centers content and uses compact padding", () => {
+    const { container } = render(<SummaryStat label="Items" value={7} tone={tone} />);
+    const body = container.querySelector(".flex");
+    expect(body).toHaveClass("items-center", "justify-center", "text-center");
   });
 });

@@ -1,15 +1,12 @@
 "use client";
 import { Card, CardBody } from "@heroui/react";
 
-export function SummaryStat({ icon, label, value, tone }) {
+export function SummaryStat({ label, value, tone }) {
   return (
-    <Card className={`${tone.bg} ${tone.border}`}>
-      <CardBody className="text-center p-4">
-        <div aria-hidden="true" className={`${tone.iconBg} rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2`}>
-          {icon}
-        </div>
-        <p className={`${tone.text} text-sm font-medium`}>{label}</p>
-        <p className={`${tone.value} text-2xl font-bold mt-1`}>{value}</p>
+    <Card className={`${tone.bg} ${tone.border} border`}>
+      <CardBody className="flex flex-col items-center justify-center p-4 text-center">
+        <p className={`${tone.text} text-xs font-medium mb-1`}>{label}</p>
+        <p className={`${tone.value} text-2xl font-bold`}>{value}</p>
       </CardBody>
     </Card>
   );

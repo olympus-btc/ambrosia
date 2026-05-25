@@ -1,45 +1,27 @@
 "use client";
-import { Card, CardBody } from "@heroui/react";
-import { DollarSign, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useSummaryData } from "../hooks/useSummaryData";
 
 import { SummaryStat } from "./SummaryStat";
 
+const TONE = {
+  bg: "bg-white",
+  border: "border-default-100",
+  iconBg: "bg-green-100",
+  text: "text-default-500",
+  value: "text-default-900",
+};
+
 export function SummaryCard({ reportData, formatCurrency }) {
   const t = useTranslations("reports");
-  const { totalRevenue, totalItems } = useSummaryData(reportData);
+  const { totalRevenue, totalItems, transactionCount, avgTicket } = useSummaryData(reportData);
   return (
-    <Card className="shadow-lg border-0 bg-white">
-      <CardBody>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SummaryStat
-            icon={<DollarSign className="w-6 h-6 text-green-600" />}
-            label={t("summary.revenue")}
-            value={formatCurrency(totalRevenue)}
-            tone={{
-              bg: "bg-green-50",
-              border: "border-green-200",
-              iconBg: "bg-green-100",
-              text: "text-green-700",
-              value: "text-green-900",
-            }}
-          />
-          <SummaryStat
-            icon={<ShoppingCart className="w-6 h-6 text-purple-600" />}
-            label={t("summary.items")}
-            value={totalItems}
-            tone={{
-              bg: "bg-purple-50",
-              border: "border-purple-200",
-              iconBg: "bg-purple-100",
-              text: "text-purple-700",
-              value: "text-purple-900",
-            }}
-          />
-        </div>
-      </CardBody>
-    </Card>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <SummaryStat label={t("summary.revenue")} value={formatCurrency(totalRevenue)} tone={TONE} />
+      <SummaryStat label={t("summary.items")} value={totalItems} tone={TONE} />
+      <SummaryStat label={t("summary.transactions")} value={transactionCount} tone={TONE} />
+      <SummaryStat label={t("summary.avgTicket")} value={formatCurrency(avgTicket)} tone={TONE} />
+    </div>
   );
 }
