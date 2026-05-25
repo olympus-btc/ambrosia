@@ -47,6 +47,7 @@ const componentsEn = {
   },
   imageUploader: {
     removeImage: "Remove image",
+    takePhoto: "Take a photo",
   },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",

@@ -149,7 +149,7 @@ export function AddProductsModal({
               uploadText={t("modal.productImageUpload")}
               uploadDescription={t("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file })}
-              value={data.productImage || data.productImageUrl}
+              image={data.productImage || data.productImageUrl}
             />
 
             <ModalFooter className="flex justify-between p-0 my-4">

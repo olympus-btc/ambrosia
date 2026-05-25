@@ -21,7 +21,7 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
-    NumberInput: ({ label, value, onValueChange, onChange, minValue, startContent, size, step, classNames, ...props }) => (
+    NumberInput: ({ label, value, onValueChange, onChange, minValue, maxValue, startContent, size, step, classNames, formatOptions, ...props }) => (
       <input
         type="number"
         aria-label={label}

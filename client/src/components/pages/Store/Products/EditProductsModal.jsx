@@ -148,7 +148,7 @@ export function EditProductsModal({
               uploadText={t("modal.productImageUpload")}
               uploadDescription={t("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file, productImageRemoved: file === null })}
-              value={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
+              image={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
             />
 
             <ModalFooter className="flex justify-between p-0 my-4">

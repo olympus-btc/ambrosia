@@ -120,7 +120,7 @@ export function BusinessDetailsStep({ data, onChange }) {
           uploadText={t("step3.fields.businessLogoUpload")}
           uploadDescription={t("step3.fields.businessLogoUploadMessage")}
           onChange={(file) => onChange({ ...data, businessLogo: file })}
-          value={data.businessLogo}
+          image={data.businessLogo}
         />
 
       </div>
