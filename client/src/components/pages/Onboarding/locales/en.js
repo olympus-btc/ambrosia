@@ -2,8 +2,8 @@ const onboardingEn = {
   submitOnboardingToast: {
     title: "Success",
     description: "The data is saved succesfully",
-    nwcSavedTitle: "NWC URI saved",
-    nwcSavedDescription: "Restart the server to activate the NWC backend.",
+    nwcSavedTitle: "NWC backend activated",
+    nwcSavedDescription: "NWC backend is now ready to use.",
   },
   buttons: {
     next: "Next",
@@ -86,7 +86,7 @@ const onboardingEn = {
     nwcDescription: "Connect any NWC-compatible wallet (Alby Hub, Mutiny, Zeus, etc.)",
     uriLabel: "NWC URI",
     uriDescription: "Paste the connection string from your NWC wallet.",
-    uriHint: "The URI will be saved to ambrosia.conf. A server restart is required to activate it.",
+    uriHint: "The URI will be saved to ambrosia.conf and the NWC backend will be activated immediately.",
     uriInvalid: "Invalid NWC URI format",
   },
   step4: {
