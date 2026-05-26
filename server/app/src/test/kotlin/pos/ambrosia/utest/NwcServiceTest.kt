@@ -109,7 +109,6 @@ class NwcServiceTest {
     fun `getNodeInfo uses wallet pubkey as fallback when NWC omits it`() =
         runBlocking {
             whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = "mainnet"))
-            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
 
             assertEquals(walletPubkey, service.getNodeInfo().nodeId)
         }
@@ -119,7 +118,6 @@ class NwcServiceTest {
         runBlocking {
             val nwcPubkey = "deadbeef".repeat(8)
             whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = nwcPubkey))
-            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
 
             assertEquals(nwcPubkey, service.getNodeInfo().nodeId)
         }
@@ -128,7 +126,6 @@ class NwcServiceTest {
     fun `getNodeInfo returns empty channel list`() =
         runBlocking {
             whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = "mainnet"))
-            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
 
             assertEquals(emptyList(), service.getNodeInfo().channels)
         }
@@ -137,9 +134,20 @@ class NwcServiceTest {
     fun `getNodeInfo returns unknown chain when network field is absent`() =
         runBlocking {
             whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = null))
-            whenever(mockClient.getBalance()).thenReturn(Nip47Balance(balance = 0L))
 
             assertEquals("unknown", service.getNodeInfo().chain)
+        }
+
+    @Test
+    fun `getNodeInfo does not make a redundant get_balance round-trip`() =
+        runBlocking<Unit> {
+            whenever(mockClient.getInfo()).thenReturn(Nip47Info(pubkey = null, network = "mainnet"))
+
+            service.getNodeInfo()
+
+            org.mockito.kotlin
+                .verify(mockClient, org.mockito.kotlin.never())
+                .getBalance()
         }
 
     // endregion

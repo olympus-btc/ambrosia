@@ -153,8 +153,6 @@ class NwcService(
     override suspend fun getNodeInfo(): NodeInfo {
         awaitReady()
         val info = nwcClient.getInfo()
-        val balance = nwcClient.getBalance()
-        val balanceSat = balance.balance / 1000
 
         val chain =
             info.network ?: run {

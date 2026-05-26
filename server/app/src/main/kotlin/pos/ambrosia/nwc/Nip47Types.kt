@@ -32,8 +32,6 @@ data class Nip47Transaction(
     val type: String? = null,
     val invoice: String? = null,
     val description: String? = null,
-    @SerialName("description_hash")
-    val descriptionHash: String? = null,
     val preimage: String? = null,
     @SerialName("payment_hash")
     val paymentHash: String? = null,
@@ -46,7 +44,6 @@ data class Nip47Transaction(
     val expiresAt: Long? = null,
     @SerialName("settled_at")
     val settledAt: Long? = null,
-    val metadata: JsonObject? = null,
 )
 
 // NIP-47 get_balance result
@@ -59,14 +56,10 @@ data class Nip47Balance(
 // NIP-47 get_info result
 @Serializable
 data class Nip47Info(
-    val alias: String? = null,
-    val color: String? = null,
     val pubkey: String? = null,
     val network: String? = null,
     @SerialName("block_height")
     val blockHeight: Int? = null,
-    val methods: List<String>? = null,
-    val notifications: List<String>? = null,
 )
 
 // NIP-47 pay_invoice result
