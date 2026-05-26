@@ -14,6 +14,21 @@ import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 
+function reconcileCartWithProducts(cart, products) {
+  const reconciledItems = cart.reduce((reconciledItems, item) => {
+    const catalogProduct = products.find((product) => product.id === item.id);
+    if (!catalogProduct) return reconciledItems;
+    if (catalogProduct.priceCents === item.price) return [...reconciledItems, item];
+    return [...reconciledItems, { ...item, price: catalogProduct.priceCents, subtotal: item.quantity * catalogProduct.priceCents }];
+  }, []);
+
+  const hasChanges =
+    reconciledItems.length !== cart.length ||
+    reconciledItems.some((item, index) => item !== cart[index]);
+
+  return hasChanges ? reconciledItems : cart;
+}
+
 export function Cart() {
   const t = useTranslations("cart");
   const outOfStockTimeoutRef = useRef(null);
@@ -22,10 +37,16 @@ export function Cart() {
     cart,
     setCart,
     discount,
+    hydrated,
     resetCartState,
   } = usePersistentCart();
   const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
+
+  useEffect(() => {
+    if (!hydrated || products.length === 0) return;
+    setCart((currentCart) => reconcileCartWithProducts(currentCart, products));
+  }, [products, hydrated, setCart]);
 
   const {
     handlePay,
@@ -72,9 +93,9 @@ export function Cart() {
   }, [cart.length]);
 
   const cartTotal = useMemo(() => {
-    const sub = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const disc = Number(discount) || 0;
-    return sub - (sub * disc) / 100;
+    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+    const discountRate = Number(discount) || 0;
+    return subtotal - (subtotal * discountRate) / 100;
   }, [cart, discount]);
 
   const getAvailableQuantity = (productId) => {
@@ -196,6 +217,7 @@ export function Cart() {
           <Summary
             cartItems={cart}
             discount={discount}
+            hydrated={hydrated}
             onRemoveProduct={removeProduct}
             onClearCart={clearCart}
             onUpdateQuantity={updateQuantity}
@@ -221,6 +243,7 @@ export function Cart() {
         onClose={() => setShowMobileSummary(false)}
         cartItems={cart}
         discount={discount}
+        hydrated={hydrated}
         onRemoveProduct={removeProduct}
         onClearCart={clearCart}
         onUpdateQuantity={updateQuantity}

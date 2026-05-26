@@ -59,6 +59,7 @@ export function usePersistentCart() {
     setCart,
     discount,
     setDiscount,
+    hydrated,
     resetCartState,
   };
 }

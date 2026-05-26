@@ -16,6 +16,7 @@ import { SwipeableCartItem } from "./SwipeableCartItem";
 export function SummaryContent({
   cartItems,
   discount,
+  hydrated,
   onRemoveProduct,
   onUpdateQuantity,
   onPay,
@@ -77,7 +78,7 @@ export function SummaryContent({
 
         <CartPaymentSection
           isPaying={isPaying}
-          isDisabled={!visibleItems.length}
+          isDisabled={!hydrated || !visibleItems.length}
           paymentError={paymentError}
           onClearPaymentError={onClearPaymentError}
           onPay={(selectedPaymentMethod) => {

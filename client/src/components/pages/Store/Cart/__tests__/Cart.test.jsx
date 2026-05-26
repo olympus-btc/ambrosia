@@ -49,6 +49,7 @@ jest.mock("../hooks/usePersistentCart", () => ({
     setCart: mockSetCart,
     discount: 0,
     setDiscount: mockSetDiscount,
+    hydrated: true,
     resetCartState: mockResetCartState,
   }),
 }));
@@ -56,8 +57,8 @@ jest.mock("../hooks/usePersistentCart", () => ({
 jest.mock("../../hooks/useProducts", () => ({
   useProducts: () => ({
     products: [
-      { id: 1, quantity: 5 },
-      { id: 2, quantity: 5 },
+      { id: 1, quantity: 5, priceCents: 100 },
+      { id: 2, quantity: 5, priceCents: 200 },
     ],
     refetch: jest.fn(),
   }),
@@ -183,6 +184,21 @@ describe("Cart page", () => {
       { id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
       { id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
     ]);
+  });
+
+  it("reconciles stale cart prices when products load", async () => {
+    await act(async () => {
+      renderCart();
+    });
+
+    const setCartCalls = mockSetCart.mock.calls;
+    const reconcileCall = setCartCalls.find(([arg]) => typeof arg === "function");
+    expect(reconcileCall).toBeDefined();
+
+    const updater = reconcileCall[0];
+    const staleCart = [{ id: 1, name: "Jade Wallet", price: 50, quantity: 2, subtotal: 100 }];
+    const result = updater(staleCart);
+    expect(result).toEqual([{ id: 1, name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 }]);
   });
 
   it("updates quantity, removes product when quantity is zero, and forwards pay", async () => {
