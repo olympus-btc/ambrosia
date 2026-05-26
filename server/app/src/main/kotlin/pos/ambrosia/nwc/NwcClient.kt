@@ -52,12 +52,18 @@ class NwcClient(
                 put("#p", buildJsonArray { add(clientPubkeyHex) })
             }
 
-        // Re-emit the NIP-47 response subscription on every (re)connection — the relay
-        // forgets filters after disconnect, so without this, responses are lost on reconnect.
-        relay.connect(scope) {
-            relay.subscribe(subId, filter)
-            logger.info("NWC subscription (re)issued: sub={}", subId)
-        }
+        relay.connect(
+            scope,
+            // Re-emit the NIP-47 response subscription on every (re)connection — the relay
+            // forgets filters after disconnect, so without this, responses are lost on reconnect.
+            onConnected = {
+                relay.subscribe(subId, filter)
+                logger.info("NWC subscription (re)issued: sub={}", subId)
+            },
+            // Fail in-flight requests immediately instead of letting them sit in the map
+            // until their 30s timeout — the relay drop means none of them can complete.
+            onDisconnect = { cancelPendingRequests() },
+        )
 
         // Process incoming relay messages
         scope.launch {
@@ -65,6 +71,20 @@ class NwcClient(
         }
 
         logger.info("NWC client connected, subscribed for responses with sub={}", subId)
+    }
+
+    private fun cancelPendingRequests() {
+        if (pendingRequests.isEmpty()) return
+        val cause = NwcConnectionException("Relay disconnected")
+        val iterator = pendingRequests.entries.iterator()
+        var cancelled = 0
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            iterator.remove()
+            entry.value.completeExceptionally(cause)
+            cancelled++
+        }
+        logger.info("Cancelled {} in-flight NWC requests due to relay disconnect", cancelled)
     }
 
     private fun handleRelayMessage(raw: String) {

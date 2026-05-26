@@ -35,11 +35,13 @@ class NostrRelay(
     suspend fun connect(
         scope: CoroutineScope,
         onConnected: (suspend () -> Unit)? = null,
+        onDisconnect: (() -> Unit)? = null,
     ) {
         val connected = CompletableDeferred<Unit>()
         scope.launch {
             var delayMs = 1_000L
             while (isActive) {
+                val wasConnected = connected.isCompleted
                 try {
                     httpClient.webSocket(urlString = url) {
                         session = this
@@ -67,6 +69,15 @@ class NostrRelay(
                     logger.warn("Relay disconnected, retrying in {}ms: {}", delayMs, e.message)
                 } finally {
                     session = null
+                    // Only fire onDisconnect after the initial connect succeeded — failures
+                    // of the first attempt are already surfaced via connected.completeExceptionally.
+                    if (wasConnected || connected.isCompleted) {
+                        try {
+                            onDisconnect?.invoke()
+                        } catch (e: Exception) {
+                            logger.warn("onDisconnect callback failed: {}", e.message)
+                        }
+                    }
                 }
                 delay(delayMs)
                 delayMs = minOf(delayMs * 2, 60_000L)
