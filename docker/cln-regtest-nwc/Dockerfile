@@ -9,7 +9,8 @@
 
 FROM elementsproject/lightningd:v25.02
 
-USER root
+# Upstream image already runs as root with /usr/bin/tini -- ./entrypoint.sh as
+# the entrypoint; we just need to add the plugin and its Python deps.
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip git ca-certificates \
@@ -33,12 +34,6 @@ RUN sed -i "s|wss://relay.getalby.com/v1|${NWC_RELAY_URL}|g" \
         /opt/cln_nwc/src/nwc.py /opt/cln_nwc/src/lib/nip47.py
 
 RUN chmod +x /opt/cln_nwc/src/nwc.py
-
-# CLN runs as the `lightning` user in the upstream image. The plugin and its
-# Python site-packages must be readable by that user.
-RUN chown -R lightning:lightning /opt/cln_nwc
-
-USER lightning
 
 # The default ENTRYPOINT/CMD from the upstream image start lightningd. The
 # compose service supplies --plugin=/opt/cln_nwc/src/nwc.py plus regtest flags.

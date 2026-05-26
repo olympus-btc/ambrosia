@@ -68,8 +68,11 @@ services:
     depends_on:
       - bitcoind
       - nostr-relay
+    environment:
+      # Upstream entrypoint passes --network=$LIGHTNINGD_NETWORK before our args,
+      # so override here instead of adding a duplicate --network flag.
+      LIGHTNINGD_NETWORK: regtest
     command:
-      - --network=regtest
       - --bitcoin-rpcconnect=bitcoind
       - --bitcoin-rpcport=18443
       - --bitcoin-rpcuser=ambrosia
@@ -83,7 +86,7 @@ services:
     ports:
       - "127.0.0.1:9735:9735"
     volumes:
-      - lightningd_regtest_data:/home/lightning/.lightning
+      - lightningd_regtest_data:/root/.lightning
 
   nostr-relay:
     image: scsibug/nostr-rs-relay:latest
