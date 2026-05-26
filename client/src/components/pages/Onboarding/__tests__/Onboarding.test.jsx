@@ -179,9 +179,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
