@@ -1,0 +1,146 @@
+# Regtest stack for reviewing the NWC backend end-to-end without depending on
+# phoenixd (which has no regtest LSP). Topology:
+#
+#   bitcoind (regtest) ── lightningd (CLN + cln_nwc plugin) ── nostr-relay ── ambrosia-dev
+#                                                                                  │
+#                                                                              client-dev
+#
+# Quickstart:
+#
+#   1. Build and start the stack:
+#        docker compose -f docker-compose.regtest-nwc.yml up -d --build
+#
+#   2. Wait ~15s for bitcoind + lightningd to settle, then mine a few blocks so
+#      CLN can finish syncing:
+#        docker compose -f docker-compose.regtest-nwc.yml exec bitcoind \
+#          bitcoin-cli -regtest -rpcuser=ambrosia -rpcpassword=ambrosia \
+#          createwallet test 2>/dev/null || true
+#        docker compose -f docker-compose.regtest-nwc.yml exec bitcoind \
+#          bitcoin-cli -regtest -rpcuser=ambrosia -rpcpassword=ambrosia \
+#          -rpcwallet=test -generate 101
+#
+#   3. Mint a NWC connection from CLN:
+#        docker compose -f docker-compose.regtest-nwc.yml exec lightningd \
+#          lightning-cli --regtest nwc-create 1000000000 0
+#      Copy the `nostr+walletconnect://...` URI from the response.
+#
+#   4. Restart Ambrosia with the URI baked in (skips onboarding):
+#        NWC_URI="nostr+walletconnect://..." \
+#          docker compose -f docker-compose.regtest-nwc.yml up -d ambrosia-dev
+#      Or paste the URI into the onboarding wallet-backend step on
+#      http://localhost:3001 — the server hot-reloads (B3).
+#
+#   5. Exercise: open http://localhost:3001, create a cart, accept Lightning
+#      payment. The invoice round-trips CLN → cln_nwc → relay → NwcService.
+#
+# Teardown (drops the regtest blockchain too):
+#   docker compose -f docker-compose.regtest-nwc.yml down -v
+#
+# Nothing here touches your production volumes — distinct names and a separate
+# datadir for the dev DB.
+
+services:
+  bitcoind:
+    image: lightninglabs/bitcoin-core:25
+    container_name: ambrosia-regtest-bitcoind
+    restart: unless-stopped
+    command:
+      - -regtest
+      - -server
+      - -txindex
+      - -fallbackfee=0.0002
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=ambrosia
+      - -rpcpassword=ambrosia
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "127.0.0.1:18443:18443"
+    volumes:
+      - bitcoind_regtest_data:/home/bitcoin/.bitcoin
+
+  lightningd:
+    build:
+      context: ./docker/cln-regtest-nwc
+    container_name: ambrosia-regtest-lightningd
+    restart: unless-stopped
+    depends_on:
+      - bitcoind
+      - nostr-relay
+    command:
+      - --network=regtest
+      - --bitcoin-rpcconnect=bitcoind
+      - --bitcoin-rpcport=18443
+      - --bitcoin-rpcuser=ambrosia
+      - --bitcoin-rpcpassword=ambrosia
+      - --bind-addr=0.0.0.0:9735
+      - --log-level=info
+      # cln_nwc has no CLI flag for the relay URL — the upstream default of
+      # wss://relay.getalby.com/v1 is rewritten to ws://nostr-relay:8080 at
+      # image-build time (see docker/cln-regtest-nwc/Dockerfile).
+      - --plugin=/opt/cln_nwc/src/nwc.py
+    ports:
+      - "127.0.0.1:9735:9735"
+    volumes:
+      - lightningd_regtest_data:/home/lightning/.lightning
+
+  nostr-relay:
+    image: scsibug/nostr-rs-relay:latest
+    container_name: ambrosia-regtest-nostr-relay
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7778:8080"
+    volumes:
+      - nostr_relay_regtest_data:/usr/src/app/db
+
+  ambrosia-dev:
+    build: server/
+    container_name: ambrosia-regtest-server
+    restart: unless-stopped
+    depends_on:
+      - lightningd
+      - nostr-relay
+    ports:
+      - "127.0.0.1:9156:9155"
+      - "127.0.0.1:9446:9445"
+    environment:
+      NWC_URI: ${NWC_URI:-}
+    volumes:
+      - ambrosia_regtest_data:/root/.Ambrosia-POS
+    entrypoint:
+      - java
+      - -jar
+      - /app/ambrosia.jar
+      - --http-bind-ip=0.0.0.0
+      - --http-bind-port=9155
+      - --ssl-bind-port=9445
+      - --phoenixd-url=http://localhost:9740
+      - --phoenixd-password=noop
+      - --phoenixd-webhook-secret=noop
+      - --docker
+
+  client-dev:
+    image: node:20-alpine
+    container_name: ambrosia-regtest-client
+    working_dir: /app
+    depends_on:
+      - ambrosia-dev
+    ports:
+      - "127.0.0.1:3002:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:9156
+      INTERNAL_API_URL: http://ambrosia-dev:9155
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./client:/app
+      - client_regtest_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --port 3001"
+    restart: unless-stopped
+
+volumes:
+  bitcoind_regtest_data:
+  lightningd_regtest_data:
+  nostr_relay_regtest_data:
+  ambrosia_regtest_data:
+  client_regtest_modules:
