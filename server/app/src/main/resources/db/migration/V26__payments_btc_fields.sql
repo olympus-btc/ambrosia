@@ -1,0 +1,3 @@
+ALTER TABLE payments ADD COLUMN satoshi_amount INTEGER;
+ALTER TABLE payments ADD COLUMN exchange_rate_at_payment REAL;
+ALTER TABLE payments ADD COLUMN payment_hash TEXT;
