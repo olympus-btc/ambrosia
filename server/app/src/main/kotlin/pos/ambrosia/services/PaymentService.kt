@@ -16,6 +16,8 @@ class PaymentService(
             "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments"
         private const val GET_PAYMENT_BY_ID =
             "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments WHERE id = ?"
+        private const val GET_EXCHANGE_RATES_BY_HASHES =
+            "SELECT payment_hash, exchange_rate_at_payment FROM payments WHERE payment_hash IN (%s) AND exchange_rate_at_payment IS NOT NULL"
         private const val UPDATE_PAYMENT =
             "UPDATE payments SET method_id = ?, currency_id = ?, transaction_id = ?, amount = ? WHERE id = ?"
         private const val DELETE_PAYMENT = "DELETE FROM payments WHERE id = ?"
@@ -117,6 +119,21 @@ class PaymentService(
             logger.warn("Currency not found with ID: $id")
             null
         }
+    }
+
+    suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, Double> {
+        if (hashes.isEmpty()) return emptyMap()
+        val placeholders = hashes.joinToString(",") { "?" }
+        val sql = String.format(GET_EXCHANGE_RATES_BY_HASHES, placeholders)
+        val result = mutableMapOf<String, Double>()
+        connection.prepareStatement(sql).use { statement ->
+            hashes.forEachIndexed { index, hash -> statement.setString(index + 1, hash) }
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                result[resultSet.getString("payment_hash")] = resultSet.getDouble("exchange_rate_at_payment")
+            }
+        }
+        return result
     }
 
     suspend fun addPayment(payment: Payment): String? {
