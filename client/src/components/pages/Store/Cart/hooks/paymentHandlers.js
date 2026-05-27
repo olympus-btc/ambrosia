@@ -186,6 +186,9 @@ export function buildHandleBtcComplete({
         currencyId: btcPaymentConfig.currencyId,
         user,
         transactionId: data?.invoice?.serialized || "",
+        satoshiAmount: data?.satoshis ?? null,
+        exchangeRateAtPayment: btcPaymentConfig.invoiceData?.exchangeRate ?? null,
+        paymentHash: data?.invoice?.paymentHash ?? null,
         t,
       });
 

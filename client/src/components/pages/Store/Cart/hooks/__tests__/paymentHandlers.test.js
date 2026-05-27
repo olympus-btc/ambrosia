@@ -251,12 +251,18 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
-  it("updates BTC invoice config on invoice ready", () => {
-    const setBtcPaymentConfig = jest.fn((fn) => fn({ existing: true }));
+  it("stores exchangeRate in btcPaymentConfig on invoice ready", () => {
+    let captured = { existing: true };
+    const setBtcPaymentConfig = jest.fn((fn) => {
+      captured = fn(captured);
+    });
     const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
 
-    handle({ invoice: "inv" });
-    expect(setBtcPaymentConfig).toHaveBeenCalled();
+    handle({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000, paymentId: "pay-1", exchangeRate: 50000 });
+
+    expect(captured.invoiceData).toEqual(
+      expect.objectContaining({ exchangeRate: 50000, satoshis: 20000 }),
+    );
   });
 
   it("returns early when BTC config is missing", async () => {
@@ -300,6 +306,7 @@ describe("paymentHandlers", () => {
         discount: 0,
         discountAmount: 0,
         total: 1,
+        invoiceData: { exchangeRate: 50000, satoshis: 20000 },
       },
       dispatch,
       onPay,
@@ -311,10 +318,15 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
     });
 
-    await handler({ invoice: { serialized: "ln" } });
+    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(processCheckout).toHaveBeenCalledWith(
-      expect.objectContaining({ transactionId: "ln" }),
+      expect.objectContaining({
+        transactionId: "ln",
+        satoshiAmount: 20000,
+        exchangeRateAtPayment: 50000,
+        paymentHash: "hash-1",
+      }),
     );
     expect(onPay).toHaveBeenCalledWith(
       expect.objectContaining({ orderId: "order-1" }),
@@ -342,6 +354,7 @@ describe("paymentHandlers", () => {
         discount: 0,
         discountAmount: 0,
         total: 1,
+        invoiceData: { exchangeRate: 50000, satoshis: 20000 },
       },
       dispatch: jest.fn(),
       onPay: jest.fn(),
@@ -353,7 +366,7 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(),
     });
 
-    await handler({ invoice: { serialized: "ln" } });
+    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(notifyError).toHaveBeenCalledWith("errors.checkout");
     expect(setBtcPaymentConfig).toHaveBeenCalled();

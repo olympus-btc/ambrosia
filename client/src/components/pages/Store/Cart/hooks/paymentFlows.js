@@ -8,6 +8,9 @@ export async function processCheckout({
   currencyId,
   user,
   transactionId = "",
+  satoshiAmount = null,
+  exchangeRateAtPayment = null,
+  paymentHash = null,
   t,
 }) {
   const checkoutHttpResponse = await httpClient("/store/orders/checkout", {
@@ -24,6 +27,9 @@ export async function processCheckout({
       currencyId,
       amount: paymentAmounts.amountFiat,
       transactionId: transactionId || "",
+      satoshiAmount,
+      exchangeRateAtPayment,
+      paymentHash,
     }),
   });
 

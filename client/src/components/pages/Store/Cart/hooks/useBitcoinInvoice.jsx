@@ -32,10 +32,8 @@ export function useBitcoinInvoice({
     setError("");
 
     try {
-      const sats = await priceService.fiatToSatoshis(
-        amountFiat,
-        currencyAcronym.toLowerCase(),
-      );
+      const btcPrice = await priceService.getBitcoinPrice(currencyAcronym.toLowerCase());
+      const sats = Math.round((amountFiat / btcPrice) * 100_000_000);
       const fallbackDescription = paymentId || `btc-${Date.now()}`;
       const createdInvoice = await createInvoiceForCart(
         sats,
@@ -44,7 +42,7 @@ export function useBitcoinInvoice({
 
       setInvoice(createdInvoice);
       setSatsAmount(sats);
-      onInvoiceReady?.({ invoice: createdInvoice, satoshis: sats, paymentId });
+      onInvoiceReady?.({ invoice: createdInvoice, satoshis: sats, paymentId, exchangeRate: btcPrice });
 
       return createdInvoice;
     } catch (caughtError) {
