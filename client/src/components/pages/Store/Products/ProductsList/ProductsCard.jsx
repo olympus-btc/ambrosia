@@ -16,25 +16,25 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
-      <CardBody className="flex flex-row items-center gap-3 p-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
+      <CardBody className="flex flex-row items-stretch gap-3 p-3 justify-between">
+        <div className="flex justify-center w-16 overflow-hidden rounded-md bg-gray-100">
           {imageUrl ? (
             <Image
               removeWrapper
               src={imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="w-full object-cover"
             />
           ) : (
-            <div data-testid={`product-card-image-placeholder-${product.id}`}>
+            <div className="flex justify-center items-center" data-testid={`product-card-image-placeholder-${product.id}`}>
               <ImageIcon aria-hidden="true" className="h-6 w-6 text-gray-400" />
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate text-sm">{product.name}</p>
-          <p className="text-green-800 font-semibold text-sm mt-0.5">{formatAmount(product.priceCents)}</p>
-          <div className="flex gap-1.5 mt-1">
+        <div className="flex flex-col justify-center">
+          <p className="font-medium truncate text-sm my-1">{product.name}</p>
+          <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
+          <div className="flex gap-1.5 my-1">
             <Chip
               className={
                 status === "out"
@@ -61,7 +61,7 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
             </Chip>
           </div>
         </div>
-        <div className="flex flex-col gap-2 shrink-0">
+        <div className="flex flex-col justify-between shrink-0 gap-1">
           <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
           {canManageProducts && (
             <>
