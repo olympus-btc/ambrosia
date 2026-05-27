@@ -60,10 +60,6 @@ const cartEn = {
     errors: {
       outOfStock: "Not enough stock available for this product.",
     },
-    productDetails: {
-      description: "Description",
-      close: "Close",
-    },
     paymentModal: {
       bitcoin: {
         title: "Pay with Bitcoin (Lightning)",

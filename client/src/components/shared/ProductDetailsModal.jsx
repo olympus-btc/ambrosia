@@ -7,7 +7,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, categories = [] }) {
-  const t = useTranslations("cart");
+  const t = useTranslations("productDetails");
   const { formatAmount } = useCurrency();
 
   if (!product) return null;
@@ -17,7 +17,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
   const categoryNames = categories
     .filter((cat) => categoryIds.includes(cat.id))
     .map((cat) => cat.name)
-    .join(", ") || t("card.errors.unknownCategory");
+    .join(", ") || t("unknownCategory");
 
   const quantity = Number(product.quantity ?? 0);
   const isOutOfStock = quantity <= 0;
@@ -76,14 +76,14 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
               </p>
             </div>
             <Chip size="sm" className={stockChipClassName}>
-              {quantity} {t("card.stock")}
+              {quantity} {t("stock")}
             </Chip>
           </div>
 
           {product.description && (
             <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
-                {t("productDetails.description")}
+              <p className="text-xs tracking-wide text-gray-500 mb-1">
+                {t("description")}
               </p>
               <p className="text-sm text-gray-600">{product.description}</p>
             </div>
@@ -92,16 +92,15 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
 
         <ModalFooter className="flex justify-between">
           <Button variant="bordered" onPress={onClose}>
-            {t("productDetails.close")}
+            {t("close")}
           </Button>
           <Button
             color="primary"
             className="bg-green-800"
             isDisabled={isOutOfStock}
-            startContent={<ShoppingCart size={16} />}
             onPress={handleAddToCart}
           >
-            {t("card.add")}
+            {t("add")}
           </Button>
         </ModalFooter>
       </ModalContent>

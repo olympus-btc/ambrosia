@@ -2,13 +2,17 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { ViewButton } from "../ViewButton";
 
+jest.mock("next-intl", () => ({
+  useTranslations: () => (key) => key,
+}));
+
 jest.mock("lucide-react", () => ({
   Eye: () => <span data-testid="eye-icon" />,
 }));
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ children, onPress, variant, className, size }) => (
-    <button onClick={onPress} data-variant={variant} className={className} data-size={size}>
+  Button: ({ children, onPress, variant, className, size, "aria-label": ariaLabel }) => (
+    <button onClick={onPress} data-variant={variant} className={className} data-size={size} aria-label={ariaLabel}>
       {children}
     </button>
   ),
@@ -47,7 +51,6 @@ describe("ViewButton", () => {
     render(<ViewButton onPress={jest.fn()}>View</ViewButton>);
 
     const btn = screen.getByRole("button");
-
     expect(btn).toHaveClass("w-8", "min-w-0", "px-0");
     expect(btn).toHaveClass("sm:w-auto", "sm:min-w-16", "sm:px-3");
   });
@@ -76,5 +79,17 @@ describe("ViewButton", () => {
     render(<ViewButton onPress={jest.fn()} size="md" />);
 
     expect(screen.getByRole("button")).toHaveAttribute("data-size", "md");
+  });
+
+  it("uses translation key as default aria-label", () => {
+    render(<ViewButton onPress={jest.fn()} />);
+
+    expect(screen.getByRole("button")).toHaveAttribute("aria-label", "view");
+  });
+
+  it("uses custom aria-label when provided", () => {
+    render(<ViewButton onPress={jest.fn()} aria-label="See product details" />);
+
+    expect(screen.getByRole("button")).toHaveAttribute("aria-label", "See product details");
   });
 });

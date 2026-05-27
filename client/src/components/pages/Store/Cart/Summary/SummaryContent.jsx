@@ -26,9 +26,6 @@ export function SummaryContent({
   btcPayment,
   cashPayment,
   cardPayment,
-  products = [],
-  categories = [],
-  onAddProduct,
 }) {
   const translateCart = useTranslations("cart");
   const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();

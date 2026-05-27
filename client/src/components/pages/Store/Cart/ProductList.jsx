@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 
 import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Image } from "@heroui/react";
 import { ImageIcon } from "lucide-react";
@@ -8,14 +7,10 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
-import { ProductDetailsModal } from "./ProductDetailsModal";
-
 export function ProductList({ products, onAddProduct, categories }) {
   const cardProductTranslation = useTranslations("cart");
   const { formatAmount } = useCurrency();
   const defaultMaxStock = 11;
-  const [showProductDetails, setShowProductDetails] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const getCategoryNames = (categoryIds) => {
     const ids = categoryIds ?? [];
@@ -25,11 +20,6 @@ export function ProductList({ products, onAddProduct, categories }) {
     return names.length > 0 ? names.join(", ") : cardProductTranslation("card.errors.unknownCategory");
   };
 
-  const handleOpenProductDetails = (product) => {
-    setSelectedProduct(product);
-    setShowProductDetails(true);
-  };
-
   const normalizeNumber = (value, fallback = 0) => {
     const numeric = Number(value ?? fallback);
     return Number.isFinite(numeric) ? numeric : fallback;
@@ -37,18 +27,12 @@ export function ProductList({ products, onAddProduct, categories }) {
 
   const stockStatus = (product) => {
     const quantity = normalizeNumber(product.quantity);
-
-    if (quantity <= 0) {
-      return "out";
-    }
-    if (quantity < defaultMaxStock) {
-      return "low";
-    }
+    if (quantity <= 0) return "out";
+    if (quantity < defaultMaxStock) return "low";
     return "ok";
   };
 
   return (
-    <>
     <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
       {products.map((product) => {
         const status = stockStatus(product);
@@ -56,40 +40,35 @@ export function ProductList({ products, onAddProduct, categories }) {
         return (
           <Card
             shadow="none"
-            className="bg-white rounded-lg hover:bg-gray-300"
+            className="bg-white rounded-lg"
             key={product.id}
           >
-            <div
-              className="cursor-pointer"
-              onClick={() => handleOpenProductDetails(product)}
-            >
-              <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
-                {imageUrl ? (
-                  <Image
-                    removeWrapper
-                    alt={product.name}
-                    src={imageUrl}
-                    className="w-full h-full object-cover rounded-none"
-                  />
-                ) : (
-                  <div data-testid={`product-image-placeholder-${product.id}`}>
-                    <ImageIcon aria-hidden="true" className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              <CardHeader className="flex flex-col items-start pb-1">
-                <h2 className="text-sm md:text-lg font-medium">{product.name}</h2>
-                <p className="text-xs">{getCategoryNames(product.categoryIds)}</p>
-              </CardHeader>
-              <CardBody className="py-1">
-                <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                  {formatAmount(product.priceCents)}
-                </h2>
-                <p className="hidden md:block text-xs">
-                  SKU: <span className="text-gray-800">{product.SKU}</span>
-                </p>
-              </CardBody>
+            <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
+              {imageUrl ? (
+                <Image
+                  removeWrapper
+                  alt={product.name}
+                  src={imageUrl}
+                  className="w-full h-full object-cover rounded-none"
+                />
+              ) : (
+                <div data-testid={`product-image-placeholder-${product.id}`}>
+                  <ImageIcon aria-hidden="true" className="h-8 w-8 text-gray-400" />
+                </div>
+              )}
             </div>
+            <CardHeader className="flex flex-col items-start pb-1">
+              <h2 className="text-sm md:text-lg font-medium">{product.name}</h2>
+              <p className="text-xs">{getCategoryNames(product.categoryIds)}</p>
+            </CardHeader>
+            <CardBody className="py-1">
+              <h2 className="text-lg md:text-2xl font-bold text-green-800">
+                {formatAmount(product.priceCents)}
+              </h2>
+              <p className="hidden md:block text-xs">
+                SKU: <span className="text-gray-800">{product.SKU}</span>
+              </p>
+            </CardBody>
             <CardFooter className="flex flex-col items-stretch gap-5 sm:flex-row sm:items-center sm:justify-between">
               <Chip
                 size="sm"
@@ -116,13 +95,5 @@ export function ProductList({ products, onAddProduct, categories }) {
         );
       })}
     </div>
-    <ProductDetailsModal
-      isOpen={showProductDetails}
-      onClose={() => setShowProductDetails(false)}
-      onAddProduct={onAddProduct}
-      product={selectedProduct}
-      categories={categories}
-    />
-    </>
   );
 }

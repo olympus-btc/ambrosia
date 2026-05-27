@@ -44,10 +44,18 @@ const componentsEs = {
   actions: {
     edit: "Editar",
     delete: "Eliminar",
+    view: "Ver",
   },
   imageUploader: {
     removeImage: "Eliminar imagen",
     takePhoto: "Tomar una foto",
+  },
+  productDetails: {
+    description: "Descripción",
+    close: "Cerrar",
+    add: "Agregar",
+    stock: "en almacén",
+    unknownCategory: "Categoría desconocida",
   },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",

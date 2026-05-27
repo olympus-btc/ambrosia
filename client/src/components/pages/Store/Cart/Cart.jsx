@@ -228,9 +228,6 @@ export function Cart() {
             btcPayment={btcPayment}
             cashPayment={cashPayment}
             cardPayment={cardPayment}
-            products={products}
-            categories={categories}
-            onAddProduct={addProduct}
           />
         </div>
       </div>
@@ -257,9 +254,6 @@ export function Cart() {
         btcPayment={btcPayment}
         cashPayment={cashPayment}
         cardPayment={cardPayment}
-        products={products}
-        categories={categories}
-        onAddProduct={addProduct}
       />
     </div>
   );

@@ -44,10 +44,18 @@ const componentsEn = {
   actions: {
     edit: "Edit",
     delete: "Delete",
+    view: "View",
   },
   imageUploader: {
     removeImage: "Remove image",
     takePhoto: "Take a photo",
+  },
+  productDetails: {
+    description: "Description",
+    close: "Close",
+    add: "Add",
+    stock: "in stock",
+    unknownCategory: "Unknown category",
   },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",

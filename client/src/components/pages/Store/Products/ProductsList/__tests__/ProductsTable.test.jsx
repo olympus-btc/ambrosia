@@ -25,6 +25,10 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
 }));
 
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
@@ -77,6 +81,7 @@ const defaultProps = {
   canManageProducts: true,
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
+  onViewProduct: jest.fn(),
 };
 
 function renderTable(props = {}) {
@@ -166,7 +171,21 @@ describe("ProductsTable", () => {
   it("hides actions column when canManageProducts is false", () => {
     renderTable({ canManageProducts: false });
 
-    const actionsHeader = screen.getByText("actions");
-    expect(actionsHeader.closest("th")).toHaveClass("hidden");
+    expect(screen.queryByText("edit")).not.toBeInTheDocument();
+    expect(screen.queryByText("delete")).not.toBeInTheDocument();
+  });
+
+  it("always renders view buttons regardless of canManageProducts", () => {
+    renderTable({ canManageProducts: false });
+
+    expect(screen.getAllByTestId("view-button")).toHaveLength(products.length);
+  });
+
+  it("calls onViewProduct when view button is clicked", () => {
+    const onViewProduct = jest.fn();
+    renderTable({ onViewProduct });
+
+    fireEvent.click(screen.getAllByTestId("view-button")[0]);
+    expect(onViewProduct).toHaveBeenCalledWith(products[0]);
   });
 });

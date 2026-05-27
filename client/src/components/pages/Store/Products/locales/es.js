@@ -9,6 +9,7 @@ const productsEs = {
     tableAriaLabel: "Tabla de productos",
     edit: "Editar",
     delete: "Eliminar",
+    viewDetails: "Ver Detalles",
     image: "Imagen",
     name: "Nombre",
     description: "Descripción",

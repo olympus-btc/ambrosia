@@ -6,10 +6,11 @@ import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsCard({ product, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct }) {
+export function ProductsCard({ product, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
   const t = useTranslations("products");
   const imageUrl = storedAssetUrl(product?.imageUrl);
 
@@ -60,16 +61,19 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
             </Chip>
           </div>
         </div>
-        {canManageProducts && (
-          <div className="flex flex-col gap-2 shrink-0">
-            <RequirePermission allOf={["products_update"]}>
-              <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
-            </RequirePermission>
-            <RequirePermission allOf={["products_delete"]}>
-              <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
-            </RequirePermission>
-          </div>
-        )}
+        <div className="flex flex-col gap-2 shrink-0">
+          <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
+          {canManageProducts && (
+            <>
+              <RequirePermission allOf={["products_update"]}>
+                <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
+              </RequirePermission>
+              <RequirePermission allOf={["products_delete"]}>
+                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
+              </RequirePermission>
+            </>
+          )}
+        </div>
       </CardBody>
     </Card>
   );
