@@ -1,8 +1,4 @@
 "use client";
-import { useTranslations } from "next-intl";
-
-import { useSummaryData } from "../hooks/useSummaryData";
-
 import { SummaryStat } from "./SummaryStat";
 
 const TONE = {
@@ -12,15 +8,12 @@ const TONE = {
   value: "text-deep",
 };
 
-export function SummaryCard({ reportData, formatCurrency }) {
-  const reportsTranslations = useTranslations("reports");
-  const { totalRevenue, totalItems, transactionCount, averageTicket } = useSummaryData(reportData);
+export function SummaryCard({ stats }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <SummaryStat label={reportsTranslations("summary.revenue")} value={formatCurrency(totalRevenue)} tone={TONE} />
-      <SummaryStat label={reportsTranslations("summary.items")} value={totalItems} tone={TONE} />
-      <SummaryStat label={reportsTranslations("summary.transactions")} value={transactionCount} tone={TONE} />
-      <SummaryStat label={reportsTranslations("summary.averageTicket")} value={formatCurrency(averageTicket)} tone={TONE} />
+      {stats.map(({ label, value }) => (
+        <SummaryStat key={label} label={label} value={value} tone={TONE} />
+      ))}
     </div>
   );
 }
