@@ -68,7 +68,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
 
         <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
+        <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">
             <span>{reportsTranslations("sales.show")}</span>
             <Select
@@ -91,17 +91,32 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-default-500">
+            <div className="flex items-center gap-1 sm:gap-3">
+              <span className="hidden sm:inline text-sm text-default-500">
                 {reportsTranslations("sales.pageLabel")} {page} {reportsTranslations("sales.ofLabel")} {totalPages}
               </span>
               <Pagination
+                className="sm:hidden"
                 total={totalPages}
                 page={page}
                 onChange={setPage}
                 color="primary"
                 showControls
                 size="sm"
+                siblings={0}
+                boundaries={1}
+                aria-label={reportsTranslations("sales.paginationAria")}
+              />
+              <Pagination
+                className="hidden sm:block"
+                total={totalPages}
+                page={page}
+                onChange={setPage}
+                color="primary"
+                showControls
+                size="sm"
+                siblings={1}
+                boundaries={1}
                 aria-label={reportsTranslations("sales.paginationAria")}
               />
             </div>
