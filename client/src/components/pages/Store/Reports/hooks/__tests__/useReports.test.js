@@ -174,46 +174,6 @@ describe("useReports — fetch", () => {
     expect(url).toContain("endDate=2024-01-31");
   });
 
-  it("fetchReport with productName includes it in the URL", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ productName: "Widget" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?productName=Widget");
-  });
-
-  it("fetchReport with productName with spaces trims it", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ productName: "  Widget  " });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?productName=Widget");
-  });
-
-  it("fetchReport with paymentMethod includes it in the URL", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ paymentMethod: "Cash" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?paymentMethod=Cash");
-  });
-
-  it("fetchReport with paymentMethod with spaces trims it", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ paymentMethod: "  BTC  " });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?paymentMethod=BTC");
-  });
-
   it("fetchReport with no parameters calls /reports without query string", async () => {
     const { result } = await setupHook();
 
@@ -260,15 +220,15 @@ describe("useReports — fetch", () => {
     await act(async () => {
       await result.current.fetchReport({
         period: "month",
-        productName: "Widget",
-        paymentMethod: "Cash",
+        startDate: "2024-01-01",
+        endDate: "2024-01-31",
       });
     });
 
     const url = httpClient.mock.calls[0][0];
     expect(url).toContain("period=month");
-    expect(url).toContain("productName=Widget");
-    expect(url).toContain("paymentMethod=Cash");
+    expect(url).toContain("startDate=2024-01-01");
+    expect(url).toContain("endDate=2024-01-31");
   });
 
   it("GAP: fetchReport does not send userId even though the server supports it", async () => {

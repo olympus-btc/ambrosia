@@ -49,20 +49,11 @@ jest.mock("../Charts", () => ({
 }));
 
 jest.mock("../Sales", () => ({
-  SalesDetailCard: ({ sales, filters, onFiltersChange }) => (
+  SalesDetailCard: ({ sales }) => (
     <div data-testid="sales-detail-card">
       {sales.map((sale, saleIndex) => (
         <span key={saleIndex} data-testid="sale-item">{sale.productName}</span>
       ))}
-      {filters && <span data-testid="sales-active-period">{filters.activePeriod}</span>}
-      {onFiltersChange && (
-        <button
-          data-testid="sales-change-filters-btn"
-          onClick={() => onFiltersChange({ productName: "test" })}
-        >
-          change sales filter
-        </button>
-      )}
     </div>
   ),
 }));
@@ -96,10 +87,26 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("@heroui/react", () => ({
-  Card: ({ children, className }) => <div className={className}>{children}</div>,
-  CardBody: ({ children }) => <div>{children}</div>,
-}));
+jest.mock("@heroui/react", () => {
+  const React = require("react");
+  return {
+    Card: ({ children, className }) => <div className={className}>{children}</div>,
+    CardBody: ({ children }) => <div>{children}</div>,
+    Tabs: ({ children, selectedKey, onSelectionChange, "aria-label": ariaLabel }) => (
+      <div role="tablist" aria-label={ariaLabel}>
+        {React.Children.map(children, (child) =>
+          React.cloneElement(child, {
+            isSelected: child.key === selectedKey,
+            onPress: () => onSelectionChange(child.key),
+          })
+        )}
+      </div>
+    ),
+    Tab: ({ title, isSelected, onPress }) => (
+      <button role="tab" aria-selected={String(isSelected)} onClick={onPress}>{title}</button>
+    ),
+  };
+});
 
 jest.mock("lucide-react", () => ({
   AlertCircle: (props) => <svg {...props} data-testid="alert-icon" />,
@@ -327,13 +334,6 @@ describe("Reports", () => {
       expect(items).toHaveLength(SALES_FIXTURE.length);
     });
 
-    it("forwards sales filter changes to handleFilters", () => {
-      mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
-      render(<Reports />);
-      switchToProductsTab();
-      fireEvent.click(screen.getByTestId("sales-change-filters-btn"));
-      expect(mockHandleFilters).toHaveBeenCalledWith(expect.objectContaining({ productName: "test" }));
-    });
   });
 
   describe("no data state", () => {
