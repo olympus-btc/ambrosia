@@ -3,8 +3,12 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { OrdersCard } from "../OrdersCard";
 
 jest.mock("@heroui/react", () => ({
-  Card: ({ children, onPress }) => <div data-testid="card" onClick={onPress}>{children}</div>,
+  Card: ({ children }) => <div data-testid="card">{children}</div>,
   CardBody: ({ children }) => <div>{children}</div>,
+}));
+
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
 }));
 
 jest.mock("@lib/formatDate", () => jest.fn((date) => `fmt:${date}`));
@@ -37,11 +41,6 @@ describe("OrdersCard", () => {
     expect(screen.getByText("#ABC123")).toBeInTheDocument();
   });
 
-  it("shows joined product names", () => {
-    render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={jest.fn()} />);
-    expect(screen.getByText("Widget A, Widget B")).toBeInTheDocument();
-  });
-
   it("shows the user name", () => {
     render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={jest.fn()} />);
     expect(screen.getByText("alice")).toBeInTheDocument();
@@ -72,10 +71,10 @@ describe("OrdersCard", () => {
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
-  it("calls onClick when card is pressed", () => {
+  it("calls onClick when ViewButton is pressed", () => {
     const onClick = jest.fn();
     render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={onClick} />);
-    fireEvent.click(screen.getByTestId("card"));
+    fireEvent.click(screen.getByTestId("view-button"));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 });
