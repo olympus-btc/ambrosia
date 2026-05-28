@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
-import { Card, CardBody } from "@heroui/react";
+import { Card, CardBody, Tab, Tabs } from "@heroui/react";
 import { AlertCircle, Loader2, Package, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -21,7 +21,7 @@ import { ReportSkeleton, SummaryCard } from "./Summary";
 
 export default function Reports() {
   const reportsTranslations = useTranslations("reports");
-  const { fetchReport, reportData, error } = useReports();
+  const { fetchReport, reportData, error, loading: reportsLoading } = useReports();
   const { filters, handleFilters } = useFiltersState(fetchReport);
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
@@ -49,7 +49,7 @@ export default function Reports() {
     { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
   ], [reportsTranslations, productsRevenue, totalItems, productLines, uniqueProducts, formatCurrency]);
 
-  if (currencyLoading && !reportData) return <ReportSkeleton />;
+  if ((reportsLoading || currencyLoading) && !reportData) return <ReportSkeleton />;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -59,32 +59,41 @@ export default function Reports() {
         subtitle={reportsTranslations("header.subtitle")}
         actions={(
           <div className="flex items-center gap-3">
-            <div className="flex bg-white rounded-xl p-1 shadow-sm" role="tablist" aria-label={reportsTranslations("header.title")}>
+            <div className={isPending ? "pointer-events-none" : ""}>
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => {
+                setPendingTab(key);
+                startTransition(() => setActiveTab(key));
+              }}
+              aria-label={reportsTranslations("header.title")}
+              variant="solid"
+              classNames={{
+                base: "bg-white rounded-xl p-1 shadow-sm",
+                tabList: "gap-0 bg-transparent p-0",
+                cursor: "bg-forest shadow-none rounded-lg",
+                tab: "px-4 py-2 h-auto rounded-lg data-[hover=true]:bg-forest/10",
+                tabContent: "group-data-[selected=true]:text-white text-gray-500 group-data-[hover=true]:text-forest text-sm font-medium",
+                panel: "hidden",
+              }}
+            >
               {[
                 { key: "orders", label: reportsTranslations("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
                 { key: "products", label: reportsTranslations("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
               ].map(({ key, label, icon }) => (
-                <button
+                <Tab
                   key={key}
-                  role="tab"
-                  aria-selected={activeTab === key}
-                  disabled={isPending}
-                  onClick={() => {
-                    setPendingTab(key);
-                    startTransition(() => setActiveTab(key));
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeTab === key
-                      ? "bg-forest text-white"
-                      : "text-gray-500 hover:text-forest hover:bg-forest/10"
-                  }`}
-                >
-                  {isPending && pendingTab === key
-                    ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
-                    : icon}
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
+                  title={
+                    <div className="flex items-center gap-2">
+                      {isPending && pendingTab === key
+                        ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                        : icon}
+                      <span className="hidden sm:inline">{label}</span>
+                    </div>
+                  }
+                />
               ))}
+            </Tabs>
             </div>
             <PeriodFilter
               filters={filters}
@@ -117,8 +126,6 @@ export default function Reports() {
               <OrdersDetailCard
                 orders={orders}
                 formatCurrency={formatCurrency}
-                filters={filters}
-                onFiltersChange={handleFilters}
                 disabled={currencyLoading}
               />
             </div>
@@ -132,8 +139,6 @@ export default function Reports() {
               <SalesDetailCard
                 sales={sales}
                 formatCurrency={formatCurrency}
-                filters={filters}
-                onFiltersChange={handleFilters}
                 disabled={currencyLoading}
               />
             </div>
