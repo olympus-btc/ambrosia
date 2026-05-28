@@ -317,15 +317,15 @@ describe("HistoryTab Component", () => {
     });
 
     it("shows clock toggle when currentRate is provided", () => {
-      const { container } = renderHistoryTab({ transactions: [incomingWithRate], currentRate: 60000 });
+      renderHistoryTab({ transactions: [incomingWithRate], currentRate: 60000 });
 
-      expect(container.querySelector("svg.lucide-clock")).toBeInTheDocument();
+      expect(screen.getByLabelText("showCurrentRate")).toBeInTheDocument();
     });
 
     it("does not show clock toggle when currentRate is null", () => {
-      const { container } = renderHistoryTab({ transactions: [incomingWithRate], currentRate: null });
+      renderHistoryTab({ transactions: [incomingWithRate], currentRate: null });
 
-      expect(container.querySelector("svg.lucide-clock")).toBeNull();
+      expect(screen.queryByLabelText("showCurrentRate")).toBeNull();
     });
   });
 

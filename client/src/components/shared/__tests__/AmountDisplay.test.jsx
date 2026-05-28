@@ -84,4 +84,21 @@ describe("AmountDisplay", () => {
     renderComponent({ satoshis: 20000, exchangeRateAtSale: null, currentRate: null });
     expect(screen.getByText("—")).toBeInTheDocument();
   });
+
+  it("shows historical rate label by default when both rates are available", () => {
+    renderComponent({ satoshis: 20000, exchangeRateAtSale: 50000, currentRate: 60000 });
+    expect(screen.getByText("amountAtTimeOfPayment")).toBeInTheDocument();
+  });
+
+  it("shows current rate label after clicking clock", () => {
+    renderComponent({ satoshis: 20000, exchangeRateAtSale: 50000, currentRate: 60000 });
+    fireEvent.click(screen.getByLabelText("showCurrentRate"));
+    expect(screen.getByText("amountAtCurrentRate")).toBeInTheDocument();
+  });
+
+  it("does not show rate label when only one rate is available", () => {
+    renderComponent({ satoshis: 20000, exchangeRateAtSale: 50000 });
+    expect(screen.queryByText("amountAtTimeOfPayment")).not.toBeInTheDocument();
+    expect(screen.queryByText("amountAtCurrentRate")).not.toBeInTheDocument();
+  });
 });
