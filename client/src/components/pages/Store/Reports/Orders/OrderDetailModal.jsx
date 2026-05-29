@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import formatDate from "@lib/formatDate";
 
 export function OrderDetailModal({ order, formatCurrency, onClose }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
 
   return (
     <Modal
@@ -24,7 +24,7 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-0.5 pb-2">
-          <span>{t("orders.detailTitle")}</span>
+          <span>{reportsTranslations("orders.detailTitle")}</span>
           {order && <span className="font-mono text-sm font-normal text-gray-400">#{order.shortId}</span>}
         </ModalHeader>
         <ModalBody className="pb-6">
@@ -32,34 +32,34 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-400">{t("sales.date")}</p>
+                  <p className="text-xs text-gray-400">{reportsTranslations("sales.date")}</p>
                   <p className="font-medium">{formatDate(order.date)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{t("sales.user")}</p>
+                  <p className="text-xs text-gray-400">{reportsTranslations("sales.user")}</p>
                   <p className="font-medium">{order.userName ?? "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{t("sales.paymentMethod")}</p>
-                  <p className="font-medium">{order.paymentMethod || t("payment.unknown")}</p>
+                  <p className="text-xs text-gray-400">{reportsTranslations("sales.paymentMethod")}</p>
+                  <p className="font-medium">{order.paymentMethod || reportsTranslations("payment.unknown")}</p>
                 </div>
               </div>
 
               <div className="border-t border-gray-100 pt-3">
                 <Table
                   removeWrapper
-                  aria-label={t("orders.detailTitle")}
+                  aria-label={reportsTranslations("orders.detailTitle")}
                   classNames={{ th: "text-xs text-gray-400 bg-transparent font-medium px-0", td: "px-0" }}
                 >
                   <TableHeader>
-                    <TableColumn align="start">{t("orders.products")}</TableColumn>
-                    <TableColumn align="center">{t("sales.quantity")}</TableColumn>
-                    <TableColumn align="end">{t("sales.price")}</TableColumn>
-                    <TableColumn align="end">{t("orders.subtotal")}</TableColumn>
+                    <TableColumn align="start">{reportsTranslations("orders.products")}</TableColumn>
+                    <TableColumn align="center">{reportsTranslations("sales.quantity")}</TableColumn>
+                    <TableColumn align="end">{reportsTranslations("sales.price")}</TableColumn>
+                    <TableColumn align="end">{reportsTranslations("orders.subtotal")}</TableColumn>
                   </TableHeader>
                   <TableBody>
-                    {order.items.map((item, index) => (
-                      <TableRow key={index}>
+                    {order.items.map((item, itemIndex) => (
+                      <TableRow key={itemIndex}>
                         <TableCell className="py-2 text-gray-700">{item.productName}</TableCell>
                         <TableCell className="py-2 text-center text-gray-500">×{item.quantity}</TableCell>
                         <TableCell className="py-2 text-right text-gray-500">{formatCurrency(item.priceAtOrder)}</TableCell>
@@ -71,7 +71,7 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
               </div>
 
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-                <span className="font-semibold text-sm">{t("orders.total")}</span>
+                <span className="font-semibold text-sm">{reportsTranslations("orders.total")}</span>
                 <span className="font-bold text-green-700">{formatCurrency(order.total)}</span>
               </div>
             </div>

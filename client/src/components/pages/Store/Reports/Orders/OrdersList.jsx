@@ -6,22 +6,10 @@ import { useTranslations } from "next-intl";
 
 import { DataTable } from "@/components/shared/DataTable";
 import { ViewButton } from "@/components/shared/ViewButton";
-import { parseUtcDate } from "@lib/formatDate";
+import { formatDateParts } from "@lib/formatDate";
 
 import { OrderDetailModal } from "./OrderDetailModal";
 import { OrdersCard } from "./OrdersCard";
-
-const formatDateOnly = (dateString) => {
-  const parsed = parseUtcDate(dateString);
-  if (isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
-};
-
-const formatTimeOnly = (dateString) => {
-  const parsed = parseUtcDate(dateString);
-  if (isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
-};
 
 const buildProductSummary = (items, overflowLabel) => {
   if (!items.length) return "—";
@@ -57,12 +45,15 @@ export function ReportsOrdersList({ orders, formatCurrency }) {
     {
       key: "date",
       label: reportsTranslations("sales.date"),
-      render: (order) => (
-        <div className="text-xs">
-          <span className="text-gray-700">{formatDateOnly(order.date)}</span>
-          <span className="text-gray-400 ml-1">{formatTimeOnly(order.date)}</span>
-        </div>
-      ),
+      render: (order) => {
+        const { date, time } = formatDateParts(order.date);
+        return (
+          <div className="text-xs">
+            <span className="text-gray-700">{date}</span>
+            <span className="text-gray-400 ml-1">{time}</span>
+          </div>
+        );
+      },
     },
     {
       key: "user",

@@ -1,22 +1,13 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
+import { useMediaQuery } from "@hooks/useMediaQuery";
 
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const listener = (mediaQueryEvent) => setMatches(mediaQueryEvent.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, [query]);
-  return matches;
-}
+import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
 
 import { OrdersFilters } from "./OrdersFilters";
 import { ReportsOrdersList } from "./OrdersList";

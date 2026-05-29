@@ -22,3 +22,16 @@ const formatDate = (dateString) => {
 };
 
 export default formatDate;
+
+export const formatDateParts = (dateString) => {
+  const parsed = parseUtcDate(dateString);
+  if (isNaN(parsed.getTime())) return { date: "-", time: "" };
+  return {
+    get date() {
+      return parsed.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+    },
+    get time() {
+      return parsed.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
+    },
+  };
+};
