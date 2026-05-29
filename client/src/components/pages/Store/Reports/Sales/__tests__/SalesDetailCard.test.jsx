@@ -65,6 +65,12 @@ const formatCurrency = (cents) => `$${cents}`;
 describe("SalesDetailCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.matchMedia = jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    }));
     mockUseSalesData = {
       paginatedSales: [],
       totalPages: 1,

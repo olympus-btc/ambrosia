@@ -1,11 +1,23 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useSalesData } from "../hooks/useSalesData";
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+    const listener = (e) => setMatches(e.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+  return matches;
+}
 
 import { SalesFilters } from "./SalesFilters";
 import { SalesList } from "./SalesList";
@@ -31,6 +43,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
     });
   }, [sales, search, paymentMethod]);
 
+  const isMobile = useMediaQuery("(max-width: 639px)");
   const { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
     useSalesData(filteredSales, formatCurrency);
 
@@ -96,26 +109,13 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
                 {reportsTranslations("sales.pageLabel")} {page} {reportsTranslations("sales.ofLabel")} {totalPages}
               </span>
               <Pagination
-                className="sm:hidden"
                 total={totalPages}
                 page={page}
                 onChange={setPage}
                 color="primary"
                 showControls
                 size="sm"
-                siblings={0}
-                boundaries={1}
-                aria-label={reportsTranslations("sales.paginationAria")}
-              />
-              <Pagination
-                className="hidden sm:block"
-                total={totalPages}
-                page={page}
-                onChange={setPage}
-                color="primary"
-                showControls
-                size="sm"
-                siblings={1}
+                siblings={isMobile ? 0 : 1}
                 boundaries={1}
                 aria-label={reportsTranslations("sales.paginationAria")}
               />

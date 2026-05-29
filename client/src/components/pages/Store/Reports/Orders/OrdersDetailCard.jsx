@@ -1,11 +1,23 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+    const listener = (e) => setMatches(e.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+  return matches;
+}
 
 import { OrdersFilters } from "./OrdersFilters";
 import { ReportsOrdersList } from "./OrdersList";
@@ -32,6 +44,7 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
     });
   }, [orders, search, paymentMethod]);
 
+  const isMobile = useMediaQuery("(max-width: 639px)");
   const { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
     useOrdersDetailData(filteredOrders, formatCurrency);
 
@@ -97,26 +110,13 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
                 {reportsTranslations("sales.pageLabel")} {page} {reportsTranslations("sales.ofLabel")} {totalPages}
               </span>
               <Pagination
-                className="sm:hidden"
                 total={totalPages}
                 page={page}
                 onChange={setPage}
                 color="primary"
                 showControls
                 size="sm"
-                siblings={0}
-                boundaries={1}
-                aria-label={reportsTranslations("orders.paginationAria")}
-              />
-              <Pagination
-                className="hidden sm:block"
-                total={totalPages}
-                page={page}
-                onChange={setPage}
-                color="primary"
-                showControls
-                size="sm"
-                siblings={1}
+                siblings={isMobile ? 0 : 1}
                 boundaries={1}
                 aria-label={reportsTranslations("orders.paginationAria")}
               />
