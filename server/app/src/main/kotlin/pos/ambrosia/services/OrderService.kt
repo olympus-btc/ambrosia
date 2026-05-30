@@ -11,7 +11,29 @@ import pos.ambrosia.models.StoreOrder
 import pos.ambrosia.models.StoreOrderItem
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.sql.Types
 import java.util.UUID
+
+private fun PreparedStatement.setNullableLong(
+    index: Int,
+    value: Long?,
+) {
+    if (value != null) setLong(index, value) else setNull(index, Types.INTEGER)
+}
+
+private fun PreparedStatement.setNullableDouble(
+    index: Int,
+    value: Double?,
+) {
+    if (value != null) setDouble(index, value) else setNull(index, Types.REAL)
+}
+
+private fun PreparedStatement.setNullableString(
+    index: Int,
+    value: String?,
+) {
+    if (value != null) setString(index, value) else setNull(index, Types.VARCHAR)
+}
 
 class OrderService(
     private val connection: Connection,
@@ -54,7 +76,7 @@ class OrderService(
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
-            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, satoshi_amount, exchange_rate_at_payment, payment_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, satoshi_amount, exchange_rate_at_payment, payment_hash, exchange_rate_currency, fiat_amount_at_payment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         private const val STORE_INSERT_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val STORE_GET_ITEMS =
@@ -596,9 +618,11 @@ class OrderService(
                 statement.setString(3, request.currencyId)
                 statement.setString(4, request.transactionId ?: "")
                 statement.setDouble(5, request.amount)
-                if (request.satoshiAmount != null) statement.setLong(6, request.satoshiAmount) else statement.setNull(6, java.sql.Types.INTEGER)
-                if (request.exchangeRateAtPayment != null) statement.setDouble(7, request.exchangeRateAtPayment) else statement.setNull(7, java.sql.Types.REAL)
-                if (request.paymentHash != null) statement.setString(8, request.paymentHash) else statement.setNull(8, java.sql.Types.VARCHAR)
+                statement.setNullableLong(6, request.satoshiAmount)
+                statement.setNullableDouble(7, request.exchangeRateAtPayment)
+                statement.setNullableString(8, request.paymentHash)
+                statement.setNullableString(9, request.exchangeRateCurrency)
+                statement.setNullableDouble(10, request.fiatAmountAtPayment)
                 statement.executeUpdate()
             }
 

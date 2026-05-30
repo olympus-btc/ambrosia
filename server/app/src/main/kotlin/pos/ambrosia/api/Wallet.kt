@@ -167,28 +167,32 @@ fun Route.wallet(
 
                 val payments = phoenixService.listIncomingPayments(from, to, limit, offset, all, externalId)
                 val hashes = payments.map { it.paymentHash }
-                val exchangeRates = paymentService.getExchangeRatesByPaymentHashes(hashes)
-                val enriched = payments.map { payment ->
-                    IncomingPaymentWithRate(
-                        type = payment.type,
-                        subType = payment.subType,
-                        paymentHash = payment.paymentHash,
-                        preimage = payment.preimage,
-                        externalId = payment.externalId,
-                        description = payment.description,
-                        invoice = payment.invoice,
-                        isPaid = payment.isPaid,
-                        isExpired = payment.isExpired,
-                        requestedSat = payment.requestedSat,
-                        receivedSat = payment.receivedSat,
-                        fees = payment.fees,
-                        payerKey = payment.payerKey,
-                        expiresAt = payment.expiresAt,
-                        completedAt = payment.completedAt,
-                        createdAt = payment.createdAt,
-                        exchangeRateAtPayment = exchangeRates[payment.paymentHash],
-                    )
-                }
+                val bitcoinPaymentDataByHash = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val enriched =
+                    payments.map { payment ->
+                        val bitcoinPaymentData = bitcoinPaymentDataByHash[payment.paymentHash]
+                        IncomingPaymentWithRate(
+                            type = payment.type,
+                            subType = payment.subType,
+                            paymentHash = payment.paymentHash,
+                            preimage = payment.preimage,
+                            externalId = payment.externalId,
+                            description = payment.description,
+                            invoice = payment.invoice,
+                            isPaid = payment.isPaid,
+                            isExpired = payment.isExpired,
+                            requestedSat = payment.requestedSat,
+                            receivedSat = payment.receivedSat,
+                            fees = payment.fees,
+                            payerKey = payment.payerKey,
+                            expiresAt = payment.expiresAt,
+                            completedAt = payment.completedAt,
+                            createdAt = payment.createdAt,
+                            exchangeRateAtPayment = bitcoinPaymentData?.exchangeRateAtPayment,
+                            exchangeRateCurrency = bitcoinPaymentData?.exchangeRateCurrency,
+                            fiatAmountAtPayment = bitcoinPaymentData?.fiatAmountAtPayment,
+                        )
+                    }
                 call.respond(HttpStatusCode.OK, enriched)
             }
 

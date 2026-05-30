@@ -454,6 +454,8 @@ data class StoreCheckoutRequest(
     val satoshiAmount: Long? = null,
     val exchangeRateAtPayment: Double? = null,
     val paymentHash: String? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )
 
 @Serializable
@@ -485,6 +487,12 @@ data class ProductSalesReport(
     val totalBtcSatoshis: Long = 0L,
 )
 
+data class PaymentBitcoinData(
+    val exchangeRateAtPayment: Double,
+    val exchangeRateCurrency: String?,
+    val fiatAmountAtPayment: Double?,
+)
+
 @Serializable
 data class IncomingPaymentWithRate(
     val type: String,
@@ -504,4 +512,6 @@ data class IncomingPaymentWithRate(
     val completedAt: Long? = null,
     val createdAt: Long,
     val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )
