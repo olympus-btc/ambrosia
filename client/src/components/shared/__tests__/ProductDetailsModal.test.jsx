@@ -26,7 +26,7 @@ jest.mock("@heroui/react", () => ({
     </button>
   ),
   Chip: ({ children }) => <span>{children}</span>,
-  Image: ({ alt, src }) => <img alt={alt} src={src} />,
+  Image: () => null,
 }));
 
 const baseProduct = {
