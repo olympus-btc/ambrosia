@@ -6,6 +6,12 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 
+function calculateHistoricalCents(fiatAmountAtPayment, exchangeRateAtSale, satoshis) {
+  if (fiatAmountAtPayment != null) return fiatAmountAtPayment * 100;
+  if (exchangeRateAtSale != null) return (satoshis / 100_000_000) * exchangeRateAtSale * 100;
+  return null;
+}
+
 function AnimatedClockButton({ showingHistorical, onClick, ariaLabel }) {
   return (
     <button
@@ -56,10 +62,16 @@ function AnimatedClockButton({ showingHistorical, onClick, ariaLabel }) {
   );
 }
 
-export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
+export function AmountDisplay({
+  satoshis,
+  exchangeRateAtSale,
+  exchangeRateCurrency,
+  fiatAmountAtPayment,
+  currentRate,
+}) {
   const [showSats, setShowSats] = useState(false);
   const [showCurrentFiat, setShowCurrentFiat] = useState(false);
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency } = useCurrency();
   const t = useTranslations("amountDisplay");
 
   if (!satoshis) return null;
@@ -76,15 +88,19 @@ export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
     );
   }
 
-  const fiatAtSaleCents = exchangeRateAtSale != null
-    ? (satoshis / 100_000_000) * exchangeRateAtSale * 100
-    : null;
-  const fiatCurrentCents = currentRate != null
+  const historicalCents = calculateHistoricalCents(fiatAmountAtPayment, exchangeRateAtSale, satoshis);
+
+  const currentFiatCents = currentRate != null
     ? (satoshis / 100_000_000) * currentRate * 100
     : null;
 
-  const displayCents = showCurrentFiat ? fiatCurrentCents : fiatAtSaleCents;
-  const canToggleRate = fiatAtSaleCents != null && fiatCurrentCents != null;
+  const displayCents = showCurrentFiat ? currentFiatCents : historicalCents;
+  const canToggleRate = historicalCents != null && currentFiatCents != null;
+
+  const currentCurrencyAcronym = currency?.acronym?.toUpperCase();
+  const displayedCurrencyAcronym = showCurrentFiat
+    ? currentCurrencyAcronym
+    : (exchangeRateCurrency?.toUpperCase() ?? currentCurrencyAcronym);
 
   return (
     <div>
@@ -96,6 +112,9 @@ export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
         >
           {displayCents != null ? formatAmount(displayCents) : "—"}
         </button>
+        {displayedCurrencyAcronym && (
+          <span className="text-xs font-normal text-foreground-400">{displayedCurrencyAcronym}</span>
+        )}
         {canToggleRate && (
           <AnimatedClockButton
             showingHistorical={!showCurrentFiat}

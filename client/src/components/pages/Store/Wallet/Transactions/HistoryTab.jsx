@@ -92,6 +92,8 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
                           <AmountDisplay
                             satoshis={transaction.receivedSat}
                             exchangeRateAtSale={transaction.exchangeRateAtPayment}
+                            exchangeRateCurrency={transaction.exchangeRateCurrency}
+                            fiatAmountAtPayment={transaction.fiatAmountAtPayment}
                             currentRate={currentRate}
                           />
                         ) : (

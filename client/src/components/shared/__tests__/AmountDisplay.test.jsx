@@ -16,7 +16,7 @@ function renderComponent(props = {}) {
 
 describe("AmountDisplay", () => {
   beforeEach(() => {
-    useCurrency.mockReturnValue({ formatAmount });
+    useCurrency.mockReturnValue({ formatAmount, currency: { acronym: "USD" } });
     formatAmount.mockClear();
   });
 
@@ -100,5 +100,51 @@ describe("AmountDisplay", () => {
     renderComponent({ satoshis: 20000, exchangeRateAtSale: 50000 });
     expect(screen.queryByText("amountAtTimeOfPayment")).not.toBeInTheDocument();
     expect(screen.queryByText("amountAtCurrentRate")).not.toBeInTheDocument();
+  });
+
+  it("uses fiatAmountAtPayment directly for historical display when provided", () => {
+    renderComponent({
+      satoshis: 100_000_000,
+      exchangeRateAtSale: 50000,
+      fiatAmountAtPayment: 1.0,
+      currentRate: 60000,
+    });
+    expect(formatAmount).toHaveBeenCalledWith(100);
+  });
+
+  it("always shows historical currency tag inline", () => {
+    useCurrency.mockReturnValue({ formatAmount, currency: { acronym: "MXN" } });
+    renderComponent({
+      satoshis: 20000,
+      exchangeRateAtSale: 50000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+      currentRate: 1_900_000,
+    });
+    expect(screen.getByText("USD")).toBeInTheDocument();
+  });
+
+  it("always shows current currency tag inline when toggled", () => {
+    useCurrency.mockReturnValue({ formatAmount, currency: { acronym: "MXN" } });
+    renderComponent({
+      satoshis: 20000,
+      exchangeRateAtSale: 50000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+      currentRate: 1_900_000,
+    });
+    fireEvent.click(screen.getByLabelText("showCurrentRate"));
+    expect(screen.getByText("MXN")).toBeInTheDocument();
+  });
+
+  it("shows current currency tag even when currencies match", () => {
+    renderComponent({
+      satoshis: 20000,
+      exchangeRateAtSale: 50000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+      currentRate: 60000,
+    });
+    expect(screen.getByText("USD")).toBeInTheDocument();
   });
 });
