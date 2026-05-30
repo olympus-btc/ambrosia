@@ -10,6 +10,17 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   }),
 }));
 
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  Accordion: ({ children }) => <div>{children}</div>,
+  AccordionItem: ({ children, title, "aria-label": ariaLabel }) => (
+    <div>
+      <button aria-label={ariaLabel}>{title}</button>
+      <div>{children}</div>
+    </div>
+  ),
+}));
+
 const products = [
   {
     id: 1,
@@ -29,6 +40,16 @@ const products = [
     quantity: 1,
   },
 ];
+
+const productWithDescription = {
+  id: 3,
+  name: "M5 StickPlus",
+  SKU: "m5-stickplus",
+  categoryIds: ["cat-1"],
+  priceCents: 900,
+  quantity: 5,
+  description: "A compact IoT device with built-in display.",
+};
 
 const categories = [
   { id: "cat-1", name: "Hardware" },
@@ -78,5 +99,34 @@ describe("ProductList", () => {
     const addButtons = screen.getAllByText("card.add");
     fireEvent.click(addButtons[0]);
     expect(onAddProduct).toHaveBeenCalledWith(products[0]);
+  });
+
+  it("renders description accordion title and content for a product with description", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[productWithDescription]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText("card.showProductDescription")).toBeInTheDocument();
+    expect(screen.getByText("A compact IoT device with built-in display.")).toBeInTheDocument();
+  });
+
+  it("does not render description accordion for products without description", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={products}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.queryByText("card.showProductDescription")).not.toBeInTheDocument();
   });
 });
