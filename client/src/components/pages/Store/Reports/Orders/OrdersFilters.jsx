@@ -2,10 +2,10 @@
 import { Input, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-export function SalesFilters({ search, onSearchChange, paymentMethod, onPaymentMethodChange, disabled, sales = [] }) {
+export function OrdersFilters({ search, onSearchChange, paymentMethod, onPaymentMethodChange, disabled, orders = [] }) {
   const reportsTranslations = useTranslations("reports");
 
-  const paymentMethods = ["all", ...new Set(sales.map((sale) => sale.paymentMethod).filter(Boolean))];
+  const paymentMethods = ["all", ...new Set(orders.map((order) => order.paymentMethod).filter(Boolean))];
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">

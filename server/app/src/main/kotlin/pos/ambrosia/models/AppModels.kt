@@ -460,6 +460,7 @@ data class StoreCheckoutResponse(
 
 @Serializable
 data class ProductSaleItem(
+    val orderId: String,
     val productName: String,
     val quantity: Int,
     val priceAtOrder: Int,

@@ -87,35 +87,6 @@ describe("useFiltersState", () => {
     expect(calls.some((fetchParams) => fetchParams.endDate === "2024-01-31")).toBe(true);
   });
 
-  it("handleFilters with paymentMethod fetches immediately", async () => {
-    const { result: filtersStateHook } = await setupHook();
-
-    await act(async () => {
-      filtersStateHook.current.handleFilters({ paymentMethod: "Cash" });
-    });
-
-    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "Cash" }));
-  });
-
-  it("handleFilters with productName debounces 500ms", async () => {
-    jest.useFakeTimers();
-    const { result: filtersStateHook } = renderHook(() => useFiltersState(mockFetch));
-    await act(async () => { jest.runAllTimers(); });
-    jest.clearAllMocks();
-
-    act(() => {
-      filtersStateHook.current.handleFilters({ productName: "Widget" });
-    });
-    expect(mockFetch).not.toHaveBeenCalled();
-
-    act(() => { jest.advanceTimersByTime(500); });
-    await act(async () => {});
-
-    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ productName: "Widget" }));
-
-    jest.useRealTimers();
-  });
-
   it("refetch calls fetchReport with current filter state", async () => {
     const { result: filtersStateHook } = await setupHook();
 

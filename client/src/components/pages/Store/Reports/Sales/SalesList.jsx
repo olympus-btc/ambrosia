@@ -4,19 +4,7 @@ import { ShoppingBag } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DataTable } from "@/components/shared/DataTable";
-import { parseUtcDate } from "@lib/formatDate";
-
-const formatDateOnly = (dateString) => {
-  const parsedDate = parseUtcDate(dateString);
-  if (isNaN(parsedDate.getTime())) return "-";
-  return parsedDate.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
-};
-
-const formatTimeOnly = (dateString) => {
-  const parsedDate = parseUtcDate(dateString);
-  if (isNaN(parsedDate.getTime())) return "";
-  return parsedDate.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
-};
+import { formatDateParts } from "@lib/formatDate";
 
 import { SalesCard } from "./SalesCard";
 
@@ -71,14 +59,14 @@ export function SalesList({ sales, formatCurrency }) {
       key: "date",
       label: reportsTranslations("sales.date"),
       render: (sale) => (
-        <span className="text-xs text-gray-400">{sale.saleDate ? formatDateOnly(sale.saleDate) : "-"}</span>
+        <span className="text-xs text-gray-400">{formatDateParts(sale.saleDate).date}</span>
       ),
     },
     {
       key: "time",
       label: reportsTranslations("sales.time"),
       render: (sale) => (
-        <span className="text-xs text-gray-400">{sale.saleDate ? formatTimeOnly(sale.saleDate) : ""}</span>
+        <span className="text-xs text-gray-400">{formatDateParts(sale.saleDate).time}</span>
       ),
     },
   ];

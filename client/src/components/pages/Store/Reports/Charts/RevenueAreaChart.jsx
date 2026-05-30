@@ -28,8 +28,8 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
             axisLine={false}
           />
           <YAxis
-            scale="log"
-            domain={["auto", "auto"]}
+            scale="linear"
+            domain={[0, "auto"]}
             tickFormatter={(cents) => formatCurrency(cents)}
             tick={{ fontSize: 11, fill: "#9ca3af" }}
             tickLine={false}

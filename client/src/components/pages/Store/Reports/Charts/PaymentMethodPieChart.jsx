@@ -4,10 +4,12 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 
 import { CHART_COLORS } from "./chartColors";
 
-export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
+export function PaymentMethodPieChart({ paymentMethods, formatCurrency, valueKey = "revenue" }) {
   const reportsTranslations = useTranslations("reports");
 
   if (!paymentMethods.length) return null;
+
+  const formatValue = (value) => (valueKey === "revenue" ? formatCurrency(value) : value);
 
   return (
     <div>
@@ -16,7 +18,7 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
         <PieChart aria-label={reportsTranslations("charts.paymentSplit")}>
           <Pie
             data={paymentMethods}
-            dataKey="revenue"
+            dataKey={valueKey}
             nameKey="method"
             cx="50%"
             cy="50%"
@@ -29,7 +31,7 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(revenueInCents, paymentMethodName) => [formatCurrency(revenueInCents), paymentMethodName]}
+            formatter={(rawValue, paymentMethodName) => [formatValue(rawValue), paymentMethodName]}
             contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13 }}
           />
           <Legend

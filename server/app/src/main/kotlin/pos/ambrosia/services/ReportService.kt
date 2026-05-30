@@ -15,7 +15,8 @@ class ReportService(
     companion object {
         private const val GET_PRODUCT_SALES_BASE =
             """
-            SELECT p.name AS product_name,
+            SELECT o.id AS order_id,
+                   p.name AS product_name,
                    op.quantity,
                    op.price_at_order,
                    u.name AS user_name,
@@ -123,6 +124,7 @@ class ReportService(
         while (resultSet.next()) {
             sales.add(
                 ProductSaleItem(
+                    orderId = resultSet.getString("order_id"),
                     productName = resultSet.getString("product_name"),
                     quantity = resultSet.getInt("quantity"),
                     priceAtOrder = resultSet.getInt("price_at_order"),

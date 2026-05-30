@@ -5,6 +5,7 @@ import { useSummaryData } from "../useSummaryData";
 const SALES = [
   { productName: "A", quantity: 1, priceAtOrder: 1000 },
   { productName: "B", quantity: 2, priceAtOrder: 500 },
+  { productName: "A", quantity: 1, priceAtOrder: 1000 },
 ];
 
 describe("useSummaryData", () => {
@@ -18,14 +19,14 @@ describe("useSummaryData", () => {
     expect(summaryDataHook.current.totalItems).toBe(0);
   });
 
-  it("transactionCount is 0 when reportData is null", () => {
+  it("productLines is 0 when reportData is null", () => {
     const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
-    expect(summaryDataHook.current.transactionCount).toBe(0);
+    expect(summaryDataHook.current.productLines).toBe(0);
   });
 
-  it("averageTicket is 0 when reportData is null", () => {
+  it("uniqueProducts is 0 when reportData is null", () => {
     const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
-    expect(summaryDataHook.current.averageTicket).toBe(0);
+    expect(summaryDataHook.current.uniqueProducts).toBe(0);
   });
 
   it("totalRevenue derives from reportData.totalRevenueCents", () => {
@@ -40,18 +41,18 @@ describe("useSummaryData", () => {
     expect(summaryDataHook.current.totalItems).toBe(42);
   });
 
-  it("transactionCount equals sales.length", () => {
+  it("productLines equals sales.length", () => {
     const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 3, sales: SALES }));
-    expect(summaryDataHook.current.transactionCount).toBe(2);
+    expect(summaryDataHook.current.productLines).toBe(3);
   });
 
-  it("averageTicket is 0 when there are no sales", () => {
-    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 5, sales: [] }));
-    expect(summaryDataHook.current.averageTicket).toBe(0);
+  it("uniqueProducts counts distinct product names", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 3, sales: SALES }));
+    expect(summaryDataHook.current.uniqueProducts).toBe(2);
   });
 
-  it("averageTicket is round(totalRevenueCents / sales.length)", () => {
-    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 1000, totalItemsSold: 3, sales: SALES }));
-    expect(summaryDataHook.current.averageTicket).toBe(500);
+  it("uniqueProducts is 0 when sales is empty", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 0, sales: [] }));
+    expect(summaryDataHook.current.uniqueProducts).toBe(0);
   });
 });

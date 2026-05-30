@@ -6,35 +6,36 @@ import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useMediaQuery } from "../hooks/useMediaQuery";
-import { useSalesData } from "../hooks/useSalesData";
+import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
 
-import { SalesFilters } from "./SalesFilters";
-import { SalesList } from "./SalesList";
+import { OrdersFilters } from "./OrdersFilters";
+import { ReportsOrdersList } from "./OrdersList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function SalesDetailCard({ sales, formatCurrency, disabled }) {
+export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
   const reportsTranslations = useTranslations("reports");
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
 
-  const filteredSales = useMemo(() => {
+  const filteredOrders = useMemo(() => {
     const term = search.toLowerCase();
-    return sales.filter((sale) => {
+    return orders.filter((order) => {
       const searchMatch = !search || (
-        sale.productName?.toLowerCase().includes(term) ||
-        sale.userName?.toLowerCase().includes(term) ||
-        sale.paymentMethod?.toLowerCase().includes(term) ||
-        String(sale.priceAtOrder * sale.quantity).includes(term)
+        order.shortId?.toLowerCase().includes(term) ||
+        order.userName?.toLowerCase().includes(term) ||
+        order.paymentMethod?.toLowerCase().includes(term) ||
+        String(order.total).includes(term) ||
+        order.items.some((item) => item.productName?.toLowerCase().includes(term))
       );
-      const methodMatch = !paymentMethod || sale.paymentMethod === paymentMethod;
+      const methodMatch = !paymentMethod || order.paymentMethod === paymentMethod;
       return searchMatch && methodMatch;
     });
-  }, [sales, search, paymentMethod]);
+  }, [orders, search, paymentMethod]);
 
   const isMobile = useMediaQuery("(max-width: 639px)");
-  const { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
-    useSalesData(filteredSales, formatCurrency);
+  const { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
+    useOrdersDetailData(filteredOrders, formatCurrency);
 
   return (
     <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
@@ -42,9 +43,9 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-bold text-lg">
-            {reportsTranslations("sales.transactions")}
+            {reportsTranslations("orders.title")}
             <span className="ml-2 text-sm font-normal text-default-400">
-              ({filteredSales.length} {reportsTranslations("sales.records")})
+              ({filteredOrders.length} {reportsTranslations("sales.records")})
             </span>
           </h2>
           <Button
@@ -52,23 +53,23 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
             size="sm"
             className="border border-green-800 text-green-800"
             startContent={<Download aria-hidden="true" className="w-3.5 h-3.5" />}
-            isDisabled={!sales.length}
+            isDisabled={!orders.length}
             onPress={exportToCsv}
           >
             {reportsTranslations("sales.export")}
           </Button>
         </div>
 
-        <SalesFilters
+        <OrdersFilters
           search={search}
           onSearchChange={setSearch}
           paymentMethod={paymentMethod}
           onPaymentMethodChange={setPaymentMethod}
           disabled={disabled}
-          sales={sales}
+          orders={orders}
         />
 
-        <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
+        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
 
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">
@@ -106,7 +107,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
                 size="sm"
                 siblings={isMobile ? 0 : 1}
                 boundaries={1}
-                aria-label={reportsTranslations("sales.paginationAria")}
+                aria-label={reportsTranslations("orders.paginationAria")}
               />
             </div>
           )}

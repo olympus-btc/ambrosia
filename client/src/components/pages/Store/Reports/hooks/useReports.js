@@ -11,8 +11,6 @@ function buildReportsQueryString(filters = {}) {
   if (filters.period) params.set("period", filters.period);
   if (filters.startDate) params.set("startDate", filters.startDate);
   if (filters.endDate) params.set("endDate", filters.endDate);
-  if (filters.productName?.trim()) params.set("productName", filters.productName.trim());
-  if (filters.paymentMethod?.trim()) params.set("paymentMethod", filters.paymentMethod.trim());
   const query = params.toString();
   return `/reports${query ? `?${query}` : ""}`;
 }

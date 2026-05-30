@@ -62,7 +62,7 @@ describe("PeriodFilter", () => {
     render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
     const activePeriodButton = screen.getAllByText("dates.period.month").find(
       (element) => element.closest("button")?.getAttribute("data-color") === "primary"
-        && element.closest("button")?.getAttribute("data-radius") === "full",
+        && element.closest("button")?.getAttribute("data-radius") === "md",
     );
     expect(activePeriodButton).toBeTruthy();
   });

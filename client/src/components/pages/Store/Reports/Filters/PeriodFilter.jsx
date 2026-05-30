@@ -31,6 +31,7 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
       <PopoverTrigger>
         <Button
           color="primary"
+          radius="md"
           startContent={<Calendar aria-hidden="true" className="w-4 h-4" />}
           endContent={(
             <ChevronDown
@@ -58,15 +59,12 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
                 key={period}
                 color={filters.activePeriod === period ? "primary" : undefined}
                 className={filters.activePeriod === period ? "" : "bg-slate-100"}
-                radius="full"
+                radius="md"
                 size="sm"
                 onPress={() => handlePeriodSelect(period)}
                 isDisabled={disabled}
               >
-                <div className="flex flex-col items-center">
-                  <Calendar aria-hidden="true" className="w-3 h-3 mb-0.5" />
-                  <span className="text-xs">{reportsTranslations(`dates.period.${period}`)}</span>
-                </div>
+                {reportsTranslations(`dates.period.${period}`)}
               </Button>
             ))}
           </div>

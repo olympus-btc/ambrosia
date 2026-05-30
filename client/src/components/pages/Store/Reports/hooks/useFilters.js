@@ -31,10 +31,8 @@ export function useDateRangeFilters(filters, onFiltersChange) {
 export function useFiltersState(fetchReport) {
   const [filters, setFilters] = useState(defaultFilters);
   const latestFiltersRef = useRef(defaultFilters);
-  const debounceTimerRef = useRef(null);
 
   useEffect(() => { latestFiltersRef.current = filters; });
-  useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
   useEffect(() => {
     fetchReport({ period: defaultFilters.activePeriod });
@@ -47,44 +45,13 @@ export function useFiltersState(fetchReport) {
       setFilters(next);
 
       if ("activePeriod" in patch && patch.activePeriod) {
-        return fetchReport({
-          period: next.activePeriod,
-          productName: next.productName || undefined,
-          paymentMethod: next.paymentMethod || undefined,
-        });
+        return fetchReport({ period: next.activePeriod });
       }
 
       if ("startDate" in patch || "endDate" in patch) {
         if (!next.startDate || !next.endDate) return;
-        return fetchReport({
-          startDate: next.startDate,
-          endDate: next.endDate,
-          productName: next.productName || undefined,
-          paymentMethod: next.paymentMethod || undefined,
-        });
+        return fetchReport({ startDate: next.startDate, endDate: next.endDate });
       }
-
-      if ("paymentMethod" in patch) {
-        return fetchReport({
-          period: next.activePeriod || undefined,
-          startDate: next.activePeriod ? undefined : next.startDate || undefined,
-          endDate: next.activePeriod ? undefined : next.endDate || undefined,
-          productName: next.productName || undefined,
-          paymentMethod: next.paymentMethod || undefined,
-        });
-      }
-
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = setTimeout(() => {
-        const currentFilters = latestFiltersRef.current;
-        fetchReport({
-          period: currentFilters.activePeriod || undefined,
-          startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
-          endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
-          productName: currentFilters.productName || undefined,
-          paymentMethod: currentFilters.paymentMethod || undefined,
-        });
-      }, 500);
     },
     [fetchReport],
   );
@@ -95,8 +62,6 @@ export function useFiltersState(fetchReport) {
       period: snapshotFilters.activePeriod || undefined,
       startDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.startDate || undefined,
       endDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.endDate || undefined,
-      productName: snapshotFilters.productName || undefined,
-      paymentMethod: snapshotFilters.paymentMethod || undefined,
     });
   }, [fetchReport]);
 

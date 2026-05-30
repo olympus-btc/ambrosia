@@ -30,6 +30,7 @@ class ReportServiceTest {
     }
 
     private fun setupSingleRowResultSet(
+        orderId: String = "order-aaa-00000001",
         productName: String = "Widget",
         quantity: Int = 2,
         priceAtOrder: Int = 1000,
@@ -40,6 +41,7 @@ class ReportServiceTest {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn(orderId)
         whenever(mockResultSet.getString("product_name")).thenReturn(productName)
         whenever(mockResultSet.getInt("quantity")).thenReturn(quantity)
         whenever(mockResultSet.getInt("price_at_order")).thenReturn(priceAtOrder)
@@ -330,6 +332,7 @@ class ReportServiceTest {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-001").thenReturn("order-002")
         whenever(mockResultSet.getString("product_name")).thenReturn("A").thenReturn("B")
         whenever(mockResultSet.getInt("quantity")).thenReturn(3).thenReturn(2)
         whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000).thenReturn(500)
@@ -356,6 +359,7 @@ class ReportServiceTest {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-001").thenReturn("order-002")
         whenever(mockResultSet.getString("product_name")).thenReturn("A").thenReturn("B")
         whenever(mockResultSet.getInt("quantity")).thenReturn(3).thenReturn(2)
         whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000).thenReturn(500)
@@ -400,6 +404,7 @@ class ReportServiceTest {
     @Test
     fun `correctly maps ResultSet fields to ProductSaleItem`() {
         setupSingleRowResultSet(
+            orderId = "order-test-00000042",
             productName = "Raspberry Pi",
             quantity = 4,
             priceAtOrder = 2500,
@@ -421,6 +426,7 @@ class ReportServiceTest {
 
         assertEquals(1, report.sales.size)
         val item = report.sales[0]
+        assertEquals("order-test-00000042", item.orderId)
         assertEquals("Raspberry Pi", item.productName)
         assertEquals(4, item.quantity)
         assertEquals(2500, item.priceAtOrder)
@@ -430,10 +436,80 @@ class ReportServiceTest {
     }
 
     @Test
+    fun `SELECT contains o-id AS order_id`() {
+        val sqlCaptor = argumentCaptor<String>()
+        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+        whenever(mockResultSet.next()).thenReturn(false)
+
+        val service = ReportService(mockConnection)
+        service.getProductSalesReport(
+            period = null,
+            startDate = null,
+            endDate = null,
+            productName = null,
+            userId = null,
+            paymentMethod = null,
+        )
+
+        val query = sqlCaptor.firstValue
+        assertTrue(query.contains("o.id AS order_id"), "SELECT must include o.id AS order_id for client-side order grouping")
+    }
+
+    @Test
+    fun `orderId is read from result set and stored in ProductSaleItem`() {
+        setupSingleRowResultSet(orderId = "order-xyz-98765")
+
+        val service = ReportService(mockConnection)
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals("order-xyz-98765", report.sales[0].orderId)
+        verify(mockResultSet).getString("order_id")
+    }
+
+    @Test
+    fun `multiple line items from the same order carry the same orderId`() {
+        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
+        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-shared-001").thenReturn("order-shared-001")
+        whenever(mockResultSet.getString("product_name")).thenReturn("Widget A").thenReturn("Widget B")
+        whenever(mockResultSet.getInt("quantity")).thenReturn(1).thenReturn(2)
+        whenever(mockResultSet.getInt("price_at_order")).thenReturn(500).thenReturn(300)
+        whenever(mockResultSet.getString("user_name")).thenReturn("alice").thenReturn("alice")
+        whenever(mockResultSet.getString("payment_method")).thenReturn("Cash").thenReturn("Cash")
+        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00").thenReturn("2024-06-01T10:00:00")
+
+        val service = ReportService(mockConnection)
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(2, report.sales.size)
+        assertEquals("order-shared-001", report.sales[0].orderId)
+        assertEquals("order-shared-001", report.sales[1].orderId)
+    }
+
+    @Test
     fun `totalRevenueCents avoids overflow with large values using Long`() {
         whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
         whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
         whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-big-001")
         whenever(mockResultSet.getString("product_name")).thenReturn("Expensive Item")
         whenever(mockResultSet.getInt("quantity")).thenReturn(1_000_000)
         whenever(mockResultSet.getInt("price_at_order")).thenReturn(Int.MAX_VALUE)
