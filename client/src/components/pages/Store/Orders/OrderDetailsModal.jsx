@@ -3,13 +3,25 @@
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./OrdersList/StatusChip";
 
-export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
+export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, currentRate }) {
   const t = useTranslations("orders");
-  const userLabel = order?.userName ?? t("details.unassigned");
+  const {
+    id,
+    userName,
+    status,
+    paymentMethod,
+    total,
+    createdAt,
+    satoshiAmount,
+    exchangeRateAtPayment,
+    exchangeRateCurrency,
+    fiatAmountAtPayment,
+  } = order ?? {};
 
   return (
     <Modal
@@ -28,23 +40,35 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
         <ModalHeader>{t("details.title")}</ModalHeader>
         <ModalBody>
           <div className="space-y-3 text-sm text-deep">
-            <DetailRow label={t("details.id")} value={order?.id} />
-            <DetailRow label={t("details.user")} value={userLabel} />
+            <DetailRow label={t("details.id")} value={id} />
+            <DetailRow label={t("details.user")} value={userName ?? t("details.unassigned")} />
             <DetailRow
               label={t("details.status")}
-              value={order ? <StatusChip status={order.status} /> : t("details.unassigned")}
+              value={status ? <StatusChip status={status} /> : t("details.unassigned")}
             />
             <DetailRow
               label={t("details.paymentMethod")}
-              value={order?.paymentMethod || t("details.noPayment")}
+              value={paymentMethod || t("details.noPayment")}
             />
             <DetailRow
               label={t("details.total")}
-              value={order ? formatAmount(order.total * 100 ?? 0) : t("details.unassigned")}
+              value={
+                satoshiAmount != null
+                  ? (
+                    <AmountDisplay
+                      satoshis={satoshiAmount}
+                      exchangeRateAtSale={exchangeRateAtPayment}
+                      exchangeRateCurrency={exchangeRateCurrency}
+                      fiatAmountAtPayment={fiatAmountAtPayment}
+                      currentRate={currentRate}
+                    /> ?? formatAmount(total * 100)
+                    )
+                  : formatAmount(total * 100 ?? 0)
+              }
             />
             <DetailRow
               label={t("details.createdAt")}
-              value={order?.createdAt ? formatDate(order.createdAt) : t("details.unassigned")}
+              value={createdAt ? formatDate(createdAt) : t("details.unassigned")}
             />
           </div>
         </ModalBody>
