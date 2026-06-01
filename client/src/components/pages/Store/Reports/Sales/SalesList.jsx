@@ -25,35 +25,35 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
     {
       key: "product",
       label: reportsTranslations("sales.product"),
-      render: (sale) => <span className="font-medium text-deep">{sale.productName}</span>,
+      render: ({ productName }) => <span className="font-medium text-deep">{productName}</span>,
     },
     {
       key: "user",
       label: reportsTranslations("sales.user"),
-      render: (sale) => <span className="text-sm text-gray-700">{sale.userName ?? "—"}</span>,
+      render: ({ userName }) => <span className="text-sm text-gray-700">{userName ?? "—"}</span>,
     },
     {
       key: "qty",
       label: reportsTranslations("sales.quantity"),
-      render: (sale) => <span className="font-bold">×{sale.quantity}</span>,
+      render: ({ quantity }) => <span className="font-bold">×{quantity}</span>,
     },
     {
       key: "price",
       label: reportsTranslations("sales.price"),
-      render: (sale) => <span className="whitespace-nowrap">{formatCurrency(sale.priceAtOrder)}</span>,
+      render: ({ priceAtOrder }) => <span className="whitespace-nowrap">{formatCurrency(priceAtOrder)}</span>,
     },
     {
       key: "total",
       label: reportsTranslations("sales.total"),
-      render: (sale) => {
-        if (sale.satoshiAmount != null) {
+      render: ({ satoshiAmount, exchangeRateAtPayment, exchangeRateCurrency, fiatAmountAtPayment, priceAtOrder, quantity }) => {
+        if (satoshiAmount != null) {
           return (
             <div className="font-bold text-green-700">
               <AmountDisplay
-                satoshis={sale.satoshiAmount}
-                exchangeRateAtSale={sale.exchangeRateAtPayment}
-                exchangeRateCurrency={sale.exchangeRateCurrency}
-                fiatAmountAtPayment={sale.fiatAmountAtPayment}
+                satoshis={satoshiAmount}
+                exchangeRateAtSale={exchangeRateAtPayment}
+                exchangeRateCurrency={exchangeRateCurrency}
+                fiatAmountAtPayment={fiatAmountAtPayment}
                 currentRate={currentRate}
               />
             </div>
@@ -61,7 +61,7 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
         }
         return (
           <span className="whitespace-nowrap font-bold text-green-700">
-            {formatCurrency(sale.priceAtOrder * sale.quantity)}
+            {formatCurrency(priceAtOrder * quantity)}
           </span>
         );
       },
@@ -69,20 +69,20 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
     {
       key: "payment",
       label: reportsTranslations("sales.paymentMethod"),
-      render: (sale) => <span className="text-sm text-gray-700">{sale.paymentMethod || reportsTranslations("payment.unknown")}</span>,
+      render: ({ paymentMethod }) => <span className="text-sm text-gray-700">{paymentMethod || reportsTranslations("payment.unknown")}</span>,
     },
     {
       key: "date",
       label: reportsTranslations("sales.date"),
-      render: (sale) => (
-        <span className="text-xs text-gray-400">{formatDateParts(sale.saleDate).date}</span>
+      render: ({ saleDate }) => (
+        <span className="text-xs text-gray-400">{formatDateParts(saleDate).date}</span>
       ),
     },
     {
       key: "time",
       label: reportsTranslations("sales.time"),
-      render: (sale) => (
-        <span className="text-xs text-gray-400">{formatDateParts(sale.saleDate).time}</span>
+      render: ({ saleDate }) => (
+        <span className="text-xs text-gray-400">{formatDateParts(saleDate).time}</span>
       ),
     },
   ];

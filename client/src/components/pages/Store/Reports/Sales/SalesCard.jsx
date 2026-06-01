@@ -9,34 +9,47 @@ import formatDate from "@lib/formatDate";
 
 export function SalesCard({ sale, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
+  const {
+    productName,
+    userName,
+    paymentMethod,
+    saleDate,
+    quantity,
+    priceAtOrder,
+    satoshiAmount,
+    exchangeRateAtPayment,
+    exchangeRateCurrency,
+    fiatAmountAtPayment,
+  } = sale;
+
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody>
-        <p className="font-bold text-deep">{sale.productName}</p>
+        <p className="font-bold text-deep">{productName}</p>
         <div className="flex items-center gap-1 text-sm text-forest mt-0.5">
           <Users aria-hidden="true" className="w-3 h-3 shrink-0" />
-          <span className="truncate">{sale.userName}</span>
+          <span className="truncate">{userName}</span>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-          <span className="text-sm text-gray-700">{sale.paymentMethod}</span>
+          <span className="text-sm text-gray-700">{paymentMethod}</span>
           <span className="text-xs text-gray-400">
-            {sale.saleDate ? formatDate(sale.saleDate) : "-"}
+            {saleDate ? formatDate(saleDate) : "-"}
           </span>
         </div>
         <div className="mt-1">
-          <p className="text-xs text-gray-500">{reportsTranslations("sales.quantity")} ×{sale.quantity}</p>
+          <p className="text-xs text-gray-500">{reportsTranslations("sales.quantity")} ×{quantity}</p>
           <div className="text-sm font-bold text-green-700 mt-1">
-            {sale.satoshiAmount != null
+            {satoshiAmount != null
               ? (
                 <AmountDisplay
-                  satoshis={sale.satoshiAmount}
-                  exchangeRateAtSale={sale.exchangeRateAtPayment}
-                  exchangeRateCurrency={sale.exchangeRateCurrency}
-                  fiatAmountAtPayment={sale.fiatAmountAtPayment}
+                  satoshis={satoshiAmount}
+                  exchangeRateAtSale={exchangeRateAtPayment}
+                  exchangeRateCurrency={exchangeRateCurrency}
+                  fiatAmountAtPayment={fiatAmountAtPayment}
                   currentRate={currentRate}
                 />
                 )
-              : formatCurrency(sale.priceAtOrder * sale.quantity)}
+              : formatCurrency(priceAtOrder * quantity)}
           </div>
         </div>
       </CardBody>

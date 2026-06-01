@@ -20,14 +20,14 @@ export function SalesDetailCard({ sales, formatCurrency, disabled, currentRate }
 
   const filteredSales = useMemo(() => {
     const term = search.toLowerCase();
-    return sales.filter((sale) => {
+    return sales.filter(({ productName, userName, paymentMethod: salePaymentMethod, priceAtOrder, quantity }) => {
       const searchMatch = !search || (
-        sale.productName?.toLowerCase().includes(term) ||
-        sale.userName?.toLowerCase().includes(term) ||
-        sale.paymentMethod?.toLowerCase().includes(term) ||
-        String(sale.priceAtOrder * sale.quantity).includes(term)
+        productName?.toLowerCase().includes(term) ||
+        userName?.toLowerCase().includes(term) ||
+        salePaymentMethod?.toLowerCase().includes(term) ||
+        String(priceAtOrder * quantity).includes(term)
       );
-      const methodMatch = !paymentMethod || sale.paymentMethod === paymentMethod;
+      const methodMatch = !paymentMethod || salePaymentMethod === paymentMethod;
       return searchMatch && methodMatch;
     });
   }, [sales, search, paymentMethod]);
