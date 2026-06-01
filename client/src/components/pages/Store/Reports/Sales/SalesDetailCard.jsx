@@ -13,7 +13,7 @@ import { SalesList } from "./SalesList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function SalesDetailCard({ sales, formatCurrency, disabled }) {
+export function SalesDetailCard({ sales, formatCurrency, disabled, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -68,7 +68,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
           sales={sales}
         />
 
-        <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
+        <SalesList sales={paginatedSales} formatCurrency={formatCurrency} currentRate={currentRate} />
 
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">

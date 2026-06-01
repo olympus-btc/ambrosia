@@ -3,12 +3,13 @@
 import { ShoppingBag } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import { DataTable } from "@/components/shared/DataTable";
 import { formatDateParts } from "@lib/formatDate";
 
 import { SalesCard } from "./SalesCard";
 
-export function SalesList({ sales, formatCurrency }) {
+export function SalesList({ sales, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
 
   if (!sales?.length) {
@@ -44,11 +45,26 @@ export function SalesList({ sales, formatCurrency }) {
     {
       key: "total",
       label: reportsTranslations("sales.total"),
-      render: (sale) => (
-        <span className="whitespace-nowrap font-bold text-green-700">
-          {formatCurrency(sale.priceAtOrder * sale.quantity)}
-        </span>
-      ),
+      render: (sale) => {
+        if (sale.satoshiAmount != null) {
+          return (
+            <div className="font-bold text-green-700">
+              <AmountDisplay
+                satoshis={sale.satoshiAmount}
+                exchangeRateAtSale={sale.exchangeRateAtPayment}
+                exchangeRateCurrency={sale.exchangeRateCurrency}
+                fiatAmountAtPayment={sale.fiatAmountAtPayment}
+                currentRate={currentRate}
+              />
+            </div>
+          );
+        }
+        return (
+          <span className="whitespace-nowrap font-bold text-green-700">
+            {formatCurrency(sale.priceAtOrder * sale.quantity)}
+          </span>
+        );
+      },
     },
     {
       key: "payment",
@@ -75,7 +91,7 @@ export function SalesList({ sales, formatCurrency }) {
     <section aria-label={reportsTranslations("sales.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
         {sales.map((sale, saleIndex) => (
-          <SalesCard key={saleIndex} sale={sale} formatCurrency={formatCurrency} />
+          <SalesCard key={saleIndex} sale={sale} formatCurrency={formatCurrency} currentRate={currentRate} />
         ))}
       </div>
       <div className="hidden md:block overflow-x-auto">
