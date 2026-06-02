@@ -1,11 +1,12 @@
 "use client";
 
-import { Card, CardBody, Chip, Image } from "@heroui/react";
+import { Card, CardBody, Image } from "@heroui/react";
 import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { ProductTypeChip } from "@/components/shared/ProductTypeChip";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
@@ -34,15 +35,7 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
         <div className="flex flex-col justify-center">
           <p className="font-medium truncate text-sm my-1">{product.name}</p>
           <div className="flex gap-1.5 my-1">
-            {product.hasVariants ? (
-              <Chip className="bg-blue-100 text-blue-800 border border-blue-200 text-xs" size="sm">
-                {t("variants")}
-              </Chip>
-            ) : (
-              <Chip className="bg-gray-100 text-gray-500 border border-gray-200 text-xs" size="sm">
-                {t("simpleProduct")}
-              </Chip>
-            )}
+            <ProductTypeChip hasVariants={product.hasVariants} />
           </div>
         </div>
         <div className="flex flex-col justify-between shrink-0 gap-1">

@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { ProductTypeChip } from "@/components/shared/ProductTypeChip";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
@@ -80,15 +81,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                 <span className="whitespace-nowrap">{product.SKU}</span>
               </TableCell>
               <TableCell>
-                {product.hasVariants ? (
-                  <Chip className="bg-blue-100 text-blue-800 border border-blue-200 text-xs">
-                    {t("variants")}
-                  </Chip>
-                ) : (
-                  <Chip className="bg-gray-100 text-gray-500 border border-gray-200 text-xs">
-                    {t("simpleProduct")}
-                  </Chip>
-                )}
+                <ProductTypeChip hasVariants={product.hasVariants} />
               </TableCell>
               <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">
