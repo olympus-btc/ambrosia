@@ -5,7 +5,7 @@ import { useOrdersData } from "../useOrdersData";
 const SALES_FIXTURE = [
   { orderId: "order-aaa-00000001", productName: "Widget A", quantity: 2, priceAtOrder: 1000, userName: "alice", paymentMethod: "Cash", saleDate: "2024-01-02T10:00:00" },
   { orderId: "order-aaa-00000001", productName: "Widget B", quantity: 1, priceAtOrder: 500, userName: "alice", paymentMethod: "Cash", saleDate: "2024-01-02T10:00:00" },
-  { orderId: "order-bbb-00000002", productName: "Widget C", quantity: 3, priceAtOrder: 2000, userName: "bob", paymentMethod: "BTC", saleDate: "2024-01-01T08:00:00" },
+  { orderId: "order-bbb-00000002", productName: "Widget C", quantity: 3, priceAtOrder: 2000, userName: "bob", paymentMethod: "BTC", saleDate: "2024-01-01T08:00:00", satoshiAmount: 100000, exchangeRateAtPayment: 95000, exchangeRateCurrency: "usd", fiatAmountAtPayment: 1.0 },
 ];
 
 describe("useOrdersData", () => {
@@ -64,5 +64,23 @@ describe("useOrdersData", () => {
     const orderB = result.current.find((order) => order.orderId === "order-bbb-00000002");
     expect(orderB.items).toHaveLength(1);
     expect(orderB.total).toBe(3 * 2000);
+  });
+
+  it("copies bitcoin payment fields from the first sale of the order", () => {
+    const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
+    const btcOrder = result.current.find((order) => order.orderId === "order-bbb-00000002");
+    expect(btcOrder.satoshiAmount).toBe(100000);
+    expect(btcOrder.exchangeRateAtPayment).toBe(95000);
+    expect(btcOrder.exchangeRateCurrency).toBe("usd");
+    expect(btcOrder.fiatAmountAtPayment).toBe(1.0);
+  });
+
+  it("sets bitcoin fields to null when sale has no bitcoin payment data", () => {
+    const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
+    const cashOrder = result.current.find((order) => order.orderId === "order-aaa-00000001");
+    expect(cashOrder.satoshiAmount).toBeNull();
+    expect(cashOrder.exchangeRateAtPayment).toBeNull();
+    expect(cashOrder.exchangeRateCurrency).toBeNull();
+    expect(cashOrder.fiatAmountAtPayment).toBeNull();
   });
 });

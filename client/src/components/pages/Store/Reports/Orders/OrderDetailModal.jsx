@@ -5,10 +5,23 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import formatDate from "@lib/formatDate";
 
-export function OrderDetailModal({ order, formatCurrency, onClose }) {
+export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }) {
   const reportsTranslations = useTranslations("reports");
+  const {
+    shortId,
+    date,
+    userName,
+    paymentMethod,
+    items,
+    total,
+    satoshiAmount,
+    exchangeRateAtPayment,
+    exchangeRateCurrency,
+    fiatAmountAtPayment,
+  } = order ?? {};
 
   return (
     <Modal
@@ -25,7 +38,7 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
       <ModalContent>
         <ModalHeader className="flex flex-col gap-0.5 pb-2">
           <span>{reportsTranslations("orders.detailTitle")}</span>
-          {order && <span className="font-mono text-sm font-normal text-gray-400">#{order.shortId}</span>}
+          {order && <span className="font-mono text-sm font-normal text-gray-400">#{shortId}</span>}
         </ModalHeader>
         <ModalBody className="pb-6">
           {order && (
@@ -33,15 +46,15 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-gray-400">{reportsTranslations("sales.date")}</p>
-                  <p className="font-medium">{formatDate(order.date)}</p>
+                  <p className="font-medium">{formatDate(date)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">{reportsTranslations("sales.user")}</p>
-                  <p className="font-medium">{order.userName ?? "—"}</p>
+                  <p className="font-medium">{userName ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">{reportsTranslations("sales.paymentMethod")}</p>
-                  <p className="font-medium">{order.paymentMethod || reportsTranslations("payment.unknown")}</p>
+                  <p className="font-medium">{paymentMethod || reportsTranslations("payment.unknown")}</p>
                 </div>
               </div>
 
@@ -58,7 +71,7 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
                     <TableColumn align="end">{reportsTranslations("orders.subtotal")}</TableColumn>
                   </TableHeader>
                   <TableBody>
-                    {order.items.map((item, itemIndex) => (
+                    {items?.map((item, itemIndex) => (
                       <TableRow key={itemIndex}>
                         <TableCell className="py-2 text-gray-700">{item.productName}</TableCell>
                         <TableCell className="py-2 text-center text-gray-500">×{item.quantity}</TableCell>
@@ -72,7 +85,19 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
 
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
                 <span className="font-semibold text-sm">{reportsTranslations("orders.total")}</span>
-                <span className="font-bold text-green-700">{formatCurrency(order.total)}</span>
+                <div className="font-bold text-green-700">
+                  {satoshiAmount != null
+                    ? (
+                      <AmountDisplay
+                        satoshis={satoshiAmount}
+                        exchangeRateAtSale={exchangeRateAtPayment}
+                        exchangeRateCurrency={exchangeRateCurrency}
+                        fiatAmountAtPayment={fiatAmountAtPayment}
+                        currentRate={currentRate}
+                      />
+                      )
+                    : formatCurrency(total)}
+                </div>
               </div>
             </div>
           )}

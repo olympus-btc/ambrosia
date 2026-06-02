@@ -15,6 +15,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
+import pos.ambrosia.models.IncomingPaymentWithRate
 import pos.ambrosia.models.RolePassword
 import pos.ambrosia.models.WalletAuthResponse
 import pos.ambrosia.models.phoenix.CloseChannelRequest
@@ -25,6 +26,7 @@ import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.services.AuthService
+import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.Bolt11Decoder
@@ -38,14 +40,16 @@ fun Application.configureWallet() {
     val phoenixService = PhoenixService(environment)
     val authService = AuthService(environment, connection)
     val tokenService = TokenService(environment, connection)
+    val paymentService = PaymentService(connection)
 
-    routing { route("/wallet") { wallet(phoenixService, tokenService, authService) } }
+    routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService) } }
 }
 
 fun Route.wallet(
     phoenixService: PhoenixService,
     tokenService: TokenService,
     authService: AuthService,
+    paymentService: PaymentService,
 ) {
     authenticate("auth-jwt") {
         post("/invoice") {
@@ -162,7 +166,34 @@ fun Route.wallet(
                 val externalId = call.request.queryParameters["externalId"]
 
                 val payments = phoenixService.listIncomingPayments(from, to, limit, offset, all, externalId)
-                call.respond(HttpStatusCode.OK, payments)
+                val hashes = payments.map { it.paymentHash }
+                val bitcoinPaymentDataByHash = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val enriched =
+                    payments.map { payment ->
+                        val bitcoinPaymentData = bitcoinPaymentDataByHash[payment.paymentHash]
+                        IncomingPaymentWithRate(
+                            type = payment.type,
+                            subType = payment.subType,
+                            paymentHash = payment.paymentHash,
+                            preimage = payment.preimage,
+                            externalId = payment.externalId,
+                            description = payment.description,
+                            invoice = payment.invoice,
+                            isPaid = payment.isPaid,
+                            isExpired = payment.isExpired,
+                            requestedSat = payment.requestedSat,
+                            receivedSat = payment.receivedSat,
+                            fees = payment.fees,
+                            payerKey = payment.payerKey,
+                            expiresAt = payment.expiresAt,
+                            completedAt = payment.completedAt,
+                            createdAt = payment.createdAt,
+                            exchangeRateAtPayment = bitcoinPaymentData?.exchangeRateAtPayment,
+                            exchangeRateCurrency = bitcoinPaymentData?.exchangeRateCurrency,
+                            fiatAmountAtPayment = bitcoinPaymentData?.fiatAmountAtPayment,
+                        )
+                    }
+                call.respond(HttpStatusCode.OK, enriched)
             }
 
             get("/incoming/{paymentHash}") {

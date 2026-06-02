@@ -48,6 +48,11 @@ class ReportServiceTest {
         whenever(mockResultSet.getString("user_name")).thenReturn(userName)
         whenever(mockResultSet.getString("payment_method")).thenReturn(paymentMethod)
         whenever(mockResultSet.getString("sale_date")).thenReturn(saleDate)
+        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
+        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
+        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-default")
     }
 
     @Test
@@ -487,6 +492,11 @@ class ReportServiceTest {
         whenever(mockResultSet.getString("user_name")).thenReturn("alice").thenReturn("alice")
         whenever(mockResultSet.getString("payment_method")).thenReturn("Cash").thenReturn("Cash")
         whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00").thenReturn("2024-06-01T10:00:00")
+        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
+        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
+        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("payment_id")).thenReturn(null)
 
         val service = ReportService(mockConnection)
         val report =
@@ -516,6 +526,11 @@ class ReportServiceTest {
         whenever(mockResultSet.getString("user_name")).thenReturn("u1")
         whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
         whenever(mockResultSet.getString("sale_date")).thenReturn("2024-01-01T00:00:00")
+        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
+        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
+        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
+        whenever(mockResultSet.getString("payment_id")).thenReturn(null)
 
         val service = ReportService(mockConnection)
         val report =
@@ -530,5 +545,70 @@ class ReportServiceTest {
 
         val expected = Int.MAX_VALUE.toLong() * 1_000_000L
         assertEquals(expected, report.totalRevenueCents, "Calculation should use Long to avoid overflow")
+    }
+
+    @Test
+    fun `SQL SELECT includes bitcoin payment columns`() {
+        val sqlCaptor = argumentCaptor<String>()
+        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+        whenever(mockResultSet.next()).thenReturn(false)
+        val service = ReportService(mockConnection)
+        service.getProductSalesReport(null, null, null, null, null, null)
+        val query = sqlCaptor.firstValue
+        assertTrue(query.contains("pay.satoshi_amount"))
+        assertTrue(query.contains("pay.exchange_rate_at_payment"))
+        assertTrue(query.contains("pay.exchange_rate_currency"))
+        assertTrue(query.contains("pay.fiat_amount_at_payment"))
+        assertTrue(query.contains("pay.id AS payment_id"))
+    }
+
+    @Test
+    fun `mapper extracts bitcoin fields when present`() {
+        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
+        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+        whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-1")
+        whenever(mockResultSet.getString("product_name")).thenReturn("Widget")
+        whenever(mockResultSet.getInt("quantity")).thenReturn(1)
+        whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000)
+        whenever(mockResultSet.getString("user_name")).thenReturn("alice")
+        whenever(mockResultSet.getString("payment_method")).thenReturn("BTC")
+        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00")
+        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
+        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
+        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
+        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
+        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-btc-1")
+        val service = ReportService(mockConnection)
+        val report = service.getProductSalesReport(null, null, null, null, null, null)
+        assertEquals(100000L, report.sales[0].satoshiAmount)
+        assertEquals(95000.0, report.sales[0].exchangeRateAtPayment)
+        assertEquals("usd", report.sales[0].exchangeRateCurrency)
+        assertEquals(1.0, report.sales[0].fiatAmountAtPayment)
+        assertEquals("payment-btc-1", report.sales[0].paymentId)
+    }
+
+    @Test
+    fun `totalBtcSatoshis deduplicates by paymentId to avoid double counting`() {
+        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
+        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
+        whenever(mockResultSet.getString("order_id")).thenReturn("order-1").thenReturn("order-1")
+        whenever(mockResultSet.getString("product_name")).thenReturn("Widget A").thenReturn("Widget B")
+        whenever(mockResultSet.getInt("quantity")).thenReturn(1).thenReturn(1)
+        whenever(mockResultSet.getInt("price_at_order")).thenReturn(500).thenReturn(500)
+        whenever(mockResultSet.getString("user_name")).thenReturn("alice").thenReturn("alice")
+        whenever(mockResultSet.getString("payment_method")).thenReturn("BTC").thenReturn("BTC")
+        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00").thenReturn("2024-06-01T10:00:00")
+        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
+        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
+        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
+        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
+        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-shared")
+        val service = ReportService(mockConnection)
+        val report = service.getProductSalesReport(null, null, null, null, null, null)
+        assertEquals(2, report.sales.size)
+        assertEquals(100000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
     }
 }

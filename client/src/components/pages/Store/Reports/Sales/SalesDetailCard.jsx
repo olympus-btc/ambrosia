@@ -13,21 +13,21 @@ import { SalesList } from "./SalesList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function SalesDetailCard({ sales, formatCurrency, disabled }) {
+export function SalesDetailCard({ sales, formatCurrency, disabled, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const filteredSales = useMemo(() => {
     const term = search.toLowerCase();
-    return sales.filter((sale) => {
+    return sales.filter(({ productName, userName, paymentMethod: salePaymentMethod, priceAtOrder, quantity }) => {
       const searchMatch = !search || (
-        sale.productName?.toLowerCase().includes(term) ||
-        sale.userName?.toLowerCase().includes(term) ||
-        sale.paymentMethod?.toLowerCase().includes(term) ||
-        String(sale.priceAtOrder * sale.quantity).includes(term)
+        productName?.toLowerCase().includes(term) ||
+        userName?.toLowerCase().includes(term) ||
+        salePaymentMethod?.toLowerCase().includes(term) ||
+        String(priceAtOrder * quantity).includes(term)
       );
-      const methodMatch = !paymentMethod || sale.paymentMethod === paymentMethod;
+      const methodMatch = !paymentMethod || salePaymentMethod === paymentMethod;
       return searchMatch && methodMatch;
     });
   }, [sales, search, paymentMethod]);
@@ -68,7 +68,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
           sales={sales}
         />
 
-        <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
+        <SalesList sales={paginatedSales} formatCurrency={formatCurrency} currentRate={currentRate} />
 
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">

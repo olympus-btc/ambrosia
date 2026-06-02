@@ -12,6 +12,7 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymentMethod";
 
@@ -45,7 +46,8 @@ export default function StoreOrders() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const { orders, fetchOrders, fetchOrdersFiltered } = useOrders();
   const { paymentMethods } = usePaymentMethods();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency } = useCurrency();
+  const { currentRate } = useBitcoinPrice({ currencyAcronym: currency?.acronym });
 
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
@@ -163,6 +165,7 @@ export default function StoreOrders() {
         onClose={() => setShowDetails(false)}
         onEdit={handleEditOrder}
         formatAmount={formatAmount}
+        currentRate={currentRate}
       />
     </div>
   );

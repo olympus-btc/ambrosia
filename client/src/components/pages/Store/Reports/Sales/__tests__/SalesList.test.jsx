@@ -6,6 +6,10 @@ jest.mock("../SalesCard", () => ({
   SalesCard: ({ sale }) => <div data-testid="sales-card">{`card-${sale.productName}`}</div>,
 }));
 
+jest.mock("@/components/shared/AmountDisplay", () => ({
+  AmountDisplay: ({ satoshis }) => <span>{`amount-display-${satoshis}`}</span>,
+}));
+
 jest.mock("@/components/shared/DataTable", () => ({
   DataTable: ({ columns, items }) => (
     <table>
@@ -179,5 +183,45 @@ describe("SalesList", () => {
     render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("-")).toBeInTheDocument();
+  });
+
+  it("renders AmountDisplay in total column for BTC sale with satoshiAmount", () => {
+    const sales = [
+      {
+        productName: "Sticker",
+        quantity: 2,
+        priceAtOrder: 500,
+        userName: "ivan",
+        paymentMethod: "BTC",
+        saleDate: "2024-01-01 00:00:00",
+        satoshiAmount: 100000,
+        exchangeRateAtPayment: 95000,
+        exchangeRateCurrency: "usd",
+        fiatAmountAtPayment: 1.0,
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
+
+    expect(screen.getByText("amount-display-100000")).toBeInTheDocument();
+    expect(mockFormatCurrency).not.toHaveBeenCalledWith(1000);
+  });
+
+  it("uses formatCurrency in total column for non-BTC sale", () => {
+    const sales = [
+      {
+        productName: "Widget",
+        quantity: 3,
+        priceAtOrder: 1500,
+        userName: "carlos",
+        paymentMethod: "Cash",
+        saleDate: "2024-01-01 00:00:00",
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
+
+    expect(mockFormatCurrency).toHaveBeenCalledWith(4500);
+    expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 });

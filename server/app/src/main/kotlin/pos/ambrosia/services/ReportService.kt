@@ -21,7 +21,12 @@ class ReportService(
                    op.price_at_order,
                    u.name AS user_name,
                    pm.name AS payment_method,
-                   o.created_at AS sale_date
+                   o.created_at AS sale_date,
+                   pay.satoshi_amount,
+                   pay.exchange_rate_at_payment,
+                   pay.exchange_rate_currency,
+                   pay.fiat_amount_at_payment,
+                   pay.id AS payment_id
             FROM order_products op
             JOIN orders o           ON o.id  = op.order_id
             JOIN products p         ON p.id  = op.product_id
@@ -131,16 +136,28 @@ class ReportService(
                     userName = resultSet.getString("user_name"),
                     paymentMethod = resultSet.getString("payment_method"),
                     saleDate = resultSet.getString("sale_date").replace(" ", "T"),
+                    satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
+                    exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
+                    exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
+                    fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
+                    paymentId = resultSet.getString("payment_id"),
                 ),
             )
         }
 
         logger.info("Product sales report: ${sales.size} line items")
 
+        val totalBtcSatoshis =
+            sales
+                .filter { it.satoshiAmount != null && it.paymentId != null }
+                .distinctBy { it.paymentId }
+                .sumOf { it.satoshiAmount!! }
+
         return ProductSalesReport(
             totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
             totalItemsSold = sales.sumOf { it.quantity },
             sales = sales,
+            totalBtcSatoshis = totalBtcSatoshis,
         )
     }
 }

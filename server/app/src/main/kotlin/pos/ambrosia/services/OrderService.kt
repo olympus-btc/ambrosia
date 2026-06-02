@@ -11,7 +11,29 @@ import pos.ambrosia.models.StoreOrder
 import pos.ambrosia.models.StoreOrderItem
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.sql.Types
 import java.util.UUID
+
+private fun PreparedStatement.setNullableLong(
+    index: Int,
+    value: Long?,
+) {
+    if (value != null) setLong(index, value) else setNull(index, Types.INTEGER)
+}
+
+private fun PreparedStatement.setNullableDouble(
+    index: Int,
+    value: Double?,
+) {
+    if (value != null) setDouble(index, value) else setNull(index, Types.REAL)
+}
+
+private fun PreparedStatement.setNullableString(
+    index: Int,
+    value: String?,
+) {
+    if (value != null) setString(index, value) else setNull(index, Types.VARCHAR)
+}
 
 class OrderService(
     private val connection: Connection,
@@ -54,7 +76,7 @@ class OrderService(
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
-            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount) VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, satoshi_amount, exchange_rate_at_payment, payment_hash, exchange_rate_currency, fiat_amount_at_payment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         private const val STORE_INSERT_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val STORE_GET_ITEMS =
@@ -72,7 +94,11 @@ class OrderService(
                    o.total,
                    o.created_at,
                    GROUP_CONCAT(DISTINCT pm.name) AS payment_method,
-                   GROUP_CONCAT(DISTINCT p.id) AS payment_method_ids
+                   GROUP_CONCAT(DISTINCT p.id) AS payment_method_ids,
+                   MAX(p.satoshi_amount) AS satoshi_amount,
+                   MAX(p.exchange_rate_at_payment) AS exchange_rate_at_payment,
+                   MAX(p.exchange_rate_currency) AS exchange_rate_currency,
+                   MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
             LEFT JOIN tickets t ON t.order_id = o.id
@@ -135,6 +161,10 @@ class OrderService(
             createdAt = resultSet.getString("created_at").replace(" ", "T"),
             paymentMethod = paymentNames,
             paymentMethodIds = paymentIds,
+            satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
+            exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
+            exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
+            fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
         )
     }
 
@@ -596,6 +626,11 @@ class OrderService(
                 statement.setString(3, request.currencyId)
                 statement.setString(4, request.transactionId ?: "")
                 statement.setDouble(5, request.amount)
+                statement.setNullableLong(6, request.satoshiAmount)
+                statement.setNullableDouble(7, request.exchangeRateAtPayment)
+                statement.setNullableString(8, request.paymentHash)
+                statement.setNullableString(9, request.exchangeRateCurrency)
+                statement.setNullableDouble(10, request.fiatAmountAtPayment)
                 statement.executeUpdate()
             }
 

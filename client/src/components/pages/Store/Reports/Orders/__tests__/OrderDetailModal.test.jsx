@@ -21,6 +21,10 @@ jest.mock("next-intl", () => ({
 
 jest.mock("@lib/formatDate", () => jest.fn((date) => `formatted:${date}`));
 
+jest.mock("@/components/shared/AmountDisplay", () => ({
+  AmountDisplay: ({ satoshis }) => <span>{`amount-display-${satoshis}`}</span>,
+}));
+
 const ORDER_FIXTURE = {
   shortId: "ABC123",
   date: "2024-01-15",
@@ -98,5 +102,24 @@ describe("OrderDetailModal", () => {
     const order = { ...ORDER_FIXTURE, paymentMethod: "" };
     render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
     expect(screen.getByText("payment.unknown")).toBeInTheDocument();
+  });
+
+  it("renders AmountDisplay for BTC orders with satoshiAmount", () => {
+    const btcOrder = {
+      ...ORDER_FIXTURE,
+      paymentMethod: "BTC",
+      satoshiAmount: 100000,
+      exchangeRateAtPayment: 95000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+    };
+    render(<OrderDetailModal order={btcOrder} formatCurrency={formatCurrency} currentRate={95000} onClose={jest.fn()} />);
+    expect(screen.getByText("amount-display-100000")).toBeInTheDocument();
+  });
+
+  it("uses formatCurrency for total when order has no satoshiAmount", () => {
+    render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} currentRate={95000} onClose={jest.fn()} />);
+    expect(screen.getByText("$5000")).toBeInTheDocument();
+    expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 export function OrdersFilters({ search, onSearchChange, paymentMethod, onPaymentMethodChange, disabled, orders = [] }) {
   const reportsTranslations = useTranslations("reports");
 
-  const paymentMethods = ["all", ...new Set(orders.map((order) => order.paymentMethod).filter(Boolean))];
+  const paymentMethods = ["all", ...new Set(orders.map(({ paymentMethod }) => paymentMethod).filter(Boolean))];
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">

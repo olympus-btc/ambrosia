@@ -13,22 +13,22 @@ import { ReportsOrdersList } from "./OrdersList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
+export function OrdersDetailCard({ orders, formatCurrency, disabled, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const filteredOrders = useMemo(() => {
     const term = search.toLowerCase();
-    return orders.filter((order) => {
+    return orders.filter(({ shortId, userName, paymentMethod: orderPaymentMethod, total, items }) => {
       const searchMatch = !search || (
-        order.shortId?.toLowerCase().includes(term) ||
-        order.userName?.toLowerCase().includes(term) ||
-        order.paymentMethod?.toLowerCase().includes(term) ||
-        String(order.total).includes(term) ||
-        order.items.some((item) => item.productName?.toLowerCase().includes(term))
+        shortId?.toLowerCase().includes(term) ||
+        userName?.toLowerCase().includes(term) ||
+        orderPaymentMethod?.toLowerCase().includes(term) ||
+        String(total).includes(term) ||
+        items.some(({ productName }) => productName?.toLowerCase().includes(term))
       );
-      const methodMatch = !paymentMethod || order.paymentMethod === paymentMethod;
+      const methodMatch = !paymentMethod || orderPaymentMethod === paymentMethod;
       return searchMatch && methodMatch;
     });
   }, [orders, search, paymentMethod]);
@@ -69,7 +69,7 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
           orders={orders}
         />
 
-        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
+        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} currentRate={currentRate} />
 
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">

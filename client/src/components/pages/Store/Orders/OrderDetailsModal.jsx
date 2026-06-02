@@ -3,13 +3,25 @@
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import formatDate from "@lib/formatDate";
 
 import { StatusChip } from "./OrdersList/StatusChip";
 
-export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
-  const t = useTranslations("orders");
-  const userLabel = order?.userName ?? t("details.unassigned");
+export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, currentRate }) {
+  const ordersTranslations = useTranslations("orders");
+  const {
+    id,
+    userName,
+    status,
+    paymentMethod,
+    total,
+    createdAt,
+    satoshiAmount,
+    exchangeRateAtPayment,
+    exchangeRateCurrency,
+    fiatAmountAtPayment,
+  } = order ?? {};
 
   return (
     <Modal
@@ -25,26 +37,38 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("details.title")}</ModalHeader>
+        <ModalHeader>{ordersTranslations("details.title")}</ModalHeader>
         <ModalBody>
           <div className="space-y-3 text-sm text-deep">
-            <DetailRow label={t("details.id")} value={order?.id} />
-            <DetailRow label={t("details.user")} value={userLabel} />
+            <DetailRow label={ordersTranslations("details.id")} value={id} />
+            <DetailRow label={ordersTranslations("details.user")} value={userName ?? ordersTranslations("details.unassigned")} />
             <DetailRow
-              label={t("details.status")}
-              value={order ? <StatusChip status={order.status} /> : t("details.unassigned")}
+              label={ordersTranslations("details.status")}
+              value={status ? <StatusChip status={status} /> : ordersTranslations("details.unassigned")}
             />
             <DetailRow
-              label={t("details.paymentMethod")}
-              value={order?.paymentMethod || t("details.noPayment")}
+              label={ordersTranslations("details.paymentMethod")}
+              value={paymentMethod || ordersTranslations("details.noPayment")}
             />
             <DetailRow
-              label={t("details.total")}
-              value={order ? formatAmount(order.total * 100 ?? 0) : t("details.unassigned")}
+              label={ordersTranslations("details.total")}
+              value={
+                satoshiAmount != null
+                  ? (
+                    <AmountDisplay
+                      satoshis={satoshiAmount}
+                      exchangeRateAtSale={exchangeRateAtPayment}
+                      exchangeRateCurrency={exchangeRateCurrency}
+                      fiatAmountAtPayment={fiatAmountAtPayment}
+                      currentRate={currentRate}
+                    /> ?? formatAmount(total * 100)
+                    )
+                  : formatAmount(total * 100 ?? 0)
+              }
             />
             <DetailRow
-              label={t("details.createdAt")}
-              value={order?.createdAt ? formatDate(order.createdAt) : t("details.unassigned")}
+              label={ordersTranslations("details.createdAt")}
+              value={createdAt ? formatDate(createdAt) : ordersTranslations("details.unassigned")}
             />
           </div>
         </ModalBody>
@@ -54,7 +78,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
             variant="bordered"
             onPress={onClose}
           >
-            {t("details.close")}
+            {ordersTranslations("details.close")}
           </Button>
         </ModalFooter>
       </ModalContent>

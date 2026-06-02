@@ -78,6 +78,10 @@ class OrderServiceTest {
             whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
             whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
             whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
+            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
+            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
+            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
+            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
 
             val service = OrderService(mockConnection)
             val result = service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(status = "paid"))
@@ -1063,6 +1067,77 @@ class OrderServiceTest {
             val service = OrderService(mockConnection) // Arrange
             val result = service.getStoreOrders() // Act
             assertTrue(result.isEmpty()) // Assert
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered SQL includes MAX aggregates for bitcoin payment fields`() {
+        runBlocking {
+            val sqlCaptor = argumentCaptor<String>()
+            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(false)
+            val service = OrderService(mockConnection)
+            service.getOrdersWithPaymentsFiltered()
+            val query = sqlCaptor.firstValue
+            assertTrue(query.contains("MAX(p.satoshi_amount)"))
+            assertTrue(query.contains("MAX(p.exchange_rate_at_payment)"))
+            assertTrue(query.contains("MAX(p.exchange_rate_currency)"))
+            assertTrue(query.contains("MAX(p.fiat_amount_at_payment)"))
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered mapper extracts bitcoin fields when present`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
+            whenever(mockResultSet.getString("id")).thenReturn("order-1")
+            whenever(mockResultSet.getString("user_id")).thenReturn("user-1")
+            whenever(mockResultSet.getString("table_id")).thenReturn(null)
+            whenever(mockResultSet.getString("status")).thenReturn("paid")
+            whenever(mockResultSet.getDouble("total")).thenReturn(1.0)
+            whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
+            whenever(mockResultSet.getString("payment_method")).thenReturn("BTC")
+            whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
+            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
+            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
+            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
+            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
+            val service = OrderService(mockConnection)
+            val result = service.getOrdersWithPaymentsFiltered()
+            assertEquals(100000L, result[0].satoshiAmount)
+            assertEquals(95000.0, result[0].exchangeRateAtPayment)
+            assertEquals("usd", result[0].exchangeRateCurrency)
+            assertEquals(1.0, result[0].fiatAmountAtPayment)
+        }
+    }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered mapper returns null bitcoin fields when not present`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
+            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
+            whenever(mockResultSet.getString("id")).thenReturn("order-1")
+            whenever(mockResultSet.getString("user_id")).thenReturn("user-1")
+            whenever(mockResultSet.getString("table_id")).thenReturn(null)
+            whenever(mockResultSet.getString("status")).thenReturn("paid")
+            whenever(mockResultSet.getDouble("total")).thenReturn(15.0)
+            whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
+            whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
+            whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
+            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
+            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
+            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
+            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
+            val service = OrderService(mockConnection)
+            val result = service.getOrdersWithPaymentsFiltered()
+            assertNull(result[0].satoshiAmount)
+            assertNull(result[0].exchangeRateAtPayment)
+            assertNull(result[0].exchangeRateCurrency)
+            assertNull(result[0].fiatAmountAtPayment)
         }
     }
 

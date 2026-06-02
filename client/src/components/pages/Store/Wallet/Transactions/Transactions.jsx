@@ -23,9 +23,10 @@ export function Transactions({
   invoiceActions,
   fetchInfo,
   fetchTransactions,
+  currentRate,
 }) {
-  const t = useTranslations("wallet");
-  const tTour = useTranslations("walletTour");
+  const walletTranslations = useTranslations("wallet");
+  const walletTourTranslations = useTranslations("walletTour");
   const [activeTab, setActiveTab] = useState("receive");
 
   useTour({
@@ -39,8 +40,8 @@ export function Transactions({
         {
           element: "#wallet-receive-amount",
           popover: {
-            title: tTour("receiveAmountTitle"),
-            description: tTour.raw("receiveAmountDescription"),
+            title: walletTourTranslations("receiveAmountTitle"),
+            description: walletTourTranslations.raw("receiveAmountDescription"),
             side: "top",
             align: "center",
           },
@@ -48,8 +49,8 @@ export function Transactions({
         {
           element: "#wallet-receive-description",
           popover: {
-            title: tTour("receiveDescTitle"),
-            description: tTour.raw("receiveDescDescription"),
+            title: walletTourTranslations("receiveDescTitle"),
+            description: walletTourTranslations.raw("receiveDescDescription"),
             side: "top",
             align: "center",
           },
@@ -57,11 +58,11 @@ export function Transactions({
         {
           element: "#wallet-receive-button",
           popover: {
-            title: tTour("receiveButtonTitle"),
-            description: tTour.raw("receiveButtonDescription"),
+            title: walletTourTranslations("receiveButtonTitle"),
+            description: walletTourTranslations.raw("receiveButtonDescription"),
             side: "top",
             align: "center",
-            nextBtnText: tTour("receiveButton"),
+            nextBtnText: walletTourTranslations("receiveButton"),
           },
         },
       ],
@@ -78,12 +79,12 @@ export function Transactions({
     <Card className="rounded-lg mb-6 p-6">
       <CardBody className="p-0">
         <h2 className="text-xl font-bold text-deep px-6 pt-2 pb-4">
-          {t("payments.title")}
+          {walletTranslations("payments.title")}
         </h2>
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={setActiveTab}
-          aria-label={t("payments.title")}
+          aria-label={walletTranslations("payments.title")}
           variant="underlined"
           classNames={{
             tabList: "gap-2 sm:gap-6 relative rounded-none px-4 sm:px-6 py-0 overflow-x-auto flex-nowrap w-full",
@@ -97,7 +98,7 @@ export function Transactions({
             title={(
               <div className="flex items-center space-x-2">
                 <ArrowDownLeft className="hidden sm:block w-4 h-4" />
-                <span>{t("payments.receive.tabTitle")}</span>
+                <span>{walletTranslations("payments.receive.tabTitle")}</span>
               </div>
             )}
           >
@@ -111,7 +112,7 @@ export function Transactions({
             title={(
               <div className="flex items-center space-x-2">
                 <ArrowUpRight className="hidden sm:block w-4 h-4" />
-                <span>{t("payments.send.tabTitle")}</span>
+                <span>{walletTranslations("payments.send.tabTitle")}</span>
               </div>
             )}
           >
@@ -126,7 +127,7 @@ export function Transactions({
             title={(
               <div className="flex items-center space-x-2">
                 <History className="hidden sm:block w-4 h-4" />
-                <span>{t("payments.history.tabTitle")}</span>
+                <span>{walletTranslations("payments.history.tabTitle")}</span>
               </div>
             )}
           >
@@ -135,6 +136,7 @@ export function Transactions({
               loading={loading}
               filter={filter}
               setFilter={setFilter}
+              currentRate={currentRate}
             />
           </Tab>
         </Tabs>

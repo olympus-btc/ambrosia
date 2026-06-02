@@ -44,6 +44,7 @@ const reportsEs = {
       averageTicket: "Ticket Promedio",
       productLines: "Líneas de Producto",
       uniqueProducts: "Productos Únicos",
+      totalBtcSatoshis: "Total Bitcoin",
       orderCount: "Órdenes",
       avgItemsPerOrder: "Items Promedio / Orden",
     },
