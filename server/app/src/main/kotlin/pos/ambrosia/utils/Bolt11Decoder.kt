@@ -30,4 +30,24 @@ object Bolt11Decoder {
             null
         }
     }
+
+    fun extractAmountSat(invoice: String?): Long? {
+        if (invoice.isNullOrBlank()) return null
+        return try {
+            val parsed = Bolt11Invoice.read(invoice).get()
+            parsed.amount?.msat?.div(1000)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun extractPaymentHash(invoice: String?): String? {
+        if (invoice.isNullOrBlank()) return null
+        return try {
+            val parsed = Bolt11Invoice.read(invoice).get()
+            parsed.paymentHash.toHex()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

@@ -18,7 +18,7 @@ export function NodeInfo({ info, onRefresh }) {
 
   const totalBalance = info?.channels
     ? info.channels
-      .filter((channel) => channel.state === "Normal")
+      .filter((channel) => channel.state?.toUpperCase() === "NORMAL")
       .reduce((total, channel) => total + channel.balanceSat, 0)
     : 0;
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useTour } from "@/hooks/tour/useTour";
-import { getSeed } from "@/services/walletService";
+import { getInfo, getSeed } from "@/services/walletService";
 
 import { SeedCardLocked } from "./SeedCardLocked";
 import { SeedCardUnlocked } from "./SeedCardUnlocked";
@@ -19,6 +19,15 @@ export function Seed() {
   const tTour = useTranslations("seedTour");
   const [showAccess, setShowAccess] = useState(false);
   const [seed, setSeed] = useState(null);
+  const [seedSupported, setSeedSupported] = useState(true);
+
+  useEffect(() => {
+    getInfo()
+      .then((info) => {
+        if (info?.version === "NWC") setSeedSupported(false);
+      })
+      .catch(() => {});
+  }, []);
 
   useTour({
     key: SEED_SETTINGS_TOUR_KEY,
@@ -88,6 +97,7 @@ export function Seed() {
   return (
     <SeedCardLocked
       onReveal={() => setShowAccess(true)}
+      disabled={!seedSupported}
       t={t}
     />
   );

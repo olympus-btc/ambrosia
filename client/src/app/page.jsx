@@ -31,9 +31,11 @@ export default function HomePage() {
 
     if (isConfigLoading) return;
 
-    if (isAuth && !businessType && !hasRequestedConfigRef.current) {
-      hasRequestedConfigRef.current = true;
-      refreshConfig?.();
+    if (isAuth && !businessType) {
+      if (!hasRequestedConfigRef.current) {
+        hasRequestedConfigRef.current = true;
+        refreshConfig?.();
+      }
       return;
     }
 

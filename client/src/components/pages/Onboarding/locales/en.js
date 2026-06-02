@@ -2,6 +2,8 @@ const onboardingEn = {
   submitOnboardingToast: {
     title: "Success",
     description: "The data is saved succesfully",
+    nwcSavedTitle: "NWC backend activated",
+    nwcSavedDescription: "NWC backend is now ready to use.",
   },
   buttons: {
     next: "Next",
@@ -76,6 +78,17 @@ const onboardingEn = {
       businessLogoUploadMessage: "PNG, JPG or GIF (máx. 5MB)",
     },
   },
+  stepWallet: {
+    title: "Lightning Backend",
+    subtitle: "Choose how you'll receive Lightning payments",
+    phoenixdDescription: "Self-hosted node. Requires phoenixd running on this server.",
+    nwcName: "Nostr Wallet Connect",
+    nwcDescription: "Connect any NWC-compatible wallet (Alby Hub, Mutiny, Zeus, etc.)",
+    uriLabel: "NWC URI",
+    uriDescription: "Paste the connection string from your NWC wallet.",
+    uriHint: "The URI will be saved to ambrosia.conf and the NWC backend will be activated immediately.",
+    uriInvalid: "Invalid NWC URI format",
+  },
   step4: {
     title: "Summary of your setup",
     subtitle: "Verify all details are correct before finishing",
@@ -84,6 +97,11 @@ const onboardingEn = {
         title: "Business type",
         store: "Store",
         restaurant: "Restaurant",
+      },
+      walletBackend: {
+        title: "Lightning backend",
+        phoenixd: "phoenixd (self-hosted)",
+        nwc: "Nostr Wallet Connect",
       },
       adminAccount: {
         title: "Admin account",

@@ -18,6 +18,14 @@ function renderOnboarding() {
   );
 }
 
+async function navigateToStep(button, targetStep) {
+  for (let i = 1; i < targetStep; i++) {
+    await act(async () => {
+      fireEvent.click(button);
+    });
+  }
+}
+
 const originalError = console.error;
 const originalWarn = console.warn;
 
@@ -96,9 +104,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -133,9 +139,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -175,9 +179,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 3);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
@@ -262,9 +264,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 3);
 
     await act(async () => {
       const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");

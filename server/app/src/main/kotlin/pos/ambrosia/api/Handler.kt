@@ -20,6 +20,8 @@ import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.MissingRoleException
+import pos.ambrosia.utils.NwcConnectionException
+import pos.ambrosia.utils.NwcServiceException
 import pos.ambrosia.utils.PermissionDeniedException
 import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
@@ -28,6 +30,7 @@ import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 import pos.ambrosia.utils.WalletOnlyException
 import java.sql.SQLException
 
@@ -122,6 +125,18 @@ fun Application.handler() {
                     source = cause.source,
                 ),
             )
+        }
+        exception<NwcConnectionException> { call, cause ->
+            logger.error("NWC relay connection error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet relay is unavailable"))
+        }
+        exception<NwcServiceException> { call, cause ->
+            logger.error("NWC service error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet service error"))
+        }
+        exception<UnsupportedBackendOperationException> { call, cause ->
+            logger.warn("Unsupported backend operation: ${cause.message}")
+            call.respond(HttpStatusCode.NotImplemented, Message(cause.message ?: "Operation not supported by current Lightning backend"))
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

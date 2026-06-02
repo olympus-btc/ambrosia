@@ -30,11 +30,30 @@ export function WizardSummary({ data, onEdit }) {
         <Card>
           <CardHeader className="flex justify-between items-start">
             <div className="flex flex-col">
+              <p className="text-xs font-medium text-muted-foreground uppercase">{t("step4.sections.walletBackend.title")}</p>
+              <p className="text-md font-semibold text-foreground mt-1">
+                {data.walletBackend === "nwc"
+                  ? t("step4.sections.walletBackend.nwc")
+                  : t("step4.sections.walletBackend.phoenixd")}
+              </p>
+              {data.walletBackend === "nwc" && data.nwcUri && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono break-all">
+                  {data.nwcUri.length > 60 ? `${data.nwcUri.slice(0, 60)}…` : data.nwcUri}
+                </p>
+              )}
+            </div>
+            <EditButton onPress={() => onEdit(2)}>{t("buttons.edit")}</EditButton>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex justify-between items-start">
+            <div className="flex flex-col">
               <p className="text-xs font-medium text-muted-foreground uppercase">{t("step4.sections.adminAccount.title")}</p>
               <p className="text-medium font-medium text-foreground mt-1">{t("step4.sections.adminAccount.userName")}: <span className="font-semibold">{data.userName}</span> </p>
               <p className="text-medium text-muted-foreground mt-1">{t("step4.sections.adminAccount.password")}: {"*".repeat(data.userPassword.length)}</p>
             </div>
-            <EditButton onPress={() => onEdit(2)}>{t("buttons.edit")}</EditButton>
+            <EditButton onPress={() => onEdit(3)}>{t("buttons.edit")}</EditButton>
           </CardHeader>
         </Card>
 
@@ -86,7 +105,7 @@ export function WizardSummary({ data, onEdit }) {
                 </div>
               )}
             </div>
-            <EditButton onPress={() => onEdit(3)}>{t("buttons.edit")}</EditButton>
+            <EditButton onPress={() => onEdit(4)}>{t("buttons.edit")}</EditButton>
           </CardHeader>
         </Card>
       </div>

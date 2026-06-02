@@ -79,6 +79,14 @@ class Ambrosia : CliktCommand() {
                 }
                 value
             }
+        val sslBindPort by
+            option("--ssl-bind-port", help = "Bind port for the https api").int().defaultLazy {
+                val value = 9443
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
+                    it.writeString("\nssl-bind-port=$value")
+                }
+                value
+            }
         val secret by
             option("--secret", help = "Secret key for the server", envvar = "AMBROSIA_SECRET").defaultLazy {
                 val seed = SeedGenerator.generateSeed() // Generate a new seed
@@ -87,6 +95,12 @@ class Ambrosia : CliktCommand() {
                 }
                 seed
             }
+        val nwcUri by
+            option(
+                "--nwc-uri",
+                help = "NWC connection URI (nostr+walletconnect://pubkey?relay=...&secret=...)",
+                envvar = "NWC_URI",
+            )
         val phoenixdUrl by
             option("--phoenixd-url", help = "phoenixd API url, eg http://phoenixd:9740").defaultLazy {
                 val value = "http://localhost:9740" // Default value
@@ -101,6 +115,7 @@ class Ambrosia : CliktCommand() {
                 help = "http-password for phoenixd API",
                 envvar = "PHOENIXD_PASSWORD",
             ).defaultLazy {
+                if (nwcUri != null) return@defaultLazy ""
                 AppConfig.loadConfig()
                 val value =
                     AppConfig.getPhoenixProperty("http-password")
@@ -117,6 +132,7 @@ class Ambrosia : CliktCommand() {
                 help = "webhook-secret for phoenixd webhooks",
                 envvar = "PHOENIXD_WEBHOOK_SECRET",
             ).defaultLazy {
+                if (nwcUri != null) return@defaultLazy ""
                 AppConfig.loadConfig()
                 val existing = AppConfig.getPhoenixProperty("webhook-secret")
                 existing
@@ -167,6 +183,7 @@ class Ambrosia : CliktCommand() {
                                     put("phoenixd-url", options.phoenixdUrl)
                                     put("phoenixd-password", options.phoenixdPassword)
                                     put("phoenix.webhook-secret", options.phoenixdWebhookSecret)
+                                    options.nwcUri?.let { put("nwc-uri", it) }
                                 }
                         },
                     configure = {
@@ -180,13 +197,17 @@ class Ambrosia : CliktCommand() {
                             keyStorePassword = { storePassword.toCharArray() },
                             privateKeyPassword = { privateKeyPassword.toCharArray() },
                         ) {
-                            port = 9443
+                            port = options.sslBindPort
                             host = options.httpBindIp
                         }
                     },
                     module = { Api().run { module() } },
                 )
-            ensurePhoenixWebhookConfigured(options.phoenixdWebhookUrl)
+            if (options.nwcUri == null) {
+                ensurePhoenixWebhookConfigured(options.phoenixdWebhookUrl)
+            } else {
+                logger.info("NWC mode active, skipping Phoenix webhook configuration")
+            }
             server.start(wait = true)
         } catch (e: Exception) {
             echo("Error starting server: ${e.message}", err = true)

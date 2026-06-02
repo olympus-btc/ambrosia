@@ -141,6 +141,10 @@ export async function getOutgoingTransactions() {
 
 export async function getSeed() {
   const response = await httpClient("/wallet/seed");
+  if (!response.ok) {
+    const body = await parseJsonResponse(response, {});
+    throw new Error(body?.message || "Seed not available");
+  }
   return await parseJsonResponse(response, null);
 }
 

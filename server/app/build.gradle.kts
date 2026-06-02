@@ -35,6 +35,7 @@ dependencies {
     implementation("io.ktor:ktor-client-auth:$ktor-version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor-version")
     implementation("io.ktor:ktor-server-websockets:$ktor-version")
+    implementation("io.ktor:ktor-client-websockets:$ktor-version")
     implementation("com.github.anastaciocintra:escpos-coffee:4.1.0")
     implementation("com.google.zxing:core:3.5.3")
 
@@ -45,6 +46,10 @@ dependencies {
 
     implementation("com.github.ajalt.clikt:clikt:5.0.3")
     implementation("fr.acinq.lightning:lightning-kmp-jvm:1.8.4")
+
+    // NWC (Nostr Wallet Connect) support
+    implementation("app.cash.nostrino:nostr-sdk:0.0.6")
+    implementation("com.squareup.okio:okio:3.9.0")
 }
 
 tasks.named<JavaExec>("run") {
