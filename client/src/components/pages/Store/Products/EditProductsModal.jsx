@@ -1,10 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Button,
   Input,
-  NumberInput,
   Switch,
   Textarea,
   Modal,
@@ -17,9 +16,12 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { ImageUploader } from "@components/shared/ImageUploader";
+import { useProductVariants } from "@components/pages/Store/hooks/useProductVariants";
 
 import { CategorySelector } from "./CategorySelector";
+import { ProductPricingFields } from "./ProductPricingFields";
 import { VariantManager } from "./VariantManager";
+import { useEditProduct } from "./hooks/useEditProduct";
 
 export function EditProductsModal({
   data,
@@ -32,15 +34,20 @@ export function EditProductsModal({
   createCategory,
   editProductsShowModal,
   onClose,
-  variants = [],
-  onAddVariant,
-  onUpdateVariant,
-  onDeleteVariant,
-  onRefreshVariants,
 }) {
   const t = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { fetchProductDetail, addVariant, updateVariant, deleteVariant } = useProductVariants();
+  const { productVariants, loadProductVariants } = useEditProduct({ fetchProductDetail });
+
+  useEffect(() => {
+    if (editProductsShowModal && data.productId) {
+      loadProductVariants(data.productId);
+    }
+  }, [editProductsShowModal, data.productId, loadProductVariants]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || isUploading) return;
@@ -112,61 +119,23 @@ export function EditProductsModal({
                 isSelected={data.hasVariants ?? false}
                 onValueChange={(val) => onChange({ hasVariants: val })}
                 size="sm"
-                isDisabled={variants.length > 1}
+                isDisabled={productVariants.length > 1}
               />
               <span className="text-sm text-gray-700">{t("hasVariants")}</span>
             </div>
 
-            {!(data.hasVariants) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <NumberInput
-                  label={t("modal.productPriceLabel")}
-                  placeholder={t("modal.productPricePlaceholder")}
-                  isRequired
-                  errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                  startContent={
-                    (
-                      <span className="text-default-400 text-small">
-                        {currency?.acronym || "$"}
-                      </span>
-                    )
-                  }
-                  minValue={0}
-                  value={data.productPrice}
-                  onValueChange={(value) => {
-                    const numeric = value === null ? "" : Number(value);
-                    onChange({ productPrice: numeric });
-                  }}
-                  min={0}
-                  step={0.01}
-                />
-
-                <NumberInput
-                  label={t("modal.productStockLabel")}
-                  placeholder={t("modal.productStockPlaceholder")}
-                  isRequired
-                  errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                  minValue={0}
-                  maxValue={1000000}
-                  value={data.productStock}
-                  onValueChange={(value) => {
-                    const numeric = value === null ? "" : Number(value);
-                    onChange({ productStock: numeric });
-                  }}
-                  min={0}
-                  step={1}
-                />
-              </div>
+            {!data.hasVariants && (
+              <ProductPricingFields data={data} onChange={onChange} currency={currency} />
             )}
 
             {data.hasVariants && (
               <VariantManager
                 productId={data.productId}
-                variants={variants}
-                onAddVariant={onAddVariant}
-                onUpdateVariant={onUpdateVariant}
-                onDeleteVariant={onDeleteVariant}
-                onRefresh={onRefreshVariants}
+                variants={productVariants}
+                onAddVariant={addVariant}
+                onUpdateVariant={updateVariant}
+                onDeleteVariant={deleteVariant}
+                onRefresh={() => loadProductVariants(data.productId)}
               />
             )}
 
