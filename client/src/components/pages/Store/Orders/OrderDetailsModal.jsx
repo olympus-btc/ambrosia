@@ -9,7 +9,7 @@ import formatDate from "@lib/formatDate";
 import { StatusChip } from "./OrdersList/StatusChip";
 
 export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, currentRate }) {
-  const t = useTranslations("orders");
+  const ordersTranslations = useTranslations("orders");
   const {
     id,
     userName,
@@ -37,21 +37,21 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, curren
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("details.title")}</ModalHeader>
+        <ModalHeader>{ordersTranslations("details.title")}</ModalHeader>
         <ModalBody>
           <div className="space-y-3 text-sm text-deep">
-            <DetailRow label={t("details.id")} value={id} />
-            <DetailRow label={t("details.user")} value={userName ?? t("details.unassigned")} />
+            <DetailRow label={ordersTranslations("details.id")} value={id} />
+            <DetailRow label={ordersTranslations("details.user")} value={userName ?? ordersTranslations("details.unassigned")} />
             <DetailRow
-              label={t("details.status")}
-              value={status ? <StatusChip status={status} /> : t("details.unassigned")}
+              label={ordersTranslations("details.status")}
+              value={status ? <StatusChip status={status} /> : ordersTranslations("details.unassigned")}
             />
             <DetailRow
-              label={t("details.paymentMethod")}
-              value={paymentMethod || t("details.noPayment")}
+              label={ordersTranslations("details.paymentMethod")}
+              value={paymentMethod || ordersTranslations("details.noPayment")}
             />
             <DetailRow
-              label={t("details.total")}
+              label={ordersTranslations("details.total")}
               value={
                 satoshiAmount != null
                   ? (
@@ -67,8 +67,8 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, curren
               }
             />
             <DetailRow
-              label={t("details.createdAt")}
-              value={createdAt ? formatDate(createdAt) : t("details.unassigned")}
+              label={ordersTranslations("details.createdAt")}
+              value={createdAt ? formatDate(createdAt) : ordersTranslations("details.unassigned")}
             />
           </div>
         </ModalBody>
@@ -78,7 +78,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, formatAmount, curren
             variant="bordered"
             onPress={onClose}
           >
-            {t("details.close")}
+            {ordersTranslations("details.close")}
           </Button>
         </ModalFooter>
       </ModalContent>

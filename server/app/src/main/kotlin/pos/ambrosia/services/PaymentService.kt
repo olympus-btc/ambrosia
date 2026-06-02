@@ -125,9 +125,9 @@ class PaymentService(
     suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> {
         if (hashes.isEmpty()) return emptyMap()
         val placeholders = hashes.joinToString(",") { "?" }
-        val sql = String.format(GET_BITCOIN_DATA_BY_PAYMENT_HASHES, placeholders)
+        val bitcoinDataQuery = String.format(GET_BITCOIN_DATA_BY_PAYMENT_HASHES, placeholders)
         val bitcoinDataByHash = mutableMapOf<String, PaymentBitcoinData>()
-        connection.prepareStatement(sql).use { statement ->
+        connection.prepareStatement(bitcoinDataQuery).use { statement ->
             hashes.forEachIndexed { index, hash -> statement.setString(index + 1, hash) }
             val resultSet = statement.executeQuery()
             while (resultSet.next()) {
