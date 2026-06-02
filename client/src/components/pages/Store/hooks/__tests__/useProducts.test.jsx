@@ -107,6 +107,7 @@ describe("useProducts", () => {
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: 1, message: "Product added successfully" });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -143,26 +144,44 @@ describe("useProducts", () => {
         name: "Cafe",
         description: "Caliente",
         imageUrl: "https://img.test/item.png",
-        costCents: 1050,
         categoryIds: [7],
-        quantity: 3,
+        hasVariants: false,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 1050,
       }),
       notShowError: false,
+    });
+    expect(httpClient).toHaveBeenCalledWith("/products/1/variants", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        SKU: "SKU-1",
+        priceCents: 1050,
+        quantity: 3,
+        isActive: true,
+      }),
     });
   });
 
   it("sends null SKU when the SKU field is blank", async () => {
+    // Use mockReset + mockImplementation to be robust against extra fetchProducts
+    // calls that can happen due to test ordering (previous test leaving pending effects).
+    httpClient.mockReset();
+    parseJsonResponse.mockReset();
+
     const upload = jest.fn();
     useUpload.mockReturnValue({ upload, isUploading: false });
 
-    httpClient.mockResolvedValueOnce({ ok: true });
-    httpClient.mockResolvedValueOnce({ ok: true });
-    parseJsonResponse.mockResolvedValueOnce([]);
-    parseJsonResponse.mockResolvedValueOnce({ id: 2, message: "Product added successfully" });
-    parseJsonResponse.mockResolvedValueOnce([]);
+    httpClient.mockImplementation((url, options = {}) =>
+      Promise.resolve({ ok: true, _isProductPost: url === "/products" && options?.method === "POST" })
+    );
+    parseJsonResponse.mockImplementation((response, fallback) =>
+      Promise.resolve(response?._isProductPost
+        ? { id: 2, message: "Product added successfully" }
+        : (Array.isArray(fallback) ? [] : null))
+    );
 
     renderWithProvider();
 
@@ -193,14 +212,24 @@ describe("useProducts", () => {
         name: "No SKU",
         description: null,
         imageUrl: null,
-        costCents: 1000,
         categoryIds: [],
-        quantity: 1,
+        hasVariants: false,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 1000,
       }),
       notShowError: false,
+    });
+    expect(httpClient).toHaveBeenCalledWith("/products/2/variants", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        SKU: null,
+        priceCents: 1000,
+        quantity: 1,
+        isActive: true,
+      }),
     });
   });
 
@@ -246,12 +275,10 @@ describe("useProducts", () => {
         name: "Te",
         description: null,
         imageUrl: "https://cdn.test/te.png",
-        costCents: 425,
         categoryIds: [2],
-        quantity: 1,
+        hasVariants: false,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 425,
       }),
       notShowError: false,
     });
@@ -301,12 +328,10 @@ describe("useProducts", () => {
         name: "Te Verde",
         description: "Suave",
         imageUrl: "/files/tea.png",
-        costCents: 350,
         categoryIds: [4],
-        quantity: 8,
+        hasVariants: false,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 350,
       }),
       notShowError: false,
     });

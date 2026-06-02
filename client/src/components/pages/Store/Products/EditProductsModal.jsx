@@ -5,6 +5,7 @@ import {
   Button,
   Input,
   NumberInput,
+  Switch,
   Textarea,
   Modal,
   ModalContent,
@@ -18,6 +19,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { ImageUploader } from "@components/shared/ImageUploader";
 
 import { CategorySelector } from "./CategorySelector";
+import { VariantManager } from "./VariantManager";
 
 export function EditProductsModal({
   data,
@@ -30,6 +32,11 @@ export function EditProductsModal({
   createCategory,
   editProductsShowModal,
   onClose,
+  variants = [],
+  onAddVariant,
+  onUpdateVariant,
+  onDeleteVariant,
+  onRefreshVariants,
 }) {
   const t = useTranslations("products");
   const { currency } = useCurrency();
@@ -75,16 +82,14 @@ export function EditProductsModal({
               isRequired
               errorMessage={t("modal.errorMsgInputFieldEmpty")}
               value={data.productName}
-              onChange={(e) => onChange({ productName: e.target.value })
-              }
+              onChange={(e) => onChange({ productName: e.target.value })}
             />
 
             <Textarea
               label={t("modal.productDescriptionLabel")}
               placeholder={t("modal.productDescriptionPlaceholder")}
               value={data.productDescription}
-              onChange={(e) => onChange({ productDescription: e.target.value })
-              }
+              onChange={(e) => onChange({ productDescription: e.target.value })}
             />
 
             <CategorySelector
@@ -99,49 +104,71 @@ export function EditProductsModal({
               label={t("modal.productSKULabel")}
               placeholder={t("modal.productSKUPlaceholder")}
               value={data.productSKU}
-              onChange={(e) => onChange({ productSKU: e.target.value })
-              }
+              onChange={(e) => onChange({ productSKU: e.target.value })}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <NumberInput
-                label={t("modal.productPriceLabel")}
-                placeholder={t("modal.productPricePlaceholder")}
-                isRequired
-                errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                startContent={
-                  (
-                    <span className="text-default-400 text-small">
-                      {currency?.acronym || "$"}
-                    </span>
-                  )
-                }
-                minValue={0}
-                value={data.productPrice}
-                onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
-                  onChange({ productPrice: numeric });
-                }}
-                min={0}
-                step={0.01}
+            <div className="flex items-center gap-3">
+              <Switch
+                isSelected={data.hasVariants ?? false}
+                onValueChange={(val) => onChange({ hasVariants: val })}
+                size="sm"
+                isDisabled={variants.length > 1}
               />
-
-              <NumberInput
-                label={t("modal.productStockLabel")}
-                placeholder={t("modal.productStockPlaceholder")}
-                isRequired
-                errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                minValue={0}
-                maxValue={1000000}
-                value={data.productStock}
-                onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
-                  onChange({ productStock: numeric });
-                }}
-                min={0}
-                step={1}
-              />
+              <span className="text-sm text-gray-700">{t("hasVariants")}</span>
             </div>
+
+            {!(data.hasVariants) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <NumberInput
+                  label={t("modal.productPriceLabel")}
+                  placeholder={t("modal.productPricePlaceholder")}
+                  isRequired
+                  errorMessage={t("modal.errorMsgInputFieldEmpty")}
+                  startContent={
+                    (
+                      <span className="text-default-400 text-small">
+                        {currency?.acronym || "$"}
+                      </span>
+                    )
+                  }
+                  minValue={0}
+                  value={data.productPrice}
+                  onValueChange={(value) => {
+                    const numeric = value === null ? "" : Number(value);
+                    onChange({ productPrice: numeric });
+                  }}
+                  min={0}
+                  step={0.01}
+                />
+
+                <NumberInput
+                  label={t("modal.productStockLabel")}
+                  placeholder={t("modal.productStockPlaceholder")}
+                  isRequired
+                  errorMessage={t("modal.errorMsgInputFieldEmpty")}
+                  minValue={0}
+                  maxValue={1000000}
+                  value={data.productStock}
+                  onValueChange={(value) => {
+                    const numeric = value === null ? "" : Number(value);
+                    onChange({ productStock: numeric });
+                  }}
+                  min={0}
+                  step={1}
+                />
+              </div>
+            )}
+
+            {data.hasVariants && (
+              <VariantManager
+                productId={data.productId}
+                variants={variants}
+                onAddVariant={onAddVariant}
+                onUpdateVariant={onUpdateVariant}
+                onDeleteVariant={onDeleteVariant}
+                onRefresh={onRefreshVariants}
+              />
+            )}
 
             <ImageUploader
               title=""

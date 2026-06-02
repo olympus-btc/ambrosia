@@ -9,6 +9,7 @@ import { RequirePermission } from "@/hooks/usePermission";
 import { PageHeader } from "@components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
+import { useProductVariants } from "../hooks/useProductVariants";
 import { useProducts } from "../hooks/useProducts";
 
 import { AddProductsModal } from "./AddProductsModal";
@@ -28,6 +29,8 @@ function createEmptyProductForm() {
     productStock: 1,
     productMinStock: 0,
     productMaxStock: 0,
+    hasVariants: false,
+    productVariantId: null,
     productImage: null,
     productImageUrl: "",
     productImageRemoved: false,
@@ -49,6 +52,13 @@ export function Products() {
     deleteCategory,
     refetch: refetchCategories,
   } = useCategories("product");
+  const {
+    fetchProductDetail,
+    addVariant,
+    updateVariant,
+    deleteVariant,
+  } = useProductVariants();
+  const [editVariants, setEditVariants] = useState([]);
 
   const handleProductFormChange = (newData) => {
     setProductForm((prev) => ({ ...prev, ...newData }));
@@ -68,22 +78,35 @@ export function Products() {
     setEditProductsShowModal(false);
   };
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = async (product) => {
+    const detail = await fetchProductDetail(product.id);
+    const firstVariant = detail?.variants?.[0];
+
     setProductForm({
       productId: product.id,
       productName: product.name,
-      productDescription: product.description,
+      productDescription: product.description ?? "",
       productCategories: toArray(product.categoryIds),
-      productSKU: product.SKU,
-      productPrice: product.priceCents ? product.priceCents / 100 : "",
-      productStock: product.quantity,
+      productSKU: product.SKU ?? "",
+      hasVariants: product.hasVariants ?? false,
+      productVariantId: firstVariant?.id ?? null,
+      productPrice: firstVariant?.priceCents ? firstVariant.priceCents / 100 : "",
+      productStock: firstVariant?.quantity ?? 0,
       productMinStock: product.minStockThreshold ?? 0,
       productMaxStock: product.maxStockThreshold ?? 0,
       productImage: null,
-      productImageUrl: product.imageUrl,
+      productImageUrl: product.imageUrl ?? "",
+      productImageRemoved: false,
     });
 
+    setEditVariants(detail?.variants ?? []);
     setEditProductsShowModal(true);
+  };
+
+  const handleRefreshEditVariants = async () => {
+    if (!productForm.productId) return;
+    const detail = await fetchProductDetail(productForm.productId);
+    setEditVariants(detail?.variants ?? []);
   };
 
   const handleDeleteProduct = (product) => {
@@ -150,6 +173,11 @@ export function Products() {
         createCategory={createCategory}
         editProductsShowModal={editProductsShowModal}
         onClose={handleCloseEditProductsModal}
+        variants={editVariants}
+        onAddVariant={addVariant}
+        onUpdateVariant={updateVariant}
+        onDeleteVariant={deleteVariant}
+        onRefreshVariants={handleRefreshEditVariants}
       />
 
       <DeleteProductsModal

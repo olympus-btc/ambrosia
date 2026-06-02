@@ -20,11 +20,6 @@ export function useProducts() {
   const normalizeSku = (sku) => sku?.trim() || null;
 
   const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
-    const priceNumber = Number(product.productPrice ?? 0);
-    const priceCents = Number.isFinite(priceNumber)
-      ? Math.round(priceNumber * 100)
-      : 0;
-    const quantityNumber = Number(product.productStock ?? 0);
     const minStockNumber = Number(product.productMinStock ?? 0);
     const maxStockNumber = Number(product.productMaxStock ?? 0);
 
@@ -34,12 +29,22 @@ export function useProducts() {
       name: product.productName,
       description: product.productDescription || null,
       imageUrl,
-      costCents: priceCents,
       categoryIds: toArray(product.productCategories),
-      quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
+      hasVariants: product.hasVariants ?? false,
       minStockThreshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
       maxStockThreshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
+    };
+  };
+
+  const buildVariantPayload = (product) => {
+    const priceNumber = Number(product.productPrice ?? 0);
+    const priceCents = Number.isFinite(priceNumber) ? Math.round(priceNumber * 100) : 0;
+    const quantityNumber = Number(product.productStock ?? 0);
+    return {
+      SKU: normalizeSku(product.productSKU),
       priceCents,
+      quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
+      isActive: true,
     };
   };
 
@@ -97,14 +102,22 @@ export function useProducts() {
 
       const response = await httpClient("/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl)),
         notShowError: false,
       });
 
       const payload = await ensureSuccess(response);
+      const newProductId = payload?.id;
+
+      if (newProductId && !product.hasVariants) {
+        await httpClient(`/products/${newProductId}/variants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildVariantPayload(product)),
+        });
+      }
+
       await fetchProducts();
       return payload;
     } catch (error) {
@@ -125,14 +138,21 @@ export function useProducts() {
 
       const response = await httpClient(`/products/${product.productId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl, { includeId: true })),
         notShowError: false,
       });
 
       const payload = await ensureSuccess(response);
+
+      if (!product.hasVariants && product.productVariantId) {
+        await httpClient(`/products/${product.productId}/variants/${product.productVariantId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildVariantPayload(product)),
+        });
+      }
+
       await fetchProducts();
       return payload;
     } catch (error) {

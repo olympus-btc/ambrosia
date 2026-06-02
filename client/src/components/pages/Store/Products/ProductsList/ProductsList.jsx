@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-import { useCurrency } from "@/components/hooks/useCurrency";
 import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -10,9 +9,7 @@ import { ProductsCard } from "./ProductsCard";
 import { ProductsTable } from "./ProductsTable";
 
 export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct }) {
-  const { formatAmount } = useCurrency();
   const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
-  const defaultMaxStock = 11;
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -26,18 +23,6 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
     return map;
   }, {}), [categories]);
 
-  const normalizeNumber = (value, fallback = 0) => {
-    const numeric = Number(value ?? fallback);
-    return Number.isFinite(numeric) ? numeric : fallback;
-  };
-
-  const stockStatus = (product) => {
-    const quantity = normalizeNumber(product.quantity ?? product.productStock);
-    if (quantity <= 0) return "out";
-    if (quantity < defaultMaxStock) return "low";
-    return "ok";
-  };
-
   return (
     <>
       <section className="w-full">
@@ -46,9 +31,6 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
             <ProductsCard
               key={product.id}
               product={product}
-              status={stockStatus(product)}
-              normalizeNumber={normalizeNumber}
-              formatAmount={formatAmount}
               canManageProducts={canManageProducts}
               onEditProduct={onEditProduct}
               onDeleteProduct={onDeleteProduct}
@@ -61,9 +43,6 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
           <ProductsTable
             products={products}
             categoryNameById={categoryNameById}
-            status={stockStatus}
-            normalizeNumber={normalizeNumber}
-            formatAmount={formatAmount}
             canManageProducts={canManageProducts}
             onEditProduct={onEditProduct}
             onDeleteProduct={onDeleteProduct}

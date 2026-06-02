@@ -19,25 +19,23 @@ import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsTable({ products, categoryNameById, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
+
+export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
   const t = useTranslations("products");
 
   return (
-    <Table className="min-w-[700px]" removeWrapper aria-label={t("tableAriaLabel")}>
+    <Table className="min-w-[600px]" removeWrapper aria-label={t("tableAriaLabel")}>
       <TableHeader>
         <TableColumn className="py-2 px-3 w-20">{t("image")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[50px]">{t("name")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[50px]">{t("description")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[100px]">{t("category")}</TableColumn>
         <TableColumn className="py-2 px-3 w-20">{t("sku")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[90px]">{t("variants")}</TableColumn>
         <TableColumn className="py-2 px-3 w-40 text-right">{t("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {products.map((product) => {
-          const productStatus = status(product);
           const imageUrl = storedAssetUrl(product?.imageUrl);
           return (
             <TableRow key={product.id}>
@@ -82,33 +80,15 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                 <span className="whitespace-nowrap">{product.SKU}</span>
               </TableCell>
               <TableCell>
-                <span className="whitespace-nowrap">{formatAmount(product.priceCents)}</span>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    productStatus === "out"
-                      ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                      : productStatus === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : "bg-green-200 text-xs text-green-800 border border-green-300"
-                  }
-                >
-                  {normalizeNumber(product.quantity ?? product.productStock)}
-                </Chip>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    productStatus === "out"
-                      ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                      : productStatus === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
-                  }
-                >
-                  {t(`status.${productStatus}`)}
-                </Chip>
+                {product.hasVariants ? (
+                  <Chip className="bg-blue-100 text-blue-800 border border-blue-200 text-xs">
+                    {t("variants")}
+                  </Chip>
+                ) : (
+                  <Chip className="bg-gray-100 text-gray-500 border border-gray-200 text-xs">
+                    {t("simpleProduct")}
+                  </Chip>
+                )}
               </TableCell>
               <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">
