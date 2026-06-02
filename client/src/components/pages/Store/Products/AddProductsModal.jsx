@@ -33,7 +33,7 @@ export function AddProductsModal({
   addProductsShowModal,
   onClose,
 }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const handleSubmit = async (e) => {
@@ -67,22 +67,22 @@ export function AddProductsModal({
       placement="center"
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleAdd")}</ModalHeader>
+        <ModalHeader>{productsTranslations("modal.titleAdd")}</ModalHeader>
 
         <ModalBody>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
-              label={t("modal.productNameLabel")}
-              placeholder={t("modal.productNamePlaceholder")}
+              label={productsTranslations("modal.productNameLabel")}
+              placeholder={productsTranslations("modal.productNamePlaceholder")}
               isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
+              errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
               value={data.productName}
               onChange={(e) => onChange({ productName: e.target.value })}
             />
 
             <Textarea
-              label={t("modal.productDescriptionLabel")}
-              placeholder={t("modal.productDescriptionPlaceholder")}
+              label={productsTranslations("modal.productDescriptionLabel")}
+              placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
               value={data.productDescription}
               onChange={(e) => onChange({ productDescription: e.target.value })}
             />
@@ -96,8 +96,8 @@ export function AddProductsModal({
             />
 
             <Input
-              label={t("modal.productSKULabel")}
-              placeholder={t("modal.productSKUPlaceholder")}
+              label={productsTranslations("modal.productSKULabel")}
+              placeholder={productsTranslations("modal.productSKUPlaceholder")}
               value={data.productSKU}
               onChange={(e) => onChange({ productSKU: e.target.value })}
             />
@@ -108,7 +108,7 @@ export function AddProductsModal({
                 onValueChange={(val) => onChange({ hasVariants: val })}
                 size="sm"
               />
-              <span className="text-sm text-gray-700">{t("hasVariants")}</span>
+              <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
             </div>
 
             {!data.hasVariants && (
@@ -116,13 +116,13 @@ export function AddProductsModal({
             )}
 
             {data.hasVariants && (
-              <p className="text-xs text-gray-400">{t("hasVariantsHint")}</p>
+              <p className="text-xs text-gray-400">{productsTranslations("hasVariantsHint")}</p>
             )}
 
             <ImageUploader
               title=""
-              uploadText={t("modal.productImageUpload")}
-              uploadDescription={t("modal.productImageUploadMessage")}
+              uploadText={productsTranslations("modal.productImageUpload")}
+              uploadDescription={productsTranslations("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file })}
               image={data.productImage || data.productImageUrl}
             />
@@ -134,7 +134,7 @@ export function AddProductsModal({
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => onClose?.()}
               >
-                {t("modal.cancelButton")}
+                {productsTranslations("modal.cancelButton")}
               </Button>
 
               <Button
@@ -143,7 +143,7 @@ export function AddProductsModal({
                 type="submit"
                 isLoading={isSubmitting || isUploading}
               >
-                {t("modal.submitButton")}
+                {productsTranslations("modal.submitButton")}
               </Button>
             </ModalFooter>
           </form>

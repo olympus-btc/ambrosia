@@ -22,18 +22,18 @@ import { RequirePermission } from "@/hooks/usePermission";
 
 
 export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
 
   return (
-    <Table className="min-w-[600px]" removeWrapper aria-label={t("tableAriaLabel")}>
+    <Table className="min-w-[600px]" removeWrapper aria-label={productsTranslations("tableAriaLabel")}>
       <TableHeader>
-        <TableColumn className="py-2 px-3 w-20">{t("image")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[50px]">{t("name")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[50px]">{t("description")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[100px]">{t("category")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-20">{t("sku")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[90px]">{t("variants")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-40 text-right">{t("actions")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-20">{productsTranslations("image")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[50px]">{productsTranslations("name")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[50px]">{productsTranslations("description")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[100px]">{productsTranslations("category")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-20">{productsTranslations("sku")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[90px]">{productsTranslations("variants")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-40 text-right">{productsTranslations("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {products.map((product) => {
@@ -73,7 +73,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                   </div>
                 ) : (
                   <Chip className="bg-gray-200 text-xs text-gray-500 border border-gray-300">
-                    {t("noCategory")}
+                    {productsTranslations("noCategory")}
                   </Chip>
                 )}
               </TableCell>
@@ -85,14 +85,14 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
               </TableCell>
               <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">
-                  <ViewButton onPress={() => onViewProduct(product)}>{t("viewDetails")}</ViewButton>
+                  <ViewButton onPress={() => onViewProduct(product)}>{productsTranslations("viewDetails")}</ViewButton>
                   {canManageProducts && (
                     <>
                       <RequirePermission allOf={["products_update"]}>
-                        <EditButton onPress={() => onEditProduct(product)}>{t("edit")}</EditButton>
+                        <EditButton onPress={() => onEditProduct(product)}>{productsTranslations("edit")}</EditButton>
                       </RequirePermission>
                       <RequirePermission allOf={["products_delete"]}>
-                        <DeleteButton onPress={() => onDeleteProduct(product)}>{t("delete")}</DeleteButton>
+                        <DeleteButton onPress={() => onDeleteProduct(product)}>{productsTranslations("delete")}</DeleteButton>
                       </RequirePermission>
                     </>
                   )}

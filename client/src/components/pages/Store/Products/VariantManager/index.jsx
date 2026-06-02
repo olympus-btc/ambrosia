@@ -20,7 +20,7 @@ export function VariantManager({
   onDeleteVariant,
   onRefresh,
 }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const { upload, isUploading } = useUpload();
   const [isAddingNewVariant, setIsAddingNewVariant] = useState(false);
@@ -81,7 +81,7 @@ export function VariantManager({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-semibold text-gray-700">{t("variants")}</span>
+        <span className="text-sm font-semibold text-gray-700">{productsTranslations("variants")}</span>
         {!isAddingNewVariant && (
           <Button
             size="sm"
@@ -89,13 +89,13 @@ export function VariantManager({
             startContent={<Plus className="w-3.5 h-3.5" />}
             onPress={() => setIsAddingNewVariant(true)}
           >
-            {t("addVariant")}
+            {productsTranslations("addVariant")}
           </Button>
         )}
       </div>
 
       {variants.length === 0 && !isAddingNewVariant && (
-        <p className="text-sm text-gray-400 py-1">{t("noVariants")}</p>
+        <p className="text-sm text-gray-400 py-1">{productsTranslations("noVariants")}</p>
       )}
 
       <div className="space-y-2">

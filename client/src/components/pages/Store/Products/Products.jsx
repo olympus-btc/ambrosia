@@ -108,13 +108,13 @@ export function Products() {
     await Promise.all([refetchProducts(), refetchCategories()]);
   };
 
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
 
   return (
     <>
       <PageHeader
-        title={t("title")}
-        subtitle={t("subtitle")}
+        title={productsTranslations("title")}
+        subtitle={productsTranslations("subtitle")}
         actions={(
           <RequirePermission allOf={["products_create"]}>
             <Button
@@ -125,7 +125,7 @@ export function Products() {
                 setAddProductsShowModal(true);
               }}
             >
-              {t("addProduct")}
+              {productsTranslations("addProduct")}
             </Button>
           </RequirePermission>
         )}

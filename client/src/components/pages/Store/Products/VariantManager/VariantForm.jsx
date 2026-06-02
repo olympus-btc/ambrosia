@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { VariantImagePicker } from "./VariantImagePicker";
 
 export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoading }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const [form, setForm] = useState({
     SKU: initial.SKU ?? "",
     priceCents: initial.priceCents ?? 0,
@@ -46,8 +46,8 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
 
       <Input
         size="sm"
-        label={t("variantSku")}
-        placeholder={t("variantSkuPlaceholder")}
+        label={productsTranslations("variantSku")}
+        placeholder={productsTranslations("variantSkuPlaceholder")}
         value={form.SKU}
         onChange={(e) => setForm((p) => ({ ...p, SKU: e.target.value }))}
       />
@@ -55,8 +55,8 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
       <div className="grid grid-cols-2 gap-3">
         <NumberInput
           size="sm"
-          label={t("variantPrice")}
-          placeholder={t("variantPricePlaceholder")}
+          label={productsTranslations("variantPrice")}
+          placeholder={productsTranslations("variantPricePlaceholder")}
           value={form.priceCents / 100}
           minValue={0}
           step={0.01}
@@ -67,8 +67,8 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
         />
         <NumberInput
           size="sm"
-          label={t("variantStock")}
-          placeholder={t("variantStockPlaceholder")}
+          label={productsTranslations("variantStock")}
+          placeholder={productsTranslations("variantStockPlaceholder")}
           value={form.quantity}
           minValue={0}
           step={1}
@@ -78,7 +78,7 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
 
       <div className="flex gap-2 justify-end pt-1">
         <Button size="sm" variant="bordered" onPress={onCancel} isDisabled={isLoading}>
-          {t("cancelVariant")}
+          {productsTranslations("cancelVariant")}
         </Button>
         <Button
           size="sm"
@@ -87,7 +87,7 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
           onPress={handleSave}
           isLoading={isLoading}
         >
-          {t("saveVariant")}
+          {productsTranslations("saveVariant")}
         </Button>
       </div>
     </div>

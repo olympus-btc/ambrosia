@@ -4,15 +4,15 @@ import { NumberInput } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 export function ProductPricingFields({ data, onChange, currency }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <NumberInput
-        label={t("modal.productPriceLabel")}
-        placeholder={t("modal.productPricePlaceholder")}
+        label={productsTranslations("modal.productPriceLabel")}
+        placeholder={productsTranslations("modal.productPricePlaceholder")}
         isRequired
-        errorMessage={t("modal.errorMsgInputFieldEmpty")}
+        errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
         startContent={
           <span className="text-default-400 text-small">
             {currency?.acronym || "$"}
@@ -29,13 +29,13 @@ export function ProductPricingFields({ data, onChange, currency }) {
       />
 
       <NumberInput
-        label={t("modal.productStockLabel")}
-        placeholder={t("modal.productStockPlaceholder")}
+        label={productsTranslations("modal.productStockLabel")}
+        placeholder={productsTranslations("modal.productStockPlaceholder")}
         value={data.productStock}
         minValue={0}
         maxValue={1000000}
         isRequired
-        errorMessage={t("modal.errorMsgInputFieldEmpty")}
+        errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
         onValueChange={(value) => {
           const numeric = value === null ? "" : Number(value);
           onChange({ productStock: numeric });

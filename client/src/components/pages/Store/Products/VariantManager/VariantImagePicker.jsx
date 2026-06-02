@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function VariantImagePicker({ imageUrl, onFileChange }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
   const currentImage = preview ?? storedAssetUrl(imageUrl);
@@ -52,7 +52,7 @@ export function VariantImagePicker({ imageUrl, onFileChange }) {
           onClick={() => inputRef.current?.click()}
           className="text-xs text-blue-600 hover:text-blue-700 underline text-left leading-none"
         >
-          {t("variantChangeImage")}
+          {productsTranslations("variantChangeImage")}
         </button>
         {currentImage && (
           <button
@@ -60,7 +60,7 @@ export function VariantImagePicker({ imageUrl, onFileChange }) {
             onClick={handleRemove}
             className="text-xs text-red-500 hover:text-red-600 text-left leading-none"
           >
-            {t("variantRemoveImage")}
+            {productsTranslations("variantRemoveImage")}
           </button>
         )}
       </div>

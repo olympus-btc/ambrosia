@@ -12,7 +12,7 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function ProductsCard({ product, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const imageUrl = storedAssetUrl(product?.imageUrl);
 
   return (
@@ -39,14 +39,14 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
           </div>
         </div>
         <div className="flex flex-col justify-between shrink-0 gap-1">
-          <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
+          <ViewButton onPress={() => onViewProduct(product)} aria-label={productsTranslations("viewDetails")} />
           {canManageProducts && (
             <>
               <RequirePermission allOf={["products_update"]}>
-                <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
+                <EditButton onPress={() => onEditProduct(product)} aria-label={productsTranslations("edit")} />
               </RequirePermission>
               <RequirePermission allOf={["products_delete"]}>
-                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
+                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={productsTranslations("delete")} />
               </RequirePermission>
             </>
           )}

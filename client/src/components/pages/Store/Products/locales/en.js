@@ -70,7 +70,7 @@ const productsEn = {
     simpleProduct: "Simple",
     variantPricePlaceholder: "0.00",
     variantStockPlaceholder: "0",
-    variantSkuPlaceholder: "SKU-001",
+    variantSkuPlaceholder: "OrangePi3Zero2GB",
     saveVariant: "Save",
     cancelVariant: "Cancel",
     deleteVariantConfirm: "Confirm delete",

@@ -10,7 +10,7 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { VariantForm } from "./VariantForm";
 
 export function VariantCard({ variant, currency, onSave, onDelete, isProcessing }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
@@ -56,7 +56,7 @@ export function VariantCard({ variant, currency, onSave, onDelete, isProcessing 
               {variant.SKU ?? "—"}
             </p>
             <p className="text-xs text-gray-500">
-              {price} · {variant.quantity} {t("variantStockUnit")}
+              {price} · {variant.quantity} {productsTranslations("variantStockUnit")}
             </p>
           </div>
 
@@ -70,13 +70,13 @@ export function VariantCard({ variant, currency, onSave, onDelete, isProcessing 
                   onPress={() => onDelete(variant.id)}
                   isLoading={isProcessing}
                 >
-                  {t("deleteVariantConfirm")}
+                  {productsTranslations("deleteVariantConfirm")}
                 </Button>
                 <button
                   type="button"
                   onClick={() => setIsConfirmingDelete(false)}
                   className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
-                  aria-label={t("cancelVariant")}
+                  aria-label={productsTranslations("cancelVariant")}
                 >
                   <X className="w-4 h-4" />
                 </button>

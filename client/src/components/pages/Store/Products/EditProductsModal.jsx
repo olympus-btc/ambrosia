@@ -35,7 +35,7 @@ export function EditProductsModal({
   editProductsShowModal,
   onClose,
 }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,22 +79,22 @@ export function EditProductsModal({
       placement="center"
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleEdit")}</ModalHeader>
+        <ModalHeader>{productsTranslations("modal.titleEdit")}</ModalHeader>
 
         <ModalBody>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
-              label={t("modal.productNameLabel")}
-              placeholder={t("modal.productNamePlaceholder")}
+              label={productsTranslations("modal.productNameLabel")}
+              placeholder={productsTranslations("modal.productNamePlaceholder")}
               isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
+              errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
               value={data.productName}
               onChange={(e) => onChange({ productName: e.target.value })}
             />
 
             <Textarea
-              label={t("modal.productDescriptionLabel")}
-              placeholder={t("modal.productDescriptionPlaceholder")}
+              label={productsTranslations("modal.productDescriptionLabel")}
+              placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
               value={data.productDescription}
               onChange={(e) => onChange({ productDescription: e.target.value })}
             />
@@ -108,8 +108,8 @@ export function EditProductsModal({
             />
 
             <Input
-              label={t("modal.productSKULabel")}
-              placeholder={t("modal.productSKUPlaceholder")}
+              label={productsTranslations("modal.productSKULabel")}
+              placeholder={productsTranslations("modal.productSKUPlaceholder")}
               value={data.productSKU}
               onChange={(e) => onChange({ productSKU: e.target.value })}
             />
@@ -121,7 +121,7 @@ export function EditProductsModal({
                 size="sm"
                 isDisabled={productVariants.length > 1}
               />
-              <span className="text-sm text-gray-700">{t("hasVariants")}</span>
+              <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
             </div>
 
             {!data.hasVariants && (
@@ -141,8 +141,8 @@ export function EditProductsModal({
 
             <ImageUploader
               title=""
-              uploadText={t("modal.productImageUpload")}
-              uploadDescription={t("modal.productImageUploadMessage")}
+              uploadText={productsTranslations("modal.productImageUpload")}
+              uploadDescription={productsTranslations("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file, productImageRemoved: file === null })}
               image={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
             />
@@ -154,7 +154,7 @@ export function EditProductsModal({
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => onClose?.()}
               >
-                {t("modal.cancelButton")}
+                {productsTranslations("modal.cancelButton")}
               </Button>
 
               <Button
@@ -163,7 +163,7 @@ export function EditProductsModal({
                 type="submit"
                 isLoading={isSubmitting || isUploading}
               >
-                {t("modal.editButton")}
+                {productsTranslations("modal.editButton")}
               </Button>
             </ModalFooter>
           </form>
