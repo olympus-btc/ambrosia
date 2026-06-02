@@ -33,6 +33,7 @@ import pos.ambrosia.api.configurePayments
 import pos.ambrosia.api.configurePermissions
 import pos.ambrosia.api.configurePhoenixWebhook
 import pos.ambrosia.api.configurePrinters
+import pos.ambrosia.api.configureProductVariants
 import pos.ambrosia.api.configureProducts
 import pos.ambrosia.api.configureReports
 import pos.ambrosia.api.configureRoles
@@ -158,6 +159,7 @@ class Api {
         configureConfig()
         configureTicketTemplates()
         configureProducts()
+        configureProductVariants()
         configureStoreOrders()
         configureCategories()
         configureCurrency()

@@ -16,16 +16,21 @@ import pos.ambrosia.models.Message
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
+import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
 
 fun Application.configureProducts() {
     val connection: Connection = DatabaseConnection.getConnection()
-    val service = ProductService(connection)
-    routing { route("/products") { products(service) } }
+    val variantService = ProductVariantService(connection)
+    val service = ProductService(connection, variantService)
+    routing { route("/products") { products(service, variantService) } }
 }
 
-fun Route.products(service: ProductService) {
+fun Route.products(
+    service: ProductService,
+    variantService: ProductVariantService,
+) {
     authorizePermission("products_read") {
         get("") {
             val items = service.getProducts()
@@ -92,7 +97,7 @@ fun Route.products(service: ProductService) {
                 call.respond(HttpStatusCode.BadRequest, "No stock adjustments provided")
                 return@post
             }
-            val ok = service.adjustStock(adjustments)
+            val ok = variantService.adjustStock(adjustments)
             if (!ok) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid or insufficient stock")
                 return@post

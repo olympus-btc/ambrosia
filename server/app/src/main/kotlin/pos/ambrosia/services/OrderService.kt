@@ -48,9 +48,11 @@ class OrderService(
         private const val STORE_INSERT_CHECKOUT_ORDER =
             "INSERT INTO orders (id, user_id, table_id, status, total, created_at) VALUES (?, ?, NULL, 'paid', ?, datetime('now'))"
         private const val STORE_INSERT_ORDER_ITEM =
-            "INSERT INTO order_products (order_id, product_id, quantity, price_at_order) VALUES (?, ?, ?, ?)"
-        private const val STORE_DECREMENT_STOCK =
-            "UPDATE products SET quantity = quantity - ? WHERE id = ? AND is_deleted = 0 AND quantity >= ?"
+            "INSERT INTO order_products (order_id, product_id, variant_id, quantity, price_at_order) VALUES (?, ?, ?, ?, ?)"
+        private const val STORE_DECREMENT_STOCK_BY_VARIANT =
+            "UPDATE product_variants SET quantity = quantity - ? WHERE id = ? AND quantity >= ?"
+        private const val STORE_GET_DEFAULT_VARIANT_ID =
+            "SELECT id FROM product_variants WHERE product_id = ? LIMIT 1"
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
@@ -58,7 +60,7 @@ class OrderService(
         private const val STORE_INSERT_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val STORE_GET_ITEMS =
-            "SELECT product_id, quantity, price_at_order FROM order_products WHERE order_id = ?"
+            "SELECT product_id, variant_id, quantity, price_at_order FROM order_products WHERE order_id = ?"
         private const val STORE_CANCEL_ORDER =
             "UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'open' AND table_id IS NULL"
 
@@ -496,12 +498,21 @@ class OrderService(
             items.add(
                 StoreOrderItem(
                     productId = resultSet.getString("product_id"),
+                    variantId = resultSet.getString("variant_id"),
                     quantity = resultSet.getInt("quantity"),
                     priceAtOrder = resultSet.getInt("price_at_order"),
                 ),
             )
         }
         return items
+    }
+
+    private fun resolveVariantId(item: pos.ambrosia.models.StoreCheckoutItem): String? {
+        if (item.variantId != null) return item.variantId
+        val statement = connection.prepareStatement(STORE_GET_DEFAULT_VARIANT_ID)
+        statement.setString(1, item.productId)
+        val rs = statement.executeQuery()
+        return if (rs.next()) rs.getString("id") else null
     }
 
     private fun mapStoreOrder(resultSet: java.sql.ResultSet): StoreOrder {
@@ -558,18 +569,25 @@ class OrderService(
             }
 
             for (item in request.items) {
+                val effectiveVariantId =
+                    resolveVariantId(item) ?: run {
+                        connection.rollback()
+                        return null
+                    }
+
                 connection.prepareStatement(STORE_INSERT_ORDER_ITEM).use { statement ->
                     statement.setString(1, orderId)
                     statement.setString(2, item.productId)
-                    statement.setInt(3, item.quantity)
-                    statement.setInt(4, item.priceAtOrder)
+                    statement.setString(3, effectiveVariantId)
+                    statement.setInt(4, item.quantity)
+                    statement.setInt(5, item.priceAtOrder)
                     statement.executeUpdate()
                 }
 
                 val rows =
-                    connection.prepareStatement(STORE_DECREMENT_STOCK).use { statement ->
+                    connection.prepareStatement(STORE_DECREMENT_STOCK_BY_VARIANT).use { statement ->
                         statement.setInt(1, item.quantity)
-                        statement.setString(2, item.productId)
+                        statement.setString(2, effectiveVariantId)
                         statement.setInt(3, item.quantity)
                         statement.executeUpdate()
                     }

@@ -805,7 +805,7 @@ class OrderServiceTest {
     }
 
     private fun validStoreRequest(
-        items: List<StoreCheckoutItem> = listOf(StoreCheckoutItem("prod-1", 2, 500)),
+        items: List<StoreCheckoutItem> = listOf(StoreCheckoutItem(productId = "prod-1", variantId = "var-1", quantity = 2, priceAtOrder = 500)),
         transactionId: String? = null,
     ) = StoreCheckoutRequest(
         userId = "user-1",
@@ -827,7 +827,7 @@ class OrderServiceTest {
     ) {
         whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt)
         whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt)
-        whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt)
+        whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt)
         whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt)
         whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt)
         whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt)
@@ -847,7 +847,7 @@ class OrderServiceTest {
     @Test
     fun `checkout returns null when any item has quantity zero`() {
         runBlocking {
-            val items = listOf(StoreCheckoutItem("prod-1", 0, 500)) // Arrange
+            val items = listOf(StoreCheckoutItem(productId = "prod-1", quantity = 0, priceAtOrder = 500)) // Arrange
             val service = OrderService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest(items = items)) // Act
             assertNull(result) // Assert
@@ -858,7 +858,7 @@ class OrderServiceTest {
     @Test
     fun `checkout returns null when any item has negative quantity`() {
         runBlocking {
-            val items = listOf(StoreCheckoutItem("prod-1", -1, 500)) // Arrange
+            val items = listOf(StoreCheckoutItem(productId = "prod-1", quantity = -1, priceAtOrder = 500)) // Arrange
             val service = OrderService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest(items = items)) // Act
             assertNull(result) // Assert
@@ -910,7 +910,7 @@ class OrderServiceTest {
             val stockSt: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt) // Arrange
             whenever(stockSt.executeUpdate()).thenReturn(0) // Arrange — stock insufficient
             val service = OrderService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest()) // Act
@@ -971,7 +971,7 @@ class OrderServiceTest {
             val ticketPaymentSt: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
@@ -993,7 +993,7 @@ class OrderServiceTest {
             val ticketPaymentSt: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
@@ -1009,8 +1009,8 @@ class OrderServiceTest {
         runBlocking {
             val items =
                 listOf( // Arrange
-                    StoreCheckoutItem("prod-1", 1, 100),
-                    StoreCheckoutItem("prod-2", 3, 200),
+                    StoreCheckoutItem(productId = "prod-1", variantId = "var-1", quantity = 1, priceAtOrder = 100),
+                    StoreCheckoutItem(productId = "prod-2", variantId = "var-2", quantity = 3, priceAtOrder = 200),
                 )
             val stockSt: PreparedStatement = mock() // Arrange
             val orderSt: PreparedStatement = mock() // Arrange
@@ -1020,7 +1020,7 @@ class OrderServiceTest {
             val ticketPaymentSt: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
@@ -1037,20 +1037,67 @@ class OrderServiceTest {
         runBlocking {
             val items =
                 listOf( // Arrange
-                    StoreCheckoutItem("prod-1", 1, 100),
-                    StoreCheckoutItem("prod-2", 999, 200),
+                    StoreCheckoutItem(productId = "prod-1", variantId = "var-1", quantity = 1, priceAtOrder = 100),
+                    StoreCheckoutItem(productId = "prod-2", variantId = "var-2", quantity = 999, priceAtOrder = 200),
                 )
             val stockSt: PreparedStatement = mock() // Arrange
             val orderSt: PreparedStatement = mock() // Arrange
             val itemSt: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
             whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(stockSt) // Arrange
             whenever(stockSt.executeUpdate()).thenReturn(1).thenReturn(0) // Arrange — second item fails
             val service = OrderService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest(items = items)) // Act
             assertNull(result) // Assert
             verify(mockConnection).rollback() // Assert
+        }
+    }
+
+    @Test
+    fun `checkout auto-resolves variantId when item variantId is null`() {
+        runBlocking {
+            val items = listOf(StoreCheckoutItem(productId = "prod-1", variantId = null, quantity = 1, priceAtOrder = 100)) // Arrange
+            val variantQuerySt: PreparedStatement = mock() // Arrange
+            val variantQueryRs: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("SELECT id FROM product_variants"))).thenReturn(variantQuerySt) // Arrange
+            whenever(variantQuerySt.executeQuery()).thenReturn(variantQueryRs) // Arrange
+            whenever(variantQueryRs.next()).thenReturn(true) // Arrange — variant found
+            whenever(variantQueryRs.getString("id")).thenReturn("auto-var-1") // Arrange
+            setupSuccessfulCheckout() // Arrange
+            val service = OrderService(mockConnection) // Arrange
+            val result = service.checkout(validStoreRequest(items = items)) // Act
+            assertNotNull(result) // Assert
+        }
+    }
+
+    @Test
+    fun `checkout returns null when no variant exists for product`() {
+        runBlocking {
+            val items = listOf(StoreCheckoutItem(productId = "prod-1", variantId = null, quantity = 1, priceAtOrder = 100)) // Arrange
+            val orderSt: PreparedStatement = mock() // Arrange
+            val variantQuerySt: PreparedStatement = mock() // Arrange
+            val variantQueryRs: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
+            whenever(mockConnection.prepareStatement(contains("SELECT id FROM product_variants"))).thenReturn(variantQuerySt) // Arrange
+            whenever(variantQuerySt.executeQuery()).thenReturn(variantQueryRs) // Arrange
+            whenever(variantQueryRs.next()).thenReturn(false) // Arrange — no variant found
+            val service = OrderService(mockConnection) // Arrange
+            val result = service.checkout(validStoreRequest(items = items)) // Act
+            assertNull(result) // Assert
+            verify(mockConnection).rollback() // Assert
+        }
+    }
+
+    @Test
+    fun `checkout inserts variant_id at position 3 in order_products`() {
+        runBlocking {
+            val items = listOf(StoreCheckoutItem(productId = "prod-1", variantId = "var-42", quantity = 1, priceAtOrder = 100)) // Arrange
+            val itemSt: PreparedStatement = mock() // Arrange
+            setupSuccessfulCheckout(itemSt = itemSt) // Arrange
+            val service = OrderService(mockConnection) // Arrange
+            service.checkout(validStoreRequest(items = items)) // Act
+            verify(itemSt).setString(3, "var-42") // Assert — variant_id at position 3
         }
     }
 
