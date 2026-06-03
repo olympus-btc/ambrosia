@@ -5,12 +5,10 @@ import pos.ambrosia.models.Currency
 import pos.ambrosia.models.Payment
 import pos.ambrosia.models.PaymentBitcoinData
 import pos.ambrosia.models.PaymentMethod
-import pos.ambrosia.models.WalletInvoiceRate
 import java.sql.Connection
 
 class PaymentService(
     private val connection: Connection,
-    private val walletRateService: WalletRateService = WalletRateService(connection),
 ) {
     companion object {
         private const val ADD_PAYMENT =
@@ -140,9 +138,7 @@ class PaymentService(
                 bitcoinDataByHash[paymentHash] = PaymentBitcoinData(exchangeRate, exchangeRateCurrency, fiatAmount)
             }
         }
-        val remainingHashes = hashes.filter { it !in bitcoinDataByHash }
-        val walletRates = walletRateService.getRatesByPaymentHashes(remainingHashes)
-        return bitcoinDataByHash + walletRates
+        return bitcoinDataByHash
     }
 
     suspend fun addPayment(payment: Payment): String? {

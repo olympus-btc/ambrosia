@@ -43,7 +43,7 @@ fun Application.configureWallet() {
     val authService = AuthService(environment, connection)
     val tokenService = TokenService(environment, connection)
     val walletRateService = WalletRateService(connection)
-    val paymentService = PaymentService(connection, walletRateService)
+    val paymentService = PaymentService(connection)
 
     routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService, walletRateService) } }
 }
@@ -182,7 +182,9 @@ fun Route.wallet(
 
                 val payments = phoenixService.listIncomingPayments(from, to, limit, offset, all, externalId)
                 val hashes = payments.map { it.paymentHash }
-                val bitcoinPaymentDataByHash = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val posRates = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val walletRates = walletRateService.getRatesByPaymentHashes(hashes.filter { it !in posRates })
+                val bitcoinPaymentDataByHash = posRates + walletRates
                 val enriched =
                     payments.map { payment ->
                         val bitcoinPaymentData = bitcoinPaymentDataByHash[payment.paymentHash]
