@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   Button,
@@ -16,12 +16,9 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { ImageUploader } from "@components/shared/ImageUploader";
-import { useProductVariants } from "@components/pages/Store/hooks/useProductVariants";
 
 import { CategorySelector } from "./CategorySelector";
 import { ProductPricingFields } from "./ProductPricingFields";
-import { VariantManager } from "./VariantManager";
-import { useEditProduct } from "./hooks/useEditProduct";
 
 export function EditProductsModal({
   data,
@@ -38,15 +35,6 @@ export function EditProductsModal({
   const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { fetchProductDetail, addVariant, updateVariant, deleteVariant } = useProductVariants();
-  const { productVariants, loadProductVariants } = useEditProduct({ fetchProductDetail });
-
-  useEffect(() => {
-    if (editProductsShowModal && data.productId) {
-      loadProductVariants(data.productId);
-    }
-  }, [editProductsShowModal, data.productId, loadProductVariants]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,7 +107,6 @@ export function EditProductsModal({
                 isSelected={data.hasVariants ?? false}
                 onValueChange={(val) => onChange({ hasVariants: val })}
                 size="sm"
-                isDisabled={productVariants.length > 1}
               />
               <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
             </div>
@@ -129,14 +116,7 @@ export function EditProductsModal({
             )}
 
             {data.hasVariants && (
-              <VariantManager
-                productId={data.productId}
-                variants={productVariants}
-                onAddVariant={addVariant}
-                onUpdateVariant={updateVariant}
-                onDeleteVariant={deleteVariant}
-                onRefresh={() => loadProductVariants(data.productId)}
-              />
+              <p className="text-xs text-gray-400">{productsTranslations("variantsHintEditModal")}</p>
             )}
 
             <ImageUploader

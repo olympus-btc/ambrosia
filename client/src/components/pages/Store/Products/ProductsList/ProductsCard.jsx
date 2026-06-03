@@ -7,11 +7,12 @@ import { useTranslations } from "next-intl";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { ProductTypeChip } from "@/components/shared/ProductTypeChip";
+import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsCard({ product, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
+export function ProductsCard({ product, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
   const productsTranslations = useTranslations("products");
   const imageUrl = storedAssetUrl(product?.imageUrl);
 
@@ -42,6 +43,11 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
           <ViewButton onPress={() => onViewProduct(product)} aria-label={productsTranslations("viewDetails")} />
           {canManageProducts && (
             <>
+              {product.hasVariants && (
+                <RequirePermission allOf={["products_update"]}>
+                  <VariantsButton onPress={() => onManageVariants(product)} aria-label={productsTranslations("manageVariants")} />
+                </RequirePermission>
+              )}
               <RequirePermission allOf={["products_update"]}>
                 <EditButton onPress={() => onEditProduct(product)} aria-label={productsTranslations("edit")} />
               </RequirePermission>

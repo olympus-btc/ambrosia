@@ -16,6 +16,7 @@ import { AddProductsModal } from "./AddProductsModal";
 import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
+import { ProductVariantsModal } from "./ProductVariantsModal";
 import { ProductsList } from "./ProductsList";
 
 function createEmptyProductForm() {
@@ -43,6 +44,7 @@ export function Products() {
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
   const [productForm, setProductForm] = useState(createEmptyProductForm);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [variantsProduct, setVariantsProduct] = useState(null);
 
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
   const {
@@ -104,6 +106,10 @@ export function Products() {
     setDeleteProductsShowModal(true);
   };
 
+  const handleManageVariants = (product) => {
+    setVariantsProduct(product);
+  };
+
   const handleRefreshData = async () => {
     await Promise.all([refetchProducts(), refetchCategories()]);
   };
@@ -136,6 +142,7 @@ export function Products() {
           categories={categories}
           onEditProduct={handleEditProduct}
           onDeleteProduct={handleDeleteProduct}
+          onManageVariants={handleManageVariants}
         />
       </div>
 
@@ -163,6 +170,12 @@ export function Products() {
         createCategory={createCategory}
         editProductsShowModal={editProductsShowModal}
         onClose={handleCloseEditProductsModal}
+      />
+
+      <ProductVariantsModal
+        product={variantsProduct}
+        isOpen={!!variantsProduct}
+        onClose={() => setVariantsProduct(null)}
       />
 
       <DeleteProductsModal

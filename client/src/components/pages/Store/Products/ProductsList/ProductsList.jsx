@@ -8,7 +8,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { ProductsCard } from "./ProductsCard";
 import { ProductsTable } from "./ProductsTable";
 
-export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct }) {
+export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct, onManageVariants }) {
   const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -35,6 +35,7 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
               onEditProduct={onEditProduct}
               onDeleteProduct={onDeleteProduct}
               onViewProduct={handleViewProductDetails}
+              onManageVariants={onManageVariants}
             />
           ))}
         </div>
@@ -47,6 +48,7 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
             onEditProduct={onEditProduct}
             onDeleteProduct={onDeleteProduct}
             onViewProduct={handleViewProductDetails}
+            onManageVariants={onManageVariants}
           />
         </div>
       </section>

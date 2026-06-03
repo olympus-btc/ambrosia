@@ -16,12 +16,13 @@ import { useTranslations } from "next-intl";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { ProductTypeChip } from "@/components/shared/ProductTypeChip";
+import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
 
-export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
+export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
   const productsTranslations = useTranslations("products");
 
   return (
@@ -88,6 +89,11 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                   <ViewButton onPress={() => onViewProduct(product)}>{productsTranslations("viewDetails")}</ViewButton>
                   {canManageProducts && (
                     <>
+                      {product.hasVariants && (
+                        <RequirePermission allOf={["products_update"]}>
+                          <VariantsButton onPress={() => onManageVariants(product)}>{productsTranslations("manageVariants")}</VariantsButton>
+                        </RequirePermission>
+                      )}
                       <RequirePermission allOf={["products_update"]}>
                         <EditButton onPress={() => onEditProduct(product)}>{productsTranslations("edit")}</EditButton>
                       </RequirePermission>
