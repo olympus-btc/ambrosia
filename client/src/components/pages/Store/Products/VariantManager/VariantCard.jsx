@@ -9,7 +9,15 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { VariantForm } from "./VariantForm";
 
-export function VariantCard({ variant, currency, onSave, onDelete, isProcessing }) {
+function deriveVariantDisplayName(optionValueIds, options) {
+  if (!options?.length || !optionValueIds?.length) return null;
+  const valueById = {};
+  options.forEach((type) => type.values.forEach((val) => { valueById[val.id] = val.value; }));
+  const labels = optionValueIds.map((id) => valueById[id]).filter(Boolean);
+  return labels.length ? labels.join(" / ") : null;
+}
+
+export function VariantCard({ variant, currency, options, onSave, onDelete, isProcessing }) {
   const productsTranslations = useTranslations("products");
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -21,12 +29,14 @@ export function VariantCard({ variant, currency, onSave, onDelete, isProcessing 
 
   const imageUrl = storedAssetUrl(variant.imageUrl);
   const price = `${currency?.acronym ?? "$"}${(variant.priceCents / 100).toFixed(2)}`;
+  const displayName = deriveVariantDisplayName(variant.optionValueIds, options) ?? variant.SKU ?? "—";
 
   if (isEditing) {
     return (
       <VariantForm
         initial={variant}
         currency={currency}
+        options={options}
         onSave={handleSaveEdit}
         onCancel={() => setIsEditing(false)}
         isLoading={isProcessing}
@@ -53,8 +63,11 @@ export function VariantCard({ variant, currency, onSave, onDelete, isProcessing 
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">
-              {variant.SKU ?? "—"}
+              {displayName}
             </p>
+            {variant.SKU && (
+              <p className="text-xs text-gray-400 truncate">{variant.SKU}</p>
+            )}
             <p className="text-xs text-gray-500">
               {price} · {variant.quantity} {productsTranslations("variantStockUnit")}
             </p>

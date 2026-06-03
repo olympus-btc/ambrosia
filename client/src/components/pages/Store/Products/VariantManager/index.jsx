@@ -9,15 +9,20 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useUpload } from "@/components/hooks/useUpload";
 
 import { resolveImageUrl } from "../utils/resolveImageUrl";
+import { OptionTypeManager } from "./OptionTypeManager";
 import { VariantCard } from "./VariantCard";
 import { VariantForm } from "./VariantForm";
 
 export function VariantManager({
   productId,
   variants = [],
+  options = [],
   onAddVariant,
   onUpdateVariant,
   onDeleteVariant,
+  onAddOptionType,
+  onUpdateOptionType,
+  onDeleteOptionType,
   onRefresh,
 }) {
   const productsTranslations = useTranslations("products");
@@ -79,46 +84,64 @@ export function VariantManager({
   const isAddFormMutating = variantIdsInProgress.has("new") || isUploading;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-semibold text-gray-700">{productsTranslations("variants")}</span>
-        {!isAddingNewVariant && (
-          <Button
-            size="sm"
-            variant="flat"
-            startContent={<Plus className="w-3.5 h-3.5" />}
-            onPress={() => setIsAddingNewVariant(true)}
-          >
-            {productsTranslations("addVariant")}
-          </Button>
+    <div className="space-y-4">
+      <OptionTypeManager
+        productId={productId}
+        options={options}
+        onAddOptionType={onAddOptionType}
+        onUpdateOptionType={onUpdateOptionType}
+        onDeleteOptionType={onDeleteOptionType}
+        onRefresh={onRefresh}
+      />
+
+      <div className="border-t border-gray-100 pt-3 space-y-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-semibold text-gray-700">{productsTranslations("variants")}</span>
+          {!isAddingNewVariant && (
+            <Button
+              size="sm"
+              variant="flat"
+              startContent={<Plus className="w-3.5 h-3.5" />}
+              onPress={() => setIsAddingNewVariant(true)}
+              isDisabled={options.length === 0}
+            >
+              {productsTranslations("addVariant")}
+            </Button>
+          )}
+        </div>
+
+        {options.length === 0 && (
+          <p className="text-xs text-amber-600">{productsTranslations("noOptionTypesWarning")}</p>
         )}
-      </div>
 
-      {variants.length === 0 && !isAddingNewVariant && (
-        <p className="text-sm text-gray-400 py-1">{productsTranslations("noVariants")}</p>
-      )}
-
-      <div className="space-y-2">
-        {variants.map((variant) => (
-          <VariantCard
-            key={variant.id}
-            variant={variant}
-            currency={currency}
-            onSave={handleUpdateVariant}
-            onDelete={handleDeleteVariant}
-            isProcessing={variantIdsInProgress.has(variant.id) || isUploading}
-          />
-        ))}
-
-        {isAddingNewVariant && (
-          <VariantForm
-            initial={{}}
-            currency={currency}
-            onSave={handleAddVariant}
-            onCancel={() => setIsAddingNewVariant(false)}
-            isLoading={isAddFormMutating}
-          />
+        {variants.length === 0 && !isAddingNewVariant && options.length > 0 && (
+          <p className="text-sm text-gray-400 py-1">{productsTranslations("noVariants")}</p>
         )}
+
+        <div className="space-y-2">
+          {variants.map((variant) => (
+            <VariantCard
+              key={variant.id}
+              variant={variant}
+              currency={currency}
+              options={options}
+              onSave={handleUpdateVariant}
+              onDelete={handleDeleteVariant}
+              isProcessing={variantIdsInProgress.has(variant.id) || isUploading}
+            />
+          ))}
+
+          {isAddingNewVariant && (
+            <VariantForm
+              initial={{}}
+              currency={currency}
+              options={options}
+              onSave={handleAddVariant}
+              onCancel={() => setIsAddingNewVariant(false)}
+              isLoading={isAddFormMutating}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

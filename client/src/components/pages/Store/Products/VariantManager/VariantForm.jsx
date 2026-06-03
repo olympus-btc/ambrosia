@@ -1,13 +1,23 @@
 "use client";
 import { useState } from "react";
 
-import { Button, Input, NumberInput } from "@heroui/react";
+import { Button, Input, NumberInput, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { VariantImagePicker } from "./VariantImagePicker";
 
-export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoading }) {
+export function VariantForm({ initial = {}, currency, options = [], onSave, onCancel, isLoading }) {
   const productsTranslations = useTranslations("products");
+
+  const buildInitialOptionValues = () => {
+    const map = {};
+    options.forEach((type) => {
+      const matchedValue = type.values.find((v) => initial.optionValueIds?.includes(v.id));
+      if (matchedValue) map[type.id] = matchedValue.id;
+    });
+    return map;
+  };
+
   const [form, setForm] = useState({
     SKU: initial.SKU ?? "",
     priceCents: initial.priceCents ?? 0,
@@ -15,6 +25,7 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
     imageFile: null,
     imageUrl: initial.imageUrl ?? null,
     imageRemoved: false,
+    selectedOptionValues: buildInitialOptionValues(),
   });
 
   const handleImageChange = (file) => {
@@ -25,17 +36,27 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
     }
   };
 
+  const handleOptionValueChange = (optionTypeId, valueId) => {
+    setForm((p) => ({
+      ...p,
+      selectedOptionValues: { ...p.selectedOptionValues, [optionTypeId]: valueId },
+    }));
+  };
+
   const handleSave = () => {
+    const optionValueIds = Object.values(form.selectedOptionValues).filter(Boolean);
     onSave({
       SKU: form.SKU.trim() || null,
       priceCents: form.priceCents,
       quantity: Number(form.quantity),
       isActive: initial.isActive ?? true,
-      optionValueIds: initial.optionValueIds ?? [],
+      optionValueIds,
       imageFile: form.imageFile,
       imageUrl: form.imageRemoved ? null : form.imageUrl,
     });
   };
+
+  const allOptionsSelected = options.length === 0 || options.every((type) => form.selectedOptionValues[type.id]);
 
   return (
     <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 space-y-3">
@@ -43,6 +64,29 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
         imageUrl={form.imageUrl}
         onFileChange={handleImageChange}
       />
+
+      {options.length > 0 && (
+        <div className="space-y-2">
+          {options.map((optionType) => (
+            <Select
+              key={optionType.id}
+              size="sm"
+              label={optionType.name}
+              placeholder={productsTranslations("selectOptionValuePlaceholder")}
+              selectedKeys={form.selectedOptionValues[optionType.id] ? [form.selectedOptionValues[optionType.id]] : []}
+              onSelectionChange={(keys) => handleOptionValueChange(optionType.id, [...keys][0])}
+            >
+              {optionType.values.map((val) => (
+                <SelectItem key={val.id}>{val.value}</SelectItem>
+              ))}
+            </Select>
+          ))}
+        </div>
+      )}
+
+      {options.length === 0 && (
+        <p className="text-xs text-amber-600">{productsTranslations("noOptionTypesWarning")}</p>
+      )}
 
       <Input
         size="sm"
@@ -86,6 +130,7 @@ export function VariantForm({ initial = {}, currency, onSave, onCancel, isLoadin
           className="bg-green-800"
           onPress={handleSave}
           isLoading={isLoading}
+          isDisabled={!allOptionsSelected}
         >
           {productsTranslations("saveVariant")}
         </Button>
