@@ -14,7 +14,7 @@ export function PaymentForm({
   onInvoiceChange,
   onSubmit,
 }) {
-  const t = useTranslations("wallet");
+  const translation = useTranslations("wallet");
   const [isScanning, setIsScanning] = useState(false);
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && navigator.maxTouchPoints > 0);
   const cameraInputRef = useRef(null);
@@ -98,7 +98,7 @@ export function PaymentForm({
     <div className="p-6 space-y-4">
       <div className="flex gap-2 items-end">
         <Input
-          label={t("payments.send.payInvoiceLabel")}
+          label={translation("payments.send.payInvoiceLabel")}
           placeholder="lnbc1..."
           value={payInvoice}
           onChange={(event) => onInvoiceChange(event.target.value)}
@@ -111,7 +111,7 @@ export function PaymentForm({
           <>
             <Button
               isIconOnly
-              aria-label={t("payments.send.scanQRButton")}
+              aria-label={translation("payments.send.scanQRButton")}
               onPress={() => cameraInputRef.current?.click()}
               isDisabled={isLoading || isScanning}
               className="h-14 w-14 min-w-14 bg-forest text-white shadow-md hover:opacity-90 transition-opacity"
@@ -137,7 +137,7 @@ export function PaymentForm({
         isDisabled={isScanning}
         className="w-full bg-forest text-white"
       >
-        {isLoading ? t("payments.send.payLightningLoading") : t("payments.send.payLightningButton")}
+        {isLoading ? translation("payments.send.payLightningLoading") : translation("payments.send.payLightningButton")}
       </Button>
     </div>
   );
