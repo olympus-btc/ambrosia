@@ -9,7 +9,7 @@ import { PaymentForm } from "./PaymentForm";
 import { getPaymentErrorDescription } from "./utils/paymentErrors";
 import { getBolt11ValidationError } from "./utils/validateBolt11Invoice";
 
-export function PaymentTab({ fetchInfo, fetchTransactions }) {
+export function PaymentTab({ fetchInfo, fetchTransactions, currentRate }) {
   const t = useTranslations("wallet");
   const {
     decodedInvoice,
@@ -22,6 +22,7 @@ export function PaymentTab({ fetchInfo, fetchTransactions }) {
   } = useSendPaymentFlow({
     fetchInfo,
     fetchTransactions,
+    currentRate,
     validateInvoice: (invoiceValue) => getBolt11ValidationError(invoiceValue, t),
   });
 
