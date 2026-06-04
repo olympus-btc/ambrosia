@@ -82,15 +82,15 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
                             : walletTranslations("payments.history.received")}
                         </span>
                         <span className="text-xs text-gray-400 shrink-0">
-                          {format.dateTime(new Date(transaction.completedAt), { dateStyle: "short" })}
-                          {" "}
-                          {format.dateTime(new Date(transaction.completedAt), { timeStyle: "short" })}
+                          {transaction.completedAt
+                            ? `${format.dateTime(new Date(transaction.completedAt), { dateStyle: "short" })} ${format.dateTime(new Date(transaction.completedAt), { timeStyle: "short" })}`
+                            : "—"}
                         </span>
                       </div>
                       <div className={`text-lg font-bold ${transaction.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
-                        {transaction.type === "incoming_payment" && transaction.exchangeRateAtPayment ? (
+                        {transaction.exchangeRateAtPayment ? (
                           <AmountDisplay
-                            satoshis={transaction.receivedSat}
+                            satoshis={transaction.type === "outgoing_payment" ? transaction.sent : transaction.receivedSat}
                             exchangeRateAtSale={transaction.exchangeRateAtPayment}
                             exchangeRateCurrency={transaction.exchangeRateCurrency}
                             fiatAmountAtPayment={transaction.fiatAmountAtPayment}

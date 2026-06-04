@@ -104,6 +104,7 @@ export function Transactions({
           >
             <ReceiveTab
               invoiceActions={invoiceActions}
+              currentRate={currentRate}
             />
           </Tab>
 
@@ -119,6 +120,7 @@ export function Transactions({
             <PaymentTab
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
+              currentRate={currentRate}
             />
           </Tab>
 

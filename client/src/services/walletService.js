@@ -64,6 +64,9 @@ export async function createInvoiceForCart(invoiceAmount, invoiceDesc) {
 export async function createInvoice({
   amountSat,
   description,
+  exchangeRate = null,
+  exchangeRateCurrency = null,
+  fiatAmount = null,
 }) {
   const response = await httpClient("/wallet/createinvoice", {
     method: "POST",
@@ -73,18 +76,26 @@ export async function createInvoice({
     body: JSON.stringify({
       description,
       amountSat: Number.parseInt(amountSat, 10),
+      exchangeRate,
+      exchangeRateCurrency,
+      fiatAmount,
     }),
   });
   return await parseJsonResponse(response, null);
 }
 
-export async function payInvoiceFromService(invoice, amountSat) {
+export async function payInvoiceFromService(invoice, amountSat, { exchangeRate = null, exchangeRateCurrency = null } = {}) {
   const response = await httpClient("/wallet/payinvoice", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ invoice: invoice.trim(), ...(amountSat != null ? { amountSat } : {}) }),
+    body: JSON.stringify({
+      invoice: invoice.trim(),
+      ...(amountSat != null ? { amountSat } : {}),
+      exchangeRate,
+      exchangeRateCurrency,
+    }),
   });
   const responseBody = await parseJsonResponse(response, null);
 

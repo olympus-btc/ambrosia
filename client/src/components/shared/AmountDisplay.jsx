@@ -94,7 +94,7 @@ export function AmountDisplay({
     ? (satoshis / 100_000_000) * currentRate * 100
     : null;
 
-  const displayCents = showCurrentFiat ? currentFiatCents : historicalCents;
+  const displayCents = showCurrentFiat ? currentFiatCents : (historicalCents ?? currentFiatCents);
   const canToggleRate = historicalCents != null && currentFiatCents != null;
 
   const currentCurrencyAcronym = currency?.acronym?.toUpperCase();
@@ -123,9 +123,13 @@ export function AmountDisplay({
           />
         )}
       </span>
-      {canToggleRate && (
-        <p className="text-xs font-normal text-foreground-400 mt-0.5">
-          {showCurrentFiat ? t("amountAtCurrentRate") : t("amountAtTimeOfPayment")}
+      {displayCents != null && (
+        <p className="text-xs font-normal text-deep mt-0.5">
+          {canToggleRate
+            ? (showCurrentFiat ? t("amountAtCurrentRate") : t("amountAtTimeOfPayment"))
+            : historicalCents != null
+              ? t("amountAtTimeOfPayment")
+              : t("amountAtCurrentRate")}
         </p>
       )}
     </div>

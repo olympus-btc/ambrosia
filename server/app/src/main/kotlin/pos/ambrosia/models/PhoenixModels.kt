@@ -10,6 +10,9 @@ data class CreateInvoiceRequest(
     val amountSat: Long? = null,
     val externalId: String? = null,
     val expirySeconds: Long? = null,
+    val exchangeRate: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmount: Double? = null,
 )
 
 @Serializable
@@ -36,6 +39,8 @@ data class CreateInvoiceResponse(
 @Serializable data class PayInvoiceRequest(
     val amountSat: Long? = null,
     val invoice: String,
+    val exchangeRate: Double? = null,
+    val exchangeRateCurrency: String? = null,
 )
 
 @Serializable

@@ -16,8 +16,10 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.IncomingPaymentWithRate
+import pos.ambrosia.models.OutgoingPaymentWithRate
 import pos.ambrosia.models.RolePassword
 import pos.ambrosia.models.WalletAuthResponse
+import pos.ambrosia.models.WalletInvoiceRate
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CsvExport
@@ -29,6 +31,7 @@ import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.TokenService
+import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.authenticateAdmin
@@ -40,9 +43,10 @@ fun Application.configureWallet() {
     val phoenixService = PhoenixService(environment)
     val authService = AuthService(environment, connection)
     val tokenService = TokenService(environment, connection)
+    val walletRateService = WalletRateService(connection)
     val paymentService = PaymentService(connection)
 
-    routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService) } }
+    routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService, walletRateService) } }
 }
 
 fun Route.wallet(
@@ -50,6 +54,7 @@ fun Route.wallet(
     tokenService: TokenService,
     authService: AuthService,
     paymentService: PaymentService,
+    walletRateService: WalletRateService,
 ) {
     authenticate("auth-jwt") {
         post("/invoice") {
@@ -94,6 +99,17 @@ fun Route.wallet(
         post("/createinvoice") {
             val request = call.receive<CreateInvoiceRequest>()
             val invoice = phoenixService.createInvoice(request)
+            if (request.exchangeRate != null && request.exchangeRateCurrency != null) {
+                walletRateService.saveInvoiceRate(
+                    WalletInvoiceRate(
+                        paymentHash = invoice.paymentHash,
+                        satoshiAmount = request.amountSat,
+                        exchangeRate = request.exchangeRate,
+                        exchangeRateCurrency = request.exchangeRateCurrency,
+                        fiatAmount = request.fiatAmount,
+                    ),
+                )
+            }
             call.respond(HttpStatusCode.OK, invoice)
         }
         post("/decodeinvoice") {
@@ -114,6 +130,18 @@ fun Route.wallet(
         post("/payinvoice") {
             val request = call.receive<PayInvoiceRequest>()
             val result = phoenixService.payInvoice(request)
+            if (request.exchangeRate != null && request.exchangeRateCurrency != null) {
+                val fiatAmount = (result.recipientAmountSat.toDouble() / 100_000_000) * request.exchangeRate
+                walletRateService.saveInvoiceRate(
+                    WalletInvoiceRate(
+                        paymentHash = result.paymentHash,
+                        satoshiAmount = result.recipientAmountSat,
+                        exchangeRate = request.exchangeRate,
+                        exchangeRateCurrency = request.exchangeRateCurrency,
+                        fiatAmount = fiatAmount,
+                    ),
+                )
+            }
             call.respond(HttpStatusCode.OK, result)
         }
         post("/payoffer") {
@@ -167,7 +195,9 @@ fun Route.wallet(
 
                 val payments = phoenixService.listIncomingPayments(from, to, limit, offset, all, externalId)
                 val hashes = payments.map { it.paymentHash }
-                val bitcoinPaymentDataByHash = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val salesPaymentRates = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val walletInvoiceRates = walletRateService.getRatesByPaymentHashes(hashes.filter { it !in salesPaymentRates })
+                val bitcoinPaymentDataByHash = salesPaymentRates + walletInvoiceRates
                 val enriched =
                     payments.map { payment ->
                         val bitcoinPaymentData = bitcoinPaymentDataByHash[payment.paymentHash]
@@ -211,7 +241,33 @@ fun Route.wallet(
                 val all = call.request.queryParameters["all"]?.toBoolean() ?: false
 
                 val payments = phoenixService.listOutgoingPayments(from, to, limit, offset, all)
-                call.respond(HttpStatusCode.OK, payments)
+                val hashes = payments.mapNotNull { it.paymentHash }
+                val salesPaymentRates = paymentService.getExchangeRatesByPaymentHashes(hashes)
+                val walletInvoiceRates = walletRateService.getRatesByPaymentHashes(hashes.filter { it !in salesPaymentRates })
+                val bitcoinDataByHash = salesPaymentRates + walletInvoiceRates
+                val enriched =
+                    payments.map { payment ->
+                        val bitcoinData = payment.paymentHash?.let { bitcoinDataByHash[it] }
+                        OutgoingPaymentWithRate(
+                            type = payment.type,
+                            subType = payment.subType,
+                            paymentId = payment.paymentId,
+                            paymentHash = payment.paymentHash,
+                            txId = payment.txId,
+                            preimage = payment.preimage,
+                            isPaid = payment.isPaid,
+                            sent = payment.sent,
+                            fees = payment.fees,
+                            invoice = payment.invoice,
+                            description = payment.description,
+                            completedAt = payment.completedAt,
+                            createdAt = payment.createdAt,
+                            exchangeRateAtPayment = bitcoinData?.exchangeRateAtPayment,
+                            exchangeRateCurrency = bitcoinData?.exchangeRateCurrency,
+                            fiatAmountAtPayment = bitcoinData?.fiatAmountAtPayment,
+                        )
+                    }
+                call.respond(HttpStatusCode.OK, enriched)
             }
 
             get("/outgoing/{paymentId}") {

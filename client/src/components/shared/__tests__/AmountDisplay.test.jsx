@@ -96,10 +96,16 @@ describe("AmountDisplay", () => {
     expect(screen.getByText("amountAtCurrentRate")).toBeInTheDocument();
   });
 
-  it("does not show rate label when only one rate is available", () => {
+  it("shows amountAtTimeOfPayment label when only historical rate is available", () => {
     renderComponent({ satoshis: 20000, exchangeRateAtSale: 50000 });
-    expect(screen.queryByText("amountAtTimeOfPayment")).not.toBeInTheDocument();
+    expect(screen.getByText("amountAtTimeOfPayment")).toBeInTheDocument();
     expect(screen.queryByText("amountAtCurrentRate")).not.toBeInTheDocument();
+  });
+
+  it("shows amountAtCurrentRate label when only currentRate is available", () => {
+    renderComponent({ satoshis: 20000, currentRate: 60000 });
+    expect(screen.getByText("amountAtCurrentRate")).toBeInTheDocument();
+    expect(screen.queryByText("amountAtTimeOfPayment")).not.toBeInTheDocument();
   });
 
   it("uses fiatAmountAtPayment directly for historical display when provided", () => {

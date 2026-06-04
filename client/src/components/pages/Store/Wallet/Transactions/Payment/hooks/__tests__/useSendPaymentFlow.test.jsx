@@ -85,7 +85,7 @@ describe("useSendPaymentFlow", () => {
           paymentHash: "hash-123",
         },
       });
-      expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test", null);
+      expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test", null, expect.any(Object));
       expect(fetchInfo).toHaveBeenCalledTimes(1);
       expect(fetchTransactions).toHaveBeenCalledTimes(1);
       expect(result.current.payInvoice).toBe("");
