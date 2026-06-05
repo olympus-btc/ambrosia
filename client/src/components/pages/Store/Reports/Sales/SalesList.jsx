@@ -90,15 +90,15 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
   return (
     <section aria-label={reportsTranslations("sales.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
-        {sales.map((sale, saleIndex) => (
-          <SalesCard key={saleIndex} sale={sale} formatCurrency={formatCurrency} currentRate={currentRate} />
+        {sales.map((sale) => (
+          <SalesCard key={`${sale.orderId}-${sale.productName}`} sale={sale} formatCurrency={formatCurrency} currentRate={currentRate} />
         ))}
       </div>
       <div className="hidden md:block overflow-x-auto">
         <DataTable
           columns={columns}
           items={sales}
-          getKey={(_, rowIndex) => String(rowIndex)}
+          getKey={(sale) => `${sale.orderId}-${sale.productName}`}
         />
       </div>
     </section>
