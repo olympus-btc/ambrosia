@@ -24,7 +24,7 @@ export function CurrencyCard({ selectedCurrency, currencies, onCurrencyChange })
           isClearable
           menuTrigger="focus"
           inputProps={{
-            onClick: (e) => e.target.select(),
+            onClick: (event) => event.target.select(),
           }}
           defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
         >

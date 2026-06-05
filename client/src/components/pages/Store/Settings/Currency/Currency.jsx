@@ -21,13 +21,13 @@ export function Currency() {
     [locale],
   );
 
-  const handleCurrencyChange = async (key) => {
-    if (!key || key === currency.acronym) { return; }
+  const handleCurrencyChange = async (newCurrencyAcronym) => {
+    if (!newCurrencyAcronym || newCurrencyAcronym === currency.acronym) { return; }
     try {
-      await updateCurrency({ acronym: key });
+      await updateCurrency({ acronym: newCurrencyAcronym });
       addToast({
         title: settingsTranslations("cardCurrency.successTitle") || "Currency Updated",
-        description: settingsTranslations("cardCurrency.successDescription") || `Currency changed to ${key}`,
+        description: settingsTranslations("cardCurrency.successDescription") || `Currency changed to ${newCurrencyAcronym}`,
         color: "success",
       });
     } catch (error) {
