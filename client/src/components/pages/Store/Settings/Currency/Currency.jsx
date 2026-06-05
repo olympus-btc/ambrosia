@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 
-import { useLocale } from "next-intl";
+import { addToast } from "@heroui/react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useCurrency } from "@components/hooks/useCurrency";
 import { CURRENCIES_EN } from "@components/pages/Onboarding/utils/currencies_en";
@@ -12,6 +13,7 @@ import { CurrencyCard } from "./CurrencyCard";
 
 export function Currency() {
   const locale = useLocale();
+  const settingsTranslations = useTranslations("settings");
   const { currency, updateCurrency } = useCurrency();
 
   const currencies = useMemo(
@@ -19,9 +21,23 @@ export function Currency() {
     [locale],
   );
 
-  const handleCurrencyChange = (e) => {
-    if (!e.target.value) { return; }
-    updateCurrency({ acronym: e.target.value });
+  const handleCurrencyChange = async (key) => {
+    if (!key || key === currency.acronym) { return; }
+    try {
+      await updateCurrency({ acronym: key });
+      addToast({
+        title: settingsTranslations("cardCurrency.successTitle") || "Currency Updated",
+        description: settingsTranslations("cardCurrency.successDescription") || `Currency changed to ${key}`,
+        color: "success",
+      });
+    } catch (error) {
+      console.error("Failed to update currency:", error);
+      addToast({
+        title: "Error",
+        description: "Failed to update currency",
+        color: "danger",
+      });
+    }
   };
 
   return (
