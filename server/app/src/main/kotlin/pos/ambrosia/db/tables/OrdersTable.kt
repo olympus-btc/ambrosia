@@ -2,12 +2,12 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object OrdersTable : UUIDTable("orders") {
+object OrdersTable : SQLiteUUIDTable("orders") {
     val userId = reference("user_id", UsersTable)
     // order_id in tables creates a circular FK — stored as raw varchar to break the cycle
     val tableId = varchar("table_id", 36).nullable()
@@ -28,7 +28,7 @@ class OrderEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var isDeleted by OrdersTable.isDeleted
 }
 
-object OrdersDishesTable : UUIDTable("orders_dishes") {
+object OrdersDishesTable : SQLiteUUIDTable("orders_dishes") {
     val orderId = reference("order_id", OrdersTable)
     val dishId = reference("dish_id", DishesTable)
     val priceAtOrder = double("price_at_order")

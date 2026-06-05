@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object PrinterConfigsTable : UUIDTable("printer_configs") {
+object PrinterConfigsTable : SQLiteUUIDTable("printer_configs") {
     val printerType = varchar("printer_type", 20)
     val printerName = varchar("printer_name", 255)
     val templateName = varchar("template_name", 255).nullable()

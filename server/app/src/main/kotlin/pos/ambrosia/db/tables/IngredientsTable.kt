@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object IngredientsTable : UUIDTable("ingredients") {
+object IngredientsTable : SQLiteUUIDTable("ingredients") {
     val name = varchar("name", 255)
     val categoryId = reference("category_id", CategoriesTable)
     val quantity = double("quantity").default(0.0)

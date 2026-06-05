@@ -2,12 +2,12 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object RolesTable : UUIDTable("roles") {
+object RolesTable : SQLiteUUIDTable("roles") {
     val role = varchar("role", 255)
     val password = varchar("password", 255).nullable()
     val isAdmin = bool("isAdmin").default(false)
@@ -23,7 +23,7 @@ class RoleEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var isDeleted by RolesTable.isDeleted
 }
 
-object PermissionsTable : UUIDTable("permissions") {
+object PermissionsTable : SQLiteUUIDTable("permissions") {
     val name = varchar("name", 255)
     val description = text("description").nullable()
     val enabled = bool("enabled").default(true)

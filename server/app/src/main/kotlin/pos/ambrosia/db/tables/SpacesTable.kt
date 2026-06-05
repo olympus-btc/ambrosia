@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object SpacesTable : UUIDTable("spaces") {
+object SpacesTable : SQLiteUUIDTable("spaces") {
     val name = varchar("name", 255).nullable()
     val isDeleted = bool("is_deleted").default(false)
 }
@@ -18,7 +18,7 @@ class SpaceEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var isDeleted by SpacesTable.isDeleted
 }
 
-object DiningTablesTable : UUIDTable("tables") {
+object DiningTablesTable : SQLiteUUIDTable("tables") {
     val name = varchar("name", 255)
     val status = varchar("status", 20).default("available")
     val spaceId = reference("space_id", SpacesTable)

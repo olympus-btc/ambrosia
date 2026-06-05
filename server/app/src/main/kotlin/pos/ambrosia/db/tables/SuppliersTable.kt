@@ -2,12 +2,12 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object SuppliersTable : UUIDTable("suppliers") {
+object SuppliersTable : SQLiteUUIDTable("suppliers") {
     val name = varchar("name", 255)
     val contact = varchar("contact", 255).nullable()
     val phone = varchar("phone", 50).nullable()

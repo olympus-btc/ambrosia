@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object TicketTemplatesTable : UUIDTable("ticket_templates") {
+object TicketTemplatesTable : SQLiteUUIDTable("ticket_templates") {
     val name = varchar("name", 255)
 }
 
@@ -16,7 +16,7 @@ class TicketTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var name by TicketTemplatesTable.name
 }
 
-object TicketTemplateElementsTable : UUIDTable("ticket_template_elements") {
+object TicketTemplateElementsTable : SQLiteUUIDTable("ticket_template_elements") {
     val templateId = reference("template_id", TicketTemplatesTable)
     val elementOrder = integer("element_order")
     val type = varchar("type", 20)

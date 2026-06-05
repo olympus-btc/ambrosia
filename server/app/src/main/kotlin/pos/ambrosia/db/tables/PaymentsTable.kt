@@ -2,12 +2,12 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object CurrencyTable : UUIDTable("currency") {
+object CurrencyTable : SQLiteUUIDTable("currency") {
     val acronym = varchar("acronym", 3)
     val name = varchar("name", 255).nullable()
     val symbol = varchar("symbol", 10).nullable()
@@ -25,7 +25,7 @@ class CurrencyEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var countryCode by CurrencyTable.countryCode
 }
 
-object PaymentMethodsTable : UUIDTable("payment_methods") {
+object PaymentMethodsTable : SQLiteUUIDTable("payment_methods") {
     val name = varchar("name", 255)
 }
 
@@ -35,7 +35,7 @@ class PaymentMethodEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var name by PaymentMethodsTable.name
 }
 
-object PaymentsTable : UUIDTable("payments") {
+object PaymentsTable : SQLiteUUIDTable("payments") {
     val methodId = reference("method_id", PaymentMethodsTable)
     val currencyId = reference("currency_id", CurrencyTable)
     val transactionId = text("transaction_id")

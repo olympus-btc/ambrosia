@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object UsersTable : UUIDTable("users") {
+object UsersTable : SQLiteUUIDTable("users") {
     val name = varchar("name", 255)
     val pin = varchar("pin", 255)
     val refreshToken = varchar("refresh_token", 1000).nullable()

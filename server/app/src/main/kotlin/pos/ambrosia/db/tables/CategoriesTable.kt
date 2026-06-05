@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object CategoriesTable : UUIDTable("categories") {
+object CategoriesTable : SQLiteUUIDTable("categories") {
     val name = varchar("name", 255)
     val type = varchar("type", 20)
     val isDeleted = bool("is_deleted").default(false)

@@ -1,12 +1,12 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
-object ShiftsTable : UUIDTable("shifts") {
+object ShiftsTable : SQLiteUUIDTable("shifts") {
     val userId = reference("user_id", UsersTable)
     val shiftDate = varchar("shift_date", 20)
     val startTime = varchar("start_time", 20)
