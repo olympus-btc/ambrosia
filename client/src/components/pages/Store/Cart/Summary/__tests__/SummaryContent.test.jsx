@@ -99,7 +99,6 @@ const cartItems = [{ id: 1, imageUrl: "/uploads/jade-wallet.png", name: "Jade Wa
 const defaultProps = {
   cartItems,
   discount: 10,
-  hydrated: true,
   onRemoveProduct: jest.fn(),
   onUpdateQuantity: jest.fn(),
   onPay: jest.fn(),
@@ -156,10 +155,10 @@ describe("SummaryContent", () => {
     expect(screen.getByText("summary.pay")).toBeDisabled();
   });
 
-  it("disables Pay button when not yet hydrated even if cart has items", () => {
-    render(<SummaryContent {...defaultProps} hydrated={false} />);
+  it("enables Pay button when cart has items", () => {
+    render(<SummaryContent {...defaultProps} cartItems={[{ id: "1", name: "Item", price: 100, quantity: 1, subtotal: 100 }]} />);
 
-    expect(screen.getByText("summary.pay")).toBeDisabled();
+    expect(screen.getByText("summary.pay")).not.toBeDisabled();
   });
 
   it("shows payment error message", () => {

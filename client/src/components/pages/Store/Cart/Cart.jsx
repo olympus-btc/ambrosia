@@ -1,7 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -9,44 +8,52 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 
+import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 
-function reconcileCartWithProducts(cart, products) {
-  const reconciledItems = cart.reduce((reconciledItems, item) => {
-    const catalogProduct = products.find((product) => product.id === item.id);
-    if (!catalogProduct) return reconciledItems;
-    if (catalogProduct.priceCents === item.price) return [...reconciledItems, item];
-    return [...reconciledItems, { ...item, price: catalogProduct.priceCents, subtotal: item.quantity * catalogProduct.priceCents }];
-  }, []);
+function syncCartWithProducts(cart, products) {
+  const syncedItems = cart
+    .filter((cartItem) => products.some((product) => product.id === cartItem.id))
+    .map((cartItem) => {
+      const catalogProduct = products.find((product) => product.id === cartItem.id);
+      return catalogProduct.priceCents === cartItem.price
+        ? cartItem
+        : { ...cartItem, price: catalogProduct.priceCents, subtotal: cartItem.quantity * catalogProduct.priceCents };
+    });
 
   const hasChanges =
-    reconciledItems.length !== cart.length ||
-    reconciledItems.some((item, index) => item !== cart[index]);
+    syncedItems.length !== cart.length ||
+    syncedItems.some((cartItem, index) => cartItem !== cart[index]);
 
-  return hasChanges ? reconciledItems : cart;
+  return hasChanges ? syncedItems : cart;
 }
 
 export function Cart() {
-  const t = useTranslations("cart");
-  const outOfStockTimeoutRef = useRef(null);
+  const cartTranslations = useTranslations("cart");
   const [showMobileSummary, setShowMobileSummary] = useState(false);
   const {
     cart,
     setCart,
     discount,
-    hydrated,
+    isCartRestored,
     resetCartState,
   } = usePersistentCart();
   const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
 
   useEffect(() => {
-    if (!hydrated || products.length === 0) return;
-    setCart((currentCart) => reconcileCartWithProducts(currentCart, products));
-  }, [products, hydrated, setCart]);
+    if (!isCartRestored || products.length === 0) return;
+    setCart((currentCart) => syncCartWithProducts(currentCart, products));
+  }, [products, isCartRestored, setCart]);
+
+  const { addProduct, updateQuantity, removeProduct, clearCart } = useCartOperations({
+    cart,
+    setCart,
+    products,
+  });
 
   const {
     handlePay,
@@ -68,24 +75,6 @@ export function Cart() {
     onPay: refetchProducts,
   });
 
-  const notifyOutOfStock = useCallback(() => {
-    if (outOfStockTimeoutRef.current) {
-      clearTimeout(outOfStockTimeoutRef.current);
-    }
-    outOfStockTimeoutRef.current = setTimeout(() => {
-      addToast({
-        color: "danger",
-        description: t("errors.outOfStock"),
-      });
-    }, 250);
-  }, [t]);
-
-  useEffect(() => () => {
-    if (outOfStockTimeoutRef.current) {
-      clearTimeout(outOfStockTimeoutRef.current);
-    }
-  }, []);
-
   useEffect(() => {
     if (cart.length === 0) {
       setTimeout(() => setShowMobileSummary(false), 0);
@@ -97,94 +86,6 @@ export function Cart() {
     const discountRate = Number(discount) || 0;
     return subtotal - (subtotal * discountRate) / 100;
   }, [cart, discount]);
-
-  const getAvailableQuantity = (productId) => {
-    const product = products.find((item) => item.id === productId);
-    return Number(product?.quantity) || 0;
-  };
-
-  const addProduct = (product) => {
-    const availableQuantity = getAvailableQuantity(product.id);
-    if (availableQuantity <= 0) {
-      notifyOutOfStock();
-      return;
-    }
-
-    const itemExist = cart.find((item) => item.id === product.id);
-
-    if (itemExist) {
-      if (itemExist.quantity + 1 > availableQuantity) {
-        notifyOutOfStock();
-        return;
-      }
-      setCart(
-        cart.map((item) => (item.id === product.id
-          ? {
-              ...item,
-              imageUrl: item.imageUrl ?? product.imageUrl,
-              quantity: item.quantity + 1,
-              subtotal: (item.quantity + 1) * item.price,
-            }
-          : item),
-        ),
-      );
-    } else {
-      setCart([
-        ...cart,
-        {
-          id: product.id,
-          imageUrl: product.imageUrl,
-          name: product.name,
-          price: product.priceCents,
-          quantity: 1,
-          subtotal: product.priceCents,
-        },
-      ]);
-    }
-  };
-
-  const updateQuantity = (id, quantity) => {
-    if (!Number.isFinite(quantity)) {
-      return;
-    }
-    const availableQuantity = getAvailableQuantity(id);
-    if (quantity > availableQuantity) {
-      notifyOutOfStock();
-      setCart(
-        cart.map((item) => (item.id === id
-          ? {
-              ...item,
-              quantity: availableQuantity,
-              subtotal: availableQuantity * item.price,
-            }
-          : item),
-        ),
-      );
-      return;
-    }
-    if (quantity <= 0) {
-      removeProduct(id);
-      return;
-    }
-    setCart(
-      cart.map((item) => (item.id === id
-        ? {
-            ...item,
-            quantity,
-            subtotal: quantity * item.price,
-          }
-        : item),
-      ),
-    );
-  };
-
-  const removeProduct = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-  };
 
   const btcPayment = {
     config: btcPaymentConfig,
@@ -207,7 +108,7 @@ export function Cart() {
 
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
@@ -217,7 +118,6 @@ export function Cart() {
           <Summary
             cartItems={cart}
             discount={discount}
-            hydrated={hydrated}
             onRemoveProduct={removeProduct}
             onClearCart={clearCart}
             onUpdateQuantity={updateQuantity}
@@ -243,7 +143,6 @@ export function Cart() {
         onClose={() => setShowMobileSummary(false)}
         cartItems={cart}
         discount={discount}
-        hydrated={hydrated}
         onRemoveProduct={removeProduct}
         onClearCart={clearCart}
         onUpdateQuantity={updateQuantity}

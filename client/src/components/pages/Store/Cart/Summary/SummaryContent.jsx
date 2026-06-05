@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -16,7 +16,6 @@ import { SwipeableCartItem } from "./SwipeableCartItem";
 export function SummaryContent({
   cartItems,
   discount,
-  hydrated,
   onRemoveProduct,
   onUpdateQuantity,
   onPay,
@@ -27,11 +26,10 @@ export function SummaryContent({
   cashPayment,
   cardPayment,
 }) {
-  const translateCart = useTranslations("cart");
+  const cartTranslations = useTranslations("cart");
   const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
-  const [isTouchDevice] = useState(
-    () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
-  );
+  const isMounted = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const isTouchDevice = useSyncExternalStore(() => () => {}, () => navigator.maxTouchPoints > 0, () => false);
   const items = cartItems || [];
   const visibleItems = items.filter((item) => !pendingRemovals.has(item.id));
 
@@ -51,7 +49,7 @@ export function SummaryContent({
           className="bg-green-800"
           onPress={() => cancelRemoval(item.id)}
         >
-          {translateCart("summary.undoToast.undo")}
+          {cartTranslations("summary.undoToast.undo")}
         </Button>
       ),
     });
@@ -78,7 +76,7 @@ export function SummaryContent({
 
         <CartPaymentSection
           isPaying={isPaying}
-          isDisabled={!hydrated || !visibleItems.length}
+          isDisabled={!isMounted || !visibleItems.length}
           paymentError={paymentError}
           onClearPaymentError={onClearPaymentError}
           onPay={(selectedPaymentMethod) => {

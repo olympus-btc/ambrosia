@@ -7,10 +7,9 @@ export const CART_STORAGE_KEY = "store-cart";
 export function usePersistentCart() {
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
+  const [isCartRestored, setIsCartRestored] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     try {
       const saved = window.localStorage.getItem(CART_STORAGE_KEY);
       if (!saved) return;
@@ -26,13 +25,12 @@ export function usePersistentCart() {
     } catch (err) {
       console.error("Error loading cart from storage", err);
     } finally {
-      setHydrated(true);
+      setIsCartRestored(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (typeof window === "undefined") return;
+    if (!isCartRestored) return;
     try {
       window.localStorage.setItem(
         CART_STORAGE_KEY,
@@ -41,12 +39,11 @@ export function usePersistentCart() {
     } catch (err) {
       console.error("Error saving cart to storage", err);
     }
-  }, [cart, discount, hydrated]);
+  }, [cart, discount, isCartRestored]);
 
   const resetCartState = useCallback(() => {
     setCart([]);
     setDiscount(0);
-    if (typeof window === "undefined") return;
     try {
       window.localStorage.removeItem(CART_STORAGE_KEY);
     } catch (err) {
@@ -59,7 +56,7 @@ export function usePersistentCart() {
     setCart,
     discount,
     setDiscount,
-    hydrated,
+    isCartRestored,
     resetCartState,
   };
 }
