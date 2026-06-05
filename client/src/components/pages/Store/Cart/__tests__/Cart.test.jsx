@@ -11,6 +11,10 @@ const mockSetCart = jest.fn();
 const mockSetDiscount = jest.fn();
 const mockResetCartState = jest.fn();
 const mockHandlePay = jest.fn();
+const mockAddProduct = jest.fn();
+const mockUpdateQuantity = jest.fn();
+const mockRemoveProduct = jest.fn();
+const mockClearCart = jest.fn();
 
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
@@ -40,6 +44,15 @@ jest.mock("../Summary", () => ({
   ),
 }));
 
+jest.mock("../hooks/useCartOperations", () => ({
+  useCartOperations: () => ({
+    addProduct: mockAddProduct,
+    updateQuantity: mockUpdateQuantity,
+    removeProduct: mockRemoveProduct,
+    clearCart: mockClearCart,
+  }),
+}));
+
 jest.mock("../hooks/usePersistentCart", () => ({
   CART_STORAGE_KEY: "store-cart",
   usePersistentCart: () => ({
@@ -49,7 +62,7 @@ jest.mock("../hooks/usePersistentCart", () => ({
     setCart: mockSetCart,
     discount: 0,
     setDiscount: mockSetDiscount,
-    hydrated: true,
+    isCartRestored: true,
     resetCartState: mockResetCartState,
   }),
 }));
@@ -169,53 +182,46 @@ describe("Cart page", () => {
     expect(screen.getByText("update-zero")).toBeInTheDocument();
   });
 
-  it("adds a new product and increases quantity for existing product", async () => {
+  it("forwards onAddProduct to SearchProducts", async () => {
     await act(async () => {
       renderCart();
     });
 
     fireEvent.click(screen.getByText("add-existing"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
-    ]);
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 });
 
     fireEvent.click(screen.getByText("add-new"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
-      { id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
-    ]);
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 });
   });
 
-  it("reconciles stale cart prices when products load", async () => {
+  it("syncs stale cart prices when products load", async () => {
     await act(async () => {
       renderCart();
     });
 
     const setCartCalls = mockSetCart.mock.calls;
-    const reconcileCall = setCartCalls.find(([arg]) => typeof arg === "function");
-    expect(reconcileCall).toBeDefined();
+    const syncCall = setCartCalls.find(([arg]) => typeof arg === "function");
+    expect(syncCall).toBeDefined();
 
-    const updater = reconcileCall[0];
+    const updater = syncCall[0];
     const staleCart = [{ id: 1, name: "Jade Wallet", price: 50, quantity: 2, subtotal: 100 }];
     const result = updater(staleCart);
     expect(result).toEqual([{ id: 1, name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 }]);
   });
 
-  it("updates quantity, removes product when quantity is zero, and forwards pay", async () => {
+  it("forwards onUpdateQuantity, onRemoveProduct, and onPay to Summary", async () => {
     await act(async () => {
       renderCart();
     });
 
     fireEvent.click(screen.getByText("update-positive"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 3, subtotal: 300 },
-    ]);
+    expect(mockUpdateQuantity).toHaveBeenCalledWith(1, 3);
 
     fireEvent.click(screen.getByText("update-zero"));
-    expect(mockSetCart).toHaveBeenCalledWith([]);
+    expect(mockUpdateQuantity).toHaveBeenCalledWith(1, 0);
 
     fireEvent.click(screen.getByText("remove"));
-    expect(mockSetCart).toHaveBeenCalledWith([]);
+    expect(mockRemoveProduct).toHaveBeenCalledWith(1);
 
     fireEvent.click(screen.getByText("pay"));
     expect(mockHandlePay).toHaveBeenCalledWith({});
