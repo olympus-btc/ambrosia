@@ -80,7 +80,31 @@ export default async function proxy(request) {
     }
   }
 
-  const next = NextResponse.next();
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+
+  const csp = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""};
+    style-src-elem 'self' 'nonce-${nonce}';
+    style-src-attr 'unsafe-inline';
+    img-src 'self' blob: data:;
+    font-src 'self';
+    connect-src 'self' ws: wss:;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  `.replace(/\s{2,}/g, " ").trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const next = NextResponse.next({ request: { headers: requestHeaders } });
+  next.headers.set("Content-Security-Policy", csp);
+
   if (businessType) {
     next.headers.set("x-business-type", businessType);
     next.cookies.set("businessType", businessType, { path: "/" });
