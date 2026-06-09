@@ -4,6 +4,8 @@ import { Button, Image } from "@heroui/react";
 import { Camera, Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { storedAssetUrl } from "@components/utils/storedAssetUrl";
+
 export function ImageUploader({ title, uploadText, uploadDescription, onChange, image }) {
   const imageUploaderTranslations = useTranslations("imageUploader");
   const [filePreview, setFilePreview] = useState(null);
@@ -21,7 +23,7 @@ export function ImageUploader({ title, uploadText, uploadDescription, onChange, 
     }
   }, [image]);
 
-  const imagePreview = filePreview || (typeof image === "string" ? image : null);
+  const imagePreview = filePreview || (typeof image === "string" ? storedAssetUrl(image) : null);
 
   const handleImageChange = (event) => {
     const file = event.target.files?.[0];

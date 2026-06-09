@@ -2,12 +2,6 @@ import { API_URL } from "@/config/api";
 
 const apiUrl = API_URL;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
 function buildHeaders(request) {
   const headers = new Headers();
   request.headers.forEach((value, key) => {
@@ -18,7 +12,7 @@ function buildHeaders(request) {
 }
 
 async function buildResponse(response) {
-  const responseHeaders = { ...CORS_HEADERS };
+  const responseHeaders = {};
 
   const setCookieHeaders = response.headers.getSetCookie?.() || [];
   if (setCookieHeaders.length > 0) {
@@ -73,7 +67,3 @@ export const GET = (req, { params }) => proxyRequest(req, params, "GET");
 export const POST = (req, { params }) => proxyRequest(req, params, "POST");
 export const PUT = (req, { params }) => proxyRequest(req, params, "PUT");
 export const DELETE = (req, { params }) => proxyRequest(req, params, "DELETE");
-
-export async function OPTIONS() {
-  return new Response(null, { status: 200, headers: CORS_HEADERS });
-}
