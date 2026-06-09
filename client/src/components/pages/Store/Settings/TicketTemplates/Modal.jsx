@@ -100,8 +100,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         broadcast: false,
         forceTemplateName: true,
       });
-    } catch (err) {
-      console.error("Error printing test ticket:", err);
+    } catch (error) {
+      console.error("Error printing test ticket:", error);
       addToast({
         title: settingsTranslations("templates.printErrorTitle"),
         description: settingsTranslations("templates.printErrorDescription"),
