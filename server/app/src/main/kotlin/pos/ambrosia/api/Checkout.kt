@@ -26,13 +26,13 @@ fun Application.configureCheckout() {
 }
 
 fun Route.checkout(
-    service: CheckoutService,
+    checkoutService: CheckoutService,
     phoenixService: PhoenixService,
 ) {
     authorizePermission("orders_create") {
         post("/checkout") {
             val checkoutRequest = call.receive<StoreCheckoutRequest>()
-            val checkoutResponse = service.checkout(checkoutRequest)
+            val checkoutResponse = checkoutService.checkout(checkoutRequest)
             if (checkoutResponse == null) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -43,12 +43,12 @@ fun Route.checkout(
             call.respond(HttpStatusCode.Created, checkoutResponse)
         }
         post("/checkout-if-paid") {
-            val request = call.receive<StoreCheckoutRequest>()
+            val checkoutRequest = call.receive<StoreCheckoutRequest>()
             val paymentHash =
-                request.paymentHash
+                checkoutRequest.paymentHash
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("paymentHash required"))
 
-            val existing = service.findCheckoutByPaymentHash(paymentHash)
+            val existing = checkoutService.findCheckoutByPaymentHash(paymentHash)
             if (existing != null) {
                 return@post call.respond(HttpStatusCode.OK, existing)
             }
@@ -58,7 +58,7 @@ fun Route.checkout(
                 return@post call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
             }
 
-            val result = service.checkout(request)
+            val result = checkoutService.checkout(checkoutRequest)
             if (result == null) {
                 call.respond(
                     HttpStatusCode.BadRequest,

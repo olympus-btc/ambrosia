@@ -16,15 +16,15 @@ import java.sql.Connection
 
 fun Application.configureStoreOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
-    val service = CheckoutService(connection)
-    routing { route("/store/orders") { storeOrders(service) } }
+    val checkoutService = CheckoutService(connection)
+    routing { route("/store/orders") { storeOrders(checkoutService) } }
 }
 
-fun Route.storeOrders(service: CheckoutService) {
+fun Route.storeOrders(checkoutService: CheckoutService) {
     authorizePermission("orders_read") {
         get("") {
             val orderStatus = call.request.queryParameters["status"]
-            val orders = service.getStoreOrders(orderStatus)
+            val orders = checkoutService.getStoreOrders(orderStatus)
             call.respond(HttpStatusCode.OK, orders)
         }
         get("/{id}") {
@@ -32,7 +32,7 @@ fun Route.storeOrders(service: CheckoutService) {
                 call.parameters["id"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
             val order =
-                service.getStoreOrderById(id)
+                checkoutService.getStoreOrderById(id)
                     ?: return@get call.respond(HttpStatusCode.NotFound, Message("Order not found"))
             call.respond(HttpStatusCode.OK, order)
         }
@@ -42,7 +42,7 @@ fun Route.storeOrders(service: CheckoutService) {
             val id =
                 call.parameters["id"]
                     ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
-            val cancelled = service.cancelStoreOrder(id)
+            val cancelled = checkoutService.cancelStoreOrder(id)
             if (!cancelled) {
                 return@delete call.respond(
                     HttpStatusCode.NotFound,
