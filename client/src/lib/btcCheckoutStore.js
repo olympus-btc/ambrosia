@@ -21,16 +21,16 @@ function openDb() {
 
 function runTransaction(storeName, mode, callback) {
   return openDb().then((db) => new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, mode);
-    const store = tx.objectStore(storeName);
+    const transaction = db.transaction(storeName, mode);
+    const store = transaction.objectStore(storeName);
     const result = callback(store);
 
     if (result && typeof result.onsuccess !== "undefined") {
       result.onsuccess = () => resolve(result.result);
       result.onerror = () => reject(result.error);
     } else {
-      tx.oncomplete = () => resolve(result);
-      tx.onerror = () => reject(tx.error);
+      transaction.oncomplete = () => resolve(result);
+      transaction.onerror = () => reject(transaction.error);
     }
   }));
 }
@@ -55,11 +55,11 @@ export async function markCheckoutCompleted(paymentHash, completedResult) {
 
 function getAllByStatus(status) {
   return openDb().then((db) => new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.getAll();
-    req.onsuccess = () => resolve((req.result || []).filter((e) => e.status === status));
-    req.onerror = () => reject(req.error);
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const getAllRequest = store.getAll();
+    getAllRequest.onsuccess = () => resolve((getAllRequest.result || []).filter((entry) => entry.status === status));
+    getAllRequest.onerror = () => reject(getAllRequest.error);
   }));
 }
 

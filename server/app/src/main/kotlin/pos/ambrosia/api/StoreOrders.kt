@@ -13,7 +13,7 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
-import pos.ambrosia.services.OrderService
+import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
@@ -22,13 +22,13 @@ private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock lev
 
 fun Application.configureStoreOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
-    val service = OrderService(connection)
+    val service = CheckoutService(connection)
     val phoenixService = PhoenixService(environment)
     routing { route("/store/orders") { storeOrders(service, phoenixService) } }
 }
 
 fun Route.storeOrders(
-    service: OrderService,
+    service: CheckoutService,
     phoenixService: PhoenixService,
 ) {
     authorizePermission("orders_read") {

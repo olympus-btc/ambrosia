@@ -21,6 +21,7 @@ import pos.ambrosia.models.OrderDish
 import pos.ambrosia.models.OrderWithDishesRequest
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.OrderService
+import pos.ambrosia.services.ReportService
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
@@ -50,10 +51,14 @@ private fun parseDoubleQueryParam(
 fun Application.configureOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
     val orderService = OrderService(connection)
-    routing { route("/orders") { orders(orderService) } }
+    val reportService = ReportService(connection)
+    routing { route("/orders") { orders(orderService, reportService) } }
 }
 
-fun Route.orders(orderService: OrderService) {
+fun Route.orders(
+    orderService: OrderService,
+    reportService: ReportService,
+) {
     authorizePermission("orders_read") {
         get("") {
             val orders = orderService.getOrders()
@@ -89,7 +94,7 @@ fun Route.orders(orderService: OrderService) {
 
             val orders =
                 try {
-                    orderService.getOrdersWithPaymentsFiltered(filters)
+                    reportService.getOrdersWithPaymentsFiltered(filters)
                 } catch (error: IllegalArgumentException) {
                     call.respond(HttpStatusCode.BadRequest, Message(error.message ?: "Invalid query parameters"))
                     return@get
@@ -230,7 +235,7 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
 
-            val totalSales = orderService.getTotalSalesByDate(date)
+            val totalSales = reportService.getTotalSalesByDate(date)
             call.respond(HttpStatusCode.OK, mapOf("date" to date, "total_sales" to totalSales.toString()))
         }
     }
