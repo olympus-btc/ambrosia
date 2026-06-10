@@ -78,8 +78,8 @@ class CheckoutService(
     }
 
     suspend fun getStoreOrders(status: String? = null): List<StoreOrder> {
-        val sql = if (status != null) STORE_GET_ORDERS_BY_STATUS else STORE_GET_ORDERS
-        val statement = connection.prepareStatement(sql)
+        val getOrdersQuery = if (status != null) STORE_GET_ORDERS_BY_STATUS else STORE_GET_ORDERS
+        val statement = connection.prepareStatement(getOrdersQuery)
         if (status != null) statement.setString(1, status)
         val resultSet = statement.executeQuery()
         val orders = mutableListOf<StoreOrder>()
@@ -103,7 +103,7 @@ class CheckoutService(
     }
 
     suspend fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? {
-        val sql =
+        val findCheckoutByPaymentHashQuery =
             """
             SELECT p.id AS paymentId, t.id AS ticketId, o.id AS orderId
             FROM payments p
@@ -112,7 +112,7 @@ class CheckoutService(
             JOIN orders o ON o.id = t.order_id
             WHERE p.payment_hash = ?
             """.trimIndent()
-        connection.prepareStatement(sql).use { statement ->
+        connection.prepareStatement(findCheckoutByPaymentHashQuery).use { statement ->
             statement.setString(1, paymentHash)
             val resultSet = statement.executeQuery()
             if (!resultSet.next()) return null
@@ -129,7 +129,7 @@ class CheckoutService(
         if (request.items.isEmpty()) return null
         if (request.items.any { it.quantity <= 0 }) return null
 
-        val prev = connection.autoCommit
+        val previousAutoCommit = connection.autoCommit
         connection.autoCommit = false
         try {
             val orderId = UUID.randomUUID().toString()
@@ -149,14 +149,14 @@ class CheckoutService(
                     statement.executeUpdate()
                 }
 
-                val rows =
+                val updatedRows =
                     connection.prepareStatement(STORE_DECREMENT_STOCK).use { statement ->
                         statement.setInt(1, item.quantity)
                         statement.setString(2, item.productId)
                         statement.setInt(3, item.quantity)
                         statement.executeUpdate()
                     }
-                if (rows == 0) {
+                if (updatedRows == 0) {
                     connection.rollback()
                     return null
                 }
@@ -196,11 +196,11 @@ class CheckoutService(
             connection.commit()
             logger.info("Store checkout: order=$orderId ticket=$ticketId payment=$paymentId")
             return StoreCheckoutResponse(orderId, ticketId, paymentId)
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             connection.rollback()
-            throw e
+            throw exception
         } finally {
-            connection.autoCommit = prev
+            connection.autoCommit = previousAutoCommit
         }
     }
 }

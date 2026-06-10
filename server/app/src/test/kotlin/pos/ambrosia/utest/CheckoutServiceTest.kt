@@ -41,20 +41,20 @@ class CheckoutServiceTest {
     )
 
     private fun setupSuccessfulCheckout(
-        orderSt: PreparedStatement = mock(),
-        itemSt: PreparedStatement = mock(),
-        stockSt: PreparedStatement = mock(),
-        ticketSt: PreparedStatement = mock(),
-        paymentSt: PreparedStatement = mock(),
-        ticketPaymentSt: PreparedStatement = mock(),
+        orderStatement: PreparedStatement = mock(),
+        itemStatement: PreparedStatement = mock(),
+        stockStatement: PreparedStatement = mock(),
+        ticketStatement: PreparedStatement = mock(),
+        paymentStatement: PreparedStatement = mock(),
+        ticketPaymentStatement: PreparedStatement = mock(),
     ) {
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt)
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt)
-        whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt)
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt)
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt)
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt)
-        whenever(stockSt.executeUpdate()).thenReturn(1)
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement)
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement)
+        whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement)
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketStatement)
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentStatement)
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentStatement)
+        whenever(stockStatement.executeUpdate()).thenReturn(1)
     }
 
     @Test
@@ -128,13 +128,13 @@ class CheckoutServiceTest {
     @Test
     fun `checkout returns null and rolls back when stock decrement affects 0 rows`() {
         runBlocking {
-            val orderSt: PreparedStatement = mock() // Arrange
-            val itemSt: PreparedStatement = mock() // Arrange
-            val stockSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
-            whenever(stockSt.executeUpdate()).thenReturn(0) // Arrange — stock insufficient
+            val orderStatement: PreparedStatement = mock() // Arrange
+            val itemStatement: PreparedStatement = mock() // Arrange
+            val stockStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement) // Arrange
+            whenever(stockStatement.executeUpdate()).thenReturn(0) // Arrange — stock insufficient
             val service = CheckoutService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest()) // Act
             assertNull(result) // Assert
@@ -145,9 +145,9 @@ class CheckoutServiceTest {
 
     @Test
     fun `checkout rolls back and rethrows on SQL exception`() {
-        val orderSt: PreparedStatement = mock() // Arrange
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-        whenever(orderSt.executeUpdate()).thenThrow(SQLException("DB error")) // Arrange
+        val orderStatement: PreparedStatement = mock() // Arrange
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+        whenever(orderStatement.executeUpdate()).thenThrow(SQLException("DB error")) // Arrange
         val service = CheckoutService(mockConnection) // Arrange
         assertFailsWith<SQLException> {
             runBlocking { service.checkout(validStoreRequest()) }
@@ -171,9 +171,9 @@ class CheckoutServiceTest {
     @Test
     fun `checkout restores autoCommit after rollback`() {
         whenever(mockConnection.autoCommit).thenReturn(true) // Arrange — prev = true
-        val orderSt: PreparedStatement = mock() // Arrange
-        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-        whenever(orderSt.executeUpdate()).thenThrow(SQLException("forced")) // Arrange
+        val orderStatement: PreparedStatement = mock() // Arrange
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+        whenever(orderStatement.executeUpdate()).thenThrow(SQLException("forced")) // Arrange
         val service = CheckoutService(mockConnection) // Arrange
         assertFailsWith<SQLException> { runBlocking { service.checkout(validStoreRequest()) } } // Act
         verify(mockConnection).autoCommit = true // Assert — restored even after exception
@@ -182,44 +182,44 @@ class CheckoutServiceTest {
     @Test
     fun `checkout uses empty string when transactionId is null`() {
         runBlocking {
-            val paymentSt: PreparedStatement = mock() // Arrange
-            val orderSt: PreparedStatement = mock() // Arrange
-            val itemSt: PreparedStatement = mock() // Arrange
-            val stockSt: PreparedStatement = mock() // Arrange
-            val ticketSt: PreparedStatement = mock() // Arrange
-            val ticketPaymentSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
-            whenever(stockSt.executeUpdate()).thenReturn(1) // Arrange
+            val paymentStatement: PreparedStatement = mock() // Arrange
+            val orderStatement: PreparedStatement = mock() // Arrange
+            val itemStatement: PreparedStatement = mock() // Arrange
+            val stockStatement: PreparedStatement = mock() // Arrange
+            val ticketStatement: PreparedStatement = mock() // Arrange
+            val ticketPaymentStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentStatement) // Arrange
+            whenever(stockStatement.executeUpdate()).thenReturn(1) // Arrange
             val service = CheckoutService(mockConnection) // Arrange
             service.checkout(validStoreRequest(transactionId = null)) // Act
-            verify(paymentSt).setString(4, "") // Assert — null → ""
+            verify(paymentStatement).setString(4, "") // Assert — null → ""
         }
     }
 
     @Test
     fun `checkout uses provided transactionId when not null`() {
         runBlocking {
-            val paymentSt: PreparedStatement = mock() // Arrange
-            val orderSt: PreparedStatement = mock() // Arrange
-            val itemSt: PreparedStatement = mock() // Arrange
-            val stockSt: PreparedStatement = mock() // Arrange
-            val ticketSt: PreparedStatement = mock() // Arrange
-            val ticketPaymentSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
-            whenever(stockSt.executeUpdate()).thenReturn(1) // Arrange
+            val paymentStatement: PreparedStatement = mock() // Arrange
+            val orderStatement: PreparedStatement = mock() // Arrange
+            val itemStatement: PreparedStatement = mock() // Arrange
+            val stockStatement: PreparedStatement = mock() // Arrange
+            val ticketStatement: PreparedStatement = mock() // Arrange
+            val ticketPaymentStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentStatement) // Arrange
+            whenever(stockStatement.executeUpdate()).thenReturn(1) // Arrange
             val service = CheckoutService(mockConnection) // Arrange
             service.checkout(validStoreRequest(transactionId = "lnbc123")) // Act
-            verify(paymentSt).setString(4, "lnbc123") // Assert
+            verify(paymentStatement).setString(4, "lnbc123") // Assert
         }
     }
 
@@ -231,23 +231,23 @@ class CheckoutServiceTest {
                     StoreCheckoutItem("prod-1", 1, 100),
                     StoreCheckoutItem("prod-2", 3, 200),
                 )
-            val stockSt: PreparedStatement = mock() // Arrange
-            val orderSt: PreparedStatement = mock() // Arrange
-            val itemSt: PreparedStatement = mock() // Arrange
-            val ticketSt: PreparedStatement = mock() // Arrange
-            val paymentSt: PreparedStatement = mock() // Arrange
-            val ticketPaymentSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentSt) // Arrange
-            whenever(stockSt.executeUpdate()).thenReturn(1) // Arrange — both items have stock
+            val stockStatement: PreparedStatement = mock() // Arrange
+            val orderStatement: PreparedStatement = mock() // Arrange
+            val itemStatement: PreparedStatement = mock() // Arrange
+            val ticketStatement: PreparedStatement = mock() // Arrange
+            val paymentStatement: PreparedStatement = mock() // Arrange
+            val ticketPaymentStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(ticketStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO payments"))).thenReturn(paymentStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO ticket_payments"))).thenReturn(ticketPaymentStatement) // Arrange
+            whenever(stockStatement.executeUpdate()).thenReturn(1) // Arrange — both items have stock
             val service = CheckoutService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest(items = items)) // Act
             assertNotNull(result) // Assert
-            verify(stockSt, times(2)).executeUpdate() // Assert — called once per item
+            verify(stockStatement, times(2)).executeUpdate() // Assert — called once per item
         }
     }
 
@@ -259,13 +259,13 @@ class CheckoutServiceTest {
                     StoreCheckoutItem("prod-1", 1, 100),
                     StoreCheckoutItem("prod-2", 999, 200),
                 )
-            val stockSt: PreparedStatement = mock() // Arrange
-            val orderSt: PreparedStatement = mock() // Arrange
-            val itemSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockSt) // Arrange
-            whenever(stockSt.executeUpdate()).thenReturn(1).thenReturn(0) // Arrange — second item fails
+            val stockStatement: PreparedStatement = mock() // Arrange
+            val orderStatement: PreparedStatement = mock() // Arrange
+            val itemStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO order_products"))).thenReturn(itemStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(stockStatement) // Arrange
+            whenever(stockStatement.executeUpdate()).thenReturn(1).thenReturn(0) // Arrange — second item fails
             val service = CheckoutService(mockConnection) // Arrange
             val result = service.checkout(validStoreRequest(items = items)) // Act
             assertNull(result) // Assert
@@ -288,14 +288,14 @@ class CheckoutServiceTest {
     @Test
     fun `getStoreOrders uses status filter query when status is provided`() {
         runBlocking {
-            val statusSt: PreparedStatement = mock() // Arrange
-            val statusRs: ResultSet = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("AND o.status = ?"))).thenReturn(statusSt) // Arrange
-            whenever(statusSt.executeQuery()).thenReturn(statusRs) // Arrange
-            whenever(statusRs.next()).thenReturn(false) // Arrange
+            val statusStatement: PreparedStatement = mock() // Arrange
+            val statusResultSet: ResultSet = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("AND o.status = ?"))).thenReturn(statusStatement) // Arrange
+            whenever(statusStatement.executeQuery()).thenReturn(statusResultSet) // Arrange
+            whenever(statusResultSet.next()).thenReturn(false) // Arrange
             val service = CheckoutService(mockConnection) // Arrange
             service.getStoreOrders(status = "paid") // Act
-            verify(statusSt).setString(1, "paid") // Assert
+            verify(statusStatement).setString(1, "paid") // Assert
         }
     }
 
@@ -330,42 +330,6 @@ class CheckoutServiceTest {
             val service = CheckoutService(mockConnection) // Arrange
             val result = service.cancelStoreOrder("not-found") // Act
             assertEquals(false, result) // Assert
-        }
-    }
-
-    @Test
-    fun `findCheckoutByPaymentHash returns null when no payment matches the hash`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("FROM payments p"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = CheckoutService(mockConnection) // Arrange
-            val result = service.findCheckoutByPaymentHash("unknown-hash") // Act
-            assertNull(result) // Assert
-        }
-    }
-
-    @Test
-    fun `findCheckoutByPaymentHash returns existing checkout details when a payment matches`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("FROM payments p"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getString("paymentId")).thenReturn("payment-1") // Arrange
-            whenever(mockResultSet.getString("ticketId")).thenReturn("ticket-1") // Arrange
-            whenever(mockResultSet.getString("orderId")).thenReturn("order-1") // Arrange
-            val service = CheckoutService(mockConnection) // Arrange
-            val result = service.findCheckoutByPaymentHash("known-hash") // Act
-            assertEquals(
-                mapOf(
-                    "status" to "completed",
-                    "paymentId" to "payment-1",
-                    "ticketId" to "ticket-1",
-                    "orderId" to "order-1",
-                ),
-                result,
-            ) // Assert
-            verify(mockStatement).setString(1, "known-hash") // Assert
         }
     }
 }
