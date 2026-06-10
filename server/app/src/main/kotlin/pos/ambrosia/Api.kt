@@ -21,6 +21,7 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import pos.ambrosia.api.configureAuth
 import pos.ambrosia.api.configureCategories
+import pos.ambrosia.api.configureCheckout
 import pos.ambrosia.api.configureConfig
 import pos.ambrosia.api.configureCurrency
 import pos.ambrosia.api.configureDishes
@@ -159,6 +160,7 @@ class Api {
         configureTicketTemplates()
         configureProducts()
         configureStoreOrders()
+        configureCheckout()
         configureCategories()
         configureCurrency()
         configureInitialSetup()
