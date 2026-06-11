@@ -91,12 +91,13 @@ suspend fun ApplicationCall.requirePermission(name: String) {
   JOIN permissions p ON p.id = rp.permission_id
   WHERE u.id = ? AND p.name = ? AND p.enabled = 1 AND u.is_deleted = 0
   """
-    val connection: Connection = DatabaseConnection.getConnection()
-    connection.prepareStatement(sql).use { statement ->
-        statement.setString(1, userId)
-        statement.setString(2, name)
-        val resultSet = statement.executeQuery()
-        if (!resultSet.next()) throw PermissionDeniedException()
+    DatabaseConnection.getConnection().use { connection ->
+        connection.prepareStatement(sql).use { statement ->
+            statement.setString(1, userId)
+            statement.setString(2, name)
+            val resultSet = statement.executeQuery()
+            if (!resultSet.next()) throw PermissionDeniedException()
+        }
     }
 }
 
