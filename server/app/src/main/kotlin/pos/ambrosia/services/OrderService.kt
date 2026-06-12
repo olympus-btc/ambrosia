@@ -32,7 +32,7 @@ class OrderService(
     }
 
     private val validStatuses = setOf("open", "closed", "paid")
-    private val orderDishService = OrderDishService(connection)
+    private val orderDishService = OrderDishService()
 
     private fun userExists(userId: String): Boolean {
         val statement = connection.prepareStatement(CHECK_USER_EXISTS)
