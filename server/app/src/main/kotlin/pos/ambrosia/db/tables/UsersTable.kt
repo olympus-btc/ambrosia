@@ -10,6 +10,7 @@ object UsersTable : SQLiteUUIDTable("users") {
     val name = varchar("name", 255)
     val pin = varchar("pin", 255)
     val refreshToken = varchar("refresh_token", 1000).nullable()
+    val walletToken = varchar("wallet_token", 1000).nullable()
     val isDeleted = bool("is_deleted").default(false)
     val roleId = optReference("role_id", RolesTable)
     val email = varchar("email", 255).nullable()
@@ -22,6 +23,7 @@ class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var name by UsersTable.name
     var pin by UsersTable.pin
     var refreshToken by UsersTable.refreshToken
+    var walletToken by UsersTable.walletToken
     var isDeleted by UsersTable.isDeleted
     var roleId by UsersTable.roleId
     var email by UsersTable.email

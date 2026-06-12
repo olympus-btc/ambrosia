@@ -20,8 +20,7 @@ fun ApplicationCall.requireAdmin() {
         throw AdminOnlyException()
     }
 
-    val connection: Connection = DatabaseConnection.getConnection()
-    val tokenService = TokenService(application.environment, connection)
+    val tokenService = TokenService(application.environment)
     val userFromToken = tokenService.getUserFromRefreshToken(refreshToken)
     val isAdmin = userFromToken?.isAdmin == true
 

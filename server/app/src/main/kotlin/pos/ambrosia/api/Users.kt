@@ -27,7 +27,7 @@ import java.sql.Connection
 fun Application.configureUsers() {
     val connection: Connection = DatabaseConnection.getConnection()
     val userService = UsersService(environment, connection)
-    val tokenService = TokenService(environment, connection)
+    val tokenService = TokenService(environment)
     val permissionsService = PermissionsService(environment, connection)
     routing { route("/users") { users(userService, tokenService, permissionsService) } }
 }
