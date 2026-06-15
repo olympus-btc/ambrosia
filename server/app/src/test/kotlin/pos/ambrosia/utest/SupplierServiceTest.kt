@@ -1,17 +1,13 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.Supplier
 import pos.ambrosia.services.SupplierService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.util.ExposedTestDb
+import java.io.File
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,237 +16,135 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SupplierServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = SupplierService()
 
-    @Test
-    fun `getSuppliers returns list of suppliers when found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("sup-1").thenReturn("sup-2") // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn("Sysco").thenReturn("US Foods") // Arrange
-            whenever(mockResultSet.getString("contact")).thenReturn("John Doe").thenReturn("Jane Smith") // Arrange
-            whenever(mockResultSet.getString("phone")).thenReturn("555-1111").thenReturn("555-2222") // Arrange
-            whenever(mockResultSet.getString("email")).thenReturn("john@sysco.com").thenReturn("jane@usfoods.com") // Arrange
-            whenever(mockResultSet.getString("address")).thenReturn("123 Supply St").thenReturn("456 Food Ave") // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.getSuppliers() // Act
-            assertEquals(2, result.size) // Assert
-            assertEquals("Sysco", result[0].name) // Assert
-        }
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
     }
 
     @Test
-    fun `getSuppliers returns empty list when none found`() {
+    fun `getSuppliers returns list of suppliers when found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.getSuppliers() // Act
-            assertTrue(result.isEmpty()) // Assert
+            ExposedTestDb.seedSupplier("Sysco", "John Doe", "555-1111", "john@sysco.com", "123 Supply St")
+            ExposedTestDb.seedSupplier("US Foods", "Jane Smith", "555-2222", "jane@usfoods.com", "456 Food Ave")
+
+            val result = service.getSuppliers()
+
+            assertEquals(2, result.size)
+            assertEquals(setOf("Sysco", "US Foods"), result.map { it.name }.toSet())
         }
-    }
 
     @Test
-    fun `getSupplierById returns supplier when found`() {
+    fun `getSuppliers returns empty list when none found`() =
         runBlocking {
-            val expectedSupplier = Supplier("sup-1", "Sysco", "John Doe", "555-1111", "john@sysco.com", "123 Supply St") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn(expectedSupplier.id) // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn(expectedSupplier.name) // Arrange
-            whenever(mockResultSet.getString("contact")).thenReturn(expectedSupplier.contact) // Arrange
-            whenever(mockResultSet.getString("phone")).thenReturn(expectedSupplier.phone) // Arrange
-            whenever(mockResultSet.getString("email")).thenReturn(expectedSupplier.email) // Arrange
-            whenever(mockResultSet.getString("address")).thenReturn(expectedSupplier.address) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.getSupplierById("sup-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals(expectedSupplier, result) // Assert
+            assertTrue(service.getSuppliers().isEmpty())
         }
-    }
 
     @Test
-    fun `getSupplierById returns null when not found`() {
+    fun `getSupplierById returns supplier when found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.getSupplierById("not-found") // Act
-            assertNull(result) // Assert
+            val id = ExposedTestDb.seedSupplier("Sysco", "John Doe", "555-1111", "john@sysco.com", "123 Supply St")
+
+            val result = service.getSupplierById(id)
+
+            assertNotNull(result)
+            assertEquals(Supplier(id, "Sysco", "John Doe", "555-1111", "john@sysco.com", "123 Supply St"), result)
         }
-    }
 
     @Test
-    fun `addSupplier returns null if name already exists`() {
+    fun `getSupplierById returns null when not found`() =
         runBlocking {
-            val newSupplier = Supplier(null, "Existing Supplier", "", "", "", "") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.addSupplier(newSupplier) // Act
-            assertNull(result) // Assert
+            assertNull(service.getSupplierById(UUID.randomUUID().toString()))
         }
-    }
 
     @Test
-    fun `addSupplier returns new ID on success`() {
+    fun `addSupplier returns null if name already exists`() =
         runBlocking {
-            val newSupplier = Supplier(null, "New Supplier", "", "", "", "") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM suppliers"))).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO suppliers"))).thenReturn(addStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.addSupplier(newSupplier) // Act
-            assertNotNull(result) // Assert
-            assertTrue(result.isNotBlank()) // Assert
+            ExposedTestDb.seedSupplier("Existing Supplier")
+
+            val result = service.addSupplier(Supplier(null, "Existing Supplier", "", "", "", ""))
+
+            assertNull(result)
         }
-    }
 
     @Test
-    fun `addSupplier returns null when database insert fails`() {
+    fun `addSupplier returns new ID on success`() =
         runBlocking {
-            val newSupplier = Supplier(null, "New Supplier", "", "", "", "") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM suppliers"))).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO suppliers"))).thenReturn(addStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.addSupplier(newSupplier) // Act
-            assertNull(result) // Assert
+            val result = service.addSupplier(Supplier(null, "New Supplier", "c", "p", "e", "a"))
+
+            assertNotNull(result)
+            assertTrue(result.isNotBlank())
+            assertEquals("New Supplier", service.getSupplierById(result)?.name)
         }
-    }
 
     @Test
-    fun `updateSupplier returns false if ID is null`() {
+    fun `updateSupplier returns false if ID is null`() =
         runBlocking {
-            val supplierWithNullId = Supplier(id = null, name = "A Name", "", "", "", "") // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.updateSupplier(supplierWithNullId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
+            assertFalse(service.updateSupplier(Supplier(id = null, name = "A Name", "", "", "", "")))
         }
-    }
 
     @Test
-    fun `updateSupplier returns false if name already exists`() {
+    fun `updateSupplier returns false if name already exists`() =
         runBlocking {
-            val supplierToUpdate = Supplier(id = "sup-1", name = "Existing Name", "", "", "", "") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.updateSupplier(supplierToUpdate) // Act
-            assertFalse(result) // Assert
+            ExposedTestDb.seedSupplier("Existing Name")
+            val id = ExposedTestDb.seedSupplier("Other Name")
+
+            val result = service.updateSupplier(Supplier(id = id, name = "Existing Name", "", "", "", ""))
+
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `updateSupplier returns true on success`() {
+    fun `updateSupplier returns true on success`() =
         runBlocking {
-            val supplierToUpdate = Supplier(id = "sup-1", name = "New Valid Name", "", "", "", "") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(
-                mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?")),
-            ).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE suppliers"))).thenReturn(updateStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.updateSupplier(supplierToUpdate) // Act
-            assertTrue(result) // Assert
+            val id = ExposedTestDb.seedSupplier("Old Name")
+
+            val result = service.updateSupplier(Supplier(id = id, name = "New Valid Name", "c", "p", "e", "a"))
+
+            assertTrue(result)
+            assertEquals("New Valid Name", service.getSupplierById(id)?.name)
         }
-    }
 
     @Test
-    fun `updateSupplier returns false when database update fails`() {
+    fun `updateSupplier returns false when supplier not found`() =
         runBlocking {
-            val supplierToUpdate = Supplier(id = "sup-1", name = "New Valid Name", "", "", "", "") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(
-                mockConnection.prepareStatement(contains("SELECT id FROM suppliers WHERE name = ? AND id != ?")),
-            ).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE suppliers"))).thenReturn(updateStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.updateSupplier(supplierToUpdate) // Act
-            assertFalse(result) // Assert
+            val result = service.updateSupplier(Supplier(id = UUID.randomUUID().toString(), name = "New Valid Name", "", "", "", ""))
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `deleteSupplier returns false if supplier is in use`() {
+    fun `deleteSupplier returns false if supplier is in use`() =
         runBlocking {
-            val supplierId = "sup-1" // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getInt("count")).thenReturn(1) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.deleteSupplier(supplierId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("UPDATE suppliers SET is_deleted")) // Assert
+            val supplierId = ExposedTestDb.seedSupplier("Sysco")
+            val ingredientId = ExposedTestDb.seedIngredient()
+            ExposedTestDb.seedIngredientSupplier(supplierId, ingredientId)
+
+            val result = service.deleteSupplier(supplierId)
+
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `deleteSupplier returns true on success`() {
+    fun `deleteSupplier returns true on success`() =
         runBlocking {
-            val supplierId = "sup-1" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE suppliers SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.deleteSupplier(supplierId) // Act
-            assertTrue(result) // Assert
+            val supplierId = ExposedTestDb.seedSupplier("Sysco")
+
+            val result = service.deleteSupplier(supplierId)
+
+            assertTrue(result)
+            assertNull(service.getSupplierById(supplierId))
         }
-    }
 
     @Test
-    fun `deleteSupplier returns false when supplier not found`() {
+    fun `deleteSupplier returns false when supplier not found`() =
         runBlocking {
-            val supplierId = "not-found-sup" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE suppliers SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SupplierService(mockConnection) // Arrange
-            val result = service.deleteSupplier(supplierId) // Act
-            assertFalse(result) // Assert
+            assertFalse(service.deleteSupplier(UUID.randomUUID().toString()))
         }
-    }
 }

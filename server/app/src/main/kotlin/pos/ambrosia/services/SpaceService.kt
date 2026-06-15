@@ -1,148 +1,113 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.neq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.DiningTableEntity
+import pos.ambrosia.db.tables.DiningTablesTable
+import pos.ambrosia.db.tables.SpaceEntity
+import pos.ambrosia.db.tables.SpacesTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Space
-import java.sql.Connection
+import java.util.UUID
 
-class SpaceService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_SPACE = "INSERT INTO spaces (id, name) VALUES (?, ?)"
-        private const val GET_SPACES = "SELECT id, name FROM spaces WHERE is_deleted = 0"
-        private const val GET_SPACE_BY_ID =
-            "SELECT id, name FROM spaces WHERE id = ? AND is_deleted = 0"
-        private const val UPDATE_SPACE = "UPDATE spaces SET name = ? WHERE id = ?"
-        private const val DELETE_SPACE = "UPDATE spaces SET is_deleted = 1 WHERE id = ?"
-        private const val CHECK_SPACE_NAME_EXISTS =
-            "SELECT id FROM spaces WHERE name = ? AND is_deleted = 0"
-        private const val CHECK_SPACE_IN_USE =
-            "SELECT COUNT(*) as count FROM tables WHERE space_id = ? AND is_deleted = 0"
-    }
+class SpaceService {
+    private fun toModel(entity: SpaceEntity): Space = Space(id = entity.id.value.toString(), name = entity.name ?: "")
 
-    private fun spaceNameExists(spaceName: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_SPACE_NAME_EXISTS)
-        statement.setString(1, spaceName)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    private fun spaceNameExists(spaceName: String): Boolean =
+        !SpaceEntity.find { (SpacesTable.name eq spaceName) and (SpacesTable.isDeleted eq false) }.empty()
 
     private fun spaceNameExistsExcludingId(
         spaceName: String,
         excludeId: String,
-    ): Boolean {
-        val statement =
-            connection.prepareStatement(
-                "SELECT id FROM spaces WHERE name = ? AND id != ? AND is_deleted = 0",
-            )
-        statement.setString(1, spaceName)
-        statement.setString(2, excludeId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    ): Boolean =
+        !SpaceEntity
+            .find {
+                (SpacesTable.name eq spaceName) and (SpacesTable.isDeleted eq false) and
+                    (SpacesTable.id neq EntityID(UUID.fromString(excludeId), SpacesTable))
+            }.empty()
 
-    private fun spaceInUse(spaceId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_SPACE_IN_USE)
-        statement.setString(1, spaceId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
-        }
-        return false
-    }
+    private fun spaceInUse(spaceId: String): Boolean =
+        !DiningTableEntity
+            .find {
+                (DiningTablesTable.spaceId eq EntityID(UUID.fromString(spaceId), SpacesTable)) and (DiningTablesTable.isDeleted eq false)
+            }.empty()
 
-    suspend fun addSpace(space: Space): String? {
-        // Verificar que el nombre del espacio no exista ya
-        if (spaceNameExists(space.name)) {
-            logger.error("Space name already exists: ${space.name}")
-            return null
-        }
+    suspend fun addSpace(space: Space): String? =
+        transaction {
+            if (spaceNameExists(space.name)) {
+                logger.error("Space name already exists: ${space.name}")
+                return@transaction null
+            }
 
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_SPACE)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, space.name)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Space created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create space")
-            null
-        }
-    }
-
-    suspend fun getSpaces(): List<Space> {
-        val statement = connection.prepareStatement(GET_SPACES)
-        val resultSet = statement.executeQuery()
-        val spaces = mutableListOf<Space>()
-        while (resultSet.next()) {
-            val space = Space(id = resultSet.getString("id"), name = resultSet.getString("name"))
-            spaces.add(space)
-        }
-        logger.info("Retrieved ${spaces.size} spaces")
-        return spaces
-    }
-
-    suspend fun getSpaceById(id: String): Space? {
-        val statement = connection.prepareStatement(GET_SPACE_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Space(id = resultSet.getString("id"), name = resultSet.getString("name"))
-        } else {
-            logger.warn("Space not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun updateSpace(space: Space): Boolean {
-        if (space.id == null) {
-            logger.error("Cannot update space: ID is null")
-            return false
+            val id =
+                SpaceEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = space.name
+                    }.id.value
+                    .toString()
+            logger.info("Space created successfully with ID: $id")
+            id
         }
 
-        // Verificar que el nombre del espacio no exista ya (excluyendo el espacio actual)
-        if (spaceNameExistsExcludingId(space.name, space.id)) {
-            logger.error("Space name already exists: ${space.name}")
-            return false
+    suspend fun getSpaces(): List<Space> =
+        transaction {
+            val spaces = SpaceEntity.find { SpacesTable.isDeleted eq false }.map { toModel(it) }
+            logger.info("Retrieved ${spaces.size} spaces")
+            spaces
         }
 
-        val statement = connection.prepareStatement(UPDATE_SPACE)
-        statement.setString(1, space.name)
-        statement.setString(2, space.id) // CORREGIDO: era setString(3, ...)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Space updated successfully: ${space.id}")
-        } else {
-            logger.error("Failed to update space: ${space.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteSpace(id: String): Boolean {
-        // Verificar que el espacio no esté siendo usado por mesas
-        if (spaceInUse(id)) {
-            logger.error("Cannot delete space $id: it has tables associated")
-            return false
+    suspend fun getSpaceById(id: String): Space? =
+        transaction {
+            val entity = SpaceEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
+            if (entity == null) {
+                logger.warn("Space not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        val statement = connection.prepareStatement(DELETE_SPACE)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
+    suspend fun updateSpace(space: Space): Boolean =
+        transaction {
+            if (space.id == null) {
+                logger.error("Cannot update space: ID is null")
+                return@transaction false
+            }
 
-        if (rowsDeleted > 0) {
-            logger.info("Space soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete space: $id")
+            if (spaceNameExistsExcludingId(space.name, space.id)) {
+                logger.error("Space name already exists: ${space.name}")
+                return@transaction false
+            }
+
+            val entity = SpaceEntity.findById(UUID.fromString(space.id))
+            if (entity == null) {
+                logger.error("Failed to update space: ${space.id}")
+                false
+            } else {
+                entity.name = space.name
+                logger.info("Space updated successfully: ${space.id}")
+                true
+            }
         }
-        return rowsDeleted > 0
-    }
+
+    suspend fun deleteSpace(id: String): Boolean =
+        transaction {
+            if (spaceInUse(id)) {
+                logger.error("Cannot delete space $id: it has tables associated")
+                return@transaction false
+            }
+
+            val entity = SpaceEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete space: $id")
+                false
+            } else {
+                entity.isDeleted = true
+                logger.info("Space soft-deleted successfully: $id")
+                true
+            }
+        }
 }

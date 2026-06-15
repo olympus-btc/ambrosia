@@ -14,7 +14,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.IncomingPaymentWithRate
 import pos.ambrosia.models.OutgoingPaymentWithRate
 import pos.ambrosia.models.RolePassword
@@ -36,15 +35,13 @@ import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.getCurrentUser
-import java.sql.Connection
 
 fun Application.configureWallet() {
-    val connection: Connection = DatabaseConnection.getConnection()
     val phoenixService = PhoenixService(environment)
     val authService = AuthService(environment)
     val tokenService = TokenService(environment)
     val walletRateService = WalletRateService()
-    val paymentService = PaymentService(connection)
+    val paymentService = PaymentService()
 
     routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService, walletRateService) } }
 }

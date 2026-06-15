@@ -11,18 +11,15 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Payment
 import pos.ambrosia.models.TicketPayment
 import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.TicketPaymentService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configurePayments() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val paymentService = PaymentService(connection)
-    val ticketPaymentService = TicketPaymentService(connection)
+    val paymentService = PaymentService()
+    val ticketPaymentService = TicketPaymentService()
     routing { route("/payments") { payments(paymentService, ticketPaymentService) } }
 }
 

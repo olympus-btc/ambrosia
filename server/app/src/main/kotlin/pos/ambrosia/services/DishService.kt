@@ -1,180 +1,151 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.CategoriesTable
+import pos.ambrosia.db.tables.CategoryEntity
+import pos.ambrosia.db.tables.DishEntity
+import pos.ambrosia.db.tables.DishesTable
+import pos.ambrosia.db.tables.OrdersDishesTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Dish
-import java.sql.Connection
+import java.util.UUID
 
-class DishService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_DISH =
-            "INSERT INTO dishes (id, name, price, category_id) VALUES (?, ?, ?, ?)"
-        private const val GET_DISHES =
-            "SELECT id, name, price, category_id FROM dishes WHERE is_deleted = 0"
-        private const val GET_DISH_BY_ID =
-            "SELECT id, name, price, category_id FROM dishes WHERE id = ? AND is_deleted = 0"
-        private const val UPDATE_DISH =
-            "UPDATE dishes SET name = ?, price = ?, category_id = ? WHERE id = ?"
-        private const val DELETE_DISH = "UPDATE dishes SET is_deleted = 1 WHERE id = ?"
-        private const val CHECK_CATEGORY_EXISTS =
-            "SELECT id FROM categories WHERE id = ? AND type = 'dish' AND is_deleted = 0"
-        private const val CHECK_DISH_IN_USE =
-            "SELECT COUNT(*) as count FROM orders_dishes WHERE dish_id = ?"
-        private const val GET_DISHES_BY_CATEGORY =
-            "SELECT id, name, price, category_id FROM dishes WHERE category_id = ? AND is_deleted = 0"
-    }
-
-    private fun categoryExists(categoryId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_CATEGORY_EXISTS)
-        statement.setString(1, categoryId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
-
-    private fun dishInUse(dishId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_DISH_IN_USE)
-        statement.setString(1, dishId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
-        }
-        return false
-    }
-
-    private fun mapResultSetToDish(resultSet: java.sql.ResultSet): Dish =
+class DishService {
+    private fun toModel(entity: DishEntity): Dish =
         Dish(
-            id = resultSet.getString("id"),
-            name = resultSet.getString("name"),
-            price = resultSet.getDouble("price"),
-            categoryId = resultSet.getString("category_id"),
+            id = entity.id.value.toString(),
+            name = entity.name,
+            price = entity.price,
+            categoryId = entity.categoryId.value.toString(),
         )
 
-    suspend fun addDish(dish: Dish): String? {
-        if (!categoryExists(dish.categoryId)) {
-            logger.error("Category does not exist: ${dish.categoryId}")
-            return null
+    private fun categoryExists(categoryId: String): Boolean =
+        !CategoryEntity
+            .find {
+                (CategoriesTable.id eq EntityID(UUID.fromString(categoryId), CategoriesTable)) and
+                    (CategoriesTable.type eq "dish") and
+                    (CategoriesTable.isDeleted eq false)
+            }.empty()
+
+    private fun dishInUse(dishId: String): Boolean =
+        !OrdersDishesTable
+            .selectAll()
+            .where { OrdersDishesTable.dishId eq EntityID(UUID.fromString(dishId), DishesTable) }
+            .empty()
+
+    suspend fun addDish(dish: Dish): String? =
+        transaction {
+            if (!categoryExists(dish.categoryId)) {
+                logger.error("Category does not exist: ${dish.categoryId}")
+                return@transaction null
+            }
+
+            if (dish.name.isBlank()) {
+                logger.error("Dish name cannot be blank")
+                return@transaction null
+            }
+
+            if (dish.price <= 0) {
+                logger.error("Dish price must be greater than 0")
+                return@transaction null
+            }
+
+            val id =
+                DishEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = dish.name
+                        this.price = dish.price
+                        this.categoryId = EntityID(UUID.fromString(dish.categoryId), CategoriesTable)
+                    }.id.value
+                    .toString()
+            logger.info("Dish created successfully with ID: $id")
+            id
         }
 
-        // Validar datos
-        if (dish.name.isBlank()) {
-            logger.error("Dish name cannot be blank")
-            return null
+    suspend fun getDishes(): List<Dish> =
+        transaction {
+            val dishes = DishEntity.find { DishesTable.isDeleted eq false }.map { toModel(it) }
+            logger.info("Retrieved ${dishes.size} dishes")
+            dishes
         }
 
-        if (dish.price <= 0) {
-            logger.error("Dish price must be greater than 0")
-            return null
+    suspend fun getDishById(id: String): Dish? =
+        transaction {
+            val entity = DishEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
+            if (entity == null) {
+                logger.warn("Dish not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_DISH)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, dish.name)
-        statement.setDouble(3, dish.price)
-        statement.setString(4, dish.categoryId)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Dish created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create dish")
-            null
-        }
-    }
-
-    suspend fun getDishes(): List<Dish> {
-        val statement = connection.prepareStatement(GET_DISHES)
-        val resultSet = statement.executeQuery()
-        val dishes = mutableListOf<Dish>()
-        while (resultSet.next()) {
-            dishes.add(mapResultSetToDish(resultSet))
-        }
-        logger.info("Retrieved ${dishes.size} dishes")
-        return dishes
-    }
-
-    suspend fun getDishById(id: String): Dish? {
-        val statement = connection.prepareStatement(GET_DISH_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            mapResultSetToDish(resultSet)
-        } else {
-            logger.warn("Dish not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun getDishesByCategory(categoryId: String): List<Dish> {
-        val statement = connection.prepareStatement(GET_DISHES_BY_CATEGORY)
-        statement.setString(1, categoryId)
-        val resultSet = statement.executeQuery()
-        val dishes = mutableListOf<Dish>()
-        while (resultSet.next()) {
-            dishes.add(mapResultSetToDish(resultSet))
-        }
-        logger.info("Retrieved ${dishes.size} dishes for category: $categoryId")
-        return dishes
-    }
-
-    suspend fun updateDish(dish: Dish): Boolean {
-        if (dish.id == null) {
-            logger.error("Cannot update dish: ID is null")
-            return false
+    suspend fun getDishesByCategory(categoryId: String): List<Dish> =
+        transaction {
+            val dishes =
+                DishEntity
+                    .find {
+                        (DishesTable.categoryId eq EntityID(UUID.fromString(categoryId), CategoriesTable)) and
+                            (DishesTable.isDeleted eq false)
+                    }.map { toModel(it) }
+            logger.info("Retrieved ${dishes.size} dishes for category: $categoryId")
+            dishes
         }
 
-        if (!categoryExists(dish.categoryId)) {
-            logger.error("Category does not exist: ${dish.categoryId}")
-            return false
+    suspend fun updateDish(dish: Dish): Boolean =
+        transaction {
+            if (dish.id == null) {
+                logger.error("Cannot update dish: ID is null")
+                return@transaction false
+            }
+
+            if (!categoryExists(dish.categoryId)) {
+                logger.error("Category does not exist: ${dish.categoryId}")
+                return@transaction false
+            }
+
+            if (dish.name.isBlank()) {
+                logger.error("Dish name cannot be blank")
+                return@transaction false
+            }
+
+            if (dish.price <= 0) {
+                logger.error("Dish price must be greater than 0")
+                return@transaction false
+            }
+
+            val entity = DishEntity.findById(UUID.fromString(dish.id))
+            if (entity == null) {
+                logger.error("Failed to update dish: ${dish.id}")
+                false
+            } else {
+                entity.name = dish.name
+                entity.price = dish.price
+                entity.categoryId = EntityID(UUID.fromString(dish.categoryId), CategoriesTable)
+                logger.info("Dish updated successfully: ${dish.id}")
+                true
+            }
         }
 
-        if (dish.name.isBlank()) {
-            logger.error("Dish name cannot be blank")
-            return false
+    suspend fun deleteDish(id: String): Boolean =
+        transaction {
+            if (dishInUse(id)) {
+                logger.error("Cannot delete dish $id: it's being used in orders")
+                return@transaction false
+            }
+
+            val entity = DishEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete dish: $id")
+                false
+            } else {
+                entity.isDeleted = true
+                logger.info("Dish soft-deleted successfully: $id")
+                true
+            }
         }
-
-        if (dish.price <= 0) {
-            logger.error("Dish price must be greater than 0")
-            return false
-        }
-
-        val statement = connection.prepareStatement(UPDATE_DISH)
-        statement.setString(1, dish.name)
-        statement.setDouble(2, dish.price)
-        statement.setString(3, dish.categoryId)
-        statement.setString(4, dish.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Dish updated successfully: ${dish.id}")
-        } else {
-            logger.error("Failed to update dish: ${dish.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteDish(id: String): Boolean {
-        if (dishInUse(id)) {
-            logger.error("Cannot delete dish $id: it's being used in orders")
-            return false
-        }
-
-        val statement = connection.prepareStatement(DELETE_DISH)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Dish soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete dish: $id")
-        }
-        return rowsDeleted > 0
-    }
 }

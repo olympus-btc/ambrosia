@@ -1,274 +1,211 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNotNull
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.CurrencyEntity
+import pos.ambrosia.db.tables.CurrencyTable
+import pos.ambrosia.db.tables.PaymentEntity
+import pos.ambrosia.db.tables.PaymentMethodEntity
+import pos.ambrosia.db.tables.PaymentMethodsTable
+import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.TicketPaymentsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Currency
 import pos.ambrosia.models.Payment
 import pos.ambrosia.models.PaymentBitcoinData
 import pos.ambrosia.models.PaymentMethod
-import java.sql.Connection
+import java.time.LocalDateTime
+import java.util.UUID
 
-class PaymentService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_PAYMENT =
-            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, date) VALUES (?, ?, ?, ?, ?, datetime('now'))"
-        private const val GET_PAYMENTS =
-            "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments"
-        private const val GET_PAYMENT_BY_ID =
-            "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments WHERE id = ?"
-        private const val GET_BITCOIN_DATA_BY_PAYMENT_HASHES =
-            "SELECT payment_hash, exchange_rate_at_payment, exchange_rate_currency, fiat_amount_at_payment FROM payments WHERE payment_hash IN (%s) AND exchange_rate_at_payment IS NOT NULL"
-        private const val UPDATE_PAYMENT =
-            "UPDATE payments SET method_id = ?, currency_id = ?, transaction_id = ?, amount = ? WHERE id = ?"
-        private const val DELETE_PAYMENT = "DELETE FROM payments WHERE id = ?"
-        private const val CHECK_PAYMENT_IN_USE =
-            "SELECT COUNT(*) as count FROM ticket_payments WHERE payment_id = ?"
+class PaymentService {
+    private fun toModel(entity: PaymentEntity): Payment =
+        Payment(
+            id = entity.id.value.toString(),
+            methodId = entity.methodId.value.toString(),
+            currencyId = entity.currencyId.value.toString(),
+            transactionId = entity.transactionId,
+            amount = entity.amount,
+        )
 
-        private const val GET_PAYMENT_METHODS = "SELECT id, name FROM payment_methods"
-        private const val GET_PAYMENT_METHOD_BY_ID = "SELECT id, name FROM payment_methods WHERE id = ?"
-        private const val CHECK_PAYMENT_METHOD_EXISTS = "SELECT id FROM payment_methods WHERE id = ?"
+    private fun toModel(entity: CurrencyEntity): Currency =
+        Currency(
+            id = entity.id.value.toString(),
+            acronym = entity.acronym,
+            name = entity.name,
+            symbol = entity.symbol,
+            countryName = entity.countryName,
+            countryCode = entity.countryCode,
+        )
 
-        private const val GET_CURRENCIES = "SELECT id, acronym, name, symbol, country_name, country_code FROM currency"
-        private const val GET_CURRENCY_BY_ID = "SELECT id, acronym, name, symbol, country_name, country_code FROM currency WHERE id = ?"
-        private const val CHECK_CURRENCY_EXISTS = "SELECT id FROM currency WHERE id = ?"
-    }
+    private fun paymentInUse(paymentId: String): Boolean =
+        !TicketPaymentsTable
+            .selectAll()
+            .where { TicketPaymentsTable.paymentId eq EntityID(UUID.fromString(paymentId), PaymentsTable) }
+            .empty()
 
-    private fun paymentInUse(paymentId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_PAYMENT_IN_USE)
-        statement.setString(1, paymentId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
+    private fun paymentMethodExists(methodId: String): Boolean = PaymentMethodEntity.findById(UUID.fromString(methodId)) != null
+
+    private fun currencyExists(currencyId: String): Boolean = CurrencyEntity.findById(UUID.fromString(currencyId)) != null
+
+    suspend fun getPaymentMethods(): List<PaymentMethod> =
+        transaction {
+            val paymentMethods =
+                PaymentMethodEntity.all().map { PaymentMethod(id = it.id.value.toString(), name = it.name) }
+            logger.info("Retrieved ${paymentMethods.size} payment methods")
+            paymentMethods
         }
-        return false
-    }
 
-    private fun paymentMethodExists(methodId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_PAYMENT_METHOD_EXISTS)
-        statement.setString(1, methodId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
-
-    private fun currencyExists(currencyId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_CURRENCY_EXISTS)
-        statement.setString(1, currencyId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
-
-    suspend fun getPaymentMethods(): List<PaymentMethod> {
-        val statement = connection.prepareStatement(GET_PAYMENT_METHODS)
-        val resultSet = statement.executeQuery()
-        val paymentMethods = mutableListOf<PaymentMethod>()
-        while (resultSet.next()) {
-            val paymentMethod =
-                PaymentMethod(id = resultSet.getString("id"), name = resultSet.getString("name"))
-            paymentMethods.add(paymentMethod)
-        }
-        logger.info("Retrieved ${paymentMethods.size} payment methods")
-        return paymentMethods
-    }
-
-    suspend fun getPaymentMethodById(id: String): PaymentMethod? {
-        val statement = connection.prepareStatement(GET_PAYMENT_METHOD_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            PaymentMethod(id = resultSet.getString("id"), name = resultSet.getString("name"))
-        } else {
-            logger.warn("Payment method not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun getCurrencies(): List<Currency> {
-        val statement = connection.prepareStatement(GET_CURRENCIES)
-        val resultSet = statement.executeQuery()
-        val currencies = mutableListOf<Currency>()
-        while (resultSet.next()) {
-            val currency =
-                Currency(
-                    id = resultSet.getString("id"),
-                    acronym = resultSet.getString("acronym"),
-                    name = resultSet.getString("name"),
-                    symbol = resultSet.getString("symbol"),
-                    countryName = resultSet.getString("country_name"),
-                    countryCode = resultSet.getString("country_code"),
-                )
-            currencies.add(currency)
-        }
-        logger.info("Retrieved ${currencies.size} currencies")
-        return currencies
-    }
-
-    suspend fun getCurrencyById(id: String): Currency? {
-        val statement = connection.prepareStatement(GET_CURRENCY_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Currency(
-                id = resultSet.getString("id"),
-                acronym = resultSet.getString("acronym"),
-                name = resultSet.getString("name"),
-                symbol = resultSet.getString("symbol"),
-                countryName = resultSet.getString("country_name"),
-                countryCode = resultSet.getString("country_code"),
-            )
-        } else {
-            logger.warn("Currency not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> {
-        if (hashes.isEmpty()) return emptyMap()
-        val placeholders = hashes.joinToString(",") { "?" }
-        val bitcoinDataQuery = String.format(GET_BITCOIN_DATA_BY_PAYMENT_HASHES, placeholders)
-        val bitcoinDataByHash = mutableMapOf<String, PaymentBitcoinData>()
-        connection.prepareStatement(bitcoinDataQuery).use { statement ->
-            hashes.forEachIndexed { index, hash -> statement.setString(index + 1, hash) }
-            val resultSet = statement.executeQuery()
-            while (resultSet.next()) {
-                val paymentHash = resultSet.getString("payment_hash")
-                val exchangeRate = resultSet.getDouble("exchange_rate_at_payment")
-                val exchangeRateCurrency = resultSet.getString("exchange_rate_currency")
-                val fiatAmount = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble()
-                bitcoinDataByHash[paymentHash] = PaymentBitcoinData(exchangeRate, exchangeRateCurrency, fiatAmount)
+    suspend fun getPaymentMethodById(id: String): PaymentMethod? =
+        transaction {
+            val entity = PaymentMethodEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.warn("Payment method not found with ID: $id")
+                null
+            } else {
+                PaymentMethod(id = entity.id.value.toString(), name = entity.name)
             }
         }
-        return bitcoinDataByHash
-    }
 
-    suspend fun addPayment(payment: Payment): String? {
-        if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
-            logger.error("Method ID, currency ID and transaction ID are required fields")
-            return null
+    suspend fun getCurrencies(): List<Currency> =
+        transaction {
+            val currencies = CurrencyEntity.all().map { toModel(it) }
+            logger.info("Retrieved ${currencies.size} currencies")
+            currencies
         }
 
-        if (!paymentMethodExists(payment.methodId)) {
-            logger.error("Payment method ID does not exist: ${payment.methodId}")
-            return null
+    suspend fun getCurrencyById(id: String): Currency? =
+        transaction {
+            val entity = CurrencyEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.warn("Currency not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        if (!currencyExists(payment.currencyId)) {
-            logger.error("Currency ID does not exist: ${payment.currencyId}")
-            return null
+    suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> =
+        transaction {
+            if (hashes.isEmpty()) return@transaction emptyMap()
+
+            PaymentsTable
+                .selectAll()
+                .where { (PaymentsTable.paymentHash inList hashes) and (PaymentsTable.exchangeRateAtPayment.isNotNull()) }
+                .associate {
+                    it[PaymentsTable.paymentHash]!! to
+                        PaymentBitcoinData(
+                            exchangeRateAtPayment = it[PaymentsTable.exchangeRateAtPayment]!!,
+                            exchangeRateCurrency = it[PaymentsTable.exchangeRateCurrency],
+                            fiatAmountAtPayment = it[PaymentsTable.fiatAmountAtPayment],
+                        )
+                }
         }
 
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_PAYMENT)
+    suspend fun addPayment(payment: Payment): String? =
+        transaction {
+            if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
+                logger.error("Method ID, currency ID and transaction ID are required fields")
+                return@transaction null
+            }
 
-        statement.setString(1, generatedId)
-        statement.setString(2, payment.methodId)
-        statement.setString(3, payment.currencyId)
-        statement.setString(4, payment.transactionId)
-        statement.setDouble(5, payment.amount)
+            if (!paymentMethodExists(payment.methodId)) {
+                logger.error("Payment method ID does not exist: ${payment.methodId}")
+                return@transaction null
+            }
 
-        val rowsAffected = statement.executeUpdate()
+            if (!currencyExists(payment.currencyId)) {
+                logger.error("Currency ID does not exist: ${payment.currencyId}")
+                return@transaction null
+            }
 
-        return if (rowsAffected > 0) {
-            logger.info("Payment created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create payment")
-            null
-        }
-    }
-
-    suspend fun getPayments(): List<Payment> {
-        val statement = connection.prepareStatement(GET_PAYMENTS)
-        val resultSet = statement.executeQuery()
-        val payments = mutableListOf<Payment>()
-        while (resultSet.next()) {
-            val payment =
-                Payment(
-                    id = resultSet.getString("id"),
-                    methodId = resultSet.getString("method_id"),
-                    currencyId = resultSet.getString("currency_id"),
-                    transactionId = resultSet.getString("transaction_id"),
-                    amount = resultSet.getDouble("amount"),
-                )
-            payments.add(payment)
-        }
-        logger.info("Retrieved ${payments.size} payments")
-        return payments
-    }
-
-    suspend fun getPaymentById(id: String): Payment? {
-        val statement = connection.prepareStatement(GET_PAYMENT_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Payment(
-                id = resultSet.getString("id"),
-                methodId = resultSet.getString("method_id"),
-                currencyId = resultSet.getString("currency_id"),
-                transactionId = resultSet.getString("transaction_id"),
-                amount = resultSet.getDouble("amount"),
-            )
-        } else {
-            logger.warn("Payment not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun updatePayment(payment: Payment): Boolean {
-        if (payment.id == null) {
-            logger.error("Cannot update payment: ID is null")
-            return false
+            val id =
+                PaymentEntity
+                    .new(UUID.randomUUID()) {
+                        this.methodId = EntityID(UUID.fromString(payment.methodId), PaymentMethodsTable)
+                        this.currencyId = EntityID(UUID.fromString(payment.currencyId), CurrencyTable)
+                        this.transactionId = payment.transactionId ?: ""
+                        this.amount = payment.amount
+                        this.date = LocalDateTime.now().toString()
+                    }.id.value
+                    .toString()
+            logger.info("Payment created successfully with ID: $id")
+            id
         }
 
-        if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
-            logger.error("Method ID, currency ID and transaction ID are required fields")
-            return false
+    suspend fun getPayments(): List<Payment> =
+        transaction {
+            val payments = PaymentEntity.all().map { toModel(it) }
+            logger.info("Retrieved ${payments.size} payments")
+            payments
         }
 
-        if (!paymentMethodExists(payment.methodId)) {
-            logger.error("Payment method ID does not exist: ${payment.methodId}")
-            return false
+    suspend fun getPaymentById(id: String): Payment? =
+        transaction {
+            val entity = PaymentEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.warn("Payment not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        if (!currencyExists(payment.currencyId)) {
-            logger.error("Currency ID does not exist: ${payment.currencyId}")
-            return false
+    suspend fun updatePayment(payment: Payment): Boolean =
+        transaction {
+            if (payment.id == null) {
+                logger.error("Cannot update payment: ID is null")
+                return@transaction false
+            }
+
+            if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
+                logger.error("Method ID, currency ID and transaction ID are required fields")
+                return@transaction false
+            }
+
+            if (!paymentMethodExists(payment.methodId)) {
+                logger.error("Payment method ID does not exist: ${payment.methodId}")
+                return@transaction false
+            }
+
+            if (!currencyExists(payment.currencyId)) {
+                logger.error("Currency ID does not exist: ${payment.currencyId}")
+                return@transaction false
+            }
+
+            val entity = PaymentEntity.findById(UUID.fromString(payment.id))
+            if (entity == null) {
+                logger.error("Failed to update payment: ${payment.id}")
+                false
+            } else {
+                entity.methodId = EntityID(UUID.fromString(payment.methodId), PaymentMethodsTable)
+                entity.currencyId = EntityID(UUID.fromString(payment.currencyId), CurrencyTable)
+                entity.transactionId = payment.transactionId ?: ""
+                entity.amount = payment.amount
+                logger.info("Payment updated successfully: ${payment.id}")
+                true
+            }
         }
 
-        val statement = connection.prepareStatement(UPDATE_PAYMENT)
-        statement.setString(1, payment.methodId)
-        statement.setString(2, payment.currencyId)
-        statement.setString(3, payment.transactionId)
-        statement.setDouble(4, payment.amount)
-        statement.setString(5, payment.id)
+    suspend fun deletePayment(id: String): Boolean =
+        transaction {
+            if (paymentInUse(id)) {
+                logger.error("Cannot delete payment $id: it's being used in transactions")
+                return@transaction false
+            }
 
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Payment updated successfully: ${payment.id}")
-        } else {
-            logger.error("Failed to update payment: ${payment.id}")
+            val entity = PaymentEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete payment: $id")
+                false
+            } else {
+                entity.delete()
+                logger.info("Payment deleted successfully: $id")
+                true
+            }
         }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deletePayment(id: String): Boolean {
-        if (paymentInUse(id)) {
-            logger.error("Cannot delete payment $id: it's being used in transactions")
-            return false
-        }
-
-        val statement = connection.prepareStatement(DELETE_PAYMENT)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Payment deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete payment: $id")
-        }
-        return rowsDeleted > 0
-    }
 }

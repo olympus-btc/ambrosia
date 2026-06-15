@@ -1,17 +1,13 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.Ticket
 import pos.ambrosia.services.TicketService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.util.ExposedTestDb
+import java.io.File
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,421 +16,229 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TicketServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = TicketService()
+
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
+
+    private fun seedOrderAndUser(): Pair<String, String> {
+        val roleId = ExposedTestDb.seedRole("admin", isAdmin = true)
+        val userId = ExposedTestDb.seedUser("Alice", roleId)
+        val orderId = ExposedTestDb.seedOrder(userId)
+        return Pair(orderId, userId)
+    }
 
     @Test
     fun `getTickets returns list of tickets when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("ticket-1").thenReturn("ticket-2") // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn("order-1").thenReturn("order-2") // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1").thenReturn("user-2") // Arrange
-            whenever(mockResultSet.getString("ticket_date")).thenReturn("date-1").thenReturn("date-2") // Arrange
-            whenever(mockResultSet.getInt("status")).thenReturn(1).thenReturn(1) // Arrange
-            whenever(mockResultSet.getDouble("total_amount")).thenReturn(100.0).thenReturn(200.0) // Arrange
-            whenever(mockResultSet.getString("notes")).thenReturn("note-1").thenReturn("note-2") // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTickets() // Act
-            assertEquals(2, result.size) // Assert
-            assertEquals("ticket-1", result[0].id) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId1 = ExposedTestDb.seedTicket(orderId, userId)
+            val ticketId2 = ExposedTestDb.seedTicket(orderId, userId)
+
+            val result = service.getTickets()
+            assertEquals(2, result.size)
+            assertTrue(result.any { it.id == ticketId1 })
+            assertTrue(result.any { it.id == ticketId2 })
         }
     }
 
     @Test
     fun `getTickets returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTickets() // Act
-            assertTrue(result.isEmpty()) // Assert
+            val result = service.getTickets()
+            assertTrue(result.isEmpty())
         }
     }
 
     @Test
     fun `getTicketById returns ticket when found`() {
         runBlocking {
-            val expectedTicket = Ticket("ticket-1", "order-1", "user-1", "date-1", 1, 100.0, "note-1") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn(expectedTicket.id) // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn(expectedTicket.orderId) // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn(expectedTicket.userId) // Arrange
-            whenever(mockResultSet.getString("ticket_date")).thenReturn(expectedTicket.ticketDate) // Arrange
-            whenever(mockResultSet.getInt("status")).thenReturn(expectedTicket.status) // Arrange
-            whenever(mockResultSet.getDouble("total_amount")).thenReturn(expectedTicket.totalAmount) // Arrange
-            whenever(mockResultSet.getString("notes")).thenReturn(expectedTicket.notes) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketById("ticket-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals(expectedTicket, result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+
+            val result = service.getTicketById(ticketId)
+            assertNotNull(result)
+            assertEquals(ticketId, result.id)
+            assertEquals(orderId, result.orderId)
+            assertEquals(userId, result.userId)
         }
     }
 
     @Test
     fun `getTicketById returns null when not found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketById("not-found") // Act
-            assertNull(result) // Assert
+            val result = service.getTicketById(UUID.randomUUID().toString())
+            assertNull(result)
         }
     }
 
     @Test
     fun `getTicketsByOrder returns tickets when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("ticket-1") // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn("order-1") // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1") // Arrange
-            whenever(mockResultSet.getString("ticket_date")).thenReturn("date-1") // Arrange
-            whenever(mockResultSet.getInt("status")).thenReturn(1) // Arrange
-            whenever(mockResultSet.getDouble("total_amount")).thenReturn(100.0) // Arrange
-            whenever(mockResultSet.getString("notes")).thenReturn("note-1") // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketsByOrder("order-1") // Act
-            assertEquals(1, result.size) // Assert
-            assertEquals("ticket-1", result[0].id) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val (otherOrderId, _) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            ExposedTestDb.seedTicket(otherOrderId, userId)
+
+            val result = service.getTicketsByOrder(orderId)
+            assertEquals(1, result.size)
+            assertEquals(ticketId, result[0].id)
         }
     }
 
     @Test
     fun `getTicketsByOrder returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketsByOrder("order-2") // Act
-            assertTrue(result.isEmpty()) // Assert
+            val (orderId, _) = seedOrderAndUser()
+            val result = service.getTicketsByOrder(orderId)
+            assertTrue(result.isEmpty())
         }
     }
 
     @Test
     fun `getTicketsByUser returns tickets when found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("ticket-1") // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn("order-1") // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1") // Arrange
-            whenever(mockResultSet.getString("ticket_date")).thenReturn("date-1") // Arrange
-            whenever(mockResultSet.getInt("status")).thenReturn(1) // Arrange
-            whenever(mockResultSet.getDouble("total_amount")).thenReturn(100.0) // Arrange
-            whenever(mockResultSet.getString("notes")).thenReturn("note-1") // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketsByUser("user-1") // Act
-            assertEquals(1, result.size) // Assert
-            assertEquals("ticket-1", result[0].id) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+
+            val result = service.getTicketsByUser(userId)
+            assertEquals(1, result.size)
+            assertEquals(ticketId, result[0].id)
         }
     }
 
     @Test
     fun `getTicketsByUser returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.getTicketsByUser("user-2") // Act
-            assertTrue(result.isEmpty()) // Assert
+            val (_, userId) = seedOrderAndUser()
+            val result = service.getTicketsByUser(userId)
+            assertTrue(result.isEmpty())
         }
     }
 
     @Test
     fun `addTicket returns null if order does not exist`() {
         runBlocking {
-            val newTicket = Ticket(null, "non-existent-order", "user-1", "date-1", 1, 100.0, "note-1") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.addTicket(newTicket) // Act
-            assertNull(result) // Assert
+            val (_, userId) = seedOrderAndUser()
+            val newTicket = Ticket(null, UUID.randomUUID().toString(), userId, "date-1", 1, 100.0, "note-1")
+            val result = service.addTicket(newTicket)
+            assertNull(result)
         }
     }
 
     @Test
     fun `addTicket returns null if user does not exist`() {
         runBlocking {
-            val newTicket = Ticket(null, "order-1", "non-existent-user", "date-1", 1, 100.0, "note-1") // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(false) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.addTicket(newTicket) // Act
-            assertNull(result) // Assert
+            val (orderId, _) = seedOrderAndUser()
+            val newTicket = Ticket(null, orderId, UUID.randomUUID().toString(), "date-1", 1, 100.0, "note-1")
+            val result = service.addTicket(newTicket)
+            assertNull(result)
         }
     }
 
     @Test
     fun `addTicket returns null if status is invalid`() {
         runBlocking {
-            val newTicket = Ticket(null, "order-1", "user-1", "date-1", 2, 100.0, "note-1") // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.addTicket(newTicket) // Act
-            assertNull(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val newTicket = Ticket(null, orderId, userId, "date-1", 2, 100.0, "note-1")
+            val result = service.addTicket(newTicket)
+            assertNull(result)
         }
     }
 
     @Test
     fun `addTicket returns new ID on success`() {
         runBlocking {
-            val newTicket = Ticket(null, "order-1", "user-1", "date-1", 1, 100.0, "note-1") // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(addStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.addTicket(newTicket) // Act
-            assertNotNull(result) // Assert
-        }
-    }
-
-    @Test
-    fun `addTicket returns null when database insert fails`() {
-        runBlocking {
-            val newTicket = Ticket(null, "order-1", "user-1", "date-1", 1, 100.0, "note-1") // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO tickets"))).thenReturn(addStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.addTicket(newTicket) // Act
-            assertNull(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val newTicket = Ticket(null, orderId, userId, "date-1", 1, 100.0, "note-1")
+            val result = service.addTicket(newTicket)
+            assertNotNull(result)
         }
     }
 
     @Test
     fun `updateTicket returns false if ID is null`() {
         runBlocking {
-            val ticket =
-                Ticket(
-                    id = null,
-                    orderId = "order-1",
-                    userId = "user-1",
-                    ticketDate = "date-1",
-                    status = 1,
-                    totalAmount = 100.0,
-                    notes = "note-1",
-                ) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticket = Ticket(null, orderId, userId, "date-1", 1, 100.0, "note-1")
+            val result = service.updateTicket(ticket)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateTicket returns false if order does not exist`() {
         runBlocking {
-            val ticket =
-                Ticket(
-                    id = "ticket-1",
-                    orderId = "non-existent-order",
-                    userId = "user-1",
-                    ticketDate = "date-1",
-                    status = 1,
-                    totalAmount = 100.0,
-                    notes = "note-1",
-                ) // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertFalse(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            val ticket = Ticket(ticketId, UUID.randomUUID().toString(), userId, "date-1", 1, 100.0, "note-1")
+            val result = service.updateTicket(ticket)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateTicket returns false if user does not exist`() {
         runBlocking {
-            val ticket =
-                Ticket(
-                    id = "ticket-1",
-                    orderId = "order-1",
-                    userId = "non-existent-user",
-                    ticketDate = "date-1",
-                    status = 1,
-                    totalAmount = 100.0,
-                    notes = "note-1",
-                ) // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(false) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertFalse(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            val ticket = Ticket(ticketId, orderId, UUID.randomUUID().toString(), "date-1", 1, 100.0, "note-1")
+            val result = service.updateTicket(ticket)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateTicket returns false if status is invalid`() {
         runBlocking {
-            val ticket =
-                Ticket(
-                    id = "ticket-1",
-                    orderId = "order-1",
-                    userId = "user-1",
-                    ticketDate = "date-1",
-                    status = 2,
-                    totalAmount = 100.0,
-                    notes = "note-1",
-                ) // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertFalse(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            val ticket = Ticket(ticketId, orderId, userId, "date-1", 2, 100.0, "note-1")
+            val result = service.updateTicket(ticket)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateTicket returns true on success`() {
         runBlocking {
-            val ticket =
-                Ticket(
-                    id = "ticket-1",
-                    orderId = "order-1",
-                    userId = "user-1",
-                    ticketDate = "date-1",
-                    status = 1,
-                    totalAmount = 150.0,
-                    notes = "updated note",
-                ) // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE tickets"))).thenReturn(updateStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertTrue(result) // Assert
-        }
-    }
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            val ticket = Ticket(ticketId, orderId, userId, "date-1", 1, 150.0, "updated note")
 
-    @Test
-    fun `updateTicket returns false when database update fails`() {
-        runBlocking {
-            val ticket =
-                Ticket(
-                    id = "ticket-1",
-                    orderId = "order-1",
-                    userId = "user-1",
-                    ticketDate = "date-1",
-                    status = 1,
-                    totalAmount = 150.0,
-                    notes = "updated note",
-                ) // Arrange
-            val orderCheckStatement: PreparedStatement = mock() // Arrange
-            val userCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("orders"))).thenReturn(orderCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("users"))).thenReturn(userCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE tickets"))).thenReturn(updateStatement) // Arrange
-            val orderResultSet: ResultSet = mock() // Arrange
-            whenever(orderResultSet.next()).thenReturn(true) // Arrange
-            whenever(orderCheckStatement.executeQuery()).thenReturn(orderResultSet) // Arrange
-            val userResultSet: ResultSet = mock() // Arrange
-            whenever(userResultSet.next()).thenReturn(true) // Arrange
-            whenever(userCheckStatement.executeQuery()).thenReturn(userResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.updateTicket(ticket) // Act
-            assertFalse(result) // Assert
+            val result = service.updateTicket(ticket)
+            assertTrue(result)
+            val updated = service.getTicketById(ticketId)
+            assertEquals(150.0, updated?.totalAmount)
+            assertEquals("updated note", updated?.notes)
         }
     }
 
     @Test
     fun `deleteTicket returns true on success`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.deleteTicket("ticket-1") // Act
-            assertTrue(result) // Assert
+            val (orderId, userId) = seedOrderAndUser()
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+
+            val result = service.deleteTicket(ticketId)
+            assertTrue(result)
+            assertNull(service.getTicketById(ticketId))
         }
     }
 
     @Test
     fun `deleteTicket returns false when ticket not found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = TicketService(mockConnection) // Arrange
-            val result = service.deleteTicket("not-found-ticket") // Act
-            assertFalse(result) // Assert
+            val result = service.deleteTicket(UUID.randomUUID().toString())
+            assertFalse(result)
         }
     }
 }

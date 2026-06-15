@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Space
 import pos.ambrosia.services.SpaceService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureSpaces() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val spaceService = SpaceService(connection)
+    val spaceService = SpaceService()
     routing { route("/spaces") { spaces(spaceService) } }
 }
 

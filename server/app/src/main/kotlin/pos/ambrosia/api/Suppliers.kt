@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Supplier
 import pos.ambrosia.services.SupplierService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureSuppliers() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val supplierService = SupplierService(connection)
+    val supplierService = SupplierService()
     routing { route("/suppliers") { suppliers(supplierService) } }
 }
 
