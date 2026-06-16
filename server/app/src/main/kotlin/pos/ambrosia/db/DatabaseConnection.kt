@@ -23,10 +23,7 @@ object DatabaseConnection {
         val config = HikariConfig().apply {
             jdbcUrl = "jdbc:sqlite:$dbPath"
             driverClassName = "org.sqlite.JDBC"
-            // TODO: lower back to 1 once the legacy services stop holding a Connection for the
-            // app's lifetime (see ORM migration). 25 configureXxx() functions still keep a
-            // permanent connection, which exhausts a pool smaller than that.
-            maximumPoolSize = 30
+            maximumPoolSize = 5
             transactionIsolation = "TRANSACTION_SERIALIZABLE"
             addDataSourceProperty("journal_mode", "WAL")
             addDataSourceProperty("foreign_keys", "ON")
