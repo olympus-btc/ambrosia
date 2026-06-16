@@ -7,10 +7,16 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.routing.Route
-import pos.ambrosia.db.DatabaseConnection
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.PermissionsTable
+import pos.ambrosia.db.tables.RolePermissionsTable
+import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.logger
 import pos.ambrosia.services.TokenService
-import java.sql.Connection
+import java.util.UUID
 
 fun ApplicationCall.requireAdmin() {
     val refreshToken = request.cookies["refreshToken"]
@@ -81,22 +87,21 @@ data class UserInfo(
 suspend fun ApplicationCall.requirePermission(name: String) {
     val principal = principal<JWTPrincipal>() ?: throw PermissionDeniedException()
     val userId = principal.getClaim("userId", String::class) ?: throw PermissionDeniedException()
-    val sql =
-        """
-  SELECT 1
-  FROM users u
-  JOIN roles r ON u.role_id = r.id
-  JOIN role_permissions rp ON rp.role_id = r.id
-  JOIN permissions p ON p.id = rp.permission_id
-  WHERE u.id = ? AND p.name = ? AND p.enabled = 1 AND u.is_deleted = 0
-  """
-    DatabaseConnection.getConnection().use { connection ->
-        connection.prepareStatement(sql).use { statement ->
-            statement.setString(1, userId)
-            statement.setString(2, name)
-            val resultSet = statement.executeQuery()
-            if (!resultSet.next()) throw PermissionDeniedException()
-        }
+    transaction {
+        val user =
+            UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted }
+                ?: throw PermissionDeniedException()
+        val roleId = user.roleId ?: throw PermissionDeniedException()
+        val hasPermission =
+            (RolePermissionsTable innerJoin PermissionsTable)
+                .selectAll()
+                .where {
+                    (RolePermissionsTable.roleId eq roleId) and
+                        (PermissionsTable.name eq name) and
+                        (PermissionsTable.enabled eq true)
+                }
+                .count() > 0
+        if (!hasPermission) throw PermissionDeniedException()
     }
 }
 
