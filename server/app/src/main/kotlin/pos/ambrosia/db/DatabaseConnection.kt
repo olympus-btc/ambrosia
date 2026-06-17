@@ -43,8 +43,6 @@ object DatabaseConnection {
             .migrate()
     }
 
-    fun getConnection(): java.sql.Connection = dataSource.connection
-
     fun close() {
         if (::dataSource.isInitialized && !dataSource.isClosed) {
             dataSource.close()

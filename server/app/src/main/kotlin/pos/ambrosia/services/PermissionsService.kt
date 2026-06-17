@@ -35,11 +35,17 @@ class PermissionsService {
                 .map { toModel(it) }
         }
 
-    fun getByRole(roleId: String?): List<Permission>? {
-        if (roleId == null || !roleExists(roleId)) return null
-
-        return transaction {
-            val roleEntityId = EntityID(UUID.fromString(roleId), RolesTable)
+    fun getByRole(roleId: String?): List<Permission>? =
+        transaction {
+            if (roleId == null) return@transaction null
+            val roleUUID =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
+            if (RoleEntity.findById(roleUUID)?.takeIf { !it.isDeleted } == null) return@transaction null
+            val roleEntityId = EntityID(roleUUID, RolesTable)
             (RolePermissionsTable innerJoin PermissionsTable)
                 .selectAll()
                 .where { RolePermissionsTable.roleId eq roleEntityId }
@@ -53,7 +59,6 @@ class PermissionsService {
                     )
                 }
         }
-    }
 
     fun roleExists(roleId: String): Boolean =
         transaction {
@@ -63,42 +68,46 @@ class PermissionsService {
     fun replaceRolePermissions(
         roleId: String,
         permissionKeys: List<String>,
-    ): Int {
-        if (!roleExists(roleId)) return 0
-
-        return try {
-            transaction {
-                val roleEntityId = EntityID(UUID.fromString(roleId), RolesTable)
-                RolePermissionsTable.deleteWhere { RolePermissionsTable.roleId eq roleEntityId }
-
-                if (permissionKeys.isEmpty()) {
+    ): Int =
+        transaction {
+            val roleUUID =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
                     return@transaction 0
                 }
+            val roleEntityId = EntityID(roleUUID, RolesTable)
+            if (RoleEntity.findById(roleUUID)?.takeIf { !it.isDeleted } == null) return@transaction 0
 
-                val permissionIds =
-                    PermissionEntity
-                        .find { (PermissionsTable.name inList permissionKeys) and (PermissionsTable.enabled eq true) }
-                        .map { it.id }
+            RolePermissionsTable.deleteWhere { RolePermissionsTable.roleId eq roleEntityId }
 
-                permissionIds.sumOf { permissionId ->
-                    RolePermissionsTable
-                        .insertIgnore {
-                            it[RolePermissionsTable.roleId] = roleEntityId
-                            it[RolePermissionsTable.permissionId] = permissionId
-                        }.insertedCount
-                }
+            if (permissionKeys.isEmpty()) return@transaction 0
+
+            val permissionIds =
+                PermissionEntity
+                    .find { (PermissionsTable.name inList permissionKeys) and (PermissionsTable.enabled eq true) }
+                    .map { it.id }
+
+            permissionIds.sumOf { permissionId ->
+                RolePermissionsTable
+                    .insertIgnore {
+                        it[RolePermissionsTable.roleId] = roleEntityId
+                        it[RolePermissionsTable.permissionId] = permissionId
+                    }.insertedCount
             }
-        } catch (e: Exception) {
-            logger.error("Failed to replace role permissions: ${e.message}")
-            0
         }
-    }
 
-    fun assignAllEnabledToRole(roleId: String): Int {
-        if (!roleExists(roleId)) return 0
+    fun assignAllEnabledToRole(roleId: String): Int =
+        transaction {
+            val roleUUID =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction 0
+                }
+            val roleEntityId = EntityID(roleUUID, RolesTable)
+            if (RoleEntity.findById(roleUUID)?.takeIf { !it.isDeleted } == null) return@transaction 0
 
-        return transaction {
-            val roleEntityId = EntityID(UUID.fromString(roleId), RolesTable)
             val permissionIds = PermissionEntity.find { PermissionsTable.enabled eq true }.map { it.id }
 
             permissionIds.sumOf { permissionId ->
@@ -109,5 +118,4 @@ class PermissionsService {
                     }.insertedCount
             }
         }
-    }
 }

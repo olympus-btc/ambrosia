@@ -20,11 +20,20 @@ class OrderService {
     private val validStatuses = setOf("open", "closed", "paid")
     private val orderDishService = OrderDishService()
 
-    private fun userExists(userId: String): Boolean = UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted } != null
+    private fun userExists(userId: String): Boolean =
+        try {
+            UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted } != null
+        } catch (_: IllegalArgumentException) {
+            false
+        }
 
     private fun tableExists(tableId: String?): Boolean {
         if (tableId == null) return true
-        return DiningTableEntity.findById(UUID.fromString(tableId))?.takeIf { !it.isDeleted } != null
+        return try {
+            DiningTableEntity.findById(UUID.fromString(tableId))?.takeIf { !it.isDeleted } != null
+        } catch (_: IllegalArgumentException) {
+            false
+        }
     }
 
     private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
@@ -79,7 +88,13 @@ class OrderService {
 
     fun getOrderById(id: String): Order? =
         transaction {
-            val entity = OrderEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
+            val entity = OrderEntity.findById(uuid)?.takeIf { !it.isDeleted }
             if (entity != null) {
                 toModel(entity)
             } else {
@@ -162,7 +177,13 @@ class OrderService {
                 return@transaction false
             }
 
-            val entity = OrderEntity.findById(UUID.fromString(id))
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
+            val entity = OrderEntity.findById(uuid)
             if (entity == null) {
                 logger.error("Failed to update order: $id")
                 return@transaction false
@@ -179,7 +200,13 @@ class OrderService {
 
     fun deleteOrder(id: String): Boolean =
         transaction {
-            val entity = OrderEntity.findById(UUID.fromString(id))
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
+            val entity = OrderEntity.findById(uuid)
             if (entity == null) {
                 logger.error("Failed to delete order: $id")
                 false

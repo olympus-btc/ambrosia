@@ -30,7 +30,13 @@ class AdminGuardService {
 
     fun activeAdminUsersByRole(roleId: String): Long =
         transaction {
-            val roleEntityId = EntityID(UUID.fromString(roleId), RolesTable)
+            val roleUUID =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction 0L
+                }
+            val roleEntityId = EntityID(roleUUID, RolesTable)
             (UsersTable innerJoin RolesTable)
                 .selectAll()
                 .where {
@@ -43,17 +49,29 @@ class AdminGuardService {
 
     fun isRoleAdmin(roleId: String): Boolean? =
         transaction {
+            val uuid =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
             RoleEntity
-                .findById(UUID.fromString(roleId))
+                .findById(uuid)
                 ?.takeIf { !it.isDeleted }
                 ?.isAdmin
         }
 
     fun getUserAdminState(userId: String): UserAdminState? =
         transaction {
+            val uuid =
+                try {
+                    UUID.fromString(userId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
             val user =
                 UserEntity
-                    .findById(UUID.fromString(userId))
+                    .findById(uuid)
                     ?.takeIf { !it.isDeleted }
                     ?: return@transaction null
 

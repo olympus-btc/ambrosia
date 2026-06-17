@@ -253,7 +253,7 @@ class ReportService {
             )
         }
 
-    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> =
+    fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> =
         transaction {
             validateOrdersWithPaymentFilters(filters)
 
@@ -337,7 +337,7 @@ class ReportService {
             orders
         }
 
-    suspend fun getTotalSalesByDate(date: String): Double =
+    fun getTotalSalesByDate(date: String): Double =
         transaction {
             var total = 0.0
             currentConnection().prepareStatement(GET_TOTAL_SALES_BY_DATE).use { statement ->

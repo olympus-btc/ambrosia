@@ -4,10 +4,13 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.minus
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.OrderProductsTable
@@ -15,7 +18,6 @@ import pos.ambrosia.db.tables.OrdersTable
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.db.tables.PaymentMethodsTable
 import pos.ambrosia.db.tables.PaymentsTable
-import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.db.tables.TicketPaymentsTable
@@ -67,15 +69,27 @@ class CheckoutService {
 
     fun getStoreOrderById(id: String): StoreOrder? =
         transaction {
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
             OrderEntity
-                .findById(UUID.fromString(id))
+                .findById(uuid)
                 ?.takeIf { !it.isDeleted && it.tableId == null }
                 ?.let { toStoreOrder(it) }
         }
 
     fun cancelStoreOrder(id: String): Boolean =
         transaction {
-            val entity = OrderEntity.findById(UUID.fromString(id))
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
+            val entity = OrderEntity.findById(uuid)
             if (entity == null || entity.status != "open" || entity.tableId != null) {
                 false
             } else {
@@ -106,6 +120,15 @@ class CheckoutService {
         if (request.items.isEmpty()) return null
         if (request.items.any { it.quantity <= 0 }) return null
 
+        try {
+            UUID.fromString(request.userId)
+            UUID.fromString(request.paymentMethodId)
+            UUID.fromString(request.currencyId)
+            request.items.forEach { UUID.fromString(it.productId) }
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
+
         return try {
             transaction {
                 val now = LocalDateTime.now().toString()
@@ -119,18 +142,23 @@ class CheckoutService {
                     }
 
                 for (item in request.items) {
+                    val productEntityId = EntityID(UUID.fromString(item.productId), ProductsTable)
+                    val updated =
+                        ProductsTable.update({
+                            (ProductsTable.id eq productEntityId) and
+                                (ProductsTable.isDeleted eq false) and
+                                (ProductsTable.quantity greaterEq item.quantity)
+                        }) {
+                            it[ProductsTable.quantity] = ProductsTable.quantity - item.quantity
+                        }
+                    if (updated == 0) throw InsufficientStockException()
+
                     OrderProductsTable.insert {
                         it[orderId] = order.id
-                        it[productId] = EntityID(UUID.fromString(item.productId), ProductsTable)
+                        it[productId] = productEntityId
                         it[quantity] = item.quantity
                         it[priceAtOrder] = item.priceAtOrder
                     }
-
-                    val product = ProductEntity.findById(UUID.fromString(item.productId))
-                    if (product == null || product.isDeleted || product.quantity < item.quantity) {
-                        throw InsufficientStockException()
-                    }
-                    product.quantity -= item.quantity
                 }
 
                 val ticket =
@@ -164,7 +192,7 @@ class CheckoutService {
                 logger.info("Store checkout: order=${order.id.value} ticket=${ticket.id.value} payment=${payment.id.value}")
                 StoreCheckoutResponse(order.id.value.toString(), ticket.id.value.toString(), payment.id.value.toString())
             }
-        } catch (exception: InsufficientStockException) {
+        } catch (_: InsufficientStockException) {
             null
         }
     }

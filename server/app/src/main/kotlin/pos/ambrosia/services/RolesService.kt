@@ -113,7 +113,7 @@ class RolesService(
             }
             ensureRoleAdminInvariant(id, role.isAdmin ?: false)
 
-            val entity = RoleEntity.findById(UUID.fromString(id))
+            val entity = RoleEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity == null) {
                 logger.error("Failed to update role: ${role.id}")
                 false
