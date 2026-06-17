@@ -51,6 +51,7 @@ import pos.ambrosia.api.configureWallet
 import pos.ambrosia.api.handler
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.db.DatabaseConnection
+import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.UnauthorizedApiException
 import kotlin.time.Duration.Companion.seconds
 
@@ -77,7 +78,6 @@ class Api {
 
         install(Authentication) {
             jwt("auth-jwt") {
-                // Configurar para leer el token desde cookies
                 authHeader { call ->
                     try {
                         val token = call.request.cookies["accessToken"]
@@ -130,11 +130,17 @@ class Api {
                         .build(),
                 )
                 validate { credential ->
-                    if (credential.payload.getClaim("scope").asString() == "wallet_access") {
-                        JWTPrincipal(credential.payload)
-                    } else {
-                        null
-                    }
+                    val scope = credential.payload.getClaim("scope").asString()
+                    val userId = credential.payload.getClaim("userId").asString()
+                    val walletAccessToken = request.cookies["walletAccessToken"]
+                    val connection = DatabaseConnection.getConnection()
+                    val tokenService = TokenService(application.environment, connection)
+                    val isValidWalletSession =
+                        scope == "wallet_access" &&
+                            userId.isNotEmpty() &&
+                            walletAccessToken != null &&
+                            tokenService.isWalletTokenValid(userId, walletAccessToken)
+                    if (isValidWalletSession) JWTPrincipal(credential.payload) else null
                 }
             }
         }

@@ -27,7 +27,11 @@ export const loginWallet = async (password) => {
     },
     body: JSON.stringify({ password }),
   });
-  return await parseJsonResponse(response, null);
+  const body = await parseJsonResponse(response, null);
+  if (!response.ok) {
+    throw createWalletServiceError(body?.message, { status: response.status });
+  }
+  return body;
 };
 
 export const logoutWallet = async () => {

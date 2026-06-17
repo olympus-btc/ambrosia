@@ -91,6 +91,7 @@ fun Route.wallet(
             }
         }
         post("/logout") {
+            call.getCurrentUser()?.let { userInfo -> tokenService.revokeWalletToken(userInfo.userId) }
             call.response.cookies.append("walletAccessToken", "", maxAge = 0)
             call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
         }
@@ -164,12 +165,10 @@ fun Route.wallet(
             val result = phoenixService.csvExport(request)
             call.respond(HttpStatusCode.OK, result)
         }
-        // Get wallet/node info
         get("/getinfo") {
             val nodeInfo = phoenixService.getNodeInfo()
             call.respond(HttpStatusCode.OK, nodeInfo)
         }
-        // Get wallet balance
         get("/getbalance") {
             val balance = phoenixService.getBalance()
             call.respond(HttpStatusCode.OK, balance)
