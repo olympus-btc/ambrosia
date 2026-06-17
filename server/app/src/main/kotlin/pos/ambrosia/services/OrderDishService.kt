@@ -128,11 +128,4 @@ class OrderDishService {
             true
         }
 
-    suspend fun checkOrderDishStatus(
-        id: String,
-        status: String,
-    ): Boolean =
-        transaction {
-            OrderDishEntity.findById(UUID.fromString(id))?.status == status
-        }
 }

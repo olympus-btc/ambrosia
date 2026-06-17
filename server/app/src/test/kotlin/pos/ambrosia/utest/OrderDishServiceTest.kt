@@ -306,38 +306,4 @@ class OrderDishServiceTest {
             assertTrue(service.getOrderDishesByOrderId(orderId).isEmpty())
         }
     }
-
-    @Test
-    fun `checkOrderDishStatus returns true when status matches`() {
-        runBlocking {
-            val userId = ExposedTestDb.seedUser("waiter")
-            val orderId = ExposedTestDb.seedOrder(userId)
-            val dishId = ExposedTestDb.seedDish("Pizza", 50.0)
-            val id =
-                service.addOrderDish(
-                    OrderDish(orderId = orderId, dishId = dishId, priceAtOrder = 50.0, status = "PENDING", shouldPrepare = true),
-                )
-            assertNotNull(id)
-
-            val result = service.checkOrderDishStatus(id, "PENDING")
-            assertTrue(result)
-        }
-    }
-
-    @Test
-    fun `checkOrderDishStatus returns false when status does not match`() {
-        runBlocking {
-            val userId = ExposedTestDb.seedUser("waiter")
-            val orderId = ExposedTestDb.seedOrder(userId)
-            val dishId = ExposedTestDb.seedDish("Pizza", 50.0)
-            val id =
-                service.addOrderDish(
-                    OrderDish(orderId = orderId, dishId = dishId, priceAtOrder = 50.0, status = "PENDING", shouldPrepare = true),
-                )
-            assertNotNull(id)
-
-            val result = service.checkOrderDishStatus(id, "COOKING")
-            assertFalse(result)
-        }
-    }
 }

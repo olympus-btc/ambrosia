@@ -252,8 +252,6 @@ class ReportService {
         )
     }
 
-    suspend fun getOrdersWithPayments(): List<OrderWithPayment> = getOrdersWithPaymentsFiltered()
-
     suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> = transaction {
         validateOrdersWithPaymentFilters(filters)
 
