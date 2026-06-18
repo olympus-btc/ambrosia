@@ -158,13 +158,6 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
   };
 }
 
-/**
- * Shared orchestration for completing a deferred payment (BTC/cash/card): runs the
- * checkout, refreshes shift tickets, prints the receipt, fires onPay, shows the
- * success toast, and finalizes the config. The per-kind builders below pass in the
- * pieces that differ (checkout args, receipt total/invoice, onPay payload, toast
- * keys, and how to finalize the config).
- */
 async function runDeferredCheckout({
   checkoutArgs,
   receiptItems,

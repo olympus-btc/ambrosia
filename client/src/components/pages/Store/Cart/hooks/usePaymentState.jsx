@@ -8,10 +8,6 @@ import {
   createErrorNotifier,
 } from "../utils/paymentState";
 
-/**
- * Holds the in-flight payment status (isPaying / error) plus the helpers that
- * mutate it: a stable dispatch, an error notifier that also toasts, and a clear.
- */
 export function usePaymentState() {
   const [{ isPaying, error: paymentError }, dispatch] = useReducer(
     paymentStateReducer,

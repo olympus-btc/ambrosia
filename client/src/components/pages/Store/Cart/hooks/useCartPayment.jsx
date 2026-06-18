@@ -41,7 +41,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     [paymentMethods],
   );
 
-  // Shared dependencies threaded into every deferred-payment "complete" handler.
   const handlerContext = useMemo(
     () => ({
       dispatch,
