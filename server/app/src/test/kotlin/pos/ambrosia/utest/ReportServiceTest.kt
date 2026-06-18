@@ -80,7 +80,6 @@ class ReportServiceTest {
         return productId
     }
 
-
     @Test
     fun `period=week filters to orders from Monday of the current week`() {
         val monday = LocalDate.now(ZoneOffset.UTC).with(DayOfWeek.MONDAY)
@@ -457,7 +456,6 @@ class ReportServiceTest {
         assertEquals(100_000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
     }
 
-
     @Test
     fun `getOrdersWithPaymentsFiltered applies status filter and default date desc sort`() =
         runBlocking {
@@ -634,7 +632,6 @@ class ReportServiceTest {
             assertNull(result[0].exchangeRateCurrency)
             assertNull(result[0].fiatAmountAtPayment)
         }
-
 
     @Test
     fun `getTotalSalesByDate returns total sales when found`() =
