@@ -268,14 +268,14 @@ describe("paymentHandlers", () => {
   it("returns early when BTC config is missing", async () => {
     const dispatch = jest.fn();
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: null,
+      getConfig: () => null,
+      setConfig: jest.fn(),
       dispatch,
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError: jest.fn(),
       t,
       user: { userId: "u1" },
-      setBtcPaymentConfig: jest.fn(),
       printCustomerReceipt: jest.fn(),
     });
 
@@ -297,7 +297,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: {
+      getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
@@ -307,14 +307,14 @@ describe("paymentHandlers", () => {
         discountAmount: 0,
         total: 1,
         invoiceData: { exchangeRate: 50000, satoshis: 20000 },
-      },
+      }),
+      setConfig: setBtcPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
       t,
       user: { userId: "u1" },
-      setBtcPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
     });
 
@@ -345,7 +345,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("errors.checkout"));
 
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: {
+      getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
@@ -355,14 +355,14 @@ describe("paymentHandlers", () => {
         discountAmount: 0,
         total: 1,
         invoiceData: { exchangeRate: 50000, satoshis: 20000 },
-      },
+      }),
+      setConfig: setBtcPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
       t,
       user: { userId: "u1" },
-      setBtcPaymentConfig,
       printCustomerReceipt: jest.fn(),
     });
 
@@ -385,7 +385,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleCashComplete({
-      cashPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -399,13 +399,13 @@ describe("paymentHandlers", () => {
         },
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
-      },
+      }),
+      setConfig: setCashPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
       t,
-      setCashPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -431,7 +431,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
     const handler = buildHandleCashComplete({
-      cashPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -445,13 +445,13 @@ describe("paymentHandlers", () => {
         },
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
-      },
+      }),
+      setConfig: setCashPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
       t,
-      setCashPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -475,7 +475,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleCardComplete({
-      cardPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -490,13 +490,13 @@ describe("paymentHandlers", () => {
         selectedPaymentMethod: "card",
         currencyId: "cur-1",
         methodLabel: "Credit Card",
-      },
+      }),
+      setConfig: setCardPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
       t,
-      setCardPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -522,7 +522,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
     const handler = buildHandleCardComplete({
-      cardPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -537,13 +537,13 @@ describe("paymentHandlers", () => {
         selectedPaymentMethod: "card",
         currencyId: "cur-1",
         methodLabel: "Credit Card",
-      },
+      }),
+      setConfig: setCardPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
       t,
-      setCardPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });

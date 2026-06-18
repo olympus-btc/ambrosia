@@ -89,16 +89,22 @@ jest.mock("../hooks/useCartPayment", () => ({
     isPaying: false,
     paymentError: "",
     clearPaymentError: jest.fn(),
-    btcPaymentConfig: null,
-    handleBtcInvoiceReady: jest.fn(),
-    handleBtcComplete: jest.fn(),
-    clearBtcPaymentConfig: jest.fn(),
-    cashPaymentConfig: null,
-    handleCashComplete: jest.fn(),
-    clearCashPaymentConfig: jest.fn(),
-    cardPaymentConfig: null,
-    handleCardComplete: jest.fn(),
-    clearCardPaymentConfig: jest.fn(),
+    btcPayment: {
+      config: null,
+      onInvoiceReady: jest.fn(),
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    cashPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    cardPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
   }),
 }));
 

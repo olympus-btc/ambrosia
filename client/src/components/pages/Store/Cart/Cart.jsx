@@ -60,16 +60,9 @@ export function Cart() {
     isPaying,
     paymentError,
     clearPaymentError,
-    btcPaymentConfig,
-    handleBtcInvoiceReady,
-    handleBtcComplete,
-    clearBtcPaymentConfig,
-    cashPaymentConfig,
-    handleCashComplete,
-    clearCashPaymentConfig,
-    cardPaymentConfig,
-    handleCardComplete,
-    clearCardPaymentConfig,
+    btcPayment,
+    cashPayment,
+    cardPayment,
   } = useCartPayment({
     onResetCart: resetCartState,
     onPay: refetchProducts,
@@ -86,25 +79,6 @@ export function Cart() {
     const discountRate = Number(discount) || 0;
     return subtotal - (subtotal * discountRate) / 100;
   }, [cart, discount]);
-
-  const btcPayment = {
-    config: btcPaymentConfig,
-    onInvoiceReady: handleBtcInvoiceReady,
-    onComplete: handleBtcComplete,
-    onClose: clearBtcPaymentConfig,
-  };
-
-  const cashPayment = {
-    config: cashPaymentConfig,
-    onComplete: handleCashComplete,
-    onClose: clearCashPaymentConfig,
-  };
-
-  const cardPayment = {
-    config: cardPaymentConfig,
-    onComplete: handleCardComplete,
-    onClose: clearCardPaymentConfig,
-  };
 
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
