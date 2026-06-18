@@ -82,18 +82,6 @@ jest.mock("@heroui/react", () => {
   };
 });
 
-jest.mock("../../BitcoinPaymentModal", () => ({
-  BitcoinPaymentModal: ({ isOpen }) => (isOpen ? <div>btc-modal</div> : null),
-}));
-
-jest.mock("../../CashPaymentModal", () => ({
-  CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
-}));
-
-jest.mock("../../CardPaymentModal", () => ({
-  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
-}));
-
 const cartItems = [{ id: 1, imageUrl: "/uploads/jade-wallet.png", name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
 
 const defaultProps = {
@@ -171,20 +159,5 @@ describe("SummaryContent", () => {
     render(<SummaryContent {...defaultProps} cartItems={undefined} />);
 
     expect(screen.getByText("summary.pay")).toBeDisabled();
-  });
-
-  it("renders payment modals when configs are provided", () => {
-    render(
-      <SummaryContent
-        {...defaultProps}
-        btcPayment={{ config: { paymentId: "btc-1" } }}
-        cashPayment={{ config: { paymentId: "cash-1" } }}
-        cardPayment={{ config: { paymentId: "card-1" } }}
-      />,
-    );
-
-    expect(screen.getByText("btc-modal")).toBeInTheDocument();
-    expect(screen.getByText("cash-modal")).toBeInTheDocument();
-    expect(screen.getByText("card-modal")).toBeInTheDocument();
   });
 });

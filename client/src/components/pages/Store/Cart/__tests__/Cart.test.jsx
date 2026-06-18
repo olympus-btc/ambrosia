@@ -16,6 +16,18 @@ const mockUpdateQuantity = jest.fn();
 const mockRemoveProduct = jest.fn();
 const mockClearCart = jest.fn();
 
+jest.mock("../BitcoinPaymentModal", () => ({
+  BitcoinPaymentModal: ({ isOpen }) => (isOpen ? <div>btc-modal</div> : null),
+}));
+
+jest.mock("../CashPaymentModal", () => ({
+  CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
+}));
+
+jest.mock("../CardPaymentModal", () => ({
+  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
+}));
+
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
     <div>
