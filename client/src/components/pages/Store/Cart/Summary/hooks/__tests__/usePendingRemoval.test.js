@@ -78,6 +78,30 @@ describe("usePendingRemoval", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it("cancels all timers and empties the set when clearPendingRemovals is called", () => {
+    const onConfirm1 = jest.fn();
+    const onConfirm2 = jest.fn();
+    const { result } = renderHook(() => usePendingRemoval());
+
+    act(() => {
+      result.current.startRemoval(1, onConfirm1);
+      result.current.startRemoval(2, onConfirm2);
+    });
+
+    act(() => {
+      result.current.clearPendingRemovals();
+    });
+
+    expect(result.current.pendingRemovals.size).toBe(0);
+
+    act(() => {
+      jest.advanceTimersByTime(5000);
+    });
+
+    expect(onConfirm1).not.toHaveBeenCalled();
+    expect(onConfirm2).not.toHaveBeenCalled();
+  });
+
   it("handles multiple independent removals simultaneously", () => {
     const onConfirm1 = jest.fn();
     const onConfirm2 = jest.fn();

@@ -16,6 +16,8 @@ import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
+import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
+import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
   const syncedItems = cart
@@ -59,6 +61,23 @@ export function Cart() {
   });
 
   const {
+    pendingRemovals,
+    startRemoval,
+    cancelRemoval,
+    clearPendingRemovals,
+  } = usePendingRemoval();
+
+  const visibleCart = useMemo(
+    () => cart.filter((item) => !pendingRemovals.has(item.id)),
+    [cart, pendingRemovals],
+  );
+
+  const handleClearCart = () => {
+    clearPendingRemovals();
+    clearCart();
+  };
+
+  const {
     handlePay,
     isPaying,
     paymentError,
@@ -85,19 +104,18 @@ export function Cart() {
   });
 
   useEffect(() => {
-    if (cart.length === 0) {
+    if (visibleCart.length === 0) {
       setTimeout(() => setShowMobileSummary(false), 0);
     }
-  }, [cart.length]);
+  }, [visibleCart.length]);
 
-  const cartTotal = useMemo(() => {
-    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const discountRate = Number(discount) || 0;
-    return subtotal - (subtotal * discountRate) / 100;
-  }, [cart, discount]);
+  const cartTotal = useMemo(
+    () => calculateCartTotals(visibleCart, discount).total,
+    [visibleCart, discount],
+  );
 
   return (
-    <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
+    <div className={`transition-[padding] duration-200 md:pt-0 ${visibleCart.length ? "pt-14" : "pt-0"}`}>
       <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -106,11 +124,13 @@ export function Cart() {
         </section>
         <div className="hidden md:block">
           <Summary
-            cartItems={cart}
+            cartItems={visibleCart}
             discount={discount}
             onRemoveProduct={removeProduct}
-            onClearCart={clearCart}
+            onClearCart={handleClearCart}
             onUpdateQuantity={updateQuantity}
+            startRemoval={startRemoval}
+            cancelRemoval={cancelRemoval}
             onPay={handlePay}
             isPaying={isPaying}
             paymentError={paymentError}
@@ -120,7 +140,7 @@ export function Cart() {
       </div>
 
       <MobileSummaryBar
-        cart={cart}
+        cart={visibleCart}
         total={cartTotal}
         onCheckout={() => setShowMobileSummary(true)}
       />
@@ -128,11 +148,13 @@ export function Cart() {
       <SummaryModal
         isOpen={showMobileSummary}
         onClose={() => setShowMobileSummary(false)}
-        cartItems={cart}
+        cartItems={visibleCart}
         discount={discount}
         onRemoveProduct={removeProduct}
-        onClearCart={clearCart}
+        onClearCart={handleClearCart}
         onUpdateQuantity={updateQuantity}
+        startRemoval={startRemoval}
+        cancelRemoval={cancelRemoval}
         onPay={handlePay}
         isPaying={isPaying}
         paymentError={paymentError}
