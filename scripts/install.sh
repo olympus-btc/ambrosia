@@ -242,8 +242,13 @@ ambrosia_resolve_tag() {
   fi
   log_info "Resolving latest Ambrosia release from $AMBROSIA_REPO..."
   local api_url="https://api.github.com/repos/${AMBROSIA_REPO}/releases"
-
-  AMBROSIA_TAG=$(curl -fsSL "$api_url" \
+  local auth_args=()
+  if [[ -n "${GH_TOKEN:-}" ]]; then
+    auth_args=(-H "Authorization: Bearer $GH_TOKEN")
+  fi
+  local response
+  response=$(curl -fsSL "${auth_args[@]}" "$api_url")
+  AMBROSIA_TAG=$(echo "$response" \
     | grep -m1 '"tag_name"' \
     | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/')
   if [[ -z "$AMBROSIA_TAG" ]]; then
