@@ -1,16 +1,16 @@
-import { useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 
-import { addToast, Button } from "@heroui/react";
+import { addToast, Button, closeToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { BitcoinPaymentModal } from "../BitcoinPaymentModal";
 import { CardPaymentModal } from "../CardPaymentModal";
 import { CashPaymentModal } from "../CashPaymentModal";
+import { calculateCartTotals } from "../hooks/cartTotals";
 
 import { CartItemCard } from "./CartItemCard";
 import { CartPaymentSection } from "./CartPaymentSection";
 import { CartTotals } from "./CartTotals";
-import { usePendingRemoval } from "./hooks/usePendingRemoval";
 import { SwipeableCartItem } from "./SwipeableCartItem";
 
 export function SummaryContent({
@@ -18,6 +18,8 @@ export function SummaryContent({
   discount,
   onRemoveProduct,
   onUpdateQuantity,
+  startRemoval,
+  cancelRemoval,
   onPay,
   isPaying,
   paymentError,
@@ -27,19 +29,28 @@ export function SummaryContent({
   cardPayment,
 }) {
   const cartTranslations = useTranslations("cart");
-  const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
   const isMounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const isTouchDevice = useSyncExternalStore(() => () => {}, () => navigator.maxTouchPoints > 0, () => false);
-  const items = cartItems || [];
-  const visibleItems = items.filter((item) => !pendingRemovals.has(item.id));
+  const removalToastKeys = useRef({});
+  const visibleItems = cartItems || [];
 
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const discountAmount = (subtotal * (Number(discount) || 0)) / 100;
-  const total = subtotal - discountAmount;
+  const { subtotal, discountAmount, total } = calculateCartTotals(visibleItems, discount);
+
+  const handleUndoRemoval = (itemId) => {
+    cancelRemoval(itemId);
+    const toastKey = removalToastKeys.current[itemId];
+    if (toastKey) {
+      closeToast(toastKey);
+      delete removalToastKeys.current[itemId];
+    }
+  };
 
   const handleStartRemoval = (item) => {
-    startRemoval(item.id, () => onRemoveProduct(item.id));
-    addToast({
+    startRemoval(item.id, () => {
+      onRemoveProduct(item.id);
+      delete removalToastKeys.current[item.id];
+    });
+    removalToastKeys.current[item.id] = addToast({
       description: item.name,
       timeout: 5000,
       endContent: (
@@ -47,7 +58,7 @@ export function SummaryContent({
           size="sm"
           color="primary"
           className="bg-green-800"
-          onPress={() => cancelRemoval(item.id)}
+          onPress={() => handleUndoRemoval(item.id)}
         >
           {cartTranslations("summary.undoToast.undo")}
         </Button>
@@ -81,7 +92,7 @@ export function SummaryContent({
           onClearPaymentError={onClearPaymentError}
           onPay={(selectedPaymentMethod) => {
             onClearPaymentError?.();
-            onPay?.({ items, subtotal, discount, discountAmount, total, selectedPaymentMethod });
+            onPay?.({ items: visibleItems, subtotal, discount, discountAmount, total, selectedPaymentMethod });
           }}
         />
       </div>

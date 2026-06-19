@@ -27,5 +27,11 @@ export function usePendingRemoval() {
     });
   };
 
-  return { pendingRemovals, startRemoval, cancelRemoval };
+  const clearPendingRemovals = () => {
+    Object.values(timers.current).forEach(clearTimeout);
+    timers.current = {};
+    setPendingRemovals(new Set());
+  };
+
+  return { pendingRemovals, startRemoval, cancelRemoval, clearPendingRemovals };
 }

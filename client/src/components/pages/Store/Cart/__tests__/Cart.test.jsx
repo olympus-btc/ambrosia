@@ -30,11 +30,14 @@ jest.mock("../SearchProducts", () => ({
 }));
 
 jest.mock("../Summary", () => ({
-  Summary: ({ onUpdateQuantity, onRemoveProduct, onPay }) => (
+  Summary: ({ cartItems, onUpdateQuantity, onRemoveProduct, onClearCart, startRemoval, onPay }) => (
     <div>
+      <span data-testid="summary-count">{cartItems.length}</span>
       <button onClick={() => onUpdateQuantity(1, 0)}>update-zero</button>
       <button onClick={() => onUpdateQuantity(1, 3)}>update-positive</button>
       <button onClick={() => onRemoveProduct(1)}>remove</button>
+      <button onClick={() => startRemoval(1, () => onRemoveProduct(1))}>soft-remove</button>
+      <button onClick={() => onClearCart()}>clear</button>
       <button onClick={() => onPay({})}>pay</button>
     </div>
   ),
@@ -225,5 +228,36 @@ describe("Cart page", () => {
 
     fireEvent.click(screen.getByText("pay"));
     expect(mockHandlePay).toHaveBeenCalledWith({});
+  });
+
+  it("hides items pending removal from totals immediately, before the undo toast expires", async () => {
+    jest.useFakeTimers();
+    try {
+      await act(async () => {
+        renderCart();
+      });
+
+      expect(screen.getByTestId("summary-count")).toHaveTextContent("1");
+      expect(screen.getByText("mobile-checkout")).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("soft-remove"));
+      });
+
+      expect(screen.getByTestId("summary-count")).toHaveTextContent("0");
+      expect(screen.queryByText("mobile-checkout")).not.toBeInTheDocument();
+      expect(mockRemoveProduct).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("clears the cart when clear is pressed", async () => {
+    await act(async () => {
+      renderCart();
+    });
+
+    fireEvent.click(screen.getByText("clear"));
+    expect(mockClearCart).toHaveBeenCalled();
   });
 });

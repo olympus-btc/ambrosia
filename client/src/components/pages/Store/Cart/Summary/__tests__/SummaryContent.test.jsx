@@ -33,14 +33,6 @@ jest.mock("../CartItemCard", () => ({
   ),
 }));
 
-jest.mock("../hooks/usePendingRemoval", () => ({
-  usePendingRemoval: () => ({
-    pendingRemovals: new Set(),
-    startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
-    cancelRemoval: jest.fn(),
-  }),
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));
@@ -60,10 +52,15 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   ),
 }));
 
+const mockAddToast = jest.fn(() => "toast-key-1");
+const mockCloseToast = jest.fn();
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
+    addToast: (...args) => mockAddToast(...args),
+    closeToast: (...args) => mockCloseToast(...args),
     NumberInput: ({ label, value, onChange }) => (
       <input aria-label={label} value={value} onChange={(e) => onChange?.(e.target.value)} />
     ),
@@ -101,6 +98,8 @@ const defaultProps = {
   discount: 10,
   onRemoveProduct: jest.fn(),
   onUpdateQuantity: jest.fn(),
+  startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
+  cancelRemoval: jest.fn(),
   onPay: jest.fn(),
   isPaying: false,
   paymentError: "",
@@ -132,6 +131,27 @@ describe("SummaryContent", () => {
 
     fireEvent.click(screen.getByLabelText("Remove Product"));
     expect(onRemoveProduct).toHaveBeenCalledWith(1);
+  });
+
+  it("cancels removal and closes the toast immediately when undo is pressed", () => {
+    const cancelRemoval = jest.fn();
+    render(
+      <SummaryContent
+        {...defaultProps}
+        startRemoval={jest.fn()}
+        cancelRemoval={cancelRemoval}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+    expect(mockAddToast).toHaveBeenCalled();
+
+    const { endContent } = mockAddToast.mock.calls[0][0];
+    render(endContent);
+    fireEvent.click(screen.getByText("summary.undoToast.undo"));
+
+    expect(cancelRemoval).toHaveBeenCalledWith(1);
+    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-1");
   });
 
   it("calls onPay with correct data when Pay is pressed", () => {
