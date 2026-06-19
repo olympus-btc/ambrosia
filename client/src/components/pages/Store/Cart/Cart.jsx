@@ -82,9 +82,22 @@ export function Cart() {
     isPaying,
     paymentError,
     clearPaymentError,
-    btcPayment,
-    cashPayment,
-    cardPayment,
+    btcPayment: {
+      config: btcPaymentConfig,
+      onClose: clearBtcPaymentConfig,
+      onInvoiceReady: handleBtcInvoiceReady,
+      onComplete: handleBtcComplete,
+    },
+    cashPayment: {
+      config: cashPaymentConfig,
+      onClose: clearCashPaymentConfig,
+      onComplete: handleCashComplete,
+    },
+    cardPayment: {
+      config: cardPaymentConfig,
+      onClose: clearCardPaymentConfig,
+      onComplete: handleCardComplete,
+    },
   } = useCartPayment({
     onResetCart: resetCartState,
     onPay: refetchProducts,
