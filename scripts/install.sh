@@ -4,7 +4,6 @@
 # 🚀 Ambrosia & Phoenixd Installer
 # ==========================================
 
-# Exit immediately if a command exits with a non-zero status, undefined vars, pipe fails.
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -229,10 +228,36 @@ EOF
 
 # --- Ambrosia Server Installation Logic ---
 
-AMBROSIA_TAG="0.7.0-beta"
-AMBROSIA_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${AMBROSIA_TAG}"
+AMBROSIA_REPO="olympus-btc/ambrosia"
 AMBROSIA_INSTALL_DIR="$HOME/.local/ambrosia"
 AMBROSIA_BIN_DIR="$HOME/.local/bin"
+AMBROSIA_TAG="${AMBROSIA_TAG:-}"
+
+ambrosia_resolve_tag() {
+
+  if [[ -n "$AMBROSIA_TAG" ]]; then
+    AMBROSIA_TAG="${AMBROSIA_TAG#v}"
+    log_info "Using pinned Ambrosia version: v$AMBROSIA_TAG"
+    return
+  fi
+  log_info "Resolving latest Ambrosia release from $AMBROSIA_REPO..."
+  local api_url="https://api.github.com/repos/${AMBROSIA_REPO}/releases"
+  local auth_args=()
+  if [[ -n "${GH_TOKEN:-}" ]]; then
+    auth_args=(-H "Authorization: Bearer $GH_TOKEN")
+  fi
+  local response
+  response=$(curl -fsSL "${auth_args[@]}" "$api_url")
+  AMBROSIA_TAG=$(printf '%s\n' "$response" \
+    | sed -E -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/p' \
+    | sed -n '1p')
+  if [[ -z "$AMBROSIA_TAG" ]]; then
+    log_error "Could not determine the latest Ambrosia release tag (GitHub API rate limit?)."
+    log_error "You can pin a version manually: AMBROSIA_TAG=vX.Y.Z $0"
+    exit 1
+  fi
+  log_info "Latest Ambrosia release: v$AMBROSIA_TAG"
+}
 
 ambrosia_write_initial_config() {
   local datadir="$HOME/.Ambrosia-POS"
@@ -271,8 +296,9 @@ ambrosia_install() {
   mkdir -p "$AMBROSIA_BIN_DIR" "$AMBROSIA_INSTALL_DIR"
   ambrosia_write_initial_config
 
-  download_file "${AMBROSIA_URL}/ambrosia-${AMBROSIA_TAG}.jar" "$AMBROSIA_INSTALL_DIR/ambrosia.jar"
-  download_file "https://raw.githubusercontent.com/olympus-btc/ambrosia/v${AMBROSIA_TAG}/scripts/run-server.sh" "$AMBROSIA_INSTALL_DIR/run-server.sh"
+  local ambrosia_url="https://github.com/${AMBROSIA_REPO}/releases/download/v${AMBROSIA_TAG}"
+  download_file "${ambrosia_url}/ambrosia-${AMBROSIA_TAG}.jar" "$AMBROSIA_INSTALL_DIR/ambrosia.jar"
+  download_file "https://raw.githubusercontent.com/${AMBROSIA_REPO}/v${AMBROSIA_TAG}/scripts/run-server.sh" "$AMBROSIA_INSTALL_DIR/run-server.sh"
   
   chmod +x "$AMBROSIA_INSTALL_DIR/ambrosia.jar" "$AMBROSIA_INSTALL_DIR/run-server.sh"
   ln -sf "$AMBROSIA_INSTALL_DIR/run-server.sh" "$AMBROSIA_BIN_DIR/ambrosia"
@@ -327,9 +353,6 @@ EOF
 
 # --- Client Installation ---
 
-CLIENT_TAG="0.7.0-beta"
-CLIENT_DIST_FILE="ambrosia-client-${CLIENT_TAG}.tar.gz"
-CLIENT_DIST_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${CLIENT_TAG}/${CLIENT_DIST_FILE}"
 CLIENT_INSTALL_DIR="$HOME/.local/ambrosia/client"
 
 client_install() {
@@ -345,9 +368,11 @@ client_install() {
   fi
 
   mkdir -p "$CLIENT_INSTALL_DIR"
-  
-  download_file "$CLIENT_DIST_URL" "$GLOBAL_TEMP_DIR/$CLIENT_DIST_FILE"
-  tar -xzf "$GLOBAL_TEMP_DIR/$CLIENT_DIST_FILE" -C "$CLIENT_INSTALL_DIR" --strip-components=1
+
+  local client_dist_file="ambrosia-client-${AMBROSIA_TAG}.tar.gz"
+  local client_dist_url="https://github.com/${AMBROSIA_REPO}/releases/download/v${AMBROSIA_TAG}/${client_dist_file}"
+  download_file "$client_dist_url" "$GLOBAL_TEMP_DIR/$client_dist_file"
+  tar -xzf "$GLOBAL_TEMP_DIR/$client_dist_file" -C "$CLIENT_INSTALL_DIR" --strip-components=1
   
   echo "   Installing Node.js dependencies..."
   pushd "$CLIENT_INSTALL_DIR" > /dev/null
@@ -417,6 +442,7 @@ EOF
 check_dependencies
 print_header
 phoenixd_install
+ambrosia_resolve_tag
 ambrosia_install
 client_install
 

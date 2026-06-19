@@ -1,5 +1,3 @@
-import { addToast } from "@heroui/react";
-
 import { processCheckout } from "../paymentFlows";
 import {
   buildHandlePay,
@@ -9,19 +7,12 @@ import {
   buildHandleCardComplete,
 } from "../paymentHandlers";
 
-jest.mock("@heroui/react", () => ({
-  addToast: jest.fn(),
-}));
-
 jest.mock("../paymentFlows", () => ({
   processCheckout: jest.fn(),
 }));
 
 describe("paymentHandlers", () => {
-  const t = (key) => key;
-
   beforeEach(() => {
-    addToast.mockClear();
     processCheckout.mockReset();
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -38,7 +29,6 @@ describe("paymentHandlers", () => {
     });
 
     const handlePay = buildHandlePay({
-      t,
       currency: { id: "cur-1" },
       formatAmount: jest.fn(),
       paymentMethodMap: {},
@@ -65,7 +55,6 @@ describe("paymentHandlers", () => {
     const dispatch = jest.fn();
 
     const handlePay = buildHandlePay({
-      t,
       currency: { id: "cur-1", acronym: "MXN" },
       formatAmount: jest.fn(() => 100),
       paymentMethodMap: { btc: { id: "btc", name: "BTC" } },
@@ -114,7 +103,6 @@ describe("paymentHandlers", () => {
     const dispatch = jest.fn();
 
     const handlePay = buildHandlePay({
-      t,
       currency: { id: "cur-1" },
       formatAmount: jest.fn(() => 100),
       paymentMethodMap: { cash: { id: "cash", name: "Cash" } },
@@ -160,10 +148,10 @@ describe("paymentHandlers", () => {
 
   it("configures card payment when method is card", async () => {
     const setCardPaymentConfig = jest.fn();
+    const notifySuccess = jest.fn();
     const dispatch = jest.fn();
 
     const handlePay = buildHandlePay({
-      t,
       currency: { id: "cur-1" },
       formatAmount: jest.fn(() => 100),
       paymentMethodMap: { card: { id: "card", name: "Card" } },
@@ -174,6 +162,7 @@ describe("paymentHandlers", () => {
       onResetCart: jest.fn(),
       onPay: jest.fn(),
       notifyError: jest.fn(),
+      notifySuccess,
       dispatch,
       user: { userId: "u1" },
       ensureCartReady: jest.fn(),
@@ -204,7 +193,7 @@ describe("paymentHandlers", () => {
         methodLabel: "Card",
       }),
     );
-    expect(addToast).not.toHaveBeenCalled();
+    expect(notifySuccess).not.toHaveBeenCalled();
     expect(dispatch).toHaveBeenCalledWith({ type: "start" });
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
@@ -215,7 +204,6 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("boom"));
 
     const handlePay = buildHandlePay({
-      t,
       currency: { id: "cur-1" },
       formatAmount: jest.fn(() => 100),
       paymentMethodMap: { bank: { id: "bank", name: "Bank Transfer" } },
@@ -268,14 +256,13 @@ describe("paymentHandlers", () => {
   it("returns early when BTC config is missing", async () => {
     const dispatch = jest.fn();
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: null,
+      getConfig: () => null,
+      setConfig: jest.fn(),
       dispatch,
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError: jest.fn(),
-      t,
       user: { userId: "u1" },
-      setBtcPaymentConfig: jest.fn(),
       printCustomerReceipt: jest.fn(),
     });
 
@@ -288,6 +275,7 @@ describe("paymentHandlers", () => {
     const dispatch = jest.fn();
     const onPay = jest.fn();
     const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
     const setBtcPaymentConfig = jest.fn((fn) => fn({ paymentCompleted: false }));
 
     processCheckout.mockResolvedValueOnce({
@@ -297,7 +285,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: {
+      getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
@@ -307,14 +295,14 @@ describe("paymentHandlers", () => {
         discountAmount: 0,
         total: 1,
         invoiceData: { exchangeRate: 50000, satoshis: 20000 },
-      },
+      }),
+      setConfig: setBtcPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
-      t,
+      notifySuccess,
       user: { userId: "u1" },
-      setBtcPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
     });
 
@@ -332,10 +320,7 @@ describe("paymentHandlers", () => {
       expect.objectContaining({ orderId: "order-1" }),
     );
     expect(onResetCart).toHaveBeenCalled();
-    expect(addToast).toHaveBeenCalledWith({
-      color: "success",
-      description: "success.btcPaid",
-    });
+    expect(notifySuccess).toHaveBeenCalledWith("success.btcPaid");
   });
 
   it("notifies error when BTC payment fails", async () => {
@@ -345,7 +330,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("errors.checkout"));
 
     const handler = buildHandleBtcComplete({
-      btcPaymentConfig: {
+      getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
         currencyId: "cur-1",
@@ -355,14 +340,13 @@ describe("paymentHandlers", () => {
         discountAmount: 0,
         total: 1,
         invoiceData: { exchangeRate: 50000, satoshis: 20000 },
-      },
+      }),
+      setConfig: setBtcPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
-      t,
       user: { userId: "u1" },
-      setBtcPaymentConfig,
       printCustomerReceipt: jest.fn(),
     });
 
@@ -376,6 +360,7 @@ describe("paymentHandlers", () => {
     const dispatch = jest.fn();
     const onPay = jest.fn();
     const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
     const setCashPaymentConfig = jest.fn();
 
     processCheckout.mockResolvedValueOnce({
@@ -385,7 +370,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleCashComplete({
-      cashPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -399,13 +384,13 @@ describe("paymentHandlers", () => {
         },
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
-      },
+      }),
+      setConfig: setCashPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
-      t,
-      setCashPaymentConfig,
+      notifySuccess,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -418,10 +403,7 @@ describe("paymentHandlers", () => {
     );
     expect(onResetCart).toHaveBeenCalled();
     expect(setCashPaymentConfig).toHaveBeenCalledWith(null);
-    expect(addToast).toHaveBeenCalledWith({
-      color: "success",
-      description: "success.cashPaid",
-    });
+    expect(notifySuccess).toHaveBeenCalledWith("success.cashPaid");
   });
 
   it("notifies error when cash payment fails", async () => {
@@ -431,7 +413,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
     const handler = buildHandleCashComplete({
-      cashPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -445,13 +427,12 @@ describe("paymentHandlers", () => {
         },
         selectedPaymentMethod: "cash",
         currencyId: "cur-1",
-      },
+      }),
+      setConfig: setCashPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
-      t,
-      setCashPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -466,6 +447,7 @@ describe("paymentHandlers", () => {
     const dispatch = jest.fn();
     const onPay = jest.fn();
     const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
     const setCardPaymentConfig = jest.fn();
 
     processCheckout.mockResolvedValueOnce({
@@ -475,7 +457,7 @@ describe("paymentHandlers", () => {
     });
 
     const handler = buildHandleCardComplete({
-      cardPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -490,13 +472,13 @@ describe("paymentHandlers", () => {
         selectedPaymentMethod: "card",
         currencyId: "cur-1",
         methodLabel: "Credit Card",
-      },
+      }),
+      setConfig: setCardPaymentConfig,
       dispatch,
       onPay,
       onResetCart,
       notifyError: jest.fn(),
-      t,
-      setCardPaymentConfig,
+      notifySuccess,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });
@@ -509,10 +491,7 @@ describe("paymentHandlers", () => {
     );
     expect(onResetCart).toHaveBeenCalled();
     expect(setCardPaymentConfig).toHaveBeenCalledWith(null);
-    expect(addToast).toHaveBeenCalledWith({
-      color: "success",
-      description: "success.cardPaid",
-    });
+    expect(notifySuccess).toHaveBeenCalledWith("success.cardPaid");
   });
 
   it("notifies error when card payment fails", async () => {
@@ -522,7 +501,7 @@ describe("paymentHandlers", () => {
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
     const handler = buildHandleCardComplete({
-      cardPaymentConfig: {
+      getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
         cartItems: [{ id: 1 }],
@@ -537,13 +516,12 @@ describe("paymentHandlers", () => {
         selectedPaymentMethod: "card",
         currencyId: "cur-1",
         methodLabel: "Credit Card",
-      },
+      }),
+      setConfig: setCardPaymentConfig,
       dispatch: jest.fn(),
       onPay: jest.fn(),
       onResetCart: jest.fn(),
       notifyError,
-      t,
-      setCardPaymentConfig,
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
       user: { userId: "u1" },
     });

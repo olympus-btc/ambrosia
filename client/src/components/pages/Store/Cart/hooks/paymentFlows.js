@@ -13,7 +13,6 @@ export async function processCheckout({
   paymentHash = null,
   exchangeRateCurrency = null,
   fiatAmountAtPayment = null,
-  t,
 }) {
   const checkoutHttpResponse = await httpClient("/store/orders/checkout", {
     method: "POST",
@@ -39,7 +38,7 @@ export async function processCheckout({
 
   const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
   if (!storeCheckoutResult?.orderId) {
-    throw new Error(t("errors.checkout"));
+    throw new Error("errors.checkout");
   }
   return storeCheckoutResult;
 }

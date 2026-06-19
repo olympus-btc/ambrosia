@@ -4,13 +4,11 @@ import {
 } from "../paymentBuilders";
 
 describe("paymentBuilders", () => {
-  const t = (key) => key;
-
   it("throws when required payment data is missing", () => {
-    expect(() => ensureCartReady({ t, items: [], selectedPaymentMethod: "" })).toThrow("errors.selectMethod");
-    expect(() => ensureCartReady({ t, items: [], selectedPaymentMethod: "cash" })).toThrow("errors.emptyCart");
-    expect(() => ensureCartReady({ t, items: [{}], selectedPaymentMethod: "cash", userId: null, currencyId: "cur" })).toThrow("errors.noUser");
-    expect(() => ensureCartReady({ t, items: [{}], selectedPaymentMethod: "cash", userId: "u1", currencyId: "" })).toThrow("errors.noCurrency");
+    expect(() => ensureCartReady({ items: [], selectedPaymentMethod: "" })).toThrow("errors.selectMethod");
+    expect(() => ensureCartReady({ items: [], selectedPaymentMethod: "cash" })).toThrow("errors.emptyCart");
+    expect(() => ensureCartReady({ items: [{}], selectedPaymentMethod: "cash", userId: null, currencyId: "cur" })).toThrow("errors.noUser");
+    expect(() => ensureCartReady({ items: [{}], selectedPaymentMethod: "cash", userId: "u1", currencyId: "" })).toThrow("errors.noCurrency");
   });
 
   it("normalizes amounts and formats total", () => {

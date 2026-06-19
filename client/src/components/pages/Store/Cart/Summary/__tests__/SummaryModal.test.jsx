@@ -2,10 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { SummaryModal } from "../SummaryModal";
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
-
 jest.mock("@heroui/react", () => ({
   Modal: ({ isOpen, onClose, children }) => (isOpen
     ? <div data-testid="modal"><button aria-label="close" onClick={onClose} />{children}</div>

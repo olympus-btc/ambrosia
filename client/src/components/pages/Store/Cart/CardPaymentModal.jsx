@@ -19,10 +19,10 @@ export function CardPaymentModal({
   displayTotal,
   methodLabel,
 }) {
-  const t = useTranslations("cart.paymentModal.card");
+  const cardTranslations = useTranslations("cart.paymentModal.card");
   const { formatAmount } = useCurrency();
   const formattedTotal = displayTotal || formatAmount((amountDue || 0) * 100);
-  const resolvedMethodLabel = methodLabel || t("defaultMethod");
+  const resolvedMethodLabel = methodLabel || cardTranslations("defaultMethod");
 
   return (
     <Modal
@@ -39,21 +39,21 @@ export function CardPaymentModal({
     >
       <ModalContent>
         <ModalHeader className="flex flex-col">
-          {t("title")}
+          {cardTranslations("title")}
           <span className="text-sm text-gray-600">
-            {t("subtitle")}
+            {cardTranslations("subtitle")}
           </span>
         </ModalHeader>
         <ModalBody className="space-y-4">
           <div className="border-b pb-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{t("totalLabel")}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{cardTranslations("totalLabel")}</p>
             <p className="text-xl font-semibold text-green-900">
               {formattedTotal}
             </p>
           </div>
 
           <div className="bg-white rounded-lg border p-3 flex justify-between items-center">
-            <span className="text-sm text-gray-600">{t("methodLabel")}</span>
+            <span className="text-sm text-gray-600">{cardTranslations("methodLabel")}</span>
             <span className="text-lg font-semibold text-green-700">{resolvedMethodLabel}</span>
           </div>
         </ModalBody>
@@ -64,14 +64,14 @@ export function CardPaymentModal({
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onPress={onClose}
           >
-            {t("cancel")}
+            {cardTranslations("cancel")}
           </Button>
           <Button
             color="primary"
             className="bg-green-800"
             onPress={() => onComplete?.()}
           >
-            {t("confirm")}
+            {cardTranslations("confirm")}
           </Button>
         </ModalFooter>
       </ModalContent>

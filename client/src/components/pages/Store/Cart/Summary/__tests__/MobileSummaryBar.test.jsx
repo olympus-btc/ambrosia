@@ -2,10 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { MobileSummaryBar } from "../MobileSummaryBar";
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));

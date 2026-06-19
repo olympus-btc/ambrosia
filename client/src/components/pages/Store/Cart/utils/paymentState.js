@@ -20,12 +20,22 @@ export function paymentStateReducer(state, action) {
   }
 }
 
-export function createErrorNotifier(dispatch) {
-  return (message) => {
+export function createErrorNotifier(dispatch, translate = (key) => key) {
+  return (messageKey) => {
+    const message = translate.has?.(messageKey) ? translate(messageKey) : messageKey;
     dispatch({ type: "error", payload: message });
     addToast({
       color: "danger",
       description: message,
+    });
+  };
+}
+
+export function createSuccessNotifier(translate = (key) => key) {
+  return (messageKey) => {
+    addToast({
+      color: "success",
+      description: translate(messageKey),
     });
   };
 }
