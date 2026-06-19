@@ -3,7 +3,7 @@ import { useRef, useSyncExternalStore } from "react";
 import { addToast, Button, closeToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { calculateCartTotals } from "../hooks/cartTotals";
+import { calculateCartTotals } from "../utils/cartTotals";
 
 import { CartItemCard } from "./CartItemCard";
 import { CartPaymentSection } from "./CartPaymentSection";

@@ -11,13 +11,13 @@ import { useProducts } from "../hooks/useProducts";
 import { BitcoinPaymentModal } from "./BitcoinPaymentModal";
 import { CardPaymentModal } from "./CardPaymentModal";
 import { CashPaymentModal } from "./CashPaymentModal";
-import { calculateCartTotals } from "./hooks/cartTotals";
 import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
+import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
   const syncedItems = cart
