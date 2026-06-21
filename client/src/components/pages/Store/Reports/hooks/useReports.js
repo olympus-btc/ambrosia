@@ -1,9 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
 
-import { addToast } from "@heroui/react";
-import { useTranslations } from "next-intl";
-
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 function buildReportsQueryString(filters = {}) {
@@ -11,14 +8,11 @@ function buildReportsQueryString(filters = {}) {
   if (filters.period) params.set("period", filters.period);
   if (filters.startDate) params.set("startDate", filters.startDate);
   if (filters.endDate) params.set("endDate", filters.endDate);
-  if (filters.productName?.trim()) params.set("productName", filters.productName.trim());
-  if (filters.paymentMethod?.trim()) params.set("paymentMethod", filters.paymentMethod.trim());
   const query = params.toString();
   return `/reports${query ? `?${query}` : ""}`;
 }
 
 export function useReports() {
-  const t = useTranslations("reports");
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -40,12 +34,5 @@ export function useReports() {
     }
   }, []);
 
-  const showError = useCallback(
-    (message) => {
-      addToast({ title: t("statuses.errorTitle"), description: message, variant: "solid", color: "danger" });
-    },
-    [t],
-  );
-
-  return { fetchReport, reportData, loading, error, showError };
+  return { fetchReport, reportData, loading, error };
 }

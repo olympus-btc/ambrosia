@@ -11,6 +11,22 @@ const mockSetCart = jest.fn();
 const mockSetDiscount = jest.fn();
 const mockResetCartState = jest.fn();
 const mockHandlePay = jest.fn();
+const mockAddProduct = jest.fn();
+const mockUpdateQuantity = jest.fn();
+const mockRemoveProduct = jest.fn();
+const mockClearCart = jest.fn();
+
+jest.mock("../BitcoinPaymentModal", () => ({
+  BitcoinPaymentModal: ({ isOpen }) => (isOpen ? <div>btc-modal</div> : null),
+}));
+
+jest.mock("../CashPaymentModal", () => ({
+  CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
+}));
+
+jest.mock("../CardPaymentModal", () => ({
+  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
+}));
 
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
@@ -26,11 +42,14 @@ jest.mock("../SearchProducts", () => ({
 }));
 
 jest.mock("../Summary", () => ({
-  Summary: ({ onUpdateQuantity, onRemoveProduct, onPay }) => (
+  Summary: ({ cartItems, onUpdateQuantity, onRemoveProduct, onClearCart, startRemoval, onPay }) => (
     <div>
+      <span data-testid="summary-count">{cartItems.length}</span>
       <button onClick={() => onUpdateQuantity(1, 0)}>update-zero</button>
       <button onClick={() => onUpdateQuantity(1, 3)}>update-positive</button>
       <button onClick={() => onRemoveProduct(1)}>remove</button>
+      <button onClick={() => startRemoval(1, () => onRemoveProduct(1))}>soft-remove</button>
+      <button onClick={() => onClearCart()}>clear</button>
       <button onClick={() => onPay({})}>pay</button>
     </div>
   ),
@@ -38,6 +57,15 @@ jest.mock("../Summary", () => ({
   MobileSummaryBar: ({ cart, onCheckout }) => (
     cart?.length ? <button onClick={onCheckout}>mobile-checkout</button> : null
   ),
+}));
+
+jest.mock("../hooks/useCartOperations", () => ({
+  useCartOperations: () => ({
+    addProduct: mockAddProduct,
+    updateQuantity: mockUpdateQuantity,
+    removeProduct: mockRemoveProduct,
+    clearCart: mockClearCart,
+  }),
 }));
 
 jest.mock("../hooks/usePersistentCart", () => ({
@@ -49,6 +77,7 @@ jest.mock("../hooks/usePersistentCart", () => ({
     setCart: mockSetCart,
     discount: 0,
     setDiscount: mockSetDiscount,
+    isCartRestored: true,
     resetCartState: mockResetCartState,
   }),
 }));
@@ -56,8 +85,8 @@ jest.mock("../hooks/usePersistentCart", () => ({
 jest.mock("../../hooks/useProducts", () => ({
   useProducts: () => ({
     products: [
-      { id: 1, quantity: 5 },
-      { id: 2, quantity: 5 },
+      { id: 1, quantity: 5, priceCents: 100 },
+      { id: 2, quantity: 5, priceCents: 200 },
     ],
     refetch: jest.fn(),
   }),
@@ -75,16 +104,22 @@ jest.mock("../hooks/useCartPayment", () => ({
     isPaying: false,
     paymentError: "",
     clearPaymentError: jest.fn(),
-    btcPaymentConfig: null,
-    handleBtcInvoiceReady: jest.fn(),
-    handleBtcComplete: jest.fn(),
-    clearBtcPaymentConfig: jest.fn(),
-    cashPaymentConfig: null,
-    handleCashComplete: jest.fn(),
-    clearCashPaymentConfig: jest.fn(),
-    cardPaymentConfig: null,
-    handleCardComplete: jest.fn(),
-    clearCardPaymentConfig: jest.fn(),
+    btcPayment: {
+      config: null,
+      onInvoiceReady: jest.fn(),
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    cashPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    cardPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
   }),
 }));
 
@@ -168,40 +203,79 @@ describe("Cart page", () => {
     expect(screen.getByText("update-zero")).toBeInTheDocument();
   });
 
-  it("adds a new product and increases quantity for existing product", async () => {
+  it("forwards onAddProduct to SearchProducts", async () => {
     await act(async () => {
       renderCart();
     });
 
     fireEvent.click(screen.getByText("add-existing"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
-    ]);
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 });
 
     fireEvent.click(screen.getByText("add-new"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
-      { id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
-    ]);
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 });
   });
 
-  it("updates quantity, removes product when quantity is zero, and forwards pay", async () => {
+  it("syncs stale cart prices when products load", async () => {
+    await act(async () => {
+      renderCart();
+    });
+
+    const setCartCalls = mockSetCart.mock.calls;
+    const syncCall = setCartCalls.find(([arg]) => typeof arg === "function");
+    expect(syncCall).toBeDefined();
+
+    const updater = syncCall[0];
+    const staleCart = [{ id: 1, name: "Jade Wallet", price: 50, quantity: 2, subtotal: 100 }];
+    const result = updater(staleCart);
+    expect(result).toEqual([{ id: 1, name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 }]);
+  });
+
+  it("forwards onUpdateQuantity, onRemoveProduct, and onPay to Summary", async () => {
     await act(async () => {
       renderCart();
     });
 
     fireEvent.click(screen.getByText("update-positive"));
-    expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 3, subtotal: 300 },
-    ]);
+    expect(mockUpdateQuantity).toHaveBeenCalledWith(1, 3);
 
     fireEvent.click(screen.getByText("update-zero"));
-    expect(mockSetCart).toHaveBeenCalledWith([]);
+    expect(mockUpdateQuantity).toHaveBeenCalledWith(1, 0);
 
     fireEvent.click(screen.getByText("remove"));
-    expect(mockSetCart).toHaveBeenCalledWith([]);
+    expect(mockRemoveProduct).toHaveBeenCalledWith(1);
 
     fireEvent.click(screen.getByText("pay"));
     expect(mockHandlePay).toHaveBeenCalledWith({});
+  });
+
+  it("hides items pending removal from totals immediately, before the undo toast expires", async () => {
+    jest.useFakeTimers();
+    try {
+      await act(async () => {
+        renderCart();
+      });
+
+      expect(screen.getByTestId("summary-count")).toHaveTextContent("1");
+      expect(screen.getByText("mobile-checkout")).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("soft-remove"));
+      });
+
+      expect(screen.getByTestId("summary-count")).toHaveTextContent("0");
+      expect(screen.queryByText("mobile-checkout")).not.toBeInTheDocument();
+      expect(mockRemoveProduct).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("clears the cart when clear is pressed", async () => {
+    await act(async () => {
+      renderCart();
+    });
+
+    fireEvent.click(screen.getByText("clear"));
+    expect(mockClearCart).toHaveBeenCalled();
   });
 });

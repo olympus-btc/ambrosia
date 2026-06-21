@@ -29,6 +29,12 @@ const printersEn = {
       CUSTOMER: "Customer",
       BAR: "Bar",
     },
+    saveSuccess: "Printer added successfully",
+    saveError: "Failed to add printer",
+    updateSuccess: "Printer updated successfully",
+    updateError: "Failed to update printer",
+    deleteSuccess: "Printer removed successfully",
+    deleteError: "Failed to remove printer",
   },
 };
 

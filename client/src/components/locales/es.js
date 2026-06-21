@@ -44,10 +44,18 @@ const componentsEs = {
   actions: {
     edit: "Editar",
     delete: "Eliminar",
+    view: "Ver",
   },
   imageUploader: {
     removeImage: "Eliminar imagen",
     takePhoto: "Tomar una foto",
+  },
+  productDetails: {
+    description: "Descripción",
+    close: "Cerrar",
+    add: "Agregar",
+    stock: "en almacén",
+    unknownCategory: "Categoría desconocida",
   },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",
@@ -74,6 +82,13 @@ const componentsEs = {
     closeShiftButton: "Cerrar turno",
     other: "Otro",
     loadError: "Error al cargar datos del turno",
+  },
+  amountDisplay: {
+    satsLabel: "sats",
+    showCurrentRate: "Ver tipo de cambio actual",
+    showHistoricalRate: "Ver tipo de cambio al momento de la venta",
+    amountAtTimeOfPayment: "Monto al momento del cobro",
+    amountAtCurrentRate: "Monto con tasa actual",
   },
 };
 

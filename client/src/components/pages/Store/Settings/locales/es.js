@@ -12,6 +12,8 @@ const settingsEs = {
     cardCurrency: {
       title: "Moneda",
       currencyLabel: "Cambiar moneda",
+      successTitle: "Moneda Actualizada",
+      successDescription: "La moneda de la tienda se ha cambiado correctamente.",
     },
     cardLanguage: {
       title: "Idioma",

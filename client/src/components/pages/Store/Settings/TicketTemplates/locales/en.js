@@ -32,6 +32,7 @@ const ticketTemplatesEn = {
     confirmDelete: "Confirm delete",
     cancelDelete: "Cancel",
     saveSuccess: "Template saved",
+    saveError: "Failed to save template",
     close: "Close",
     saveNew: "Create",
     saveChanges: "Save",

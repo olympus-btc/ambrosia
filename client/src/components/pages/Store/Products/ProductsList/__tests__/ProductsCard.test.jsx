@@ -21,6 +21,10 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress }) => <button data-testid="delete-button" onClick={onPress}><span data-testid="trash-icon" /></button>,
 }));
 
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress }) => <button data-testid="view-button" onClick={onPress} />,
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
@@ -47,6 +51,7 @@ const defaultProps = {
   canManageProducts: true,
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
+  onViewProduct: jest.fn(),
 };
 
 function renderCard(props = {}) {
@@ -134,11 +139,25 @@ describe("ProductsCard", () => {
     expect(onDeleteProduct).toHaveBeenCalledWith(product);
   });
 
-  it("hides action buttons when canManageProducts is false", () => {
+  it("hides edit and delete buttons when canManageProducts is false", () => {
     renderCard({ canManageProducts: false });
 
     expect(screen.queryByTestId("pencil-icon")).not.toBeInTheDocument();
     expect(screen.queryByTestId("trash-icon")).not.toBeInTheDocument();
+  });
+
+  it("always renders view button regardless of canManageProducts", () => {
+    renderCard({ canManageProducts: false });
+
+    expect(screen.getByTestId("view-button")).toBeInTheDocument();
+  });
+
+  it("calls onViewProduct when view button is pressed", () => {
+    const onViewProduct = jest.fn();
+    renderCard({ onViewProduct });
+
+    fireEvent.click(screen.getByTestId("view-button"));
+    expect(onViewProduct).toHaveBeenCalledWith(product);
   });
 
   it("uses productStock as fallback when quantity is undefined", () => {

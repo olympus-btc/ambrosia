@@ -1,6 +1,6 @@
 {
   "name": "ambrosia-pos",
-  "version": "0.6.0-beta",
+  "version": "0.7.0-beta",
   "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
   "scripts": {
@@ -39,9 +39,6 @@
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.23.1"
-  },
-  "overrides": {
-    "brace-expansion": ">=1.1.13"
   },
   "dependencies": {
     "cross-spawn": "^7.0.6",

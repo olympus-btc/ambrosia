@@ -60,7 +60,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.btcPaymentConfig).toEqual(
+      expect(result.current.btcPayment.config).toEqual(
         expect.objectContaining({
           amountFiat: 1,
           currencyAcronym: "usd",
@@ -71,10 +71,10 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.clearBtcPaymentConfig();
+      result.current.btcPayment.onClose();
     });
 
-    expect(result.current.btcPaymentConfig).toBeNull();
+    expect(result.current.btcPayment.config).toBeNull();
   });
 
   it("handles cash payment config and clearing", async () => {
@@ -92,7 +92,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.cashPaymentConfig).toEqual(
+      expect(result.current.cashPayment.config).toEqual(
         expect.objectContaining({
           amountDue: 1,
           displayTotal: "fmt-100",
@@ -101,10 +101,10 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.clearCashPaymentConfig();
+      result.current.cashPayment.onClose();
     });
 
-    expect(result.current.cashPaymentConfig).toBeNull();
+    expect(result.current.cashPayment.config).toBeNull();
   });
 
   it("handles card payment config and clearing", async () => {
@@ -125,7 +125,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.cardPaymentConfig).toEqual(
+      expect(result.current.cardPayment.config).toEqual(
         expect.objectContaining({
           amountDue: 1,
           displayTotal: "fmt-100",
@@ -135,10 +135,10 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.clearCardPaymentConfig();
+      result.current.cardPayment.onClose();
     });
 
-    expect(result.current.cardPaymentConfig).toBeNull();
+    expect(result.current.cardPayment.config).toBeNull();
   });
 
   it("handles missing payment methods without crashing", () => {

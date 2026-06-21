@@ -1,38 +1,37 @@
 "use client";
 import { useMemo } from "react";
 
+import { formatDateParts } from "@lib/formatDate";
+
 export function useChartData(sales) {
-  const revenueByDay = useMemo(() => {
-    const byDay = {};
-    for (const sale of sales) {
-      const day = sale.saleDate.slice(0, 10);
-      if (!byDay[day]) byDay[day] = { date: day, revenue: 0, count: 0 };
-      byDay[day].revenue += sale.quantity * sale.priceAtOrder;
-      byDay[day].count += sale.quantity;
-    }
-    return Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date));
-  }, [sales]);
+  const { revenueByDay, topProducts, paymentMethodSplit } = useMemo(() => {
+    const dailyRevenueMap = {};
+    const productRevenueMap = {};
+    const paymentMethodMap = {};
 
-  const topProducts = useMemo(() => {
-    const byProduct = {};
     for (const sale of sales) {
-      if (!byProduct[sale.productName])
-        byProduct[sale.productName] = { name: sale.productName, revenue: 0, quantity: 0 };
-      byProduct[sale.productName].revenue += sale.quantity * sale.priceAtOrder;
-      byProduct[sale.productName].quantity += sale.quantity;
-    }
-    return Object.values(byProduct).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
-  }, [sales]);
-
-  const paymentMethodSplit = useMemo(() => {
-    const byMethod = {};
-    for (const sale of sales) {
+      const dateKey = formatDateParts(sale.saleDate).localDay;
+      const saleRevenue = sale.quantity * sale.priceAtOrder;
       const method = sale.paymentMethod;
-      if (!byMethod[method]) byMethod[method] = { method, revenue: 0, count: 0 };
-      byMethod[method].revenue += sale.quantity * sale.priceAtOrder;
-      byMethod[method].count += 1;
+
+      if (!dailyRevenueMap[dateKey]) dailyRevenueMap[dateKey] = { date: dateKey, revenue: 0, count: 0 };
+      dailyRevenueMap[dateKey].revenue += saleRevenue;
+      dailyRevenueMap[dateKey].count += sale.quantity;
+
+      if (!productRevenueMap[sale.productName]) productRevenueMap[sale.productName] = { name: sale.productName, revenue: 0, quantity: 0 };
+      productRevenueMap[sale.productName].revenue += saleRevenue;
+      productRevenueMap[sale.productName].quantity += sale.quantity;
+
+      if (!paymentMethodMap[method]) paymentMethodMap[method] = { method, revenue: 0, count: 0 };
+      paymentMethodMap[method].revenue += saleRevenue;
+      paymentMethodMap[method].count += 1;
     }
-    return Object.values(byMethod).sort((a, b) => b.revenue - a.revenue);
+
+    return {
+      revenueByDay: Object.values(dailyRevenueMap).sort((left, right) => left.date.localeCompare(right.date)),
+      topProducts: Object.values(productRevenueMap).sort((left, right) => right.revenue - left.revenue).slice(0, 8),
+      paymentMethodSplit: Object.values(paymentMethodMap).sort((left, right) => right.revenue - left.revenue),
+    };
   }, [sales]);
 
   return { revenueByDay, topProducts, paymentMethodSplit };

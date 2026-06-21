@@ -1,6 +1,7 @@
 import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import * as useBitcoinPriceHook from "@/components/hooks/useBitcoinPrice";
 import { AuthContext } from "@/providers/auth/AuthProvider";
 import * as walletService from "@/services/walletService";
 import * as useNavigationHook from "@hooks/useNavigation";
@@ -170,6 +171,11 @@ beforeEach(() => {
     setInvoiceHash: jest.fn(),
     setFetchers: jest.fn(),
     onPayment: jest.fn(() => jest.fn()),
+  });
+
+  jest.spyOn(useBitcoinPriceHook, "useBitcoinPrice").mockReturnValue({
+    currentRate: 50000,
+    isLoading: false,
   });
 });
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
 import { decodeInvoice, payInvoiceFromService } from "@/services/walletService";
 
 import { getBolt11ValidationError } from "../utils/validateBolt11Invoice";
@@ -9,8 +10,10 @@ import { getBolt11ValidationError } from "../utils/validateBolt11Invoice";
 export function useSendPaymentFlow({
   fetchInfo,
   fetchTransactions,
+  currentRate,
   validateInvoice,
 }) {
+  const { currency } = useCurrency();
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);
   const [invoiceValidationError, setInvoiceValidationError] = useState("");
@@ -50,7 +53,10 @@ export function useSendPaymentFlow({
   const confirmPayment = async (customAmountSat) => {
     try {
       setIsLoading(true);
-      const paymentResponse = await payInvoiceFromService(payInvoice, customAmountSat);
+      const paymentResponse = await payInvoiceFromService(payInvoice, customAmountSat, {
+        exchangeRate: currentRate ?? null,
+        exchangeRateCurrency: currentRate != null ? (currency?.acronym?.toLowerCase() ?? null) : null,
+      });
       setPaymentResult(paymentResponse);
       setPayInvoice("");
       setInvoiceValidationError("");

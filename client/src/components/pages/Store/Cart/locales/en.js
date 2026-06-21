@@ -10,6 +10,8 @@ const cartEn = {
     card: {
       add: "Add",
       stock: "in stock",
+      showProductDetails: "Show Details",
+      showProductDescription: "Description",
       errors: {
         unknownCategory: "Unknown category",
       },

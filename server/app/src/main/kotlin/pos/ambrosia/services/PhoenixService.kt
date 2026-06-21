@@ -340,8 +340,8 @@ class PhoenixService(
                     url = "$phoenixdUrl/export",
                     formParameters =
                         Parameters.build {
-                            append("from", request.from.toString())
-                            append("to", request.to.toString())
+                            append("from", request.from)
+                            append("to", request.to)
                         },
                 )
             if (response.status.value != 200) {

@@ -15,10 +15,11 @@ import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsTable({ products, categoryNameById, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct }) {
+export function ProductsTable({ products, categoryNameById, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
   const t = useTranslations("products");
 
   return (
@@ -32,7 +33,7 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
         <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
-        <TableColumn className={canManageProducts ? "py-2 px-3 w-40 text-right" : "hidden"}>{t("actions")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-40 text-right">{t("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {products.map((product) => {
@@ -109,14 +110,19 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                   {t(`status.${productStatus}`)}
                 </Chip>
               </TableCell>
-              <TableCell className={canManageProducts ? "py-2 px-3" : "hidden"}>
+              <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">
-                  <RequirePermission allOf={["products_update"]}>
-                    <EditButton onPress={() => onEditProduct(product)}>{t("edit")}</EditButton>
-                  </RequirePermission>
-                  <RequirePermission allOf={["products_delete"]}>
-                    <DeleteButton onPress={() => onDeleteProduct(product)}>{t("delete")}</DeleteButton>
-                  </RequirePermission>
+                  <ViewButton onPress={() => onViewProduct(product)}>{t("viewDetails")}</ViewButton>
+                  {canManageProducts && (
+                    <>
+                      <RequirePermission allOf={["products_update"]}>
+                        <EditButton onPress={() => onEditProduct(product)}>{t("edit")}</EditButton>
+                      </RequirePermission>
+                      <RequirePermission allOf={["products_delete"]}>
+                        <DeleteButton onPress={() => onDeleteProduct(product)}>{t("delete")}</DeleteButton>
+                      </RequirePermission>
+                    </>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

@@ -89,13 +89,18 @@ class PrintService(
                     } else {
                         configItem.templateName ?: request.templateName
                     }
-                if (resolvedTemplateName.isNullOrBlank()) {
-                    throw IOException("Template not configured for printer ${configItem.printerName}.")
+                val effectiveTemplateName =
+                    resolvedTemplateName
+                        ?.takeIf { it.isNotBlank() && !it.equals("none", ignoreCase = true) }
+                if (effectiveTemplateName == null) {
+                    logger.warn("No template configured for printer ${configItem.printerName}, skipping.")
+                    successCount++
+                    return@forEach
                 }
                 val template =
-                    templateCache.getOrPut(resolvedTemplateName) {
-                        ticketTemplateService.getTemplateByName(resolvedTemplateName)
-                            ?: throw IOException("Template '$resolvedTemplateName' not found.")
+                    templateCache.getOrPut(effectiveTemplateName) {
+                        ticketTemplateService.getTemplateByName(effectiveTemplateName)
+                            ?: throw IOException("Template '$effectiveTemplateName' not found.")
                     }
 
                 val printerOutputStream = PrinterOutputStream(printerService)

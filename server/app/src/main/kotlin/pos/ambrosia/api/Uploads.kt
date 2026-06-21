@@ -55,7 +55,7 @@ fun Application.configureUploads() {
 
                         else -> {}
                     }
-                    part.dispose()
+                    part.release()
                 }
 
                 if (uploads.isEmpty()) {

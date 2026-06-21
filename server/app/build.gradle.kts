@@ -1,10 +1,10 @@
-version = "0.6.0-beta"
+version = "0.7.0-beta"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.plugin.serialization)
-    id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
+    alias(libs.plugins.ktlint)
     application
 }
 
@@ -13,38 +13,39 @@ repositories {
 }
 
 dependencies {
-    testImplementation("org.jetbrains.kotlin:kotlin-test:$2.1.20")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.2.20")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
-    testImplementation("org.mockito:mockito-core:4.0.0")
-    testImplementation("io.ktor:ktor-client-mock:$ktor-version")
     implementation(libs.ktor.server.core)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.netty)
-    testImplementation(libs.ktor.server.test.host)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.network.tls.certificates)
+
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.auth)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     implementation(libs.logback.classic)
 
-    implementation("io.ktor:ktor-server-cors:$ktor-version")
-    implementation("io.ktor:ktor-server-status-pages:$ktor-version")
-    implementation("io.ktor:ktor-server-auth:$ktor-version")
-    implementation("io.ktor:ktor-server-auth-jwt:$ktor-version")
-    implementation("io.ktor:ktor-client-core:$ktor-version")
-    implementation("io.ktor:ktor-client-cio:$ktor-version")
-    implementation("io.ktor:ktor-client-auth:$ktor-version")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktor-version")
-    implementation("io.ktor:ktor-server-websockets:$ktor-version")
-    implementation("com.github.anastaciocintra:escpos-coffee:4.1.0")
-    implementation("com.google.zxing:core:3.5.3")
+    implementation(libs.flyway.core)
+    implementation(libs.sqlite.jdbc)
 
-    implementation("io.ktor:ktor-network-tls-certificates:$ktor-version")
+    implementation(libs.clikt)
+    implementation(libs.lightning.kmp)
 
-    implementation("org.flywaydb:flyway-core:11.11.2")
-    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    implementation(libs.escpos.coffee)
+    implementation(libs.zxing.core)
 
-    implementation("com.github.ajalt.clikt:clikt:5.0.3")
-    implementation("fr.acinq.lightning:lightning-kmp-jvm:1.8.4")
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.ktor.server.test.host)
 }
 
 tasks.named<JavaExec>("run") {
@@ -53,7 +54,6 @@ tasks.named<JavaExec>("run") {
 
 tasks.test {
     testLogging {
-        // Define qué eventos quieres ver en el log
         events("passed", "skipped", "failed")
     }
 }

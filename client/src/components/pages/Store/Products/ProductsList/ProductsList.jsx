@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { usePermission } from "@/hooks/usePermission";
 
 import { ProductsCard } from "./ProductsCard";
@@ -12,6 +13,13 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
   const { formatAmount } = useCurrency();
   const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
   const defaultMaxStock = 11;
+  const [showProductDetails, setShowProductDetails] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const handleViewProductDetails = (product) => {
+    setSelectedProduct(product);
+    setShowProductDetails(true);
+  };
 
   const categoryNameById = useMemo(() => categories.reduce((map, category) => {
     map[String(category.id)] = category.name;
@@ -31,34 +39,46 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
   };
 
   return (
-    <section className="w-full">
-      <div className="md:hidden space-y-3">
-        {products.map((product) => (
-          <ProductsCard
-            key={product.id}
-            product={product}
-            status={stockStatus(product)}
+    <>
+      <section className="w-full">
+        <div className="md:hidden space-y-3">
+          {products.map((product) => (
+            <ProductsCard
+              key={product.id}
+              product={product}
+              status={stockStatus(product)}
+              normalizeNumber={normalizeNumber}
+              formatAmount={formatAmount}
+              canManageProducts={canManageProducts}
+              onEditProduct={onEditProduct}
+              onDeleteProduct={onDeleteProduct}
+              onViewProduct={handleViewProductDetails}
+            />
+          ))}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+          <ProductsTable
+            products={products}
+            categoryNameById={categoryNameById}
+            status={stockStatus}
             normalizeNumber={normalizeNumber}
             formatAmount={formatAmount}
             canManageProducts={canManageProducts}
             onEditProduct={onEditProduct}
             onDeleteProduct={onDeleteProduct}
+            onViewProduct={handleViewProductDetails}
           />
-        ))}
-      </div>
+        </div>
+      </section>
 
-      <div className="hidden md:block overflow-x-auto">
-        <ProductsTable
-          products={products}
-          categoryNameById={categoryNameById}
-          status={stockStatus}
-          normalizeNumber={normalizeNumber}
-          formatAmount={formatAmount}
-          canManageProducts={canManageProducts}
-          onEditProduct={onEditProduct}
-          onDeleteProduct={onDeleteProduct}
-        />
-      </div>
-    </section>
+      <ProductDetailsModal
+        isOpen={showProductDetails}
+        onClose={() => setShowProductDetails(false)}
+        showAddButton={false}
+        product={selectedProduct}
+        categories={categories}
+      />
+    </>
   );
 }

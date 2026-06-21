@@ -40,10 +40,10 @@ describe("useChartData", () => {
   });
 
   it("topProducts is capped at 8 entries", () => {
-    const manySales = Array.from({ length: 10 }, (_, idx) => ({
-      productName: `Product ${idx}`,
+    const manySales = Array.from({ length: 10 }, (_, index) => ({
+      productName: `Product ${index}`,
       quantity: 1,
-      priceAtOrder: 1000 - idx * 10,
+      priceAtOrder: 1000 - index * 10,
       userName: "u",
       paymentMethod: "Cash",
       saleDate: "2024-01-01T00:00:00",
@@ -56,14 +56,14 @@ describe("useChartData", () => {
     const { result } = renderHook(() => useChartData(salesData));
     const [first] = result.current.paymentMethodSplit;
     expect(first.method).toBe("Cash");
-    result.current.paymentMethodSplit.forEach((entry, idx, arr) => {
-      if (idx > 0) expect(entry.revenue).toBeLessThanOrEqual(arr[idx - 1].revenue);
+    result.current.paymentMethodSplit.forEach((entry, index, entries) => {
+      if (index > 0) expect(entry.revenue).toBeLessThanOrEqual(entries[index - 1].revenue);
     });
   });
 
   it("paymentMethodSplit count tracks number of sale records per method", () => {
     const { result } = renderHook(() => useChartData(salesData));
-    const cash = result.current.paymentMethodSplit.find((e) => e.method === "Cash");
+    const cash = result.current.paymentMethodSplit.find((entry) => entry.method === "Cash");
     expect(cash.count).toBe(2);
   });
 
@@ -72,5 +72,14 @@ describe("useChartData", () => {
     expect(result.current.revenueByDay).toEqual([]);
     expect(result.current.topProducts).toEqual([]);
     expect(result.current.paymentMethodSplit).toEqual([]);
+  });
+
+  it("revenueByDay groups a mid-day sale under exactly one local day entry", () => {
+    const singleSale = [
+      { productName: "A", quantity: 1, priceAtOrder: 1000, userName: "u", paymentMethod: "Cash", saleDate: "2024-06-15T12:00:00" },
+    ];
+    const { result } = renderHook(() => useChartData(singleSale));
+    expect(result.current.revenueByDay).toHaveLength(1);
+    expect(result.current.revenueByDay[0].revenue).toBe(1000);
   });
 });

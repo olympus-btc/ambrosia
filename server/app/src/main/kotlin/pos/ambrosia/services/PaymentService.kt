@@ -3,6 +3,7 @@ package pos.ambrosia.services
 import pos.ambrosia.logger
 import pos.ambrosia.models.Currency
 import pos.ambrosia.models.Payment
+import pos.ambrosia.models.PaymentBitcoinData
 import pos.ambrosia.models.PaymentMethod
 import java.sql.Connection
 
@@ -16,6 +17,8 @@ class PaymentService(
             "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments"
         private const val GET_PAYMENT_BY_ID =
             "SELECT id, method_id, currency_id, transaction_id, amount, date FROM payments WHERE id = ?"
+        private const val GET_BITCOIN_DATA_BY_PAYMENT_HASHES =
+            "SELECT payment_hash, exchange_rate_at_payment, exchange_rate_currency, fiat_amount_at_payment FROM payments WHERE payment_hash IN (%s) AND exchange_rate_at_payment IS NOT NULL"
         private const val UPDATE_PAYMENT =
             "UPDATE payments SET method_id = ?, currency_id = ?, transaction_id = ?, amount = ? WHERE id = ?"
         private const val DELETE_PAYMENT = "DELETE FROM payments WHERE id = ?"
@@ -117,6 +120,25 @@ class PaymentService(
             logger.warn("Currency not found with ID: $id")
             null
         }
+    }
+
+    suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> {
+        if (hashes.isEmpty()) return emptyMap()
+        val placeholders = hashes.joinToString(",") { "?" }
+        val bitcoinDataQuery = String.format(GET_BITCOIN_DATA_BY_PAYMENT_HASHES, placeholders)
+        val bitcoinDataByHash = mutableMapOf<String, PaymentBitcoinData>()
+        connection.prepareStatement(bitcoinDataQuery).use { statement ->
+            hashes.forEachIndexed { index, hash -> statement.setString(index + 1, hash) }
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                val paymentHash = resultSet.getString("payment_hash")
+                val exchangeRate = resultSet.getDouble("exchange_rate_at_payment")
+                val exchangeRateCurrency = resultSet.getString("exchange_rate_currency")
+                val fiatAmount = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble()
+                bitcoinDataByHash[paymentHash] = PaymentBitcoinData(exchangeRate, exchangeRateCurrency, fiatAmount)
+            }
+        }
+        return bitcoinDataByHash
     }
 
     suspend fun addPayment(payment: Payment): String? {

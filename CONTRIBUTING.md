@@ -17,7 +17,7 @@ Thank you for your interest in contributing to Ambrosia POS! We love community c
 
 ## Code of Conduct
 
-This project adheres to our **[Code of Conduct](CODE_OF_CONDUCT.md)**. By participating, you are expected to uphold this code. Please report unacceptable behavior to **jordi77alva@gmail.com**.
+This project adheres to our **[Code of Conduct](CODE_OF_CONDUCT.md)**. By participating, you are expected to uphold this code. Please report unacceptable behavior to **contact@ambrosiapay.com**.
 
 ## Getting Started
 

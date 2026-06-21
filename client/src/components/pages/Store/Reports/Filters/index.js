@@ -1,2 +1,1 @@
-export { DateRangeCard } from "./DateRangeCard";
-export { FiltersCard } from "./FiltersCard";
+export { PeriodFilter } from "./PeriodFilter";

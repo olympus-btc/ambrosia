@@ -2,7 +2,13 @@
 import { useMemo } from "react";
 
 export function useSummaryData(reportData) {
-  const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);
-  const totalItems = useMemo(() => reportData?.totalItemsSold ?? 0, [reportData]);
-  return { totalRevenue, totalItems };
+  return useMemo(() => {
+    const sales = reportData?.sales ?? [];
+    return {
+      totalRevenue: reportData?.totalRevenueCents ?? 0,
+      totalItems: reportData?.totalItemsSold ?? 0,
+      productLines: sales.length,
+      uniqueProducts: new Set(sales.map((sale) => sale.productName)).size,
+    };
+  }, [reportData]);
 }

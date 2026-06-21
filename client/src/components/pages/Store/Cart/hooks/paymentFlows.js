@@ -8,7 +8,11 @@ export async function processCheckout({
   currencyId,
   user,
   transactionId = "",
-  t,
+  satoshiAmount = null,
+  exchangeRateAtPayment = null,
+  paymentHash = null,
+  exchangeRateCurrency = null,
+  fiatAmountAtPayment = null,
 }) {
   const checkoutHttpResponse = await httpClient("/store/orders/checkout", {
     method: "POST",
@@ -24,12 +28,17 @@ export async function processCheckout({
       currencyId,
       amount: paymentAmounts.amountFiat,
       transactionId: transactionId || "",
+      satoshiAmount,
+      exchangeRateAtPayment,
+      paymentHash,
+      exchangeRateCurrency,
+      fiatAmountAtPayment,
     }),
   });
 
   const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
   if (!storeCheckoutResult?.orderId) {
-    throw new Error(t("errors.checkout"));
+    throw new Error("errors.checkout");
   }
   return storeCheckoutResult;
 }
