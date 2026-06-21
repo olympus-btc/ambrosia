@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
@@ -72,6 +72,17 @@ export function Cart() {
     [cart, pendingRemovals],
   );
 
+  const handleAddProduct = useCallback(
+    (product) => {
+      if (pendingRemovals.has(product.id)) {
+        cancelRemoval(product.id);
+        return;
+      }
+      addProduct(product);
+    },
+    [addProduct, cancelRemoval, pendingRemovals],
+  );
+
   const handleClearCart = () => {
     clearPendingRemovals();
     clearCart();
@@ -120,7 +131,7 @@ export function Cart() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
-          <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
+          <SearchProducts products={products} categories={categories} onAddProduct={handleAddProduct} />
         </section>
         <div className="hidden md:block">
           <Summary

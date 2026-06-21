@@ -2,8 +2,15 @@ import { renderHook, act } from "@testing-library/react";
 
 import { usePendingRemoval } from "../usePendingRemoval";
 
+const mockCloseToast = jest.fn();
+
+jest.mock("@heroui/react", () => ({
+  closeToast: (...args) => mockCloseToast(...args),
+}));
+
 beforeEach(() => {
   jest.useFakeTimers();
+  mockCloseToast.mockClear();
 });
 
 afterEach(() => {
@@ -100,6 +107,50 @@ describe("usePendingRemoval", () => {
 
     expect(onConfirm1).not.toHaveBeenCalled();
     expect(onConfirm2).not.toHaveBeenCalled();
+  });
+
+  it("closes the toast when cancelRemoval is called", () => {
+    const { result } = renderHook(() => usePendingRemoval());
+
+    act(() => {
+      result.current.startRemoval(42, jest.fn(), "toast-key-42");
+    });
+
+    act(() => {
+      result.current.cancelRemoval(42);
+    });
+
+    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-42");
+  });
+
+  it("closes the toast when the removal is confirmed after 5 seconds", () => {
+    const { result } = renderHook(() => usePendingRemoval());
+
+    act(() => {
+      result.current.startRemoval(42, jest.fn(), "toast-key-42");
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(5000);
+    });
+
+    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-42");
+  });
+
+  it("closes every toast when clearPendingRemovals is called", () => {
+    const { result } = renderHook(() => usePendingRemoval());
+
+    act(() => {
+      result.current.startRemoval(1, jest.fn(), "toast-key-1");
+      result.current.startRemoval(2, jest.fn(), "toast-key-2");
+    });
+
+    act(() => {
+      result.current.clearPendingRemovals();
+    });
+
+    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-1");
+    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-2");
   });
 
   it("handles multiple independent removals simultaneously", () => {

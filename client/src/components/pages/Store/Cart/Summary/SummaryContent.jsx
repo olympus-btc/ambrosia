@@ -1,6 +1,6 @@
-import { useRef, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
-import { addToast, Button, closeToast } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { calculateCartTotals } from "../utils/cartTotals";
@@ -25,26 +25,12 @@ export function SummaryContent({
   const cartTranslations = useTranslations("cart");
   const isMounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const isTouchDevice = useSyncExternalStore(() => () => {}, () => navigator.maxTouchPoints > 0, () => false);
-  const removalToastKeys = useRef({});
   const visibleItems = cartItems || [];
 
   const { subtotal, discountAmount, total } = calculateCartTotals(visibleItems, discount);
 
-  const handleUndoRemoval = (itemId) => {
-    cancelRemoval(itemId);
-    const toastKey = removalToastKeys.current[itemId];
-    if (toastKey) {
-      closeToast(toastKey);
-      delete removalToastKeys.current[itemId];
-    }
-  };
-
   const handleStartRemoval = (item) => {
-    startRemoval(item.id, () => {
-      onRemoveProduct(item.id);
-      delete removalToastKeys.current[item.id];
-    });
-    removalToastKeys.current[item.id] = addToast({
+    const toastKey = addToast({
       description: item.name,
       timeout: 5000,
       endContent: (
@@ -52,12 +38,13 @@ export function SummaryContent({
           size="sm"
           color="primary"
           className="bg-green-800"
-          onPress={() => handleUndoRemoval(item.id)}
+          onPress={() => cancelRemoval(item.id)}
         >
           {cartTranslations("summary.undoToast.undo")}
         </Button>
       ),
     });
+    startRemoval(item.id, () => onRemoveProduct(item.id), toastKey);
   };
 
   return (

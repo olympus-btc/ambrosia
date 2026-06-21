@@ -121,7 +121,17 @@ describe("SummaryContent", () => {
     expect(onRemoveProduct).toHaveBeenCalledWith(1);
   });
 
-  it("cancels removal and closes the toast immediately when undo is pressed", () => {
+  it("passes the toast key to startRemoval so the hook owns its dismissal", () => {
+    const startRemoval = jest.fn();
+    render(<SummaryContent {...defaultProps} startRemoval={startRemoval} />);
+
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+
+    expect(mockAddToast).toHaveBeenCalled();
+    expect(startRemoval).toHaveBeenCalledWith(1, expect.any(Function), "toast-key-1");
+  });
+
+  it("cancels removal when undo is pressed", () => {
     const cancelRemoval = jest.fn();
     render(
       <SummaryContent
@@ -139,7 +149,6 @@ describe("SummaryContent", () => {
     fireEvent.click(screen.getByText("summary.undoToast.undo"));
 
     expect(cancelRemoval).toHaveBeenCalledWith(1);
-    expect(mockCloseToast).toHaveBeenCalledWith("toast-key-1");
   });
 
   it("calls onPay with correct data when Pay is pressed", () => {
