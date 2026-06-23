@@ -10,6 +10,7 @@ Claude.md
 AGENTS.md
 .claude
 *PLAN.md
+client/.codex
 
 # Python cache
 __pycache__/

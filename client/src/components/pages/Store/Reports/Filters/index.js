@@ -1,1 +1,1 @@
-export { DateRangeCard } from "./DateRangeCard";
+export { PeriodFilter } from "./PeriodFilter";

@@ -17,7 +17,7 @@ import { AlertCircle, Printer } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { usePrinters } from "@/components/pages/Store/hooks/usePrinter";
-import { useShiftTickets } from "@/hooks/turn/useShiftTickets";
+import { useTurn } from "@/hooks/turn/useTurn";
 
 export function CloseTurnModal({
   isOpen,
@@ -29,11 +29,10 @@ export function CloseTurnModal({
 }) {
   const [finalAmount, setFinalAmount] = useState(0);
   const [printing, setPrinting] = useState(false);
-  const t = useTranslations("reports");
-  const ts = useTranslations("shifts");
+  const reportsTranslations = useTranslations("reports");
+  const shiftTranslations = useTranslations("shifts");
 
-  const { totalBalance, totalTickets, byPaymentMethod, loading: ticketsLoading, breakdownLoading } =
-    useShiftTickets(isOpen ? shiftData : null);
+  const { totalBalance, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading } = useTurn();
 
   const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
 
@@ -53,7 +52,7 @@ export function CloseTurnModal({
         broadcast: false,
         ticketData: {
           ticketId: `corte-z-${shiftData?.shiftDate ?? ""}`,
-          tableName: ts("cortezTitle"),
+          tableName: shiftTranslations("cortezTitle"),
           roomName: "",
           date: new Date().toISOString(),
           items: byPaymentMethod.map(({ name, total }) => ({
@@ -68,7 +67,7 @@ export function CloseTurnModal({
       });
       if (!res?.ok) throw new Error("print failed");
     } catch {
-      addToast({ color: "danger", description: ts("printCorteZError") });
+      addToast({ color: "danger", description: shiftTranslations("printCorteZError") });
     } finally {
       setPrinting(false);
     }
@@ -99,18 +98,18 @@ export function CloseTurnModal({
       <ModalContent>
         <ModalHeader>
           <div className="flex items-center space-x-2">
-            <span>{t("close.modalTitle")}</span>
+            <span>{reportsTranslations("close.modalTitle")}</span>
           </div>
         </ModalHeader>
         <ModalBody>
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-5 h-5 text-orange-600" />
-              <span className="text-deep font-medium">{t("close.modalQuestion")}</span>
+              <span className="text-deep font-medium">{reportsTranslations("close.modalQuestion")}</span>
             </div>
 
             <NumberInput
-              label={ts("finalAmount")}
+              label={shiftTranslations("finalAmount")}
               startContent={<span className="text-default-400 text-small">$</span>}
               minValue={0}
               value={finalAmount}
@@ -126,19 +125,19 @@ export function CloseTurnModal({
               <Card className="border">
                 <CardBody className="p-3 space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-default-500">{ts("initialAmountLabel")}</span>
+                    <span className="text-default-500">{shiftTranslations("initialAmountLabel")}</span>
                     <span>{formatCurrency(initialAmount)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-default-500">{ts("totalSales")}</span>
+                    <span className="text-default-500">{shiftTranslations("totalSales")}</span>
                     <span>+ {formatCurrency(totalBalance)}</span>
                   </div>
                   <div className="flex justify-between text-sm font-semibold border-t border-default-200 pt-1 mt-1">
-                    <span>{ts("expectedTotal")}</span>
+                    <span>{shiftTranslations("expectedTotal")}</span>
                     <span>{formatCurrency(expectedTotal)}</span>
                   </div>
                   <div className={`flex justify-between text-sm font-bold pt-1 ${difference < 0 ? "text-red-600" : difference > 0 ? "text-orange-500" : "text-green-600"}`}>
-                    <span>{ts("difference")}</span>
+                    <span>{shiftTranslations("difference")}</span>
                     <span>{difference >= 0 ? "+" : ""}{formatCurrency(difference)}</span>
                   </div>
                 </CardBody>
@@ -147,28 +146,28 @@ export function CloseTurnModal({
 
             <Card className="border">
               <CardBody className="p-3 space-y-2">
-                <p className="text-sm font-semibold text-deep">{ts("cortezTitle")}</p>
+                <p className="text-sm font-semibold text-deep">{shiftTranslations("cortezTitle")}</p>
                 <div className="flex justify-between text-sm text-forest">
-                  <span>{ts("shiftPeriod")}</span>
+                  <span>{shiftTranslations("shiftPeriod")}</span>
                   <span className="font-mono text-xs">{shiftPeriod}</span>
                 </div>
                 {ticketsLoading ? (
-                  <p className="text-xs text-default-400">{t("close.confirming")}</p>
+                  <p className="text-xs text-default-400">{reportsTranslations("close.confirming")}</p>
                 ) : (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-forest">{ts("totalSales")}</span>
+                      <span className="text-forest">{shiftTranslations("totalSales")}</span>
                       <span className="font-bold text-green-700">
                         {formatCurrency(totalBalance)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-forest">{ts("totalTickets")}</span>
+                      <span className="text-forest">{shiftTranslations("totalTickets")}</span>
                       <span className="font-semibold">{totalTickets}</span>
                     </div>
                     {byPaymentMethod.length > 0 && (
                       <div className="space-y-1 pt-1 border-t border-default-100">
-                        <p className="text-xs text-default-500">{ts("byPaymentMethod")}</p>
+                        <p className="text-xs text-default-500">{shiftTranslations("byPaymentMethod")}</p>
                         {byPaymentMethod.map(({ name, total }) => (
                           <div key={name} className="flex justify-between text-xs">
                             <span className="text-default-600">{name}</span>
@@ -188,7 +187,7 @@ export function CloseTurnModal({
                     isLoading={printing}
                     isDisabled={ticketsLoading || breakdownLoading}
                   >
-                    {ts("printCorteZ")}
+                    {shiftTranslations("printCorteZ")}
                   </Button>
                 )}
               </CardBody>
@@ -202,7 +201,7 @@ export function CloseTurnModal({
             type="button"
             onPress={onClose}
           >
-            {t("close.cancel")}
+            {reportsTranslations("close.cancel")}
           </Button>
           <Button
             variant="solid"
@@ -211,7 +210,7 @@ export function CloseTurnModal({
             isDisabled={confirmLoading}
             isLoading={confirmLoading}
           >
-            {confirmLoading ? t("close.confirming") : t("close.confirm")}
+            {confirmLoading ? reportsTranslations("close.confirming") : reportsTranslations("close.confirm")}
           </Button>
         </ModalFooter>
       </ModalContent>

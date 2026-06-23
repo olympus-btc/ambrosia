@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 
 export function MobileSummaryBar({ cart, total, onCheckout }) {
-  const t = useTranslations("cart");
+  const cartTranslations = useTranslations("cart");
   const { formatAmount } = useCurrency();
 
   if (!cart.length) return null;
@@ -25,7 +25,7 @@ export function MobileSummaryBar({ cart, total, onCheckout }) {
           <span className="font-bold text-green-900 text-lg">{formatAmount(total)}</span>
         </div>
         <Button color="primary" onPress={onCheckout}>
-          {t("summary.viewCart")}
+          {cartTranslations("summary.viewCart")}
         </Button>
       </div>
     </div>

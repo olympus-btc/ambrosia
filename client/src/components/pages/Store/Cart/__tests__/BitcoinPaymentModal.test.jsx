@@ -88,11 +88,11 @@ describe("BitcoinPaymentModal", () => {
   });
 
   describe("Error state", () => {
-    it("shows error message", () => {
+    it("shows service unavailable message when invoice is missing", () => {
       mockInvoiceState = { ...mockInvoiceState, error: "invoice-error" };
       renderModal();
 
-      expect(screen.getByText("invoice-error")).toBeInTheDocument();
+      expect(screen.getByText("serviceUnavailable")).toBeInTheDocument();
     });
 
     it("calls generateInvoice on retry", () => {
@@ -300,6 +300,13 @@ describe("BitcoinPaymentModal", () => {
       renderModal();
 
       fireEvent.click(screen.getByText("markAsPaid"));
+
+      expect(screen.queryByText("markAsPaid")).not.toBeInTheDocument();
+    });
+
+    it("hides button while loading even when awaiting payment", () => {
+      mockInvoiceState = { ...mockInvoiceState, loading: true };
+      renderModal();
 
       expect(screen.queryByText("markAsPaid")).not.toBeInTheDocument();
     });

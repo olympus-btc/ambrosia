@@ -267,6 +267,21 @@ class ProductServiceTest {
     }
 
     @Test
+    fun `addProduct succeeds with blank SKU and does not check uniqueness`() {
+        runBlocking {
+            val newProduct = Product(null, "   ", "Blank SKU Product", null, null, 100, emptyList(), 5, 1, 10, 199) // Arrange
+            val insertStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
+            stubCategoryIds() // Arrange
+            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.addProduct(newProduct) // Act
+            assertNotNull(result) // Assert
+            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+        }
+    }
+
+    @Test
     fun `addProduct returns new ID when categoryIds is empty`() {
         runBlocking {
             val newProduct = Product(null, "SKU-NO-CAT", "New Product", null, null, 100, emptyList(), 5, 1, 10, 199) // Arrange

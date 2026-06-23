@@ -25,11 +25,15 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
 }));
 
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
 
-const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
+const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({
   __esModule: true,
   storedAssetUrl: (...args) => mockStoredAssetUrl(...args),
@@ -77,6 +81,7 @@ const defaultProps = {
   canManageProducts: true,
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
+  onViewProduct: jest.fn(),
 };
 
 function renderTable(props = {}) {
@@ -139,6 +144,14 @@ describe("ProductsTable", () => {
     expect(screen.getByRole("img", { name: "Jade Wallet" }).getAttribute("data-src")).toBe("cdn/images/jade.png");
   });
 
+  it("renders an image placeholder when imageUrl is missing", () => {
+    renderTable({
+      products: [{ ...products[0], imageUrl: null }],
+    });
+
+    expect(screen.getByTestId("product-table-image-placeholder-1")).toBeInTheDocument();
+  });
+
   it("calls onEditProduct when edit button is clicked", () => {
     const onEditProduct = jest.fn();
     renderTable({ onEditProduct });
@@ -158,7 +171,21 @@ describe("ProductsTable", () => {
   it("hides actions column when canManageProducts is false", () => {
     renderTable({ canManageProducts: false });
 
-    const actionsHeader = screen.getByText("actions");
-    expect(actionsHeader.closest("th")).toHaveClass("hidden");
+    expect(screen.queryByText("edit")).not.toBeInTheDocument();
+    expect(screen.queryByText("delete")).not.toBeInTheDocument();
+  });
+
+  it("always renders view buttons regardless of canManageProducts", () => {
+    renderTable({ canManageProducts: false });
+
+    expect(screen.getAllByTestId("view-button")).toHaveLength(products.length);
+  });
+
+  it("calls onViewProduct when view button is clicked", () => {
+    const onViewProduct = jest.fn();
+    renderTable({ onViewProduct });
+
+    fireEvent.click(screen.getAllByTestId("view-button")[0]);
+    expect(onViewProduct).toHaveBeenCalledWith(products[0]);
   });
 });

@@ -12,14 +12,14 @@ export default function Providers({ children }) {
     <>
       <AuthProvider>
         <ConfigurationsProvider>
-          <TurnProvider>
-            <I18nProvider>
+          <I18nProvider>
+            <TurnProvider>
               <HeroUIProvider>
                 <ToastProvider placement="top-right" maxVisibleToasts={1} />
                 {children}
               </HeroUIProvider>
-            </I18nProvider>
-          </TurnProvider>
+            </TurnProvider>
+          </I18nProvider>
         </ConfigurationsProvider>
       </AuthProvider>
     </>

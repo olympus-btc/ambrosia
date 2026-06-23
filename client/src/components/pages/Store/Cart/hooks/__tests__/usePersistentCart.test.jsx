@@ -7,7 +7,7 @@ import { usePersistentCart, CART_STORAGE_KEY } from "../usePersistentCart";
 const handlers = {};
 
 function TestComponent() {
-  const { cart, discount, setCart, setDiscount, resetCartState } = usePersistentCart();
+  const { cart, discount, isCartRestored, setCart, setDiscount, resetCartState } = usePersistentCart();
   useEffect(() => {
     handlers.setCart = setCart;
     handlers.setDiscount = setDiscount;
@@ -17,6 +17,7 @@ function TestComponent() {
     <div>
       <span data-testid="count">{cart.length}</span>
       <span data-testid="discount">{discount}</span>
+      <span data-testid="is-cart-restored">{String(isCartRestored)}</span>
     </div>
   );
 }
@@ -121,6 +122,14 @@ describe("usePersistentCart", () => {
     });
 
     localStorage.setItem = originalSetItem;
+  });
+
+  it("exposes isCartRestored=false before effect and isCartRestored=true after", async () => {
+    render(<TestComponent />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("is-cart-restored")).toHaveTextContent("true");
+    });
   });
 
   it("handles storage clear errors gracefully", async () => {

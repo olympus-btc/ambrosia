@@ -133,7 +133,13 @@ describe("walletService", () => {
       expect(httpClient).toHaveBeenCalledWith("/wallet/createinvoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: "Wallet invoice", amountSat: 2000 }),
+        body: JSON.stringify({
+          description: "Wallet invoice",
+          amountSat: 2000,
+          exchangeRate: null,
+          exchangeRateCurrency: null,
+          fiatAmount: null,
+        }),
       });
     });
 

@@ -10,6 +10,8 @@ const cartEn = {
     card: {
       add: "Add",
       stock: "in stock",
+      showProductDetails: "Show Details",
+      showProductDescription: "Description",
       errors: {
         unknownCategory: "Unknown category",
       },
@@ -28,6 +30,10 @@ const cartEn = {
       pay: "Pay",
       each: "each",
       viewCart: "Checkout",
+      swipeDelete: "Remove",
+      undoToast: {
+        undo: "Undo",
+      },
     },
     payment: {
       errors: {
@@ -61,6 +67,7 @@ const cartEn = {
         subtitle: "Ask the customer to scan the QR to complete the payment",
         generating: "Generating invoice...",
         retry: "Retry",
+        serviceUnavailable: "Lightning payment service is unavailable. Please try again.",
         totalLabel: "Total",
         cancel: "Cancel",
         copyButton: "Copy",

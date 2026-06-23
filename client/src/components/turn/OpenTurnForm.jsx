@@ -16,7 +16,7 @@ export default function OpenTurnForm({ onOpened }) {
   const { updateTurn, openShift, refreshTurn } = useTurn();
   const router = useRouter();
 
-  const t = useTranslations("shifts");
+  const shiftTranslations = useTranslations("shifts");
 
   const handleAmountChange = (value) => {
     setInitialAmount(value);
@@ -27,7 +27,7 @@ export default function OpenTurnForm({ onOpened }) {
     setError("");
 
     if (initialAmount == null || isNaN(Number(initialAmount)) || initialAmount < 0) {
-      setError(t("invalidAmount"));
+      setError(shiftTranslations("invalidAmount"));
       return;
     }
 
@@ -36,11 +36,11 @@ export default function OpenTurnForm({ onOpened }) {
       const id = await openShift(initialAmount);
       updateTurn(id);
       onOpened?.(id);
-    } catch (err) {
-      if (err?.message === "shift_already_open") {
+    } catch (caughtError) {
+      if (caughtError?.message === "shift_already_open") {
         await refreshTurn();
       } else {
-        setError(t("openShiftError"));
+        setError(shiftTranslations("openShiftError"));
       }
     } finally {
       setIsLoading(false);
@@ -57,7 +57,7 @@ export default function OpenTurnForm({ onOpened }) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
         <NumberInput
-          label={t("initialAmount")}
+          label={shiftTranslations("initialAmount")}
           isRequired
           isDisabled={isLoading}
           startContent={
@@ -77,7 +77,7 @@ export default function OpenTurnForm({ onOpened }) {
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onPress={() => router.back()}
           >
-            {t("cancel")}
+            {shiftTranslations("cancel")}
           </Button>
 
           <Button
@@ -86,7 +86,7 @@ export default function OpenTurnForm({ onOpened }) {
             type="submit"
             isLoading={isLoading}
           >
-            {isLoading ? t("openingShift") : t("openShiftButton")}
+            {isLoading ? shiftTranslations("openingShift") : shiftTranslations("openShiftButton")}
           </Button>
         </div>
 

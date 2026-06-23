@@ -36,6 +36,7 @@ export function OrdersFilterBar({
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
         <Input
           isClearable
+          aria-label={t("filter.searchLabel")}
           className="w-full lg:flex-1"
           label={t("filter.searchLabel")}
           placeholder={t("filter.searchPlaceholder")}
@@ -60,8 +61,9 @@ export function OrdersFilterBar({
 
           <Button
             variant="flat"
+            aria-expanded={isOpen}
             className="md:flex-1 lg:w-48 lg:flex-none h-14 justify-between px-3 text-foreground"
-            endContent={<ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />}
+            endContent={<ChevronDown aria-hidden="true" className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />}
             onPress={() => setIsOpen((v) => !v)}
           >
             {activeFilterCount > 0

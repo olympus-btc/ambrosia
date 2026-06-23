@@ -27,6 +27,7 @@ const transactionsEn = {
     send: {
       tabTitle: "Send",
       payInvoiceLabel: "Invoice BOLT11",
+      scanQRButton: "Scan QR",
       payLightningButton: "Send Lightning Payment ",
       payLightningLoading: "Processing Payment...",
       paymentDone: "Payment Done",

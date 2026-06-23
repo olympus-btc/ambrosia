@@ -1,18 +1,48 @@
 
 [versions]
-kotlin-version = "2.1.20"
-ktor-version = "3.1.2"
-logback-version = "1.4.14"
+kotlin-version = "2.4.0"
+ktor-version = "3.5.0"
+logback-version = "1.5.34"
+mockito-version = "4.0.0"
+flyway-version = "11.11.2"
+sqlite-jdbc-version = "3.49.1.0"
+clikt-version = "5.0.3"
+lightning-kmp-version = "1.8.4"
+zxing-version = "3.5.3"
+escpos-coffee-version = "4.1.0"
+ktlint-plugin-version = "14.0.1"
 
 [libraries]
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor-version" }
-ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor-version" }
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor-version" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor-version" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-version" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor-version" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor-version" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor-version" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor-version" }
+ktor-network-tls-certificates = { module = "io.ktor:ktor-network-tls-certificates", version.ref = "ktor-version" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-version" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor-version" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor-version" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor-version" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor-version" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-version" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway-version" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc-version" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt-version" }
+lightning-kmp = { module = "fr.acinq.lightning:lightning-kmp-jvm", version.ref = "lightning-kmp-version" }
+escpos-coffee = { module = "com.github.anastaciocintra:escpos-coffee", version.ref = "escpos-coffee-version" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-version" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin-version" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-version" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito-version" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor-version" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor-version" }
 
 [plugins]
 ktor = { id = "io.ktor.plugin", version.ref = "ktor-version" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "2.1.20" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-version" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin-version" }

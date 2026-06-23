@@ -16,7 +16,7 @@ export function EmptyOrdersState({ filter, searchTerm }) {
 
   return (
     <div className="text-center py-12">
-      <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <ClipboardList aria-hidden="true" className="w-16 h-16 text-gray-300 mx-auto mb-4" />
       <h3 className="text-xl font-semibold text-deep mb-2">{title}</h3>
       <p className="text-gray-500 mb-6">{subtitle}</p>
     </div>

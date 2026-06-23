@@ -5,10 +5,6 @@ jest.mock("@/hooks/turn/useTurn", () => ({
   useTurn: jest.fn(),
 }));
 
-jest.mock("@/hooks/turn/useShiftTickets", () => ({
-  useShiftTickets: jest.fn(),
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: jest.fn(),
 }));
@@ -23,7 +19,6 @@ jest.mock("@/components/turn/CloseTurnModal", () => ({
 }));
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { useShiftTickets } from "@/hooks/turn/useShiftTickets";
 import { useTurn } from "@/hooks/turn/useTurn";
 
 import { ShiftWidget } from "../ShiftWidget";
@@ -45,8 +40,14 @@ function setupMocks({
   totalTickets = 5,
   ticketsLoading = false,
 } = {}) {
-  useTurn.mockReturnValue({ openTurn, openShiftData, closeShift: mockCloseShift });
-  useShiftTickets.mockReturnValue({ totalBalance, totalTickets, loading: ticketsLoading, error: null });
+  useTurn.mockReturnValue({
+    openTurn,
+    openShiftData,
+    closeShift: mockCloseShift,
+    totalBalance,
+    totalTickets,
+    ticketsLoading,
+  });
   useCurrency.mockReturnValue({ formatAmount: mockFormatAmount });
 }
 
@@ -75,12 +76,6 @@ describe("ShiftWidget", () => {
       render(<ShiftWidget />);
       expect(screen.queryByText(/shiftOpenedAt/)).not.toBeInTheDocument();
     });
-
-    it("passes null to useShiftTickets while collapsed", () => {
-      setupMocks();
-      render(<ShiftWidget />);
-      expect(useShiftTickets).toHaveBeenCalledWith(null);
-    });
   });
 
   describe("expanding the panel", () => {
@@ -96,11 +91,6 @@ describe("ShiftWidget", () => {
       await renderExpanded();
       expect(screen.getByText(/2026-03-04/)).toBeInTheDocument();
       expect(screen.getByText(/09:00:00/)).toBeInTheDocument();
-    });
-
-    it("passes openShiftData to useShiftTickets when expanded", async () => {
-      await renderExpanded();
-      expect(useShiftTickets).toHaveBeenCalledWith(SHIFT_DATA);
     });
 
     it("calls formatAmount with totalBalance in cents", async () => {

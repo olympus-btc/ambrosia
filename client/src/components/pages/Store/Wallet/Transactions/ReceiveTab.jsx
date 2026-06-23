@@ -11,8 +11,8 @@ import { createInvoice } from "@/services/walletService";
 import { AmountUnitInputFields } from "./AmountUnitInputFields";
 import { useWalletAmountInput } from "./hooks/useWalletAmountInput";
 
-export function ReceiveTab({ invoiceActions }) {
-  const t = useTranslations("wallet");
+export function ReceiveTab({ invoiceActions, currentRate }) {
+  const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const [invoiceDesc, setInvoiceDesc] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +35,8 @@ export function ReceiveTab({ invoiceActions }) {
     isPaid: false,
     invoiceSats: null,
     currencyAcronym: currency.acronym,
-    invalidAmountMessage: t("payments.receive.invoiceAmountError"),
-    amountTooLargeMessage: t("payments.receive.invoiceAmountTooLargeError"),
+    invalidAmountMessage: walletTranslations("payments.receive.invoiceAmountError"),
+    amountTooLargeMessage: walletTranslations("payments.receive.invoiceAmountTooLargeError"),
   });
 
   const handleCreateInvoice = async () => {
@@ -44,26 +44,32 @@ export function ReceiveTab({ invoiceActions }) {
     if (amountSat === undefined) {
       return;
     }
+    const fiatAmount = amountSat != null && currentRate != null
+      ? (amountSat / 100_000_000) * currentRate
+      : null;
     try {
       setIsLoading(true);
       const res = await createInvoice({
         amountSat,
         description: invoiceDesc,
+        exchangeRate: currentRate ?? null,
+        exchangeRateCurrency: currentRate != null ? (currency?.acronym?.toLowerCase() ?? null) : null,
+        fiatAmount,
       });
       invoiceActions.createInvoice(res);
       resetAmounts();
       setInvoiceDesc("");
       addToast({
-        title: t("payments.receive.invoiceSuccessTitle"),
-        description: t("payments.receive.invoiceSuccessDescription"),
+        title: walletTranslations("payments.receive.invoiceSuccessTitle"),
+        description: walletTranslations("payments.receive.invoiceSuccessDescription"),
         variant: "solid",
         color: "success",
       });
     } catch (err) {
       console.error(err);
       addToast({
-        title: t("errorTitle"),
-        description: t("payments.receive.invoiceCreateError"),
+        title: walletTranslations("errorTitle"),
+        description: walletTranslations("payments.receive.invoiceCreateError"),
         variant: "solid",
         color: "danger",
       });
@@ -73,17 +79,17 @@ export function ReceiveTab({ invoiceActions }) {
   };
 
   const fieldLabels = {
-    title: t("payments.receive.invoiceAmountTitle"),
-    satLabel: t("payments.receive.invoiceAmountSatLabel"),
-    satsOptionLabel: t("payments.receive.satsOption"),
-    satPlaceholder: t("payments.receive.invoiceAmountSatPlaceholder"),
-    fiatLabel: t("payments.receive.invoiceAmountFiatLabel", { currency: currency.acronym }),
-    fiatOptionLabel: t("payments.receive.fiatOption", { currency: currency.acronym }),
-    fiatPlaceholder: t("payments.receive.invoiceAmountFiatPlaceholder"),
-    estimatedLabel: t("payments.receive.invoiceEstimatedLabel"),
-    loadingText: t("payments.receive.invoiceFiatLoading"),
-    estimatedFiatErrorText: t("payments.receive.invoiceSatsToFiatError"),
-    conversionErrorText: t("payments.receive.invoiceFiatToSatsError"),
+    title: walletTranslations("payments.receive.invoiceAmountTitle"),
+    satLabel: walletTranslations("payments.receive.invoiceAmountSatLabel"),
+    satsOptionLabel: walletTranslations("payments.receive.satsOption"),
+    satPlaceholder: walletTranslations("payments.receive.invoiceAmountSatPlaceholder"),
+    fiatLabel: walletTranslations("payments.receive.invoiceAmountFiatLabel", { currency: currency.acronym }),
+    fiatOptionLabel: walletTranslations("payments.receive.fiatOption", { currency: currency.acronym }),
+    fiatPlaceholder: walletTranslations("payments.receive.invoiceAmountFiatPlaceholder"),
+    estimatedLabel: walletTranslations("payments.receive.invoiceEstimatedLabel"),
+    loadingText: walletTranslations("payments.receive.invoiceFiatLoading"),
+    estimatedFiatErrorText: walletTranslations("payments.receive.invoiceSatsToFiatError"),
+    conversionErrorText: walletTranslations("payments.receive.invoiceFiatToSatsError"),
   };
 
   return (
@@ -100,8 +106,8 @@ export function ReceiveTab({ invoiceActions }) {
         </div>
         <div id="wallet-receive-description" className="mx-auto w-full max-w-xl">
           <Input
-            label={t("payments.receive.invoiceDescriptionLabel")}
-            placeholder={t("payments.receive.invoiceDescriptionPlaceholder")}
+            label={walletTranslations("payments.receive.invoiceDescriptionLabel")}
+            placeholder={walletTranslations("payments.receive.invoiceDescriptionPlaceholder")}
             value={invoiceDesc}
             onChange={(e) => setInvoiceDesc(e.target.value)}
             isDisabled={isLoading}
@@ -119,7 +125,7 @@ export function ReceiveTab({ invoiceActions }) {
             className="w-full font-medium"
             radius="lg"
           >
-            {isLoading ? t("payments.receive.invoiceLightningLoading") : t("payments.receive.invoiceLightningButton")}
+            {isLoading ? walletTranslations("payments.receive.invoiceLightningLoading") : walletTranslations("payments.receive.invoiceLightningButton")}
           </Button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { SummaryContent } from "./SummaryContent";
 
 export function SummaryModal({ isOpen, onClose, ...props }) {
-  const t = useTranslations("cart");
+  const cartTranslations = useTranslations("cart");
   const { onClearCart } = props;
 
   return (
@@ -25,10 +25,10 @@ export function SummaryModal({ isOpen, onClose, ...props }) {
       <ModalContent>
         <ModalHeader><div className="flex w-full items-center justify-between">
           <h2 className="text-lg font-semibold text-green-900">
-            {t("summary.title")}
+            {cartTranslations("summary.title")}
           </h2>
           <DeleteButton onPress={onClearCart} showLabelOnMobile>
-            {t("summary.clearCart")}
+            {cartTranslations("summary.clearCart")}
           </DeleteButton>
         </div></ModalHeader>
         <ModalBody>

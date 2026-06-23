@@ -5,10 +5,6 @@ import userEvent from "@testing-library/user-event";
 
 import { CashPaymentModal } from "../CashPaymentModal";
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({
     formatAmount: (cents) => (typeof cents === "number"
@@ -21,7 +17,7 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
-    NumberInput: ({ label, value, onValueChange, onChange, minValue, startContent, size, step, classNames, ...props }) => (
+    NumberInput: ({ label, value, onValueChange, onChange, minValue, maxValue, startContent, size, step, classNames, formatOptions, ...props }) => (
       <input
         type="number"
         aria-label={label}

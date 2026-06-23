@@ -25,6 +25,14 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,
 }));
 
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
+}));
+
+jest.mock("@/components/shared/ProductDetailsModal", () => ({
+  ProductDetailsModal: ({ isOpen, product }) => (isOpen ? <div data-testid="product-details-modal">{product?.name}</div> : null),
+}));
+
 const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
 
 jest.mock("@/components/utils/storedAssetUrl", () => ({
@@ -127,5 +135,16 @@ describe("ProductsList", () => {
 
     fireEvent.click(screen.getAllByText("delete")[2].closest("button"));
     expect(onDeleteProduct).toHaveBeenCalledWith(products[2]);
+  });
+
+  it("opens ProductDetailsModal when view button is clicked", () => {
+    renderList();
+
+    expect(screen.queryByTestId("product-details-modal")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId("view-button")[0]);
+
+    expect(screen.getByTestId("product-details-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("product-details-modal")).toHaveTextContent("Jade Wallet");
   });
 });

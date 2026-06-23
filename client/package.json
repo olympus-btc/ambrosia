@@ -1,6 +1,6 @@
 {
   "name": "ambrosia-client",
-  "version": "0.6.0-beta",
+  "version": "0.7.1-beta",
   "private": true,
   "type": "module",
   "engines": {
@@ -32,12 +32,14 @@
     "driver.js": "^1.4.0",
     "framer-motion": "^12.23.12",
     "jsonwebtoken": "^9.0.2",
+    "jsqr": "1.4.0",
     "lucide-react": "^0.536.0",
     "next": "^16.2.4",
     "next-intl": "^4.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-qr-code": "^2.0.18",
+    "recharts": "3.8.1",
     "serwist": "^9.5.7",
     "ws": "^8.18.0"
   },

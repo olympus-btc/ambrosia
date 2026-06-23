@@ -70,6 +70,8 @@ class ProductService(
         statement.executeBatch()
     }
 
+    private fun normalizeSku(sku: String?): String? = sku?.takeIf { it.isNotBlank() }
+
     private fun valid(p: Product): Boolean {
         if (p.name.isBlank()) return false
         if (p.costCents < 0) return false
@@ -83,8 +85,9 @@ class ProductService(
 
     suspend fun addProduct(product: Product): String? {
         if (!valid(product)) return null
-        if (!product.SKU.isNullOrBlank()) {
-            val existing = getProductBySKU(product.SKU)
+        val normalizedSku = normalizeSku(product.SKU)
+        if (normalizedSku != null) {
+            val existing = getProductBySKU(normalizedSku)
             if (existing != null) throw DuplicateProductSkuException()
         }
         val id =
@@ -96,7 +99,7 @@ class ProductService(
         try {
             val statement = connection.prepareStatement(ADD_PRODUCT)
             statement.setString(1, id)
-            statement.setString(2, product.SKU)
+            statement.setString(2, normalizedSku)
             statement.setString(3, product.name)
             statement.setString(4, product.description)
             statement.setString(5, product.imageUrl)
@@ -142,9 +145,9 @@ class ProductService(
     }
 
     suspend fun getProductBySKU(sku: String?): Product? {
-        if (sku == null) return null
+        val normalizedSku = normalizeSku(sku) ?: return null
         val statement = connection.prepareStatement(GET_PRODUCT_BY_SKU)
-        statement.setString(1, sku)
+        statement.setString(1, normalizedSku)
         val resultSet = statement.executeQuery()
         return if (resultSet.next()) map(resultSet) else null
     }
@@ -161,8 +164,9 @@ class ProductService(
     suspend fun updateProduct(product: Product): Boolean {
         if (product.id == null) return false
         if (!valid(product)) return false
-        if (!product.SKU.isNullOrBlank()) {
-            val current = getProductBySKU(product.SKU)
+        val normalizedSku = normalizeSku(product.SKU)
+        if (normalizedSku != null) {
+            val current = getProductBySKU(normalizedSku)
             if (current != null && current.id != product.id) throw DuplicateProductSkuException()
         }
         val prev = connection.autoCommit
@@ -170,7 +174,7 @@ class ProductService(
         try {
             val rows =
                 connection.prepareStatement(UPDATE_PRODUCT).use { statement ->
-                    statement.setString(1, product.SKU)
+                    statement.setString(1, normalizedSku)
                     statement.setString(2, product.name)
                     statement.setString(3, product.description)
                     statement.setString(4, product.imageUrl)

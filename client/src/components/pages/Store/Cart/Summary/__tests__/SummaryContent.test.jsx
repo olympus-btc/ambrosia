@@ -2,6 +2,37 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { SummaryContent } from "../SummaryContent";
 
+jest.mock("../CartTotals", () => ({
+  CartTotals: ({ subtotal, discountAmount, total }) => (
+    <div>
+      <span>{`fmt-${subtotal}`}</span>
+      <span>{`fmt-${discountAmount}`}</span>
+      <span>{`fmt-${total}`}</span>
+    </div>
+  ),
+}));
+
+jest.mock("../CartPaymentSection", () => ({
+  CartPaymentSection: ({ onPay, isDisabled, paymentError }) => (
+    <div>
+      {paymentError && <p>{paymentError}</p>}
+      <button disabled={isDisabled} onClick={() => onPay("btc")}>
+        summary.pay
+      </button>
+    </div>
+  ),
+}));
+
+jest.mock("../CartItemCard", () => ({
+  CartItemCard: ({ item, onRemove }) => (
+    <div data-testid={`cart-item-${item.id}`}>
+      <span>{item.name}</span>
+      <button aria-label="Remove Product" onClick={onRemove} />
+      <span data-testid={`summary-image-placeholder-${item.id}`} />
+    </div>
+  ),
+}));
+
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));
@@ -21,10 +52,15 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   ),
 }));
 
+const mockAddToast = jest.fn(() => "toast-key-1");
+const mockCloseToast = jest.fn();
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
+    addToast: (...args) => mockAddToast(...args),
+    closeToast: (...args) => mockCloseToast(...args),
     NumberInput: ({ label, value, onChange }) => (
       <input aria-label={label} value={value} onChange={(e) => onChange?.(e.target.value)} />
     ),
@@ -43,25 +79,15 @@ jest.mock("@heroui/react", () => {
   };
 });
 
-jest.mock("../../BitcoinPaymentModal", () => ({
-  BitcoinPaymentModal: ({ isOpen }) => (isOpen ? <div>btc-modal</div> : null),
-}));
-
-jest.mock("../../CashPaymentModal", () => ({
-  CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
-}));
-
-jest.mock("../../CardPaymentModal", () => ({
-  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
-}));
-
-const cartItems = [{ id: 1, name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
+const cartItems = [{ id: 1, imageUrl: "/uploads/jade-wallet.png", name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
 
 const defaultProps = {
   cartItems,
   discount: 10,
   onRemoveProduct: jest.fn(),
   onUpdateQuantity: jest.fn(),
+  startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
+  cancelRemoval: jest.fn(),
   onPay: jest.fn(),
   isPaying: false,
   paymentError: "",
@@ -73,15 +99,14 @@ beforeEach(() => {
 });
 
 describe("SummaryContent", () => {
-  it("renders item name, price and subtotal", () => {
+  it("renders a CartItemCard for each cart item", () => {
     render(<SummaryContent {...defaultProps} />);
 
+    expect(screen.getByTestId("cart-item-1")).toBeInTheDocument();
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
-    expect(screen.getByText(/fmt-1000/)).toBeInTheDocument();
-    expect(screen.getAllByText("fmt-2000")).toHaveLength(2);
   });
 
-  it("renders computed totals with discount", () => {
+  it("passes computed totals to CartTotals", () => {
     render(<SummaryContent {...defaultProps} />);
 
     expect(screen.getByText("fmt-200")).toBeInTheDocument();
@@ -96,18 +121,34 @@ describe("SummaryContent", () => {
     expect(onRemoveProduct).toHaveBeenCalledWith(1);
   });
 
-  it("calls onUpdateQuantity when quantity changes", () => {
-    const onUpdateQuantity = jest.fn();
-    render(<SummaryContent {...defaultProps} onUpdateQuantity={onUpdateQuantity} />);
+  it("passes the toast key to startRemoval so the hook owns its dismissal", () => {
+    const startRemoval = jest.fn();
+    render(<SummaryContent {...defaultProps} startRemoval={startRemoval} />);
 
-    fireEvent.change(screen.getByLabelText("summary.quantity"), { target: { value: "3" } });
-    expect(onUpdateQuantity).toHaveBeenCalledWith(1, 3);
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+
+    expect(mockAddToast).toHaveBeenCalled();
+    expect(startRemoval).toHaveBeenCalledWith(1, expect.any(Function), "toast-key-1");
   });
 
-  it("selects BTC as default payment method", () => {
-    render(<SummaryContent {...defaultProps} />);
+  it("cancels removal when undo is pressed", () => {
+    const cancelRemoval = jest.fn();
+    render(
+      <SummaryContent
+        {...defaultProps}
+        startRemoval={jest.fn()}
+        cancelRemoval={cancelRemoval}
+      />,
+    );
 
-    expect(screen.getByLabelText("summary.paymentMethodLabel")).toHaveValue("btc");
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+    expect(mockAddToast).toHaveBeenCalled();
+
+    const { endContent } = mockAddToast.mock.calls[0][0];
+    render(endContent);
+    fireEvent.click(screen.getByText("summary.undoToast.undo"));
+
+    expect(cancelRemoval).toHaveBeenCalledWith(1);
   });
 
   it("calls onPay with correct data when Pay is pressed", () => {
@@ -131,6 +172,12 @@ describe("SummaryContent", () => {
     expect(screen.getByText("summary.pay")).toBeDisabled();
   });
 
+  it("enables Pay button when cart has items", () => {
+    render(<SummaryContent {...defaultProps} cartItems={[{ id: "1", name: "Item", price: 100, quantity: 1, subtotal: 100 }]} />);
+
+    expect(screen.getByText("summary.pay")).not.toBeDisabled();
+  });
+
   it("shows payment error message", () => {
     render(<SummaryContent {...defaultProps} paymentError="payment.error" />);
 
@@ -141,28 +188,5 @@ describe("SummaryContent", () => {
     render(<SummaryContent {...defaultProps} cartItems={undefined} />);
 
     expect(screen.getByText("summary.pay")).toBeDisabled();
-  });
-
-  it("renders payment modals when configs are provided", () => {
-    render(
-      <SummaryContent
-        {...defaultProps}
-        btcPayment={{ config: { paymentId: "btc-1" } }}
-        cashPayment={{ config: { paymentId: "cash-1" } }}
-        cardPayment={{ config: { paymentId: "card-1" } }}
-      />,
-    );
-
-    expect(screen.getByText("btc-modal")).toBeInTheDocument();
-    expect(screen.getByText("cash-modal")).toBeInTheDocument();
-    expect(screen.getByText("card-modal")).toBeInTheDocument();
-  });
-
-  it("clears payment error when payment method changes", () => {
-    const onClearPaymentError = jest.fn();
-    render(<SummaryContent {...defaultProps} paymentError="error" onClearPaymentError={onClearPaymentError} />);
-
-    fireEvent.change(screen.getByLabelText("summary.paymentMethodLabel"), { target: { value: "cash" } });
-    expect(onClearPaymentError).toHaveBeenCalled();
   });
 });

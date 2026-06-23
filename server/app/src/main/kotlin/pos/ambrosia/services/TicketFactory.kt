@@ -20,7 +20,7 @@ import pos.ambrosia.models.ImageSize
 import pos.ambrosia.models.Justification
 import pos.ambrosia.models.TicketData
 import pos.ambrosia.models.TicketTemplate
-import pos.ambrosia.util.formatTicketLine
+import pos.ambrosia.utils.formatTicketLine
 import java.awt.image.BufferedImage
 import java.util.EnumMap
 

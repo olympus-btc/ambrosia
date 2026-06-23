@@ -2,16 +2,28 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
+import { useShiftTicketMetrics } from "@/hooks/turn/useShiftTicketMetrics";
 import { getTurnOpen, openTurn, closeTurn } from "@/services/shiftsService";
 
 export const TurnContext = createContext();
 
 export function TurnProvider({ children }) {
+  const { user } = useAuth();
+
   const [openTurnId, setOpenTurnId] = useState(null);
   const [openShiftData, setOpenShiftData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuth();
+
+  const {
+    totalBalance,
+    totalTickets,
+    byPaymentMethod,
+    ticketsLoading,
+    breakdownLoading,
+    refresh: refreshShiftTickets,
+    reset: resetTicketMetrics,
+  } = useShiftTicketMetrics(openShiftData);
 
   const loadOpenTurn = useCallback(async () => {
     try {
@@ -20,8 +32,8 @@ export function TurnProvider({ children }) {
       setOpenTurnId(shift?.id ?? null);
       setOpenShiftData(shift);
       return shift?.id ?? null;
-    } catch (err) {
-      setError(err?.message || "Error al obtener turno");
+    } catch (caughtError) {
+      setError(caughtError?.message || "Error al obtener turno");
       setOpenTurnId(null);
       setOpenShiftData(null);
       return null;
@@ -59,8 +71,9 @@ export function TurnProvider({ children }) {
     await closeTurn(openTurnId, finalAmount, difference);
     setOpenTurnId(null);
     setOpenShiftData(null);
+    resetTicketMetrics();
     return true;
-  }, [openTurnId]);
+  }, [openTurnId, resetTicketMetrics]);
 
   const value = useMemo(
     () => ({
@@ -74,8 +87,19 @@ export function TurnProvider({ children }) {
       checkOpenShift: loadOpenTurn,
       openShift,
       closeShift,
+      totalBalance,
+      totalTickets,
+      byPaymentMethod,
+      ticketsLoading,
+      breakdownLoading,
+      refreshShiftTickets,
     }),
-    [openTurnId, openShiftData, loading, error, updateTurn, refreshTurn, loadOpenTurn, openShift, closeShift],
+    [
+      openTurnId, openShiftData, loading, error,
+      updateTurn, refreshTurn, loadOpenTurn, openShift, closeShift,
+      totalBalance, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
+      refreshShiftTickets,
+    ],
   );
 
   return (

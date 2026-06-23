@@ -154,6 +154,56 @@ describe("useProducts", () => {
     });
   });
 
+  it("sends null SKU when the SKU field is blank", async () => {
+    const upload = jest.fn();
+    useUpload.mockReturnValue({ upload, isUploading: false });
+
+    httpClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: 2, message: "Product added successfully" });
+    parseJsonResponse.mockResolvedValueOnce([]);
+
+    renderWithProvider();
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+
+    await act(async () => {
+      await handlers.addProduct({
+        productSKU: "   ",
+        productName: "No SKU",
+        productDescription: "",
+        productImage: null,
+        productImageUrl: null,
+        productPrice: 10,
+        productCategories: [],
+        productStock: 1,
+        productMinStock: 0,
+        productMaxStock: 0,
+      });
+    });
+
+    expect(httpClient).toHaveBeenCalledWith("/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        SKU: null,
+        name: "No SKU",
+        description: null,
+        imageUrl: null,
+        costCents: 1000,
+        categoryIds: [],
+        quantity: 1,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
+        priceCents: 1000,
+      }),
+      notShowError: false,
+    });
+  });
+
   it("updates a product without uploading when no file is provided", async () => {
     const upload = jest.fn();
     useUpload.mockReturnValue({ upload, isUploading: false });

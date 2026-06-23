@@ -17,6 +17,8 @@ export function useProducts() {
   const [error, setError] = useState(null);
   const { upload, isUploading } = useUpload();
 
+  const normalizeSku = (sku) => sku?.trim() || null;
+
   const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
     const priceNumber = Number(product.productPrice ?? 0);
     const priceCents = Number.isFinite(priceNumber)
@@ -28,7 +30,7 @@ export function useProducts() {
 
     return {
       ...(includeId ? { id: product.productId } : {}),
-      SKU: product.productSKU,
+      SKU: normalizeSku(product.productSKU),
       name: product.productName,
       description: product.productDescription || null,
       imageUrl,

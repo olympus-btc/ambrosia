@@ -8,9 +8,9 @@ import pos.ambrosia.models.Justification
 import pos.ambrosia.models.TicketElement
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTemplateRequest
-import pos.ambrosia.util.executeInTransaction
-import pos.ambrosia.util.toBytes
-import pos.ambrosia.util.toUUID
+import pos.ambrosia.utils.executeInTransaction
+import pos.ambrosia.utils.toBytes
+import pos.ambrosia.utils.toUUID
 import java.sql.Connection
 import java.sql.ResultSet
 import java.util.UUID

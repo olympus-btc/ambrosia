@@ -10,6 +10,8 @@ const cartEs = {
     card: {
       add: "Agregar",
       stock: "en almacén",
+      showProductDetails: "Ver detalles",
+      showProductDescription: "Descripcion",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
@@ -28,6 +30,10 @@ const cartEs = {
       pay: "Pagar",
       each: "c/u",
       viewCart: "Cobrar",
+      swipeDelete: "Remover",
+      undoToast: {
+        undo: "Deshacer",
+      },
     },
     payment: {
       errors: {
@@ -61,6 +67,7 @@ const cartEs = {
         subtitle: "Pídele al cliente que escanee el QR para completar el pago",
         generating: "Generando invoice...",
         retry: "Reintentar",
+        serviceUnavailable: "El servicio de pago Lightning no está disponible. Por favor, inténtalo de nuevo.",
         totalLabel: "Total",
         cancel: "Cancelar",
         confirm: "Confirmar pago",

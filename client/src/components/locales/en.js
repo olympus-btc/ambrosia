@@ -44,9 +44,18 @@ const componentsEn = {
   actions: {
     edit: "Edit",
     delete: "Delete",
+    view: "View",
   },
   imageUploader: {
     removeImage: "Remove image",
+    takePhoto: "Take a photo",
+  },
+  productDetails: {
+    description: "Description",
+    close: "Close",
+    add: "Add",
+    stock: "in stock",
+    unknownCategory: "Unknown category",
   },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",
@@ -73,6 +82,13 @@ const componentsEn = {
     closeShiftButton: "Close shift",
     other: "Other",
     loadError: "Error loading shift data",
+  },
+  amountDisplay: {
+    satsLabel: "sats",
+    showCurrentRate: "Show current rate",
+    showHistoricalRate: "Show rate at time of sale",
+    amountAtTimeOfPayment: "Amount at time of sale",
+    amountAtCurrentRate: "Amount at current rate",
   },
 };
 

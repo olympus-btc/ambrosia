@@ -15,7 +15,7 @@ export default function RequireOpenTurn({ children }) {
 
   const showModal = !loading && !openTurn;
 
-  const t = useTranslations("shifts");
+  const shiftTranslations = useTranslations("shifts");
 
   useEffect(() => {
     if (!showModal) {
@@ -40,9 +40,9 @@ export default function RequireOpenTurn({ children }) {
       >
         <ModalContent>
           <ModalHeader className="flex flex-col gap-2 text-center">
-            {t("requiredOpenShiftTitle")}
+            {shiftTranslations("requiredOpenShiftTitle")}
             <p className="text-base font-normal text-gray-600">
-              {t("requiredOpenShiftMessage")}
+              {shiftTranslations("requiredOpenShiftMessage")}
             </p>
           </ModalHeader>
           <ModalBody className="pb-8">

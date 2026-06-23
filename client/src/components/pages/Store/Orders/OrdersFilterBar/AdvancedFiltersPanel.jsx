@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Input, NumberInput, Select, SelectItem } from "@heroui/react";
+import { Button, DateRangePicker, NumberInput, Select, SelectItem } from "@heroui/react";
+import { parseDate } from "@internationalized/date";
 import { useTranslations } from "next-intl";
 
 export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange, onApplyFilters, onClearFilters }) {
@@ -8,6 +9,17 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
 
   const updateFilter = (key, value) => {
     onFiltersChange({ [key]: value === "" ? null : value });
+  };
+
+  const dateRangeValue = filters.startDate && filters.endDate
+    ? { start: parseDate(filters.startDate), end: parseDate(filters.endDate) }
+    : null;
+
+  const handleDateRangeChange = (range) => {
+    onFiltersChange({
+      startDate: range?.start?.toString() ?? null,
+      endDate: range?.end?.toString() ?? null,
+    });
   };
 
   return (
@@ -56,21 +68,16 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
           ))}
         </Select>
 
-        <Input
-          type="date"
-          label={t("filter.startDateLabel")}
-          value={filters.startDate ?? ""}
-          onChange={(e) => updateFilter("startDate", e.target.value)}
-        />
-
-        <Input
-          type="date"
-          label={t("filter.endDateLabel")}
-          value={filters.endDate ?? ""}
-          onChange={(e) => updateFilter("endDate", e.target.value)}
+        <DateRangePicker
+          aria-label={t("filter.dateRangeLabel")}
+          className="sm:col-span-2"
+          label={t("filter.dateRangeLabel")}
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
         />
 
         <NumberInput
+          aria-label={t("filter.minTotalLabel")}
           label={t("filter.minTotalLabel")}
           placeholder={t("filter.totalPlaceholder")}
           variant="flat"
@@ -84,6 +91,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         />
 
         <NumberInput
+          aria-label={t("filter.maxTotalLabel")}
           label={t("filter.maxTotalLabel")}
           placeholder={t("filter.totalPlaceholder")}
           classNames={{

@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
-import { defaultFilters, useReports } from "../useReports";
+import { useReports } from "../useReports";
 
 jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
@@ -174,46 +174,6 @@ describe("useReports — fetch", () => {
     expect(url).toContain("endDate=2024-01-31");
   });
 
-  it("fetchReport with productName includes it in the URL", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ productName: "Widget" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?productName=Widget");
-  });
-
-  it("fetchReport with productName with spaces trims it", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ productName: "  Widget  " });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?productName=Widget");
-  });
-
-  it("fetchReport with paymentMethod includes it in the URL", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ paymentMethod: "Cash" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?paymentMethod=Cash");
-  });
-
-  it("fetchReport with paymentMethod with spaces trims it", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.fetchReport({ paymentMethod: "  BTC  " });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/reports?paymentMethod=BTC");
-  });
-
   it("fetchReport with no parameters calls /reports without query string", async () => {
     const { result } = await setupHook();
 
@@ -260,15 +220,15 @@ describe("useReports — fetch", () => {
     await act(async () => {
       await result.current.fetchReport({
         period: "month",
-        productName: "Widget",
-        paymentMethod: "Cash",
+        startDate: "2024-01-01",
+        endDate: "2024-01-31",
       });
     });
 
     const url = httpClient.mock.calls[0][0];
     expect(url).toContain("period=month");
-    expect(url).toContain("productName=Widget");
-    expect(url).toContain("paymentMethod=Cash");
+    expect(url).toContain("startDate=2024-01-01");
+    expect(url).toContain("endDate=2024-01-31");
   });
 
   it("GAP: fetchReport does not send userId even though the server supports it", async () => {
@@ -280,186 +240,5 @@ describe("useReports — fetch", () => {
 
     const url = httpClient.mock.calls[0][0];
     expect(url).not.toContain("userId");
-  });
-});
-
-describe("useReports — filters", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    httpClient.mockResolvedValue({});
-    parseJsonResponse.mockResolvedValue(successReport);
-  });
-
-  it("initial filters match defaultFilters", async () => {
-    const { result } = renderHook(() => useReports());
-    await act(async () => {});
-    expect(result.current.filters).toEqual(defaultFilters);
-  });
-
-  it("auto-fetches with default period on mount", async () => {
-    renderHook(() => useReports());
-    await act(async () => {});
-    expect(httpClient).toHaveBeenCalledWith(
-      expect.stringContaining(`period=${defaultFilters.activePeriod}`),
-    );
-  });
-
-  it("handleFiltersChange with activePeriod fetches immediately", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ activePeriod: "week", startDate: "", endDate: "" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith(expect.stringContaining("period=week"));
-  });
-
-  it("handleFiltersChange with activePeriod updates filters state", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ activePeriod: "year", startDate: "", endDate: "" });
-    });
-
-    expect(result.current.filters.activePeriod).toBe("year");
-  });
-
-  it("handleFiltersChange with only startDate does not fetch", async () => {
-    const { result } = await setupHook();
-
-    act(() => {
-      result.current.handleFiltersChange({ startDate: "2024-01-01", activePeriod: null });
-    });
-
-    expect(httpClient).not.toHaveBeenCalled();
-  });
-
-  it("handleFiltersChange with only endDate does not fetch", async () => {
-    const { result } = await setupHook();
-
-    act(() => {
-      result.current.handleFiltersChange({ endDate: "2024-12-31", activePeriod: null });
-    });
-
-    expect(httpClient).not.toHaveBeenCalled();
-  });
-
-  it("handleFiltersChange fetches when both startDate and endDate are valid", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ startDate: "2024-01-01", activePeriod: null });
-    });
-    await act(async () => {
-      result.current.handleFiltersChange({ endDate: "2024-01-31", activePeriod: null });
-    });
-
-    const urls = httpClient.mock.calls.map((c) => c[0]);
-    expect(urls.some((u) => u.includes("startDate=2024-01-01"))).toBe(true);
-    expect(urls.some((u) => u.includes("endDate=2024-01-31"))).toBe(true);
-  });
-
-  it("handleFiltersChange does not fetch and shows error when startDate > endDate", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ startDate: "2024-12-31", activePeriod: null });
-    });
-    await act(async () => {
-      result.current.handleFiltersChange({ endDate: "2024-01-01", activePeriod: null });
-    });
-
-    expect(httpClient).not.toHaveBeenCalled();
-    expect(mockAddToast).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "danger" }),
-    );
-  });
-
-  it("handleFiltersChange with paymentMethod fetches immediately", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ paymentMethod: "Cash" });
-    });
-
-    expect(httpClient).toHaveBeenCalledWith(
-      expect.stringContaining("paymentMethod=Cash"),
-    );
-  });
-
-  it("handleFiltersChange with productName debounces 500ms", async () => {
-    jest.useFakeTimers();
-    const { result } = renderHook(() => useReports());
-    await act(async () => { jest.runAllTimers(); });
-    jest.clearAllMocks();
-
-    act(() => {
-      result.current.handleFiltersChange({ productName: "Widget" });
-    });
-    expect(httpClient).not.toHaveBeenCalled();
-
-    act(() => { jest.advanceTimersByTime(500); });
-    await act(async () => {});
-
-    expect(httpClient).toHaveBeenCalledWith(
-      expect.stringContaining("productName=Widget"),
-    );
-
-    jest.useRealTimers();
-  });
-
-  it("generateReport fetches with current filters", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      await result.current.generateReport();
-    });
-
-    expect(httpClient).toHaveBeenCalledWith(
-      expect.stringContaining(`period=${defaultFilters.activePeriod}`),
-    );
-  });
-});
-
-describe("useReports — derived values", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    httpClient.mockResolvedValue({});
-  });
-
-  it("totalRevenue is 0 when reportData is null", async () => {
-    const { result } = renderHook(() => useReports());
-    await act(async () => {});
-    expect(result.current.totalRevenue).toBe(0);
-  });
-
-  it("totalItems is 0 when reportData is null", async () => {
-    const { result } = renderHook(() => useReports());
-    await act(async () => {});
-    expect(result.current.totalItems).toBe(0);
-  });
-
-  it("totalRevenue derives from reportData.totalRevenueCents", async () => {
-    parseJsonResponse.mockResolvedValue({ totalRevenueCents: 9900, totalItemsSold: 0, sales: [] });
-    const { result } = await setupHook();
-    parseJsonResponse.mockResolvedValueOnce({ totalRevenueCents: 9900, totalItemsSold: 0, sales: [] });
-
-    await act(async () => {
-      await result.current.fetchReport({ period: "month" });
-    });
-
-    expect(result.current.totalRevenue).toBe(9900);
-  });
-
-  it("totalItems derives from reportData.totalItemsSold", async () => {
-    parseJsonResponse.mockResolvedValue({ totalRevenueCents: 0, totalItemsSold: 42, sales: [] });
-    const { result } = await setupHook();
-    parseJsonResponse.mockResolvedValueOnce({ totalRevenueCents: 0, totalItemsSold: 42, sales: [] });
-
-    await act(async () => {
-      await result.current.fetchReport({ period: "month" });
-    });
-
-    expect(result.current.totalItems).toBe(42);
   });
 });

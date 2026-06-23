@@ -7,8 +7,8 @@ jest.mock("@heroui/react", () => ({
   addToast: (...args) => mockAddToast(...args),
 }));
 
-jest.mock("@/hooks/turn/useShiftTickets", () => ({
-  useShiftTickets: jest.fn(),
+jest.mock("@/hooks/turn/useTurn", () => ({
+  useTurn: jest.fn(),
 }));
 
 jest.mock("@/components/pages/Store/hooks/usePrinter", () => ({
@@ -16,7 +16,7 @@ jest.mock("@/components/pages/Store/hooks/usePrinter", () => ({
 }));
 
 import { usePrinters } from "@/components/pages/Store/hooks/usePrinter";
-import { useShiftTickets } from "@/hooks/turn/useShiftTickets";
+import { useTurn } from "@/hooks/turn/useTurn";
 
 import { CloseTurnModal } from "../CloseTurnModal";
 
@@ -33,11 +33,11 @@ function setupMocks({
   totalBalance = 250,
   totalTickets = 5,
   byPaymentMethod = [],
-  loading = false,
+  ticketsLoading = false,
   printerConfigs = [],
   loadingConfigs = false,
 } = {}) {
-  useShiftTickets.mockReturnValue({ totalBalance, totalTickets, byPaymentMethod, loading, breakdownLoading: false });
+  useTurn.mockReturnValue({ totalBalance, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading: false });
   usePrinters.mockReturnValue({ printTicket: jest.fn(), printerConfigs, loadingConfigs });
 }
 
@@ -62,7 +62,7 @@ beforeEach(() => {
 
 describe("CloseTurnModal", () => {
   describe("when closed", () => {
-    it("does not pass shiftData to useShiftTickets when isOpen=false", () => {
+    it("does not render modal content when isOpen=false", () => {
       setupMocks();
       render(
         <CloseTurnModal
@@ -73,7 +73,7 @@ describe("CloseTurnModal", () => {
           formatCurrency={formatCurrency}
         />,
       );
-      expect(useShiftTickets).toHaveBeenCalledWith(null);
+      expect(screen.queryByText("close.modalTitle")).not.toBeInTheDocument();
     });
   });
 
@@ -88,22 +88,22 @@ describe("CloseTurnModal", () => {
       expect(screen.getByText("2026-03-04 09:00:00")).toBeInTheDocument();
     });
 
-    it("passes shiftData to useShiftTickets when isOpen=true", () => {
+    it("shows modal title when isOpen=true", () => {
       renderModal();
-      expect(useShiftTickets).toHaveBeenCalledWith(SHIFT_DATA);
+      expect(screen.getByText("close.modalTitle")).toBeInTheDocument();
     });
   });
 
   describe("loading state", () => {
     it("shows loading text and hides summary card while tickets load", () => {
-      setupMocks({ loading: true });
+      setupMocks({ ticketsLoading: true });
       renderModal();
       expect(screen.getByText("close.confirming")).toBeInTheDocument();
       expect(screen.queryByText("totalSales")).not.toBeInTheDocument();
     });
 
     it("shows totalBalance and totalTickets once loaded", () => {
-      setupMocks({ totalBalance: 250, totalTickets: 5, loading: false });
+      setupMocks({ totalBalance: 250, totalTickets: 5, ticketsLoading: false });
       renderModal();
       expect(screen.queryByText("close.confirming")).not.toBeInTheDocument();
       expect(screen.getAllByText("$250.00").length).toBeGreaterThan(0);
@@ -113,13 +113,13 @@ describe("CloseTurnModal", () => {
 
   describe("financial summary", () => {
     it("shows initialAmountLabel with formatted value", () => {
-      setupMocks({ totalBalance: 250, loading: false });
+      setupMocks({ totalBalance: 250, ticketsLoading: false });
       renderModal();
       expect(screen.getByText("$100.00")).toBeInTheDocument();
     });
 
     it("shows expectedTotal = initialAmount + totalBalance", () => {
-      setupMocks({ totalBalance: 250, loading: false });
+      setupMocks({ totalBalance: 250, ticketsLoading: false });
       renderModal();
       expect(screen.getByText("$350.00")).toBeInTheDocument();
     });
@@ -127,7 +127,7 @@ describe("CloseTurnModal", () => {
     it("shows payment method breakdown when available", () => {
       setupMocks({
         totalBalance: 300,
-        loading: false,
+        ticketsLoading: false,
         byPaymentMethod: [
           { name: "Efectivo", total: 200 },
           { name: "Tarjeta", total: 100 },
@@ -139,7 +139,7 @@ describe("CloseTurnModal", () => {
     });
 
     it("hides payment breakdown section when byPaymentMethod is empty", () => {
-      setupMocks({ byPaymentMethod: [], loading: false });
+      setupMocks({ byPaymentMethod: [], ticketsLoading: false });
       renderModal();
       expect(screen.queryByText("byPaymentMethod")).not.toBeInTheDocument();
     });
@@ -157,7 +157,7 @@ describe("CloseTurnModal", () => {
     it("calls onConfirm with finalAmount=0 and computed difference", async () => {
       const user = userEvent.setup();
       const onConfirm = jest.fn();
-      setupMocks({ totalBalance: 250, loading: false });
+      setupMocks({ totalBalance: 250, ticketsLoading: false });
       renderModal({ onConfirm });
       await user.click(screen.getByText("close.confirm"));
       expect(onConfirm).toHaveBeenCalledWith(0, -350);
@@ -173,8 +173,8 @@ describe("CloseTurnModal", () => {
   describe("printer integration", () => {
     it("disables print button while breakdown is loading", () => {
       setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      useShiftTickets.mockReturnValue({
-        totalBalance: 250, totalTickets: 5, byPaymentMethod: [], loading: false, breakdownLoading: true,
+      useTurn.mockReturnValue({
+        totalBalance: 250, totalTickets: 5, byPaymentMethod: [], ticketsLoading: false, breakdownLoading: true,
       });
       usePrinters.mockReturnValue({
         printTicket: jest.fn(),
@@ -248,7 +248,7 @@ describe("CloseTurnModal", () => {
       const byPaymentMethod = [{ name: "Cash", total: 100 }];
       setupMocks({
         totalBalance: 100,
-        loading: false,
+        ticketsLoading: false,
         byPaymentMethod,
         printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
         loadingConfigs: false,

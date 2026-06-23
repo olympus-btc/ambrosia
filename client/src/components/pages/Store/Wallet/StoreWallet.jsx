@@ -10,6 +10,8 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
+import { useCurrency } from "@/components/hooks/useCurrency";
 import {
   getIncomingTransactions,
   getInfo,
@@ -22,7 +24,9 @@ import { NodeError, NodeInfo } from "./NodeInfo";
 import { InvoiceModal, Transactions } from "./Transactions";
 
 export function StoreWallet() {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
+  const { currency } = useCurrency();
+  const { currentRate } = useBitcoinPrice({ currencyAcronym: currency.acronym });
   const [info, setInfo] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
@@ -40,15 +44,15 @@ export function StoreWallet() {
       setError("");
     } catch (err) {
       console.error(err);
-      setError(t("nodeInfo.fetchInfoError"));
+      setError(walletTranslations("nodeInfo.fetchInfoError"));
       addToast({
-        title: t("errorTitle"),
-        description: t("nodeInfo.getInfoErrorDescription"),
+        title: walletTranslations("errorTitle"),
+        description: walletTranslations("nodeInfo.getInfoErrorDescription"),
         variant: "solid",
         color: "danger",
       });
     }
-  }, [t]);
+  }, [walletTranslations]);
 
   const fetchTransactions = useCallback(
     async () => {
@@ -71,15 +75,15 @@ export function StoreWallet() {
         setTransactions(allTx);
       } catch {
         addToast({
-          title: t("errorTitle"),
-          description: t("payments.history.getTransactionsErrorDescription"),
+          title: walletTranslations("errorTitle"),
+          description: walletTranslations("payments.history.getTransactionsErrorDescription"),
           variant: "solid",
           color: "danger",
         });
       } finally {
         setLoading(false);
       }
-    }, [filter, t]);
+    }, [filter, walletTranslations]);
 
   useEffect(() => {
     fetchInfo();
@@ -118,7 +122,7 @@ export function StoreWallet() {
         <CardBody className="flex flex-col items-center justify-center py-12">
           <Spinner size="lg" color="success" />
           <p className="text-lg font-semibold text-deep mt-4">
-            {t("loadingMessage")}
+            {walletTranslations("loadingMessage")}
           </p>
         </CardBody>
       </Card>
@@ -130,7 +134,7 @@ export function StoreWallet() {
   return (
     <div className="">
       {(error || !nodeAvailable) && (
-        <NodeError error={error || t("nodeInfo.nodeUnavailable")} />
+        <NodeError error={error || walletTranslations("nodeInfo.nodeUnavailable")} />
       )}
 
       {nodeAvailable && (
@@ -146,6 +150,7 @@ export function StoreWallet() {
               invoiceActions={invoiceActions}
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
+              currentRate={currentRate}
             />
           </div>
 

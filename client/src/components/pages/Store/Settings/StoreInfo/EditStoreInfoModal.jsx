@@ -103,7 +103,7 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
               uploadText={t("modal.logoUpload")}
               uploadDescription={t("modal.logoUploadMessage")}
               onChange={(file) => onChange({ ...data, businessLogo: file, businessLogoRemoved: file === null })}
-              value={data.businessLogoRemoved ? null : (data.businessLogo || data.businessLogoUrl)}
+              image={data.businessLogoRemoved ? null : (data.businessLogo || data.businessLogoUrl)}
             />
 
             <ModalFooter className="flex justify-between p-0 my-4">

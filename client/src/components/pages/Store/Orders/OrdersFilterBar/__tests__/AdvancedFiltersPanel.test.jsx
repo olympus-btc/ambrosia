@@ -4,8 +4,19 @@ import { AdvancedFiltersPanel } from "../AdvancedFiltersPanel";
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
-  const Input = ({ type, label, value, onChange }) => (
-    <input type={type} aria-label={label} value={value} onChange={onChange} />
+  const DateRangePicker = ({ label, onChange }) => (
+    <div>
+      <label>{label}</label>
+      <button
+        data-testid="date-range-picker"
+        onClick={() => onChange({ start: { toString: () => "2024-01-01" }, end: { toString: () => "2024-01-31" } })}
+      >
+        pick
+      </button>
+      <button data-testid="date-range-clear" onClick={() => onChange(null)}>
+        clear
+      </button>
+    </div>
   );
   const NumberInput = ({ label, value, onValueChange }) => (
     <input
@@ -29,8 +40,12 @@ jest.mock("@heroui/react", () => {
   );
   const SelectItem = ({ value, children }) => <option value={value}>{children}</option>;
 
-  return { ...actual, Button, Input, NumberInput, Select, SelectItem };
+  return { ...actual, Button, DateRangePicker, NumberInput, Select, SelectItem };
 });
+
+jest.mock("@internationalized/date", () => ({
+  parseDate: (str) => ({ toString: () => str }),
+}));
 
 describe("AdvancedFiltersPanel", () => {
   const defaultFilters = {
@@ -57,8 +72,7 @@ describe("AdvancedFiltersPanel", () => {
 
     expect(screen.getByLabelText("Status")).toBeInTheDocument();
     expect(screen.getByLabelText("Payment method")).toBeInTheDocument();
-    expect(screen.getByLabelText("filter.startDateLabel")).toBeInTheDocument();
-    expect(screen.getByLabelText("filter.endDateLabel")).toBeInTheDocument();
+    expect(screen.getByTestId("date-range-picker")).toBeInTheDocument();
     expect(screen.getByLabelText("filter.minTotalLabel")).toBeInTheDocument();
     expect(screen.getByLabelText("filter.maxTotalLabel")).toBeInTheDocument();
   });
@@ -77,6 +91,38 @@ describe("AdvancedFiltersPanel", () => {
 
     fireEvent.change(screen.getByLabelText("Status"), { target: { value: "paid" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ status: "paid" });
+  });
+
+  it("calls onFiltersChange with startDate and endDate when range is selected", () => {
+    const onFiltersChange = jest.fn();
+    render(
+      <AdvancedFiltersPanel
+        filters={defaultFilters}
+        paymentMethods={[]}
+        onFiltersChange={onFiltersChange}
+        onApplyFilters={jest.fn()}
+        onClearFilters={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("date-range-picker"));
+    expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "2024-01-01", endDate: "2024-01-31" });
+  });
+
+  it("calls onFiltersChange with null dates when range is cleared", () => {
+    const onFiltersChange = jest.fn();
+    render(
+      <AdvancedFiltersPanel
+        filters={defaultFilters}
+        paymentMethods={[]}
+        onFiltersChange={onFiltersChange}
+        onApplyFilters={jest.fn()}
+        onClearFilters={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("date-range-clear"));
+    expect(onFiltersChange).toHaveBeenCalledWith({ startDate: null, endDate: null });
   });
 
   it("calls onApplyFilters and onClearFilters", () => {

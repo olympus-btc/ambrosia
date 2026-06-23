@@ -9,8 +9,8 @@ import { PaymentForm } from "./PaymentForm";
 import { getPaymentErrorDescription } from "./utils/paymentErrors";
 import { getBolt11ValidationError } from "./utils/validateBolt11Invoice";
 
-export function PaymentTab({ fetchInfo, fetchTransactions }) {
-  const t = useTranslations("wallet");
+export function PaymentTab({ fetchInfo, fetchTransactions, currentRate }) {
+  const walletTranslations = useTranslations("wallet");
   const {
     decodedInvoice,
     invoiceValidationError,
@@ -22,7 +22,8 @@ export function PaymentTab({ fetchInfo, fetchTransactions }) {
   } = useSendPaymentFlow({
     fetchInfo,
     fetchTransactions,
-    validateInvoice: (invoiceValue) => getBolt11ValidationError(invoiceValue, t),
+    currentRate,
+    validateInvoice: (invoiceValue) => getBolt11ValidationError(invoiceValue, walletTranslations),
   });
 
   const handleOpenConfirm = async () => {
@@ -30,8 +31,8 @@ export function PaymentTab({ fetchInfo, fetchTransactions }) {
 
     if (result?.status === "decode_error") {
       addToast({
-        title: t("payments.send.paymentError"),
-        description: t("payments.send.confirmModal.decodingError"),
+        title: walletTranslations("payments.send.paymentError"),
+        description: walletTranslations("payments.send.confirmModal.decodingError"),
         variant: "solid",
         color: "danger",
       });
@@ -43,8 +44,8 @@ export function PaymentTab({ fetchInfo, fetchTransactions }) {
 
     if (result?.status === "success") {
       addToast({
-        title: t("payments.send.paySuccessTitle"),
-        description: t("payments.send.paySuccessDescription"),
+        title: walletTranslations("payments.send.paySuccessTitle"),
+        description: walletTranslations("payments.send.paySuccessDescription"),
         variant: "solid",
         color: "success",
       });
@@ -53,8 +54,8 @@ export function PaymentTab({ fetchInfo, fetchTransactions }) {
 
     if (result?.status === "payment_error") {
       addToast({
-        title: t("payments.send.paymentError"),
-        description: getPaymentErrorDescription(t, result.error),
+        title: walletTranslations("payments.send.paymentError"),
+        description: getPaymentErrorDescription(walletTranslations, result.error),
         variant: "solid",
         color: "danger",
       });
