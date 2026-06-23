@@ -123,6 +123,10 @@ jobs:
           ./gradlew jar
         working-directory: ./server
 
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: ./client
+
       - name: Package client
         run: |
           chmod +x ./package-client.sh
