@@ -37,8 +37,9 @@ cp -r public "$CLIENT_DIST_DIR/"
 cp -r node_modules/@swc/helpers "$CLIENT_DIST_DIR/node_modules/@swc/"
 cp -r node_modules/tslib "$CLIENT_DIST_DIR/node_modules/"
 
+DIST_FILE="ambrosia-client-$TAG.tar.gz"
+
 if [ "${NO_ZIP:-0}" != "1" ]; then
-  DIST_FILE="ambrosia-client-$TAG.tar.gz"
   echo "Creating distribution file: $DIST_FILE..."
   tar -C "$(dirname "$CLIENT_DIST_DIR")" -czf "$DIST_FILE" "$(basename "$CLIENT_DIST_DIR")"
   mv "$DIST_FILE" ./dist/

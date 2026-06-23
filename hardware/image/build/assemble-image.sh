@@ -340,12 +340,18 @@ expand_base_image() {
   losetup -d "$loopdev"
 
   # Attach only the last partition via byte offset — no partition device nodes needed.
+  # Not tracked in PART_LOOPDEVS: this device is temporary to this function and its
+  # loop number gets recycled before attach_and_mount_image runs, which would cause
+  # detach_image_mounts to prematurely release LOOPDEV.
   part_loopdev=$(losetup -f --show --offset "$part_start_b" "$BASE_IMAGE_WORK_PATH")
 
   case "${part_fstype:-}" in
     ext4|ext3|ext2|"")
       e2fsck -fy "$part_loopdev" >/dev/null 2>&1 || true
-      resize2fs "$part_loopdev" >/dev/null
+      if ! resize2fs "$part_loopdev" >/dev/null; then
+        losetup -d "$part_loopdev" 2>/dev/null || true
+        fail "resize2fs failed on partition $last_num of $BASE_IMAGE_WORK_PATH"
+      fi
       ;;
     *)
       warn "Skipping filesystem resize for unsupported type '${part_fstype:-unknown}' on partition $last_num"
