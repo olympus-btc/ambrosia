@@ -27,10 +27,10 @@ export function CashPaymentModal({
   const [cashReceived, setCashReceived] = useState(0);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [previousIsOpen, setPreviousIsOpen] = useState(isOpen);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
+  if (isOpen !== previousIsOpen) {
+    setPreviousIsOpen(isOpen);
     if (isOpen) {
       setCashReceived(0);
       setError("");

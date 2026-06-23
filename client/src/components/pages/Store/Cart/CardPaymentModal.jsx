@@ -25,10 +25,10 @@ export function CardPaymentModal({
   const cardTranslations = useTranslations("cart.paymentModal.card");
   const { formatAmount } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [previousIsOpen, setPreviousIsOpen] = useState(isOpen);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
+  if (isOpen !== previousIsOpen) {
+    setPreviousIsOpen(isOpen);
     if (isOpen) {
       setIsSubmitting(false);
     }
