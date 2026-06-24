@@ -1,9 +1,7 @@
-import { addToast } from "@heroui/react";
-
 import {
   classifyPaymentMethod,
-  PAYMENT_KIND,
-} from "../utils/paymentKinds";
+  PAYMENT_METHODS,
+} from "../utils/paymentMethods";
 
 import { processCheckout } from "./paymentFlows";
 
@@ -31,7 +29,6 @@ function buildInvoiceDescription(items = []) {
 }
 
 export function buildHandlePay({
-  t,
   currency,
   formatAmount,
   paymentMethodMap,
@@ -42,6 +39,7 @@ export function buildHandlePay({
   onResetCart,
   onPay,
   notifyError,
+  notifySuccess,
   dispatch,
   user,
   ensureCartReady,
@@ -59,7 +57,6 @@ export function buildHandlePay({
   }) {
     try {
       ensureCartReady({
-        t,
         items: cartItems,
         selectedPaymentMethod,
         userId: user?.userId,
@@ -76,9 +73,9 @@ export function buildHandlePay({
       const currencyId = currency.id;
       const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, total, formatAmount });
       const paymentMethodData = paymentMethodMap[selectedPaymentMethod] || null;
-      const paymentKind = classifyPaymentMethod(paymentMethodData?.name || "");
+      const paymentMethod = classifyPaymentMethod(paymentMethodData?.name || "");
 
-      if (paymentKind === PAYMENT_KIND.BTC) {
+      if (paymentMethod === PAYMENT_METHODS.BTC) {
         const currencyData = await getPaymentCurrencyById(currencyId);
         const currencyAcronym = (
           currencyData?.acronym ||
@@ -105,7 +102,7 @@ export function buildHandlePay({
         return;
       }
 
-      if (paymentKind === PAYMENT_KIND.CASH) {
+      if (paymentMethod === PAYMENT_METHODS.CASH) {
         setCashPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
@@ -117,7 +114,7 @@ export function buildHandlePay({
         return;
       }
 
-      if (paymentKind === PAYMENT_KIND.CARD) {
+      if (paymentMethod === PAYMENT_METHODS.CARD) {
         setCardPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
@@ -136,7 +133,6 @@ export function buildHandlePay({
         selectedPaymentMethod,
         currencyId,
         user,
-        t,
       });
 
       await refreshShiftTickets?.();
@@ -146,12 +142,12 @@ export function buildHandlePay({
         ticketId: storeCheckoutResult.ticketId,
       });
 
-      addToast({ color: "success", description: t("success.paid") });
+      notifySuccess("success.paid");
       onResetCart?.();
       onPay?.({ items: cartItems, ...paymentAmounts, paymentMethod: selectedPaymentMethod, ...storeCheckoutResult });
     } catch (err) {
       console.error("Error processing payment:", err);
-      notifyError(err?.message || t("errors.process"));
+      notifyError(err?.message || "errors.process");
     } finally {
       dispatch({ type: "stop" });
     }
@@ -190,13 +186,6 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
   };
 }
 
-/**
- * Shared orchestration for completing a deferred payment (BTC/cash/card): runs the
- * checkout, refreshes shift tickets, prints the receipt, fires onPay, shows the
- * success toast, and finalizes the config. The per-kind builders below pass in the
- * pieces that differ (checkout args, receipt total/invoice, onPay payload, toast
- * keys, and how to finalize the config).
- */
 async function runDeferredCheckout({
   checkoutArgs,
   receiptItems,
@@ -210,14 +199,14 @@ async function runDeferredCheckout({
   onPay,
   onResetCart,
   notifyError,
-  t,
+  notifySuccess,
   user,
   printCustomerReceipt,
   refreshShiftTickets,
 }) {
   dispatch({ type: "start" });
   try {
-    const storeCheckoutResult = await processCheckout({ ...checkoutArgs, user, t });
+    const storeCheckoutResult = await processCheckout({ ...checkoutArgs, user });
 
     await refreshShiftTickets?.();
     await printCustomerReceipt?.({
@@ -229,10 +218,10 @@ async function runDeferredCheckout({
 
     onPay?.(buildOnPayPayload(storeCheckoutResult));
     onResetCart?.();
-    addToast({ color: "success", description: t(successKey) });
+    notifySuccess(successKey);
   } catch (err) {
     console.error("Error completing payment:", err);
-    notifyError(err?.message || t(errorKey));
+    notifyError(err?.message || errorKey);
   } finally {
     finalize();
     dispatch({ type: "stop" });

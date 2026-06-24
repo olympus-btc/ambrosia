@@ -5,10 +5,6 @@ import userEvent from "@testing-library/user-event";
 
 import { CashPaymentModal } from "../CashPaymentModal";
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({
     formatAmount: (cents) => (typeof cents === "number"

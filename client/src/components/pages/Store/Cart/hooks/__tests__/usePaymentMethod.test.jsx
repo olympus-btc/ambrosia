@@ -13,11 +13,6 @@ jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
 }));
 
-jest.mock("next-intl", () => {
-  const t = (key) => key;
-  return { useTranslations: () => t };
-});
-
 function TestComponent() {
   const { paymentMethods, loading, error } = usePaymentMethods();
   return (

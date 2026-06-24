@@ -2,10 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { Summary } from "../Summary";
 
-jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
-}));
-
 jest.mock("@heroui/react", () => ({
   Card: ({ children, shadow, className }) => <div data-shadow={shadow} className={className}>{children}</div>,
   CardHeader: ({ children }) => <div data-testid="card-header">{children}</div>,

@@ -35,7 +35,7 @@ export function BitcoinPaymentModal({
   const [paymentReceived, setPaymentReceived] = useState(false);
   const [paymentAwaiting, setPaymentAwaiting] = useState(false);
   const [paymentCompletedAt, setPaymentCompletedAt] = useState(null);
-  const [prevHash, setPrevHash] = useState(null);
+  const [previousHash, setPreviousHash] = useState(null);
   const completedRef = useRef(false);
 
   const {
@@ -55,8 +55,8 @@ export function BitcoinPaymentModal({
 
   const currentHash = invoice?.paymentHash;
 
-  if (currentHash !== prevHash) {
-    setPrevHash(currentHash);
+  if (currentHash !== previousHash) {
+    setPreviousHash(currentHash);
     setPaymentReceived(false);
     setPaymentCompletedAt(null);
     setPaymentAwaiting(!!currentHash);

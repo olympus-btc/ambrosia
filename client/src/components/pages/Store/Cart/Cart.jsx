@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
@@ -8,11 +8,16 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 
+import { BitcoinPaymentModal } from "./BitcoinPaymentModal";
+import { CardPaymentModal } from "./CardPaymentModal";
+import { CashPaymentModal } from "./CashPaymentModal";
 import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
+import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
+import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
   const syncedItems = cart
@@ -56,58 +61,97 @@ export function Cart() {
   });
 
   const {
+    pendingRemovals,
+    startRemoval,
+    cancelRemoval,
+    clearPendingRemovals,
+  } = usePendingRemoval();
+
+  const visibleCart = useMemo(
+    () => cart.filter((item) => !pendingRemovals.has(item.id)),
+    [cart, pendingRemovals],
+  );
+
+  const handleAddProduct = useCallback(
+    (product) => {
+      if (pendingRemovals.has(product.id)) {
+        cancelRemoval(product.id);
+        return;
+      }
+      addProduct(product);
+    },
+    [addProduct, cancelRemoval, pendingRemovals],
+  );
+
+  const handleClearCart = () => {
+    clearPendingRemovals();
+    clearCart();
+  };
+
+  const {
     handlePay,
     isPaying,
     paymentError,
     clearPaymentError,
-    btcPayment,
-    cashPayment,
-    cardPayment,
+    btcPayment: {
+      config: btcPaymentConfig,
+      onClose: clearBtcPaymentConfig,
+      onInvoiceReady: handleBtcInvoiceReady,
+      onComplete: handleBtcComplete,
+    },
+    cashPayment: {
+      config: cashPaymentConfig,
+      onClose: clearCashPaymentConfig,
+      onComplete: handleCashComplete,
+    },
+    cardPayment: {
+      config: cardPaymentConfig,
+      onClose: clearCardPaymentConfig,
+      onComplete: handleCardComplete,
+    },
   } = useCartPayment({
     onResetCart: resetCartState,
     onPay: refetchProducts,
   });
 
   useEffect(() => {
-    if (cart.length === 0) {
+    if (visibleCart.length === 0) {
       setTimeout(() => setShowMobileSummary(false), 0);
     }
-  }, [cart.length]);
+  }, [visibleCart.length]);
 
-  const cartTotal = useMemo(() => {
-    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const discountRate = Number(discount) || 0;
-    return subtotal - (subtotal * discountRate) / 100;
-  }, [cart, discount]);
+  const cartTotal = useMemo(
+    () => calculateCartTotals(visibleCart, discount).total,
+    [visibleCart, discount],
+  );
 
   return (
-    <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
+    <div className={`transition-[padding] duration-200 md:pt-0 ${visibleCart.length ? "pt-14" : "pt-0"}`}>
       <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
-          <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
+          <SearchProducts products={products} categories={categories} onAddProduct={handleAddProduct} />
         </section>
         <div className="hidden md:block">
           <Summary
-            cartItems={cart}
+            cartItems={visibleCart}
             discount={discount}
             onRemoveProduct={removeProduct}
-            onClearCart={clearCart}
+            onClearCart={handleClearCart}
             onUpdateQuantity={updateQuantity}
+            startRemoval={startRemoval}
+            cancelRemoval={cancelRemoval}
             onPay={handlePay}
             isPaying={isPaying}
             paymentError={paymentError}
             onClearPaymentError={clearPaymentError}
-            btcPayment={btcPayment}
-            cashPayment={cashPayment}
-            cardPayment={cardPayment}
           />
         </div>
       </div>
 
       <MobileSummaryBar
-        cart={cart}
+        cart={visibleCart}
         total={cartTotal}
         onCheckout={() => setShowMobileSummary(true)}
       />
@@ -115,18 +159,46 @@ export function Cart() {
       <SummaryModal
         isOpen={showMobileSummary}
         onClose={() => setShowMobileSummary(false)}
-        cartItems={cart}
+        cartItems={visibleCart}
         discount={discount}
         onRemoveProduct={removeProduct}
-        onClearCart={clearCart}
+        onClearCart={handleClearCart}
         onUpdateQuantity={updateQuantity}
+        startRemoval={startRemoval}
+        cancelRemoval={cancelRemoval}
         onPay={handlePay}
         isPaying={isPaying}
         paymentError={paymentError}
         onClearPaymentError={clearPaymentError}
-        btcPayment={btcPayment}
-        cashPayment={cashPayment}
-        cardPayment={cardPayment}
+      />
+
+      <BitcoinPaymentModal
+        isOpen={!!btcPaymentConfig}
+        amountFiat={btcPaymentConfig?.amountFiat}
+        currencyAcronym={btcPaymentConfig?.currencyAcronym}
+        paymentId={btcPaymentConfig?.paymentId}
+        invoiceDescription={btcPaymentConfig?.invoiceDescription}
+        displayTotal={btcPaymentConfig?.displayTotal}
+        onClose={clearBtcPaymentConfig}
+        onInvoiceReady={handleBtcInvoiceReady}
+        onComplete={handleBtcComplete}
+      />
+
+      <CashPaymentModal
+        isOpen={!!cashPaymentConfig}
+        amountDue={cashPaymentConfig?.amountDue}
+        displayTotal={cashPaymentConfig?.displayTotal}
+        onClose={clearCashPaymentConfig}
+        onComplete={handleCashComplete}
+      />
+
+      <CardPaymentModal
+        isOpen={!!cardPaymentConfig}
+        amountDue={cardPaymentConfig?.amountDue}
+        displayTotal={cardPaymentConfig?.displayTotal}
+        methodLabel={cardPaymentConfig?.methodLabel}
+        onClose={clearCardPaymentConfig}
+        onComplete={handleCardComplete}
       />
     </div>
   );

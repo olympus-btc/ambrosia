@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { ProductList } from "./ProductList";
 
 export function SearchProducts({ products, onAddProduct, categories }) {
-  const t = useTranslations("cart");
+  const cartTranslations = useTranslations("cart");
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(null);
@@ -34,8 +34,8 @@ export function SearchProducts({ products, onAddProduct, categories }) {
         classNames={{
           inputWrapper: "rounded-lg bg-white data-[hover=true]:bg-white data-[focus=true]:bg-white",
         }}
-        label={t("search.label")}
-        placeholder={t("search.placeholder")}
+        label={cartTranslations("search.label")}
+        placeholder={cartTranslations("search.placeholder")}
         startContent={
           <Search width={20} height={20} />
         }
@@ -51,7 +51,7 @@ export function SearchProducts({ products, onAddProduct, categories }) {
           size="sm"
           onPress={() => setCategoryFilter(null)}
         >
-          {t("search.filterAll")}
+          {cartTranslations("search.filterAll")}
         </Button>
         {categories.map((category) => (
           <Button

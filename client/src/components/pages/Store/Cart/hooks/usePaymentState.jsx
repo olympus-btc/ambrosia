@@ -6,20 +6,18 @@ import {
   initialPaymentState,
   paymentStateReducer,
   createErrorNotifier,
+  createSuccessNotifier,
 } from "../utils/paymentState";
 
-/**
- * Holds the in-flight payment status (isPaying / error) plus the helpers that
- * mutate it: a stable dispatch, an error notifier that also toasts, and a clear.
- */
-export function usePaymentState() {
+export function usePaymentState(translate) {
   const [{ isPaying, error: paymentError }, dispatch] = useReducer(
     paymentStateReducer,
     initialPaymentState,
   );
 
-  const notifyError = useMemo(() => createErrorNotifier(dispatch), []);
+  const notifyError = useMemo(() => createErrorNotifier(dispatch, translate), [translate]);
+  const notifySuccess = useMemo(() => createSuccessNotifier(translate), [translate]);
   const clearPaymentError = useCallback(() => dispatch({ type: "clearError" }), []);
 
-  return { isPaying, paymentError, dispatch, notifyError, clearPaymentError };
+  return { isPaying, paymentError, dispatch, notifyError, notifySuccess, clearPaymentError };
 }

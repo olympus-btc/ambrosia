@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { usePrinters } from "../../hooks/usePrinter";
 
 export function useCustomerReceipt() {
-  const t = useTranslations("cart.payment");
+  const paymentTranslations = useTranslations("cart.payment");
   const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
 
   const hasCustomerPrinter = useMemo(() => {
@@ -23,7 +23,7 @@ export function useCustomerReceipt() {
       if (loadingConfigs || !hasCustomerPrinter) return;
       const ticketData = {
         ticketId: ticketId?.toString() || "",
-        tableName: t("receipt.tableName"),
+        tableName: paymentTranslations("receipt.tableName"),
         roomName: "",
         date: new Date().toISOString(),
         items: (items || []).map((item) => ({
@@ -46,11 +46,11 @@ export function useCustomerReceipt() {
         console.error("Error printing customer ticket:", err);
         addToast({
           color: "warning",
-          description: t("errors.printCustomer"),
+          description: paymentTranslations("errors.printCustomer"),
         });
       }
     },
-    [hasCustomerPrinter, loadingConfigs, printTicket, t],
+    [hasCustomerPrinter, loadingConfigs, printTicket, paymentTranslations],
   );
 
   return { printCustomerReceipt };

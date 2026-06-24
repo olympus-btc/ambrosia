@@ -33,14 +33,6 @@ jest.mock("../CartItemCard", () => ({
   ),
 }));
 
-jest.mock("../hooks/usePendingRemoval", () => ({
-  usePendingRemoval: () => ({
-    pendingRemovals: new Set(),
-    startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
-    cancelRemoval: jest.fn(),
-  }),
-}));
-
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));
@@ -60,10 +52,15 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   ),
 }));
 
+const mockAddToast = jest.fn(() => "toast-key-1");
+const mockCloseToast = jest.fn();
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
+    addToast: (...args) => mockAddToast(...args),
+    closeToast: (...args) => mockCloseToast(...args),
     NumberInput: ({ label, value, onChange }) => (
       <input aria-label={label} value={value} onChange={(e) => onChange?.(e.target.value)} />
     ),
@@ -82,18 +79,6 @@ jest.mock("@heroui/react", () => {
   };
 });
 
-jest.mock("../../BitcoinPaymentModal", () => ({
-  BitcoinPaymentModal: ({ isOpen }) => (isOpen ? <div>btc-modal</div> : null),
-}));
-
-jest.mock("../../CashPaymentModal", () => ({
-  CashPaymentModal: ({ isOpen }) => (isOpen ? <div>cash-modal</div> : null),
-}));
-
-jest.mock("../../CardPaymentModal", () => ({
-  CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
-}));
-
 const cartItems = [{ id: 1, imageUrl: "/uploads/jade-wallet.png", name: "Jade Wallet", price: 1000, quantity: 2, subtotal: 2000 }];
 
 const defaultProps = {
@@ -101,6 +86,8 @@ const defaultProps = {
   discount: 10,
   onRemoveProduct: jest.fn(),
   onUpdateQuantity: jest.fn(),
+  startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
+  cancelRemoval: jest.fn(),
   onPay: jest.fn(),
   isPaying: false,
   paymentError: "",
@@ -132,6 +119,36 @@ describe("SummaryContent", () => {
 
     fireEvent.click(screen.getByLabelText("Remove Product"));
     expect(onRemoveProduct).toHaveBeenCalledWith(1);
+  });
+
+  it("passes the toast key to startRemoval so the hook owns its dismissal", () => {
+    const startRemoval = jest.fn();
+    render(<SummaryContent {...defaultProps} startRemoval={startRemoval} />);
+
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+
+    expect(mockAddToast).toHaveBeenCalled();
+    expect(startRemoval).toHaveBeenCalledWith(1, expect.any(Function), "toast-key-1");
+  });
+
+  it("cancels removal when undo is pressed", () => {
+    const cancelRemoval = jest.fn();
+    render(
+      <SummaryContent
+        {...defaultProps}
+        startRemoval={jest.fn()}
+        cancelRemoval={cancelRemoval}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Remove Product"));
+    expect(mockAddToast).toHaveBeenCalled();
+
+    const { endContent } = mockAddToast.mock.calls[0][0];
+    render(endContent);
+    fireEvent.click(screen.getByText("summary.undoToast.undo"));
+
+    expect(cancelRemoval).toHaveBeenCalledWith(1);
   });
 
   it("calls onPay with correct data when Pay is pressed", () => {
@@ -171,20 +188,5 @@ describe("SummaryContent", () => {
     render(<SummaryContent {...defaultProps} cartItems={undefined} />);
 
     expect(screen.getByText("summary.pay")).toBeDisabled();
-  });
-
-  it("renders payment modals when configs are provided", () => {
-    render(
-      <SummaryContent
-        {...defaultProps}
-        btcPayment={{ config: { paymentId: "btc-1" } }}
-        cashPayment={{ config: { paymentId: "cash-1" } }}
-        cardPayment={{ config: { paymentId: "card-1" } }}
-      />,
-    );
-
-    expect(screen.getByText("btc-modal")).toBeInTheDocument();
-    expect(screen.getByText("cash-modal")).toBeInTheDocument();
-    expect(screen.getByText("card-modal")).toBeInTheDocument();
   });
 });
