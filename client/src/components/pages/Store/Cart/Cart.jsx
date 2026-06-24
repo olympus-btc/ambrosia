@@ -1,7 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -9,231 +8,150 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 
+import { BitcoinPaymentModal } from "./BitcoinPaymentModal";
+import { CardPaymentModal } from "./CardPaymentModal";
+import { CashPaymentModal } from "./CashPaymentModal";
+import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
+import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
+import { calculateCartTotals } from "./utils/cartTotals";
 
-function reconcileCartWithProducts(cart, products) {
-  const reconciledItems = cart.reduce((reconciledItems, item) => {
-    const catalogProduct = products.find((product) => product.id === item.id);
-    if (!catalogProduct) return reconciledItems;
-    if (catalogProduct.priceCents === item.price) return [...reconciledItems, item];
-    return [...reconciledItems, { ...item, price: catalogProduct.priceCents, subtotal: item.quantity * catalogProduct.priceCents }];
-  }, []);
+function syncCartWithProducts(cart, products) {
+  const syncedItems = cart
+    .filter((cartItem) => products.some((product) => product.id === cartItem.id))
+    .map((cartItem) => {
+      const catalogProduct = products.find((product) => product.id === cartItem.id);
+      return catalogProduct.priceCents === cartItem.price
+        ? cartItem
+        : { ...cartItem, price: catalogProduct.priceCents, subtotal: cartItem.quantity * catalogProduct.priceCents };
+    });
 
   const hasChanges =
-    reconciledItems.length !== cart.length ||
-    reconciledItems.some((item, index) => item !== cart[index]);
+    syncedItems.length !== cart.length ||
+    syncedItems.some((cartItem, index) => cartItem !== cart[index]);
 
-  return hasChanges ? reconciledItems : cart;
+  return hasChanges ? syncedItems : cart;
 }
 
 export function Cart() {
-  const t = useTranslations("cart");
-  const outOfStockTimeoutRef = useRef(null);
+  const cartTranslations = useTranslations("cart");
   const [showMobileSummary, setShowMobileSummary] = useState(false);
   const {
     cart,
     setCart,
     discount,
-    hydrated,
+    isCartRestored,
     resetCartState,
   } = usePersistentCart();
   const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
 
   useEffect(() => {
-    if (!hydrated || products.length === 0) return;
-    setCart((currentCart) => reconcileCartWithProducts(currentCart, products));
-  }, [products, hydrated, setCart]);
+    if (!isCartRestored || products.length === 0) return;
+    setCart((currentCart) => syncCartWithProducts(currentCart, products));
+  }, [products, isCartRestored, setCart]);
+
+  const { addProduct, updateQuantity, removeProduct, clearCart } = useCartOperations({
+    cart,
+    setCart,
+    products,
+  });
+
+  const {
+    pendingRemovals,
+    startRemoval,
+    cancelRemoval,
+    clearPendingRemovals,
+  } = usePendingRemoval();
+
+  const visibleCart = useMemo(
+    () => cart.filter((item) => !pendingRemovals.has(item.id)),
+    [cart, pendingRemovals],
+  );
+
+  const handleAddProduct = useCallback(
+    (product) => {
+      if (pendingRemovals.has(product.id)) {
+        cancelRemoval(product.id);
+        return;
+      }
+      addProduct(product);
+    },
+    [addProduct, cancelRemoval, pendingRemovals],
+  );
+
+  const handleClearCart = () => {
+    clearPendingRemovals();
+    clearCart();
+  };
 
   const {
     handlePay,
     isPaying,
     paymentError,
     clearPaymentError,
-    btcPaymentConfig,
-    handleBtcInvoiceReady,
-    handleBtcComplete,
-    clearBtcPaymentConfig,
-    cashPaymentConfig,
-    handleCashComplete,
-    clearCashPaymentConfig,
-    cardPaymentConfig,
-    handleCardComplete,
-    clearCardPaymentConfig,
+    btcPayment: {
+      config: btcPaymentConfig,
+      onClose: clearBtcPaymentConfig,
+      onInvoiceReady: handleBtcInvoiceReady,
+      onComplete: handleBtcComplete,
+    },
+    cashPayment: {
+      config: cashPaymentConfig,
+      onClose: clearCashPaymentConfig,
+      onComplete: handleCashComplete,
+    },
+    cardPayment: {
+      config: cardPaymentConfig,
+      onClose: clearCardPaymentConfig,
+      onComplete: handleCardComplete,
+    },
   } = useCartPayment({
     onResetCart: resetCartState,
     onPay: refetchProducts,
   });
 
-  const notifyOutOfStock = useCallback(() => {
-    if (outOfStockTimeoutRef.current) {
-      clearTimeout(outOfStockTimeoutRef.current);
-    }
-    outOfStockTimeoutRef.current = setTimeout(() => {
-      addToast({
-        color: "danger",
-        description: t("errors.outOfStock"),
-      });
-    }, 250);
-  }, [t]);
-
-  useEffect(() => () => {
-    if (outOfStockTimeoutRef.current) {
-      clearTimeout(outOfStockTimeoutRef.current);
-    }
-  }, []);
-
   useEffect(() => {
-    if (cart.length === 0) {
+    if (visibleCart.length === 0) {
       setTimeout(() => setShowMobileSummary(false), 0);
     }
-  }, [cart.length]);
+  }, [visibleCart.length]);
 
-  const cartTotal = useMemo(() => {
-    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const discountRate = Number(discount) || 0;
-    return subtotal - (subtotal * discountRate) / 100;
-  }, [cart, discount]);
-
-  const getAvailableQuantity = (productId) => {
-    const product = products.find((item) => item.id === productId);
-    return Number(product?.quantity) || 0;
-  };
-
-  const addProduct = (product) => {
-    const availableQuantity = getAvailableQuantity(product.id);
-    if (availableQuantity <= 0) {
-      notifyOutOfStock();
-      return;
-    }
-
-    const itemExist = cart.find((item) => item.id === product.id);
-
-    if (itemExist) {
-      if (itemExist.quantity + 1 > availableQuantity) {
-        notifyOutOfStock();
-        return;
-      }
-      setCart(
-        cart.map((item) => (item.id === product.id
-          ? {
-              ...item,
-              imageUrl: item.imageUrl ?? product.imageUrl,
-              quantity: item.quantity + 1,
-              subtotal: (item.quantity + 1) * item.price,
-            }
-          : item),
-        ),
-      );
-    } else {
-      setCart([
-        ...cart,
-        {
-          id: product.id,
-          imageUrl: product.imageUrl,
-          name: product.name,
-          price: product.priceCents,
-          quantity: 1,
-          subtotal: product.priceCents,
-        },
-      ]);
-    }
-  };
-
-  const updateQuantity = (id, quantity) => {
-    if (!Number.isFinite(quantity)) {
-      return;
-    }
-    const availableQuantity = getAvailableQuantity(id);
-    if (quantity > availableQuantity) {
-      notifyOutOfStock();
-      setCart(
-        cart.map((item) => (item.id === id
-          ? {
-              ...item,
-              quantity: availableQuantity,
-              subtotal: availableQuantity * item.price,
-            }
-          : item),
-        ),
-      );
-      return;
-    }
-    if (quantity <= 0) {
-      removeProduct(id);
-      return;
-    }
-    setCart(
-      cart.map((item) => (item.id === id
-        ? {
-            ...item,
-            quantity,
-            subtotal: quantity * item.price,
-          }
-        : item),
-      ),
-    );
-  };
-
-  const removeProduct = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const btcPayment = {
-    config: btcPaymentConfig,
-    onInvoiceReady: handleBtcInvoiceReady,
-    onComplete: handleBtcComplete,
-    onClose: clearBtcPaymentConfig,
-  };
-
-  const cashPayment = {
-    config: cashPaymentConfig,
-    onComplete: handleCashComplete,
-    onClose: clearCashPaymentConfig,
-  };
-
-  const cardPayment = {
-    config: cardPaymentConfig,
-    onComplete: handleCardComplete,
-    onClose: clearCardPaymentConfig,
-  };
+  const cartTotal = useMemo(
+    () => calculateCartTotals(visibleCart, discount).total,
+    [visibleCart, discount],
+  );
 
   return (
-    <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+    <div className={`transition-[padding] duration-200 md:pt-0 ${visibleCart.length ? "pt-14" : "pt-0"}`}>
+      <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
-          <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
+          <SearchProducts products={products} categories={categories} onAddProduct={handleAddProduct} />
         </section>
         <div className="hidden md:block">
           <Summary
-            cartItems={cart}
+            cartItems={visibleCart}
             discount={discount}
-            hydrated={hydrated}
             onRemoveProduct={removeProduct}
-            onClearCart={clearCart}
+            onClearCart={handleClearCart}
             onUpdateQuantity={updateQuantity}
+            startRemoval={startRemoval}
+            cancelRemoval={cancelRemoval}
             onPay={handlePay}
             isPaying={isPaying}
             paymentError={paymentError}
             onClearPaymentError={clearPaymentError}
-            btcPayment={btcPayment}
-            cashPayment={cashPayment}
-            cardPayment={cardPayment}
           />
         </div>
       </div>
 
       <MobileSummaryBar
-        cart={cart}
+        cart={visibleCart}
         total={cartTotal}
         onCheckout={() => setShowMobileSummary(true)}
       />
@@ -241,19 +159,46 @@ export function Cart() {
       <SummaryModal
         isOpen={showMobileSummary}
         onClose={() => setShowMobileSummary(false)}
-        cartItems={cart}
+        cartItems={visibleCart}
         discount={discount}
-        hydrated={hydrated}
         onRemoveProduct={removeProduct}
-        onClearCart={clearCart}
+        onClearCart={handleClearCart}
         onUpdateQuantity={updateQuantity}
+        startRemoval={startRemoval}
+        cancelRemoval={cancelRemoval}
         onPay={handlePay}
         isPaying={isPaying}
         paymentError={paymentError}
         onClearPaymentError={clearPaymentError}
-        btcPayment={btcPayment}
-        cashPayment={cashPayment}
-        cardPayment={cardPayment}
+      />
+
+      <BitcoinPaymentModal
+        isOpen={!!btcPaymentConfig}
+        amountFiat={btcPaymentConfig?.amountFiat}
+        currencyAcronym={btcPaymentConfig?.currencyAcronym}
+        paymentId={btcPaymentConfig?.paymentId}
+        invoiceDescription={btcPaymentConfig?.invoiceDescription}
+        displayTotal={btcPaymentConfig?.displayTotal}
+        onClose={clearBtcPaymentConfig}
+        onInvoiceReady={handleBtcInvoiceReady}
+        onComplete={handleBtcComplete}
+      />
+
+      <CashPaymentModal
+        isOpen={!!cashPaymentConfig}
+        amountDue={cashPaymentConfig?.amountDue}
+        displayTotal={cashPaymentConfig?.displayTotal}
+        onClose={clearCashPaymentConfig}
+        onComplete={handleCashComplete}
+      />
+
+      <CardPaymentModal
+        isOpen={!!cardPaymentConfig}
+        amountDue={cardPaymentConfig?.amountDue}
+        displayTotal={cardPaymentConfig?.displayTotal}
+        methodLabel={cardPaymentConfig?.methodLabel}
+        onClose={clearCardPaymentConfig}
+        onComplete={handleCardComplete}
       />
     </div>
   );

@@ -44,6 +44,7 @@ const reportsEs = {
       averageTicket: "Ticket Promedio",
       productLines: "Líneas de Producto",
       uniqueProducts: "Productos Únicos",
+      totalBtcSatoshis: "Total Bitcoin",
       orderCount: "Órdenes",
       avgItemsPerOrder: "Items Promedio / Orden",
     },
@@ -73,6 +74,9 @@ const reportsEs = {
       subtotal: "Subtotal",
       actions: "Acciones",
       view: "Detalles",
+      records: "registros",
+      export: "Exportar CSV",
+      unknownUser: "Desconocido",
     },
     payment: {
       unknown: "Desconocido",

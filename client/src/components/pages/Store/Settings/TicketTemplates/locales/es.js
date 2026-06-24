@@ -32,6 +32,7 @@ const ticketTemplatesEs = {
     confirmDelete: "Confirmar eliminacion",
     cancelDelete: "Cancelar",
     saveSuccess: "Plantilla guardada",
+    saveError: "Error al guardar plantilla",
     close: "Cerrar",
     saveNew: "Crear",
     saveChanges: "Guardar",

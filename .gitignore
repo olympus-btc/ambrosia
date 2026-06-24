@@ -8,3 +8,6 @@ GEMINI.md
 Claude.md
 .claude
 *PLAN.md
+.codex
+AGENTS.md
+client/.codex

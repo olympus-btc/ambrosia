@@ -9,6 +9,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Spinner,
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
@@ -21,17 +22,19 @@ export function CashPaymentModal({
   amountDue = 0,
   displayTotal,
 }) {
-  const t = useTranslations("cart.paymentModal.cash");
+  const cashTranslations = useTranslations("cart.paymentModal.cash");
   const { formatAmount } = useCurrency();
   const [cashReceived, setCashReceived] = useState(0);
   const [error, setError] = useState("");
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previousIsOpen, setPreviousIsOpen] = useState(isOpen);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
+  if (isOpen !== previousIsOpen) {
+    setPreviousIsOpen(isOpen);
     if (isOpen) {
       setCashReceived(0);
       setError("");
+      setIsSubmitting(false);
     }
   }
 
@@ -42,15 +45,21 @@ export function CashPaymentModal({
   const formattedTotal = displayTotal || formatAmount((amountDue || 0) * 100);
   const formattedChange = Number.isFinite(change) ? formatAmount(change * 100) : change;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
     if (!hasEnoughCash) {
-      setError(t("errors.insufficient"));
+      setError(cashTranslations("errors.insufficient"));
       return;
     }
-    onComplete?.({
-      cashReceived: numericReceived,
-      change,
-    });
+    setIsSubmitting(true);
+    try {
+      await onComplete?.({
+        cashReceived: numericReceived,
+        change,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,21 +77,21 @@ export function CashPaymentModal({
     >
       <ModalContent>
         <ModalHeader className="flex flex-col">
-          {t("title")}
+          {cashTranslations("title")}
           <span className="text-sm text-gray-600">
-            {t("subtitle")}
+            {cashTranslations("subtitle")}
           </span>
         </ModalHeader>
         <ModalBody className="space-y-4">
           <div className="border-b pb-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{t("totalLabel")}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">{cashTranslations("totalLabel")}</p>
             <p className="text-xl font-semibold text-green-900">
               {formattedTotal}
             </p>
           </div>
 
           <NumberInput
-            label={t("receivedLabel")}
+            label={cashTranslations("receivedLabel")}
             value={cashReceived}
             onValueChange={(receivedAmount) => {
               setCashReceived(receivedAmount ?? 0);
@@ -118,7 +127,7 @@ export function CashPaymentModal({
           />
 
           <div className="bg-white rounded-lg border p-3 flex justify-between items-center">
-            <span className="text-sm text-gray-600">{t("changeLabel")}</span>
+            <span className="text-sm text-gray-600">{cashTranslations("changeLabel")}</span>
             <span className={`text-lg font-semibold ${hasEnoughCash ? "text-green-700" : "text-red-600"}`}>
               {formattedChange}
             </span>
@@ -131,17 +140,18 @@ export function CashPaymentModal({
             variant="bordered"
             type="button"
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            isDisabled={isSubmitting}
             onPress={onClose}
           >
-            {t("cancel")}
+            {cashTranslations("cancel")}
           </Button>
           <Button
             color="primary"
             className="bg-green-800"
-            isDisabled={cashReceived <= 0}
+            isDisabled={cashReceived <= 0 || isSubmitting}
             onPress={handleConfirm}
           >
-            {t("confirm")}
+            {isSubmitting ? <Spinner color="white" size="sm" /> : cashTranslations("confirm")}
           </Button>
         </ModalFooter>
       </ModalContent>

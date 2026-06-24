@@ -97,7 +97,7 @@ describe("OrdersDetailCard", () => {
 
   it("shows record count of filtered orders", () => {
     render(<OrdersDetailCard orders={ORDERS} formatCurrency={formatCurrency} />);
-    expect(screen.getByText(/2 sales\.records/)).toBeInTheDocument();
+    expect(screen.getByText(/2 orders\.records/)).toBeInTheDocument();
   });
 
   it("export button is disabled when orders is empty", () => {

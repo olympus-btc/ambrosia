@@ -89,7 +89,7 @@ class TicketService(
             }
         statement.setString(4, ticketDate)
         statement.setInt(5, ticket.status)
-        statement.setDouble(6, ticket.totalAmount.toDouble())
+        statement.setDouble(6, ticket.totalAmount)
         statement.setString(7, ticket.notes)
 
         val rowsAffected = statement.executeUpdate()

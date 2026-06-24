@@ -29,6 +29,12 @@ const printersEs = {
       CUSTOMER: "Cliente",
       BAR: "Barra",
     },
+    saveSuccess: "Impresora agregada con éxito",
+    saveError: "Error al agregar impresora",
+    updateSuccess: "Impresora actualizada con éxito",
+    updateError: "Error al actualizar impresora",
+    deleteSuccess: "Impresora eliminada con éxito",
+    deleteError: "Error al eliminar impresora",
   },
 };
 

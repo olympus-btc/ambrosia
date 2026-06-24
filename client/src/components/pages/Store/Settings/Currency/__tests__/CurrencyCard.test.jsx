@@ -6,21 +6,31 @@ import { CurrencyCard } from "../CurrencyCard";
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
-  const Select = ({ label, selectedKeys, onChange, children }) => {
-    const value = selectedKeys ? [...selectedKeys][0] ?? "" : "";
+  const Autocomplete = ({
+    children, label, onSelectionChange, selectedKey,
+  }) => (
+    <div data-testid="autocomplete-wrapper">
+      <label htmlFor="currency-select">{label}</label>
+      <select
+        id="currency-select"
+        aria-label={label}
+        value={selectedKey ?? ""}
+        onChange={(event) => onSelectionChange(event.target.value)}
+      >
+        <option value="">Select currency</option>
+        {children}
+      </select>
+    </div>
+  );
+  const AutocompleteItem = ({ children, textValue }) => {
+    const code = textValue ? textValue.split(" ")[0] : children.toString().split(" ")[0];
     return (
-      <label>
-        {label}
-        <select aria-label={label} value={value} onChange={onChange}>
-          {children}
-        </select>
-      </label>
+      <option value={code}>
+        {textValue || children}
+      </option>
     );
   };
-  const SelectItem = ({ value, children }) => (
-    <option value={value ?? ""}>{children}</option>
-  );
-  return { ...actual, Select, SelectItem };
+  return { ...actual, Autocomplete, AutocompleteItem };
 });
 
 const mockCurrencies = [
@@ -73,7 +83,7 @@ describe("CurrencyCard", () => {
       expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
     });
 
-    it("renders the currency select", async () => {
+    it("renders the currency autocomplete", async () => {
       await act(async () => { renderCard(); });
       expect(screen.getByLabelText("cardCurrency.currencyLabel")).toBeInTheDocument();
     });
@@ -81,7 +91,7 @@ describe("CurrencyCard", () => {
     it("renders all currency options", async () => {
       await act(async () => { renderCard(); });
       const options = screen.getAllByRole("option");
-      const codes = options.map((o) => o.value);
+      const codes = options.map((o) => o.value).filter((val) => val !== "");
       expect(codes).toContain("USD");
       expect(codes).toContain("EUR");
       expect(codes).toContain("MXN");
@@ -103,7 +113,7 @@ describe("CurrencyCard", () => {
       fireEvent.change(select, { target: { value: "MXN" } });
 
       await waitFor(() => {
-        expect(mockOnChange).toHaveBeenCalled();
+        expect(mockOnChange).toHaveBeenCalledWith("MXN");
       });
     });
   });

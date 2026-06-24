@@ -4,11 +4,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 
 import { useBitcoinInvoice } from "../useBitcoinInvoice";
 
-let mockFiatToSatoshis;
+let mockGetBitcoinPrice;
 let mockCreateInvoice;
 
 jest.mock("@/services/bitcoinPriceService", () => jest.fn().mockImplementation(() => ({
-  fiatToSatoshis: (...args) => mockFiatToSatoshis(...args),
+  getBitcoinPrice: (...args) => mockGetBitcoinPrice(...args),
 })),
 );
 
@@ -35,25 +35,50 @@ function TestComponent(props) {
 
 describe("useBitcoinInvoice", () => {
   beforeEach(() => {
-    mockFiatToSatoshis = jest.fn();
+    mockGetBitcoinPrice = jest.fn();
     mockCreateInvoice = jest.fn();
     latestState = {};
   });
 
   it("auto-generates invoice when amount is provided", async () => {
-    mockFiatToSatoshis.mockResolvedValue(500);
+    mockGetBitcoinPrice.mockResolvedValue(50000);
     mockCreateInvoice.mockResolvedValue({ serialized: "ln", paymentHash: "hash-1" });
 
     render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);
 
     await waitFor(() => expect(screen.getByTestId("invoice")).toHaveTextContent("yes"));
-    expect(mockFiatToSatoshis).toHaveBeenCalledWith(10, "mxn");
-    expect(mockCreateInvoice).toHaveBeenCalledWith(500, "pay-1");
-    expect(screen.getByTestId("sats")).toHaveTextContent("500");
+    expect(mockGetBitcoinPrice).toHaveBeenCalledWith("mxn");
+    expect(mockCreateInvoice).toHaveBeenCalledWith(20000, "pay-1");
+    expect(screen.getByTestId("sats")).toHaveTextContent("20000");
+  });
+
+  it("calls onInvoiceReady with satoshis and exchangeRate", async () => {
+    const onInvoiceReady = jest.fn();
+    mockGetBitcoinPrice.mockResolvedValue(50000);
+    mockCreateInvoice.mockResolvedValue({ serialized: "ln", paymentHash: "hash-1" });
+
+    render(
+      <TestComponent
+        amountFiat={10}
+        currencyAcronym="mxn"
+        paymentId="pay-1"
+        onInvoiceReady={onInvoiceReady}
+      />,
+    );
+
+    await waitFor(() => expect(onInvoiceReady).toHaveBeenCalled());
+    expect(onInvoiceReady).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invoice: { serialized: "ln", paymentHash: "hash-1" },
+        satoshis: 20000,
+        paymentId: "pay-1",
+        exchangeRate: 50000,
+      }),
+    );
   });
 
   it("captures errors when invoice creation fails", async () => {
-    mockFiatToSatoshis.mockResolvedValue(500);
+    mockGetBitcoinPrice.mockResolvedValue(50000);
     mockCreateInvoice.mockRejectedValue(new Error("invoice-error"));
 
     render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);
@@ -69,7 +94,7 @@ describe("useBitcoinInvoice", () => {
       expect(result).toBeNull();
     });
 
-    expect(mockFiatToSatoshis).not.toHaveBeenCalled();
+    expect(mockGetBitcoinPrice).not.toHaveBeenCalled();
     expect(mockCreateInvoice).not.toHaveBeenCalled();
   });
 
@@ -84,11 +109,11 @@ describe("useBitcoinInvoice", () => {
     );
 
     await waitFor(() => expect(screen.getByTestId("invoice")).toHaveTextContent("no"));
-    expect(mockFiatToSatoshis).not.toHaveBeenCalled();
+    expect(mockGetBitcoinPrice).not.toHaveBeenCalled();
   });
 
   it("resets invoice state", async () => {
-    mockFiatToSatoshis.mockResolvedValue(500);
+    mockGetBitcoinPrice.mockResolvedValue(50000);
     mockCreateInvoice.mockResolvedValue({ serialized: "ln", paymentHash: "hash-1" });
 
     render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);

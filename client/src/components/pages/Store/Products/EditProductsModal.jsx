@@ -83,7 +83,7 @@ export function EditProductsModal({
             <Textarea
               label={productsTranslations("modal.productDescriptionLabel")}
               placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
-              value={data.productDescription}
+              value={data.productDescription ?? ""}
               onChange={(e) => onChange({ productDescription: e.target.value })}
             />
 
@@ -98,7 +98,7 @@ export function EditProductsModal({
             <Input
               label={productsTranslations("modal.productSKULabel")}
               placeholder={productsTranslations("modal.productSKUPlaceholder")}
-              value={data.productSKU}
+              value={data.productSKU ?? ""}
               onChange={(e) => onChange({ productSKU: e.target.value })}
             />
 

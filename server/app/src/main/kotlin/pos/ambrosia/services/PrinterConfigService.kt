@@ -5,9 +5,9 @@ import pos.ambrosia.models.PrinterConfig
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
 import pos.ambrosia.models.PrinterType
-import pos.ambrosia.util.executeInTransaction
-import pos.ambrosia.util.toBytes
-import pos.ambrosia.util.toUUID
+import pos.ambrosia.utils.executeInTransaction
+import pos.ambrosia.utils.toBytes
+import pos.ambrosia.utils.toUUID
 import java.sql.Connection
 import java.sql.ResultSet
 import java.util.UUID

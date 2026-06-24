@@ -19,7 +19,7 @@ const buildProductSummary = (items, overflowLabel) => {
   return names.join(", ");
 };
 
-export function ReportsOrdersList({ orders, formatCurrency }) {
+export function ReportsOrdersList({ orders, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -36,17 +36,17 @@ export function ReportsOrdersList({ orders, formatCurrency }) {
     {
       key: "id",
       label: reportsTranslations("orders.shortId"),
-      render: (order) => (
+      render: ({ shortId }) => (
         <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-          #{order.shortId}
+          #{shortId}
         </span>
       ),
     },
     {
       key: "date",
       label: reportsTranslations("sales.date"),
-      render: (order) => {
-        const { date, time } = formatDateParts(order.date);
+      render: ({ date: orderDate }) => {
+        const { date, time } = formatDateParts(orderDate);
         return (
           <div className="text-xs">
             <span className="text-gray-700">{date}</span>
@@ -58,32 +58,32 @@ export function ReportsOrdersList({ orders, formatCurrency }) {
     {
       key: "user",
       label: reportsTranslations("sales.user"),
-      render: (order) => <span className="text-sm text-gray-700">{order.userName ?? "—"}</span>,
+      render: ({ userName }) => <span className="text-sm text-gray-700">{userName ?? "—"}</span>,
     },
     {
       key: "products",
       label: reportsTranslations("orders.products"),
-      render: (order) => (
-        <span className="text-sm text-deep">{buildProductSummary(order.items, reportsTranslations("orders.more"))}</span>
+      render: ({ items }) => (
+        <span className="text-sm text-deep">{buildProductSummary(items, reportsTranslations("orders.more"))}</span>
       ),
     },
     {
       key: "items",
       label: reportsTranslations("sales.quantity"),
-      render: (order) => <span className="font-bold">×{order.itemCount}</span>,
+      render: ({ itemCount }) => <span className="font-bold">×{itemCount}</span>,
     },
     {
       key: "total",
       label: reportsTranslations("orders.total"),
-      render: (order) => (
-        <span className="whitespace-nowrap font-bold text-green-700">{formatCurrency(order.total)}</span>
+      render: ({ total }) => (
+        <span className="whitespace-nowrap font-bold text-green-700">{formatCurrency(total)}</span>
       ),
     },
     {
       key: "payment",
       label: reportsTranslations("sales.paymentMethod"),
-      render: (order) => (
-        <span className="text-sm text-gray-700">{order.paymentMethod || reportsTranslations("payment.unknown")}</span>
+      render: ({ paymentMethod }) => (
+        <span className="text-sm text-gray-700">{paymentMethod || reportsTranslations("payment.unknown")}</span>
       ),
     },
     {
@@ -122,6 +122,7 @@ export function ReportsOrdersList({ orders, formatCurrency }) {
       <OrderDetailModal
         order={selectedOrder}
         formatCurrency={formatCurrency}
+        currentRate={currentRate}
         onClose={() => setSelectedOrder(null)}
       />
     </section>

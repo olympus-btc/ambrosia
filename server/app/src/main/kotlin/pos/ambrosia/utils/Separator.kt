@@ -1,4 +1,4 @@
-package pos.ambrosia.util
+package pos.ambrosia.utils
 
 fun formatTicketLine(
     text1: String,

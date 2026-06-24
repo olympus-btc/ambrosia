@@ -6,7 +6,7 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { SummaryContent } from "./SummaryContent";
 
 export function Summary(props) {
-  const t = useTranslations("cart");
+  const cartTranslations = useTranslations("cart");
   const { onClearCart, cartItems: items = [] } = props;
 
   return (
@@ -14,11 +14,11 @@ export function Summary(props) {
       <CardHeader>
         <div className="flex w-full items-center justify-between">
           <h2 className="text-lg font-semibold text-green-900">
-            {t("summary.title")}
+            {cartTranslations("summary.title")}
           </h2>
           {items.length > 0 && (
           <DeleteButton onPress={onClearCart}>
-            {t("summary.clearCart")}
+            {cartTranslations("summary.clearCart")}
           </DeleteButton>
           )}
         </div>

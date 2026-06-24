@@ -111,7 +111,7 @@ describe("useOrdersChartData", () => {
         { orderId: "order-x", date: "2024-01-02T10:00:00", userName: null, paymentMethod: "Cash", total: 1000 },
       ];
       const { result } = renderHook(() => useOrdersChartData(ordersWithNullUser));
-      expect(result.current.topUsersByOrders[0].name).toBe("Unknown");
+      expect(result.current.topUsersByOrders[0].name).toBe("orders.unknownUser");
     });
 
     it("uses 'Unknown' as fallback for empty string userName", () => {
@@ -119,7 +119,7 @@ describe("useOrdersChartData", () => {
         { orderId: "order-y", date: "2024-01-02T10:00:00", userName: "", paymentMethod: "Cash", total: 1000 },
       ];
       const { result } = renderHook(() => useOrdersChartData(ordersWithEmptyUser));
-      expect(result.current.topUsersByOrders[0].name).toBe("Unknown");
+      expect(result.current.topUsersByOrders[0].name).toBe("orders.unknownUser");
     });
 
     it("limits results to 8 users", () => {

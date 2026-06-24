@@ -12,9 +12,7 @@ import pos.ambrosia.logger
 import pos.ambrosia.services.TokenService
 import java.sql.Connection
 
-/** Extensión para verificar si el usuario actual es administrador */
 fun ApplicationCall.requireAdmin() {
-    // Obtener el refreshToken desde la cookie
     val refreshToken = request.cookies["refreshToken"]
 
     if (refreshToken.isNullOrBlank()) {
@@ -22,7 +20,6 @@ fun ApplicationCall.requireAdmin() {
         throw AdminOnlyException()
     }
 
-    // Consultar la BD para obtener isAdmin usando el refreshToken registrado
     val connection: Connection = DatabaseConnection.getConnection()
     val tokenService = TokenService(application.environment, connection)
     val userFromToken = tokenService.getUserFromRefreshToken(refreshToken)
@@ -34,7 +31,6 @@ fun ApplicationCall.requireAdmin() {
     }
 }
 
-/** Extensión para obtener información del usuario actual desde el JWT */
 fun ApplicationCall.getCurrentUser(): UserInfo? {
     val principal = principal<JWTPrincipal>() ?: return null
 
@@ -46,14 +42,12 @@ fun ApplicationCall.getCurrentUser(): UserInfo? {
 }
 
 suspend fun ApplicationCall.requireWallet() {
-    // Verificar que la cookie walletAccessToken esté presente
     val walletToken = request.cookies["walletAccessToken"]
     if (walletToken == null) {
         logger.warn("Wallet access attempted without walletAccessToken cookie")
         throw WalletOnlyException()
     }
 
-    // Verificar que el principal tenga el scope correcto
     val principal = principal<JWTPrincipal>()
     val scope = principal?.getClaim("scope", String::class)
 
@@ -65,19 +59,11 @@ suspend fun ApplicationCall.requireWallet() {
     logger.info("Wallet access granted successfully")
 }
 
-/**
- * Plugin de Ktor para verificar los privilegios de administrador. Este plugin se asegura de que
- * solo los administradores puedan acceder a una ruta. Se debe usar dentro de un bloque
- * `authenticate`.
- */
 val AdminAccess =
     createRouteScopedPlugin(name = "AdminAccess") {
         on(AuthenticationChecked) { call -> call.requireAdmin() }
     }
 
-/**
- * Función de extensión para crear rutas que requieren autenticación y privilegios de administrador
- */
 fun Route.authenticateAdmin(
     name: String = "auth-jwt",
     build: Route.() -> Unit,
@@ -87,7 +73,6 @@ fun Route.authenticateAdmin(
         build()
     }
 
-/** Data class para representar información básica del usuario */
 data class UserInfo(
     val userId: String,
     val role: String,

@@ -82,10 +82,10 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
 
           {product.description && (
             <div>
-              <p className="text-xs tracking-wide text-gray-500 mb-1">
+              <p className="text-xs tracking-wide text-primary mb-1">
                 {t("description")}
               </p>
-              <p className="text-sm text-gray-600">{product.description}</p>
+              <p className="text-xs text-gray-400">{product.description}</p>
             </div>
           )}
         </ModalBody>

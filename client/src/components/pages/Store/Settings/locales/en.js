@@ -12,6 +12,8 @@ const settingsEn = {
     cardCurrency: {
       title: "Currency",
       currencyLabel: "Change currency",
+      successTitle: "Currency Updated",
+      successDescription: "The store currency has been changed successfully.",
     },
     cardLanguage: {
       title: "Language",

@@ -8,7 +8,7 @@ import formatDate from "@lib/formatDate";
 const DEFAULT_ROWS_PER_PAGE = 10;
 
 export function useSalesData(sales, formatCurrency) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
   const [prevSales, setPrevSales] = useState(sales);
@@ -32,8 +32,8 @@ export function useSalesData(sales, formatCurrency) {
   const exportToCsv = useCallback(() => {
     if (!sales.length) return;
     const headers = [
-      t("sales.product"), t("sales.user"), t("sales.quantity"),
-      t("sales.price"), t("sales.total"), t("sales.paymentMethod"), t("sales.date"),
+      reportsTranslations("sales.product"), reportsTranslations("sales.user"), reportsTranslations("sales.quantity"),
+      reportsTranslations("sales.price"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"), reportsTranslations("sales.date"),
     ];
     const rows = sales.map((sale) => [
       sale.productName,
@@ -53,7 +53,7 @@ export function useSalesData(sales, formatCurrency) {
     link.download = `sales-report-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [sales, formatCurrency, t]);
+  }, [sales, formatCurrency, reportsTranslations]);
 
   return { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv };
 }

@@ -1,10 +1,11 @@
 "use client";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { Card, CardBody, Tab, Tabs } from "@heroui/react";
 import { AlertCircle, Loader2, Package, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { PageHeader } from "@components/shared/PageHeader";
 
@@ -23,8 +24,8 @@ export default function Reports() {
   const reportsTranslations = useTranslations("reports");
   const { fetchReport, reportData, error, loading: reportsLoading } = useReports();
   const { filters, handleFilters } = useFiltersState(fetchReport);
-  const { formatAmount, loading: currencyLoading } = useCurrency();
-  const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
+  const { formatAmount, loading: currencyLoading, currency } = useCurrency();
+  const { currentRate } = useBitcoinPrice({ currencyAcronym: currency?.acronym });
   const [activeTab, setActiveTab] = useState("orders");
   const [pendingTab, setPendingTab] = useState(null);
   const [isPending, startTransition] = useTransition();
@@ -36,18 +37,29 @@ export default function Reports() {
   const { totalRevenue: productsRevenue, totalItems, productLines, uniqueProducts } = useSummaryData(reportData);
 
   const orderStats = useMemo(() => [
-    { label: reportsTranslations("summary.revenue"), value: formatCurrency(ordersRevenue) },
+    { label: reportsTranslations("summary.revenue"), value: formatAmount(ordersRevenue) },
     { label: reportsTranslations("summary.orderCount"), value: orderCount },
-    { label: reportsTranslations("summary.averageTicket"), value: formatCurrency(averageTicket) },
+    { label: reportsTranslations("summary.averageTicket"), value: formatAmount(averageTicket) },
     { label: reportsTranslations("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
-  ], [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, formatCurrency]);
+  ], [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, formatAmount]);
 
-  const productStats = useMemo(() => [
-    { label: reportsTranslations("summary.revenue"), value: formatCurrency(productsRevenue) },
-    { label: reportsTranslations("summary.items"), value: totalItems },
-    { label: reportsTranslations("summary.productLines"), value: productLines },
-    { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
-  ], [reportsTranslations, productsRevenue, totalItems, productLines, uniqueProducts, formatCurrency]);
+  const totalBtcSatoshis = reportData?.totalBtcSatoshis ?? 0;
+
+  const productStats = useMemo(() => {
+    const stats = [
+      { label: reportsTranslations("summary.revenue"), value: formatAmount(productsRevenue) },
+      { label: reportsTranslations("summary.items"), value: totalItems },
+      { label: reportsTranslations("summary.productLines"), value: productLines },
+      { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
+    ];
+    if (totalBtcSatoshis > 0) {
+      stats.push({
+        label: reportsTranslations("summary.totalBtcSatoshis"),
+        value: `${totalBtcSatoshis.toLocaleString()} sats`,
+      });
+    }
+    return stats;
+  }, [reportsTranslations, productsRevenue, totalItems, productLines, uniqueProducts, formatAmount, totalBtcSatoshis]);
 
   if ((reportsLoading || currencyLoading) && !reportData) return <ReportSkeleton />;
 
@@ -121,12 +133,13 @@ export default function Reports() {
             <div className="space-y-6">
               <SummaryCard stats={orderStats} />
               {orders.length > 0 && (
-                <OrdersAnalyticsCard sales={sales} orders={orders} formatCurrency={formatCurrency} />
+                <OrdersAnalyticsCard sales={sales} orders={orders} formatCurrency={formatAmount} />
               )}
               <OrdersDetailCard
                 orders={orders}
-                formatCurrency={formatCurrency}
+                formatCurrency={formatAmount}
                 disabled={currencyLoading}
+                currentRate={currentRate}
               />
             </div>
           )}
@@ -134,12 +147,13 @@ export default function Reports() {
             <div className="space-y-6">
               <SummaryCard stats={productStats} />
               {sales.length > 0 && (
-                <AnalyticsCard sales={sales} formatCurrency={formatCurrency} />
+                <AnalyticsCard sales={sales} formatCurrency={formatAmount} />
               )}
               <SalesDetailCard
                 sales={sales}
-                formatCurrency={formatCurrency}
+                formatCurrency={formatAmount}
                 disabled={currencyLoading}
+                currentRate={currentRate}
               />
             </div>
           )}

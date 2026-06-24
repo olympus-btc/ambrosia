@@ -1,24 +1,23 @@
 export function ensureCartReady({
-  t,
   items,
   selectedPaymentMethod,
   userId,
   currencyId,
 }) {
   if (!selectedPaymentMethod) {
-    throw new Error(t("errors.selectMethod"));
+    throw new Error("errors.selectMethod");
   }
 
   if (!items.length) {
-    throw new Error(t("errors.emptyCart"));
+    throw new Error("errors.emptyCart");
   }
 
   if (!userId) {
-    throw new Error(t("errors.noUser"));
+    throw new Error("errors.noUser");
   }
 
   if (!currencyId) {
-    throw new Error(t("errors.noCurrency"));
+    throw new Error("errors.noCurrency");
   }
 }
 

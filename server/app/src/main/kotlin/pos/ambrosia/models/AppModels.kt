@@ -160,6 +160,10 @@ data class OrderWithPayment(
     val createdAt: String,
     val paymentMethod: String? = null,
     val paymentMethodIds: List<String> = emptyList(),
+    val satoshiAmount: Long? = null,
+    val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )
 
 data class OrderWithPaymentFilters(
@@ -507,6 +511,11 @@ data class StoreCheckoutRequest(
     val amount: Double,
     val transactionId: String? = null,
     val ticketNotes: String = "",
+    val satoshiAmount: Long? = null,
+    val exchangeRateAtPayment: Double? = null,
+    val paymentHash: String? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )
 
 @Serializable
@@ -525,6 +534,11 @@ data class ProductSaleItem(
     val userName: String,
     val paymentMethod: String,
     val saleDate: String,
+    val satoshiAmount: Long? = null,
+    val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
+    val paymentId: String? = null,
 )
 
 @Serializable
@@ -532,4 +546,62 @@ data class ProductSalesReport(
     val totalRevenueCents: Long,
     val totalItemsSold: Int,
     val sales: List<ProductSaleItem>,
+    val totalBtcSatoshis: Long = 0L,
+)
+
+@Serializable
+data class OutgoingPaymentWithRate(
+    val type: String,
+    val subType: String,
+    val paymentId: String,
+    val paymentHash: String? = null,
+    val txId: String? = null,
+    val preimage: String? = null,
+    val isPaid: Boolean,
+    val sent: Long,
+    val fees: Long,
+    val invoice: String? = null,
+    val description: String? = null,
+    val completedAt: Long? = null,
+    val createdAt: Long,
+    val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
+)
+
+data class WalletInvoiceRate(
+    val paymentHash: String,
+    val satoshiAmount: Long?,
+    val exchangeRate: Double,
+    val exchangeRateCurrency: String,
+    val fiatAmount: Double?,
+)
+
+data class PaymentBitcoinData(
+    val exchangeRateAtPayment: Double,
+    val exchangeRateCurrency: String?,
+    val fiatAmountAtPayment: Double?,
+)
+
+@Serializable
+data class IncomingPaymentWithRate(
+    val type: String,
+    val subType: String,
+    val paymentHash: String,
+    val preimage: String? = null,
+    val externalId: String? = null,
+    val description: String? = null,
+    val invoice: String? = null,
+    val isPaid: Boolean,
+    val isExpired: Boolean? = null,
+    val requestedSat: Long? = null,
+    val receivedSat: Long,
+    val fees: Long,
+    val payerKey: String? = null,
+    val expiresAt: Long? = null,
+    val completedAt: Long? = null,
+    val createdAt: Long,
+    val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )

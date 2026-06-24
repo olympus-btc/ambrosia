@@ -7,8 +7,6 @@ export const defaultFilters = {
   activePeriod: "month",
   startDate: "",
   endDate: "",
-  productName: "",
-  paymentMethod: "",
 };
 
 export function useDateRangeFilters(filters, onFiltersChange) {
@@ -32,7 +30,7 @@ export function useFiltersState(fetchReport) {
   const [filters, setFilters] = useState(defaultFilters);
   const latestFiltersRef = useRef(defaultFilters);
 
-  useEffect(() => { latestFiltersRef.current = filters; });
+  useEffect(() => { latestFiltersRef.current = filters; }, [filters]);
 
   useEffect(() => {
     fetchReport({ period: defaultFilters.activePeriod });

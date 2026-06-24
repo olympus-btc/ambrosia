@@ -83,6 +83,13 @@ const componentsEn = {
     other: "Other",
     loadError: "Error loading shift data",
   },
+  amountDisplay: {
+    satsLabel: "sats",
+    showCurrentRate: "Show current rate",
+    showHistoricalRate: "Show rate at time of sale",
+    amountAtTimeOfPayment: "Amount at time of sale",
+    amountAtCurrentRate: "Amount at current rate",
+  },
 };
 
 export default componentsEn;

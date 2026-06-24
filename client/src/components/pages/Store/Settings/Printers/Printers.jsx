@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { addToast } from "@heroui/react";
+import { useTranslations } from "next-intl";
+
 import { usePrinters } from "../../hooks/usePrinter";
 import { useTemplates } from "../../hooks/useTemplates";
 
 import { PrintersCard } from "./PrintersCard";
 
 export function Printers() {
+  const settingsTranslations = useTranslations("settings");
   const {
     availablePrinters,
     printerConfigs,
@@ -75,8 +79,38 @@ export function Printers() {
       setTemplateName(templates?.[0]?.name ?? "");
       setIsDefault(false);
       setEnabled(true);
+      addToast({ description: settingsTranslations("cardPrinters.saveSuccess"), color: "success" });
+    } catch {
+      addToast({ description: settingsTranslations("cardPrinters.saveError"), color: "danger" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdate = async (id, data) => {
+    try {
+      await updatePrinterConfig(id, data);
+      addToast({ description: settingsTranslations("cardPrinters.updateSuccess"), color: "success" });
+    } catch {
+      addToast({ description: settingsTranslations("cardPrinters.updateError"), color: "danger" });
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deletePrinterConfig(id);
+      addToast({ description: settingsTranslations("cardPrinters.deleteSuccess"), color: "success" });
+    } catch {
+      addToast({ description: settingsTranslations("cardPrinters.deleteError"), color: "danger" });
+    }
+  };
+
+  const handleSetDefault = async (id) => {
+    try {
+      await setDefaultPrinterConfig(id);
+      addToast({ description: settingsTranslations("cardPrinters.updateSuccess"), color: "success" });
+    } catch {
+      addToast({ description: settingsTranslations("cardPrinters.updateError"), color: "danger" });
     }
   };
 
@@ -91,11 +125,12 @@ export function Printers() {
   const printerData = { availablePrinters, configRows, templates };
   const printerLoading = { available: loadingAvailable, configs: loadingConfigs, templates: loadingTemplates };
   const printerState = {
-    error, saving,
+    error,
+    saving,
     onAdd: handleAdd,
-    onUpdateConfig: updatePrinterConfig,
-    onDeleteConfig: deletePrinterConfig,
-    onSetDefaultConfig: setDefaultPrinterConfig,
+    onUpdateConfig: handleUpdate,
+    onDeleteConfig: handleDelete,
+    onSetDefaultConfig: handleSetDefault,
   };
 
   return (

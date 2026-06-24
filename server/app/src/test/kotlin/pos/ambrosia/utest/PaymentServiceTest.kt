@@ -9,6 +9,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Currency
 import pos.ambrosia.models.Payment
+import pos.ambrosia.models.PaymentBitcoinData
 import pos.ambrosia.models.PaymentMethod
 import pos.ambrosia.services.PaymentService
 import java.sql.Connection
@@ -443,6 +444,67 @@ class PaymentServiceTest {
             val service = PaymentService(mockConnection) // Arrange
             val result = service.deletePayment(paymentId) // Act
             assertTrue(result) // Assert
+        }
+    }
+
+    @Test
+    fun `getExchangeRatesByPaymentHashes returns empty map when hashes list is empty`() {
+        runBlocking {
+            val service = PaymentService(mockConnection) // Arrange
+            val result = service.getExchangeRatesByPaymentHashes(emptyList()) // Act
+            assertTrue(result.isEmpty()) // Assert
+            verify(mockConnection, never()).prepareStatement(any()) // Assert
+        }
+    }
+
+    @Test
+    fun `getExchangeRatesByPaymentHashes returns PaymentBitcoinData with all fields when found`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
+            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
+            whenever(mockResultSet.getString("payment_hash")).thenReturn("hash1") // Arrange
+            whenever(mockResultSet.getDouble("exchange_rate_at_payment")).thenReturn(95000.0) // Arrange
+            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd") // Arrange
+            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0) // Arrange
+            val service = PaymentService(mockConnection) // Arrange
+            val result = service.getExchangeRatesByPaymentHashes(listOf("hash1")) // Act
+            assertEquals(1, result.size) // Assert
+            assertEquals(95000.0, result["hash1"]?.exchangeRateAtPayment) // Assert
+            assertEquals("usd", result["hash1"]?.exchangeRateCurrency) // Assert
+            assertEquals(1.0, result["hash1"]?.fiatAmountAtPayment) // Assert
+        }
+    }
+
+    @Test
+    fun `getExchangeRatesByPaymentHashes returns PaymentBitcoinData with null optional fields`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
+            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
+            whenever(mockResultSet.getString("payment_hash")).thenReturn("hash1") // Arrange
+            whenever(mockResultSet.getDouble("exchange_rate_at_payment")).thenReturn(95000.0) // Arrange
+            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null) // Arrange
+            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null) // Arrange
+            val service = PaymentService(mockConnection) // Arrange
+            val result = service.getExchangeRatesByPaymentHashes(listOf("hash1")) // Act
+            val btcData = result["hash1"] // Assert
+            assertNotNull(btcData) // Assert
+            assertEquals(95000.0, btcData.exchangeRateAtPayment) // Assert
+            assertNull(btcData.exchangeRateCurrency) // Assert
+            assertNull(btcData.fiatAmountAtPayment) // Assert
+        }
+    }
+
+    @Test
+    fun `getExchangeRatesByPaymentHashes returns empty map when no matches found`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
+            whenever(mockResultSet.next()).thenReturn(false) // Arrange
+            val service = PaymentService(mockConnection) // Arrange
+            val result = service.getExchangeRatesByPaymentHashes(listOf("hash-unknown")) // Act
+            assertTrue(result.isEmpty()) // Assert
         }
     }
 

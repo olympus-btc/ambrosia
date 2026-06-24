@@ -1,4 +1,4 @@
-package pos.ambrosia.util
+package pos.ambrosia.utils
 
 import pos.ambrosia.logger
 import java.sql.Connection

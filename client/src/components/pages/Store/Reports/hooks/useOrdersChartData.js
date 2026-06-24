@@ -1,9 +1,12 @@
 "use client";
 import { useMemo } from "react";
 
+import { useTranslations } from "next-intl";
+
 import { formatDateParts } from "@lib/formatDate";
 
 export function useOrdersChartData(orders) {
+  const reportsTranslations = useTranslations("reports");
   const { ordersPerDay, paymentMethodByOrders, topUsersByOrders } = useMemo(() => {
     const dailyStatsMap = {};
     const paymentMethodMap = {};
@@ -12,7 +15,7 @@ export function useOrdersChartData(orders) {
     for (const order of orders) {
       const dateKey = formatDateParts(order.date).localDay;
       const method = order.paymentMethod;
-      const userName = order.userName || "Unknown";
+      const userName = order.userName || reportsTranslations("orders.unknownUser");
 
       if (!dailyStatsMap[dateKey]) dailyStatsMap[dateKey] = { date: dateKey, orders: 0, revenue: 0 };
       dailyStatsMap[dateKey].orders += 1;
@@ -34,7 +37,7 @@ export function useOrdersChartData(orders) {
         .sort((left, right) => right.orderCount - left.orderCount)
         .slice(0, 8),
     };
-  }, [orders]);
+  }, [orders, reportsTranslations]);
 
   return { ordersPerDay, paymentMethodByOrders, topUsersByOrders };
 }

@@ -154,7 +154,7 @@ describe("ReceiveTab Component", () => {
       fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
 
       await waitFor(() => {
-        expect(walletService.createInvoice).toHaveBeenCalledWith({ amountSat: 1000, description: "" });
+        expect(walletService.createInvoice).toHaveBeenCalledWith(expect.objectContaining({ amountSat: 1000, description: "" }));
       });
     });
 
@@ -217,7 +217,7 @@ describe("ReceiveTab Component", () => {
       fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
 
       await waitFor(() => {
-        expect(walletService.createInvoice).toHaveBeenCalledWith({ amountSat: 5000, description: "Test payment" });
+        expect(walletService.createInvoice).toHaveBeenCalledWith(expect.objectContaining({ amountSat: 5000, description: "Test payment" }));
       });
     });
 
@@ -236,7 +236,46 @@ describe("ReceiveTab Component", () => {
       fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
 
       await waitFor(() => {
-        expect(walletService.createInvoice).toHaveBeenCalledWith({ amountSat: 5000, description: "" });
+        expect(walletService.createInvoice).toHaveBeenCalledWith(expect.objectContaining({ amountSat: 5000, description: "" }));
+      });
+    });
+
+    it("sends exchangeRate and fiatAmount when currentRate is provided", async () => {
+      renderReceiveTab({ currentRate: 95000 });
+
+      fireEvent.change(screen.getByLabelText("payments.receive.invoiceAmountSatLabel"), {
+        target: { value: "100000" },
+      });
+
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(walletService.createInvoice).toHaveBeenCalledWith(
+          expect.objectContaining({
+            amountSat: 100000,
+            exchangeRate: 95000,
+            fiatAmount: (100000 / 100_000_000) * 95000,
+          }),
+        );
+      });
+    });
+
+    it("sends null rate fields when currentRate is not provided", async () => {
+      renderReceiveTab();
+
+      fireEvent.change(screen.getByLabelText("payments.receive.invoiceAmountSatLabel"), {
+        target: { value: "100000" },
+      });
+
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(walletService.createInvoice).toHaveBeenCalledWith(
+          expect.objectContaining({
+            exchangeRate: null,
+            fiatAmount: null,
+          }),
+        );
       });
     });
 
@@ -344,7 +383,7 @@ describe("ReceiveTab Component", () => {
       fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
 
       await waitFor(() => {
-        expect(walletService.createInvoice).toHaveBeenCalledWith({ amountSat: 1000, description: "" });
+        expect(walletService.createInvoice).toHaveBeenCalledWith(expect.objectContaining({ amountSat: 1000, description: "" }));
       });
     });
 

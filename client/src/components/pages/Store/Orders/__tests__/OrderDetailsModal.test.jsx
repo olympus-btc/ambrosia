@@ -2,6 +2,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrderDetailsModal } from "../OrderDetailsModal";
 
+jest.mock("@/components/shared/AmountDisplay", () => ({
+  AmountDisplay: ({ satoshis }) => <span>{`amount-display-${satoshis}`}</span>,
+}));
+
+jest.mock("../OrdersList/StatusChip", () => ({
+  StatusChip: ({ status }) => <span>{`status-${status}`}</span>,
+}));
+
 jest.mock("@/lib/formatDate", () => ({
   __esModule: true,
   default: jest.fn(() => "formatted-date"),
@@ -66,6 +74,62 @@ describe("OrderDetailsModal", () => {
 
     fireEvent.click(screen.getByText("details.close"));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("renders AmountDisplay for BTC orders with satoshiAmount", () => {
+    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const btcOrder = {
+      id: "order-btc",
+      userName: "Ana",
+      status: "paid",
+      paymentMethod: "BTC",
+      total: 1.0,
+      createdAt: "2024-01-01T10:00:00Z",
+      satoshiAmount: 100000,
+      exchangeRateAtPayment: 95000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+    };
+
+    render(
+      <OrderDetailsModal
+        order={btcOrder}
+        isOpen
+        onClose={jest.fn()}
+        onEdit={jest.fn()}
+        formatAmount={formatAmount}
+        currentRate={95000}
+      />,
+    );
+
+    expect(screen.getByText("amount-display-100000")).toBeInTheDocument();
+    expect(formatAmount).not.toHaveBeenCalledWith(100);
+  });
+
+  it("uses formatAmount for non-BTC orders", () => {
+    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const cashOrder = {
+      id: "order-cash",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "Cash",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+    };
+
+    render(
+      <OrderDetailsModal
+        order={cashOrder}
+        isOpen
+        onClose={jest.fn()}
+        onEdit={jest.fn()}
+        formatAmount={formatAmount}
+        currentRate={95000}
+      />,
+    );
+
+    expect(formatAmount).toHaveBeenCalledWith(2500);
+    expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
   it("renders fallbacks when order is missing", () => {

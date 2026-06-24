@@ -38,7 +38,8 @@ jobs:
         run: chmod +x scripts/install.sh
 
       - name: Run install script
-        # Using --no-service because CI runners often lack systemd or we don't want background services
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/install.sh --yes --no-service
 
       - name: Verify phoenixd binary

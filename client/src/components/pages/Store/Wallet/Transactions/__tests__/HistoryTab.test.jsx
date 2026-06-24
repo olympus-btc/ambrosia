@@ -1,8 +1,13 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { HistoryTab } from "../HistoryTab";
+
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: jest.fn(),
+}));
 
 const mockIncomingTransaction = {
   paymentId: "payment-1",
@@ -39,6 +44,11 @@ const originalWarn = console.warn;
 const originalError = console.error;
 
 beforeEach(() => {
+  useCurrency.mockReturnValue({
+    currency: { acronym: "USD", symbol: "$", locale: "en-US" },
+    formatAmount: (cents) => `$${(cents / 100).toFixed(2)}`,
+  });
+
   console.warn = (...args) => {
     if (
       typeof args[0] === "string" &&
@@ -275,6 +285,47 @@ describe("HistoryTab Component", () => {
       const { container } = renderHistoryTab({ transactions: [txWithoutId] });
 
       expect(container.querySelector('[class*="border"]')).toBeInTheDocument();
+    });
+  });
+
+  describe("AmountDisplay integration", () => {
+    const incomingWithRate = {
+      paymentId: "payment-btc",
+      type: "incoming_payment",
+      receivedSat: 100_000_000,
+      fees: 0,
+      completedAt: Date.now(),
+      exchangeRateAtPayment: 50000,
+    };
+
+    it("shows AmountDisplay for incoming transaction with exchangeRateAtPayment", () => {
+      renderHistoryTab({ transactions: [incomingWithRate], currentRate: 60000 });
+
+      expect(screen.getByText("$50000.00")).toBeInTheDocument();
+    });
+
+    it("shows raw sats for incoming transaction without exchangeRateAtPayment", () => {
+      renderHistoryTab({ transactions: [mockIncomingTransaction] });
+
+      expect(screen.getByText("5,000 sats")).toBeInTheDocument();
+    });
+
+    it("shows raw sats for outgoing transaction regardless of currentRate", () => {
+      renderHistoryTab({ transactions: [mockOutgoingTransaction], currentRate: 60000 });
+
+      expect(screen.getByText("3,000 sats")).toBeInTheDocument();
+    });
+
+    it("shows clock toggle when currentRate is provided", () => {
+      renderHistoryTab({ transactions: [incomingWithRate], currentRate: 60000 });
+
+      expect(screen.getByLabelText("showCurrentRate")).toBeInTheDocument();
+    });
+
+    it("does not show clock toggle when currentRate is null", () => {
+      renderHistoryTab({ transactions: [incomingWithRate], currentRate: null });
+
+      expect(screen.queryByLabelText("showCurrentRate")).toBeNull();
     });
   });
 

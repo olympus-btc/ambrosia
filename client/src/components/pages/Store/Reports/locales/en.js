@@ -44,6 +44,7 @@ const reportsEn = {
       averageTicket: "Average Ticket",
       productLines: "Product Lines",
       uniqueProducts: "Unique Products",
+      totalBtcSatoshis: "Total Bitcoin",
       orderCount: "Orders",
       avgItemsPerOrder: "Average Items / Order",
     },
@@ -73,6 +74,9 @@ const reportsEn = {
       subtotal: "Subtotal",
       actions: "Actions",
       view: "Details",
+      records: "records",
+      export: "Export CSV",
+      unknownUser: "Unknown",
     },
     payment: {
       unknown: "Unknown",
