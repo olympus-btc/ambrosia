@@ -128,8 +128,11 @@ class ReportService {
             val start =
                 when (period) {
                     "week" -> today.with(DayOfWeek.MONDAY)
+
                     "month" -> today.withDayOfMonth(1)
+
                     "year" -> today.withDayOfYear(1)
+
                     else -> throw IllegalArgumentException(
                         "Invalid period: $period. Must be week, month, or year",
                     )
@@ -333,8 +336,7 @@ class ReportService {
                         (dateFunc(OrdersTable.createdAt) eq date) and
                             (OrdersTable.status eq "paid") and
                             (OrdersTable.isDeleted eq false)
-                    }
-                    .sumOf { it[OrdersTable.total] }
+                    }.sumOf { it[OrdersTable.total] }
             logger.info("Total sales for $date: $total")
             total
         }
