@@ -7,7 +7,7 @@ import org.junit.Before
 import org.mockito.kotlin.mock
 import pos.ambrosia.models.UpdateUserRequest
 import pos.ambrosia.services.UsersService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
 import java.io.File
 import kotlin.test.Test

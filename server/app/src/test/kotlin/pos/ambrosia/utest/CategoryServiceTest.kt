@@ -5,7 +5,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.CategoryItem
 import pos.ambrosia.services.CategoryService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

@@ -5,7 +5,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.Dish
 import pos.ambrosia.services.DishService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

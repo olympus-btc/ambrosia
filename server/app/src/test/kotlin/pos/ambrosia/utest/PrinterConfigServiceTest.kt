@@ -8,7 +8,7 @@ import pos.ambrosia.models.PrinterConfigUpdateRequest
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.PrinterConfigUpdateStatus
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

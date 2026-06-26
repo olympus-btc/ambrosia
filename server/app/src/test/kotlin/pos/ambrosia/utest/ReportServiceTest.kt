@@ -5,7 +5,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.ReportService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate

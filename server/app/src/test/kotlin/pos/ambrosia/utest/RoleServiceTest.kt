@@ -9,7 +9,7 @@ import org.junit.Before
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.models.Role
 import pos.ambrosia.services.RolesService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
 import java.io.File
 import java.util.UUID

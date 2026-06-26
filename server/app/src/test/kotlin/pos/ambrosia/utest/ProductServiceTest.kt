@@ -6,7 +6,7 @@ import org.junit.Before
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.DuplicateProductSkuException
 import java.io.File
 import kotlin.test.Test

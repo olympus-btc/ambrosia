@@ -5,7 +5,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.TicketPayment
 import pos.ambrosia.services.TicketPaymentService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

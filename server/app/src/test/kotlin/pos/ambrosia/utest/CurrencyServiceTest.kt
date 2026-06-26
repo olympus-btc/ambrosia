@@ -3,7 +3,7 @@ package pos.ambrosia.utest
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.services.CurrencyService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals

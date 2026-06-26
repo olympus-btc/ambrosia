@@ -5,7 +5,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.Table
 import pos.ambrosia.services.TableService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

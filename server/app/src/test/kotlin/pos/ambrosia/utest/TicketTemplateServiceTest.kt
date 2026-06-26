@@ -10,7 +10,7 @@ import pos.ambrosia.models.Justification
 import pos.ambrosia.models.TicketElementCreateRequest
 import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

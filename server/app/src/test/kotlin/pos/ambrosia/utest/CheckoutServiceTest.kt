@@ -9,7 +9,7 @@ import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.models.StoreCheckoutItem
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.services.CheckoutService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test

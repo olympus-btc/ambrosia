@@ -1,4 +1,4 @@
-package pos.ambrosia.util
+package pos.ambrosia.utils
 
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID

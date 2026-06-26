@@ -8,7 +8,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.services.TokenService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.Date
 import java.util.UUID

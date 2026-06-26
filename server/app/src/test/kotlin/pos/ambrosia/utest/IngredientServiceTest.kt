@@ -7,7 +7,7 @@ import org.junit.Before
 import pos.ambrosia.db.tables.IngredientEntity
 import pos.ambrosia.models.Ingredient
 import pos.ambrosia.services.IngredientService
-import pos.ambrosia.util.ExposedTestDb
+import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test
