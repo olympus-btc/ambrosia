@@ -17,7 +17,7 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-stretch gap-3 p-3 justify-between">
-        <div className="flex justify-center w-16 overflow-hidden rounded-md bg-gray-100">
+        <div className="flex justify-center w-16 shrink-0 overflow-hidden rounded-md bg-gray-100">
           {imageUrl ? (
             <Image
               removeWrapper
@@ -31,8 +31,8 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
             </div>
           )}
         </div>
-        <div className="flex flex-col justify-center">
-          <p className="font-medium truncate text-sm my-1">{product.name}</p>
+        <div className="flex flex-col justify-center flex-1 min-w-0">
+          <p className="font-medium wrap-break-word text-sm my-1">{product.name}</p>
           <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
           <div className="flex gap-1.5 my-1">
             <Chip
