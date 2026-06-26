@@ -32,6 +32,9 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
             </div>
             <div className="flex min-w-0 flex-col">
               <h3 className="text-sm font-medium text-green-900">{item.name}</h3>
+              {item.variantName && (
+                <p className="text-xs text-gray-400">{item.variantName}</p>
+              )}
               <div className="text-xs text-gray-700">
                 {formatAmount(item.price)} {translateCart("summary.each")}
               </div>

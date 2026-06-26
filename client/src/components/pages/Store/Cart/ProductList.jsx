@@ -11,6 +11,8 @@ import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
+import { VariantSelectorModal } from "./VariantSelectorModal";
+
 const XL_BREAKPOINT_PX = 1280;
 const XL_COLUMN_COUNT = 3;
 const DEFAULT_COLUMN_COUNT = 2;
@@ -32,6 +34,7 @@ export function ProductList({ products, onAddProduct, categories }) {
   const defaultMaxStock = 11;
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [variantProduct, setVariantProduct] = useState(null);
   const columnCount = useColumnCount();
   const productColumns = useMemo(() => {
     const columnGroups = Array.from({ length: columnCount }, () => []);
@@ -62,6 +65,14 @@ export function ProductList({ products, onAddProduct, categories }) {
   const handleShowProductDetails = (product) => {
     setShowProductDetails(true);
     setSelectedProduct(product);
+  };
+
+  const handleAddClick = (product) => {
+    if (product.hasVariants) {
+      setVariantProduct(product);
+    } else {
+      onAddProduct(product);
+    }
   };
 
   return (
@@ -95,7 +106,9 @@ export function ProductList({ products, onAddProduct, categories }) {
                   </CardHeader>
                   <CardBody className="py-1">
                     <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                      {formatAmount(priceCents)}
+                      {product.hasVariants
+                        ? `${cardProductTranslation("card.priceFrom")} ${formatAmount(priceCents)}`
+                        : formatAmount(priceCents)}
                     </h2>
                     <p className="hidden md:block text-xs">
                       SKU: <span className="text-gray-800">{SKU}</span>
@@ -146,8 +159,8 @@ export function ProductList({ products, onAddProduct, categories }) {
                         className="w-full ml-3"
                         color="primary"
                         size="sm"
-                        isDisabled={quantity === 0}
-                        onPress={() => onAddProduct(product)}
+                        isDisabled={!product.hasVariants && quantity === 0}
+                        onPress={() => handleAddClick(product)}
                       >
                         {cardProductTranslation("card.add")}
                       </Button>
@@ -165,6 +178,15 @@ export function ProductList({ products, onAddProduct, categories }) {
         showAddButton={false}
         product={selectedProduct}
         categories={categories}
+      />
+      <VariantSelectorModal
+        product={variantProduct}
+        isOpen={!!variantProduct}
+        onClose={() => setVariantProduct(null)}
+        onAddToCart={(product, variant) => {
+          onAddProduct(product, variant);
+          setVariantProduct(null);
+        }}
       />
     </>
   );

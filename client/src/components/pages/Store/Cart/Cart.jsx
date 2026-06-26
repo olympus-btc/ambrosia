@@ -21,9 +21,10 @@ import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
   const syncedItems = cart
-    .filter((cartItem) => products.some((product) => product.id === cartItem.id))
+    .filter((cartItem) => products.some((product) => product.id === (cartItem.productId ?? cartItem.id)))
     .map((cartItem) => {
-      const catalogProduct = products.find((product) => product.id === cartItem.id);
+      if (cartItem.variantId) return cartItem;
+      const catalogProduct = products.find((product) => product.id === (cartItem.productId ?? cartItem.id));
       return catalogProduct.priceCents === cartItem.price
         ? cartItem
         : { ...cartItem, price: catalogProduct.priceCents, subtotal: cartItem.quantity * catalogProduct.priceCents };
@@ -73,12 +74,13 @@ export function Cart() {
   );
 
   const handleAddProduct = useCallback(
-    (product) => {
-      if (pendingRemovals.has(product.id)) {
-        cancelRemoval(product.id);
+    (product, variant = null) => {
+      const itemId = variant?.id ?? product.id;
+      if (pendingRemovals.has(itemId)) {
+        cancelRemoval(itemId);
         return;
       }
-      addProduct(product);
+      addProduct(product, variant);
     },
     [addProduct, cancelRemoval, pendingRemovals],
   );
