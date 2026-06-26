@@ -106,7 +106,7 @@ export function BusinessDetailsStep({ data, onChange }) {
           inputProps={{
             onClick: (e) => e.target.select(),
           }}
-          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
+          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().includes(inputValue.toLowerCase())}
         >
           {CURRENCIES.map((currency) => (
             <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
