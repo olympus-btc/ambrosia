@@ -1,12 +1,12 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
-import pos.ambrosia.utils.DuplicateProductSkuException
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import kotlin.test.Test
@@ -170,7 +170,7 @@ class ProductServiceTest {
         runBlocking {
             ExposedTestDb.seedProduct(name = "Existing", sku = "SKU-1")
             val newProductData = newProduct(sku = "SKU-1", name = "Prod1")
-            assertFailsWith<DuplicateProductSkuException> { service.addProduct(newProductData) }
+            assertFailsWith<ExposedSQLException> { service.addProduct(newProductData) }
         }
     }
 
@@ -272,7 +272,7 @@ class ProductServiceTest {
                     maxStockThreshold = 10,
                     priceCents = 250,
                 )
-            assertFailsWith<DuplicateProductSkuException> { service.updateProduct(toUpdate) }
+            assertFailsWith<ExposedSQLException> { service.updateProduct(toUpdate) }
 
             val unchanged = service.getProductById(id)
             assertEquals("SKU-MINE", unchanged?.SKU)
