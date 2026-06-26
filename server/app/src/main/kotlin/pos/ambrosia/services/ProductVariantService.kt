@@ -59,6 +59,8 @@ open class ProductVariantService(
             "UPDATE product_variants SET quantity = quantity - ? WHERE id = ? AND quantity >= ?"
         private const val ADJUST_STOCK_BY_PRODUCT =
             "UPDATE product_variants SET quantity = quantity - ? WHERE product_id = ? AND quantity >= ?"
+        private const val ADJUST_SIMPLE_PRODUCT_STOCK =
+            "UPDATE products SET quantity = quantity - ? WHERE id = ? AND has_variants = 0 AND quantity >= ?"
     }
 
     private fun mapOptionValue(rs: ResultSet): ProductOptionValue =
@@ -349,7 +351,10 @@ open class ProductVariantService(
         try {
             for (adjustment in adjustments) {
                 if (adjustment.quantity == 0) continue
-                val sql = if (adjustment.variantId != null) ADJUST_STOCK else ADJUST_STOCK_BY_PRODUCT
+                val sql = when {
+                    adjustment.variantId != null -> ADJUST_STOCK
+                    else -> ADJUST_SIMPLE_PRODUCT_STOCK
+                }
                 val rows =
                     connection.prepareStatement(sql).use { statement ->
                         statement.setInt(1, adjustment.quantity)
