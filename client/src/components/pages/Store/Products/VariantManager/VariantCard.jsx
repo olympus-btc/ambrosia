@@ -6,16 +6,9 @@ import { ImageIcon, Pencil, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
+import { deriveVariantDisplayName } from "@/components/pages/Store/utils/variantUtils";
 
 import { VariantForm } from "./VariantForm";
-
-function deriveVariantDisplayName(optionValueIds, options) {
-  if (!options?.length || !optionValueIds?.length) return null;
-  const valueById = {};
-  options.forEach((type) => type.values.forEach((val) => { valueById[val.id] = val.value; }));
-  const labels = optionValueIds.map((id) => valueById[id]).filter(Boolean);
-  return labels.length ? labels.join(" / ") : null;
-}
 
 export function VariantCard({ variant, currency, options, onSave, onDelete, isProcessing }) {
   const productsTranslations = useTranslations("products");
