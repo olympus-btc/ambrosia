@@ -11,7 +11,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.AddOrderDishRequest
 import pos.ambrosia.models.CompleteOrder
@@ -22,11 +21,9 @@ import pos.ambrosia.services.OrderService
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureOrders() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val orderService = OrderService(connection)
+    val orderService = OrderService()
     routing { route("/orders") { orders(orderService) } }
 }
 

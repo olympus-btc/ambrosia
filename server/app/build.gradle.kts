@@ -31,8 +31,12 @@ dependencies {
 
     implementation(libs.logback.classic)
 
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
     implementation(libs.flyway.core)
     implementation(libs.sqlite.jdbc)
+    implementation(libs.hikaricp)
 
     implementation(libs.clikt)
     implementation(libs.lightning.kmp)

@@ -1,191 +1,153 @@
 package pos.ambrosia.services
 
 import io.ktor.server.application.ApplicationEnvironment
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.neq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.RoleEntity
+import pos.ambrosia.db.tables.RolesTable
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Role
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.SecurePinProcessor
-import java.lang.StringBuilder
-import java.sql.Connection
+import java.util.UUID
 
 class RolesService(
     private val env: ApplicationEnvironment,
-    private val connection: Connection,
 ) {
-    private val adminGuard = AdminGuardService(connection)
+    private val adminGuard = AdminGuardService()
 
-    companion object {
-        private const val ADD_ROLE =
-            "INSERT INTO roles (id, role, password, isAdmin) VALUES (?, ?, ?, ?)"
-        private const val GET_ROLES =
-            "SELECT id, role, password, isAdmin FROM roles WHERE is_deleted = 0"
-        private const val GET_ROLE_BY_ID =
-            "SELECT id, role, password, isAdmin FROM roles WHERE id = ? AND is_deleted = 0"
-        private const val DELETE_ROLE = "UPDATE roles SET role = ?,  is_deleted = 1 WHERE id = ?"
-        private const val UNASSIGN_ROLE_FROM_USERS = "UPDATE users SET role_id = NULL WHERE role_id = ?"
-        private const val CHECK_ROLE_NAME_EXISTS =
-            "SELECT id FROM roles WHERE role = ? AND is_deleted = 0"
-    }
+    fun addRole(role: Role): String? =
+        transaction {
+            if (role.role.isBlank()) return@transaction null
+            if (roleNameExists(role.role)) {
+                logger.error("Role name already exists: ${role.role}")
+                return@transaction null
+            }
 
-    suspend fun addRole(role: Role): String? {
-        if (role.role.isBlank()) return null
-        if (roleNameExists(role.role)) {
-            logger.error("Role name already exists: ${role.role}")
-            return null
-        }
+            val id = UUID.randomUUID()
+            val encryptedPin =
+                SecurePinProcessor.hashPinForStorage(
+                    pin = role.password?.toCharArray() ?: charArrayOf(),
+                    id = id.toString(),
+                    env = env,
+                )
 
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_ROLE)
-
-        val encryptedPin =
-            SecurePinProcessor.hashPinForStorage(
-                pin = role.password?.toCharArray() ?: charArrayOf(),
-                id = generatedId,
-                env = env,
-            )
-
-        statement.setString(1, generatedId)
-        statement.setString(2, role.role)
-        statement.setString(3, SecurePinProcessor.byteArrayToBase64(encryptedPin))
-        statement.setBoolean(4, role.isAdmin ?: false)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
+            val generatedId =
+                RoleEntity
+                    .new(id) {
+                        this.role = role.role
+                        this.password = SecurePinProcessor.byteArrayToBase64(encryptedPin)
+                        this.isAdmin = role.isAdmin ?: false
+                    }.id.value
+                    .toString()
             logger.info("Role created successfully with ID: $generatedId")
             generatedId
-        } else {
-            logger.error("Failed to create role")
-            null
         }
-    }
 
-    private suspend fun roleNameExists(roleName: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_ROLE_NAME_EXISTS)
-        statement.setString(1, roleName)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    private fun roleNameExists(roleName: String): Boolean =
+        !RolesTable
+            .selectAll()
+            .where { (RolesTable.role eq roleName) and (RolesTable.isDeleted eq false) }
+            .empty()
 
-    suspend fun getRoles(): List<Role> {
-        val statement = connection.prepareStatement(GET_ROLES)
-        val resultSet = statement.executeQuery()
-        val roles = mutableListOf<Role>()
-        while (resultSet.next()) {
-            val role =
-                Role(
-                    id = resultSet.getString("id"),
-                    role = resultSet.getString("role"),
-                    password = "********", // Masked for security
-                    isAdmin = resultSet.getBoolean("isAdmin"),
-                )
-            roles.add(role)
-        }
-        logger.info("Retrieved ${roles.size} roles")
-        return roles
-    }
-
-    suspend fun getRoleById(id: String): Role? {
-        val statement = connection.prepareStatement(GET_ROLE_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Role(
-                id = resultSet.getString("id"),
-                role = resultSet.getString("role"),
-                isAdmin = resultSet.getBoolean("isAdmin"),
-            )
-        } else {
-            logger.warn("Role not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun updateRole(
-        id: String?,
-        role: Role,
-    ): Boolean {
-        val sql = StringBuilder()
-        sql.append("UPDATE roles SET role = ?, isAdmin = ? ")
-        if (role.password != null) sql.append(", password = ? ")
-        sql.append("WHERE id = ?")
-
-        if (id == null) return false
-        if (role.role.isBlank()) return false
-        if (roleNameExistsExcludingId(role.role, id)) {
-            logger.error("Role name already exists: ${role.role}")
-            return false
-        }
-        ensureRoleAdminInvariant(id, role.isAdmin ?: false)
-
-        val statement = connection.prepareStatement(sql.toString())
-
-        statement.setString(1, role.role)
-        statement.setBoolean(2, role.isAdmin ?: false)
-        if (role.password != null) {
-            val encryptedPin = SecurePinProcessor.hashPinForStorage(role.password.toCharArray(), id, env)
-            statement.setString(3, SecurePinProcessor.byteArrayToBase64(encryptedPin))
-        }
-        statement.setString(role.password?.let { 4 } ?: 3, id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Role updated successfully: ${role.id}")
-        } else {
-            logger.error("Failed to update role: ${role.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    private suspend fun roleNameExistsExcludingId(
+    private fun roleNameExistsExcludingId(
         roleName: String,
         excludeId: String,
-    ): Boolean {
-        val statement =
-            connection.prepareStatement(
-                "SELECT id FROM roles WHERE role = ? AND id != ? AND is_deleted = 0",
-            )
-        statement.setString(1, roleName)
-        statement.setString(2, excludeId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    ): Boolean =
+        !RolesTable
+            .selectAll()
+            .where {
+                (RolesTable.role eq roleName) and
+                    (RolesTable.isDeleted eq false) and
+                    (RolesTable.id neq EntityID(UUID.fromString(excludeId), RolesTable))
+            }.empty()
 
-    suspend fun deleteRole(id: String): Boolean {
-        ensureRoleDeletionKeepsAdmin(id)
-
-        val unassignStmt = connection.prepareStatement(UNASSIGN_ROLE_FROM_USERS)
-        unassignStmt.setString(1, id)
-        unassignStmt.executeUpdate()
-
-        val statement = connection.prepareStatement(DELETE_ROLE)
-        statement.setString(1, "DELETED-$id")
-        statement.setString(2, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Role soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete role: $id")
+    fun getRoles(): List<Role> =
+        transaction {
+            val roles =
+                RoleEntity
+                    .find { RolesTable.isDeleted eq false }
+                    .map {
+                        Role(
+                            id = it.id.value.toString(),
+                            role = it.role,
+                            password = "********",
+                            isAdmin = it.isAdmin,
+                        )
+                    }
+            logger.info("Retrieved ${roles.size} roles")
+            roles
         }
-        return rowsDeleted > 0
-    }
 
-    private suspend fun roleInUse(roleId: String): Boolean {
-        val statement =
-            connection.prepareStatement(
-                "SELECT COUNT(*) as count FROM users WHERE role_id = ? AND is_deleted = 0",
-            )
-        statement.setString(1, roleId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
+    fun getRoleById(id: String): Role? =
+        transaction {
+            val entity = RoleEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted) {
+                logger.warn("Role not found with ID: $id")
+                null
+            } else {
+                Role(
+                    id = entity.id.value.toString(),
+                    role = entity.role,
+                    isAdmin = entity.isAdmin,
+                )
+            }
         }
-        return false
-    }
+
+    fun updateRole(
+        id: String?,
+        role: Role,
+    ): Boolean =
+        transaction {
+            if (id == null) return@transaction false
+            if (role.role.isBlank()) return@transaction false
+            if (roleNameExistsExcludingId(role.role, id)) {
+                logger.error("Role name already exists: ${role.role}")
+                return@transaction false
+            }
+            ensureRoleAdminInvariant(id, role.isAdmin ?: false)
+
+            val entity = RoleEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
+            if (entity == null) {
+                logger.error("Failed to update role: ${role.id}")
+                false
+            } else {
+                entity.role = role.role
+                entity.isAdmin = role.isAdmin ?: false
+                if (role.password != null) {
+                    val encryptedPin = SecurePinProcessor.hashPinForStorage(role.password.toCharArray(), id, env)
+                    entity.password = SecurePinProcessor.byteArrayToBase64(encryptedPin)
+                }
+                logger.info("Role updated successfully: ${role.id}")
+                true
+            }
+        }
+
+    fun deleteRole(id: String): Boolean =
+        transaction {
+            ensureRoleDeletionKeepsAdmin(id)
+
+            UsersTable.update({ UsersTable.roleId eq EntityID(UUID.fromString(id), RolesTable) }) {
+                it[roleId] = null
+            }
+
+            val entity = RoleEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete role: $id")
+                false
+            } else {
+                entity.role = "DELETED-$id"
+                entity.isDeleted = true
+                logger.info("Role soft-deleted successfully: $id")
+                true
+            }
+        }
 
     private fun ensureRoleDeletionKeepsAdmin(roleId: String) {
         val currentIsAdmin = adminGuard.isRoleAdmin(roleId) ?: return

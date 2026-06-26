@@ -1,148 +1,153 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.ReportService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ReportServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private val service = ReportService()
+    private lateinit var dbFile: File
 
-    private fun setupEmptyResultSet() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
     }
 
-    private fun setupSingleRowResultSet(
-        orderId: String = "order-aaa-00000001",
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
+
+    private data class Sale(
+        val userId: String,
+        val orderId: String,
+        val paymentMethodId: String,
+        val paymentId: String,
+    )
+
+    private fun seedSale(
+        userName: String = "alice",
+        userId: String? = null,
+        paymentMethodName: String = "Cash",
+        createdAt: String = "2024-06-15T12:00:00",
+        orderStatus: String = "paid",
+        total: Double = 0.0,
+        satoshiAmount: Long? = null,
+        exchangeRateAtPayment: Double? = null,
+        exchangeRateCurrency: String? = null,
+        fiatAmountAtPayment: Double? = null,
+    ): Sale {
+        val userId = userId ?: ExposedTestDb.seedUser(userName)
+        val orderId = ExposedTestDb.seedOrder(userId, createdAt = createdAt, status = orderStatus, total = total)
+        val paymentMethodId = ExposedTestDb.seedPaymentMethod(paymentMethodName)
+        val currencyId = ExposedTestDb.seedCurrency("USD")
+        val paymentId =
+            ExposedTestDb.seedPayment(
+                methodId = paymentMethodId,
+                currencyId = currencyId,
+                transactionId = "txn-$orderId",
+                amount = total,
+                satoshiAmount = satoshiAmount,
+                exchangeRateAtPayment = exchangeRateAtPayment,
+                exchangeRateCurrency = exchangeRateCurrency,
+                fiatAmountAtPayment = fiatAmountAtPayment,
+            )
+        val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+        ExposedTestDb.seedTicketPayment(paymentId, ticketId)
+        return Sale(userId, orderId, paymentMethodId, paymentId)
+    }
+
+    private fun addOrderProduct(
+        orderId: String,
         productName: String = "Widget",
         quantity: Int = 2,
         priceAtOrder: Int = 1000,
-        userName: String = "alice",
-        paymentMethod: String = "Cash",
-        saleDate: String = "2024-06-15T12:00:00",
-    ) {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn(orderId)
-        whenever(mockResultSet.getString("product_name")).thenReturn(productName)
-        whenever(mockResultSet.getInt("quantity")).thenReturn(quantity)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(priceAtOrder)
-        whenever(mockResultSet.getString("user_name")).thenReturn(userName)
-        whenever(mockResultSet.getString("payment_method")).thenReturn(paymentMethod)
-        whenever(mockResultSet.getString("sale_date")).thenReturn(saleDate)
-        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
-        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
-        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-default")
+    ): String {
+        val productId = ExposedTestDb.seedProduct(name = productName, priceCents = priceAtOrder)
+        ExposedTestDb.seedOrderProduct(orderId, productId, quantity = quantity, priceAtOrder = priceAtOrder)
+        return productId
     }
 
     @Test
-    fun `period=week adds WHERE with start date as Monday of the current week`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `period=week filters to orders from Monday of the current week`() {
+        val monday = LocalDate.now(ZoneOffset.UTC).with(DayOfWeek.MONDAY)
+        val recent = seedSale(createdAt = "${monday}T12:00:00")
+        addOrderProduct(recent.orderId)
+        val old = seedSale(createdAt = "2020-01-01T12:00:00")
+        addOrderProduct(old.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = "week",
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = "week",
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("date(o.created_at) >= date(?)"), "Should filter by start date")
-        assertTrue(query.contains("date(o.created_at) <= date(?)"), "Should filter by end date")
-
-        val expectedStart = LocalDate.now(ZoneOffset.UTC).with(DayOfWeek.MONDAY).toString()
-        val expectedEnd = LocalDate.now(ZoneOffset.UTC).toString()
-        verify(mockStatement).setString(1, expectedStart)
-        verify(mockStatement).setString(2, expectedEnd)
+        assertEquals(1, report.sales.size)
+        assertEquals(recent.orderId, report.sales[0].orderId)
     }
 
     @Test
-    fun `period=month adds WHERE with first day of the current month`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `period=month filters to orders from the first day of the current month`() {
+        val firstOfMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
+        val recent = seedSale(createdAt = "${firstOfMonth}T12:00:00")
+        addOrderProduct(recent.orderId)
+        val old = seedSale(createdAt = "2020-01-01T12:00:00")
+        addOrderProduct(old.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = "month",
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = "month",
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("date(o.created_at) >= date(?)"))
-        assertTrue(query.contains("date(o.created_at) <= date(?)"))
-
-        val expectedStart = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1).toString()
-        val expectedEnd = LocalDate.now(ZoneOffset.UTC).toString()
-        verify(mockStatement).setString(1, expectedStart)
-        verify(mockStatement).setString(2, expectedEnd)
+        assertEquals(1, report.sales.size)
+        assertEquals(recent.orderId, report.sales[0].orderId)
     }
 
     @Test
-    fun `period=year adds WHERE with first day of the current year`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `period=year filters to orders from the first day of the current year`() {
+        val firstOfYear = LocalDate.now(ZoneOffset.UTC).withDayOfYear(1)
+        val recent = seedSale(createdAt = "${firstOfYear}T12:00:00")
+        addOrderProduct(recent.orderId)
+        val old = seedSale(createdAt = "2019-01-01T12:00:00")
+        addOrderProduct(old.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = "year",
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = "year",
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("date(o.created_at) >= date(?)"))
-        assertTrue(query.contains("date(o.created_at) <= date(?)"))
-
-        val expectedStart = LocalDate.now(ZoneOffset.UTC).withDayOfYear(1).toString()
-        val expectedEnd = LocalDate.now(ZoneOffset.UTC).toString()
-        verify(mockStatement).setString(1, expectedStart)
-        verify(mockStatement).setString(2, expectedEnd)
+        assertEquals(1, report.sales.size)
+        assertEquals(recent.orderId, report.sales[0].orderId)
     }
 
     @Test
     fun `invalid period throws IllegalArgumentException`() {
-        val service = ReportService(mockConnection)
         assertFailsWith<IllegalArgumentException> {
             service.getProductSalesReport(
                 period = "fortnight",
@@ -157,199 +162,154 @@ class ReportServiceTest {
 
     @Test
     fun `startDate and endDate without period uses the provided dates`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+        val inRange = seedSale(createdAt = "2024-01-15T12:00:00")
+        addOrderProduct(inRange.orderId)
+        val outOfRange = seedSale(createdAt = "2023-01-15T12:00:00")
+        addOrderProduct(outOfRange.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = "2024-01-01",
-            endDate = "2024-01-31",
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-01-01",
+                endDate = "2024-01-31",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("date(o.created_at) >= date(?)"))
-        assertTrue(query.contains("date(o.created_at) <= date(?)"))
-        verify(mockStatement).setString(1, "2024-01-01")
-        verify(mockStatement).setString(2, "2024-01-31")
+        assertEquals(1, report.sales.size)
+        assertEquals(inRange.orderId, report.sales[0].orderId)
     }
 
     @Test
-    fun `without period or dates does not add date range WHERE`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `without period or dates returns sales from all dates`() {
+        val a = seedSale(createdAt = "2024-01-15T12:00:00")
+        addOrderProduct(a.orderId)
+        val b = seedSale(createdAt = "2020-01-15T12:00:00")
+        addOrderProduct(b.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertFalse(query.contains("date(o.created_at)"), "Without date filters there should be no date WHERE clause")
+        assertEquals(2, report.sales.size)
     }
 
     @Test
     fun `period takes precedence over startDate and endDate`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+        val firstOfMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
+        val sale = seedSale(createdAt = "${firstOfMonth}T12:00:00")
+        addOrderProduct(sale.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = "month",
-            startDate = "2020-01-01",
-            endDate = "2020-01-31",
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = "month",
+                startDate = "2020-01-01",
+                endDate = "2020-01-31",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val expectedStart = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1).toString()
-        verify(mockStatement).setString(1, expectedStart)
+        assertEquals(1, report.sales.size)
     }
 
     @Test
-    fun `without filters builds query without additional AND clauses`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `productName filters with case-insensitive LIKE`() {
+        val widget = seedSale()
+        addOrderProduct(widget.orderId, productName = "Widget")
+        val gadget = seedSale()
+        addOrderProduct(gadget.orderId, productName = "Gadget")
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = "widg",
+                userId = null,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertFalse(query.contains("LIKE"), "Without productName there should be no LIKE clause")
-        assertFalse(query.contains("o.user_id = ?"), "Without userId there should be no user WHERE filter")
-        assertFalse(query.contains("lower(pm.name)"), "Without paymentMethod there should be no payment method filter")
-        assertTrue(query.contains("ORDER BY o.created_at DESC"), "Should always order DESC")
+        assertEquals(1, report.sales.size)
+        assertEquals("Widget", report.sales[0].productName)
     }
 
     @Test
-    fun `with productName adds case-insensitive LIKE clause`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `paymentMethod filters case-insensitively`() {
+        val cash = seedSale(paymentMethodName = "Cash")
+        addOrderProduct(cash.orderId)
+        val btc = seedSale(paymentMethodName = "BTC")
+        addOrderProduct(btc.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = "Widget",
-            userId = null,
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = "cash",
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("p.name LIKE ?"), "Should filter by product name with LIKE")
-        verify(mockStatement).setString(1, "%Widget%")
+        assertEquals(1, report.sales.size)
+        assertEquals("Cash", report.sales[0].paymentMethod)
     }
 
     @Test
-    fun `with paymentMethod adds lower() = lower() clause`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `userId filters to sales from that user`() {
+        val alice = seedSale(userName = "alice")
+        addOrderProduct(alice.orderId)
+        val bob = seedSale(userName = "bob")
+        addOrderProduct(bob.orderId)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = "Cash",
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = alice.userId,
+                paymentMethod = null,
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("lower(pm.name) = lower(?)"), "Should compare payment method case-insensitively")
-        verify(mockStatement).setString(1, "Cash")
+        assertEquals(1, report.sales.size)
+        assertEquals("alice", report.sales[0].userName)
     }
 
     @Test
-    fun `with userId adds exact equality clause`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `combined filters narrow down to a single matching sale`() {
+        val match = seedSale(userName = "alice", paymentMethodName = "Cash", createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(match.orderId, productName = "Widget")
+        val other = seedSale(userName = "bob", paymentMethodName = "BTC", createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(other.orderId, productName = "Gadget")
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = "user-42",
-            paymentMethod = null,
-        )
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = "Widget",
+                userId = match.userId,
+                paymentMethod = "cash",
+            )
 
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("o.user_id = ?"), "Should filter by exact user ID")
-        verify(mockStatement).setString(1, "user-42")
+        assertEquals(1, report.sales.size)
+        assertEquals(match.orderId, report.sales[0].orderId)
     }
 
     @Test
-    fun `all filters together generate four AND clauses`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
+    fun `calculates totalRevenueCents and totalItemsSold as sums across all line items`() {
+        val sale = seedSale()
+        addOrderProduct(sale.orderId, productName = "A", quantity = 3, priceAtOrder = 1000)
+        addOrderProduct(sale.orderId, productName = "B", quantity = 2, priceAtOrder = 500)
 
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = "2024-01-01",
-            endDate = "2024-12-31",
-            productName = "Widget",
-            userId = "user-1",
-            paymentMethod = "BTC",
-        )
-
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("date(o.created_at) >= date(?)"))
-        assertTrue(query.contains("date(o.created_at) <= date(?)"))
-        assertTrue(query.contains("p.name LIKE ?"))
-        assertTrue(query.contains("o.user_id = ?"))
-        assertTrue(query.contains("lower(pm.name) = lower(?)"))
-    }
-
-    @Test
-    fun `calculates totalRevenueCents as the sum of priceAtOrder times quantity`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-001").thenReturn("order-002")
-        whenever(mockResultSet.getString("product_name")).thenReturn("A").thenReturn("B")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(3).thenReturn(2)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000).thenReturn(500)
-        whenever(mockResultSet.getString("user_name")).thenReturn("u1").thenReturn("u2")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("Cash").thenReturn("Cash")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-01-01T00:00:00").thenReturn("2024-01-02T00:00:00")
-
-        val service = ReportService(mockConnection)
         val report =
             service.getProductSalesReport(
                 period = null,
@@ -361,40 +321,11 @@ class ReportServiceTest {
             )
 
         assertEquals(4000L, report.totalRevenueCents)
-    }
-
-    @Test
-    fun `calculates totalItemsSold as the sum of quantities`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-001").thenReturn("order-002")
-        whenever(mockResultSet.getString("product_name")).thenReturn("A").thenReturn("B")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(3).thenReturn(2)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000).thenReturn(500)
-        whenever(mockResultSet.getString("user_name")).thenReturn("u1").thenReturn("u2")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("Cash").thenReturn("Cash")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-01-01T00:00:00").thenReturn("2024-01-02T00:00:00")
-
-        val service = ReportService(mockConnection)
-        val report =
-            service.getProductSalesReport(
-                period = null,
-                startDate = null,
-                endDate = null,
-                productName = null,
-                userId = null,
-                paymentMethod = null,
-            )
-
         assertEquals(5, report.totalItemsSold)
     }
 
     @Test
     fun `returns empty list and zeros when there is no data`() {
-        setupEmptyResultSet()
-
-        val service = ReportService(mockConnection)
         val report =
             service.getProductSalesReport(
                 period = null,
@@ -412,17 +343,9 @@ class ReportServiceTest {
 
     @Test
     fun `correctly maps ResultSet fields to ProductSaleItem`() {
-        setupSingleRowResultSet(
-            orderId = "order-test-00000042",
-            productName = "Raspberry Pi",
-            quantity = 4,
-            priceAtOrder = 2500,
-            userName = "bob",
-            paymentMethod = "BTC",
-            saleDate = "2024-03-20T09:15:00",
-        )
+        val sale = seedSale(userName = "bob", paymentMethodName = "BTC", createdAt = "2024-03-20T09:15:00")
+        addOrderProduct(sale.orderId, productName = "Raspberry Pi", quantity = 4, priceAtOrder = 2500)
 
-        val service = ReportService(mockConnection)
         val report =
             service.getProductSalesReport(
                 period = null,
@@ -435,7 +358,7 @@ class ReportServiceTest {
 
         assertEquals(1, report.sales.size)
         val item = report.sales[0]
-        assertEquals("order-test-00000042", item.orderId)
+        assertEquals(sale.orderId, item.orderId)
         assertEquals("Raspberry Pi", item.productName)
         assertEquals(4, item.quantity)
         assertEquals(2500, item.priceAtOrder)
@@ -445,64 +368,11 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `SELECT contains o-id AS order_id`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
-
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(
-            period = null,
-            startDate = null,
-            endDate = null,
-            productName = null,
-            userId = null,
-            paymentMethod = null,
-        )
-
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("o.id AS order_id"), "SELECT must include o.id AS order_id for client-side order grouping")
-    }
-
-    @Test
-    fun `orderId is read from result set and stored in ProductSaleItem`() {
-        setupSingleRowResultSet(orderId = "order-xyz-98765")
-
-        val service = ReportService(mockConnection)
-        val report =
-            service.getProductSalesReport(
-                period = null,
-                startDate = null,
-                endDate = null,
-                productName = null,
-                userId = null,
-                paymentMethod = null,
-            )
-
-        assertEquals("order-xyz-98765", report.sales[0].orderId)
-        verify(mockResultSet).getString("order_id")
-    }
-
-    @Test
     fun `multiple line items from the same order carry the same orderId`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-shared-001").thenReturn("order-shared-001")
-        whenever(mockResultSet.getString("product_name")).thenReturn("Widget A").thenReturn("Widget B")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(1).thenReturn(2)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(500).thenReturn(300)
-        whenever(mockResultSet.getString("user_name")).thenReturn("alice").thenReturn("alice")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("Cash").thenReturn("Cash")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00").thenReturn("2024-06-01T10:00:00")
-        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
-        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
-        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("payment_id")).thenReturn(null)
+        val sale = seedSale()
+        addOrderProduct(sale.orderId, productName = "Widget A", quantity = 1, priceAtOrder = 500)
+        addOrderProduct(sale.orderId, productName = "Widget B", quantity = 2, priceAtOrder = 300)
 
-        val service = ReportService(mockConnection)
         val report =
             service.getProductSalesReport(
                 period = null,
@@ -514,29 +384,15 @@ class ReportServiceTest {
             )
 
         assertEquals(2, report.sales.size)
-        assertEquals("order-shared-001", report.sales[0].orderId)
-        assertEquals("order-shared-001", report.sales[1].orderId)
+        assertEquals(sale.orderId, report.sales[0].orderId)
+        assertEquals(sale.orderId, report.sales[1].orderId)
     }
 
     @Test
     fun `totalRevenueCents avoids overflow with large values using Long`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-big-001")
-        whenever(mockResultSet.getString("product_name")).thenReturn("Expensive Item")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(1_000_000)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(Int.MAX_VALUE)
-        whenever(mockResultSet.getString("user_name")).thenReturn("u1")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-01-01T00:00:00")
-        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
-        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
-        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
-        whenever(mockResultSet.getString("payment_id")).thenReturn(null)
+        val sale = seedSale()
+        addOrderProduct(sale.orderId, productName = "Expensive Item", quantity = 1_000_000, priceAtOrder = Int.MAX_VALUE)
 
-        val service = ReportService(mockConnection)
         val report =
             service.getProductSalesReport(
                 period = null,
@@ -552,378 +408,246 @@ class ReportServiceTest {
     }
 
     @Test
-    fun `SQL SELECT includes bitcoin payment columns`() {
-        val sqlCaptor = argumentCaptor<String>()
-        whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(false)
-        val service = ReportService(mockConnection)
-        service.getProductSalesReport(null, null, null, null, null, null)
-        val query = sqlCaptor.firstValue
-        assertTrue(query.contains("pay.satoshi_amount"))
-        assertTrue(query.contains("pay.exchange_rate_at_payment"))
-        assertTrue(query.contains("pay.exchange_rate_currency"))
-        assertTrue(query.contains("pay.fiat_amount_at_payment"))
-        assertTrue(query.contains("pay.id AS payment_id"))
-    }
-
-    @Test
     fun `mapper extracts bitcoin fields when present`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-1")
-        whenever(mockResultSet.getString("product_name")).thenReturn("Widget")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(1)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(1000)
-        whenever(mockResultSet.getString("user_name")).thenReturn("alice")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("BTC")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00")
-        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
-        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
-        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
-        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
-        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-btc-1")
-        val service = ReportService(mockConnection)
-        val report = service.getProductSalesReport(null, null, null, null, null, null)
-        assertEquals(100000L, report.sales[0].satoshiAmount)
-        assertEquals(95000.0, report.sales[0].exchangeRateAtPayment)
+        val sale =
+            seedSale(
+                paymentMethodName = "BTC",
+                satoshiAmount = 100_000L,
+                exchangeRateAtPayment = 95_000.0,
+                exchangeRateCurrency = "usd",
+                fiatAmountAtPayment = 1.0,
+            )
+        addOrderProduct(sale.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(100_000L, report.sales[0].satoshiAmount)
+        assertEquals(95_000.0, report.sales[0].exchangeRateAtPayment)
         assertEquals("usd", report.sales[0].exchangeRateCurrency)
         assertEquals(1.0, report.sales[0].fiatAmountAtPayment)
-        assertEquals("payment-btc-1", report.sales[0].paymentId)
+        assertEquals(sale.paymentId, report.sales[0].paymentId)
     }
 
     @Test
     fun `totalBtcSatoshis deduplicates by paymentId to avoid double counting`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-        whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
-        whenever(mockResultSet.getString("order_id")).thenReturn("order-1").thenReturn("order-1")
-        whenever(mockResultSet.getString("product_name")).thenReturn("Widget A").thenReturn("Widget B")
-        whenever(mockResultSet.getInt("quantity")).thenReturn(1).thenReturn(1)
-        whenever(mockResultSet.getInt("price_at_order")).thenReturn(500).thenReturn(500)
-        whenever(mockResultSet.getString("user_name")).thenReturn("alice").thenReturn("alice")
-        whenever(mockResultSet.getString("payment_method")).thenReturn("BTC").thenReturn("BTC")
-        whenever(mockResultSet.getString("sale_date")).thenReturn("2024-06-01T10:00:00").thenReturn("2024-06-01T10:00:00")
-        whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
-        whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
-        whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
-        whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
-        whenever(mockResultSet.getString("payment_id")).thenReturn("payment-shared")
-        val service = ReportService(mockConnection)
-        val report = service.getProductSalesReport(null, null, null, null, null, null)
+        val sale = seedSale(paymentMethodName = "BTC", satoshiAmount = 100_000L)
+        addOrderProduct(sale.orderId, productName = "Widget A", quantity = 1, priceAtOrder = 500)
+        addOrderProduct(sale.orderId, productName = "Widget B", quantity = 1, priceAtOrder = 500)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
         assertEquals(2, report.sales.size)
-        assertEquals(100000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
+        assertEquals(100_000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
     }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies status filter and default date desc sort`() {
+    fun `getOrdersWithPaymentsFiltered applies status filter and default date desc sort`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-            whenever(mockResultSet.getString("id")).thenReturn("order-1")
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1")
-            whenever(mockResultSet.getString("table_id")).thenReturn("table-1")
-            whenever(mockResultSet.getString("status")).thenReturn("paid")
-            whenever(mockResultSet.getDouble("total")).thenReturn(100.0)
-            whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
-            whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
-            whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
-            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
-            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
-            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
-            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
+            val older = seedSale(orderStatus = "paid", createdAt = "2025-01-01T10:00:00", total = 100.0)
+            val newer = seedSale(orderStatus = "paid", createdAt = "2025-01-10T10:00:00", total = 100.0)
+            seedSale(orderStatus = "open", createdAt = "2025-01-15T10:00:00", total = 100.0)
 
-            val service = ReportService(mockConnection)
             val result = service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(status = "paid"))
 
-            assertEquals(1, result.size)
+            assertEquals(2, result.size)
+            assertEquals(newer.orderId, result[0].id)
+            assertEquals(older.orderId, result[1].id)
             assertEquals("Cash", result[0].paymentMethod)
-            assertTrue(sqlCaptor.firstValue.contains("o.status = ?"))
-            assertTrue(sqlCaptor.firstValue.contains("ORDER BY datetime(o.created_at) desc"))
-            verify(mockStatement).setString(1, "paid")
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies combined filters and custom total sort`() {
+    fun `getOrdersWithPaymentsFiltered applies date range filters`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val inRange = seedSale(createdAt = "2025-01-15T10:00:00")
+            seedSale(createdAt = "2024-01-15T10:00:00")
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(
-                OrderWithPaymentFilters(
-                    startDate = "2025-01-01",
-                    endDate = "2025-01-31",
-                    userId = "user-123",
-                    paymentMethod = "cash",
-                    minTotal = 10.0,
-                    maxTotal = 500.0,
-                    sortBy = "total",
-                    sortOrder = "asc",
-                ),
-            )
+            val result =
+                service.getOrdersWithPaymentsFiltered(
+                    OrderWithPaymentFilters(startDate = "2025-01-01", endDate = "2025-01-31"),
+                )
 
-            val query = sqlCaptor.firstValue
-            assertTrue(query.contains("date(o.created_at) >= date(?)"))
-            assertTrue(query.contains("date(o.created_at) <= date(?)"))
-            assertTrue(query.contains("o.user_id = ?"))
-            assertTrue(query.contains("lower(pm2.name) = lower(?)"))
-            assertTrue(query.contains("o.total >= ?"))
-            assertTrue(query.contains("o.total <= ?"))
-            assertTrue(query.contains("ORDER BY o.total asc"))
-            verify(mockStatement).setString(1, "2025-01-01")
-            verify(mockStatement).setString(2, "2025-01-31")
-            verify(mockStatement).setString(3, "user-123")
-            verify(mockStatement).setString(4, "cash")
-            verify(mockStatement).setDouble(5, 10.0)
-            verify(mockStatement).setDouble(6, 500.0)
+            assertEquals(1, result.size)
+            assertEquals(inRange.orderId, result[0].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies date range filters`() {
+    fun `getOrdersWithPaymentsFiltered applies user id filter`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val alice = seedSale(userName = "alice")
+            seedSale(userName = "bob")
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(
-                OrderWithPaymentFilters(
-                    startDate = "2025-01-01",
-                    endDate = "2025-01-31",
-                ),
-            )
+            val result = service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(userId = alice.userId))
 
-            val query = sqlCaptor.firstValue
-            assertTrue(query.contains("date(o.created_at) >= date(?)"))
-            assertTrue(query.contains("date(o.created_at) <= date(?)"))
-            verify(mockStatement).setString(1, "2025-01-01")
-            verify(mockStatement).setString(2, "2025-01-31")
+            assertEquals(1, result.size)
+            assertEquals(alice.orderId, result[0].id)
+            assertEquals(alice.userId, result[0].userId)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies user id filter`() {
+    fun `getOrdersWithPaymentsFiltered applies payment method filter case-insensitively`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val cash = seedSale(paymentMethodName = "Cash")
+            seedSale(paymentMethodName = "BTC")
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(userId = "user-123"))
+            val result = service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(paymentMethod = "cash"))
 
-            assertTrue(sqlCaptor.firstValue.contains("o.user_id = ?"))
-            verify(mockStatement).setString(1, "user-123")
+            assertEquals(1, result.size)
+            assertEquals(cash.orderId, result[0].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies payment method filter`() {
+    fun `getOrdersWithPaymentsFiltered applies total range filters`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val inRange = seedSale(total = 100.0)
+            seedSale(total = 600.0)
+            seedSale(total = 5.0)
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(paymentMethod = "cash"))
+            val result =
+                service.getOrdersWithPaymentsFiltered(
+                    OrderWithPaymentFilters(minTotal = 10.0, maxTotal = 500.0),
+                )
 
-            assertTrue(sqlCaptor.firstValue.contains("lower(pm2.name) = lower(?)"))
-            verify(mockStatement).setString(1, "cash")
+            assertEquals(1, result.size)
+            assertEquals(inRange.orderId, result[0].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered applies total range filters`() {
+    fun `getOrdersWithPaymentsFiltered sorts by total ascending`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val high = seedSale(total = 100.0, createdAt = "2025-01-01T10:00:00")
+            val low = seedSale(total = 50.0, createdAt = "2025-01-02T10:00:00")
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(
-                OrderWithPaymentFilters(
-                    minTotal = 10.0,
-                    maxTotal = 500.0,
-                ),
-            )
+            val result = service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(sortBy = "total", sortOrder = "asc"))
 
-            val query = sqlCaptor.firstValue
-            assertTrue(query.contains("o.total >= ?"))
-            assertTrue(query.contains("o.total <= ?"))
-            verify(mockStatement).setDouble(1, 10.0)
-            verify(mockStatement).setDouble(2, 500.0)
+            assertEquals(2, result.size)
+            assertEquals(low.orderId, result[0].id)
+            assertEquals(high.orderId, result[1].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered sorts by total ascending`() {
+    fun `getOrdersWithPaymentsFiltered sorts by date descending by default`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val older = seedSale(createdAt = "2025-01-01T10:00:00")
+            val newer = seedSale(createdAt = "2025-01-10T10:00:00")
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered(
-                OrderWithPaymentFilters(
-                    sortBy = "total",
-                    sortOrder = "asc",
-                ),
-            )
+            val result = service.getOrdersWithPaymentsFiltered()
 
-            assertTrue(sqlCaptor.firstValue.contains("ORDER BY o.total asc"))
+            assertEquals(2, result.size)
+            assertEquals(newer.orderId, result[0].id)
+            assertEquals(older.orderId, result[1].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered sorts by date descending by default`() {
+    fun `getOrdersWithPaymentsFiltered combines filters and custom total sort`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
+            val low = seedSale(userName = "alice", paymentMethodName = "Cash", createdAt = "2025-01-05T10:00:00", total = 50.0)
+            val high = seedSale(userId = low.userId, paymentMethodName = "Cash", createdAt = "2025-01-10T10:00:00", total = 100.0)
+            seedSale(userName = "bob", paymentMethodName = "Cash", createdAt = "2025-01-10T10:00:00", total = 100.0)
 
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered()
+            val result =
+                service.getOrdersWithPaymentsFiltered(
+                    OrderWithPaymentFilters(
+                        startDate = "2025-01-01",
+                        endDate = "2025-01-31",
+                        userId = low.userId,
+                        paymentMethod = "cash",
+                        minTotal = 10.0,
+                        maxTotal = 500.0,
+                        sortBy = "total",
+                        sortOrder = "asc",
+                    ),
+                )
 
-            assertTrue(sqlCaptor.firstValue.contains("ORDER BY datetime(o.created_at) desc"))
+            assertEquals(2, result.size)
+            assertEquals(low.orderId, result[0].id)
+            assertEquals(high.orderId, result[1].id)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered rejects invalid status`() {
+    fun `getOrdersWithPaymentsFiltered rejects invalid status`() =
         runBlocking {
-            val service = ReportService(mockConnection)
-
             val exception =
                 assertFailsWith<IllegalArgumentException> {
                     service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(status = "invalid"))
                 }
 
             assertEquals("Invalid status: invalid", exception.message)
-            verify(mockConnection, never()).prepareStatement(any())
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered rejects invalid sort by`() {
+    fun `getOrdersWithPaymentsFiltered rejects invalid sort by`() =
         runBlocking {
-            val service = ReportService(mockConnection)
-
             val exception =
                 assertFailsWith<IllegalArgumentException> {
                     service.getOrdersWithPaymentsFiltered(OrderWithPaymentFilters(sortBy = "waiter"))
                 }
 
             assertEquals("Invalid sort_by: waiter", exception.message)
-            verify(mockConnection, never()).prepareStatement(any())
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered SQL includes MAX aggregates for bitcoin payment fields`() {
+    fun `getOrdersWithPaymentsFiltered mapper extracts bitcoin fields when present`() =
         runBlocking {
-            val sqlCaptor = argumentCaptor<String>()
-            whenever(mockConnection.prepareStatement(sqlCaptor.capture())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
-            val service = ReportService(mockConnection)
-            service.getOrdersWithPaymentsFiltered()
-            val query = sqlCaptor.firstValue
-            assertTrue(query.contains("MAX(p.satoshi_amount)"))
-            assertTrue(query.contains("MAX(p.exchange_rate_at_payment)"))
-            assertTrue(query.contains("MAX(p.exchange_rate_currency)"))
-            assertTrue(query.contains("MAX(p.fiat_amount_at_payment)"))
-        }
-    }
+            seedSale(
+                paymentMethodName = "BTC",
+                satoshiAmount = 100_000L,
+                exchangeRateAtPayment = 95_000.0,
+                exchangeRateCurrency = "usd",
+                fiatAmountAtPayment = 1.0,
+            )
 
-    @Test
-    fun `getOrdersWithPaymentsFiltered mapper extracts bitcoin fields when present`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-            whenever(mockResultSet.getString("id")).thenReturn("order-1")
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1")
-            whenever(mockResultSet.getString("table_id")).thenReturn(null)
-            whenever(mockResultSet.getString("status")).thenReturn("paid")
-            whenever(mockResultSet.getDouble("total")).thenReturn(1.0)
-            whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
-            whenever(mockResultSet.getString("payment_method")).thenReturn("BTC")
-            whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
-            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(100000L)
-            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(95000.0)
-            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn("usd")
-            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(1.0)
-            val service = ReportService(mockConnection)
             val result = service.getOrdersWithPaymentsFiltered()
-            assertEquals(100000L, result[0].satoshiAmount)
-            assertEquals(95000.0, result[0].exchangeRateAtPayment)
+
+            assertEquals(100_000L, result[0].satoshiAmount)
+            assertEquals(95_000.0, result[0].exchangeRateAtPayment)
             assertEquals("usd", result[0].exchangeRateCurrency)
             assertEquals(1.0, result[0].fiatAmountAtPayment)
         }
-    }
 
     @Test
-    fun `getOrdersWithPaymentsFiltered mapper returns null bitcoin fields when not present`() {
+    fun `getOrdersWithPaymentsFiltered mapper returns null bitcoin fields when not present`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-            whenever(mockResultSet.getString("id")).thenReturn("order-1")
-            whenever(mockResultSet.getString("user_id")).thenReturn("user-1")
-            whenever(mockResultSet.getString("table_id")).thenReturn(null)
-            whenever(mockResultSet.getString("status")).thenReturn("paid")
-            whenever(mockResultSet.getDouble("total")).thenReturn(15.0)
-            whenever(mockResultSet.getString("created_at")).thenReturn("2025-01-10T10:00:00")
-            whenever(mockResultSet.getString("payment_method")).thenReturn("Cash")
-            whenever(mockResultSet.getString("payment_method_ids")).thenReturn("payment-1")
-            whenever(mockResultSet.getObject("satoshi_amount")).thenReturn(null)
-            whenever(mockResultSet.getObject("exchange_rate_at_payment")).thenReturn(null)
-            whenever(mockResultSet.getString("exchange_rate_currency")).thenReturn(null)
-            whenever(mockResultSet.getObject("fiat_amount_at_payment")).thenReturn(null)
-            val service = ReportService(mockConnection)
+            seedSale(paymentMethodName = "Cash")
+
             val result = service.getOrdersWithPaymentsFiltered()
+
             assertNull(result[0].satoshiAmount)
             assertNull(result[0].exchangeRateAtPayment)
             assertNull(result[0].exchangeRateCurrency)
             assertNull(result[0].fiatAmountAtPayment)
         }
-    }
 
     @Test
-    fun `getTotalSalesByDate returns total sales when found`() {
+    fun `getTotalSalesByDate returns total sales when found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getDouble("total_sales")).thenReturn(1234.56) // Arrange
-            val service = ReportService(mockConnection) // Arrange
-            val result = service.getTotalSalesByDate("2023-01-15") // Act
-            assertEquals(1234.56, result) // Assert
+            seedSale(orderStatus = "paid", createdAt = "2023-01-15T10:00:00", total = 1234.56)
+
+            val result = service.getTotalSalesByDate("2023-01-15")
+
+            assertEquals(1234.56, result)
         }
-    }
 
     @Test
-    fun `getTotalSalesByDate returns zero when none found`() {
+    fun `getTotalSalesByDate returns zero when none found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = ReportService(mockConnection) // Arrange
-            val result = service.getTotalSalesByDate("2023-01-16") // Act
-            assertEquals(0.0, result) // Assert
+            val result = service.getTotalSalesByDate("2023-01-16")
+
+            assertEquals(0.0, result)
         }
-    }
 }

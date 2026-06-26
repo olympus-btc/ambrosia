@@ -1,73 +1,55 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.CategoriesTable
+import pos.ambrosia.db.tables.ProductCategoriesTable
+import pos.ambrosia.db.tables.ProductEntity
+import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Product
-import pos.ambrosia.utils.DuplicateProductSkuException
-import java.sql.Connection
-import java.sql.SQLException
+import pos.ambrosia.models.ProductStockAdjustment
+import java.util.UUID
 
-class ProductService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_PRODUCT =
-            "INSERT INTO products (id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        private const val GET_PRODUCTS =
-            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE is_deleted = 0"
-        private const val GET_PRODUCT_BY_ID =
-            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE id = ? AND is_deleted = 0"
-        private const val GET_PRODUCT_BY_SKU =
-            "SELECT id, SKU, name, description, image_url, cost_cents, quantity, min_stock_threshold, max_stock_threshold, price_cents FROM products WHERE SKU = ? AND is_deleted = 0"
-        private const val UPDATE_PRODUCT =
-            "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, cost_cents = ?, quantity = ?, min_stock_threshold = ?, max_stock_threshold = ?, price_cents = ? WHERE id = ?"
-        private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1, SKU = ? WHERE id = ?"
-        private const val GET_CATEGORY_IDS =
-            "SELECT category_id FROM product_categories WHERE product_id = ?"
-        private const val INSERT_CATEGORY =
-            "INSERT OR IGNORE INTO product_categories (product_id, category_id) VALUES (?, ?)"
-        private const val DELETE_CATEGORIES =
-            "DELETE FROM product_categories WHERE product_id = ?"
-        private const val GET_PRODUCTS_BY_CATEGORY =
-            "SELECT DISTINCT p.id, p.SKU, p.name, p.description, p.image_url, p.cost_cents, p.quantity, p.min_stock_threshold, p.max_stock_threshold, p.price_cents FROM products p INNER JOIN product_categories pc ON p.id = pc.product_id WHERE pc.category_id = ? AND p.is_deleted = 0"
-    }
-
-    private fun map(result: java.sql.ResultSet): Product {
-        val productId = result.getString("id")
-        return Product(
-            id = productId,
-            SKU = result.getString("SKU"),
-            name = result.getString("name"),
-            description = result.getString("description"),
-            imageUrl = result.getString("image_url"),
-            costCents = result.getInt("cost_cents"),
-            categoryIds = getCategoryIds(productId),
-            quantity = result.getInt("quantity"),
-            minStockThreshold = result.getInt("min_stock_threshold"),
-            maxStockThreshold = result.getInt("max_stock_threshold"),
-            priceCents = result.getInt("price_cents"),
+class ProductService {
+    private fun toModel(entity: ProductEntity): Product =
+        Product(
+            id = entity.id.value.toString(),
+            SKU = entity.sku,
+            name = entity.name,
+            description = entity.description,
+            imageUrl = entity.imageUrl,
+            costCents = entity.costCents,
+            categoryIds = getCategoryIds(entity.id.value),
+            quantity = entity.quantity,
+            minStockThreshold = entity.minStockThreshold,
+            maxStockThreshold = entity.maxStockThreshold,
+            priceCents = entity.priceCents,
         )
-    }
 
-    private fun getCategoryIds(productId: String): List<String> {
-        val statement = connection.prepareStatement(GET_CATEGORY_IDS)
-        statement.setString(1, productId)
-        val resultSet = statement.executeQuery()
-        val ids = mutableListOf<String>()
-        while (resultSet.next()) ids.add(resultSet.getString("category_id"))
-        return ids
-    }
+    private fun getCategoryIds(productId: UUID): List<String> =
+        ProductCategoriesTable
+            .selectAll()
+            .where { ProductCategoriesTable.productId eq EntityID(productId, ProductsTable) }
+            .map { it[ProductCategoriesTable.categoryId].value.toString() }
 
-    private fun insertCategories(
-        productId: String,
+    private fun replaceCategories(
+        productId: UUID,
         categoryIds: List<String>,
     ) {
-        val statement = connection.prepareStatement(INSERT_CATEGORY)
+        ProductCategoriesTable.deleteWhere { ProductCategoriesTable.productId eq EntityID(productId, ProductsTable) }
         for (categoryId in categoryIds) {
-            statement.setString(1, productId)
-            statement.setString(2, categoryId)
-            statement.addBatch()
+            ProductCategoriesTable.insertIgnore {
+                it[ProductCategoriesTable.productId] = EntityID(productId, ProductsTable)
+                it[ProductCategoriesTable.categoryId] = EntityID(UUID.fromString(categoryId), CategoriesTable)
+            }
         }
-        statement.executeBatch()
     }
 
     private fun normalizeSku(sku: String?): String? = sku?.takeIf { it.isNotBlank() }
@@ -83,176 +65,129 @@ class ProductService(
         return true
     }
 
-    suspend fun addProduct(product: Product): String? {
-        if (!valid(product)) return null
-        val normalizedSku = normalizeSku(product.SKU)
-        if (normalizedSku != null) {
-            val existing = getProductBySKU(normalizedSku)
-            if (existing != null) throw DuplicateProductSkuException()
-        }
-        val id =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val prev = connection.autoCommit
-        connection.autoCommit = false
-        try {
-            val statement = connection.prepareStatement(ADD_PRODUCT)
-            statement.setString(1, id)
-            statement.setString(2, normalizedSku)
-            statement.setString(3, product.name)
-            statement.setString(4, product.description)
-            statement.setString(5, product.imageUrl)
-            statement.setInt(6, product.costCents)
-            statement.setInt(7, product.quantity)
-            statement.setInt(8, product.minStockThreshold)
-            statement.setInt(9, product.maxStockThreshold)
-            statement.setInt(10, product.priceCents)
-            val rows = statement.executeUpdate()
-            if (rows == 0) {
-                connection.rollback()
-                return null
-            }
-            insertCategories(id, product.categoryIds)
-            connection.commit()
+    fun addProduct(product: Product): String? =
+        transaction {
+            if (!valid(product)) return@transaction null
+            val normalizedSku = normalizeSku(product.SKU)
+
+            val id =
+                ProductEntity
+                    .new(UUID.randomUUID()) {
+                        this.sku = normalizedSku
+                        this.name = product.name
+                        this.description = product.description
+                        this.imageUrl = product.imageUrl
+                        this.costCents = product.costCents
+                        this.quantity = product.quantity
+                        this.minStockThreshold = product.minStockThreshold
+                        this.maxStockThreshold = product.maxStockThreshold
+                        this.priceCents = product.priceCents
+                    }.id.value
+
+            replaceCategories(id, product.categoryIds)
             logger.info("Product created: $id")
-            return id
-        } catch (e: SQLException) {
-            connection.rollback()
-            if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
-            throw e
-        } catch (e: Exception) {
-            connection.rollback()
-            throw e
-        } finally {
-            connection.autoCommit = prev
+            id.toString()
         }
-    }
 
-    suspend fun getProducts(): List<Product> {
-        val statement = connection.prepareStatement(GET_PRODUCTS)
-        val resultSet = statement.executeQuery()
-        val out = mutableListOf<Product>()
-        while (resultSet.next()) out.add(map(resultSet))
-        return out
-    }
-
-    suspend fun getProductById(id: String): Product? {
-        val statement = connection.prepareStatement(GET_PRODUCT_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) map(resultSet) else null
-    }
-
-    suspend fun getProductBySKU(sku: String?): Product? {
-        val normalizedSku = normalizeSku(sku) ?: return null
-        val statement = connection.prepareStatement(GET_PRODUCT_BY_SKU)
-        statement.setString(1, normalizedSku)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) map(resultSet) else null
-    }
-
-    suspend fun getProductsByCategory(category: String): List<Product> {
-        val statement = connection.prepareStatement(GET_PRODUCTS_BY_CATEGORY)
-        statement.setString(1, category)
-        val resultSet = statement.executeQuery()
-        val out = mutableListOf<Product>()
-        while (resultSet.next()) out.add(map(resultSet))
-        return out
-    }
-
-    suspend fun updateProduct(product: Product): Boolean {
-        if (product.id == null) return false
-        if (!valid(product)) return false
-        val normalizedSku = normalizeSku(product.SKU)
-        if (normalizedSku != null) {
-            val current = getProductBySKU(normalizedSku)
-            if (current != null && current.id != product.id) throw DuplicateProductSkuException()
+    fun getProducts(): List<Product> =
+        transaction {
+            ProductEntity.find { ProductsTable.isDeleted eq false }.map { toModel(it) }
         }
-        val prev = connection.autoCommit
-        connection.autoCommit = false
-        try {
-            val rows =
-                connection.prepareStatement(UPDATE_PRODUCT).use { statement ->
-                    statement.setString(1, normalizedSku)
-                    statement.setString(2, product.name)
-                    statement.setString(3, product.description)
-                    statement.setString(4, product.imageUrl)
-                    statement.setInt(5, product.costCents)
-                    statement.setInt(6, product.quantity)
-                    statement.setInt(7, product.minStockThreshold)
-                    statement.setInt(8, product.maxStockThreshold)
-                    statement.setInt(9, product.priceCents)
-                    statement.setString(10, product.id)
-                    statement.executeUpdate()
-                }
-            if (rows == 0) {
-                connection.rollback()
-                return false
-            }
-            connection.prepareStatement(DELETE_CATEGORIES).use { statement ->
-                statement.setString(1, product.id)
-                statement.executeUpdate()
-            }
-            insertCategories(product.id, product.categoryIds)
-            connection.commit()
+
+    fun getProductById(id: String): Product? =
+        transaction {
+            val entity = ProductEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted) null else toModel(entity)
+        }
+
+    private fun getProductBySKUInternal(sku: String): Product? =
+        ProductEntity
+            .find { (ProductsTable.sku eq sku) and (ProductsTable.isDeleted eq false) }
+            .firstOrNull()
+            ?.let { toModel(it) }
+
+    fun getProductBySKU(sku: String?): Product? =
+        transaction {
+            val normalizedSku = normalizeSku(sku) ?: return@transaction null
+            getProductBySKUInternal(normalizedSku)
+        }
+
+    fun getProductsByCategory(category: String): List<Product> =
+        transaction {
+            val productIds =
+                ProductCategoriesTable
+                    .selectAll()
+                    .where { ProductCategoriesTable.categoryId eq EntityID(UUID.fromString(category), CategoriesTable) }
+                    .map { it[ProductCategoriesTable.productId].value }
+                    .toSet()
+
+            val productEntityIds = productIds.map { EntityID(it, ProductsTable) }
+            ProductEntity
+                .find { (ProductsTable.id inList productEntityIds) and (ProductsTable.isDeleted eq false) }
+                .map { toModel(it) }
+        }
+
+    fun updateProduct(product: Product): Boolean =
+        transaction {
+            if (product.id == null) return@transaction false
+            if (!valid(product)) return@transaction false
+            val normalizedSku = normalizeSku(product.SKU)
+
+            val entity = ProductEntity.findById(UUID.fromString(product.id)) ?: return@transaction false
+
+            entity.sku = normalizedSku
+            entity.name = product.name
+            entity.description = product.description
+            entity.imageUrl = product.imageUrl
+            entity.costCents = product.costCents
+            entity.quantity = product.quantity
+            entity.minStockThreshold = product.minStockThreshold
+            entity.maxStockThreshold = product.maxStockThreshold
+            entity.priceCents = product.priceCents
+            entity.flush()
+
+            replaceCategories(UUID.fromString(product.id), product.categoryIds)
             logger.info("Product updated: ${product.id}")
-            return true
-        } catch (e: SQLException) {
-            connection.rollback()
-            if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
-            throw e
-        } catch (e: Exception) {
-            connection.rollback()
-            throw e
-        } finally {
-            connection.autoCommit = prev
+            true
         }
-    }
 
-    suspend fun deleteProduct(id: String): Boolean {
-        val statement = connection.prepareStatement(DELETE_PRODUCT)
-        statement.setString(1, deletedSku(id))
-        statement.setString(2, id)
-        val rows = statement.executeUpdate()
-        if (rows > 0) logger.info("Product deleted: $id")
-        return rows > 0
-    }
+    fun deleteProduct(id: String): Boolean =
+        transaction {
+            val entity = ProductEntity.findById(UUID.fromString(id)) ?: return@transaction false
+            entity.isDeleted = true
+            entity.sku = deletedSku(id)
+            logger.info("Product deleted: $id")
+            true
+        }
 
     private fun deletedSku(id: String): String = "DELETED-$id"
 
-    private fun isDuplicateSkuViolation(error: SQLException): Boolean =
-        error.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true
+    fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean =
+        transaction {
+            if (adjustments.isEmpty()) return@transaction true
+            if (adjustments.any { it.productId.isBlank() || it.quantity < 0 }) return@transaction false
 
-    suspend fun adjustStock(adjustments: List<pos.ambrosia.models.ProductStockAdjustment>): Boolean {
-        if (adjustments.isEmpty()) return true
-        if (adjustments.any { it.productId.isBlank() || it.quantity < 0 }) return false
-
-        val previousAutoCommit = connection.autoCommit
-        connection.autoCommit = false
-        try {
-            val statement =
-                connection.prepareStatement(
-                    "UPDATE products SET quantity = quantity - ? WHERE id = ? AND is_deleted = 0 AND quantity >= ?",
-                )
+            val pendingQuantities = mutableMapOf<UUID, Int>()
             for (adjustment in adjustments) {
                 if (adjustment.quantity == 0) continue
-                statement.setInt(1, adjustment.quantity)
-                statement.setString(2, adjustment.productId)
-                statement.setInt(3, adjustment.quantity)
-                val rows = statement.executeUpdate()
-                if (rows == 0) {
-                    connection.rollback()
-                    return false
-                }
+                val productId =
+                    try {
+                        UUID.fromString(adjustment.productId)
+                    } catch (e: IllegalArgumentException) {
+                        return@transaction false
+                    }
+                val entity = ProductEntity.findById(productId)
+                if (entity == null || entity.isDeleted) return@transaction false
+
+                val currentQuantity = pendingQuantities.getOrPut(productId) { entity.quantity }
+                val newQuantity = currentQuantity - adjustment.quantity
+                if (newQuantity < 0) return@transaction false
+                pendingQuantities[productId] = newQuantity
             }
-            connection.commit()
-            return true
-        } catch (e: Exception) {
-            connection.rollback()
-            throw e
-        } finally {
-            connection.autoCommit = previousAutoCommit
+
+            pendingQuantities.forEach { (productId, newQuantity) ->
+                ProductEntity.findById(productId)?.quantity = newQuantity
+            }
+            true
         }
-    }
 }

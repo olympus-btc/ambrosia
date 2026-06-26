@@ -9,15 +9,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Config
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureConfig() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val configService = ConfigService(connection)
+    val configService = ConfigService()
     routing { route("/config") { config(configService) } }
 }
 

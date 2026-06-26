@@ -20,7 +20,7 @@ class PrintService(
         return printerNames
     }
 
-    suspend fun setPrinter(
+    fun setPrinter(
         type: PrinterType,
         printerName: String,
     ): String? {
@@ -32,7 +32,7 @@ class PrintService(
         return printerConfigService.upsertDefaultByTypeName(type, printerName)
     }
 
-    suspend fun printTicket(
+    fun printTicket(
         request: PrintRequest,
         config: Config?,
     ) {

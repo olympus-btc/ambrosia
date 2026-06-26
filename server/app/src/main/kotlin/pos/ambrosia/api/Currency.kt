@@ -8,17 +8,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
-import pos.ambrosia.models.Currency
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.SetBaseCurrencyRequest
 import pos.ambrosia.services.CurrencyService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureCurrency() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val service = CurrencyService(connection)
+    val service = CurrencyService()
 
     routing {
         route("/currencies") {

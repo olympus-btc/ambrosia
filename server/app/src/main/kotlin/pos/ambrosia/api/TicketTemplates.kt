@@ -12,14 +12,12 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
 
 fun Application.configureTicketTemplates() {
-    val connection = DatabaseConnection.getConnection()
-    val ticketTemplateService = TicketTemplateService(connection)
+    val ticketTemplateService = TicketTemplateService()
     routing { route("/templates") { templatesAPI(ticketTemplateService) } }
 }
 

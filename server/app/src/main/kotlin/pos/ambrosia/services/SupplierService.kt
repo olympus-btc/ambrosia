@@ -1,174 +1,130 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.neq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.IngredientSuppliersTable
+import pos.ambrosia.db.tables.SupplierEntity
+import pos.ambrosia.db.tables.SuppliersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Supplier
-import java.sql.Connection
+import java.util.UUID
 
-class SupplierService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_SUPPLIER =
-            "INSERT INTO suppliers (id, name, contact, phone, email, address) VALUES (?, ?, ?, ?, ?, ?)"
-        private const val GET_SUPPLIERS =
-            "SELECT id, name, contact, phone, email, address FROM suppliers WHERE is_deleted = 0"
-        private const val GET_SUPPLIER_BY_ID =
-            "SELECT id, name, contact, phone, email, address FROM suppliers WHERE id = ? AND is_deleted = 0"
-        private const val UPDATE_SUPPLIER =
-            "UPDATE suppliers SET name = ?, contact = ?, phone = ?, email = ?, address = ? WHERE id = ?"
-        private const val DELETE_SUPPLIER = "UPDATE suppliers SET is_deleted = 1 WHERE id = ?"
-        private const val CHECK_SUPPLIER_NAME_EXISTS =
-            "SELECT id FROM suppliers WHERE name = ? AND is_deleted = 0"
-        private const val CHECK_SUPPLIER_IN_USE =
-            "SELECT COUNT(*) as count FROM ingredient_suppliers WHERE id_supplier = ?"
-    }
+class SupplierService {
+    private fun toModel(entity: SupplierEntity): Supplier =
+        Supplier(
+            id = entity.id.value.toString(),
+            name = entity.name,
+            contact = entity.contact ?: "",
+            phone = entity.phone ?: "",
+            email = entity.email ?: "",
+            address = entity.address ?: "",
+        )
 
-    private fun supplierNameExists(supplierName: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_SUPPLIER_NAME_EXISTS)
-        statement.setString(1, supplierName)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    private fun supplierNameExists(supplierName: String): Boolean =
+        !SupplierEntity.find { (SuppliersTable.name eq supplierName) and (SuppliersTable.isDeleted eq false) }.empty()
 
     private fun supplierNameExistsExcludingId(
         supplierName: String,
         excludeId: String,
-    ): Boolean {
-        val statement =
-            connection.prepareStatement(
-                "SELECT id FROM suppliers WHERE name = ? AND id != ? AND is_deleted = 0",
-            )
-        statement.setString(1, supplierName)
-        statement.setString(2, excludeId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    ): Boolean =
+        !SupplierEntity
+            .find {
+                (SuppliersTable.name eq supplierName) and
+                    (SuppliersTable.id neq EntityID(UUID.fromString(excludeId), SuppliersTable)) and
+                    (SuppliersTable.isDeleted eq false)
+            }.empty()
 
-    private fun supplierInUse(supplierId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_SUPPLIER_IN_USE)
-        statement.setString(1, supplierId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
-        }
-        return false
-    }
+    private fun supplierInUse(supplierId: String): Boolean =
+        !IngredientSuppliersTable
+            .selectAll()
+            .where { IngredientSuppliersTable.supplierId eq EntityID(UUID.fromString(supplierId), SuppliersTable) }
+            .empty()
 
-    suspend fun addSupplier(supplier: Supplier): String? {
-        // Verificar que el nombre del proveedor no exista ya
-        if (supplierNameExists(supplier.name)) {
-            logger.error("Supplier name already exists: ${supplier.name}")
-            return null
-        }
+    fun addSupplier(supplier: Supplier): String? =
+        transaction {
+            if (supplierNameExists(supplier.name)) {
+                logger.error("Supplier name already exists: ${supplier.name}")
+                return@transaction null
+            }
 
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_SUPPLIER)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, supplier.name)
-        statement.setString(3, supplier.contact)
-        statement.setString(4, supplier.phone)
-        statement.setString(5, supplier.email)
-        statement.setString(6, supplier.address)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Supplier created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create supplier")
-            null
-        }
-    }
-
-    suspend fun getSuppliers(): List<Supplier> {
-        val statement = connection.prepareStatement(GET_SUPPLIERS)
-        val resultSet = statement.executeQuery()
-        val suppliers = mutableListOf<Supplier>()
-        while (resultSet.next()) {
-            val supplier =
-                Supplier(
-                    id = resultSet.getString("id"),
-                    name = resultSet.getString("name"),
-                    contact = resultSet.getString("contact"),
-                    phone = resultSet.getString("phone"),
-                    email = resultSet.getString("email"),
-                    address = resultSet.getString("address"),
-                )
-            suppliers.add(supplier)
-        }
-        logger.info("Retrieved ${suppliers.size} suppliers")
-        return suppliers
-    }
-
-    suspend fun getSupplierById(id: String): Supplier? {
-        val statement = connection.prepareStatement(GET_SUPPLIER_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            Supplier(
-                id = resultSet.getString("id"),
-                name = resultSet.getString("name"),
-                contact = resultSet.getString("contact"),
-                phone = resultSet.getString("phone"),
-                email = resultSet.getString("email"),
-                address = resultSet.getString("address"),
-            )
-        } else {
-            logger.warn("Supplier not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun updateSupplier(supplier: Supplier): Boolean {
-        if (supplier.id == null) {
-            logger.error("Cannot update supplier: ID is null")
-            return false
+            val id =
+                SupplierEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = supplier.name
+                        this.contact = supplier.contact
+                        this.phone = supplier.phone
+                        this.email = supplier.email
+                        this.address = supplier.address
+                    }.id.value
+                    .toString()
+            logger.info("Supplier created successfully with ID: $id")
+            id
         }
 
-        // Verificar que el nombre del proveedor no exista ya (excluyendo el proveedor actual)
-        if (supplierNameExistsExcludingId(supplier.name, supplier.id)) {
-            logger.error("Supplier name already exists: ${supplier.name}")
-            return false
+    fun getSuppliers(): List<Supplier> =
+        transaction {
+            val suppliers = SupplierEntity.find { SuppliersTable.isDeleted eq false }.map { toModel(it) }
+            logger.info("Retrieved ${suppliers.size} suppliers")
+            suppliers
         }
 
-        val statement = connection.prepareStatement(UPDATE_SUPPLIER)
-        statement.setString(1, supplier.name)
-        statement.setString(2, supplier.contact)
-        statement.setString(3, supplier.phone)
-        statement.setString(4, supplier.email)
-        statement.setString(5, supplier.address)
-        statement.setString(6, supplier.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Supplier updated successfully: ${supplier.id}")
-        } else {
-            logger.error("Failed to update supplier: ${supplier.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteSupplier(id: String): Boolean {
-        // Verificar que el proveedor no esté siendo usado en ingredient_suppliers
-        if (supplierInUse(id)) {
-            logger.error("Cannot delete supplier $id: it has ingredient associations")
-            return false
+    fun getSupplierById(id: String): Supplier? =
+        transaction {
+            val entity = SupplierEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
+            if (entity == null) {
+                logger.warn("Supplier not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        val statement = connection.prepareStatement(DELETE_SUPPLIER)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
+    fun updateSupplier(supplier: Supplier): Boolean =
+        transaction {
+            if (supplier.id == null) {
+                logger.error("Cannot update supplier: ID is null")
+                return@transaction false
+            }
 
-        if (rowsDeleted > 0) {
-            logger.info("Supplier soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete supplier: $id")
+            if (supplierNameExistsExcludingId(supplier.name, supplier.id)) {
+                logger.error("Supplier name already exists: ${supplier.name}")
+                return@transaction false
+            }
+
+            val entity = SupplierEntity.findById(UUID.fromString(supplier.id))
+            if (entity == null) {
+                logger.error("Failed to update supplier: ${supplier.id}")
+                false
+            } else {
+                entity.name = supplier.name
+                entity.contact = supplier.contact
+                entity.phone = supplier.phone
+                entity.email = supplier.email
+                entity.address = supplier.address
+                logger.info("Supplier updated successfully: ${supplier.id}")
+                true
+            }
         }
-        return rowsDeleted > 0
-    }
+
+    fun deleteSupplier(id: String): Boolean =
+        transaction {
+            if (supplierInUse(id)) {
+                logger.error("Cannot delete supplier $id: it has ingredient associations")
+                return@transaction false
+            }
+
+            val entity = SupplierEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete supplier: $id")
+                false
+            } else {
+                entity.isDeleted = true
+                logger.info("Supplier soft-deleted successfully: $id")
+                true
+            }
+        }
 }
