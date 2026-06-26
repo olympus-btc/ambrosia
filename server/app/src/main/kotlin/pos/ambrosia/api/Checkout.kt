@@ -9,21 +9,18 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock levels, and payment details"
 
 fun Application.configureCheckout() {
-    val connection: Connection = DatabaseConnection.getConnection()
     val phoenixService = PhoenixService(environment)
-    val checkoutService = CheckoutService(connection, phoenixService)
+    val checkoutService = CheckoutService(phoenixService)
     routing { route("/store/orders") { checkout(checkoutService, phoenixService) } }
 }
 

@@ -1,101 +1,246 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.CategoryItem
 import pos.ambrosia.services.CategoryService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CategoryServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = CategoryService()
+
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
 
     @Test
-    fun `getCategories returns list for product`() {
+    fun `addCategory returns null for invalid type`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false)
-            whenever(mockResultSet.getString("id")).thenReturn("cat-1").thenReturn("cat-2")
-            whenever(mockResultSet.getString("name")).thenReturn("Bebidas").thenReturn("Postres")
+            val result = service.addCategory("invalid-type", CategoryItem(name = "Bebidas"))
+            assertNull(result)
+        }
+    }
 
-            val service = CategoryService(mockConnection)
-            val result = service.getCategories("product")
+    @Test
+    fun `addCategory returns null for blank name`() {
+        runBlocking {
+            val result = service.addCategory("dish", CategoryItem(name = "  "))
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `addCategory returns null if name already exists for type`() {
+        runBlocking {
+            ExposedTestDb.seedCategory("Bebidas", "dish")
+            val result = service.addCategory("dish", CategoryItem(name = "Bebidas"))
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `addCategory allows same name for different types`() {
+        runBlocking {
+            ExposedTestDb.seedCategory("Bebidas", "dish")
+            val result = service.addCategory("product", CategoryItem(name = "Bebidas"))
             assertNotNull(result)
-            assertEquals(2, result.size)
-            assertEquals("Bebidas", result[0].name)
-            assertEquals("Postres", result[1].name)
+        }
+    }
+
+    @Test
+    fun `addCategory returns new ID on success`() {
+        runBlocking {
+            val result = service.addCategory("product", CategoryItem(name = "Lacteos"))
+            assertNotNull(result)
         }
     }
 
     @Test
     fun `getCategories returns null for invalid type`() {
         runBlocking {
-            val service = CategoryService(mockConnection)
             val result = service.getCategories("invalid-type")
-            assertTrue(result == null)
+            assertNull(result)
         }
     }
 
     @Test
-    fun `addCategory validates and inserts product`() {
+    fun `getCategories returns empty list when none found`() {
         runBlocking {
-            val checkNameStatement: PreparedStatement = mock()
-            val insertStatement: PreparedStatement = mock()
-            val checkNameResultSet: ResultSet = mock()
-
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM categories"))).thenReturn(checkNameStatement)
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO categories"))).thenReturn(insertStatement)
-
-            whenever(checkNameResultSet.next()).thenReturn(false)
-            whenever(checkNameStatement.executeQuery()).thenReturn(checkNameResultSet)
-            whenever(insertStatement.executeUpdate()).thenReturn(1)
-
-            val service = CategoryService(mockConnection)
-            val id = service.addCategory("product", CategoryItem(name = "Lácteos"))
-            assertNotNull(id)
+            val result = service.getCategories("dish")
+            assertNotNull(result)
+            assertTrue(result.isEmpty())
         }
     }
 
     @Test
-    fun `updateCategory rejects duplicate names`() {
+    fun `getCategories returns list for matching type only`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM categories"))).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true)
+            ExposedTestDb.seedCategory("Bebidas", "product")
+            ExposedTestDb.seedCategory("Postres", "product")
+            ExposedTestDb.seedCategory("Carnes", "dish")
 
-            val service = CategoryService(mockConnection)
-            val ok = service.updateCategory("product", CategoryItem(id = "cat-1", name = "Duplicado"))
-            assertFalse(ok)
+            val result = service.getCategories("product")
+            assertNotNull(result)
+            assertEquals(2, result.size)
+            assertTrue(result.any { it.name == "Bebidas" })
+            assertTrue(result.any { it.name == "Postres" })
+        }
+    }
+
+    @Test
+    fun `getCategoryById returns null for invalid type`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.getCategoryById(categoryId, "invalid-type")
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `getCategoryById returns null when not found`() {
+        runBlocking {
+            val result = service.getCategoryById(UUID.randomUUID().toString(), "product")
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `getCategoryById returns null when type does not match`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.getCategoryById(categoryId, "dish")
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `getCategoryById returns category when found`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.getCategoryById(categoryId, "product")
+            assertNotNull(result)
+            assertEquals(categoryId, result.id)
+            assertEquals("Bebidas", result.name)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false for invalid type`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.updateCategory("invalid-type", CategoryItem(id = categoryId, name = "Refrescos"))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false when id is null`() {
+        runBlocking {
+            val result = service.updateCategory("product", CategoryItem(id = null, name = "Refrescos"))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false for blank name`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.updateCategory("product", CategoryItem(id = categoryId, name = "  "))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false when name already exists for type`() {
+        runBlocking {
+            ExposedTestDb.seedCategory("Postres", "product")
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.updateCategory("product", CategoryItem(id = categoryId, name = "Postres"))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false when not found`() {
+        runBlocking {
+            val result = service.updateCategory("product", CategoryItem(id = UUID.randomUUID().toString(), name = "Refrescos"))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns false when type does not match`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.updateCategory("dish", CategoryItem(id = categoryId, name = "Refrescos"))
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `updateCategory returns true on success`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.updateCategory("product", CategoryItem(id = categoryId, name = "Refrescos"))
+            assertTrue(result)
+
+            val updated = service.getCategoryById(categoryId, "product")
+            assertEquals("Refrescos", updated?.name)
+        }
+    }
+
+    @Test
+    fun `deleteCategory returns false for invalid type`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.deleteCategory(categoryId, "invalid-type")
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `deleteCategory returns false when not found`() {
+        runBlocking {
+            val result = service.deleteCategory(UUID.randomUUID().toString(), "product")
+            assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `deleteCategory returns false when type does not match`() {
+        runBlocking {
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val result = service.deleteCategory(categoryId, "dish")
+            assertFalse(result)
         }
     }
 
     @Test
     fun `deleteCategory soft deletes category and clears product_categories`() {
         runBlocking {
-            val clearStatement: PreparedStatement = mock()
-            val deleteStatement: PreparedStatement = mock()
+            val categoryId = ExposedTestDb.seedCategory("Bebidas", "product")
+            val productId = ExposedTestDb.seedProduct("Cola")
+            ExposedTestDb.seedProductCategory(productId, categoryId)
 
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_categories"))).thenReturn(clearStatement)
-            whenever(mockConnection.prepareStatement(contains("UPDATE categories SET name"))).thenReturn(deleteStatement)
-
-            whenever(clearStatement.executeUpdate()).thenReturn(0)
-            whenever(deleteStatement.executeUpdate()).thenReturn(1)
-
-            val service = CategoryService(mockConnection)
-            val ok = service.deleteCategory("cat-1", "product")
-            assertTrue(ok)
+            val result = service.deleteCategory(categoryId, "product")
+            assertTrue(result)
+            assertNull(service.getCategoryById(categoryId, "product"))
         }
     }
 }

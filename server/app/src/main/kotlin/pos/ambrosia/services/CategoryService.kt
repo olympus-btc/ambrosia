@@ -1,165 +1,121 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.neq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.CategoriesTable
+import pos.ambrosia.db.tables.CategoryEntity
+import pos.ambrosia.db.tables.ProductCategoriesTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.CategoryItem
-import java.sql.Connection
+import java.util.UUID
 
-class CategoryService(
-    private val connection: Connection,
-) {
+class CategoryService {
     private val validTypes = setOf("dish", "ingredient", "product")
 
     private fun validateType(type: String): Boolean = validTypes.contains(type)
-
-    private fun usageTable(type: String): String =
-        when (type) {
-            "dish" -> "dishes"
-            "ingredient" -> "ingredients"
-            "product" -> "products"
-            else -> throw IllegalArgumentException("Invalid type")
-        }
-
-    private fun map(resultSet: java.sql.ResultSet): CategoryItem =
-        CategoryItem(id = resultSet.getString("id"), name = resultSet.getString("name"))
 
     private fun nameExists(
         name: String,
         type: String,
         excludeId: String? = null,
-    ): Boolean {
-        val statement =
-            connection.prepareStatement(
-                "SELECT id FROM categories WHERE name = ? AND type = ? AND is_deleted = 0 AND id != ?",
-            )
-        statement.setString(1, name)
-        statement.setString(2, type)
-        statement.setString(3, excludeId ?: "")
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    ): Boolean =
+        !CategoriesTable
+            .selectAll()
+            .where {
+                val condition = (CategoriesTable.name eq name) and (CategoriesTable.type eq type) and (CategoriesTable.isDeleted eq false)
+                if (excludeId != null) {
+                    condition and (CategoriesTable.id neq EntityID(UUID.fromString(excludeId), CategoriesTable))
+                } else {
+                    condition
+                }
+            }.empty()
 
-    private fun categoryInUse(
-        categoryId: String,
-        type: String,
-    ): Boolean {
-        val table = usageTable(type)
-        val sql = "SELECT COUNT(*) as count FROM $table WHERE category_id = ? AND is_deleted = 0"
-        val statement = connection.prepareStatement(sql)
-        statement.setString(1, categoryId)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) resultSet.getInt("count") > 0 else false
-    }
-
-    suspend fun addCategory(
+    fun addCategory(
         type: String,
         category: CategoryItem,
-    ): String? {
-        if (!validateType(type)) return null
-        if (category.name.isBlank()) return null
-        if (nameExists(category.name, type)) return null
+    ): String? =
+        transaction {
+            if (!validateType(type)) return@transaction null
+            if (category.name.isBlank()) return@transaction null
+            if (nameExists(category.name, type)) return@transaction null
 
-        val id =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement =
-            connection.prepareStatement(
-                "INSERT INTO categories (id, name, type, is_deleted) VALUES (?, ?, ?, 0)",
-            )
-        statement.setString(1, id)
-        statement.setString(2, category.name)
-        statement.setString(3, type)
-        val rows = statement.executeUpdate()
-        return if (rows > 0) {
+            val id =
+                CategoryEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = category.name
+                        this.type = type
+                    }.id.value
+                    .toString()
             logger.info("Category created: $id type=$type")
             id
-        } else {
-            null
         }
-    }
 
-    suspend fun getCategories(type: String): List<CategoryItem>? {
-        if (!validateType(type)) return null
-        val statement =
-            connection.prepareStatement(
-                "SELECT id, name FROM categories WHERE type = ? AND is_deleted = 0",
-            )
-        statement.setString(1, type)
-        val resultSet = statement.executeQuery()
-        val out = mutableListOf<CategoryItem>()
-        while (resultSet.next()) out.add(map(resultSet))
-        return out
-    }
+    fun getCategories(type: String): List<CategoryItem>? =
+        transaction {
+            if (!validateType(type)) return@transaction null
+            CategoryEntity
+                .find { (CategoriesTable.type eq type) and (CategoriesTable.isDeleted eq false) }
+                .map { CategoryItem(id = it.id.value.toString(), name = it.name) }
+        }
 
-    suspend fun getCategoryById(
+    fun getCategoryById(
         id: String,
         type: String,
-    ): CategoryItem? {
-        if (!validateType(type)) return null
-        val statement =
-            connection.prepareStatement(
-                "SELECT id, name FROM categories WHERE id = ? AND type = ? AND is_deleted = 0",
-            )
-        statement.setString(1, id)
-        statement.setString(2, type)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) map(resultSet) else null
-    }
+    ): CategoryItem? =
+        transaction {
+            if (!validateType(type)) return@transaction null
+            val entity = CategoryEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.type != type || entity.isDeleted) {
+                null
+            } else {
+                CategoryItem(id = entity.id.value.toString(), name = entity.name)
+            }
+        }
 
-    suspend fun updateCategory(
+    fun updateCategory(
         type: String,
         category: CategoryItem,
-    ): Boolean {
-        if (!validateType(type)) return false
-        if (category.id == null) return false
-        if (category.name.isBlank()) return false
-        if (nameExists(category.name, type, category.id)) return false
-        val statement =
-            connection.prepareStatement(
-                "UPDATE categories SET name = ? WHERE id = ? AND type = ?",
-            )
-        statement.setString(1, category.name)
-        statement.setString(2, category.id)
-        statement.setString(3, type)
-        val rows = statement.executeUpdate()
-        if (rows > 0) logger.info("Category updated: ${category.id} type=$type")
-        return rows > 0
-    }
+    ): Boolean =
+        transaction {
+            if (!validateType(type)) return@transaction false
+            if (category.id == null) return@transaction false
+            if (category.name.isBlank()) return@transaction false
+            if (nameExists(category.name, type, category.id)) return@transaction false
 
-    suspend fun deleteCategory(
+            val entity = CategoryEntity.findById(UUID.fromString(category.id))
+            if (entity == null || entity.type != type) {
+                false
+            } else {
+                entity.name = category.name
+                logger.info("Category updated: ${category.id} type=$type")
+                true
+            }
+        }
+
+    fun deleteCategory(
         id: String,
         type: String,
-    ): Boolean {
-        if (!validateType(type)) return false
-        val prev = connection.autoCommit
-        connection.autoCommit = false
-        try {
-            connection
-                .prepareStatement(
-                    "DELETE FROM product_categories WHERE category_id = ?",
-                ).use { statement ->
-                    statement.setString(1, id)
-                    statement.executeUpdate()
-                }
+    ): Boolean =
+        transaction {
+            if (!validateType(type)) return@transaction false
 
-            val rows =
-                connection
-                    .prepareStatement(
-                        "UPDATE categories SET name = ?, is_deleted = 1 WHERE id = ? AND type = ?",
-                    ).use { statement ->
-                        statement.setString(1, "DELETED-$id")
-                        statement.setString(2, id)
-                        statement.setString(3, type)
-                        statement.executeUpdate()
-                    }
-            connection.commit()
-            if (rows > 0) logger.info("Category deleted: $id type=$type")
-            return rows > 0
-        } catch (e: Exception) {
-            connection.rollback()
-            throw e
-        } finally {
-            connection.autoCommit = prev
+            ProductCategoriesTable.deleteWhere {
+                ProductCategoriesTable.categoryId eq EntityID(UUID.fromString(id), CategoriesTable)
+            }
+
+            val entity = CategoryEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.type != type) {
+                false
+            } else {
+                entity.name = "DELETED-$id"
+                entity.isDeleted = true
+                logger.info("Category deleted: $id type=$type")
+                true
+            }
         }
-    }
 }

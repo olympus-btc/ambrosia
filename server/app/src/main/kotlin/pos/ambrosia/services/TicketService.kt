@@ -1,42 +1,39 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.OrderEntity
+import pos.ambrosia.db.tables.OrdersTable
+import pos.ambrosia.db.tables.TicketEntity
+import pos.ambrosia.db.tables.TicketsTable
+import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Ticket
-import java.sql.Connection
+import java.time.LocalDateTime
+import java.util.UUID
 
-class TicketService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_TICKET =
-            "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?, ?)"
-        private const val GET_TICKETS =
-            "SELECT id, order_id, user_id, ticket_date, status, total_amount, notes FROM tickets"
-        private const val GET_TICKET_BY_ID =
-            "SELECT id, order_id, user_id, ticket_date, status, total_amount, notes FROM tickets WHERE id = ?"
-        private const val UPDATE_TICKET =
-            "UPDATE tickets SET order_id = ?, user_id = ?, ticket_date = ?, status = ?, total_amount = ?, notes = ? WHERE id = ?"
-        private const val DELETE_TICKET = "DELETE FROM tickets WHERE id = ?"
-        private const val CHECK_ORDER_EXISTS = "SELECT id FROM orders WHERE id = ? AND is_deleted = 0"
-        private const val CHECK_USER_EXISTS = "SELECT id FROM users WHERE id = ? AND is_deleted = 0"
-        private const val GET_TICKETS_BY_ORDER =
-            "SELECT id, order_id, user_id, ticket_date, status, total_amount, notes FROM tickets WHERE order_id = ?"
-        private const val GET_TICKETS_BY_USER =
-            "SELECT id, order_id, user_id, ticket_date, status, total_amount, notes FROM tickets WHERE user_id = ?"
-    }
+class TicketService {
+    private fun toModel(entity: TicketEntity): Ticket =
+        Ticket(
+            id = entity.id.value.toString(),
+            orderId = entity.orderId.value.toString(),
+            userId = entity.userId.value.toString(),
+            ticketDate = entity.ticketDate,
+            status = entity.status,
+            totalAmount = entity.totalAmount,
+            notes = entity.notes ?: "",
+        )
 
     private fun orderExists(orderId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_ORDER_EXISTS)
-        statement.setString(1, orderId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
+        val entity = OrderEntity.findById(UUID.fromString(orderId))
+        return entity != null && !entity.isDeleted
     }
 
     private fun userExists(userId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_USER_EXISTS)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
+        val entity = UserEntity.findById(UUID.fromString(userId))
+        return entity != null && !entity.isDeleted
     }
 
     private fun isValidStatus(status: Int): Boolean = status in 0..1
@@ -54,142 +51,107 @@ class TicketService(
         return null
     }
 
-    private fun mapResultSetToTicket(resultSet: java.sql.ResultSet): Ticket =
-        Ticket(
-            id = resultSet.getString("id"),
-            orderId = resultSet.getString("order_id"),
-            userId = resultSet.getString("user_id"),
-            ticketDate = resultSet.getString("ticket_date"),
-            status = resultSet.getInt("status"),
-            totalAmount = resultSet.getDouble("total_amount"),
-            notes = resultSet.getString("notes"),
-        )
-
-    suspend fun addTicket(ticket: Ticket): String? {
-        val validationError = validateTicket(ticket)
-        if (validationError != null) {
-            logger.error(validationError)
-            return null
-        }
-
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_TICKET)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, ticket.orderId)
-        statement.setString(3, ticket.userId)
-        val ticketDate =
-            ticket.ticketDate.ifEmpty {
-                java.time.LocalDateTime
-                    .now()
-                    .toString()
+    fun addTicket(ticket: Ticket): String? =
+        transaction {
+            val validationError = validateTicket(ticket)
+            if (validationError != null) {
+                logger.error(validationError)
+                return@transaction null
             }
-        statement.setString(4, ticketDate)
-        statement.setInt(5, ticket.status)
-        statement.setDouble(6, ticket.totalAmount)
-        statement.setString(7, ticket.notes)
 
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Ticket created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create ticket")
-            null
-        }
-    }
-
-    suspend fun getTickets(): List<Ticket> {
-        val statement = connection.prepareStatement(GET_TICKETS)
-        val resultSet = statement.executeQuery()
-        val tickets = mutableListOf<Ticket>()
-        while (resultSet.next()) {
-            tickets.add(mapResultSetToTicket(resultSet))
-        }
-        logger.info("Retrieved ${tickets.size} tickets")
-        return tickets
-    }
-
-    suspend fun getTicketById(id: String): Ticket? {
-        val statement = connection.prepareStatement(GET_TICKET_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            mapResultSetToTicket(resultSet)
-        } else {
-            logger.warn("Ticket not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun getTicketsByOrder(orderId: String): List<Ticket> {
-        val statement = connection.prepareStatement(GET_TICKETS_BY_ORDER)
-        statement.setString(1, orderId)
-        val resultSet = statement.executeQuery()
-        val tickets = mutableListOf<Ticket>()
-        while (resultSet.next()) {
-            tickets.add(mapResultSetToTicket(resultSet))
-        }
-        logger.info("Retrieved ${tickets.size} tickets for order: $orderId")
-        return tickets
-    }
-
-    suspend fun getTicketsByUser(userId: String): List<Ticket> {
-        val statement = connection.prepareStatement(GET_TICKETS_BY_USER)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        val tickets = mutableListOf<Ticket>()
-        while (resultSet.next()) {
-            tickets.add(mapResultSetToTicket(resultSet))
-        }
-        logger.info("Retrieved ${tickets.size} tickets for user: $userId")
-        return tickets
-    }
-
-    suspend fun updateTicket(ticket: Ticket): Boolean {
-        if (ticket.id == null) {
-            logger.error("Cannot update ticket: ID is null")
-            return false
+            val ticketDate = ticket.ticketDate.ifEmpty { LocalDateTime.now().toString() }
+            val id =
+                TicketEntity
+                    .new(UUID.randomUUID()) {
+                        this.orderId = EntityID(UUID.fromString(ticket.orderId), OrdersTable)
+                        this.userId = EntityID(UUID.fromString(ticket.userId), UsersTable)
+                        this.ticketDate = ticketDate
+                        this.status = ticket.status
+                        this.totalAmount = ticket.totalAmount
+                        this.notes = ticket.notes
+                    }.id.value
+                    .toString()
+            logger.info("Ticket created successfully with ID: $id")
+            id
         }
 
-        val validationError = validateTicket(ticket)
-        if (validationError != null) {
-            logger.error(validationError)
-            return false
+    fun getTickets(): List<Ticket> =
+        transaction {
+            val tickets = TicketEntity.all().map { toModel(it) }
+            logger.info("Retrieved ${tickets.size} tickets")
+            tickets
         }
 
-        val statement = connection.prepareStatement(UPDATE_TICKET)
-        statement.setString(1, ticket.orderId)
-        statement.setString(2, ticket.userId)
-        statement.setString(3, ticket.ticketDate)
-        statement.setInt(4, ticket.status)
-        statement.setDouble(5, ticket.totalAmount)
-        statement.setString(6, ticket.notes)
-        statement.setString(7, ticket.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Ticket updated successfully: ${ticket.id}")
-        } else {
-            logger.error("Failed to update ticket: ${ticket.id}")
+    fun getTicketById(id: String): Ticket? =
+        transaction {
+            val entity = TicketEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.warn("Ticket not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
-        return rowsUpdated > 0
-    }
 
-    suspend fun deleteTicket(id: String): Boolean {
-        val statement = connection.prepareStatement(DELETE_TICKET)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Ticket deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete ticket: $id")
+    fun getTicketsByOrder(orderId: String): List<Ticket> =
+        transaction {
+            val tickets =
+                TicketEntity
+                    .find { TicketsTable.orderId eq EntityID(UUID.fromString(orderId), OrdersTable) }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${tickets.size} tickets for order: $orderId")
+            tickets
         }
-        return rowsDeleted > 0
-    }
+
+    fun getTicketsByUser(userId: String): List<Ticket> =
+        transaction {
+            val tickets =
+                TicketEntity
+                    .find { TicketsTable.userId eq EntityID(UUID.fromString(userId), UsersTable) }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${tickets.size} tickets for user: $userId")
+            tickets
+        }
+
+    fun updateTicket(ticket: Ticket): Boolean =
+        transaction {
+            if (ticket.id == null) {
+                logger.error("Cannot update ticket: ID is null")
+                return@transaction false
+            }
+
+            val validationError = validateTicket(ticket)
+            if (validationError != null) {
+                logger.error(validationError)
+                return@transaction false
+            }
+
+            val entity = TicketEntity.findById(UUID.fromString(ticket.id))
+            if (entity == null) {
+                logger.error("Failed to update ticket: ${ticket.id}")
+                false
+            } else {
+                entity.orderId = EntityID(UUID.fromString(ticket.orderId), OrdersTable)
+                entity.userId = EntityID(UUID.fromString(ticket.userId), UsersTable)
+                entity.ticketDate = ticket.ticketDate
+                entity.status = ticket.status
+                entity.totalAmount = ticket.totalAmount
+                entity.notes = ticket.notes
+                logger.info("Ticket updated successfully: ${ticket.id}")
+                true
+            }
+        }
+
+    fun deleteTicket(id: String): Boolean =
+        transaction {
+            val entity = TicketEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete ticket: $id")
+                false
+            } else {
+                entity.delete()
+                logger.info("Ticket deleted successfully: $id")
+                true
+            }
+        }
 }

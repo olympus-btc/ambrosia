@@ -1,49 +1,46 @@
 package pos.ambrosia.utest
 
-import org.mockito.Mockito.anyString
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.services.BaseCurrencyService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.services.CurrencyService
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class BaseCurrencyTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = BaseCurrencyService()
+    private val currencyService = CurrencyService()
 
-    @Test
-    fun `getBaseCurrency returns currency ID when found`() {
-        val expectedCurrencyId = "USD" // Arrange
-        whenever(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-        whenever(mockResultSet.next()).thenReturn(true) // Arrange
-        whenever(mockResultSet.getString("id")).thenReturn(expectedCurrencyId)
-        whenever(mockResultSet.getString("acronym")).thenReturn("US$")
-        whenever(mockResultSet.getString("name")).thenReturn("US Dollar")
-        whenever(mockResultSet.getString("symbol")).thenReturn("$")
-        whenever(mockResultSet.getString("country_name")).thenReturn("United States")
-        whenever(mockResultSet.getString("country_code")).thenReturn("US")
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
 
-        val service = BaseCurrencyService(mockConnection) // Arrange
-        val result = service.getBaseCurrency() // Act
-
-        assertNotNull(result)
-        assertEquals(expectedCurrencyId, result.currencyId) // Assert
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
     }
 
     @Test
-    fun `getBaseCurrency returns Unknown when not found`() {
-        whenever(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-        whenever(mockResultSet.next()).thenReturn(false) // Simulate not finding the currency
-        val service = BaseCurrencyService(mockConnection) // Arrange
-        val result = service.getBaseCurrency() // Act
-        assertNull(result) // Assert
+    fun `getBaseCurrency returns currency when set`() {
+        val currencyId = ExposedTestDb.seedCurrency("USD", "US Dollar", "$", "United States", "US")
+        currencyService.setBaseCurrencyById(currencyId)
+
+        val result = service.getBaseCurrency()
+
+        assertNotNull(result)
+        assertEquals(currencyId, result.currencyId)
+        assertEquals("USD", result.acronym)
+    }
+
+    @Test
+    fun `getBaseCurrency returns null when not set`() {
+        val result = service.getBaseCurrency()
+        assertNull(result)
     }
 }

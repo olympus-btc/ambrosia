@@ -25,12 +25,12 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
-import org.flywaydb.core.Flyway
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.config.EnvVars
 import pos.ambrosia.config.InjectLogs
 import pos.ambrosia.config.ListValueSource
 import pos.ambrosia.config.SeedGenerator
+import pos.ambrosia.db.DatabaseConnection
 import java.io.File
 import java.security.KeyStore
 
@@ -148,7 +148,8 @@ class Ambrosia : CliktCommand() {
         echo(green("Running Ambrosia POS Server v$appVersion"))
         logger.info("Using data directory: $datadir")
 
-        runDatabaseMigrations()
+        DatabaseConnection.init()
+        Runtime.getRuntime().addShutdownHook(Thread { DatabaseConnection.close() })
 
         try {
             val (keyStore, storePassword, privateKeyPassword) = ensureKeyStore()
@@ -192,15 +193,6 @@ class Ambrosia : CliktCommand() {
             echo("Error starting server: ${e.message}", err = true)
             throw e
         }
-    }
-
-    private fun runDatabaseMigrations() {
-        Flyway
-            .configure()
-            .dataSource("jdbc:sqlite:$datadir/ambrosia.db", null, null)
-            .mixed(true)
-            .load()
-            .migrate()
     }
 
     private data class KeyStoreInfo(

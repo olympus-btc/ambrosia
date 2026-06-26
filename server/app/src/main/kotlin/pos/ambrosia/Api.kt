@@ -133,8 +133,7 @@ class Api {
                     val scope = credential.payload.getClaim("scope").asString()
                     val userId = credential.payload.getClaim("userId").asString()
                     val walletAccessToken = request.cookies["walletAccessToken"]
-                    val connection = DatabaseConnection.getConnection()
-                    val tokenService = TokenService(application.environment, connection)
+                    val tokenService = TokenService(application.environment)
                     val isValidWalletSession =
                         scope == "wallet_access" &&
                             userId.isNotEmpty() &&

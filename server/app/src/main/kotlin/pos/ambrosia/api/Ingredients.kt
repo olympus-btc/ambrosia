@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Ingredient
 import pos.ambrosia.services.IngredientService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureIngredients() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val ingredientService = IngredientService(connection)
+    val ingredientService = IngredientService()
     routing { route("/ingredients") { ingredients(ingredientService) } }
 }
 

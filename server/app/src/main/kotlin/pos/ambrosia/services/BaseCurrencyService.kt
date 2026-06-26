@@ -1,37 +1,34 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.BaseCurrencyTable
+import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.BaseCurrencyResponse
-import java.sql.Connection
 
-class BaseCurrencyService(
-    private val connection: Connection,
-) {
-    fun getBaseCurrency(): BaseCurrencyResponse? {
-        val query =
-            """
-            SELECT c.id, c.acronym, c.name, c.symbol, c.country_name, c.country_code
-            FROM base_currency b
-            JOIN currency c ON c.id = b.currency_id
-            WHERE b.id = 1
-            """.trimIndent()
-
-        connection.prepareStatement(query).use { statement ->
-            val resultSet = statement.executeQuery()
-            return if (resultSet.next()) {
-                BaseCurrencyResponse(
-                    currencyId = resultSet.getString("id"),
-                    id = resultSet.getString("id"),
-                    acronym = resultSet.getString("acronym"),
-                    name = resultSet.getString("name"),
-                    symbol = resultSet.getString("symbol"),
-                    countryName = resultSet.getString("country_name"),
-                    countryCode = resultSet.getString("country_code"),
-                )
-            } else {
+class BaseCurrencyService {
+    fun getBaseCurrency(): BaseCurrencyResponse? =
+        transaction {
+            (BaseCurrencyTable innerJoin CurrencyTable)
+                .selectAll()
+                .where { BaseCurrencyTable.id eq 1 }
+                .firstOrNull()
+                ?.let { row ->
+                    val id = row[CurrencyTable.id].value.toString()
+                    BaseCurrencyResponse(
+                        currencyId = id,
+                        id = id,
+                        acronym = row[CurrencyTable.acronym],
+                        name = row[CurrencyTable.name],
+                        symbol = row[CurrencyTable.symbol],
+                        countryName = row[CurrencyTable.countryName],
+                        countryCode = row[CurrencyTable.countryCode],
+                    )
+                } ?: run {
                 logger.error("Base currency not found")
                 null
             }
         }
-    }
 }

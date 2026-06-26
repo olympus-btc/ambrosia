@@ -13,7 +13,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
@@ -26,11 +25,10 @@ import pos.ambrosia.services.TicketTemplateService
 import pos.ambrosia.utils.PrintTicketException
 
 fun Application.configurePrinters() {
-    val connection = DatabaseConnection.getConnection()
-    val ticketTemplateService = TicketTemplateService(connection)
-    val printerConfigService = PrinterConfigService(connection)
+    val ticketTemplateService = TicketTemplateService()
+    val printerConfigService = PrinterConfigService()
     val printService = PrintService(ticketTemplateService, printerConfigService)
-    val configService = ConfigService(connection)
+    val configService = ConfigService()
     routing { route("/printers") { printers(printService, configService, printerConfigService) } }
 }
 

@@ -8,15 +8,12 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureStoreOrders() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val checkoutService = CheckoutService(connection)
+    val checkoutService = CheckoutService()
     routing { route("/store/orders") { storeOrders(checkoutService) } }
 }
 

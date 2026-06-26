@@ -1,22 +1,19 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.ElementStyle
 import pos.ambrosia.models.ElementType
+import pos.ambrosia.models.FontSize
+import pos.ambrosia.models.Justification
 import pos.ambrosia.models.TicketElementCreateRequest
 import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Statement
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import java.util.UUID
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -24,15 +21,21 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TicketTemplateServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockPreparedStatement: PreparedStatement = mock()
-    private val mockStatement: Statement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = TicketTemplateService()
 
-    private val service = TicketTemplateService(mockConnection)
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
 
     @Test
-    fun `addTemplate should return id on success`() {
+    fun `addTemplate returns id on success`() {
         runBlocking {
             val request =
                 TicketTemplateRequest(
@@ -43,112 +46,188 @@ class TicketTemplateServiceTest {
                         ),
                 )
 
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
-
             val resultId = service.addTemplate(request)
-
             assertNotNull(resultId)
-            verify(mockConnection).commit()
+
+            val created = service.getTemplateById(resultId)
+            assertEquals("New Template", created?.name)
+            assertEquals(1, created?.elements?.size)
+            assertEquals("Hello", created?.elements?.get(0)?.value)
         }
     }
 
     @Test
-    fun `addTemplate should return null if name exists`() {
+    fun `addTemplate returns null if name exists`() {
         runBlocking {
+            ExposedTestDb.seedTicketTemplate("Existing Template")
             val request = TicketTemplateRequest(name = "Existing Template", elements = emptyList())
 
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(true)
-
             val resultId = service.addTemplate(request)
-
             assertNull(resultId)
-            verify(mockConnection, never()).commit()
         }
     }
 
     @Test
-    fun `getTemplates should return list of templates`() {
+    fun `getTemplates returns list of templates`() {
         runBlocking {
-            whenever(mockConnection.createStatement()).thenReturn(mockStatement)
-            whenever(mockStatement.executeQuery(any())).thenReturn(mockResultSet)
-
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false)
-            val uuid = UUID.randomUUID()
-            whenever(mockResultSet.getBytes("id")).thenReturn(uuid.toBytes())
-            whenever(mockResultSet.getString("name")).thenReturn("My Template")
-
-            val mockElementsStmt: PreparedStatement = mock()
-            val mockElementsRs: ResultSet = mock()
-
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockElementsStmt)
-            whenever(mockElementsStmt.executeQuery()).thenReturn(mockElementsRs)
-            whenever(mockElementsRs.next()).thenReturn(false)
+            ExposedTestDb.seedTicketTemplate("My Template")
 
             val templates = service.getTemplates()
-
             assertEquals(1, templates.size)
             assertEquals("My Template", templates[0].name)
         }
     }
 
     @Test
-    fun `updateTemplate should return true on success`() {
+    fun `getTemplates returns empty list when none found`() {
         runBlocking {
-            val id = UUID.randomUUID().toString()
+            val templates = service.getTemplates()
+            assertTrue(templates.isEmpty())
+        }
+    }
+
+    @Test
+    fun `getTemplateById returns template with ordered elements`() {
+        runBlocking {
+            val templateId = ExposedTestDb.seedTicketTemplate("My Template")
+            ExposedTestDb.seedTicketTemplateElement(templateId, order = 1, type = "FOOTER", value = "Bye")
+            ExposedTestDb.seedTicketTemplateElement(templateId, order = 0, type = "HEADER", value = "Hi")
+
+            val result = service.getTemplateById(templateId)
+            assertNotNull(result)
+            assertEquals(2, result.elements.size)
+            assertEquals("Hi", result.elements[0].value)
+            assertEquals("Bye", result.elements[1].value)
+        }
+    }
+
+    @Test
+    fun `getTemplateById returns null for invalid uuid`() {
+        runBlocking {
+            val result = service.getTemplateById("not-a-uuid")
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `getTemplateById returns null when not found`() {
+        runBlocking {
+            val result = service.getTemplateById(UUID.randomUUID().toString())
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `getTemplateByName returns template when found`() {
+        runBlocking {
+            ExposedTestDb.seedTicketTemplate("My Template")
+
+            val result = service.getTemplateByName("My Template")
+            assertNotNull(result)
+            assertEquals("My Template", result.name)
+        }
+    }
+
+    @Test
+    fun `getTemplateByName returns null when not found`() {
+        runBlocking {
+            val result = service.getTemplateByName("NonExistent")
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `updateTemplate returns true on success and replaces elements`() {
+        runBlocking {
+            val templateId = ExposedTestDb.seedTicketTemplate("Old Name")
+            ExposedTestDb.seedTicketTemplateElement(templateId, order = 0, type = "TEXT", value = "Old")
+
             val request =
                 TicketTemplateRequest(
                     name = "Updated Name",
-                    elements = emptyList(),
+                    elements =
+                        listOf(
+                            TicketElementCreateRequest(
+                                ElementType.HEADER,
+                                "New Header",
+                                ElementStyle(bold = true, justification = Justification.CENTER, fontSize = FontSize.LARGE),
+                            ),
+                        ),
                 )
 
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet)
-            whenever(mockResultSet.next()).thenReturn(false)
-
-            val success = service.updateTemplate(id, request)
-
+            val success = service.updateTemplate(templateId, request)
             assertTrue(success)
-            verify(mockConnection).commit()
+
+            val updated = service.getTemplateById(templateId)
+            assertEquals("Updated Name", updated?.name)
+            assertEquals(1, updated?.elements?.size)
+            assertEquals("New Header", updated?.elements?.get(0)?.value)
+            assertEquals(ElementType.HEADER, updated?.elements?.get(0)?.type)
+            assertTrue(
+                updated
+                    ?.elements
+                    ?.get(0)
+                    ?.style
+                    ?.bold ?: false,
+            )
         }
     }
 
     @Test
-    fun `deleteTemplate should return true if deleted`() {
+    fun `updateTemplate returns false for invalid uuid`() {
         runBlocking {
-            val id = UUID.randomUUID().toString()
-
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeUpdate()).thenReturn(1)
-
-            val success = service.deleteTemplate(id)
-
-            assertTrue(success)
-        }
-    }
-
-    @Test
-    fun `deleteTemplate should return false if not found`() {
-        runBlocking {
-            val id = UUID.randomUUID().toString()
-
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockPreparedStatement)
-            whenever(mockPreparedStatement.executeUpdate()).thenReturn(0)
-
-            val success = service.deleteTemplate(id)
-
+            val request = TicketTemplateRequest(name = "Updated Name", elements = emptyList())
+            val success = service.updateTemplate("not-a-uuid", request)
             assertFalse(success)
         }
     }
 
-    private fun UUID.toBytes(): ByteArray {
-        val byteArray = ByteArray(16)
-        val bb = java.nio.ByteBuffer.wrap(byteArray)
-        bb.putLong(this.mostSignificantBits)
-        bb.putLong(this.leastSignificantBits)
-        return byteArray
+    @Test
+    fun `updateTemplate returns false when name already exists for another template`() {
+        runBlocking {
+            ExposedTestDb.seedTicketTemplate("Taken Name")
+            val templateId = ExposedTestDb.seedTicketTemplate("My Template")
+
+            val request = TicketTemplateRequest(name = "Taken Name", elements = emptyList())
+            val success = service.updateTemplate(templateId, request)
+            assertFalse(success)
+        }
+    }
+
+    @Test
+    fun `updateTemplate returns false when not found`() {
+        runBlocking {
+            val request = TicketTemplateRequest(name = "Updated Name", elements = emptyList())
+            val success = service.updateTemplate(UUID.randomUUID().toString(), request)
+            assertFalse(success)
+        }
+    }
+
+    @Test
+    fun `deleteTemplate returns true if deleted`() {
+        runBlocking {
+            val templateId = ExposedTestDb.seedTicketTemplate("My Template")
+            ExposedTestDb.seedTicketTemplateElement(templateId)
+
+            val success = service.deleteTemplate(templateId)
+            assertTrue(success)
+            assertNull(service.getTemplateById(templateId))
+        }
+    }
+
+    @Test
+    fun `deleteTemplate returns false for invalid uuid`() {
+        runBlocking {
+            val success = service.deleteTemplate("not-a-uuid")
+            assertFalse(success)
+        }
+    }
+
+    @Test
+    fun `deleteTemplate returns false if not found`() {
+        runBlocking {
+            val success = service.deleteTemplate(UUID.randomUUID().toString())
+            assertFalse(success)
+        }
     }
 }

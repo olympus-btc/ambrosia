@@ -15,7 +15,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.util.date.GMTDate
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.AuthRequest
 import pos.ambrosia.models.LoginResponse
@@ -25,7 +24,6 @@ import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.InvalidTokenException
-import java.sql.Connection
 import java.util.concurrent.ConcurrentHashMap
 
 private object LoginRateLimiter {
@@ -96,10 +94,9 @@ private object LoginRateLimiter {
 }
 
 fun Application.configureAuth() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val authService = AuthService(environment, connection)
-    val tokenService = TokenService(environment, connection)
-    val permissionsService = PermissionsService(environment, connection)
+    val authService = AuthService(environment)
+    val tokenService = TokenService(environment)
+    val permissionsService = PermissionsService()
     routing { route("/auth") { auth(tokenService, authService, permissionsService) } }
 }
 

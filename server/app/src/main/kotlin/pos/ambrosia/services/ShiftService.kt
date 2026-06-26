@@ -1,286 +1,187 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.ShiftEntity
+import pos.ambrosia.db.tables.ShiftsTable
+import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Shift
-import java.sql.Connection
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
-class ShiftService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_SHIFT =
-            "INSERT INTO shifts (id, user_id, shift_date, start_time, end_time, notes, initial_amount) VALUES (?, ?, ?, ?, ?, ?, ?)"
-        private const val GET_SHIFTS =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE is_deleted = 0"
-        private const val GET_SHIFT_BY_ID =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE id = ? AND is_deleted = 0"
-        private const val UPDATE_SHIFT =
-            "UPDATE shifts SET user_id = ?, shift_date = ?, start_time = ?, end_time = ?, notes = ? WHERE id = ?"
-        private const val DELETE_SHIFT = "UPDATE shifts SET is_deleted = 1 WHERE id = ?"
-        private const val CHECK_USER_EXISTS = "SELECT id FROM users WHERE id = ? AND is_deleted = 0"
-        private const val GET_SHIFTS_BY_USER =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE user_id = ? AND is_deleted = 0"
-        private const val GET_SHIFTS_BY_DATE =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE shift_date = ? AND is_deleted = 0"
-        private const val GET_OPEN_SHIFT =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
-        private const val GET_OPEN_SHIFT_BY_USER =
-            "SELECT id, user_id, shift_date, start_time, end_time, notes, initial_amount, final_amount, difference FROM shifts WHERE user_id = ? AND end_time IS NULL AND is_deleted = 0 ORDER BY shift_date DESC, start_time DESC LIMIT 1"
-        private const val CLOSE_SHIFT =
-            "UPDATE shifts SET end_time = ?, final_amount = ?, difference = ? WHERE id = ? AND is_deleted = 0 AND end_time IS NULL"
-    }
+class ShiftService {
+    private fun toModel(entity: ShiftEntity): Shift =
+        Shift(
+            id = entity.id.value.toString(),
+            userId = entity.userId.value.toString(),
+            shiftDate = entity.shiftDate,
+            startTime = entity.startTime,
+            endTime = entity.endTime,
+            notes = entity.notes ?: "",
+            initialAmount = entity.initialAmount ?: 0.0,
+            finalAmount = entity.finalAmount,
+            difference = entity.difference,
+        )
 
     private fun userExists(userId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_USER_EXISTS)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
+        val entity = UserEntity.findById(UUID.fromString(userId))
+        return entity != null && !entity.isDeleted
     }
 
-    suspend fun addShift(shift: Shift): String? {
-        val existingOpen = getOpenShift(null)
-        if (existingOpen != null) {
-            logger.warn("Attempt to open a new shift while one is already open: ${existingOpen.id}")
-            return null
-        }
-        if (!userExists(shift.userId)) {
-            logger.error("User does not exist: ${shift.userId}")
-            return null
-        }
-
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_SHIFT)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, shift.userId)
-        statement.setString(3, shift.shiftDate)
-        statement.setString(4, shift.startTime)
-        statement.setString(5, shift.endTime)
-        statement.setString(6, shift.notes)
-        statement.setDouble(7, shift.initialAmount)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Shift created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create shift")
-            null
-        }
-    }
-
-    suspend fun getShifts(): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val finalAmt = resultSet.getDouble("final_amount")
-            val isFinalNull = resultSet.wasNull()
-            val diffAmt = resultSet.getDouble("difference")
-            val isDiffNull = resultSet.wasNull()
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    userId = resultSet.getString("user_id"),
-                    shiftDate = resultSet.getString("shift_date"),
-                    startTime = resultSet.getString("start_time"),
-                    endTime = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                    initialAmount = resultSet.getDouble("initial_amount"),
-                    finalAmount = if (isFinalNull) null else finalAmt,
-                    difference = if (isDiffNull) null else diffAmt,
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts")
-        return shifts
-    }
-
-    suspend fun getShiftById(id: String): Shift? {
-        val statement = connection.prepareStatement(GET_SHIFT_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val finalAmt = resultSet.getDouble("final_amount")
-            val isFinalNull = resultSet.wasNull()
-            val diffAmt = resultSet.getDouble("difference")
-            val isDiffNull = resultSet.wasNull()
-            Shift(
-                id = resultSet.getString("id"),
-                userId = resultSet.getString("user_id"),
-                shiftDate = resultSet.getString("shift_date"),
-                startTime = resultSet.getString("start_time"),
-                endTime = resultSet.getString("end_time"),
-                notes = resultSet.getString("notes"),
-                initialAmount = resultSet.getDouble("initial_amount"),
-                finalAmount = if (isFinalNull) null else finalAmt,
-                difference = if (isDiffNull) null else diffAmt,
-            )
-        } else {
-            logger.warn("Shift not found with ID: $id")
-            null
-        }
-    }
-
-    suspend fun getShiftsByUser(userId: String): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS_BY_USER)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val finalAmt = resultSet.getDouble("final_amount")
-            val isFinalNull = resultSet.wasNull()
-            val diffAmt = resultSet.getDouble("difference")
-            val isDiffNull = resultSet.wasNull()
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    userId = resultSet.getString("user_id"),
-                    shiftDate = resultSet.getString("shift_date"),
-                    startTime = resultSet.getString("start_time"),
-                    endTime = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                    initialAmount = resultSet.getDouble("initial_amount"),
-                    finalAmount = if (isFinalNull) null else finalAmt,
-                    difference = if (isDiffNull) null else diffAmt,
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts for user: $userId")
-        return shifts
-    }
-
-    suspend fun getShiftsByDate(date: String): List<Shift> {
-        val statement = connection.prepareStatement(GET_SHIFTS_BY_DATE)
-        statement.setString(1, date)
-        val resultSet = statement.executeQuery()
-        val shifts = mutableListOf<Shift>()
-        while (resultSet.next()) {
-            val finalAmt = resultSet.getDouble("final_amount")
-            val isFinalNull = resultSet.wasNull()
-            val diffAmt = resultSet.getDouble("difference")
-            val isDiffNull = resultSet.wasNull()
-            val shift =
-                Shift(
-                    id = resultSet.getString("id"),
-                    userId = resultSet.getString("user_id"),
-                    shiftDate = resultSet.getString("shift_date"),
-                    startTime = resultSet.getString("start_time"),
-                    endTime = resultSet.getString("end_time"),
-                    notes = resultSet.getString("notes"),
-                    initialAmount = resultSet.getDouble("initial_amount"),
-                    finalAmount = if (isFinalNull) null else finalAmt,
-                    difference = if (isDiffNull) null else diffAmt,
-                )
-            shifts.add(shift)
-        }
-        logger.info("Retrieved ${shifts.size} shifts for date: $date")
-        return shifts
-    }
-
-    suspend fun getOpenShift(userId: String? = null): Shift? {
-        val statement =
-            if (userId != null) {
-                connection.prepareStatement(GET_OPEN_SHIFT_BY_USER).also { it.setString(1, userId) }
-            } else {
-                connection.prepareStatement(GET_OPEN_SHIFT)
+    fun addShift(shift: Shift): String? =
+        transaction {
+            val existingOpen = findOpenShift(null)
+            if (existingOpen != null) {
+                logger.warn("Attempt to open a new shift while one is already open: ${existingOpen.id}")
+                return@transaction null
+            }
+            if (!userExists(shift.userId)) {
+                logger.error("User does not exist: ${shift.userId}")
+                return@transaction null
             }
 
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            val finalAmt = resultSet.getDouble("final_amount")
-            val isFinalNull = resultSet.wasNull()
-            val diffAmt = resultSet.getDouble("difference")
-            val isDiffNull = resultSet.wasNull()
-            Shift(
-                id = resultSet.getString("id"),
-                userId = resultSet.getString("user_id"),
-                shiftDate = resultSet.getString("shift_date"),
-                startTime = resultSet.getString("start_time"),
-                endTime = resultSet.getString("end_time"),
-                notes = resultSet.getString("notes"),
-                initialAmount = resultSet.getDouble("initial_amount"),
-                finalAmount = if (isFinalNull) null else finalAmt,
-                difference = if (isDiffNull) null else diffAmt,
-            )
-        } else {
-            null
+            val id =
+                ShiftEntity
+                    .new(UUID.randomUUID()) {
+                        this.userId = EntityID(UUID.fromString(shift.userId), UsersTable)
+                        this.shiftDate = shift.shiftDate
+                        this.startTime = shift.startTime
+                        this.endTime = shift.endTime
+                        this.notes = shift.notes
+                        this.initialAmount = shift.initialAmount
+                    }.id.value
+                    .toString()
+            logger.info("Shift created successfully with ID: $id")
+            id
         }
+
+    fun getShifts(): List<Shift> =
+        transaction {
+            val shifts =
+                ShiftEntity
+                    .find { ShiftsTable.isDeleted eq false }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${shifts.size} shifts")
+            shifts
+        }
+
+    fun getShiftById(id: String): Shift? =
+        transaction {
+            val entity = ShiftEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted) {
+                logger.warn("Shift not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
+        }
+
+    fun getShiftsByUser(userId: String): List<Shift> =
+        transaction {
+            val shifts =
+                ShiftEntity
+                    .find {
+                        (ShiftsTable.userId eq EntityID(UUID.fromString(userId), UsersTable)) and (ShiftsTable.isDeleted eq false)
+                    }.map { toModel(it) }
+            logger.info("Retrieved ${shifts.size} shifts for user: $userId")
+            shifts
+        }
+
+    fun getShiftsByDate(date: String): List<Shift> =
+        transaction {
+            val shifts =
+                ShiftEntity
+                    .find { (ShiftsTable.shiftDate eq date) and (ShiftsTable.isDeleted eq false) }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${shifts.size} shifts for date: $date")
+            shifts
+        }
+
+    private fun findOpenShift(userId: String?): Shift? {
+        var query =
+            ShiftEntity.find {
+                (ShiftsTable.endTime eq null) and (ShiftsTable.isDeleted eq false)
+            }
+        if (userId != null) {
+            query =
+                ShiftEntity.find {
+                    (ShiftsTable.userId eq EntityID(UUID.fromString(userId), UsersTable)) and
+                        (ShiftsTable.endTime eq null) and
+                        (ShiftsTable.isDeleted eq false)
+                }
+        }
+        return query
+            .orderBy(ShiftsTable.shiftDate to SortOrder.DESC, ShiftsTable.startTime to SortOrder.DESC)
+            .limit(1)
+            .firstOrNull()
+            ?.let { toModel(it) }
     }
 
-    suspend fun updateShift(shift: Shift): Boolean {
-        if (shift.id == null) {
-            logger.error("Cannot update shift: ID is null")
-            return false
+    fun getOpenShift(userId: String? = null): Shift? = transaction { findOpenShift(userId) }
+
+    fun updateShift(shift: Shift): Boolean =
+        transaction {
+            if (shift.id == null) {
+                logger.error("Cannot update shift: ID is null")
+                return@transaction false
+            }
+
+            if (!userExists(shift.userId)) {
+                logger.error("User does not exist: ${shift.userId}")
+                return@transaction false
+            }
+
+            val entity = ShiftEntity.findById(UUID.fromString(shift.id))
+            if (entity == null) {
+                logger.error("Failed to update shift: ${shift.id}")
+                false
+            } else {
+                entity.userId = EntityID(UUID.fromString(shift.userId), UsersTable)
+                entity.shiftDate = shift.shiftDate
+                entity.startTime = shift.startTime
+                entity.endTime = shift.endTime
+                entity.notes = shift.notes
+                logger.info("Shift updated successfully: ${shift.id}")
+                true
+            }
         }
 
-        if (!userExists(shift.userId)) {
-            logger.error("User does not exist: ${shift.userId}")
-            return false
+    fun deleteShift(id: String): Boolean =
+        transaction {
+            val entity = ShiftEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete shift: $id")
+                false
+            } else {
+                entity.isDeleted = true
+                logger.info("Shift soft-deleted successfully: $id")
+                true
+            }
         }
 
-        val statement = connection.prepareStatement(UPDATE_SHIFT)
-        statement.setString(1, shift.userId)
-        statement.setString(2, shift.shiftDate)
-        statement.setString(3, shift.startTime)
-        statement.setString(4, shift.endTime)
-        statement.setString(5, shift.notes)
-        statement.setString(6, shift.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Shift updated successfully: ${shift.id}")
-        } else {
-            logger.error("Failed to update shift: ${shift.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteShift(id: String): Boolean {
-        val statement = connection.prepareStatement(DELETE_SHIFT)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
-
-        if (rowsDeleted > 0) {
-            logger.info("Shift soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete shift: $id")
-        }
-        return rowsDeleted > 0
-    }
-
-    suspend fun closeShift(
+    fun closeShift(
         id: String,
         finalAmount: Double? = null,
         difference: Double? = null,
-    ): Boolean {
-        val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-        val statement = connection.prepareStatement(CLOSE_SHIFT)
-        statement.setString(1, now)
-        if (finalAmount != null) {
-            statement.setDouble(2, finalAmount)
-        } else {
-            statement.setNull(2, java.sql.Types.REAL)
+    ): Boolean =
+        transaction {
+            val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+            val entity = ShiftEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted || entity.endTime != null) {
+                logger.warn("Shift not closed (not found or already closed): $id")
+                false
+            } else {
+                entity.endTime = now
+                entity.finalAmount = finalAmount
+                entity.difference = difference
+                logger.info("Shift closed successfully: $id at $now")
+                true
+            }
         }
-        if (difference != null) {
-            statement.setDouble(3, difference)
-        } else {
-            statement.setNull(3, java.sql.Types.REAL)
-        }
-        statement.setString(4, id)
-
-        val rows = statement.executeUpdate()
-        if (rows > 0) {
-            logger.info("Shift closed successfully: $id at $now")
-        } else {
-            logger.warn("Shift not closed (not found or already closed): $id")
-        }
-        return rows > 0
-    }
 }

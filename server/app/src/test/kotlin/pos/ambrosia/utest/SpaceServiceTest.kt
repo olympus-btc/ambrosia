@@ -1,17 +1,12 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.Space
 import pos.ambrosia.services.SpaceService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,229 +15,155 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SpaceServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = SpaceService()
 
-    @Test
-    fun `getSpaces returns list of spaces when found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("space-1").thenReturn("space-2") // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn("Patio").thenReturn("Main Hall") // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.getSpaces() // Act
-            assertEquals(2, result.size) // Assert
-            assertEquals("Patio", result[0].name) // Assert
-        }
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
     }
 
     @Test
-    fun `getSpaces returns empty list when none found`() {
+    fun `getSpaces returns list of spaces when found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.getSpaces() // Act
-            assertTrue(result.isEmpty()) // Assert
+            ExposedTestDb.seedSpace("Patio")
+            ExposedTestDb.seedSpace("Main Hall")
+
+            val result = service.getSpaces()
+
+            assertEquals(2, result.size)
+            assertEquals(setOf("Patio", "Main Hall"), result.map { it.name }.toSet())
         }
-    }
 
     @Test
-    fun `getSpaceById returns space when found`() {
+    fun `getSpaces returns empty list when none found`() =
         runBlocking {
-            val expectedSpace = Space(id = "space-1", name = "Patio") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn(expectedSpace.id) // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn(expectedSpace.name) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.getSpaceById("space-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals(expectedSpace, result) // Assert
+            assertTrue(service.getSpaces().isEmpty())
         }
-    }
 
     @Test
-    fun `getSpaceById returns null when not found`() {
+    fun `getSpaceById returns space when found`() =
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.getSpaceById("not-found") // Act
-            assertNull(result) // Assert
+            val id = ExposedTestDb.seedSpace("Patio")
+
+            val result = service.getSpaceById(id)
+
+            assertNotNull(result)
+            assertEquals(Space(id = id, name = "Patio"), result)
         }
-    }
 
     @Test
-    fun `addSpace returns null if name already exists`() {
+    fun `getSpaceById returns null when not found`() =
         runBlocking {
-            val newSpace = Space(id = null, name = "Existing Patio") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.addSpace(newSpace) // Act
-            assertNull(result) // Assert
+            assertNull(
+                service.getSpaceById(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                ),
+            )
         }
-    }
 
     @Test
-    fun `addSpace returns new ID on success`() {
+    fun `addSpace returns null if name already exists`() =
         runBlocking {
-            val newSpace = Space(id = null, name = "New Balcony") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM spaces"))).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO spaces"))).thenReturn(addStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.addSpace(newSpace) // Act
-            assertNotNull(result) // Assert
-            assertTrue(result.isNotBlank()) // Assert
+            ExposedTestDb.seedSpace("Existing Patio")
+
+            val result = service.addSpace(Space(id = null, name = "Existing Patio"))
+
+            assertNull(result)
         }
-    }
 
     @Test
-    fun `addSpace returns null when database insert fails`() {
+    fun `addSpace returns new ID on success`() =
         runBlocking {
-            val newSpace = Space(id = null, name = "New Balcony") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val addStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT id FROM spaces"))).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO spaces"))).thenReturn(addStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(addStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.addSpace(newSpace) // Act
-            assertNull(result) // Assert
+            val result = service.addSpace(Space(id = null, name = "New Balcony"))
+
+            assertNotNull(result)
+            assertTrue(result.isNotBlank())
+            assertEquals("New Balcony", service.getSpaceById(result)?.name)
         }
-    }
 
     @Test
-    fun `updateSpace returns false if ID is null`() {
+    fun `updateSpace returns false if ID is null`() =
         runBlocking {
-            val spaceWithNullId = Space(id = null, name = "A Name") // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.updateSpace(spaceWithNullId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
+            assertFalse(service.updateSpace(Space(id = null, name = "A Name")))
         }
-    }
 
     @Test
-    fun `updateSpace returns false if name already exists`() {
+    fun `updateSpace returns false if name already exists`() =
         runBlocking {
-            val spaceToUpdate = Space(id = "space-1", name = "Existing Name") // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.updateSpace(spaceToUpdate) // Act
-            assertFalse(result) // Assert
+            ExposedTestDb.seedSpace("Existing Name")
+            val id = ExposedTestDb.seedSpace("Other Name")
+
+            val result = service.updateSpace(Space(id = id, name = "Existing Name"))
+
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `updateSpace returns true on success`() {
+    fun `updateSpace returns true on success`() =
         runBlocking {
-            val spaceToUpdate = Space(id = "space-1", name = "New Valid Name") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(
-                mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?")),
-            ).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE spaces"))).thenReturn(updateStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.updateSpace(spaceToUpdate) // Act
-            assertTrue(result) // Assert
+            val id = ExposedTestDb.seedSpace("Old Name")
+
+            val result = service.updateSpace(Space(id = id, name = "New Valid Name"))
+
+            assertTrue(result)
+            assertEquals("New Valid Name", service.getSpaceById(id)?.name)
         }
-    }
 
     @Test
-    fun `updateSpace returns false when database update fails`() {
+    fun `updateSpace returns false when space not found`() =
         runBlocking {
-            val spaceToUpdate = Space(id = "space-1", name = "New Valid Name") // Arrange
-            val nameCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(
-                mockConnection.prepareStatement(contains("SELECT id FROM spaces WHERE name = ? AND id != ?")),
-            ).thenReturn(nameCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE spaces"))).thenReturn(updateStatement) // Arrange
-            val nameCheckResultSet: ResultSet = mock() // Arrange
-            whenever(nameCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(nameCheckStatement.executeQuery()).thenReturn(nameCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.updateSpace(spaceToUpdate) // Act
-            assertFalse(result) // Assert
+            val result =
+                service.updateSpace(
+                    Space(
+                        id =
+                            java.util.UUID
+                                .randomUUID()
+                                .toString(),
+                        name = "New Valid Name",
+                    ),
+                )
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `deleteSpace returns false if space is in use`() {
+    fun `deleteSpace returns false if space is in use`() =
         runBlocking {
-            val spaceId = "space-1" // Arrange
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getInt("count")).thenReturn(1) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.deleteSpace(spaceId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("UPDATE spaces SET is_deleted")) // Assert
+            val spaceId = ExposedTestDb.seedSpace("Patio")
+            ExposedTestDb.seedDiningTable(spaceId = spaceId)
+
+            val result = service.deleteSpace(spaceId)
+
+            assertFalse(result)
         }
-    }
 
     @Test
-    fun `deleteSpace returns true on success`() {
+    fun `deleteSpace returns true on success`() =
         runBlocking {
-            val spaceId = "space-1" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE spaces SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(1) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.deleteSpace(spaceId) // Act
-            assertTrue(result) // Assert
+            val spaceId = ExposedTestDb.seedSpace("Patio")
+
+            val result = service.deleteSpace(spaceId)
+
+            assertTrue(result)
+            assertNull(service.getSpaceById(spaceId))
         }
-    }
 
     @Test
-    fun `deleteSpace returns false when space not found`() {
+    fun `deleteSpace returns false when space not found`() =
         runBlocking {
-            val spaceId = "not-found-space" // Arrange
-            val checkInUseStatement: PreparedStatement = mock() // Arrange
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("SELECT COUNT(*)"))).thenReturn(checkInUseStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE spaces SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            val checkInUseResultSet: ResultSet = mock() // Arrange
-            whenever(checkInUseResultSet.next()).thenReturn(true) // Arrange
-            whenever(checkInUseResultSet.getInt("count")).thenReturn(0) // Arrange
-            whenever(checkInUseStatement.executeQuery()).thenReturn(checkInUseResultSet) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(0) // Arrange
-            val service = SpaceService(mockConnection) // Arrange
-            val result = service.deleteSpace(spaceId) // Act
-            assertFalse(result) // Assert
+            val result =
+                service.deleteSpace(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
+            assertFalse(result)
         }
-    }
 }

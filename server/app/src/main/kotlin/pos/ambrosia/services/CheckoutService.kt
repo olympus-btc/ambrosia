@@ -2,24 +2,38 @@ package pos.ambrosia.services
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.minus
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.CurrencyTable
+import pos.ambrosia.db.tables.OrderEntity
+import pos.ambrosia.db.tables.OrderProductsTable
+import pos.ambrosia.db.tables.OrdersTable
+import pos.ambrosia.db.tables.PaymentEntity
+import pos.ambrosia.db.tables.PaymentMethodsTable
+import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.ProductsTable
+import pos.ambrosia.db.tables.TicketEntity
+import pos.ambrosia.db.tables.TicketPaymentsTable
+import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.models.StoreCheckoutResponse
 import pos.ambrosia.models.StoreOrder
 import pos.ambrosia.models.StoreOrderItem
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Types
+import java.time.LocalDateTime
 import java.util.UUID
 
-private fun <T : Any> PreparedStatement.setNullable(
-    index: Int,
-    value: T?,
-    sqlType: Int,
-) {
-    if (value != null) setObject(index, value, sqlType) else setNull(index, sqlType)
-}
+private class InsufficientStockException : Exception()
 
 sealed interface CheckoutResult {
     data class Success(
@@ -33,113 +47,93 @@ sealed interface CheckoutResult {
 }
 
 class CheckoutService(
-    private val connection: Connection,
     private val paymentVerifier: PaymentVerifier? = null,
 ) {
     companion object {
-        private const val STORE_GET_ORDER =
-            "SELECT o.id, o.user_id, u.name as user_name, o.status, CAST(o.total AS INTEGER) as total, o.created_at FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ? AND o.is_deleted = 0 AND o.table_id IS NULL"
-        private const val STORE_GET_ORDERS =
-            "SELECT o.id, o.user_id, u.name as user_name, o.status, CAST(o.total AS INTEGER) as total, o.created_at FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.is_deleted = 0 AND o.table_id IS NULL ORDER BY o.created_at DESC"
-        private const val STORE_GET_ORDERS_BY_STATUS =
-            "SELECT o.id, o.user_id, u.name as user_name, o.status, CAST(o.total AS INTEGER) as total, o.created_at FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.is_deleted = 0 AND o.table_id IS NULL AND o.status = ? ORDER BY o.created_at DESC"
-        private const val STORE_INSERT_CHECKOUT_ORDER =
-            "INSERT INTO orders (id, user_id, table_id, status, total, created_at) VALUES (?, ?, NULL, 'paid', ?, datetime('now'))"
-        private const val STORE_INSERT_ORDER_ITEM =
-            "INSERT INTO order_products (order_id, product_id, quantity, price_at_order) VALUES (?, ?, ?, ?)"
-        private const val STORE_DECREMENT_STOCK =
-            "UPDATE products SET quantity = quantity - ? WHERE id = ? AND is_deleted = 0 AND quantity >= ?"
-        private const val STORE_INSERT_TICKET =
-            "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
-        private const val STORE_INSERT_PAYMENT =
-            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, satoshi_amount, exchange_rate_at_payment, payment_hash, exchange_rate_currency, fiat_amount_at_payment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        private const val STORE_INSERT_TICKET_PAYMENT =
-            "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
-        private const val STORE_GET_ITEMS =
-            "SELECT product_id, quantity, price_at_order FROM order_products WHERE order_id = ?"
-        private const val STORE_CANCEL_ORDER =
-            "UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'open' AND table_id IS NULL"
-
         private val checkoutMutex = Mutex()
     }
 
-    private fun mapStoreItems(orderId: String): List<StoreOrderItem> {
-        val statement = connection.prepareStatement(STORE_GET_ITEMS)
-        statement.setString(1, orderId)
-        val resultSet = statement.executeQuery()
-        val items = mutableListOf<StoreOrderItem>()
-        while (resultSet.next()) {
-            items.add(
-                StoreOrderItem(
-                    productId = resultSet.getString("product_id"),
-                    quantity = resultSet.getInt("quantity"),
-                    priceAtOrder = resultSet.getInt("price_at_order"),
-                ),
-            )
-        }
-        return items
-    }
-
-    private fun mapStoreOrder(resultSet: ResultSet): StoreOrder {
-        val id = resultSet.getString("id")
+    private fun toStoreOrder(entity: OrderEntity): StoreOrder {
+        val items =
+            OrderProductsTable
+                .selectAll()
+                .where { OrderProductsTable.orderId eq entity.id }
+                .map {
+                    StoreOrderItem(
+                        productId = it[OrderProductsTable.productId].value.toString(),
+                        quantity = it[OrderProductsTable.quantity],
+                        priceAtOrder = it[OrderProductsTable.priceAtOrder],
+                    )
+                }
         return StoreOrder(
-            id = id,
-            userId = resultSet.getString("user_id"),
-            userName = resultSet.getString("user_name"),
-            status = resultSet.getString("status"),
-            total = resultSet.getInt("total"),
-            createdAt = resultSet.getString("created_at").replace(" ", "T"),
-            items = mapStoreItems(id),
+            id = entity.id.value.toString(),
+            userId = entity.userId.value.toString(),
+            userName = UserEntity.findById(entity.userId)?.name,
+            status = entity.status,
+            total = entity.total.toInt(),
+            createdAt = entity.createdAt.replace(" ", "T"),
+            items = items,
         )
     }
 
-    suspend fun getStoreOrders(status: String? = null): List<StoreOrder> {
-        val getOrdersQuery = if (status != null) STORE_GET_ORDERS_BY_STATUS else STORE_GET_ORDERS
-        val statement = connection.prepareStatement(getOrdersQuery)
-        if (status != null) statement.setString(1, status)
-        val resultSet = statement.executeQuery()
-        val orders = mutableListOf<StoreOrder>()
-        while (resultSet.next()) orders.add(mapStoreOrder(resultSet))
-        return orders
-    }
+    fun getStoreOrders(status: String? = null): List<StoreOrder> =
+        transaction {
+            val baseCondition = (OrdersTable.isDeleted eq false) and OrdersTable.tableId.isNull()
+            val condition = if (status != null) baseCondition and (OrdersTable.status eq status) else baseCondition
+            OrderEntity
+                .find { condition }
+                .orderBy(OrdersTable.createdAt to SortOrder.DESC)
+                .map { toStoreOrder(it) }
+        }
 
-    suspend fun getStoreOrderById(id: String): StoreOrder? {
-        val statement = connection.prepareStatement(STORE_GET_ORDER)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) mapStoreOrder(resultSet) else null
-    }
+    fun getStoreOrderById(id: String): StoreOrder? =
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
+            OrderEntity
+                .findById(uuid)
+                ?.takeIf { !it.isDeleted && it.tableId == null }
+                ?.let { toStoreOrder(it) }
+        }
 
-    suspend fun cancelStoreOrder(id: String): Boolean {
-        val statement = connection.prepareStatement(STORE_CANCEL_ORDER)
-        statement.setString(1, id)
-        val rows = statement.executeUpdate()
-        if (rows > 0) logger.info("Store order cancelled: $id")
-        return rows > 0
-    }
+    fun cancelStoreOrder(id: String): Boolean =
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
+            val entity = OrderEntity.findById(uuid)
+            if (entity == null || entity.status != "open" || entity.tableId != null) {
+                false
+            } else {
+                entity.status = "closed"
+                logger.info("Store order cancelled: $id")
+                true
+            }
+        }
 
-    suspend fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? {
-        val findCheckoutByPaymentHashQuery =
-            """
-            SELECT p.id AS paymentId, t.id AS ticketId, o.id AS orderId
-            FROM payments p
-            JOIN ticket_payments tp ON tp.payment_id = p.id
-            JOIN tickets t ON t.id = tp.ticket_id
-            JOIN orders o ON o.id = t.order_id
-            WHERE p.payment_hash = ?
-            """.trimIndent()
-        connection.prepareStatement(findCheckoutByPaymentHashQuery).use { statement ->
-            statement.setString(1, paymentHash)
-            val resultSet = statement.executeQuery()
-            if (!resultSet.next()) return null
-            return mapOf(
+    fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? =
+        transaction {
+            val payment = PaymentEntity.find { PaymentsTable.paymentHash eq paymentHash }.firstOrNull() ?: return@transaction null
+            val ticketPayment =
+                TicketPaymentsTable
+                    .selectAll()
+                    .where { TicketPaymentsTable.paymentId eq payment.id }
+                    .firstOrNull() ?: return@transaction null
+            val ticket = TicketEntity.findById(ticketPayment[TicketPaymentsTable.ticketId]) ?: return@transaction null
+            mapOf(
                 "status" to "completed",
-                "paymentId" to resultSet.getString("paymentId"),
-                "ticketId" to resultSet.getString("ticketId"),
-                "orderId" to resultSet.getString("orderId"),
+                "paymentId" to payment.id.value.toString(),
+                "ticketId" to ticket.id.value.toString(),
+                "orderId" to ticket.orderId.value.toString(),
             )
         }
-    }
 
     suspend fun checkout(request: StoreCheckoutRequest): CheckoutResult {
         if (request.items.isEmpty()) return CheckoutResult.Invalid
@@ -178,78 +172,80 @@ class CheckoutService(
     }
 
     private fun performCheckout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
-        val previousAutoCommit = connection.autoCommit
-        connection.autoCommit = false
         try {
-            val orderId = UUID.randomUUID().toString()
-            connection.prepareStatement(STORE_INSERT_CHECKOUT_ORDER).use { statement ->
-                statement.setString(1, orderId)
-                statement.setString(2, request.userId)
-                statement.setDouble(3, request.amount)
-                statement.executeUpdate()
-            }
+            UUID.fromString(request.userId)
+            UUID.fromString(request.paymentMethodId)
+            UUID.fromString(request.currencyId)
+            request.items.forEach { UUID.fromString(it.productId) }
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
 
-            for (item in request.items) {
-                connection.prepareStatement(STORE_INSERT_ORDER_ITEM).use { statement ->
-                    statement.setString(1, orderId)
-                    statement.setString(2, item.productId)
-                    statement.setInt(3, item.quantity)
-                    statement.setInt(4, item.priceAtOrder)
-                    statement.executeUpdate()
-                }
-
-                val updatedRows =
-                    connection.prepareStatement(STORE_DECREMENT_STOCK).use { statement ->
-                        statement.setInt(1, item.quantity)
-                        statement.setString(2, item.productId)
-                        statement.setInt(3, item.quantity)
-                        statement.executeUpdate()
+        return try {
+            transaction {
+                val now = LocalDateTime.now().toString()
+                val order =
+                    OrderEntity.new(UUID.randomUUID()) {
+                        this.userId = EntityID(UUID.fromString(request.userId), UsersTable)
+                        this.tableId = null
+                        this.status = "paid"
+                        this.total = request.amount
+                        this.createdAt = now
                     }
-                if (updatedRows == 0) {
-                    connection.rollback()
-                    return null
+
+                for (item in request.items) {
+                    val productEntityId = EntityID(UUID.fromString(item.productId), ProductsTable)
+                    val updated =
+                        ProductsTable.update({
+                            (ProductsTable.id eq productEntityId) and
+                                (ProductsTable.isDeleted eq false) and
+                                (ProductsTable.quantity greaterEq item.quantity)
+                        }) {
+                            it[ProductsTable.quantity] = ProductsTable.quantity - item.quantity
+                        }
+                    if (updated == 0) throw InsufficientStockException()
+
+                    OrderProductsTable.insert {
+                        it[orderId] = order.id
+                        it[productId] = productEntityId
+                        it[quantity] = item.quantity
+                        it[priceAtOrder] = item.priceAtOrder
+                    }
                 }
-            }
 
-            val ticketId = UUID.randomUUID().toString()
-            connection.prepareStatement(STORE_INSERT_TICKET).use { statement ->
-                statement.setString(1, ticketId)
-                statement.setString(2, orderId)
-                statement.setString(3, request.userId)
-                statement.setDouble(4, request.amount)
-                statement.setString(5, request.ticketNotes)
-                statement.executeUpdate()
-            }
+                val ticket =
+                    TicketEntity.new(UUID.randomUUID()) {
+                        this.orderId = order.id
+                        this.userId = EntityID(UUID.fromString(request.userId), UsersTable)
+                        this.ticketDate = now
+                        this.totalAmount = request.amount
+                        this.notes = request.ticketNotes
+                    }
 
-            val paymentId = UUID.randomUUID().toString()
-            connection.prepareStatement(STORE_INSERT_PAYMENT).use { statement ->
-                statement.setString(1, paymentId)
-                statement.setString(2, request.paymentMethodId)
-                statement.setString(3, request.currencyId)
-                statement.setString(4, request.transactionId ?: "")
-                statement.setDouble(5, request.amount)
-                statement.setNullable(6, request.satoshiAmount, Types.INTEGER)
-                statement.setNullable(7, request.exchangeRateAtPayment, Types.REAL)
-                statement.setNullable(8, request.paymentHash, Types.VARCHAR)
-                statement.setNullable(9, request.exchangeRateCurrency, Types.VARCHAR)
-                statement.setNullable(10, request.fiatAmountAtPayment, Types.REAL)
-                statement.executeUpdate()
-            }
+                val payment =
+                    PaymentEntity.new(UUID.randomUUID()) {
+                        this.methodId = EntityID(UUID.fromString(request.paymentMethodId), PaymentMethodsTable)
+                        this.currencyId = EntityID(UUID.fromString(request.currencyId), CurrencyTable)
+                        this.transactionId = request.transactionId ?: ""
+                        this.amount = request.amount
+                        this.date = now
+                        this.satoshiAmount = request.satoshiAmount
+                        this.exchangeRateAtPayment = request.exchangeRateAtPayment
+                        this.paymentHash = request.paymentHash
+                        this.exchangeRateCurrency = request.exchangeRateCurrency
+                        this.fiatAmountAtPayment = request.fiatAmountAtPayment
+                    }
 
-            connection.prepareStatement(STORE_INSERT_TICKET_PAYMENT).use { statement ->
-                statement.setString(1, paymentId)
-                statement.setString(2, ticketId)
-                statement.executeUpdate()
-            }
+                TicketPaymentsTable.insert {
+                    it[paymentId] = payment.id
+                    it[ticketId] = ticket.id
+                }
 
-            connection.commit()
-            logger.info("Store checkout: order=$orderId ticket=$ticketId payment=$paymentId")
-            return StoreCheckoutResponse(orderId, ticketId, paymentId)
-        } catch (exception: Exception) {
-            connection.rollback()
-            throw exception
-        } finally {
-            connection.autoCommit = previousAutoCommit
+                logger.info("Store checkout: order=${order.id.value} ticket=${ticket.id.value} payment=${payment.id.value}")
+                StoreCheckoutResponse(order.id.value.toString(), ticket.id.value.toString(), payment.id.value.toString())
+            }
+        } catch (_: InsufficientStockException) {
+            null
         }
     }
 }
