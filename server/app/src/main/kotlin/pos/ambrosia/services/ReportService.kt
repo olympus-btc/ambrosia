@@ -25,6 +25,7 @@ import pos.ambrosia.db.tables.TicketPaymentsTable
 import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
+import pos.ambrosia.models.OrderItem
 import pos.ambrosia.models.OrderWithPayment
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.models.ProductSaleItem
@@ -53,13 +54,17 @@ class ReportService {
                    MAX(p.satoshi_amount) AS satoshi_amount,
                    MAX(p.exchange_rate_at_payment) AS exchange_rate_at_payment,
                    MAX(p.exchange_rate_currency) AS exchange_rate_currency,
-                   MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment
+                   MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment,
+                   MAX(p.payment_hash) AS payment_hash,
+                   GROUP_CONCAT(pr.name || '|||' || op.quantity || '|||' || op.price_at_order, ';;;') AS items
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
             LEFT JOIN tickets t ON t.order_id = o.id
             LEFT JOIN ticket_payments tp ON tp.ticket_id = t.id
             LEFT JOIN payments p ON p.id = tp.payment_id
             LEFT JOIN payment_methods pm ON pm.id = p.method_id
+            LEFT JOIN order_products op ON op.order_id = o.id
+            LEFT JOIN products pr ON pr.id = op.product_id
             WHERE o.is_deleted = 0
             """
     }
@@ -82,6 +87,22 @@ class ReportService {
 
     private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
 
+    private fun parseOrderItems(rawItems: String?): List<OrderItem> =
+        rawItems
+            ?.split(";;;")
+            ?.mapNotNull { entry ->
+                val parts = entry.split("|||")
+                if (parts.size == 3) {
+                    OrderItem(
+                        productName = parts[0],
+                        quantity = parts[1].toIntOrNull() ?: 1,
+                        priceAtOrder = parts[2].toIntOrNull() ?: 0,
+                    )
+                } else {
+                    null
+                }
+            } ?: emptyList()
+
     private fun mapResultSetToOrderWithPayment(resultSet: ResultSet): OrderWithPayment {
         val paymentNames = resultSet.getString("payment_method") ?: ""
         val paymentIdsConcat = resultSet.getString("payment_method_ids") ?: ""
@@ -102,6 +123,8 @@ class ReportService {
             exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
             exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
             fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
+            paymentHash = resultSet.getString("payment_hash"),
+            items = parseOrderItems(resultSet.getString("items")),
         )
     }
 
