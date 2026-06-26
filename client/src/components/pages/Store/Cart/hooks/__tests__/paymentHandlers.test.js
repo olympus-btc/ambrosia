@@ -5,7 +5,7 @@ import {
   savePendingCheckout,
 } from "@/lib/btcCheckoutStore";
 
-import { PaymentPendingError, processCheckout } from "../paymentFlows";
+import { processCheckout } from "../paymentFlows";
 import {
   buildHandlePay,
   buildHandleBtcInvoiceReady,
@@ -23,7 +23,6 @@ jest.mock("@/lib/btcCheckoutStore", () => ({
 
 jest.mock("../paymentFlows", () => ({
   processCheckout: jest.fn(),
-  PaymentPendingError: class PaymentPendingError extends Error {},
 }));
 
 describe("paymentHandlers", () => {
@@ -515,7 +514,7 @@ describe("paymentHandlers", () => {
     const onResetCart = jest.fn();
     const setBtcPaymentConfig = jest.fn((fn) => fn({ paymentCompleted: false }));
 
-    processCheckout.mockRejectedValueOnce(new PaymentPendingError());
+    processCheckout.mockResolvedValueOnce({ pending: true });
 
     const handler = buildHandleBtcComplete({
       getConfig: () => ({

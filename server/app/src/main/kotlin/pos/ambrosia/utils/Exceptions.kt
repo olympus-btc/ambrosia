@@ -75,3 +75,7 @@ class InitialSetupException(
 class DatabaseException(
     message: String = "Database operation failed",
 ) : RuntimeException(message)
+
+class PaymentNotConfirmedException(
+    message: String = "Payment not yet confirmed",
+) : RuntimeException(message)

@@ -10,7 +10,7 @@ import {
   PAYMENT_METHODS,
 } from "../utils/paymentMethods";
 
-import { PaymentPendingError, processCheckout } from "./paymentFlows";
+import { processCheckout } from "./paymentFlows";
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -154,33 +154,33 @@ export function buildHandlePay({
 }
 
 export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
-  return (data) => {
-    setBtcPaymentConfig((prev) => {
-      if (!prev) return prev;
+  return (invoiceReadyData) => {
+    setBtcPaymentConfig((prevConfig) => {
+      if (!prevConfig) return prevConfig;
 
-      if (data?.invoice?.paymentHash) {
+      if (invoiceReadyData?.invoice?.paymentHash) {
         const checkoutPayload = {
-          paymentHash: data.invoice.paymentHash,
-          userId: prev.userId,
-          items: (prev.cartItems || []).map((item) => ({
+          paymentHash: invoiceReadyData.invoice.paymentHash,
+          userId: prevConfig.userId,
+          items: (prevConfig.cartItems || []).map((item) => ({
             productId: String(item?.id ?? ""),
             quantity: Number(item?.quantity) || 0,
             priceAtOrder: Number(item?.price) || 0,
           })),
-          paymentMethodId: prev.selectedPaymentMethod,
-          currencyId: prev.currencyId,
-          amount: prev.amountFiat,
-          transactionId: data.invoice.serialized || "",
-          satoshiAmount: data.satoshis ?? null,
-          exchangeRateAtPayment: data.exchangeRate ?? null,
-          exchangeRateCurrency: prev.currencyAcronym ?? null,
-          fiatAmountAtPayment: prev.amountFiat ?? null,
+          paymentMethodId: prevConfig.selectedPaymentMethod,
+          currencyId: prevConfig.currencyId,
+          amount: prevConfig.amountFiat,
+          transactionId: invoiceReadyData.invoice.serialized || "",
+          satoshiAmount: invoiceReadyData.satoshis ?? null,
+          exchangeRateAtPayment: invoiceReadyData.exchangeRate ?? null,
+          exchangeRateCurrency: prevConfig.currencyAcronym ?? null,
+          fiatAmountAtPayment: prevConfig.amountFiat ?? null,
         };
-        savePendingCheckout({ paymentHash: data.invoice.paymentHash, checkoutPayload }).catch(() => {});
+        savePendingCheckout({ paymentHash: invoiceReadyData.invoice.paymentHash, checkoutPayload }).catch(() => {});
         registerBtcCheckoutSync().catch(() => {});
       }
 
-      return { ...prev, invoiceData: data };
+      return { ...prevConfig, invoiceData: invoiceReadyData };
     });
   };
 }
@@ -209,6 +209,12 @@ async function runDeferredCheckout({
   try {
     const storeCheckoutResult = await processCheckout({ ...checkoutArgs, user });
 
+    if (storeCheckoutResult?.pending) {
+      onResetCart?.();
+      notifySuccess(pendingKey);
+      return;
+    }
+
     await onCheckoutSuccess?.(storeCheckoutResult);
 
     await refreshShiftTickets?.();
@@ -223,13 +229,8 @@ async function runDeferredCheckout({
     onResetCart?.();
     notifySuccess(successKey);
   } catch (err) {
-    if (pendingKey && err instanceof PaymentPendingError) {
-      onResetCart?.();
-      notifySuccess(pendingKey);
-    } else {
-      console.error("Error completing payment:", err);
-      notifyError(err?.message || errorKey);
-    }
+    console.error("Error completing payment:", err);
+    notifyError(err?.message || errorKey);
   } finally {
     finalize();
     dispatch({ type: "stop" });

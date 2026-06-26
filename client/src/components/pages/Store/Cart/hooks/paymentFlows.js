@@ -1,8 +1,6 @@
 import { httpClient } from "@/lib/http";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
-export class PaymentPendingError extends Error {}
-
 export async function processCheckout({
   cartItems,
   paymentAmounts,
@@ -38,10 +36,11 @@ export async function processCheckout({
     }),
   });
 
-  const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
-  if (storeCheckoutResult?.status === "pending") {
-    throw new PaymentPendingError();
+  if (checkoutHttpResponse.status === 202) {
+    return { pending: true };
   }
+
+  const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
   if (!storeCheckoutResult?.orderId) {
     throw new Error("errors.checkout");
   }

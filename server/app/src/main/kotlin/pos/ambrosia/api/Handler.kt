@@ -20,6 +20,7 @@ import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.MissingRoleException
+import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.PermissionDeniedException
 import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
@@ -118,6 +119,10 @@ fun Application.handler() {
                     source = cause.source,
                 ),
             )
+        }
+        exception<PaymentNotConfirmedException> { call, cause ->
+            logger.info("Payment not yet confirmed: ${cause.message}")
+            call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

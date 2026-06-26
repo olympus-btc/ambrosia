@@ -14,6 +14,7 @@ import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.PhoenixService
+import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.authorizePermission
 
 private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock levels, and payment details"
@@ -38,7 +39,7 @@ fun Route.checkout(
                 }
 
                 CheckoutResult.NotPaid -> {
-                    call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
+                    throw PaymentNotConfirmedException()
                 }
 
                 CheckoutResult.Invalid -> {

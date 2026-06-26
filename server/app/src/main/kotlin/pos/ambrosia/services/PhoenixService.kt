@@ -45,7 +45,6 @@ interface PaymentVerifier {
     suspend fun getIncomingPayment(paymentHash: String): IncomingPayment
 }
 
-/** Service for interacting with Phoenix Lightning node */
 class PhoenixService(
     app: ApplicationEnvironment,
     private val httpClient: HttpClient,
@@ -260,7 +259,6 @@ class PhoenixService(
         }
     }
 
-    /** Get a specific incoming payment by payment hash */
     override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
         try {
             val response: HttpResponse = httpClient.get("$phoenixdUrl/payments/incoming/$paymentHash")
