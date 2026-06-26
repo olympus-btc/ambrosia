@@ -39,7 +39,18 @@ describe("useCartOperations", () => {
       });
 
       expect(setCart).toHaveBeenCalledWith([
-        { id: 1, imageUrl: "/img.png", name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
+        {
+          id: 1,
+          productId: 1,
+          variantId: null,
+          variantName: null,
+          imageUrl: "/img.png",
+          name: "Jade Wallet",
+          price: 100,
+          quantity: 1,
+          subtotal: 100,
+          maxQuantity: 5,
+        },
       ]);
     });
 

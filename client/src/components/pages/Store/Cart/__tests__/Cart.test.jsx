@@ -209,10 +209,10 @@ describe("Cart page", () => {
     });
 
     fireEvent.click(screen.getByText("add-existing"));
-    expect(mockAddProduct).toHaveBeenCalledWith({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 });
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 }, null);
 
     fireEvent.click(screen.getByText("add-new"));
-    expect(mockAddProduct).toHaveBeenCalledWith({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 });
+    expect(mockAddProduct).toHaveBeenCalledWith({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 }, null);
   });
 
   it("syncs stale cart prices when products load", async () => {
