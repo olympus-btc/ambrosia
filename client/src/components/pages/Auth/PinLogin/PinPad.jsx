@@ -72,14 +72,14 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {NUMBER_PAD.flat().map((number, index) => (
           <Button
             key={index}
             color="default"
             variant={number ? "bordered" : "light"}
             size="lg"
-            className={`h-14 text-xl font-bold bg-white border border-primary-400 shadow-sm hover:shadow-md active:scale-95 transition-all ${!number && "invisible"}`}
+            className={`min-w-0 h-14 text-xl font-bold bg-white border border-primary-400 shadow-sm hover:shadow-md active:scale-95 transition-all ${!number && "invisible"}`}
             onPress={() => number && onNumberClick(number)}
             isDisabled={isLoading || isLocked || !number}
           >
@@ -88,7 +88,7 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
         <Button
           variant="bordered"
           size="md"

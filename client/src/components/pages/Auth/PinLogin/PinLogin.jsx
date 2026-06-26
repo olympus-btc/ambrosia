@@ -122,7 +122,7 @@ export default function PinLogin() {
   };
 
   return (
-    <div className="min-h-screen gradient-fresh flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-fresh flex items-center justify-center p-4 overflow-x-hidden">
       <Card className="w-full max-w-md rounded-lg shadow-lg mx-auto my-auto">
         <CardHeader className="text-center space-y-3 pb-4 flex flex-col items-center justify-center">
           <BusinessHeader
@@ -131,7 +131,7 @@ export default function PinLogin() {
           />
         </CardHeader>
 
-        <CardBody className="space-y-4 px-6 pb-6">
+        <CardBody className="space-y-4 px-3 sm:px-6 pb-6">
           <EmployeeSelect
             employees={employees}
             selectedUser={selectedUser}
