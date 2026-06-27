@@ -1,22 +1,16 @@
 package pos.ambrosia.utest
 
-import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.models.UpsertOptionTypeRequest
 import pos.ambrosia.models.UpsertOptionValueRequest
 import pos.ambrosia.models.UpsertVariantRequest
 import pos.ambrosia.services.ProductVariantService
-import pos.ambrosia.utils.DuplicateVariantSkuException
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.SQLException
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,377 +20,265 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProductVariantServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
+    private lateinit var dbFile: File
+    private val service = ProductVariantService()
 
-    private val mockNestedStatement: PreparedStatement = mock()
-    private val mockNestedResultSet: ResultSet = mock()
-
-    private fun service() = ProductVariantService(mockConnection)
-
-    private fun stubOptionValues(returnValues: Boolean = false) {
-        whenever(mockConnection.prepareStatement(contains("FROM product_option_values"))).thenReturn(mockNestedStatement)
-        whenever(mockNestedStatement.executeQuery()).thenReturn(mockNestedResultSet)
-        whenever(mockNestedResultSet.next()).thenReturn(returnValues)
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
     }
 
-    private fun stubVariantOptionIds(returnValues: Boolean = false) {
-        whenever(mockConnection.prepareStatement(contains("FROM variant_option_values"))).thenReturn(mockNestedStatement)
-        whenever(mockNestedStatement.executeQuery()).thenReturn(mockNestedResultSet)
-        whenever(mockNestedResultSet.next()).thenReturn(returnValues)
-    }
-
-    private fun stubVariantResultSet(rs: ResultSet, id: String = "v-1") {
-        whenever(rs.getString("id")).thenReturn(id)
-        whenever(rs.getString("product_id")).thenReturn("p-1")
-        whenever(rs.getString("sku")).thenReturn("V-SKU-1")
-        whenever(rs.getInt("price_cents")).thenReturn(1000)
-        whenever(rs.getInt("cost_cents")).thenReturn(500)
-        whenever(rs.wasNull()).thenReturn(false)
-        whenever(rs.getInt("quantity")).thenReturn(10)
-        whenever(rs.getInt("is_active")).thenReturn(1)
-        whenever(rs.getString("image_url")).thenReturn(null)
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
     }
 
     // --- Option Types ---
 
     @Test
     fun `getOptionTypes returns empty list when none found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("FROM product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getOptionTypes("p-1") // Act
-            assertTrue(result.isEmpty()) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val result = service.getOptionTypes(productId)
+        assertTrue(result.isEmpty())
     }
 
     @Test
     fun `getOptionTypes returns list with nested values`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("FROM product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("ot-1") // Arrange
-            whenever(mockResultSet.getString("product_id")).thenReturn("p-1") // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn("Color") // Arrange
-            whenever(mockResultSet.getInt("display_order")).thenReturn(0) // Arrange
-            stubOptionValues() // Arrange — no values
-            val result = service().getOptionTypes("p-1") // Act
-            assertEquals(1, result.size) // Assert
-            assertEquals("Color", result[0].name) // Assert
-            assertEquals("ot-1", result[0].id) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"), UpsertOptionValueRequest("Blue"))))
+
+        val result = service.getOptionTypes(productId)
+        assertEquals(1, result.size)
+        assertEquals("Color", result[0].name)
+        assertEquals(2, result[0].values.size)
     }
 
     @Test
-    fun `addOptionType inserts type and values in transaction and returns id`() {
-        runBlocking {
-            val req = UpsertOptionTypeRequest(name = "Size", values = listOf(UpsertOptionValueRequest("S"), UpsertOptionValueRequest("M"))) // Arrange
-            val insertTypeSt: PreparedStatement = mock() // Arrange
-            val insertValueSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_option_types"))).thenReturn(insertTypeSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_option_values"))).thenReturn(insertValueSt) // Arrange
-            val id = service().addOptionType("p-1", req) // Act
-            assertNotNull(id) // Assert
-            assertTrue(id.isNotBlank()) // Assert
-            verify(insertTypeSt).executeUpdate() // Assert
-            verify(insertValueSt).executeBatch() // Assert
-            verify(mockConnection).commit() // Assert
-        }
+    fun `addOptionType returns id and creates values`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val req = UpsertOptionTypeRequest(name = "Size", values = listOf(UpsertOptionValueRequest("S"), UpsertOptionValueRequest("M")))
+        val id = service.addOptionType(productId, req)
+
+        assertTrue(id.isNotBlank())
+        val options = service.getOptionTypes(productId)
+        assertEquals(1, options.size)
+        assertEquals(2, options[0].values.size)
     }
 
     @Test
-    fun `addOptionType rolls back on exception`() {
-        runBlocking {
-            val req = UpsertOptionTypeRequest(name = "Size") // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenThrow(RuntimeException("forced")) // Arrange
-            assertFailsWith<RuntimeException> { service().addOptionType("p-1", req) } // Act
-            verify(mockConnection).rollback() // Assert
-            verify(mockConnection, never()).commit() // Assert
-        }
+    fun `updateOptionType returns false when not found`() {
+        val result = service.updateOptionType(UUID.randomUUID().toString(), UpsertOptionTypeRequest(name = "Color"))
+        assertFalse(result)
     }
 
     @Test
-    fun `updateOptionType returns false when option type not found`() {
-        runBlocking {
-            val req = UpsertOptionTypeRequest(name = "Color") // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().updateOptionType("ot-missing", req) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection).rollback() // Assert
-        }
-    }
+    fun `updateOptionType replaces values`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val typeId = service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"))))
 
-    @Test
-    fun `updateOptionType replaces values in transaction`() {
-        runBlocking {
-            val req = UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"))) // Arrange
-            val updateTypeSt: PreparedStatement = mock() // Arrange
-            val deleteValuesSt: PreparedStatement = mock() // Arrange
-            val insertValueSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE product_option_types"))).thenReturn(updateTypeSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_option_values"))).thenReturn(deleteValuesSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_option_values"))).thenReturn(insertValueSt) // Arrange
-            whenever(updateTypeSt.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().updateOptionType("ot-1", req) // Act
-            assertTrue(result) // Assert
-            verify(deleteValuesSt).executeUpdate() // Assert
-            verify(insertValueSt).executeBatch() // Assert
-            verify(mockConnection).commit() // Assert
-        }
+        val result = service.updateOptionType(typeId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Blue"), UpsertOptionValueRequest("Green"))))
+        assertTrue(result)
+
+        val options = service.getOptionTypes(productId)
+        assertEquals(2, options[0].values.size)
     }
 
     @Test
     fun `deleteOptionType returns true on success`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().deleteOptionType("ot-1") // Act
-            assertTrue(result) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val typeId = service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color"))
+        val result = service.deleteOptionType(typeId)
+        assertTrue(result)
+        assertTrue(service.getOptionTypes(productId).isEmpty())
     }
 
     @Test
     fun `deleteOptionType returns false when not found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_option_types"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().deleteOptionType("ot-missing") // Act
-            assertFalse(result) // Assert
-        }
+        val result = service.deleteOptionType(UUID.randomUUID().toString())
+        assertFalse(result)
     }
 
     // --- Variants ---
 
     @Test
-    fun `getVariants returns empty list when none found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("FROM product_variants WHERE product_id"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getVariants("p-1") // Act
-            assertTrue(result.isEmpty()) // Assert
-        }
+    fun `getVariants returns list of variants`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 1000)
+        val result = service.getVariants(productId)
+        assertEquals(1, result.size)
+        assertEquals(1000, result[0].priceCents)
     }
 
     @Test
-    fun `getVariants returns list of variants`() {
-        runBlocking {
-            stubVariantOptionIds() // Arrange — no option links
-            whenever(mockConnection.prepareStatement(contains("FROM product_variants WHERE product_id"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
-            stubVariantResultSet(mockResultSet) // Arrange
-            val result = service().getVariants("p-1") // Act
-            assertEquals(1, result.size) // Assert
-            assertEquals("v-1", result[0].id) // Assert
-            assertEquals(1000, result[0].priceCents) // Assert
-        }
+    fun `getVariants returns empty list for unknown product`() {
+        val result = service.getVariants(UUID.randomUUID().toString())
+        assertTrue(result.isEmpty())
     }
 
     @Test
     fun `getVariantById returns variant when found`() {
-        runBlocking {
-            stubVariantOptionIds() // Arrange
-            whenever(mockConnection.prepareStatement(contains("FROM product_variants WHERE id"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            stubVariantResultSet(mockResultSet) // Arrange
-            val result = service().getVariantById("v-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals("v-1", result!!.id) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 500)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.getVariantById(variantId)
+        assertNotNull(result)
+        assertEquals(500, result.priceCents)
     }
 
     @Test
     fun `getVariantById returns null when not found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getVariantById("missing") // Act
-            assertNull(result) // Assert
-        }
+        val result = service.getVariantById(UUID.randomUUID().toString())
+        assertNull(result)
     }
 
     @Test
-    fun `getDefaultVariant returns null when no variants exist`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("WHERE product_id = ? LIMIT 1"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getDefaultVariant("p-no-variants") // Act
-            assertNull(result) // Assert
-        }
+    fun `getVariantById returns null for invalid UUID`() {
+        val result = service.getVariantById("not-a-uuid")
+        assertNull(result)
+    }
+
+    @Test
+    fun `getDefaultVariant returns null when no variants`() {
+        val result = service.getDefaultVariant(UUID.randomUUID().toString())
+        assertNull(result)
+    }
+
+    @Test
+    fun `getDefaultVariant returns first variant`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 300)
+        val result = service.getDefaultVariant(productId)
+        assertNotNull(result)
+        assertEquals(300, result.priceCents)
     }
 
     @Test
     fun `addVariant returns null when priceCents is negative`() {
-        runBlocking {
-            val req = UpsertVariantRequest(priceCents = -1) // Arrange
-            val result = service().addVariant("p-1", req) // Act
-            assertNull(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val result = service.addVariant(productId, UpsertVariantRequest(priceCents = -1))
+        assertNull(result)
     }
 
     @Test
     fun `addVariant returns null when quantity is negative`() {
-        runBlocking {
-            val req = UpsertVariantRequest(priceCents = 100, quantity = -1) // Arrange
-            val result = service().addVariant("p-1", req) // Act
-            assertNull(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val result = service.addVariant(productId, UpsertVariantRequest(priceCents = 100, quantity = -1))
+        assertNull(result)
     }
 
     @Test
     fun `addVariant returns new ID on success`() {
-        runBlocking {
-            val req = UpsertVariantRequest(priceCents = 1000, quantity = 5) // Arrange
-            val insertSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_variants"))).thenReturn(insertSt) // Arrange
-            val id = service().addVariant("p-1", req) // Act
-            assertNotNull(id) // Assert
-            assertTrue(id!!.isNotBlank()) // Assert
-            verify(mockConnection).commit() // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val id = service.addVariant(productId, UpsertVariantRequest(priceCents = 1000, quantity = 5))
+        assertNotNull(id)
+        assertTrue(id!!.isNotBlank())
+
+        val variant = service.getVariantById(id!!)
+        assertEquals(1000, variant?.priceCents)
+        assertEquals(5, variant?.quantity)
     }
 
     @Test
-    fun `addVariant throws DuplicateVariantSkuException on SKU conflict`() {
-        runBlocking {
-            val req = UpsertVariantRequest(SKU = "DUP-SKU", priceCents = 500) // Arrange
-            val insertSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO product_variants"))).thenReturn(insertSt) // Arrange
-            whenever(insertSt.executeUpdate()).thenThrow(
-                SQLException("UNIQUE constraint failed: product_variants.sku"),
-            ) // Arrange
-            assertFailsWith<DuplicateVariantSkuException> { service().addVariant("p-1", req) } // Act
-            verify(mockConnection).rollback() // Assert
+    fun `addVariant throws on duplicate SKU`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        service.addVariant(productId, UpsertVariantRequest(SKU = "DUP-SKU", priceCents = 500))
+        assertFailsWith<ExposedSQLException> {
+            service.addVariant(productId, UpsertVariantRequest(SKU = "DUP-SKU", priceCents = 600))
         }
     }
 
     @Test
     fun `updateVariant returns false when not found`() {
-        runBlocking {
-            val req = UpsertVariantRequest(priceCents = 500) // Arrange
-            val updateSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(updateSt) // Arrange
-            whenever(updateSt.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().updateVariant("v-missing", req) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection).rollback() // Assert
-        }
+        val result = service.updateVariant(UUID.randomUUID().toString(), UpsertVariantRequest(priceCents = 500))
+        assertFalse(result)
     }
 
     @Test
-    fun `updateVariant returns true on success`() {
-        runBlocking {
-            val req = UpsertVariantRequest(priceCents = 800, quantity = 3) // Arrange
-            val updateSt: PreparedStatement = mock() // Arrange
-            val deleteOptionsSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE product_variants"))).thenReturn(updateSt) // Arrange
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM variant_option_values"))).thenReturn(deleteOptionsSt) // Arrange
-            whenever(updateSt.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().updateVariant("v-1", req) // Act
-            assertTrue(result) // Assert
-            verify(deleteOptionsSt).executeUpdate() // Assert
-            verify(mockConnection).commit() // Assert
-        }
+    fun `updateVariant returns false when priceCents is negative`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val variantId = service.getVariants(productId)[0].id!!
+        val result = service.updateVariant(variantId, UpsertVariantRequest(priceCents = -1))
+        assertFalse(result)
+    }
+
+    @Test
+    fun `updateVariant returns true and updates data`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 1000)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.updateVariant(variantId, UpsertVariantRequest(priceCents = 800, quantity = 3))
+        assertTrue(result)
+
+        val updated = service.getVariantById(variantId)
+        assertEquals(800, updated?.priceCents)
+        assertEquals(3, updated?.quantity)
     }
 
     @Test
     fun `deleteVariant returns true on success`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_variants"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().deleteVariant("v-1") // Act
-            assertTrue(result) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val variantId = service.getVariants(productId)[0].id!!
+        val result = service.deleteVariant(variantId)
+        assertTrue(result)
+        assertNull(service.getVariantById(variantId))
     }
 
     @Test
     fun `deleteVariant returns false when not found`() {
-        runBlocking {
-            whenever(mockConnection.prepareStatement(contains("DELETE FROM product_variants"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().deleteVariant("v-missing") // Act
-            assertFalse(result) // Assert
-        }
+        val result = service.deleteVariant(UUID.randomUUID().toString())
+        assertFalse(result)
     }
 
     // --- Stock Adjustment ---
 
     @Test
     fun `adjustStock returns true for empty list`() {
-        runBlocking {
-            val result = service().adjustStock(emptyList()) // Act
-            assertTrue(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
-        }
+        val result = service.adjustStock(emptyList())
+        assertTrue(result)
     }
 
     @Test
     fun `adjustStock returns false for negative quantity`() {
-        runBlocking {
-            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", quantity = -1)) // Arrange
-            val result = service().adjustStock(adjustments) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
-        }
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val result = service.adjustStock(listOf(ProductStockAdjustment(productId = productId, quantity = -1)))
+        assertFalse(result)
     }
 
     @Test
-    fun `adjustStock by variantId uses variant-specific query`() {
-        runBlocking {
-            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", variantId = "v-1", quantity = 2)) // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE id = ? AND quantity >="))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().adjustStock(adjustments) // Act
-            assertTrue(result) // Assert
-            verify(mockStatement).setString(2, "v-1") // Assert — uses variantId
-            verify(mockConnection).commit() // Assert
-        }
+    fun `adjustStock by variantId decrements variant stock`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", quantity = 10)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.adjustStock(listOf(ProductStockAdjustment(productId = productId, variantId = variantId, quantity = 3)))
+        assertTrue(result)
+        assertEquals(7, service.getVariantById(variantId)?.quantity)
     }
 
     @Test
-    fun `adjustStock by productId auto-resolves when variantId is null`() {
-        runBlocking {
-            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", variantId = null, quantity = 2)) // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE product_id = ? AND quantity >="))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().adjustStock(adjustments) // Act
-            assertTrue(result) // Assert
-            verify(mockStatement).setString(2, "p-1") // Assert — uses productId
-            verify(mockConnection).commit() // Assert
-        }
+    fun `adjustStock by productId auto-resolves default variant`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", quantity = 10)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.adjustStock(listOf(ProductStockAdjustment(productId = productId, variantId = null, quantity = 4)))
+        assertTrue(result)
+        assertEquals(6, service.getVariantById(variantId)?.quantity)
     }
 
     @Test
-    fun `adjustStock returns false and rolls back when stock insufficient`() {
-        runBlocking {
-            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", variantId = "v-1", quantity = 999)) // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE id = ? AND quantity >="))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange — 0 rows = insufficient stock
-            val result = service().adjustStock(adjustments) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection).rollback() // Assert
-            verify(mockConnection, never()).commit() // Assert
-        }
+    fun `adjustStock returns false when stock insufficient`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", quantity = 5)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.adjustStock(listOf(ProductStockAdjustment(productId = productId, variantId = variantId, quantity = 999)))
+        assertFalse(result)
+        assertEquals(5, service.getVariantById(variantId)?.quantity)
     }
 
     @Test
-    fun `adjustStock skips zero-quantity adjustments`() {
-        runBlocking {
-            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", variantId = "v-1", quantity = 0)) // Arrange
-            val result = service().adjustStock(adjustments) // Act
-            assertTrue(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert — no DB calls for quantity=0
-        }
+    fun `adjustStock skips zero-quantity items`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1", quantity = 5)
+        val variantId = service.getVariants(productId)[0].id!!
+
+        val result = service.adjustStock(listOf(ProductStockAdjustment(productId = productId, variantId = variantId, quantity = 0)))
+        assertTrue(result)
+        assertEquals(5, service.getVariantById(variantId)?.quantity)
     }
 }

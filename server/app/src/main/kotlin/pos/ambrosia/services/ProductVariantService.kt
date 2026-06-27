@@ -178,8 +178,8 @@ open class ProductVariantService {
                 }
             for (optionValueId in req.optionValueIds) {
                 VariantOptionValuesTable.insert {
-                    it[variantId] = entity.id
-                    it[optionValueId] = EntityID(UUID.fromString(optionValueId), ProductOptionValuesTable)
+                    it[VariantOptionValuesTable.variantId] = entity.id
+                    it[VariantOptionValuesTable.optionValueId] = EntityID(UUID.fromString(optionValueId), ProductOptionValuesTable)
                 }
             }
             logger.info("Variant created: ${entity.id.value} for product $productId")
