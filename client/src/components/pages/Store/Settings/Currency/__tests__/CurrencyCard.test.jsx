@@ -7,21 +7,33 @@ import { CurrencyCard } from "../CurrencyCard";
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Autocomplete = ({
-    children, label, onSelectionChange, selectedKey,
-  }) => (
-    <div data-testid="autocomplete-wrapper">
-      <label htmlFor="currency-select">{label}</label>
-      <select
-        id="currency-select"
-        aria-label={label}
-        value={selectedKey ?? ""}
-        onChange={(event) => onSelectionChange(event.target.value)}
-      >
-        <option value="">Select currency</option>
-        {children}
-      </select>
-    </div>
-  );
+    children, label, onSelectionChange, selectedKey, defaultFilter,
+  }) => {
+    const [inputValue, setInputValue] = require("react").useState("");
+    const filteredChildren = require("react").Children.toArray(children).filter((child) => (
+      !inputValue || defaultFilter(child.props.textValue, inputValue)
+    ));
+
+    return (
+      <div data-testid="autocomplete-wrapper">
+        <label htmlFor="currency-search">{label}</label>
+        <input
+          id="currency-search"
+          aria-label={label}
+          value={inputValue}
+          onChange={(event) => setInputValue(event.target.value)}
+        />
+        <select
+          aria-label={`${label} options`}
+          value={selectedKey ?? ""}
+          onChange={(event) => onSelectionChange(event.target.value)}
+        >
+          <option value="">Select currency</option>
+          {filteredChildren}
+        </select>
+      </div>
+    );
+  };
   const AutocompleteItem = ({ children, textValue }) => {
     const code = textValue ? textValue.split(" ")[0] : children.toString().split(" ")[0];
     return (
@@ -99,7 +111,7 @@ describe("CurrencyCard", () => {
 
     it("pre-selects the current currency", async () => {
       await act(async () => { renderCard({ selectedCurrency: "EUR" }); });
-      const select = screen.getByLabelText("cardCurrency.currencyLabel");
+      const select = screen.getByLabelText("cardCurrency.currencyLabel options");
       expect(select.value).toBe("EUR");
     });
   });
@@ -109,12 +121,22 @@ describe("CurrencyCard", () => {
       const mockOnChange = jest.fn();
       await act(async () => { renderCard({ onCurrencyChange: mockOnChange }); });
 
-      const select = screen.getByLabelText("cardCurrency.currencyLabel");
+      const select = screen.getByLabelText("cardCurrency.currencyLabel options");
       fireEvent.change(select, { target: { value: "MXN" } });
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith("MXN");
       });
+    });
+
+    it("filters currencies by currency name", async () => {
+      await act(async () => { renderCard(); });
+
+      const searchInput = screen.getByLabelText("cardCurrency.currencyLabel");
+      fireEvent.change(searchInput, { target: { value: "mex" } });
+
+      expect(screen.getByRole("option", { name: "MXN - Mexican Peso" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "USD - United States Dollar" })).not.toBeInTheDocument();
     });
   });
 });

@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 
-import { Input, Autocomplete, AutocompleteItem } from "@heroui/react";
+import { Input } from "@heroui/react";
 import { useTranslations, useLocale } from "next-intl";
 
+import { CurrencyInput } from "@components/shared/CurrencyInput";
 import { ImageUploader } from "@components/shared/ImageUploader";
 
 import { CURRENCIES_EN } from "./utils/currencies_en";
@@ -94,26 +95,14 @@ export function BusinessDetailsStep({ data, onChange }) {
           errorMessage={rfcError}
         />
 
-        <Autocomplete
+        <CurrencyInput
+          currencies={CURRENCIES}
           label={t("step3.fields.businessCurrency")}
           defaultSelectedKey={data.businessCurrency}
           isInvalid={!data.businessCurrency}
           errorMessage={t("step3.fields.businessCurrencyError")}
           onSelectionChange={handleCurrencyChange}
-          isClearable
-          allowsCustomValue={false}
-          menuTrigger="focus"
-          inputProps={{
-            onClick: (e) => e.target.select(),
-          }}
-          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
-        >
-          {CURRENCIES.map((currency) => (
-            <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
-              {`${currency.code}  -  ${currency.name}`}
-            </AutocompleteItem>
-          ))}
-        </Autocomplete>
+        />
 
         <ImageUploader
           title={data.businessType === "store" ? t("step3.fields.businessLogoLabelStore") : t("step3.fields.businessLogoLabelRestaurant")}

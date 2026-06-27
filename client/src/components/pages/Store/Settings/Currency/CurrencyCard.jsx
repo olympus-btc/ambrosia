@@ -1,7 +1,9 @@
 "use client";
 
-import { Card, CardBody, CardHeader, Autocomplete, AutocompleteItem } from "@heroui/react";
+import { Card, CardBody, CardHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
+
+import { CurrencyInput } from "@components/shared/CurrencyInput";
 
 export function CurrencyCard({ selectedCurrency, currencies, onCurrencyChange }) {
   const settingsTranslations = useTranslations("settings");
@@ -14,26 +16,14 @@ export function CurrencyCard({ selectedCurrency, currencies, onCurrencyChange })
         </h2>
       </CardHeader>
       <CardBody>
-        <Autocomplete
+        <CurrencyInput
+          currencies={currencies}
           className="w-full sm:max-w-xs"
           size="sm"
           label={settingsTranslations("cardCurrency.currencyLabel")}
           selectedKey={selectedCurrency}
           onSelectionChange={onCurrencyChange}
-          allowsCustomValue={false}
-          isClearable
-          menuTrigger="focus"
-          inputProps={{
-            onClick: (event) => event.target.select(),
-          }}
-          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
-        >
-          {currencies.map((currency) => (
-            <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
-              {`${currency.code}  -  ${currency.name}`}
-            </AutocompleteItem>
-          ))}
-        </Autocomplete>
+        />
       </CardBody>
     </Card>
   );
