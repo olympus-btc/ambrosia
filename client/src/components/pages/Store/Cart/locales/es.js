@@ -24,6 +24,7 @@ const cartEs = {
       loading: "Cargando...",
       outOfStock: "Sin stock",
       inStock: "en almacén",
+      noVariantFound: "Esta combinación no está disponible",
     },
     summary: {
       clearCart: "Remover Todo",
