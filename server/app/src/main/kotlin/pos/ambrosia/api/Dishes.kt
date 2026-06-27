@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Dish
 import pos.ambrosia.services.DishService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureDishes() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val dishService = DishService(connection)
+    val dishService = DishService()
     routing { route("/dishes") { dishes(dishService) } }
 }
 

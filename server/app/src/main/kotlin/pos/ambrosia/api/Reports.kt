@@ -7,12 +7,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.ReportService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 import java.time.LocalDate
 
 private fun parseDateQueryParam(
@@ -36,8 +34,7 @@ private fun parseDoubleQueryParam(
 }
 
 fun Application.configureReports() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val reportService = ReportService(connection)
+    val reportService = ReportService()
     routing {
         route("/reports") { reports(reportService) }
         route("/orders") { orderReports(reportService) }

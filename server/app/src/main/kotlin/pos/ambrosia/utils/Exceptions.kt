@@ -52,14 +52,6 @@ class DuplicateUserNameException(
     message: String = "User name already exists",
 ) : IllegalStateException(message)
 
-class DuplicateProductSkuException(
-    message: String = "SKU already exists",
-) : IllegalStateException(message)
-
-class DuplicateVariantSkuException(
-    message: String = "Variant SKU already exists",
-) : IllegalStateException(message)
-
 class MissingRoleException(
     message: String = "No assigned role for this user, contact Admin",
 ) : Exception(message)

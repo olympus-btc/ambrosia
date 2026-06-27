@@ -3,25 +3,23 @@ package pos.ambrosia.utest
 import com.auth0.jwt.JWT
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.engine.applicationEnvironment
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.junit.After
+import org.junit.Before
+import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.services.TokenService
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import java.util.Date
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TokenServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
-
     private val environment =
         applicationEnvironment {
             config =
@@ -31,56 +29,63 @@ class TokenServiceTest {
                     "jwt.audience" to "test-audience",
                 )
         }
+    private val service = TokenService(environment)
+    private lateinit var dbFile: File
+
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
 
     @Test
     fun `generateWalletAccessToken persists token and expires in about 5 minutes`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        val service = TokenService(environment, mockConnection) // Arrange
+        val userId = ExposedTestDb.seedUser("wallet-user")
 
-        val token = service.generateWalletAccessToken("user-1") // Act
+        val token = service.generateWalletAccessToken(userId)
 
-        verify(mockStatement).setString(1, token) // Assert
-        verify(mockStatement).setString(2, "user-1") // Assert
-        verify(mockStatement).executeUpdate() // Assert
+        val stored = transaction { UserEntity.findById(UUID.fromString(userId))?.walletToken }
+        assertNotNull(stored)
+        assertTrue(stored == token)
 
         val expiresAt = JWT.decode(token).expiresAt
         val now = System.currentTimeMillis()
-        assertTrue(expiresAt.after(Date(now + TimeUnit.MINUTES.toMillis(4)))) // Assert
-        assertTrue(expiresAt.before(Date(now + TimeUnit.MINUTES.toMillis(5) + TimeUnit.SECONDS.toMillis(1)))) // Assert
+        assertTrue(expiresAt.after(Date(now + TimeUnit.MINUTES.toMillis(4))))
+        assertTrue(expiresAt.before(Date(now + TimeUnit.MINUTES.toMillis(5) + TimeUnit.SECONDS.toMillis(1))))
     }
 
     @Test
     fun `isWalletTokenValid returns true when token matches stored value`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-        whenever(mockResultSet.next()).thenReturn(true) // Arrange
-        val service = TokenService(environment, mockConnection) // Arrange
+        val userId = ExposedTestDb.seedUser("wallet-user")
+        val token = service.generateWalletAccessToken(userId)
 
-        val result = service.isWalletTokenValid("user-1", "some-token") // Act
+        val result = service.isWalletTokenValid(userId, token)
 
-        assertTrue(result) // Assert
+        assertTrue(result)
     }
 
     @Test
-    fun `isWalletTokenValid returns false when no row matches`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-        whenever(mockResultSet.next()).thenReturn(false) // Arrange
-        val service = TokenService(environment, mockConnection) // Arrange
+    fun `isWalletTokenValid returns false when token does not match`() {
+        val userId = ExposedTestDb.seedUser("wallet-user")
+        service.generateWalletAccessToken(userId)
 
-        val result = service.isWalletTokenValid("user-1", "stale-token") // Act
+        val result = service.isWalletTokenValid(userId, "stale-token")
 
-        assertFalse(result) // Assert
+        assertFalse(result)
     }
 
     @Test
     fun `revokeWalletToken clears the stored wallet token`() {
-        whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-        val service = TokenService(environment, mockConnection) // Arrange
+        val userId = ExposedTestDb.seedUser("wallet-user")
+        service.generateWalletAccessToken(userId)
 
-        service.revokeWalletToken("user-1") // Act
+        service.revokeWalletToken(userId)
 
-        verify(mockStatement).setString(1, "user-1") // Assert
-        verify(mockStatement).executeUpdate() // Assert
+        val stored = transaction { UserEntity.findById(UUID.fromString(userId))?.walletToken }
+        assertNull(stored)
     }
 }

@@ -1,79 +1,86 @@
 package pos.ambrosia.services
 
-import java.sql.Connection
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.RoleEntity
+import pos.ambrosia.db.tables.RolesTable
+import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.db.tables.UsersTable
+import java.util.UUID
 
 data class UserAdminState(
     val roleId: String?,
     val isAdmin: Boolean,
 )
 
-class AdminGuardService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val COUNT_ACTIVE_ADMIN_USERS =
-            """
-            SELECT COUNT(*)
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.is_deleted = 0 AND r.is_deleted = 0 AND r.isAdmin = 1
-            """
-
-        private const val COUNT_ACTIVE_ADMIN_USERS_BY_ROLE =
-            """
-            SELECT COUNT(*)
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.is_deleted = 0 AND r.is_deleted = 0 AND r.isAdmin = 1 AND u.role_id = ?
-            """
-
-        private const val GET_ROLE_ADMIN_STATE =
-            """
-            SELECT isAdmin
-            FROM roles
-            WHERE id = ? AND is_deleted = 0
-            """
-
-        private const val GET_USER_ADMIN_STATE =
-            """
-            SELECT u.role_id, COALESCE(r.isAdmin, 0) AS isAdmin
-            FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id AND r.is_deleted = 0
-            WHERE u.id = ? AND u.is_deleted = 0
-            """
-    }
-
-    fun activeAdminUserCount(): Long {
-        val statement = connection.prepareStatement(COUNT_ACTIVE_ADMIN_USERS)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) resultSet.getLong(1) else 0L
-    }
-
-    fun activeAdminUsersByRole(roleId: String): Long {
-        val statement = connection.prepareStatement(COUNT_ACTIVE_ADMIN_USERS_BY_ROLE)
-        statement.setString(1, roleId)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) resultSet.getLong(1) else 0L
-    }
-
-    fun isRoleAdmin(roleId: String): Boolean? {
-        val statement = connection.prepareStatement(GET_ROLE_ADMIN_STATE)
-        statement.setString(1, roleId)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) resultSet.getBoolean("isAdmin") else null
-    }
-
-    fun getUserAdminState(userId: String): UserAdminState? {
-        val statement = connection.prepareStatement(GET_USER_ADMIN_STATE)
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            UserAdminState(
-                roleId = resultSet.getString("role_id"),
-                isAdmin = resultSet.getBoolean("isAdmin"),
-            )
-        } else {
-            null
+class AdminGuardService {
+    fun activeAdminUserCount(): Long =
+        transaction {
+            (UsersTable innerJoin RolesTable)
+                .selectAll()
+                .where {
+                    (UsersTable.isDeleted eq false) and
+                        (RolesTable.isDeleted eq false) and
+                        (RolesTable.isAdmin eq true)
+                }.count()
         }
-    }
+
+    fun activeAdminUsersByRole(roleId: String): Long =
+        transaction {
+            val roleUUID =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction 0L
+                }
+            val roleEntityId = EntityID(roleUUID, RolesTable)
+            (UsersTable innerJoin RolesTable)
+                .selectAll()
+                .where {
+                    (UsersTable.isDeleted eq false) and
+                        (RolesTable.isDeleted eq false) and
+                        (RolesTable.isAdmin eq true) and
+                        (UsersTable.roleId eq roleEntityId)
+                }.count()
+        }
+
+    fun isRoleAdmin(roleId: String): Boolean? =
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(roleId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
+            RoleEntity
+                .findById(uuid)
+                ?.takeIf { !it.isDeleted }
+                ?.isAdmin
+        }
+
+    fun getUserAdminState(userId: String): UserAdminState? =
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(userId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction null
+                }
+            val user =
+                UserEntity
+                    .findById(uuid)
+                    ?.takeIf { !it.isDeleted }
+                    ?: return@transaction null
+
+            val role = user.roleId?.let { RoleEntity.findById(it.value) }
+            val isAdmin = role?.takeIf { !it.isDeleted }?.isAdmin ?: false
+
+            UserAdminState(
+                roleId = user.roleId?.value?.toString(),
+                isAdmin = isAdmin,
+            )
+        }
 }

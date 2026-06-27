@@ -1,19 +1,13 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.mockito.ArgumentMatchers.contains
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.models.Product
 import pos.ambrosia.services.ProductService
-import pos.ambrosia.services.ProductVariantService
-import pos.ambrosia.utils.DuplicateProductSkuException
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
+import pos.ambrosia.utils.ExposedTestDb
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -23,408 +17,314 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProductServiceTest {
-    private val mockConnection: Connection = mock()
-    private val mockStatement: PreparedStatement = mock()
-    private val mockResultSet: ResultSet = mock()
-    private val mockVariantService: ProductVariantService = mock()
+    private lateinit var dbFile: File
+    private val service = ProductService()
 
-    private val mockCatStatement: PreparedStatement = mock()
-    private val mockCatResultSet: ResultSet = mock()
-
-    private fun stubCategoryIds() {
-        whenever(mockConnection.prepareStatement(contains("SELECT category_id FROM product_categories"))).thenReturn(mockCatStatement)
-        whenever(mockConnection.prepareStatement(contains("INSERT OR IGNORE INTO product_categories"))).thenReturn(mockCatStatement)
-        whenever(mockConnection.prepareStatement(contains("DELETE FROM product_categories"))).thenReturn(mockCatStatement)
-        whenever(mockCatStatement.executeQuery()).thenReturn(mockCatResultSet)
-        whenever(mockCatResultSet.next()).thenReturn(false)
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
     }
 
-    private fun stubVariantService() {
-        runBlocking {
-            whenever(mockVariantService.getOptionTypes(any())).thenReturn(emptyList())
-            whenever(mockVariantService.getVariants(any())).thenReturn(emptyList())
-        }
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
     }
 
-    private fun stubProductResultSet(
-        rs: ResultSet,
-        id: String = "p-1",
+    private fun newProduct(
+        id: String? = null,
         sku: String? = "SKU-1",
         name: String = "Prod1",
-        hasVariants: Int = 0,
-    ) {
-        whenever(rs.getString("id")).thenReturn(id)
-        whenever(rs.getString("SKU")).thenReturn(sku)
-        whenever(rs.getString("name")).thenReturn(name)
-        whenever(rs.getString("description")).thenReturn(null)
-        whenever(rs.getString("image_url")).thenReturn(null)
-        whenever(rs.getInt("min_stock_threshold")).thenReturn(1)
-        whenever(rs.getInt("max_stock_threshold")).thenReturn(10)
-        whenever(rs.getInt("has_variants")).thenReturn(hasVariants)
-    }
-
-    private fun service() = ProductService(mockConnection, mockVariantService)
+        categoryIds: List<String> = emptyList(),
+        minStockThreshold: Int = 1,
+        maxStockThreshold: Int = 10,
+    ): Product =
+        Product(
+            id = id,
+            SKU = sku,
+            name = name,
+            description = null,
+            imageUrl = null,
+            categoryIds = categoryIds,
+            minStockThreshold = minStockThreshold,
+            maxStockThreshold = maxStockThreshold,
+        )
 
     @Test
     fun `getProducts returns list when found`() {
         runBlocking {
-            stubCategoryIds() // Arrange
-            whenever(mockConnection.prepareStatement(contains("FROM products WHERE is_deleted"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
-            whenever(mockResultSet.getString("id")).thenReturn("p-1").thenReturn("p-2") // Arrange
-            whenever(mockResultSet.getString("SKU")).thenReturn("SKU-1").thenReturn("SKU-2") // Arrange
-            whenever(mockResultSet.getString("name")).thenReturn("Prod1").thenReturn("Prod2") // Arrange
-            whenever(mockResultSet.getString("description")).thenReturn(null) // Arrange
-            whenever(mockResultSet.getString("image_url")).thenReturn(null) // Arrange
-            whenever(mockResultSet.getInt("min_stock_threshold")).thenReturn(1).thenReturn(2) // Arrange
-            whenever(mockResultSet.getInt("max_stock_threshold")).thenReturn(10).thenReturn(20) // Arrange
-            whenever(mockResultSet.getInt("has_variants")).thenReturn(0).thenReturn(0) // Arrange
-            val result = service().getProducts() // Act
-            assertEquals(2, result.size) // Assert
-            assertEquals("SKU-1", result[0].SKU) // Assert
-            assertEquals("Prod2", result[1].name) // Assert
+            ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1", priceCents = 199)
+            ExposedTestDb.seedProduct(name = "Prod2", sku = "SKU-2", priceCents = 499)
+
+            val result = service.getProducts()
+            assertEquals(2, result.size)
+            assertTrue(result.any { it.SKU == "SKU-1" })
+            assertTrue(result.any { it.priceCents == 499 })
         }
     }
 
     @Test
     fun `getProducts returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getProducts() // Act
-            assertTrue(result.isEmpty()) // Assert
+            val result = service.getProducts()
+            assertTrue(result.isEmpty())
+        }
+    }
+
+    @Test
+    fun `getProducts excludes soft deleted products`() {
+        runBlocking {
+            ExposedTestDb.seedProduct(name = "Active")
+            ExposedTestDb.seedProduct(name = "Deleted", isDeleted = true)
+
+            val result = service.getProducts()
+            assertEquals(1, result.size)
+            assertEquals("Active", result[0].name)
         }
     }
 
     @Test
     fun `getProductById returns product when found`() {
         runBlocking {
-            stubCategoryIds() // Arrange
-            stubVariantService() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE id = ?"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            stubProductResultSet(mockResultSet) // Arrange
-            val result = service().getProductById("p-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals("SKU-1", result!!.SKU) // Assert
-            assertTrue(result.options.isEmpty()) // Assert
-            assertTrue(result.variants.isEmpty()) // Assert
+            val id = ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1")
+
+            val result = service.getProductById(id)
+            assertNotNull(result)
+            assertEquals("SKU-1", result.SKU)
         }
     }
 
     @Test
     fun `getProductById returns null when not found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getProductById("missing") // Act
-            assertNull(result) // Assert
+            val result =
+                service.getProductById(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
+            assertNull(result)
         }
     }
 
     @Test
     fun `getProductBySKU returns product when found`() {
         runBlocking {
-            stubCategoryIds() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            stubProductResultSet(mockResultSet) // Arrange
-            val result = service().getProductBySKU("SKU-1") // Act
-            assertNotNull(result) // Assert
-            assertEquals("p-1", result!!.id) // Assert
+            val id = ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1")
+
+            val result = service.getProductBySKU("SKU-1")
+            assertNotNull(result)
+            assertEquals(id, result.id)
         }
     }
 
     @Test
     fun `getProductBySKU returns null when not found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getProductBySKU("NOPE") // Act
-            assertNull(result) // Assert
+            val result = service.getProductBySKU("NOPE")
+            assertNull(result)
         }
     }
 
     @Test
     fun `getProductsByCategory returns list when found`() {
         runBlocking {
-            stubCategoryIds() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INNER JOIN product_categories"))).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(true).thenReturn(false) // Arrange
-            stubProductResultSet(mockResultSet) // Arrange
-            val result = service().getProductsByCategory("cat-1") // Act
-            assertEquals(1, result.size) // Assert
-            assertEquals("SKU-1", result[0].SKU) // Assert
+            val categoryId = ExposedTestDb.seedCategory(type = "product")
+            val productId = ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1")
+            ExposedTestDb.seedProductCategory(productId, categoryId)
+            ExposedTestDb.seedProduct(name = "Prod2", sku = "SKU-2")
+
+            val result = service.getProductsByCategory(categoryId)
+            assertEquals(1, result.size)
+            assertEquals("SKU-1", result[0].SKU)
         }
     }
 
     @Test
     fun `getProductsByCategory returns empty list when none found`() {
         runBlocking {
-            whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
-            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
-            whenever(mockResultSet.next()).thenReturn(false) // Arrange
-            val result = service().getProductsByCategory("cat-404") // Act
-            assertTrue(result.isEmpty()) // Assert
+            val categoryId = ExposedTestDb.seedCategory(type = "product")
+            val result = service.getProductsByCategory(categoryId)
+            assertTrue(result.isEmpty())
         }
     }
 
     @Test
     fun `addProduct returns null if invalid data`() {
         runBlocking {
-            val invalid = Product(name = " ", minStockThreshold = -1, maxStockThreshold = 0) // Arrange
-            val result = service().addProduct(invalid) // Act
-            assertNull(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
+            val invalid = newProduct(sku = " ", name = " ", minStockThreshold = -1, maxStockThreshold = -1)
+            val result = service.addProduct(invalid)
+            assertNull(result)
         }
     }
 
     @Test
     fun `addProduct throws if SKU already exists`() {
         runBlocking {
-            val newProduct = Product(SKU = "SKU-1", name = "Prod1", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(true) // Arrange
-            stubProductResultSet(skuCheckResultSet, id = "existing-id", sku = "SKU-1") // Arrange
-            stubCategoryIds() // Arrange
-            assertFailsWith<DuplicateProductSkuException> { service().addProduct(newProduct) } // Act
+            ExposedTestDb.seedProduct(name = "Existing", sku = "SKU-1")
+            val newProductData = newProduct(sku = "SKU-1", name = "Prod1")
+            assertFailsWith<ExposedSQLException> { service.addProduct(newProductData) }
         }
     }
 
     @Test
     fun `addProduct returns new ID on success`() {
         runBlocking {
-            val newProduct = Product(SKU = "SKU-NEW", name = "New Product", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            stubCategoryIds() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().addProduct(newProduct) // Act
-            assertNotNull(result) // Assert
-            assertTrue(result!!.isNotBlank()) // Assert
+            val categoryId = ExposedTestDb.seedCategory(type = "product")
+            val newProductData = newProduct(sku = "SKU-NEW", name = "New Product", categoryIds = listOf(categoryId))
+            val result = service.addProduct(newProductData)
+            assertNotNull(result)
+            assertTrue(result.isNotBlank())
+
+            val created = service.getProductById(result)
+            assertEquals(listOf(categoryId), created?.categoryIds)
         }
     }
 
     @Test
-    fun `addProduct succeeds with null SKU and description`() {
+    fun `addProduct succeeds with null SKU`() {
         runBlocking {
-            val newProduct = Product(name = "No SKU Product") // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            stubCategoryIds() // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().addProduct(newProduct) // Act
-            assertNotNull(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+            val newProductData = newProduct(sku = null, name = "No SKU Product")
+            val result = service.addProduct(newProductData)
+            assertNotNull(result)
         }
     }
 
     @Test
-    fun `addProduct succeeds with blank SKU and does not check uniqueness`() {
+    fun `addProduct succeeds with blank SKU`() {
         runBlocking {
-            val newProduct = Product(SKU = "   ", name = "Blank SKU Product") // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            stubCategoryIds() // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().addProduct(newProduct) // Act
-            assertNotNull(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+            val newProductData = newProduct(sku = "   ", name = "Blank SKU Product")
+            val result = service.addProduct(newProductData)
+            assertNotNull(result)
         }
     }
 
     @Test
     fun `addProduct returns new ID when categoryIds is empty`() {
         runBlocking {
-            val newProduct = Product(SKU = "SKU-NO-CAT", name = "New Product") // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            stubCategoryIds() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().addProduct(newProduct) // Act
-            assertNotNull(result) // Assert
-            assertTrue(result!!.isNotBlank()) // Assert
-            verify(mockCatStatement, never()).addBatch() // Assert
-        }
-    }
-
-    @Test
-    fun `addProduct returns null when database insert fails`() {
-        runBlocking {
-            val newProduct = Product(SKU = "SKU-NEW", name = "New Product", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().addProduct(newProduct) // Act
-            assertNull(result) // Assert
-        }
-    }
-
-    @Test
-    fun `addProduct sets hasVariants as integer in statement`() {
-        runBlocking {
-            val newProduct = Product(name = "Variant Product", hasVariants = true) // Arrange
-            val insertStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
-            stubCategoryIds() // Arrange
-            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
-            service().addProduct(newProduct) // Act
-            verify(insertStatement).setInt(8, 1) // Assert — hasVariants = true → 1
+            val newProductData = newProduct(sku = "SKU-NO-CAT", name = "New Product", categoryIds = emptyList())
+            val result = service.addProduct(newProductData)
+            assertNotNull(result)
+            assertTrue(result.isNotBlank())
         }
     }
 
     @Test
     fun `updateProduct returns false if ID is null`() {
         runBlocking {
-            val productWithNullId = Product(id = null, name = "Name") // Arrange
-            val result = service().updateProduct(productWithNullId) // Act
-            assertFalse(result) // Assert
-            verify(mockConnection, never()).prepareStatement(any()) // Assert
+            val productWithNullId = newProduct(id = null, sku = "SKU-1", name = "Name")
+            val result = service.updateProduct(productWithNullId)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateProduct returns false if invalid data`() {
         runBlocking {
-            val invalid = Product(id = "p-1", name = " ", minStockThreshold = -1, maxStockThreshold = -1) // Arrange
-            val result = service().updateProduct(invalid) // Act
-            assertFalse(result) // Assert
+            val invalid = newProduct(id = "p-1", name = " ", minStockThreshold = -1, maxStockThreshold = -1)
+            val result = service.updateProduct(invalid)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `updateProduct throws if SKU belongs to another product`() {
         runBlocking {
-            val toUpdate = Product(id = "p-1", SKU = "SKU-TAKEN", name = "New Name", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(true) // Arrange
-            stubProductResultSet(skuCheckResultSet, id = "another-id", sku = "SKU-TAKEN", name = "Other") // Arrange
-            stubCategoryIds() // Arrange
-            assertFailsWith<DuplicateProductSkuException> { service().updateProduct(toUpdate) } // Act
-            verify(mockConnection, never()).prepareStatement(contains("UPDATE products")) // Assert
+            ExposedTestDb.seedProduct(name = "Other", sku = "SKU-TAKEN")
+            val id = ExposedTestDb.seedProduct(name = "Mine", sku = "SKU-MINE")
+
+            val toUpdate = newProduct(id = id, sku = "SKU-TAKEN", name = "New Name")
+            assertFailsWith<ExposedSQLException> { service.updateProduct(toUpdate) }
+
+            val unchanged = service.getProductById(id)
+            assertEquals("SKU-MINE", unchanged?.SKU)
         }
     }
 
     @Test
     fun `updateProduct returns true on success`() {
         runBlocking {
-            val toUpdate = Product(id = "p-1", SKU = "SKU-OK", name = "Updated", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
-            stubCategoryIds() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().updateProduct(toUpdate) // Act
-            assertTrue(result) // Assert
+            val categoryId = ExposedTestDb.seedCategory(type = "product")
+            val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-OLD")
+
+            val toUpdate = newProduct(id = id, sku = "SKU-OK", name = "Updated", categoryIds = listOf(categoryId))
+            val result = service.updateProduct(toUpdate)
+            assertTrue(result)
+
+            val updated = service.getProductById(id)
+            assertEquals("Updated", updated?.name)
+            assertEquals("SKU-OK", updated?.SKU)
+            assertEquals(listOf(categoryId), updated?.categoryIds)
         }
     }
 
     @Test
     fun `updateProduct succeeds with null SKU`() {
         runBlocking {
-            val toUpdate = Product(id = "p-1", SKU = null, name = "Updated No SKU", description = "Now no SKU") // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
-            stubCategoryIds() // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().updateProduct(toUpdate) // Act
-            assertTrue(result) // Assert
-            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+            val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-OLD")
+
+            val toUpdate = newProduct(id = id, sku = null, name = "Updated No SKU", categoryIds = emptyList())
+            val result = service.updateProduct(toUpdate)
+            assertTrue(result)
+
+            val updated = service.getProductById(id)
+            assertNull(updated?.SKU)
         }
     }
 
     @Test
     fun `updateProduct returns true when categoryIds is empty`() {
         runBlocking {
-            val toUpdate = Product(id = "p-1", SKU = "SKU-1", name = "Updated Name") // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
-            stubCategoryIds() // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
-            whenever(mockCatStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().updateProduct(toUpdate) // Act
-            assertTrue(result) // Assert
-            verify(mockCatStatement, never()).addBatch() // Assert
+            val categoryId = ExposedTestDb.seedCategory(type = "product")
+            val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-1")
+            ExposedTestDb.seedProductCategory(id, categoryId)
+
+            val toUpdate = newProduct(id = id, sku = "SKU-1", name = "Updated Name", categoryIds = emptyList())
+            val result = service.updateProduct(toUpdate)
+            assertTrue(result)
+
+            val updated = service.getProductById(id)
+            assertTrue(updated?.categoryIds?.isEmpty() == true)
         }
     }
 
     @Test
-    fun `updateProduct returns false when database update fails`() {
+    fun `updateProduct returns false when not found`() {
         runBlocking {
-            val toUpdate = Product(id = "p-1", SKU = "SKU-OK", name = "Updated", categoryIds = listOf("cat-1")) // Arrange
-            val skuCheckStatement: PreparedStatement = mock() // Arrange
-            val updateStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
-            val skuCheckResultSet: ResultSet = mock() // Arrange
-            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
-            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
-            whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().updateProduct(toUpdate) // Act
-            assertFalse(result) // Assert
+            val toUpdate =
+                newProduct(
+                    id =
+                        java.util.UUID
+                            .randomUUID()
+                            .toString(),
+                    sku = "SKU-OK",
+                    name = "Updated",
+                )
+            val result = service.updateProduct(toUpdate)
+            assertFalse(result)
         }
     }
 
     @Test
     fun `deleteProduct returns true on success`() {
         runBlocking {
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(1) // Arrange
-            val result = service().deleteProduct("p-1") // Act
-            assertTrue(result) // Assert
-            verify(deleteStatement).setString(1, "DELETED-p-1") // Assert
-            verify(deleteStatement).setString(2, "p-1") // Assert
+            val id = ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1")
+
+            val result = service.deleteProduct(id)
+            assertTrue(result)
+            assertNull(service.getProductById(id))
         }
     }
 
     @Test
-    fun `deleteProduct returns false when not updated`() {
+    fun `deleteProduct returns false when not found`() {
         runBlocking {
-            val deleteStatement: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("UPDATE products SET is_deleted"))).thenReturn(deleteStatement) // Arrange
-            whenever(deleteStatement.executeUpdate()).thenReturn(0) // Arrange
-            val result = service().deleteProduct("not-found") // Act
-            assertFalse(result) // Assert
-            verify(deleteStatement).setString(1, "DELETED-not-found") // Assert
-            verify(deleteStatement).setString(2, "not-found") // Assert
+            val result =
+                service.deleteProduct(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
+            assertFalse(result)
         }
     }
 }

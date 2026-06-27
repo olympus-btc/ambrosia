@@ -11,17 +11,14 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.UpsertOptionTypeRequest
 import pos.ambrosia.models.UpsertVariantRequest
 import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureProductVariants() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val service = ProductVariantService(connection)
+    val service = ProductVariantService()
     routing { route("/products/{id}") { productVariants(service) } }
 }
 

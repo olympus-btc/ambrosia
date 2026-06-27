@@ -1,93 +1,71 @@
 package pos.ambrosia.services
 
-import pos.ambrosia.logger
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.BaseCurrencyTable
+import pos.ambrosia.db.tables.CurrencyEntity
+import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.models.Currency
-import java.sql.Connection
+import java.util.UUID
 
-class CurrencyService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val SELECT_BY_ACRONYM = "SELECT id, acronym, name, symbol, country_name, country_code FROM currency WHERE acronym = ?"
-        private const val SELECT_ALL = "SELECT id, acronym, name, symbol, country_name, country_code FROM currency"
-        private const val UPSERT_BASE = "INSERT OR REPLACE INTO base_currency (id, currency_id) VALUES (1, ?)"
-        private const val SELECT_BASE_JOIN =
-            """
-      SELECT c.id, c.acronym, c.name, c.symbol, c.country_name, c.country_code
-      FROM base_currency b
-      JOIN currency c ON c.id = b.currency_id
-      WHERE b.id = 1
-      """
-    }
+class CurrencyService {
+    private fun toModel(entity: CurrencyEntity): Currency =
+        Currency(
+            id = entity.id.value.toString(),
+            acronym = entity.acronym,
+            name = entity.name,
+            symbol = entity.symbol,
+            countryName = entity.countryName,
+            countryCode = entity.countryCode,
+        )
 
-    fun getByAcronym(acronym: String): Currency? {
-        connection.prepareStatement(SELECT_BY_ACRONYM).use { statement ->
-            statement.setString(1, acronym)
-            val resultSet = statement.executeQuery()
-            return if (resultSet.next()) {
-                Currency(
-                    id = resultSet.getString("id"),
-                    acronym = resultSet.getString("acronym"),
-                    name = resultSet.getString("name"),
-                    symbol = resultSet.getString("symbol"),
-                    countryName = resultSet.getString("country_name"),
-                    countryCode = resultSet.getString("country_code"),
-                )
-            } else {
-                null
+    fun getByAcronym(acronym: String): Currency? =
+        transaction {
+            CurrencyEntity.find { CurrencyTable.acronym eq acronym }.firstOrNull()?.let { toModel(it) }
+        }
+
+    fun list(): List<Currency> =
+        transaction {
+            CurrencyEntity.all().map { toModel(it) }
+        }
+
+    fun setBaseCurrencyById(id: String): Boolean =
+        transaction {
+            val currencyId = EntityID(UUID.fromString(id), CurrencyTable)
+            val updated = BaseCurrencyTable.update({ BaseCurrencyTable.id eq 1 }) { it[BaseCurrencyTable.currencyId] = currencyId }
+            if (updated == 0) {
+                BaseCurrencyTable.insert {
+                    it[BaseCurrencyTable.id] = 1
+                    it[BaseCurrencyTable.currencyId] = currencyId
+                }
             }
+            true
         }
-    }
-
-    fun list(): List<Currency> {
-        val out = mutableListOf<Currency>()
-        connection.prepareStatement(SELECT_ALL).use { statement ->
-            val resultSet = statement.executeQuery()
-            while (resultSet.next()) {
-                out.add(
-                    Currency(
-                        id = resultSet.getString("id"),
-                        acronym = resultSet.getString("acronym"),
-                        name = resultSet.getString("name"),
-                        symbol = resultSet.getString("symbol"),
-                        countryName = resultSet.getString("country_name"),
-                        countryCode = resultSet.getString("country_code"),
-                    ),
-                )
-            }
-        }
-        return out
-    }
-
-    fun setBaseCurrencyById(id: String): Boolean {
-        connection.prepareStatement(UPSERT_BASE).use { statement ->
-            statement.setString(1, id)
-            val n = statement.executeUpdate()
-            if (n <= 0) logger.error("Failed to upsert base currency with id=$id")
-            return n > 0
-        }
-    }
 
     fun setBaseCurrencyByAcronym(acronym: String): Boolean {
-        val c = getByAcronym(acronym) ?: return false
-        return setBaseCurrencyById(c.id!!)
+        val currency = getByAcronym(acronym) ?: return false
+        return setBaseCurrencyById(currency.id!!)
     }
 
-    fun getBaseCurrency(): Currency? {
-        connection.prepareStatement(SELECT_BASE_JOIN).use { statement ->
-            val resultSet = statement.executeQuery()
-            return if (resultSet.next()) {
-                Currency(
-                    id = resultSet.getString("id"),
-                    acronym = resultSet.getString("acronym"),
-                    name = resultSet.getString("name"),
-                    symbol = resultSet.getString("symbol"),
-                    countryName = resultSet.getString("country_name"),
-                    countryCode = resultSet.getString("country_code"),
-                )
-            } else {
-                null
-            }
+    fun getBaseCurrency(): Currency? =
+        transaction {
+            (BaseCurrencyTable innerJoin CurrencyTable)
+                .selectAll()
+                .where { BaseCurrencyTable.id eq 1 }
+                .firstOrNull()
+                ?.let { row ->
+                    Currency(
+                        id = row[CurrencyTable.id].value.toString(),
+                        acronym = row[CurrencyTable.acronym],
+                        name = row[CurrencyTable.name],
+                        symbol = row[CurrencyTable.symbol],
+                        countryName = row[CurrencyTable.countryName],
+                        countryCode = row[CurrencyTable.countryCode],
+                    )
+                }
         }
-    }
 }

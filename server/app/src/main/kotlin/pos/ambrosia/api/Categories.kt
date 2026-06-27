@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.CategoryItem
 import pos.ambrosia.models.CategoryUpsert
 import pos.ambrosia.services.CategoryService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureCategories() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val service = CategoryService(connection)
+    val service = CategoryService()
     routing { route("/categories") { categories(service) } }
 }
 

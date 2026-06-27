@@ -5,19 +5,15 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.services.BaseCurrencyService
-import java.sql.Connection
 
 fun Application.configureRouting() {
-    val connection: Connection = DatabaseConnection.getConnection()
     routing {
         get("/") {
-            // TODO: Add link to the documentation
             call.respondText("Root path of the API Nothing to see here")
         }
         get("/base-currency") {
-            val baseCurrencyService = BaseCurrencyService(connection)
+            val baseCurrencyService = BaseCurrencyService()
             val baseCurrency = baseCurrencyService.getBaseCurrency()
             if (baseCurrency == null) {
                 call.respond(mapOf("currency_id" to null))

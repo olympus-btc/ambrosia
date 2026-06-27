@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Table
 import pos.ambrosia.services.TableService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureTables() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val tableService = TableService(connection)
+    val tableService = TableService()
     routing { route("/tables") { tables(tableService) } }
 }
 

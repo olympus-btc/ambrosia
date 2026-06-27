@@ -11,16 +11,13 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.Ticket
 import pos.ambrosia.services.TicketService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureTickets() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val ticketService = TicketService(connection)
+    val ticketService = TicketService()
     routing { route("/tickets") { tickets(ticketService) } }
 }
 

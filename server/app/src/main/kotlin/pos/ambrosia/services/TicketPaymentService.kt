@@ -1,141 +1,120 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.PaymentEntity
+import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.TicketEntity
+import pos.ambrosia.db.tables.TicketPaymentsTable
+import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.TicketPayment
-import java.sql.Connection
+import java.util.UUID
 
-class TicketPaymentService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_TICKET_PAYMENT =
-            "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
-        private const val GET_TICKET_PAYMENTS_BY_TICKET =
-            "SELECT payment_id, ticket_id FROM ticket_payments WHERE ticket_id = ?"
-        private const val GET_TICKET_PAYMENTS_BY_PAYMENT =
-            "SELECT payment_id, ticket_id FROM ticket_payments WHERE payment_id = ?"
-        private const val DELETE_TICKET_PAYMENT =
-            "DELETE FROM ticket_payments WHERE payment_id = ? AND ticket_id = ?"
-        private const val DELETE_TICKET_PAYMENTS_BY_TICKET =
-            "DELETE FROM ticket_payments WHERE ticket_id = ?"
-        private const val CHECK_TICKET_EXISTS = "SELECT id FROM tickets WHERE id = ?"
-        private const val CHECK_PAYMENT_EXISTS = "SELECT id FROM payments WHERE id = ?"
-    }
+class TicketPaymentService {
+    private fun ticketExists(ticketId: String): Boolean = TicketEntity.findById(UUID.fromString(ticketId)) != null
 
-    private fun ticketExists(ticketId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_TICKET_EXISTS)
-        statement.setString(1, ticketId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    private fun paymentExists(paymentId: String): Boolean = PaymentEntity.findById(UUID.fromString(paymentId)) != null
 
-    private fun paymentExists(paymentId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_PAYMENT_EXISTS)
-        statement.setString(1, paymentId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
+    fun addTicketPayment(ticketPayment: TicketPayment): Boolean =
+        transaction {
+            if (ticketPayment.paymentId.isBlank() || ticketPayment.ticketId.isBlank()) {
+                logger.error("Payment ID and ticket ID are required fields")
+                return@transaction false
+            }
 
-    suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean {
-        if (ticketPayment.paymentId.isBlank() || ticketPayment.ticketId.isBlank()) {
-            logger.error("Payment ID and ticket ID are required fields")
-            return false
-        }
+            if (!ticketExists(ticketPayment.ticketId)) {
+                logger.error("Ticket ID does not exist: ${ticketPayment.ticketId}")
+                return@transaction false
+            }
 
-        if (!ticketExists(ticketPayment.ticketId)) {
-            logger.error("Ticket ID does not exist: ${ticketPayment.ticketId}")
-            return false
-        }
+            if (!paymentExists(ticketPayment.paymentId)) {
+                logger.error("Payment ID does not exist: ${ticketPayment.paymentId}")
+                return@transaction false
+            }
 
-        if (!paymentExists(ticketPayment.paymentId)) {
-            logger.error("Payment ID does not exist: ${ticketPayment.paymentId}")
-            return false
-        }
-
-        val statement = connection.prepareStatement(ADD_TICKET_PAYMENT)
-        statement.setString(1, ticketPayment.paymentId)
-        statement.setString(2, ticketPayment.ticketId)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
+            TicketPaymentsTable.insert {
+                it[paymentId] = EntityID(UUID.fromString(ticketPayment.paymentId), PaymentsTable)
+                it[ticketId] = EntityID(UUID.fromString(ticketPayment.ticketId), TicketsTable)
+            }
             logger.info(
                 "Ticket payment created successfully: payment ${ticketPayment.paymentId} -> ticket ${ticketPayment.ticketId}",
             )
             true
-        } else {
-            logger.error("Failed to create ticket payment")
-            false
-        }
-    }
-
-    suspend fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? {
-        if (!ticketExists(ticketId)) return null
-        val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_TICKET)
-        statement.setString(1, ticketId)
-        val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<TicketPayment>()
-
-        while (resultSet.next()) {
-            val ticketPayment =
-                TicketPayment(
-                    paymentId = resultSet.getString("payment_id"),
-                    ticketId = resultSet.getString("ticket_id"),
-                )
-            ticketPayments.add(ticketPayment)
         }
 
-        logger.info("Retrieved ${ticketPayments.size} payments for ticket: $ticketId")
-        return ticketPayments
-    }
+    fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? =
+        transaction {
+            if (!ticketExists(ticketId)) return@transaction null
 
-    suspend fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? {
-        if (!paymentExists(paymentId)) return null
-        val statement = connection.prepareStatement(GET_TICKET_PAYMENTS_BY_PAYMENT)
-        statement.setString(1, paymentId)
-        val resultSet = statement.executeQuery()
-        val ticketPayments = mutableListOf<TicketPayment>()
-
-        while (resultSet.next()) {
-            val ticketPayment =
-                TicketPayment(
-                    paymentId = resultSet.getString("payment_id"),
-                    ticketId = resultSet.getString("ticket_id"),
-                )
-            ticketPayments.add(ticketPayment)
+            val ticketPayments =
+                TicketPaymentsTable
+                    .selectAll()
+                    .where { TicketPaymentsTable.ticketId eq EntityID(UUID.fromString(ticketId), TicketsTable) }
+                    .map {
+                        TicketPayment(
+                            paymentId = it[TicketPaymentsTable.paymentId].value.toString(),
+                            ticketId = it[TicketPaymentsTable.ticketId].value.toString(),
+                        )
+                    }
+            logger.info("Retrieved ${ticketPayments.size} payments for ticket: $ticketId")
+            ticketPayments
         }
 
-        logger.info("Retrieved ${ticketPayments.size} tickets for payment: $paymentId")
-        return ticketPayments
-    }
+    fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? =
+        transaction {
+            if (!paymentExists(paymentId)) return@transaction null
 
-    suspend fun deleteTicketPayment(
+            val ticketPayments =
+                TicketPaymentsTable
+                    .selectAll()
+                    .where { TicketPaymentsTable.paymentId eq EntityID(UUID.fromString(paymentId), PaymentsTable) }
+                    .map {
+                        TicketPayment(
+                            paymentId = it[TicketPaymentsTable.paymentId].value.toString(),
+                            ticketId = it[TicketPaymentsTable.ticketId].value.toString(),
+                        )
+                    }
+            logger.info("Retrieved ${ticketPayments.size} tickets for payment: $paymentId")
+            ticketPayments
+        }
+
+    fun deleteTicketPayment(
         paymentId: String,
         ticketId: String,
-    ): Boolean {
-        val statement = connection.prepareStatement(DELETE_TICKET_PAYMENT)
-        statement.setString(1, paymentId)
-        statement.setString(2, ticketId)
-        val rowsDeleted = statement.executeUpdate()
+    ): Boolean =
+        transaction {
+            val rowsDeleted =
+                TicketPaymentsTable.deleteWhere {
+                    (TicketPaymentsTable.paymentId eq EntityID(UUID.fromString(paymentId), PaymentsTable)) and
+                        (TicketPaymentsTable.ticketId eq EntityID(UUID.fromString(ticketId), TicketsTable))
+                }
 
-        if (rowsDeleted > 0) {
-            logger.info("Ticket payment deleted successfully: payment $paymentId -> ticket $ticketId")
-        } else {
-            logger.error("Failed to delete ticket payment: payment $paymentId -> ticket $ticketId")
+            if (rowsDeleted > 0) {
+                logger.info("Ticket payment deleted successfully: payment $paymentId -> ticket $ticketId")
+            } else {
+                logger.error("Failed to delete ticket payment: payment $paymentId -> ticket $ticketId")
+            }
+            rowsDeleted > 0
         }
-        return rowsDeleted > 0
-    }
 
-    suspend fun deleteTicketPaymentsByTicket(ticketId: String): Boolean {
-        val statement = connection.prepareStatement(DELETE_TICKET_PAYMENTS_BY_TICKET)
-        statement.setString(1, ticketId)
-        val rowsDeleted = statement.executeUpdate()
+    fun deleteTicketPaymentsByTicket(ticketId: String): Boolean =
+        transaction {
+            val rowsDeleted =
+                TicketPaymentsTable.deleteWhere {
+                    TicketPaymentsTable.ticketId eq EntityID(UUID.fromString(ticketId), TicketsTable)
+                }
 
-        if (rowsDeleted > 0) {
-            logger.info("All payments deleted for ticket: $ticketId ($rowsDeleted payments)")
-        } else {
-            logger.info("No payments found to delete for ticket: $ticketId")
+            if (rowsDeleted > 0) {
+                logger.info("All payments deleted for ticket: $ticketId ($rowsDeleted payments)")
+            } else {
+                logger.info("No payments found to delete for ticket: $ticketId")
+            }
+            true
         }
-        return true
-    }
 }

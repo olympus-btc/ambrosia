@@ -11,17 +11,14 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.CloseShiftRequest
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureShifts() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val shiftService = ShiftService(connection)
+    val shiftService = ShiftService()
     routing { route("/shifts") { shifts(shiftService) } }
 }
 

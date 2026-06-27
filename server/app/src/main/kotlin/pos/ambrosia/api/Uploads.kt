@@ -15,7 +15,6 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import pos.ambrosia.datadir
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.services.UploadService
 import java.nio.file.Path
@@ -24,8 +23,7 @@ import java.nio.file.Paths
 fun Application.configureUploads() {
     val uploadRoot: Path = Paths.get(datadir.toString(), "uploads")
     val uploadService = UploadService(uploadRoot)
-    val connection = DatabaseConnection.getConnection()
-    val configService = ConfigService(connection)
+    val configService = ConfigService()
 
     routing {
         staticFiles("/uploads", uploadRoot.toFile())

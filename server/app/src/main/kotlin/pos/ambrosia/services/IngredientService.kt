@@ -1,233 +1,198 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.CategoriesTable
+import pos.ambrosia.db.tables.CategoryEntity
+import pos.ambrosia.db.tables.DishesIngredientsTable
+import pos.ambrosia.db.tables.IngredientEntity
+import pos.ambrosia.db.tables.IngredientsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Ingredient
-import java.sql.Connection
+import java.util.UUID
 
-class IngredientService(
-    private val connection: Connection,
-) {
-    companion object {
-        private const val ADD_INGREDIENT =
-            "INSERT INTO ingredients (id, name, category_id, quantity, unit, low_stock_threshold, cost_per_unit) VALUES (?, ?, ?, ?, ?, ?, ?)"
-        private const val GET_INGREDIENTS =
-            "SELECT id, name, category_id, quantity, unit, low_stock_threshold, cost_per_unit FROM ingredients WHERE is_deleted = 0"
-        private const val GET_INGREDIENT_BY_ID =
-            "SELECT id, name, category_id, quantity, unit, low_stock_threshold, cost_per_unit FROM ingredients WHERE id = ? AND is_deleted = 0"
-        private const val UPDATE_INGREDIENT =
-            "UPDATE ingredients SET name = ?, category_id = ?, quantity = ?, unit = ?, low_stock_threshold = ?, cost_per_unit = ? WHERE id = ?"
-        private const val DELETE_INGREDIENT = "UPDATE ingredients SET is_deleted = 1 WHERE id = ?"
-        private const val CHECK_CATEGORY_EXISTS =
-            "SELECT id FROM categories WHERE id = ? AND type = 'ingredient' AND is_deleted = 0"
-        private const val CHECK_INGREDIENT_IN_USE =
-            "SELECT COUNT(*) as count FROM dishes_ingredient WHERE id_ingredient = ?"
-        private const val GET_LOW_STOCK_INGREDIENTS =
-            "SELECT id, name, category_id, quantity, unit, low_stock_threshold, cost_per_unit FROM ingredients WHERE quantity < low_stock_threshold AND is_deleted = 0"
-        private const val GET_INGREDIENTS_BY_CATEGORY =
-            "SELECT id, name, category_id, quantity, unit, low_stock_threshold, cost_per_unit FROM ingredients WHERE category_id = ? AND is_deleted = 0"
-    }
-
-    private fun categoryExists(categoryId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_CATEGORY_EXISTS)
-        statement.setString(1, categoryId)
-        val resultSet = statement.executeQuery()
-        return resultSet.next()
-    }
-
-    private fun ingredientInUse(ingredientId: String): Boolean {
-        val statement = connection.prepareStatement(CHECK_INGREDIENT_IN_USE)
-        statement.setString(1, ingredientId)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            return resultSet.getInt("count") > 0
-        }
-        return false
-    }
-
-    private fun mapResultSetToIngredient(resultSet: java.sql.ResultSet): Ingredient =
+class IngredientService {
+    private fun toModel(entity: IngredientEntity): Ingredient =
         Ingredient(
-            id = resultSet.getString("id"),
-            name = resultSet.getString("name"),
-            categoryId = resultSet.getString("category_id"),
-            quantity = resultSet.getDouble("quantity"),
-            unit = resultSet.getString("unit"),
-            lowStockThreshold =
-                resultSet.getDouble("low_stock_threshold"),
-            costPerUnit = resultSet.getDouble("cost_per_unit"),
+            id = entity.id.value.toString(),
+            name = entity.name,
+            categoryId = entity.categoryId.value.toString(),
+            quantity = entity.quantity,
+            unit = entity.unit,
+            lowStockThreshold = entity.lowStockThreshold,
+            costPerUnit = entity.costPerUnit,
         )
 
-    suspend fun addIngredient(ingredient: Ingredient): String? {
-        if (!categoryExists(ingredient.categoryId)) {
-            logger.error("Category does not exist: ${ingredient.categoryId}")
-            return null
-        }
-
-        if (ingredient.name.isBlank()) {
-            logger.error("Ingredient name cannot be blank")
-            return null
-        }
-
-        if (ingredient.quantity < 0 ||
-            ingredient.lowStockThreshold < 0 ||
-            ingredient.costPerUnit < 0
-        ) {
-            logger.error("Quantity, threshold and cost cannot be negative")
-            return null
-        }
-
-        val generatedId =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        val statement = connection.prepareStatement(ADD_INGREDIENT)
-
-        statement.setString(1, generatedId)
-        statement.setString(2, ingredient.name)
-        statement.setString(3, ingredient.categoryId)
-        statement.setDouble(4, ingredient.quantity)
-        statement.setString(5, ingredient.unit)
-        statement.setDouble(6, ingredient.lowStockThreshold)
-        statement.setDouble(7, ingredient.costPerUnit)
-
-        val rowsAffected = statement.executeUpdate()
-
-        return if (rowsAffected > 0) {
-            logger.info("Ingredient created successfully with ID: $generatedId")
-            generatedId
-        } else {
-            logger.error("Failed to create ingredient")
-            null
-        }
+    private fun categoryExists(categoryId: String): Boolean {
+        val entity = CategoryEntity.findById(UUID.fromString(categoryId)) ?: return false
+        return entity.type == "ingredient" && !entity.isDeleted
     }
 
-    suspend fun getIngredients(): List<Ingredient> {
-        val statement = connection.prepareStatement(GET_INGREDIENTS)
-        val resultSet = statement.executeQuery()
-        val ingredients = mutableListOf<Ingredient>()
-        while (resultSet.next()) {
-            ingredients.add(mapResultSetToIngredient(resultSet))
-        }
-        logger.info("Retrieved ${ingredients.size} ingredients")
-        return ingredients
-    }
+    private fun ingredientInUse(ingredientId: String): Boolean =
+        !DishesIngredientsTable
+            .selectAll()
+            .where { DishesIngredientsTable.ingredientId eq EntityID(UUID.fromString(ingredientId), IngredientsTable) }
+            .empty()
 
-    suspend fun getIngredientById(id: String): Ingredient? {
-        val statement = connection.prepareStatement(GET_INGREDIENT_BY_ID)
-        statement.setString(1, id)
-        val resultSet = statement.executeQuery()
-        return if (resultSet.next()) {
-            mapResultSetToIngredient(resultSet)
-        } else {
-            logger.warn("Ingredient not found with ID: $id")
-            null
-        }
-    }
+    fun addIngredient(ingredient: Ingredient): String? =
+        transaction {
+            if (!categoryExists(ingredient.categoryId)) {
+                logger.error("Category does not exist: ${ingredient.categoryId}")
+                return@transaction null
+            }
 
-    suspend fun getIngredientsByCategory(categoryId: String): List<Ingredient> {
-        val statement = connection.prepareStatement(GET_INGREDIENTS_BY_CATEGORY)
-        statement.setString(1, categoryId)
-        val resultSet = statement.executeQuery()
-        val ingredients = mutableListOf<Ingredient>()
-        while (resultSet.next()) {
-            ingredients.add(mapResultSetToIngredient(resultSet))
-        }
-        logger.info("Retrieved ${ingredients.size} ingredients for category: $categoryId")
-        return ingredients
-    }
+            if (ingredient.name.isBlank()) {
+                logger.error("Ingredient name cannot be blank")
+                return@transaction null
+            }
 
-    suspend fun updateIngredient(ingredient: Ingredient): Boolean {
-        if (ingredient.id == null) {
-            logger.error("Cannot update ingredient: ID is null")
-            return false
-        }
+            if (ingredient.quantity < 0 ||
+                ingredient.lowStockThreshold < 0 ||
+                ingredient.costPerUnit < 0
+            ) {
+                logger.error("Quantity, threshold and cost cannot be negative")
+                return@transaction null
+            }
 
-        if (!categoryExists(ingredient.categoryId)) {
-            logger.error("Category does not exist: ${ingredient.categoryId}")
-            return false
+            val id =
+                IngredientEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = ingredient.name
+                        this.categoryId = EntityID(UUID.fromString(ingredient.categoryId), CategoriesTable)
+                        this.quantity = ingredient.quantity
+                        this.unit = ingredient.unit
+                        this.lowStockThreshold = ingredient.lowStockThreshold
+                        this.costPerUnit = ingredient.costPerUnit
+                    }.id.value
+                    .toString()
+            logger.info("Ingredient created successfully with ID: $id")
+            id
         }
 
-        if (ingredient.name.isBlank()) {
-            logger.error("Ingredient name cannot be blank")
-            return false
+    fun getIngredients(): List<Ingredient> =
+        transaction {
+            val ingredients =
+                IngredientEntity
+                    .find { IngredientsTable.isDeleted eq false }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${ingredients.size} ingredients")
+            ingredients
         }
 
-        if (ingredient.quantity < 0 ||
-            ingredient.lowStockThreshold < 0 ||
-            ingredient.costPerUnit < 0
-        ) {
-            logger.error("Quantity, threshold and cost cannot be negative")
-            return false
+    fun getIngredientById(id: String): Ingredient? =
+        transaction {
+            val entity = IngredientEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted) {
+                logger.warn("Ingredient not found with ID: $id")
+                null
+            } else {
+                toModel(entity)
+            }
         }
 
-        val statement = connection.prepareStatement(UPDATE_INGREDIENT)
-        statement.setString(1, ingredient.name)
-        statement.setString(2, ingredient.categoryId)
-        statement.setDouble(3, ingredient.quantity)
-        statement.setString(4, ingredient.unit)
-        statement.setDouble(5, ingredient.lowStockThreshold)
-        statement.setDouble(6, ingredient.costPerUnit)
-        statement.setString(7, ingredient.id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Ingredient updated successfully: ${ingredient.id}")
-        } else {
-            logger.error("Failed to update ingredient: ${ingredient.id}")
-        }
-        return rowsUpdated > 0
-    }
-
-    suspend fun deleteIngredient(id: String): Boolean {
-        if (ingredientInUse(id)) {
-            logger.error("Cannot delete ingredient $id: it's being used in dishes")
-            return false
+    fun getIngredientsByCategory(categoryId: String): List<Ingredient> =
+        transaction {
+            val ingredients =
+                IngredientEntity
+                    .find {
+                        (IngredientsTable.categoryId eq EntityID(UUID.fromString(categoryId), CategoriesTable)) and
+                            (IngredientsTable.isDeleted eq false)
+                    }.map { toModel(it) }
+            logger.info("Retrieved ${ingredients.size} ingredients for category: $categoryId")
+            ingredients
         }
 
-        val statement = connection.prepareStatement(DELETE_INGREDIENT)
-        statement.setString(1, id)
-        val rowsDeleted = statement.executeUpdate()
+    fun updateIngredient(ingredient: Ingredient): Boolean =
+        transaction {
+            if (ingredient.id == null) {
+                logger.error("Cannot update ingredient: ID is null")
+                return@transaction false
+            }
 
-        if (rowsDeleted > 0) {
-            logger.info("Ingredient soft-deleted successfully: $id")
-        } else {
-            logger.error("Failed to delete ingredient: $id")
+            if (!categoryExists(ingredient.categoryId)) {
+                logger.error("Category does not exist: ${ingredient.categoryId}")
+                return@transaction false
+            }
+
+            if (ingredient.name.isBlank()) {
+                logger.error("Ingredient name cannot be blank")
+                return@transaction false
+            }
+
+            if (ingredient.quantity < 0 ||
+                ingredient.lowStockThreshold < 0 ||
+                ingredient.costPerUnit < 0
+            ) {
+                logger.error("Quantity, threshold and cost cannot be negative")
+                return@transaction false
+            }
+
+            val entity = IngredientEntity.findById(UUID.fromString(ingredient.id))
+            if (entity == null) {
+                logger.error("Failed to update ingredient: ${ingredient.id}")
+                false
+            } else {
+                entity.name = ingredient.name
+                entity.categoryId = EntityID(UUID.fromString(ingredient.categoryId), CategoriesTable)
+                entity.quantity = ingredient.quantity
+                entity.unit = ingredient.unit
+                entity.lowStockThreshold = ingredient.lowStockThreshold
+                entity.costPerUnit = ingredient.costPerUnit
+                logger.info("Ingredient updated successfully: ${ingredient.id}")
+                true
+            }
         }
-        return rowsDeleted > 0
-    }
 
-    suspend fun getLowStockIngredients(): List<Ingredient> {
-        val statement = connection.prepareStatement(GET_LOW_STOCK_INGREDIENTS)
-        val resultSet = statement.executeQuery()
-        val lowStockIngredients = mutableListOf<Ingredient>()
-        while (resultSet.next()) {
-            lowStockIngredients.add(mapResultSetToIngredient(resultSet))
+    fun deleteIngredient(id: String): Boolean =
+        transaction {
+            if (ingredientInUse(id)) {
+                logger.error("Cannot delete ingredient $id: it's being used in dishes")
+                return@transaction false
+            }
+
+            val entity = IngredientEntity.findById(UUID.fromString(id))
+            if (entity == null) {
+                logger.error("Failed to delete ingredient: $id")
+                false
+            } else {
+                entity.isDeleted = true
+                logger.info("Ingredient soft-deleted successfully: $id")
+                true
+            }
         }
-        logger.info("Retrieved ${lowStockIngredients.size} low stock ingredients")
-        return lowStockIngredients
-    }
 
-    suspend fun updateIngredientQuantity(
+    fun getLowStockIngredients(): List<Ingredient> =
+        transaction {
+            val lowStockIngredients =
+                IngredientEntity
+                    .find { (IngredientsTable.quantity less IngredientsTable.lowStockThreshold) and (IngredientsTable.isDeleted eq false) }
+                    .map { toModel(it) }
+            logger.info("Retrieved ${lowStockIngredients.size} low stock ingredients")
+            lowStockIngredients
+        }
+
+    fun updateIngredientQuantity(
         id: String,
         newQuantity: Double,
-    ): Boolean {
-        if (newQuantity < 0) {
-            logger.error("Quantity cannot be negative")
-            return false
-        }
+    ): Boolean =
+        transaction {
+            if (newQuantity < 0) {
+                logger.error("Quantity cannot be negative")
+                return@transaction false
+            }
 
-        val statement =
-            connection.prepareStatement(
-                "UPDATE ingredients SET quantity = ? WHERE id = ? AND is_deleted = 0",
-            )
-        statement.setDouble(1, newQuantity)
-        statement.setString(2, id)
-
-        val rowsUpdated = statement.executeUpdate()
-        if (rowsUpdated > 0) {
-            logger.info("Ingredient quantity updated: $id -> $newQuantity")
-        } else {
-            logger.error("Failed to update ingredient quantity: $id")
+            val entity = IngredientEntity.findById(UUID.fromString(id))
+            if (entity == null || entity.isDeleted) {
+                logger.error("Failed to update ingredient quantity: $id")
+                false
+            } else {
+                entity.quantity = newQuantity
+                logger.info("Ingredient quantity updated: $id -> $newQuantity")
+                true
+            }
         }
-        return rowsUpdated > 0
-    }
 }

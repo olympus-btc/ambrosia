@@ -12,7 +12,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logger
 import pos.ambrosia.models.UpdateUserRequest
 import pos.ambrosia.models.User
@@ -22,13 +21,11 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.UsersService
 import pos.ambrosia.utils.authorizePermission
-import java.sql.Connection
 
 fun Application.configureUsers() {
-    val connection: Connection = DatabaseConnection.getConnection()
-    val userService = UsersService(environment, connection)
-    val tokenService = TokenService(environment, connection)
-    val permissionsService = PermissionsService(environment, connection)
+    val userService = UsersService(environment)
+    val tokenService = TokenService(environment)
+    val permissionsService = PermissionsService()
     routing { route("/users") { users(userService, tokenService, permissionsService) } }
 }
 

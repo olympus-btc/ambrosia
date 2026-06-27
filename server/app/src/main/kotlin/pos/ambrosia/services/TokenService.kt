@@ -5,14 +5,20 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTVerificationException
 import io.ktor.server.application.ApplicationEnvironment
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.RoleEntity
+import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.models.AuthResponse
-import java.sql.Connection
 import java.util.Date
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class TokenService(
     environment: ApplicationEnvironment,
-    private val connection: Connection,
 ) {
     private val config = environment.config
     private val secret = config.property("secret").getString()
@@ -58,7 +64,7 @@ class TokenService(
                 .withExpiresAt(Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30)))
                 .sign(algorithm)
 
-        user.id.let { saveRefreshTokenToDatabase(it, refreshToken) }
+        saveRefreshTokenToDatabase(user.id, refreshToken)
         return refreshToken
     }
 
@@ -81,21 +87,26 @@ class TokenService(
     fun isWalletTokenValid(
         userId: String,
         walletAccessToken: String,
-    ): Boolean {
-        val selectWalletTokenQuery = "SELECT 1 FROM users WHERE id = ? AND wallet_token = ?"
-        connection.prepareStatement(selectWalletTokenQuery).use { statement ->
-            statement.setString(1, userId)
-            statement.setString(2, walletAccessToken)
-            val resultSet = statement.executeQuery()
-            return resultSet.next()
+    ): Boolean =
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(userId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
+            UserEntity.findById(uuid)?.walletToken == walletAccessToken
         }
-    }
 
     fun revokeWalletToken(userId: String) {
-        val clearWalletTokenQuery = "UPDATE users SET wallet_token = NULL WHERE id = ?"
-        connection.prepareStatement(clearWalletTokenQuery).use { statement ->
-            statement.setString(1, userId)
-            statement.executeUpdate()
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(userId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction
+                }
+            UserEntity.findById(uuid)?.walletToken = null
         }
     }
 
@@ -110,61 +121,53 @@ class TokenService(
             false
         }
 
-    fun getUserFromRefreshToken(refreshToken: String): AuthResponse? {
-        return try {
+    fun getUserFromRefreshToken(refreshToken: String): AuthResponse? =
+        try {
             verifier.verify(refreshToken)
-            val sql =
-                """
-                    SELECT u.id, u.name, r.role, r.isAdmin, u.role_id, u.email, u.phone
-                    FROM users u
-                    JOIN roles r ON u.role_id = r.id
-                    WHERE u.refresh_token = ? AND u.is_deleted = 0
-                """
 
-            connection.prepareStatement(sql).use { statement ->
-                statement.setString(1, refreshToken)
-                val resultSet = statement.executeQuery()
+            transaction {
+                val user =
+                    UserEntity
+                        .find { (UsersTable.refreshToken eq refreshToken) and (UsersTable.isDeleted eq false) }
+                        .firstOrNull()
 
-                if (resultSet.next()) {
-                    return AuthResponse(
-                        id = resultSet.getString("id"),
-                        name = resultSet.getString("name"),
-                        roleId = resultSet.getString("role_id"),
-                        role = resultSet.getString("role"),
-                        isAdmin = resultSet.getBoolean("isAdmin"),
-                        email = resultSet.getString("email"),
-                        phone = resultSet.getString("phone"),
+                if (user == null) {
+                    null
+                } else {
+                    val role = user.roleId?.let { RoleEntity.findById(it) }
+                    AuthResponse(
+                        id = user.id.value.toString(),
+                        name = user.name,
+                        roleId = user.roleId?.value?.toString(),
+                        role = role?.role ?: "",
+                        isAdmin = role?.isAdmin ?: false,
+                        email = user.email,
+                        phone = user.phone,
                     )
                 }
             }
-            null
         } catch (e: JWTVerificationException) {
             null
         }
-    }
 
     fun revokeRefreshToken(userId: String) {
-        val sql = "UPDATE users SET refresh_token = NULL WHERE id = ?"
-        connection.prepareStatement(sql).use { statement ->
-            statement.setString(1, userId)
-            statement.executeUpdate()
+        transaction {
+            UserEntity.findById(UUID.fromString(userId))?.refreshToken = null
         }
     }
 
     fun revokeAllRefreshTokens() {
-        val sql = "UPDATE users SET refresh_token = NULL"
-        connection.prepareStatement(sql).use { statement -> statement.executeUpdate() }
+        transaction {
+            UsersTable.update { it[refreshToken] = null }
+        }
     }
 
     private fun saveRefreshTokenToDatabase(
         userId: String,
         refreshToken: String,
     ) {
-        val sql = "UPDATE users SET refresh_token = ? WHERE id = ?"
-        connection.prepareStatement(sql).use { statement ->
-            statement.setString(1, refreshToken)
-            statement.setString(2, userId)
-            statement.executeUpdate()
+        transaction {
+            UserEntity.findById(UUID.fromString(userId))?.refreshToken = refreshToken
         }
     }
 
@@ -172,22 +175,21 @@ class TokenService(
         userId: String,
         walletAccessToken: String,
     ) {
-        val updateWalletTokenQuery = "UPDATE users SET wallet_token = ? WHERE id = ?"
-        connection.prepareStatement(updateWalletTokenQuery).use { statement ->
-            statement.setString(1, walletAccessToken)
-            statement.setString(2, userId)
-            statement.executeUpdate()
+        transaction {
+            val uuid =
+                try {
+                    UUID.fromString(userId)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction
+                }
+            UserEntity.findById(uuid)?.walletToken = walletAccessToken
         }
     }
 
-    private fun isRefreshTokenInDatabase(refreshToken: String): Boolean {
-        val sql = "SELECT 1 FROM users WHERE refresh_token = ?"
-        connection.prepareStatement(sql).use { statement ->
-            statement.setString(1, refreshToken)
-            val resultSet = statement.executeQuery()
-            return resultSet.next()
+    private fun isRefreshTokenInDatabase(refreshToken: String): Boolean =
+        transaction {
+            UserEntity.find { UsersTable.refreshToken eq refreshToken }.any()
         }
-    }
 
     private fun isTokenExpired(expiresAt: Date): Boolean = expiresAt.before(Date())
 }
