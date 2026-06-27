@@ -58,7 +58,6 @@ const ordersEn = {
     },
     details: {
       title: "Order details",
-      id: "Order ID",
       user: "User",
       status: "Status",
       paymentMethod: "Payment Method",
@@ -67,6 +66,14 @@ const ordersEn = {
       close: "Close",
       unassigned: "Unassigned",
       noPayment: "Payment not registered",
+      products: "Products",
+      quantity: "Quantity",
+      unitPrice: "Unit Price",
+      subtotal: "Subtotal",
+      lightning: {
+        paymentHash: "Payment hash",
+        copy: "Copy",
+      },
     },
   },
 };

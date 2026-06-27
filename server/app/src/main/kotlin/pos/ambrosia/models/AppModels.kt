@@ -150,6 +150,13 @@ data class Order(
 )
 
 @Serializable
+data class OrderItem(
+    val productName: String,
+    val quantity: Int,
+    val priceAtOrder: Int,
+)
+
+@Serializable
 data class OrderWithPayment(
     val id: String,
     val userId: String,
@@ -164,6 +171,8 @@ data class OrderWithPayment(
     val exchangeRateAtPayment: Double? = null,
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
+    val paymentHash: String? = null,
+    val items: List<OrderItem> = emptyList(),
 )
 
 data class OrderWithPaymentFilters(

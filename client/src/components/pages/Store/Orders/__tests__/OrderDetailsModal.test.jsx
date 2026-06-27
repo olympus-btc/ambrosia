@@ -23,9 +23,7 @@ jest.mock("@heroui/react", () => {
   const ModalBody = ({ children }) => <div>{children}</div>;
   const ModalFooter = ({ children }) => <div>{children}</div>;
   const Button = ({ onPress, children }) => (
-    <button type="button" onClick={onPress}>
-      {children}
-    </button>
+    <button type="button" onClick={onPress}>{children}</button>
   );
   const Chip = ({ children }) => <span>{children}</span>;
 
@@ -66,7 +64,7 @@ describe("OrderDetailsModal", () => {
     );
 
     expect(screen.getByText("details.title")).toBeInTheDocument();
-    expect(screen.getByText("order-1")).toBeInTheDocument();
+    expect(screen.getByText("#order-1")).toBeInTheDocument();
     expect(screen.getByText("Luis")).toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByText("formatted-date")).toBeInTheDocument();
@@ -132,7 +130,7 @@ describe("OrderDetailsModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
-  it("renders fallbacks when order is missing", () => {
+  it("renders only the title when order is null", () => {
     render(
       <OrderDetailsModal
         order={null}
@@ -143,6 +141,7 @@ describe("OrderDetailsModal", () => {
       />,
     );
 
-    expect(screen.getAllByText("details.unassigned").length).toBeGreaterThan(0);
+    expect(screen.getByText("details.title")).toBeInTheDocument();
+    expect(screen.queryByText("details.user")).not.toBeInTheDocument();
   });
 });

@@ -1,11 +1,9 @@
 "use client";
-import {
-  Modal, ModalBody, ModalContent, ModalHeader,
-  Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
-} from "@heroui/react";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
+import { OrderProductsTable } from "@/components/shared/OrderProductsTable";
 import formatDate from "@lib/formatDate";
 
 export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }) {
@@ -59,28 +57,16 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
               </div>
 
               <div className="border-t border-gray-100 pt-3">
-                <Table
-                  removeWrapper
-                  aria-label={reportsTranslations("orders.detailTitle")}
-                  classNames={{ th: "text-xs text-gray-400 bg-transparent font-medium px-0", td: "px-0" }}
-                >
-                  <TableHeader>
-                    <TableColumn align="start">{reportsTranslations("orders.products")}</TableColumn>
-                    <TableColumn align="center">{reportsTranslations("sales.quantity")}</TableColumn>
-                    <TableColumn align="end">{reportsTranslations("sales.price")}</TableColumn>
-                    <TableColumn align="end">{reportsTranslations("orders.subtotal")}</TableColumn>
-                  </TableHeader>
-                  <TableBody>
-                    {items?.map((item, itemIndex) => (
-                      <TableRow key={itemIndex}>
-                        <TableCell className="py-2 text-gray-700">{item.productName}</TableCell>
-                        <TableCell className="py-2 text-center text-gray-500">×{item.quantity}</TableCell>
-                        <TableCell className="py-2 text-right text-gray-500">{formatCurrency(item.priceAtOrder)}</TableCell>
-                        <TableCell className="py-2 text-right font-semibold">{formatCurrency(item.quantity * item.priceAtOrder)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <OrderProductsTable
+                  items={items ?? []}
+                  formatAmount={formatCurrency}
+                  labels={{
+                    products: reportsTranslations("orders.products"),
+                    quantity: reportsTranslations("sales.quantity"),
+                    unitPrice: reportsTranslations("sales.price"),
+                    subtotal: reportsTranslations("orders.subtotal"),
+                  }}
+                />
               </div>
 
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center">

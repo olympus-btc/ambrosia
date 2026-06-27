@@ -650,4 +650,69 @@ class ReportServiceTest {
 
             assertEquals(0.0, result)
         }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered maps items from order_products`() =
+        runBlocking {
+            val sale = seedSale()
+            addOrderProduct(sale.orderId, productName = "Tacos", quantity = 3, priceAtOrder = 500)
+            addOrderProduct(sale.orderId, productName = "Soda", quantity = 1, priceAtOrder = 200)
+
+            val result = service.getOrdersWithPaymentsFiltered()
+
+            assertEquals(1, result.size)
+            val items = result[0].items
+            assertEquals(2, items.size)
+            val tacos = items.first { it.productName == "Tacos" }
+            assertEquals(3, tacos.quantity)
+            assertEquals(500, tacos.priceAtOrder)
+            val soda = items.first { it.productName == "Soda" }
+            assertEquals(1, soda.quantity)
+            assertEquals(200, soda.priceAtOrder)
+        }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered returns empty items list when order has no products`() =
+        runBlocking {
+            seedSale()
+
+            val result = service.getOrdersWithPaymentsFiltered()
+
+            assertEquals(1, result.size)
+            assertTrue(result[0].items.isEmpty())
+        }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered maps paymentHash when present`() =
+        runBlocking {
+            val userId = ExposedTestDb.seedUser("alice")
+            val orderId = ExposedTestDb.seedOrder(userId, status = "paid")
+            val methodId = ExposedTestDb.seedPaymentMethod("BTC")
+            val currencyId = ExposedTestDb.seedCurrency("USD")
+            val paymentId =
+                ExposedTestDb.seedPayment(
+                    methodId = methodId,
+                    currencyId = currencyId,
+                    transactionId = "txn-hash",
+                    paymentHash = "abc123def456",
+                )
+            val ticketId = ExposedTestDb.seedTicket(orderId, userId)
+            ExposedTestDb.seedTicketPayment(paymentId, ticketId)
+
+            val result = service.getOrdersWithPaymentsFiltered()
+
+            assertEquals(1, result.size)
+            assertEquals("abc123def456", result[0].paymentHash)
+        }
+
+    @Test
+    fun `getOrdersWithPaymentsFiltered returns null paymentHash when not a BTC payment`() =
+        runBlocking {
+            seedSale(paymentMethodName = "Cash")
+
+            val result = service.getOrdersWithPaymentsFiltered()
+
+            assertEquals(1, result.size)
+            assertNull(result[0].paymentHash)
+        }
 }
