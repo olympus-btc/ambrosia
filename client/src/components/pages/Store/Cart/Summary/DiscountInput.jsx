@@ -66,6 +66,7 @@ export function DiscountInput({ discount, discountType, onApply, onPreview }) {
             maxValue={activeType === "percentage" ? 100 : undefined}
             size="sm"
             value={inputValue}
+            classNames={{ inputWrapper: "shadow-none" }}
             onValueChange={(value) => {
               setInputValue(value);
               onPreview?.(value, activeType);
