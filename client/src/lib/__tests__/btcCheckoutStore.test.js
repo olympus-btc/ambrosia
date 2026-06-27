@@ -15,24 +15,24 @@ import {
 
 function clearStore() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("ambrosia-btc", 1);
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains("pending-checkouts")) {
-        db.createObjectStore("pending-checkouts", { keyPath: "paymentHash" });
+    const openRequest = indexedDB.open("ambrosia-btc", 1);
+    openRequest.onupgradeneeded = (event) => {
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains("pending-checkouts")) {
+        database.createObjectStore("pending-checkouts", { keyPath: "paymentHash" });
       }
     };
-    request.onsuccess = () => {
-      const db = request.result;
-      const transaction = db.transaction("pending-checkouts", "readwrite");
+    openRequest.onsuccess = () => {
+      const database = openRequest.result;
+      const transaction = database.transaction("pending-checkouts", "readwrite");
       transaction.objectStore("pending-checkouts").clear();
       transaction.oncomplete = () => {
-        db.close();
+        database.close();
         resolve();
       };
       transaction.onerror = () => reject(transaction.error);
     };
-    request.onerror = () => reject(request.error);
+    openRequest.onerror = () => reject(openRequest.error);
   });
 }
 
