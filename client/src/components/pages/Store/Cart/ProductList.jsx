@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { ViewButton } from "@/components/shared/ViewButton";
+import { normalizeNumber } from "@/components/utils/number";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { VariantSelectorModal } from "./VariantSelectorModal";
@@ -50,10 +51,6 @@ export function ProductList({ products, onAddProduct, categories }) {
     return names.length > 0 ? names.join(", ") : cardProductTranslation("card.errors.unknownCategory");
   };
 
-  const normalizeNumber = (value, fallback = 0) => {
-    const numeric = Number(value ?? fallback);
-    return Number.isFinite(numeric) ? numeric : fallback;
-  };
 
   const stockStatus = (product) => {
     const quantity = normalizeNumber(product.quantity);
