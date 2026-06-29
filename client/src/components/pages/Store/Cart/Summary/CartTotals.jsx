@@ -4,12 +4,14 @@ import { Divider } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { usePermission } from "@/hooks/usePermission";
 
 import { DiscountInput } from "./DiscountInput";
 
 export function CartTotals({ subtotal, discountAmount, discount, discountType, onApplyDiscount }) {
   const translateCart = useTranslations("cart");
   const { formatAmount } = useCurrency();
+  const canApplyDiscount = usePermission({ allOf: ["orders_discount"] });
   const [previewDiscountValue, setPreviewDiscountValue] = useState(null);
   const [previewDiscountType, setPreviewDiscountType] = useState("percentage");
 
@@ -36,12 +38,19 @@ export function CartTotals({ subtotal, discountAmount, discount, discountType, o
           <span>{formatAmount(subtotal)}</span>
         </div>
       )}
-      <DiscountInput
-        discount={discount}
-        discountType={discountType}
-        onApply={onApplyDiscount}
-        onPreview={handlePreview}
-      />
+      {canApplyDiscount ? (
+        <DiscountInput
+          discount={discount}
+          discountType={discountType}
+          onApply={onApplyDiscount}
+          onPreview={handlePreview}
+        />
+      ) : discount > 0 ? (
+        <div className="flex justify-between">
+          <span>{translateCart("summary.discount")}</span>
+          <span>{discountType === "fixed" ? formatAmount(discount * 100) : `${discount}%`}</span>
+        </div>
+      ) : null}
       <Divider className="bg-green-600" />
       <div className="flex justify-between items-center font-semibold text-green-900">
         <span>{translateCart("summary.total")}:</span>

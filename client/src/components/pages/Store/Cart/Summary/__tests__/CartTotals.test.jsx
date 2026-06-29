@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import { CartTotals } from "../CartTotals";
 
 let capturedOnPreview;
+let mockCanApplyDiscount = true;
 
 jest.mock("../DiscountInput", () => ({
   DiscountInput: ({ onPreview }) => {
@@ -15,6 +16,10 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));
 
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => mockCanApplyDiscount,
+}));
+
 const defaultProps = {
   subtotal: 1000,
   discountAmount: 100,
@@ -24,6 +29,10 @@ const defaultProps = {
 };
 
 describe("CartTotals", () => {
+  beforeEach(() => {
+    mockCanApplyDiscount = true;
+  });
+
   it("renders the subtotal when there is a discount", () => {
     render(<CartTotals {...defaultProps} />);
     expect(screen.getByText("fmt-1000")).toBeInTheDocument();
@@ -37,6 +46,39 @@ describe("CartTotals", () => {
   it("renders the total", () => {
     render(<CartTotals {...defaultProps} />);
     expect(screen.getByText("fmt-900")).toBeInTheDocument();
+  });
+
+  describe("discount permission", () => {
+    it("shows DiscountInput when user has orders_discount permission", () => {
+      mockCanApplyDiscount = true;
+      render(<CartTotals {...defaultProps} />);
+      expect(screen.getByTestId("discount-input")).toBeInTheDocument();
+    });
+
+    it("hides DiscountInput when user lacks orders_discount permission", () => {
+      mockCanApplyDiscount = false;
+      render(<CartTotals {...defaultProps} />);
+      expect(screen.queryByTestId("discount-input")).not.toBeInTheDocument();
+    });
+
+    it("shows read-only percentage discount when user lacks permission and discount is applied", () => {
+      mockCanApplyDiscount = false;
+      render(<CartTotals {...defaultProps} discount={10} discountType="percentage" />);
+      expect(screen.getByText("10%")).toBeInTheDocument();
+    });
+
+    it("shows read-only fixed discount when user lacks permission and discount is applied", () => {
+      mockCanApplyDiscount = false;
+      render(<CartTotals {...defaultProps} discount={5} discountType="fixed" />);
+      expect(screen.getByText("fmt-500")).toBeInTheDocument();
+    });
+
+    it("shows nothing in place of discount input when user lacks permission and no discount is applied", () => {
+      mockCanApplyDiscount = false;
+      render(<CartTotals {...defaultProps} discount={0} discountAmount={0} />);
+      expect(screen.queryByTestId("discount-input")).not.toBeInTheDocument();
+      expect(screen.queryByText("summary.discount")).not.toBeInTheDocument();
+    });
   });
 
   describe("real-time preview", () => {

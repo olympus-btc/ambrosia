@@ -15,16 +15,16 @@ export function usePersistentCart() {
       const saved = window.localStorage.getItem(CART_STORAGE_KEY);
       if (!saved) return;
 
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed?.items)) {
-        setCart(parsed.items);
+      const savedCart = JSON.parse(saved);
+      if (Array.isArray(savedCart?.items)) {
+        setCart(savedCart.items);
       }
-      const storedDiscount = Number(parsed?.discount);
-      if (Number.isFinite(storedDiscount)) {
-        setDiscount(storedDiscount);
+      const savedDiscount = Number(savedCart?.discount);
+      if (Number.isFinite(savedDiscount)) {
+        setDiscount(savedDiscount);
       }
-      if (parsed?.discountType === "fixed" || parsed?.discountType === "percentage") {
-        setDiscountType(parsed.discountType);
+      if (savedCart?.discountType === "fixed" || savedCart?.discountType === "percentage") {
+        setDiscountType(savedCart.discountType);
       }
     } catch (err) {
       console.error("Error loading cart from storage", err);
