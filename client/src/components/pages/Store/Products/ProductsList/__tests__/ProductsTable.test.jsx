@@ -29,6 +29,10 @@ jest.mock("@/components/shared/ViewButton", () => ({
   ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
 }));
 
+jest.mock("@/components/shared/VariantsButton", () => ({
+  VariantsButton: ({ onPress, children }) => <button data-testid="variants-button" onClick={onPress}>{children}</button>,
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
@@ -71,6 +75,7 @@ const defaultProps = {
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
   onViewProduct: jest.fn(),
+  onManageVariants: jest.fn(),
 };
 
 function renderTable(props = {}) {
@@ -87,7 +92,10 @@ describe("ProductsTable", () => {
 
     expect(screen.getByText("image")).toBeInTheDocument();
     expect(screen.getByText("name")).toBeInTheDocument();
-    expect(screen.getByText("variants", { selector: "th" })).toBeInTheDocument();
+    expect(screen.getByText("description")).toBeInTheDocument();
+    expect(screen.getByText("category")).toBeInTheDocument();
+    expect(screen.getByText("sku")).toBeInTheDocument();
+    expect(screen.getByText("stock")).toBeInTheDocument();
     expect(screen.getByText("actions")).toBeInTheDocument();
   });
 
@@ -98,14 +106,14 @@ describe("ProductsTable", () => {
     expect(screen.getByText("jade-wallet")).toBeInTheDocument();
   });
 
-  it("renders simpleProduct chip for non-variant product", () => {
-    renderTable();
-    expect(screen.getByText("simpleProduct")).toBeInTheDocument();
+  it("does not render variants button for simple product", () => {
+    renderTable({ products: [products[0]] });
+    expect(screen.queryByTestId("variants-button")).not.toBeInTheDocument();
   });
 
-  it("renders variants chip for variant product", () => {
-    renderTable();
-    expect(screen.getByText("variants", { selector: "span" })).toBeInTheDocument();
+  it("renders variants button for variant product", () => {
+    renderTable({ products: [products[1]] });
+    expect(screen.getByTestId("variants-button")).toBeInTheDocument();
   });
 
   it("renders category name chip when category is found", () => {

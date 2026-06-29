@@ -25,6 +25,14 @@ jest.mock("@/components/shared/ViewButton", () => ({
   ViewButton: ({ onPress }) => <button data-testid="view-button" onClick={onPress} />,
 }));
 
+jest.mock("@/components/shared/VariantsButton", () => ({
+  VariantsButton: ({ onPress }) => <button data-testid="variants-button" onClick={onPress} />,
+}));
+
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({ formatAmount: (cents) => `$${cents}` }),
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
@@ -40,6 +48,9 @@ const product = {
   name: "Jade Wallet",
   hasVariants: false,
   imageUrl: "/images/jade.png",
+  priceCents: 1000,
+  quantity: 10,
+  minStockThreshold: 0,
 };
 
 const defaultProps = {
@@ -48,6 +59,7 @@ const defaultProps = {
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
   onViewProduct: jest.fn(),
+  onManageVariants: jest.fn(),
 };
 
 function renderCard(props = {}) {
@@ -64,14 +76,15 @@ describe("ProductsCard", () => {
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
   });
 
-  it("renders simpleProduct chip for non-variant product", () => {
+  it("does not render variants button for simple product", () => {
     renderCard({ product: { ...product, hasVariants: false } });
-    expect(screen.getByText("simpleProduct")).toBeInTheDocument();
+    expect(screen.queryByTestId("variants-button")).not.toBeInTheDocument();
   });
 
-  it("renders variants chip for variant product", () => {
-    renderCard({ product: { ...product, hasVariants: true } });
-    expect(screen.getByText("variants")).toBeInTheDocument();
+  it("renders variants button for variant product", () => {
+    const onManageVariants = jest.fn();
+    renderCard({ product: { ...product, hasVariants: true }, onManageVariants });
+    expect(screen.getByTestId("variants-button")).toBeInTheDocument();
   });
 
   it("renders image via storedAssetUrl", () => {

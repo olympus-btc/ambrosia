@@ -108,8 +108,10 @@ describe("useProducts", () => {
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: 1, message: "Product added successfully" });
+    parseJsonResponse.mockResolvedValueOnce({ id: 5 });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     renderWithProvider();
@@ -162,6 +164,7 @@ describe("useProducts", () => {
         quantity: 3,
         isActive: true,
       }),
+      notShowError: false,
     });
   });
 
@@ -175,12 +178,20 @@ describe("useProducts", () => {
     useUpload.mockReturnValue({ upload, isUploading: false });
 
     httpClient.mockImplementation((url, options = {}) =>
-      Promise.resolve({ ok: true, _isProductPost: url === "/products" && options?.method === "POST" })
+      Promise.resolve({
+        ok: true,
+        _isProductPost: url === "/products" && options?.method === "POST",
+        _isVariantPost: url.includes("/variants") && options?.method === "POST",
+      })
     );
     parseJsonResponse.mockImplementation((response, fallback) =>
-      Promise.resolve(response?._isProductPost
-        ? { id: 2, message: "Product added successfully" }
-        : (Array.isArray(fallback) ? [] : null))
+      Promise.resolve(
+        response?._isProductPost
+          ? { id: 2, message: "Product added successfully" }
+          : response?._isVariantPost
+            ? { id: 5 }
+            : (Array.isArray(fallback) ? [] : null)
+      )
     );
 
     renderWithProvider();
@@ -230,6 +241,7 @@ describe("useProducts", () => {
         quantity: 1,
         isActive: true,
       }),
+      notShowError: false,
     });
   });
 
