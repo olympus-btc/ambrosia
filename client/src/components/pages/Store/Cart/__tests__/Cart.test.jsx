@@ -68,6 +68,8 @@ jest.mock("../hooks/useCartOperations", () => ({
   }),
 }));
 
+const mockSetDiscountType = jest.fn();
+
 jest.mock("../hooks/usePersistentCart", () => ({
   CART_STORAGE_KEY: "store-cart",
   usePersistentCart: () => ({
@@ -77,6 +79,8 @@ jest.mock("../hooks/usePersistentCart", () => ({
     setCart: mockSetCart,
     discount: 0,
     setDiscount: mockSetDiscount,
+    discountType: "percentage",
+    setDiscountType: mockSetDiscountType,
     isCartRestored: true,
     resetCartState: mockResetCartState,
   }),

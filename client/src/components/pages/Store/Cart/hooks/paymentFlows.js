@@ -27,6 +27,7 @@ export async function processCheckout({
       paymentMethodId: selectedPaymentMethod,
       currencyId,
       amount: paymentAmounts.amountFiat,
+      discountAmount: paymentAmounts.discountAmount,
       transactionId: transactionId || "",
       satoshiAmount,
       exchangeRateAtPayment,

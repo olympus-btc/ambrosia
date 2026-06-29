@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.models.StoreCheckoutItem
@@ -62,6 +63,7 @@ class CheckoutServiceTest {
         items: List<StoreCheckoutItem>,
         transactionId: String? = null,
         paymentHash: String? = null,
+        discountAmount: Double = 0.0,
     ) = StoreCheckoutRequest(
         userId = userId,
         items = items,
@@ -71,6 +73,7 @@ class CheckoutServiceTest {
         transactionId = transactionId,
         ticketNotes = "",
         paymentHash = paymentHash,
+        discountAmount = discountAmount,
     )
 
     private fun incomingPayment(
@@ -402,6 +405,40 @@ class CheckoutServiceTest {
             assertEquals(checkout.response.orderId, result?.get("orderId"))
             assertEquals(checkout.response.ticketId, result?.get("ticketId"))
             assertEquals(checkout.response.paymentId, result?.get("paymentId"))
+        }
+    }
+
+    @Test
+    fun `checkout persists discountAmount on the order`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val result = service.checkout(validStoreRequest(userId, items = items, discountAmount = 1.0))
+
+            assertTrue(result is CheckoutResult.Success)
+            val persistedDiscountAmount =
+                transaction {
+                    OrderEntity.findById(UUID.fromString(result.response.orderId))!!.discountAmount
+                }
+            assertEquals(1.0, persistedDiscountAmount)
+        }
+    }
+
+    @Test
+    fun `checkout persists zero discountAmount when not provided`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Success)
+            val persistedDiscountAmount =
+                transaction {
+                    OrderEntity.findById(UUID.fromString(result.response.orderId))!!.discountAmount
+                }
+            assertEquals(0.0, persistedDiscountAmount)
         }
     }
 }

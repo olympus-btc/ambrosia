@@ -467,6 +467,7 @@ data class StoreCheckoutRequest(
     val paymentHash: String? = null,
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
+    val discountAmount: Double = 0.0,
 )
 
 @Serializable

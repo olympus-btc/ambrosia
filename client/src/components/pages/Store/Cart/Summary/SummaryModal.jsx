@@ -23,15 +23,17 @@ export function SummaryModal({ isOpen, onClose, ...props }) {
       className="md:hidden"
     >
       <ModalContent>
-        <ModalHeader><div className="flex w-full items-center justify-between">
+        <ModalHeader>
           <h2 className="text-lg font-semibold text-green-900">
             {cartTranslations("summary.title")}
           </h2>
-          <DeleteButton onPress={onClearCart} showLabelOnMobile>
-            {cartTranslations("summary.clearCart")}
-          </DeleteButton>
-        </div></ModalHeader>
-        <ModalBody>
+        </ModalHeader>
+        <ModalBody className="pt-0">
+          <div className="flex justify-start">
+            <DeleteButton onPress={onClearCart} showLabelOnMobile>
+              {cartTranslations("summary.clearCart")}
+            </DeleteButton>
+          </div>
           <SummaryContent {...props} />
         </ModalBody>
       </ModalContent>

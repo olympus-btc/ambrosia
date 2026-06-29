@@ -17,7 +17,7 @@ export function DeleteButton({
     ? showLabelOnMobile
       ? "w-auto min-w-16 px-3"
       : "w-8 min-w-0 px-0 sm:w-auto sm:min-w-16 sm:px-3"
-    : "w-8 min-w-0 px-0";
+    : "w-8 h-8 min-w-0 px-0 shrink-0";
 
   return (
     <Button

@@ -43,9 +43,20 @@ export function Cart() {
     cart,
     setCart,
     discount,
+    setDiscount,
+    discountType,
+    setDiscountType,
     isCartRestored,
     resetCartState,
   } = usePersistentCart();
+
+  const handleApplyDiscount = useCallback(
+    (value, type) => {
+      setDiscount(value);
+      setDiscountType(type);
+    },
+    [setDiscount, setDiscountType],
+  );
   const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
 
@@ -117,8 +128,10 @@ export function Cart() {
   useEffect(() => {
     if (visibleCart.length === 0) {
       setTimeout(() => setShowMobileSummary(false), 0);
+      setDiscount(0);
+      setDiscountType("percentage");
     }
-  }, [visibleCart.length]);
+  }, [visibleCart.length, setDiscount, setDiscountType]);
 
   const cartTotal = useMemo(
     () => calculateCartTotals(visibleCart, discount).total,
@@ -137,6 +150,8 @@ export function Cart() {
           <Summary
             cartItems={visibleCart}
             discount={discount}
+            discountType={discountType}
+            onApplyDiscount={handleApplyDiscount}
             onRemoveProduct={removeProduct}
             onClearCart={handleClearCart}
             onUpdateQuantity={updateQuantity}
@@ -161,6 +176,8 @@ export function Cart() {
         onClose={() => setShowMobileSummary(false)}
         cartItems={visibleCart}
         discount={discount}
+        discountType={discountType}
+        onApplyDiscount={handleApplyDiscount}
         onRemoveProduct={removeProduct}
         onClearCart={handleClearCart}
         onUpdateQuantity={updateQuantity}

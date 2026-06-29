@@ -50,6 +50,7 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
             placeholder="Enter the amount"
             value={item.quantity}
             onChange={(value) => onUpdateQuantity(item.id, Number(value))}
+            classNames={{ inputWrapper: "shadow-none" }}
           />
           <div className="text-sm font-semibold text-green-900">
             {formatAmount(item.subtotal)}

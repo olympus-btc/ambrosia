@@ -55,7 +55,7 @@ describe("usePersistentCart", () => {
 
     await waitFor(() => {
       const stored = JSON.parse(localStorage.getItem(CART_STORAGE_KEY));
-      expect(stored).toEqual({ items: [{ id: 2 }], discount: 5 });
+      expect(stored).toEqual({ items: [{ id: 2 }], discount: 5, discountType: "percentage" });
     });
   });
 
@@ -81,6 +81,7 @@ describe("usePersistentCart", () => {
       expect(JSON.parse(localStorage.getItem(CART_STORAGE_KEY))).toEqual({
         items: [],
         discount: 0,
+        discountType: "percentage",
       });
     });
   });

@@ -12,6 +12,7 @@ object OrdersTable : SQLiteUUIDTable("orders") {
     val tableId = varchar("table_id", 36).nullable()
     val status = varchar("status", 20).default("open")
     val total = double("total").default(0.0)
+    val discountAmount = double("discount_amount").default(0.0)
     val createdAt = varchar("created_at", 50)
     val isDeleted = bool("is_deleted").default(false)
 }
@@ -25,6 +26,7 @@ class OrderEntity(
     var tableId by OrdersTable.tableId
     var status by OrdersTable.status
     var total by OrdersTable.total
+    var discountAmount by OrdersTable.discountAmount
     var createdAt by OrdersTable.createdAt
     var isDeleted by OrdersTable.isDeleted
 }

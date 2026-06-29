@@ -190,6 +190,7 @@ class CheckoutService(
                         this.tableId = null
                         this.status = "paid"
                         this.total = request.amount
+                        this.discountAmount = request.discountAmount
                         this.createdAt = now
                     }
 

@@ -170,6 +170,7 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
           paymentMethodId: prevConfig.selectedPaymentMethod,
           currencyId: prevConfig.currencyId,
           amount: prevConfig.amountFiat,
+          discountAmount: prevConfig.discountAmount ?? 0,
           transactionId: invoiceReadyData.invoice.serialized || "",
           satoshiAmount: invoiceReadyData.satoshis ?? null,
           exchangeRateAtPayment: invoiceReadyData.exchangeRate ?? null,

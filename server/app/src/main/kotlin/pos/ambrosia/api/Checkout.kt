@@ -16,6 +16,7 @@ import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.requirePermission
 
 private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock levels, and payment details"
 
@@ -32,6 +33,9 @@ fun Route.checkout(
     authorizePermission("orders_create") {
         post("/checkout") {
             val checkoutRequest = call.receive<StoreCheckoutRequest>()
+            if (checkoutRequest.discountAmount > 0.0) {
+                call.requirePermission("orders_discount")
+            }
             when (val result = checkoutService.checkout(checkoutRequest)) {
                 is CheckoutResult.Success -> {
                     val status = if (result.alreadyExisted) HttpStatusCode.OK else HttpStatusCode.Created

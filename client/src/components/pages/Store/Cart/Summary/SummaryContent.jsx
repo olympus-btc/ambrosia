@@ -13,6 +13,8 @@ import { SwipeableCartItem } from "./SwipeableCartItem";
 export function SummaryContent({
   cartItems,
   discount,
+  discountType,
+  onApplyDiscount,
   onRemoveProduct,
   onUpdateQuantity,
   startRemoval,
@@ -27,7 +29,7 @@ export function SummaryContent({
   const isTouchDevice = useSyncExternalStore(() => () => {}, () => navigator.maxTouchPoints > 0, () => false);
   const visibleItems = cartItems || [];
 
-  const { subtotal, discountAmount, total } = calculateCartTotals(visibleItems, discount);
+  const { subtotal, discountAmount, total } = calculateCartTotals(visibleItems, discount, discountType);
 
   const handleStartRemoval = (item) => {
     const toastKey = addToast({
@@ -63,7 +65,15 @@ export function SummaryContent({
         </SwipeableCartItem>
       ))}
 
-      <CartTotals subtotal={subtotal} discountAmount={discountAmount} total={total} />
+      {visibleItems.length > 0 && (
+        <CartTotals
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          discount={discount}
+          discountType={discountType}
+          onApplyDiscount={onApplyDiscount}
+        />
+      )}
 
       <CartPaymentSection
         isPaying={isPaying}

@@ -7,6 +7,7 @@ export const CART_STORAGE_KEY = "store-cart";
 export function usePersistentCart() {
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState("percentage");
   const [isCartRestored, setIsCartRestored] = useState(false);
 
   useEffect(() => {
@@ -14,13 +15,16 @@ export function usePersistentCart() {
       const saved = window.localStorage.getItem(CART_STORAGE_KEY);
       if (!saved) return;
 
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed?.items)) {
-        setCart(parsed.items);
+      const savedCart = JSON.parse(saved);
+      if (Array.isArray(savedCart?.items)) {
+        setCart(savedCart.items);
       }
-      const storedDiscount = Number(parsed?.discount);
-      if (Number.isFinite(storedDiscount)) {
-        setDiscount(storedDiscount);
+      const savedDiscount = Number(savedCart?.discount);
+      if (Number.isFinite(savedDiscount)) {
+        setDiscount(savedDiscount);
+      }
+      if (savedCart?.discountType === "fixed" || savedCart?.discountType === "percentage") {
+        setDiscountType(savedCart.discountType);
       }
     } catch (err) {
       console.error("Error loading cart from storage", err);
@@ -34,16 +38,17 @@ export function usePersistentCart() {
     try {
       window.localStorage.setItem(
         CART_STORAGE_KEY,
-        JSON.stringify({ items: cart, discount }),
+        JSON.stringify({ items: cart, discount, discountType }),
       );
     } catch (err) {
       console.error("Error saving cart to storage", err);
     }
-  }, [cart, discount, isCartRestored]);
+  }, [cart, discount, discountType, isCartRestored]);
 
   const resetCartState = useCallback(() => {
     setCart([]);
     setDiscount(0);
+    setDiscountType("percentage");
     try {
       window.localStorage.removeItem(CART_STORAGE_KEY);
     } catch (err) {
@@ -56,6 +61,8 @@ export function usePersistentCart() {
     setCart,
     discount,
     setDiscount,
+    discountType,
+    setDiscountType,
     isCartRestored,
     resetCartState,
   };
