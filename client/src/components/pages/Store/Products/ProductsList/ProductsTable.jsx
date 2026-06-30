@@ -94,7 +94,9 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                         : "bg-green-200 text-xs text-green-800 border border-green-300"
                   }
                 >
-                  {normalizeNumber(product.quantity ?? product.productStock)}
+                  {product.isBundle
+                    ? `${t("bundleStock")} ${normalizeNumber(product.quantity ?? product.productStock)}`
+                    : normalizeNumber(product.quantity ?? product.productStock)}
                 </Chip>
               </TableCell>
               <TableCell>

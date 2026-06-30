@@ -188,4 +188,18 @@ describe("ProductsTable", () => {
     fireEvent.click(screen.getAllByTestId("view-button")[0]);
     expect(onViewProduct).toHaveBeenCalledWith(products[0]);
   });
+
+  it("shows bundleStock prefix in stock chip for bundle products", () => {
+    renderTable({
+      products: [{ ...products[0], isBundle: true, quantity: 7 }],
+    });
+
+    expect(screen.getByText("bundleStock 7")).toBeInTheDocument();
+  });
+
+  it("shows plain quantity in stock chip for non-bundle products", () => {
+    renderTable({ products: [products[0]] });
+
+    expect(screen.queryByText(/bundleStock/)).not.toBeInTheDocument();
+  });
 });

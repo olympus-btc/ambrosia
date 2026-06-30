@@ -167,4 +167,16 @@ describe("ProductsCard", () => {
 
     expect(screen.getByText("7")).toBeInTheDocument();
   });
+
+  it("shows bundleStock prefix in quantity chip for bundle products", () => {
+    renderCard({ product: { ...product, isBundle: true, quantity: 5 } });
+
+    expect(screen.getByText("bundleStock 5")).toBeInTheDocument();
+  });
+
+  it("shows plain quantity without bundleStock prefix for non-bundle products", () => {
+    renderCard();
+
+    expect(screen.queryByText(/bundleStock/)).not.toBeInTheDocument();
+  });
 });

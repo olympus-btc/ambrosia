@@ -45,7 +45,9 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
               }
               size="sm"
             >
-              {normalizeNumber(product.quantity ?? product.productStock)}
+              {product.isBundle
+                ? `${t("bundleStock")} ${normalizeNumber(product.quantity ?? product.productStock)}`
+                : normalizeNumber(product.quantity ?? product.productStock)}
             </Chip>
             <Chip
               className={
