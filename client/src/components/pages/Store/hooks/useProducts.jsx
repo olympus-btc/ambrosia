@@ -73,10 +73,10 @@ export function useProducts() {
     });
   };
 
-  const ensureSuccess = async (response) => {
-    const payload = await parseJsonResponse(response, null);
-    if (!response.ok) throw buildHttpError(response, payload);
-    return payload;
+  const validateProductResponse = async (productResponse) => {
+    const productData = await parseJsonResponse(productResponse, null);
+    if (!productResponse.ok) throw buildHttpError(productResponse, productData);
+    return productData;
   };
 
   const fetchProducts = useCallback(async () => {
@@ -99,17 +99,17 @@ export function useProducts() {
     try {
       const uploadedUrl = await resolveImageUrl(product.productImage, product.productImageUrl || null, upload);
 
-      const response = await httpClient("/products", {
+      const addProductResponse = await httpClient("/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl)),
         notShowError: false,
       });
 
-      const payload = await ensureSuccess(response);
+      const createdProduct = await validateProductResponse(addProductResponse);
 
       await fetchProducts();
-      return payload;
+      return createdProduct;
     } catch (error) {
       notifyMutationError(error);
       throw error;
@@ -125,21 +125,21 @@ export function useProducts() {
         uploadedUrl = await resolveImageUrl(product.productImage, product.productImageUrl || null, upload);
       }
 
-      const response = await httpClient(`/products/${product.productId}`, {
+      const updateProductResponse = await httpClient(`/products/${product.productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl, { includeId: true })),
         notShowError: false,
       });
 
-      const payload = await ensureSuccess(response);
+      const updatedProduct = await validateProductResponse(updateProductResponse);
 
       if (!product.hasVariants && product.productVariantId) {
         await updateVariant(product.productId, product.productVariantId, buildDefaultVariantPayload(product));
       }
 
       await fetchProducts();
-      return payload;
+      return updatedProduct;
     } catch (error) {
       notifyMutationError(error);
       throw error;
@@ -148,11 +148,11 @@ export function useProducts() {
 
   const deleteProduct = async (product) => {
     try {
-      const response = await httpClient(`/products/${product.id}`, {
+      const deleteProductResponse = await httpClient(`/products/${product.id}`, {
         method: "DELETE",
         notShowError: false,
       });
-      await ensureSuccess(response);
+      await validateProductResponse(deleteProductResponse);
       await fetchProducts();
       return true;
     } catch (error) {

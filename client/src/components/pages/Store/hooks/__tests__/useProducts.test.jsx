@@ -108,10 +108,8 @@ describe("useProducts", () => {
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
-    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce({ id: 1, message: "Product added successfully" });
-    parseJsonResponse.mockResolvedValueOnce({ id: 5 });
     parseJsonResponse.mockResolvedValueOnce([]);
 
     renderWithProvider();
@@ -148,21 +146,10 @@ describe("useProducts", () => {
         imageUrl: "https://img.test/item.png",
         categoryIds: [7],
         hasVariants: false,
-        minStockThreshold: 0,
-        maxStockThreshold: 0,
-      }),
-      notShowError: false,
-    });
-    expect(httpClient).toHaveBeenCalledWith("/products/1/variants", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        SKU: "SKU-1",
         priceCents: 1050,
         quantity: 3,
-        isActive: true,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
       }),
       notShowError: false,
     });
@@ -177,16 +164,13 @@ describe("useProducts", () => {
 
     httpClient.mockImplementation((url, options = {}) => Promise.resolve({
       ok: true,
-      _isProductPost: url === "/products" && options?.method === "POST",
-      _isVariantPost: url.includes("/variants") && options?.method === "POST",
+      isProductPost: url === "/products" && options?.method === "POST",
     }),
     );
     parseJsonResponse.mockImplementation((response, fallback) => Promise.resolve(
-      response?._isProductPost
+      response?.isProductPost
         ? { id: 2, message: "Product added successfully" }
-        : response?._isVariantPost
-          ? { id: 5 }
-          : (Array.isArray(fallback) ? [] : null),
+        : (Array.isArray(fallback) ? [] : null),
     ),
     );
 
@@ -221,21 +205,10 @@ describe("useProducts", () => {
         imageUrl: null,
         categoryIds: [],
         hasVariants: false,
-        minStockThreshold: 0,
-        maxStockThreshold: 0,
-      }),
-      notShowError: false,
-    });
-    expect(httpClient).toHaveBeenCalledWith("/products/2/variants", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        SKU: null,
         priceCents: 1000,
         quantity: 1,
-        isActive: true,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
       }),
       notShowError: false,
     });

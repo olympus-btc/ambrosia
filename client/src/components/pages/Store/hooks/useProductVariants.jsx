@@ -29,43 +29,43 @@ export function useProductVariants() {
   );
 
   const fetchProductDetail = useCallback(async (productId) => {
-    const response = await httpClient(`/products/${productId}`);
-    const data = await parseJsonResponse(response, null);
-    if (!response.ok) {
-      notifyError(response.status);
+    const productDetailResponse = await httpClient(`/products/${productId}`);
+    const productDetailData = await parseJsonResponse(productDetailResponse, null);
+    if (!productDetailResponse.ok) {
+      notifyError(productDetailResponse.status);
       return null;
     }
-    return data;
+    return productDetailData;
   }, [notifyError]);
 
   const addVariant = useCallback(
     async (productId, variantData) => {
-      const response = await httpClient(`/products/${productId}/variants`, {
+      const addVariantResponse = await httpClient(`/products/${productId}/variants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(variantData),
         notShowError: false,
       });
-      const payload = await parseJsonResponse(response, null);
-      if (!response.ok) {
-        notifyError(response.status);
+      const createdVariant = await parseJsonResponse(addVariantResponse, null);
+      if (!addVariantResponse.ok) {
+        notifyError(addVariantResponse.status);
         return null;
       }
-      return payload?.id ?? null;
+      return createdVariant?.id ?? null;
     },
     [notifyError],
   );
 
   const updateVariant = useCallback(
     async (productId, variantId, variantData) => {
-      const response = await httpClient(`/products/${productId}/variants/${variantId}`, {
+      const updateVariantResponse = await httpClient(`/products/${productId}/variants/${variantId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(variantData),
         notShowError: false,
       });
-      if (!response.ok) {
-        notifyError(response.status);
+      if (!updateVariantResponse.ok) {
+        notifyError(updateVariantResponse.status);
         return false;
       }
       return true;
@@ -74,12 +74,12 @@ export function useProductVariants() {
   );
 
   const deleteVariant = useCallback(async (productId, variantId) => {
-    const response = await httpClient(`/products/${productId}/variants/${variantId}`, {
+    const deleteVariantResponse = await httpClient(`/products/${productId}/variants/${variantId}`, {
       method: "DELETE",
       notShowError: false,
     });
-    if (!response.ok) {
-      notifyError(response.status);
+    if (!deleteVariantResponse.ok) {
+      notifyError(deleteVariantResponse.status);
       return false;
     }
     return true;
@@ -87,32 +87,32 @@ export function useProductVariants() {
 
   const addOptionType = useCallback(
     async (productId, optionData) => {
-      const response = await httpClient(`/products/${productId}/options`, {
+      const addOptionTypeResponse = await httpClient(`/products/${productId}/options`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(optionData),
         notShowError: false,
       });
-      const payload = await parseJsonResponse(response, null);
-      if (!response.ok) {
-        notifyError(response.status);
+      const createdOptionType = await parseJsonResponse(addOptionTypeResponse, null);
+      if (!addOptionTypeResponse.ok) {
+        notifyError(addOptionTypeResponse.status);
         return null;
       }
-      return payload?.id ?? null;
+      return createdOptionType?.id ?? null;
     },
     [notifyError],
   );
 
   const updateOptionType = useCallback(
     async (productId, optionTypeId, optionData) => {
-      const response = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
+      const updateOptionTypeResponse = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(optionData),
         notShowError: false,
       });
-      if (!response.ok) {
-        notifyError(response.status);
+      if (!updateOptionTypeResponse.ok) {
+        notifyError(updateOptionTypeResponse.status);
         return false;
       }
       return true;
@@ -121,12 +121,12 @@ export function useProductVariants() {
   );
 
   const deleteOptionType = useCallback(async (productId, optionTypeId) => {
-    const response = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
+    const deleteOptionTypeResponse = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
       method: "DELETE",
       notShowError: false,
     });
-    if (!response.ok) {
-      notifyError(response.status);
+    if (!deleteOptionTypeResponse.ok) {
+      notifyError(deleteOptionTypeResponse.status);
       return false;
     }
     return true;
