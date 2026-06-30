@@ -54,7 +54,6 @@ const componentsEs = {
     description: "Descripción",
     close: "Cerrar",
     add: "Agregar",
-    priceFrom: "Desde",
     stock: "en almacén",
     totalStock: "total en almacén",
     hasVariants: "Variantes",
