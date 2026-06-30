@@ -31,10 +31,13 @@ function createEmptyProductForm() {
     productImage: null,
     productImageUrl: "",
     productImageRemoved: false,
+    isBundle: false,
+    bundleComponents: [],
   };
 }
 
 export function Products() {
+  const productsTranslation = useTranslations("products");
   const [addProductsShowModal, setAddProductsShowModal] = useState(false);
   const [editProductsShowModal, setEditProductsShowModal] = useState(false);
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
@@ -81,6 +84,11 @@ export function Products() {
       productMaxStock: product.maxStockThreshold ?? 0,
       productImage: null,
       productImageUrl: product.imageUrl,
+      isBundle: product.isBundle ?? false,
+      bundleComponents: product.bundleComponents?.map((bundleComponent) => ({
+        productId: bundleComponent.componentId,
+        quantity: bundleComponent.quantity,
+      })) ?? [],
     });
 
     setEditProductsShowModal(true);
@@ -95,13 +103,11 @@ export function Products() {
     await Promise.all([refetchProducts(), refetchCategories()]);
   };
 
-  const t = useTranslations("products");
-
   return (
     <>
       <PageHeader
-        title={t("title")}
-        subtitle={t("subtitle")}
+        title={productsTranslation("title")}
+        subtitle={productsTranslation("subtitle")}
         actions={(
           <RequirePermission allOf={["products_create"]}>
             <Button
@@ -112,7 +118,7 @@ export function Products() {
                 setAddProductsShowModal(true);
               }}
             >
-              {t("addProduct")}
+              {productsTranslation("addProduct")}
             </Button>
           </RequirePermission>
         )}
@@ -130,6 +136,7 @@ export function Products() {
         addProductsShowModal={addProductsShowModal}
         onClose={handleCloseAddProductsModal}
         data={productForm}
+        allProducts={products}
         addProduct={addProduct}
         isUploading={isUploading}
         categories={categories}
@@ -141,6 +148,7 @@ export function Products() {
 
       <EditProductsModal
         data={productForm}
+        allProducts={products}
         onChange={handleProductFormChange}
         updateProduct={updateProduct}
         isUploading={isUploading}
