@@ -58,6 +58,7 @@ const componentsEs = {
     stock: "en almacén",
     totalStock: "total en almacén",
     hasVariants: "Variantes",
+    noCategory: "Sin categoría",
   },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",

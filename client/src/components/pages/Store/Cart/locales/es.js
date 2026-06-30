@@ -10,6 +10,7 @@ const cartEs = {
     card: {
       add: "Agregar",
       hasVariants: "Variantes",
+      noCategory: "Sin categoría",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripción",

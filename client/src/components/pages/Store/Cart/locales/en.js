@@ -10,6 +10,7 @@ const cartEn = {
     card: {
       add: "Add",
       hasVariants: "Variants",
+      noCategory: "No category",
       stock: "in stock",
       showProductDetails: "Show Details",
       showProductDescription: "Description",

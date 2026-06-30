@@ -65,7 +65,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
         <ModalHeader className="flex flex-row items-start justify-between pb-2">
           <div className="flex flex-col">
             {product.name}
-            {categoryNames && <span className="text-sm font-normal text-gray-500">{categoryNames}</span>}
+            <span className="text-sm font-normal text-gray-500">{categoryNames || t("noCategory")}</span>
           </div>
           {product.hasVariants && (
             <Chip size="sm" className="shrink-0 ml-2 bg-blue-100 text-blue-700 border border-blue-200">

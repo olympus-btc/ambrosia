@@ -58,6 +58,7 @@ const componentsEn = {
     stock: "in stock",
     totalStock: "total in stock",
     hasVariants: "Variants",
+    noCategory: "No category",
   },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",

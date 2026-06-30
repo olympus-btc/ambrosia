@@ -100,7 +100,7 @@ export function ProductList({ products, onAddProduct, categories }) {
                   <CardHeader className="flex flex-row items-start justify-between pb-1">
                     <div className="flex flex-col min-w-0">
                       <h2 className="text-sm md:text-lg font-medium">{name}</h2>
-                      {categoryNames && <p className="text-xs">{categoryNames}</p>}
+                      <p className="text-xs">{categoryNames || cardProductTranslation("card.noCategory")}</p>
                     </div>
                     {product.hasVariants && (
                       <Chip size="sm" className="hidden sm:flex shrink-0 ml-2 bg-blue-100 text-blue-700 border border-blue-200">
