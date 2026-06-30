@@ -84,7 +84,6 @@ class TestCheckoutRecovery:
             json={
                 "SKU": f"SKU-{uid}",
                 "name": f"test_product_{uid}",
-                "costCents": 500,
                 "priceCents": 1000,
                 "quantity": 10,
                 "minStockThreshold": 2,

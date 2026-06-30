@@ -13,11 +13,12 @@ DUMMY_ID = "00000000-0000-0000-0000-000000000000"
 
 async def assert_permission_gate(client_factory, method, path, permission, body=None):
     """Assert path returns 403 without permission and a non-403 with it."""
+    kwargs = {"json": body} if body is not None and method in ("post", "put", "patch") else {}
     no_perm = await client_factory(permissions=["permissions_read"])
-    assert_status_code(await getattr(no_perm, method)(path, json=body), 403)
+    assert_status_code(await getattr(no_perm, method)(path, **kwargs), 403)
 
     with_perm = await client_factory(permissions=[permission])
-    assert (await getattr(with_perm, method)(path, json=body)).status_code != 403
+    assert (await getattr(with_perm, method)(path, **kwargs)).status_code != 403
 
 
 class TestCategoriesPermissions:

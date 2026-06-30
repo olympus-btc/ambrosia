@@ -140,6 +140,8 @@ class ProductService {
 
     private fun valid(p: Product): Boolean {
         if (p.name.isBlank()) return false
+        if (p.priceCents < 0) return false
+        if (p.quantity < 0) return false
         if (p.minStockThreshold < 0) return false
         if (p.maxStockThreshold < 0) return false
         if (p.maxStockThreshold > 0 && p.minStockThreshold > p.maxStockThreshold) return false
@@ -163,6 +165,12 @@ class ProductService {
                         this.hasVariants = product.hasVariants
                     }.id.value
 
+            ProductVariantEntity.new(UUID.randomUUID()) {
+                this.productId = EntityID(id, ProductsTable)
+                this.priceCents = product.priceCents
+                this.quantity = product.quantity
+                this.isActive = true
+            }
             replaceCategories(id, product.categoryIds)
             logger.info("Product created: $id")
             id.toString()

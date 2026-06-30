@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 VALID_PRODUCT = {
     "SKU": "SKU-TEST-001",
     "name": "Test Product",
-    "costCents": 500,
     "priceCents": 1000,
     "quantity": 10,
     "minStockThreshold": 2,
