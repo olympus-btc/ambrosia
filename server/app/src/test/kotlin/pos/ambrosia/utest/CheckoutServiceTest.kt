@@ -441,4 +441,77 @@ class CheckoutServiceTest {
             assertEquals(0.0, persistedDiscountAmount)
         }
     }
+
+    @Test
+    fun `checkout deducts component stock when item is a bundle`() {
+        runBlocking {
+            val userId = seedUser()
+            val componentId = ExposedTestDb.seedProduct(name = "Part", quantity = 10)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true, quantity = 0)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId, quantity = 2)
+
+            val items = listOf(StoreCheckoutItem(bundleId, 1, 500))
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Success)
+            assertEquals(8, productQuantity(componentId))
+            assertEquals(0, productQuantity(bundleId))
+        }
+    }
+
+    @Test
+    fun `checkout deducts N times component quantity when N bundles are sold`() {
+        runBlocking {
+            val userId = seedUser()
+            val componentId = ExposedTestDb.seedProduct(name = "Part", quantity = 12)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId, quantity = 3)
+
+            val items = listOf(StoreCheckoutItem(bundleId, 2, 500))
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Success)
+            assertEquals(6, productQuantity(componentId))
+        }
+    }
+
+    @Test
+    fun `checkout returns Invalid when a bundle component has insufficient stock`() {
+        runBlocking {
+            val userId = seedUser()
+            val componentId = ExposedTestDb.seedProduct(name = "Part", quantity = 1)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId, quantity = 2)
+
+            val items = listOf(StoreCheckoutItem(bundleId, 1, 500))
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Invalid)
+            assertEquals(1, productQuantity(componentId))
+            assertTrue(service.getStoreOrders().isEmpty())
+        }
+    }
+
+    @Test
+    fun `checkout rolls back all when bundle component stock is insufficient mid-transaction`() {
+        runBlocking {
+            val userId = seedUser()
+            val regularProductId = ExposedTestDb.seedProduct(name = "Regular", quantity = 5)
+            val componentId = ExposedTestDb.seedProduct(name = "Part", quantity = 1)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId, quantity = 3)
+
+            val items =
+                listOf(
+                    StoreCheckoutItem(regularProductId, 1, 100),
+                    StoreCheckoutItem(bundleId, 1, 500),
+                )
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Invalid)
+            assertEquals(5, productQuantity(regularProductId))
+            assertEquals(1, productQuantity(componentId))
+            assertTrue(service.getStoreOrders().isEmpty())
+        }
+    }
 }

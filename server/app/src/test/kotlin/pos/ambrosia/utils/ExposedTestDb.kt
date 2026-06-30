@@ -34,6 +34,7 @@ import pos.ambrosia.db.tables.PermissionEntity
 import pos.ambrosia.db.tables.PermissionsTable
 import pos.ambrosia.db.tables.PrinterConfigEntity
 import pos.ambrosia.db.tables.PrinterConfigsTable
+import pos.ambrosia.db.tables.ProductBundleComponentsTable
 import pos.ambrosia.db.tables.ProductCategoriesTable
 import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.db.tables.ProductsTable
@@ -90,6 +91,7 @@ object ExposedTestDb {
                 TicketsDishTable,
                 TicketPaymentsTable,
                 ProductsTable,
+                ProductBundleComponentsTable,
                 ProductCategoriesTable,
                 DishesIngredientsTable,
                 ShiftsTable,
@@ -112,6 +114,7 @@ object ExposedTestDb {
                 ShiftsTable,
                 DishesIngredientsTable,
                 ProductCategoriesTable,
+                ProductBundleComponentsTable,
                 ProductsTable,
                 TicketPaymentsTable,
                 TicketsDishTable,
@@ -457,6 +460,7 @@ object ExposedTestDb {
         maxStockThreshold: Int = 0,
         priceCents: Int = 200,
         isDeleted: Boolean = false,
+        isBundle: Boolean = false,
     ): String =
         transaction {
             ProductEntity
@@ -471,9 +475,24 @@ object ExposedTestDb {
                     this.maxStockThreshold = maxStockThreshold
                     this.priceCents = priceCents
                     this.isDeleted = isDeleted
+                    this.isBundle = isBundle
                 }.id.value
                 .toString()
         }
+
+    fun seedBundleComponent(
+        bundleId: String,
+        componentId: String,
+        quantity: Int = 1,
+    ) {
+        transaction {
+            ProductBundleComponentsTable.insert {
+                it[ProductBundleComponentsTable.bundleId] = EntityID(UUID.fromString(bundleId), ProductsTable)
+                it[ProductBundleComponentsTable.componentId] = EntityID(UUID.fromString(componentId), ProductsTable)
+                it[ProductBundleComponentsTable.quantity] = quantity
+            }
+        }
+    }
 
     fun seedProductCategory(
         productId: String,
