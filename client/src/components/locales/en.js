@@ -57,7 +57,7 @@ const componentsEn = {
     priceFrom: "From",
     stock: "in stock",
     totalStock: "total in stock",
-    unknownCategory: "Unknown category",
+    hasVariants: "Variants",
   },
   shifts: {
     requiredOpenShiftTitle: "Open Shift Required",

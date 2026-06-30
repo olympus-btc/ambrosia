@@ -13,9 +13,6 @@ const cartEs = {
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripción",
-      errors: {
-        unknownCategory: "Categoría desconocida",
-      },
     },
     variantSelector: {
       title: "Seleccionar variante",

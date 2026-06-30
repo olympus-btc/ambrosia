@@ -57,7 +57,7 @@ const componentsEs = {
     priceFrom: "Desde",
     stock: "en almacén",
     totalStock: "total en almacén",
-    unknownCategory: "Categoría desconocida",
+    hasVariants: "Variantes",
   },
   shifts: {
     requiredOpenShiftTitle: "Abrir Turno Requerido",

@@ -17,7 +17,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
   const categoryNames = categories
     .filter((cat) => categoryIds.includes(cat.id))
     .map((cat) => cat.name)
-    .join(", ") || t("unknownCategory");
+    .join(", ");
 
   const quantity = Number(product.quantity ?? 0);
   const isOutOfStock = quantity <= 0;
@@ -62,9 +62,16 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
           </div>
         )}
 
-        <ModalHeader className="flex flex-col pb-2">
-          {product.name}
-          <span className="text-sm font-normal text-gray-500">{categoryNames}</span>
+        <ModalHeader className="flex flex-row items-start justify-between pb-2">
+          <div className="flex flex-col">
+            {product.name}
+            {categoryNames && <span className="text-sm font-normal text-gray-500">{categoryNames}</span>}
+          </div>
+          {product.hasVariants && (
+            <Chip size="sm" className="shrink-0 ml-2 bg-blue-100 text-blue-700 border border-blue-200">
+              {t("hasVariants")}
+            </Chip>
+          )}
         </ModalHeader>
 
         <ModalBody className="space-y-3 pt-0">

@@ -45,10 +45,10 @@ export function ProductList({ products, onAddProduct, categories }) {
 
   const getCategoryNames = (categoryIds) => {
     const ids = categoryIds ?? [];
-    const names = categories
+    return categories
       .filter((cat) => ids.includes(cat.id))
-      .map((cat) => cat.name);
-    return names.length > 0 ? names.join(", ") : cardProductTranslation("card.errors.unknownCategory");
+      .map((cat) => cat.name)
+      .join(", ");
   };
 
   const stockStatus = (product) => {
@@ -80,6 +80,7 @@ export function ProductList({ products, onAddProduct, categories }) {
               const status = stockStatus(product);
               const { id, description, priceCents, name, imageUrl, SKU, categoryIds, quantity } = product;
               const productImageUrl = storedAssetUrl(imageUrl);
+              const categoryNames = getCategoryNames(categoryIds);
               return (
                 <Card shadow="none" className="bg-white rounded-lg w-full" key={id}>
                   <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
@@ -96,9 +97,16 @@ export function ProductList({ products, onAddProduct, categories }) {
                       </div>
                     )}
                   </div>
-                  <CardHeader className="flex flex-col items-start pb-1">
-                    <h2 className="text-sm md:text-lg font-medium">{name}</h2>
-                    <p className="text-xs">{getCategoryNames(categoryIds)}</p>
+                  <CardHeader className="flex flex-row items-start justify-between pb-1">
+                    <div className="flex flex-col min-w-0">
+                      <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                      {categoryNames && <p className="text-xs">{categoryNames}</p>}
+                    </div>
+                    {product.hasVariants && (
+                      <Chip size="sm" className="hidden sm:flex shrink-0 ml-2 bg-blue-100 text-blue-700 border border-blue-200">
+                        {cardProductTranslation("card.hasVariants")}
+                      </Chip>
+                    )}
                   </CardHeader>
                   <CardBody className="py-1">
                     <h2 className="text-lg md:text-2xl font-bold text-green-800">
@@ -139,11 +147,10 @@ export function ProductList({ products, onAddProduct, categories }) {
                   </CardBody>
                   <CardFooter className="flex flex-col pt-0 items-stretch gap-2 md:gap-5 sm:flex-row sm:items-center sm:justify-between">
                     {product.hasVariants && (
-                      <Chip size="sm" className="bg-blue-100 text-blue-700 border border-blue-200">
+                      <Chip size="sm" className="sm:hidden bg-blue-100 text-blue-700 border border-blue-200">
                         {cardProductTranslation("card.hasVariants")}
                       </Chip>
-                    )}
-                    <Chip
+                    )}                    <Chip
                       size="sm"
                       className={
                         status === "out"
