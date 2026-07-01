@@ -28,7 +28,9 @@ const productsEn = {
     actions: "Actions",
     noCategory: "No category",
     bundle: "Bundle",
+    regular: "Regular",
     bundleStock: "Bundles:",
+    type: "Type",
     modal: {
       titleAdd: "Add Product",
       titleEdit: "Edit Product",

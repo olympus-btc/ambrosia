@@ -189,17 +189,19 @@ describe("ProductsTable", () => {
     expect(onViewProduct).toHaveBeenCalledWith(products[0]);
   });
 
-  it("shows bundleStock prefix in stock chip for bundle products", () => {
+  it("shows plain quantity in stock chip and bundle chip in type column for bundle products", () => {
     renderTable({
       products: [{ ...products[0], isBundle: true, quantity: 7 }],
     });
 
-    expect(screen.getByText("bundleStock 7")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("bundle")).toBeInTheDocument();
   });
 
-  it("shows plain quantity in stock chip for non-bundle products", () => {
+  it("shows plain quantity and regular chip in type column for non-bundle products", () => {
     renderTable({ products: [products[0]] });
 
-    expect(screen.queryByText(/bundleStock/)).not.toBeInTheDocument();
+    expect(screen.getByText("regular")).toBeInTheDocument();
+    expect(screen.queryByText("bundle")).not.toBeInTheDocument();
   });
 });

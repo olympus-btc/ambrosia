@@ -28,7 +28,9 @@ const productsEs = {
     actions: "Acciones",
     noCategory: "Sin categoría",
     bundle: "Paquete",
+    regular: "Regular",
     bundleStock: "Paquetes:",
+    type: "Tipo",
     modal: {
       titleAdd: "Agregar Producto",
       titleEdit: "Editar Producto",
