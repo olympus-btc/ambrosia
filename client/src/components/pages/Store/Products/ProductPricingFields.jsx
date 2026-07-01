@@ -20,9 +20,9 @@ export function ProductPricingFields({ data, onChange, currency }) {
         )}
         minValue={0}
         value={data.productPrice}
-        onValueChange={(value) => {
-          const numeric = value === null ? "" : Number(value);
-          onChange({ productPrice: numeric });
+        onValueChange={(priceValue) => {
+          const productPrice = priceValue === null ? "" : Number(priceValue);
+          onChange({ productPrice });
         }}
         min={0}
         step={0.01}
@@ -36,9 +36,9 @@ export function ProductPricingFields({ data, onChange, currency }) {
         maxValue={1000000}
         isRequired
         errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
-        onValueChange={(value) => {
-          const numeric = value === null ? "" : Number(value);
-          onChange({ productStock: numeric });
+        onValueChange={(stockValue) => {
+          const productStock = stockValue === null ? "" : Number(stockValue);
+          onChange({ productStock });
         }}
         min={0}
         step={1}

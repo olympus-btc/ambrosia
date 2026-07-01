@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useProductVariants } from "@/components/pages/Store/hooks/useProductVariants";
+import { variantIsAvailableForSale } from "@/components/pages/Store/utils/productVariantAvailability";
 import {
   deriveVariantDisplayName,
   findMatchingVariant,
   variantHasOptionValues,
-  variantIsAvailableForSale,
-} from "@/components/pages/Store/utils/variantUtils";
+} from "@/components/pages/Store/utils/productVariantOptionValues";
 
 export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
   const { fetchProductDetail } = useProductVariants();

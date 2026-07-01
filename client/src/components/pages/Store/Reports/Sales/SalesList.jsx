@@ -8,6 +8,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { formatDateParts } from "@lib/formatDate";
 
 import { SalesCard } from "./SalesCard";
+import { buildSaleItemKey } from "./utils/saleItemKeys";
 
 export function SalesList({ sales, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
@@ -91,14 +92,14 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
     <section aria-label={reportsTranslations("sales.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
         {sales.map((sale) => (
-          <SalesCard key={`${sale.orderId}-${sale.productName}-${sale.variantId ?? ""}`} sale={sale} formatCurrency={formatCurrency} currentRate={currentRate} />
+          <SalesCard key={buildSaleItemKey(sale)} sale={sale} formatCurrency={formatCurrency} currentRate={currentRate} />
         ))}
       </div>
       <div className="hidden md:block overflow-x-auto">
         <DataTable
           columns={columns}
           items={sales}
-          getKey={(sale) => `${sale.orderId}-${sale.productName}-${sale.variantId ?? ""}`}
+          getKey={buildSaleItemKey}
         />
       </div>
     </section>

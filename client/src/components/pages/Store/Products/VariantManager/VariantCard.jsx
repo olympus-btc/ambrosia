@@ -5,7 +5,7 @@ import { Button, Card, CardBody, Image } from "@heroui/react";
 import { ImageIcon, Pencil, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { deriveVariantDisplayName } from "@/components/pages/Store/utils/variantUtils";
+import { deriveVariantDisplayName } from "@/components/pages/Store/utils/productVariantOptionValues";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { VariantForm } from "./VariantForm";

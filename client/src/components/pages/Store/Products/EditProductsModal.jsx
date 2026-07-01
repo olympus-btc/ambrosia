@@ -36,8 +36,8 @@ export function EditProductsModal({
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (productFormSubmission) => {
+    productFormSubmission.preventDefault();
     if (isSubmitting || isUploading) return;
 
     try {
@@ -77,14 +77,14 @@ export function EditProductsModal({
               isRequired
               errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
               value={data.productName}
-              onChange={(e) => onChange({ productName: e.target.value })}
+              onChange={({ target: productNameInput }) => onChange({ productName: productNameInput.value })}
             />
 
             <Textarea
               label={productsTranslations("modal.productDescriptionLabel")}
               placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
               value={data.productDescription ?? ""}
-              onChange={(e) => onChange({ productDescription: e.target.value })}
+              onChange={({ target: productDescriptionInput }) => onChange({ productDescription: productDescriptionInput.value })}
             />
 
             <CategorySelector
@@ -99,13 +99,13 @@ export function EditProductsModal({
               label={productsTranslations("modal.productSKULabel")}
               placeholder={productsTranslations("modal.productSKUPlaceholder")}
               value={data.productSKU ?? ""}
-              onChange={(e) => onChange({ productSKU: e.target.value })}
+              onChange={({ target: productSkuInput }) => onChange({ productSKU: productSkuInput.value })}
             />
 
             <div className="flex items-center gap-3">
               <Switch
                 isSelected={data.hasVariants ?? false}
-                onValueChange={(val) => onChange({ hasVariants: val })}
+                onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
                 size="sm"
               />
               <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>

@@ -57,8 +57,8 @@ export function Products() {
   } = useCategories("product");
   const { fetchProductDetail } = useProductVariants();
 
-  const handleProductFormChange = (newData) => {
-    setProductForm((prev) => ({ ...prev, ...newData }));
+  const handleProductFormChange = (productFormUpdates) => {
+    setProductForm((previousProductForm) => ({ ...previousProductForm, ...productFormUpdates }));
   };
 
   const resetProductForm = () => {
@@ -79,7 +79,7 @@ export function Products() {
     const productDetail = await fetchProductDetail(product.id);
     if (!productDetail) return;
 
-    const defaultVariant = productDetail.variants?.[0];
+    const primaryVariant = productDetail.variants?.[0];
 
     setProductForm({
       productId: product.id,
@@ -88,9 +88,9 @@ export function Products() {
       productCategories: toArray(product.categoryIds),
       productSKU: product.SKU ?? "",
       hasVariants: product.hasVariants ?? false,
-      productVariantId: defaultVariant?.id ?? null,
-      productPrice: defaultVariant?.priceCents ? defaultVariant.priceCents / 100 : "",
-      productStock: defaultVariant?.quantity ?? 0,
+      productVariantId: primaryVariant?.id ?? null,
+      productPrice: primaryVariant?.priceCents ? primaryVariant.priceCents / 100 : "",
+      productStock: primaryVariant?.quantity ?? 0,
       productMinStock: product.minStockThreshold ?? 0,
       productMaxStock: product.maxStockThreshold ?? 0,
       productImage: null,
@@ -112,6 +112,11 @@ export function Products() {
 
   const handleRefreshData = async () => {
     await Promise.all([refetchProducts(), refetchCategories()]);
+  };
+
+  const handleCloseVariantsModal = () => {
+    setVariantsProduct(null);
+    refetchProducts();
   };
 
   const productsTranslations = useTranslations("products");
@@ -175,7 +180,7 @@ export function Products() {
       <ProductVariantsModal
         product={variantsProduct}
         isOpen={!!variantsProduct}
-        onClose={() => { setVariantsProduct(null); refetchProducts(); }}
+        onClose={handleCloseVariantsModal}
       />
 
       <DeleteProductsModal
