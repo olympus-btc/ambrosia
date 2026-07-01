@@ -7,6 +7,7 @@ import { usePermission } from "@/hooks/usePermission";
 
 import { ProductsCard } from "./ProductsCard";
 import { ProductsTable } from "./ProductsTable";
+import { buildCategoryNameById } from "./utils/productCategories";
 
 export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct, onManageVariants }) {
   const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
@@ -18,10 +19,7 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
     setShowProductDetails(true);
   };
 
-  const categoryNameById = useMemo(() => categories.reduce((map, category) => {
-    map[String(category.id)] = category.name;
-    return map;
-  }, {}), [categories]);
+  const categoryNameById = useMemo(() => buildCategoryNameById(categories), [categories]);
 
   return (
     <>

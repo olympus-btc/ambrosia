@@ -6,17 +6,19 @@ import { useTranslations } from "next-intl";
 
 import { ImageUploader } from "@/components/shared/ImageUploader";
 
+function buildInitialOptionValuesByType(options, initialOptionValueIds = []) {
+  return options.reduce((selectedOptionValueIdsByType, optionType) => {
+    const matchedOptionValue = optionType.values.find((optionValue) => initialOptionValueIds.includes(optionValue.id));
+    if (!matchedOptionValue) return selectedOptionValueIdsByType;
+    return {
+      ...selectedOptionValueIdsByType,
+      [optionType.id]: matchedOptionValue.id,
+    };
+  }, {});
+}
+
 export function VariantForm({ initial = {}, currency, options = [], onSave, onCancel, isLoading }) {
   const productsTranslations = useTranslations("products");
-
-  const buildInitialOptionValues = () => {
-    const selectedOptionValueIdsByType = {};
-    options.forEach((optionType) => {
-      const matchedOptionValue = optionType.values.find((optionValue) => initial.optionValueIds?.includes(optionValue.id));
-      if (matchedOptionValue) selectedOptionValueIdsByType[optionType.id] = matchedOptionValue.id;
-    });
-    return selectedOptionValueIdsByType;
-  };
 
   const [form, setForm] = useState({
     SKU: initial.SKU ?? "",
@@ -25,7 +27,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
     imageFile: null,
     imageUrl: initial.imageUrl ?? null,
     imageRemoved: false,
-    selectedOptionValues: buildInitialOptionValues(),
+    selectedOptionValues: buildInitialOptionValuesByType(options, initial.optionValueIds),
   });
 
   const updateForm = (formUpdates) => {

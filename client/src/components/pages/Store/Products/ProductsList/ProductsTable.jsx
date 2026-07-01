@@ -20,6 +20,8 @@ import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
+import { getProductCategories } from "./utils/productCategories";
+
 export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
   const productsTranslations = useTranslations("products");
 
@@ -37,6 +39,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
       <TableBody>
         {products.map((product) => {
           const imageUrl = storedAssetUrl(product?.imageUrl);
+          const productCategories = getProductCategories(product, categoryNameById);
           return (
             <TableRow key={product.id}>
               <TableCell>
@@ -62,11 +65,11 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                 <span className="block max-w-[50px] truncate">{product.description}</span>
               </TableCell>
               <TableCell>
-                {product.categoryIds?.some((categoryId) => categoryNameById[String(categoryId)]) ? (
+                {productCategories.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {product.categoryIds.filter((categoryId) => categoryNameById[String(categoryId)]).map((categoryId) => (
-                      <Chip key={categoryId} className="bg-green-200 text-xs text-green-800 border border-green-300">
-                        {categoryNameById[String(categoryId)]}
+                    {productCategories.map((category) => (
+                      <Chip key={category.id} className="bg-green-200 text-xs text-green-800 border border-green-300">
+                        {category.name}
                       </Chip>
                     ))}
                   </div>

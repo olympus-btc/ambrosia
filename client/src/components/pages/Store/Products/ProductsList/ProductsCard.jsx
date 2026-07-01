@@ -9,16 +9,18 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
-import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
+import { getProductStockQuantity, getProductStockStatus, getStockChipClassName } from "./utils/productStockStatus";
+
 export function ProductsCard({ product, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { formatAmount } = useCurrency();
   const imageUrl = storedAssetUrl(product?.imageUrl);
-  const quantity = toFiniteNumber(product.quantity);
-  const stockStatus = quantity <= 0 ? "out" : quantity <= toFiniteNumber(product.minStockThreshold) ? "low" : "ok";
+  const stockQuantity = getProductStockQuantity(product);
+  const stockStatus = getProductStockStatus(product);
+  const stockChipClassName = getStockChipClassName(stockStatus);
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
@@ -42,45 +44,33 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
           <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
           <div className="flex flex-wrap gap-1.5 my-1">
             <Chip
-              className={
-                stockStatus === "out"
-                  ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                  : stockStatus === "low"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                    : "bg-green-200 text-xs text-green-800 border border-green-300"
-              }
+              className={stockChipClassName}
               size="sm"
             >
-              {toFiniteNumber(product.quantity ?? product.productStock)}
+              {stockQuantity}
             </Chip>
             <Chip
-              className={
-                stockStatus === "out"
-                  ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                  : stockStatus === "low"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                    : "bg-green-200 text-green-800 border border-green-300 text-xs"
-              }
+              className={stockChipClassName}
               size="sm"
             >
-              {t(`status.${stockStatus}`)}
+              {productsTranslations(`status.${stockStatus}`)}
             </Chip>
           </div>
         </div>
         <div className="flex flex-col justify-between shrink-0 gap-1">
-          <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
+          <ViewButton onPress={() => onViewProduct(product)} aria-label={productsTranslations("viewDetails")} />
           {canManageProducts && (
             <>
               {product.hasVariants && (
                 <RequirePermission allOf={["products_update"]}>
-                  <VariantsButton onPress={() => onManageVariants(product)} aria-label={t("manageVariants")} />
+                  <VariantsButton onPress={() => onManageVariants(product)} aria-label={productsTranslations("manageVariants")} />
                 </RequirePermission>
               )}
               <RequirePermission allOf={["products_update"]}>
-                <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
+                <EditButton onPress={() => onEditProduct(product)} aria-label={productsTranslations("edit")} />
               </RequirePermission>
               <RequirePermission allOf={["products_delete"]}>
-                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
+                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={productsTranslations("delete")} />
               </RequirePermission>
             </>
           )}

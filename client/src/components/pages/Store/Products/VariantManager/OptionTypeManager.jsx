@@ -131,40 +131,37 @@ export function OptionTypeManager({
   const [editingOptionTypeId, setEditingOptionTypeId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleAdd = async (optionTypeRequest) => {
+  const executeOptionTypeMutation = async (optionTypeMutation) => {
     setIsSaving(true);
     try {
-      const createdOptionTypeId = await onAddOptionType(productId, optionTypeRequest);
-      if (createdOptionTypeId) {
-        await onRefresh?.();
-        setIsAddingNew(false);
-      }
+      const mutationResult = await optionTypeMutation();
+      if (mutationResult !== false && mutationResult !== null) await onRefresh?.();
+      return mutationResult;
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAdd = async (optionTypeRequest) => {
+    const createdOptionTypeId = await executeOptionTypeMutation(async () => {
+      const createdOptionTypeId = await onAddOptionType(productId, optionTypeRequest);
+      if (createdOptionTypeId) setIsAddingNew(false);
+      return createdOptionTypeId;
+    });
+    return createdOptionTypeId;
   };
 
   const handleUpdate = async (optionTypeId, optionTypeRequest) => {
-    setIsSaving(true);
-    try {
+    const optionTypeWasUpdated = await executeOptionTypeMutation(async () => {
       const optionTypeWasUpdated = await onUpdateOptionType(productId, optionTypeId, optionTypeRequest);
-      if (optionTypeWasUpdated) {
-        await onRefresh?.();
-        setEditingOptionTypeId(null);
-      }
-    } finally {
-      setIsSaving(false);
-    }
+      if (optionTypeWasUpdated) setEditingOptionTypeId(null);
+      return optionTypeWasUpdated;
+    });
+    return optionTypeWasUpdated;
   };
 
   const handleDelete = async (optionTypeId) => {
-    setIsSaving(true);
-    try {
-      await onDeleteOptionType(productId, optionTypeId);
-      await onRefresh?.();
-    } finally {
-      setIsSaving(false);
-    }
+    await executeOptionTypeMutation(() => onDeleteOptionType(productId, optionTypeId));
   };
 
   return (
