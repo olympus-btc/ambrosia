@@ -149,6 +149,8 @@ describe("useProducts", () => {
         minStockThreshold: 0,
         maxStockThreshold: 0,
         priceCents: 1050,
+        isBundle: false,
+        bundleComponents: [],
       }),
       notShowError: false,
     });
@@ -199,6 +201,8 @@ describe("useProducts", () => {
         minStockThreshold: 0,
         maxStockThreshold: 0,
         priceCents: 1000,
+        isBundle: false,
+        bundleComponents: [],
       }),
       notShowError: false,
     });
@@ -252,6 +256,8 @@ describe("useProducts", () => {
         minStockThreshold: 0,
         maxStockThreshold: 0,
         priceCents: 425,
+        isBundle: false,
+        bundleComponents: [],
       }),
       notShowError: false,
     });
@@ -307,6 +313,8 @@ describe("useProducts", () => {
         minStockThreshold: 0,
         maxStockThreshold: 0,
         priceCents: 350,
+        isBundle: false,
+        bundleComponents: [],
       }),
       notShowError: false,
     });

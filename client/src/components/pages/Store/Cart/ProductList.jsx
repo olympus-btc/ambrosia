@@ -125,20 +125,27 @@ export function ProductList({ products, onAddProduct, categories }) {
                       </Accordion>
                     )}
                   </CardBody>
-                  <CardFooter className="flex flex-col pt-0 items-stretch gap-2 md:gap-5 sm:flex-row sm:items-center sm:justify-between">
-                    <Chip
-                      size="sm"
-                      className={
-                        status === "out"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                          : status === "low"
-                            ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                            : "bg-green-200 text-xs text-green-800 border border-green-300"
-                      }
-                    >
-                      {normalizeNumber(quantity)} {cardProductTranslation("card.stock")}
-                    </Chip>
-                    <div className="flex justify-between">
+                  <CardFooter className="flex flex-col pt-0 items-stretch gap-2 md:gap-5 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Chip
+                        size="sm"
+                        className={
+                          status === "out"
+                            ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
+                            : status === "low"
+                              ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+                              : "bg-green-200 text-xs text-green-800 border border-green-300"
+                        }
+                      >
+                        {normalizeNumber(quantity)} {cardProductTranslation("card.stock")}
+                      </Chip>
+                      {product.isBundle && (
+                        <Chip size="sm" className="bg-blue-100 text-xs text-blue-800 border border-blue-200">
+                          {cardProductTranslation("card.bundle")}
+                        </Chip>
+                      )}
+                    </div>
+                    <div className="flex justify-between sm:flex-1">
                       <div className="md:hidden">
                         <ViewButton onPress={() => handleShowProductDetails(product)} />
                       </div>

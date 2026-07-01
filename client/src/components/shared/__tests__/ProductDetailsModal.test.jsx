@@ -136,4 +136,18 @@ describe("ProductDetailsModal", () => {
 
     expect(screen.getByText("add")).toBeDisabled();
   });
+
+  it("shows bundle chip in header when product is a bundle", () => {
+    render(
+      <ProductDetailsModal {...defaultProps} product={{ ...baseProduct, isBundle: true }} />,
+    );
+
+    expect(screen.getByText("bundle")).toBeInTheDocument();
+  });
+
+  it("does not show bundle chip when product is not a bundle", () => {
+    render(<ProductDetailsModal {...defaultProps} />);
+
+    expect(screen.queryByText("bundle")).not.toBeInTheDocument();
+  });
 });

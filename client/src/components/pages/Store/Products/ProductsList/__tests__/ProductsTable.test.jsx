@@ -188,4 +188,20 @@ describe("ProductsTable", () => {
     fireEvent.click(screen.getAllByTestId("view-button")[0]);
     expect(onViewProduct).toHaveBeenCalledWith(products[0]);
   });
+
+  it("shows plain quantity in stock chip and bundle chip in type column for bundle products", () => {
+    renderTable({
+      products: [{ ...products[0], isBundle: true, quantity: 7 }],
+    });
+
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("bundle")).toBeInTheDocument();
+  });
+
+  it("shows plain quantity and regular chip in type column for non-bundle products", () => {
+    renderTable({ products: [products[0]] });
+
+    expect(screen.getByText("regular")).toBeInTheDocument();
+    expect(screen.queryByText("bundle")).not.toBeInTheDocument();
+  });
 });

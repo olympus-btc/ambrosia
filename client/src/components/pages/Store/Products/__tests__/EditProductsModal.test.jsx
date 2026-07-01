@@ -12,6 +12,10 @@ jest.mock("../CategorySelector", () => ({
   ),
 }));
 
+jest.mock("../BundleProductSelector", () => ({
+  BundleProductSelector: () => <div data-testid="bundle-product-selector" />,
+}));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const NumberInput = ({
@@ -23,6 +27,7 @@ jest.mock("@heroui/react", () => {
     startContent,
     minValue,
     maxValue,
+    classNames,
     ...props
   }) => (
     <input
@@ -38,7 +43,19 @@ jest.mock("@heroui/react", () => {
     />
   );
 
-  return { ...actual, NumberInput };
+  const Switch = ({ children, isSelected, onValueChange }) => (
+    <label>
+      <input
+        data-testid="bundle-switch"
+        type="checkbox"
+        checked={isSelected ?? false}
+        onChange={(event) => onValueChange?.(event.target.checked)}
+      />
+      {children}
+    </label>
+  );
+
+  return { ...actual, NumberInput, Switch };
 });
 
 jest.mock("@/components/hooks/useCurrency", () => ({
@@ -190,6 +207,39 @@ describe("EditProductsModal", () => {
     fireEvent.click(screen.getByText("modal.cancelButton"));
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("renders the bundle toggle", () => {
+    renderModal();
+
+    expect(screen.getByText("modal.isBundle")).toBeInTheDocument();
+  });
+
+  it("hides stock field when product is a bundle", () => {
+    renderModal({ data: { ...baseData, isBundle: true } });
+
+    expect(screen.queryByLabelText("modal.productStockLabel")).not.toBeInTheDocument();
+  });
+
+  it("shows BundleComponentSelector when product is a bundle", () => {
+    renderModal({ data: { ...baseData, isBundle: true } });
+
+    expect(screen.getByTestId("bundle-product-selector")).toBeInTheDocument();
+  });
+
+  it("calls onChange with bundle fields when bundle toggle is switched on", () => {
+    const onChange = jest.fn();
+    renderModal({ onChange });
+
+    fireEvent.click(screen.getByTestId("bundle-switch"));
+
+    expect(onChange).toHaveBeenCalledWith({
+      isBundle: true,
+      bundleComponents: [],
+      productStock: 0,
+      productMinStock: 0,
+      productMaxStock: 0,
+    });
   });
 
   it("saves changes and closes on submit", async () => {

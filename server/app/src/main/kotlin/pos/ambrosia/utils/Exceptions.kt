@@ -79,3 +79,7 @@ class DatabaseException(
 class PaymentNotConfirmedException(
     message: String = "Payment not yet confirmed",
 ) : RuntimeException(message)
+
+class ProductIsBundleComponentException(
+    val bundleNames: List<String>,
+) : IllegalStateException("Product is a component of bundles: ${bundleNames.joinToString(", ")}")

@@ -4,10 +4,12 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.models.BundleComponent
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.ProductIsBundleComponentException
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -399,6 +401,198 @@ class ProductServiceTest {
                         .toString(),
                 )
             assertFalse(result)
+        }
+    }
+
+    @Test
+    fun `deleteProduct throws ProductIsBundleComponentException when product is a bundle component`() {
+        runBlocking {
+            val componentId = ExposedTestDb.seedProduct(name = "Component")
+            val bundleId = ExposedTestDb.seedProduct(name = "My Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId)
+
+            val exception =
+                assertFailsWith<ProductIsBundleComponentException> {
+                    service.deleteProduct(componentId)
+                }
+            assertTrue(exception.bundleNames.contains("My Bundle"))
+        }
+    }
+
+    @Test
+    fun `addProduct returns null when bundle has no components`() {
+        runBlocking {
+            val bundle =
+                Product(
+                    name = "Empty Bundle",
+                    costCents = 0,
+                    quantity = 0,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 500,
+                    isBundle = true,
+                    bundleComponents = emptyList(),
+                )
+            val result = service.addProduct(bundle)
+            assertNull(result)
+        }
+    }
+
+    @Test
+    fun `addProduct creates bundle and persists components`() {
+        runBlocking {
+            val componentId = ExposedTestDb.seedProduct(name = "Part A", costCents = 100, quantity = 10)
+            val bundle =
+                Product(
+                    name = "Kit",
+                    costCents = 0,
+                    quantity = 0,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 500,
+                    isBundle = true,
+                    bundleComponents = listOf(BundleComponent(componentId, quantity = 2)),
+                )
+            val bundleId = service.addProduct(bundle)
+            assertNotNull(bundleId)
+
+            val created = service.getProductById(bundleId)
+            assertNotNull(created)
+            assertTrue(created.isBundle)
+            assertEquals(1, created.bundleComponents.size)
+            assertEquals(componentId, created.bundleComponents[0].componentId)
+            assertEquals(2, created.bundleComponents[0].quantity)
+        }
+    }
+
+    @Test
+    fun `getProductById returns quantity as min floor of component stocks for bundle`() {
+        runBlocking {
+            val componentA = ExposedTestDb.seedProduct(name = "A", quantity = 10)
+            val componentB = ExposedTestDb.seedProduct(name = "B", quantity = 7)
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentA, quantity = 2)
+            ExposedTestDb.seedBundleComponent(bundleId, componentB, quantity = 1)
+
+            val result = service.getProductById(bundleId)
+            assertEquals(5, result?.quantity)
+        }
+    }
+
+    @Test
+    fun `getProductById returns zero quantity when a component has no stock`() {
+        runBlocking {
+            val componentA = ExposedTestDb.seedProduct(name = "A", quantity = 5)
+            val componentB = ExposedTestDb.seedProduct(name = "B", quantity = 0)
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentA, quantity = 1)
+            ExposedTestDb.seedBundleComponent(bundleId, componentB, quantity = 1)
+
+            val result = service.getProductById(bundleId)
+            assertEquals(0, result?.quantity)
+        }
+    }
+
+    @Test
+    fun `getProductById returns bundleCostCents as sum of component costs times required quantity`() {
+        runBlocking {
+            val componentA = ExposedTestDb.seedProduct(name = "A", costCents = 300, quantity = 10)
+            val componentB = ExposedTestDb.seedProduct(name = "B", costCents = 200, quantity = 10)
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentA, quantity = 2)
+            ExposedTestDb.seedBundleComponent(bundleId, componentB, quantity = 1)
+
+            val result = service.getProductById(bundleId)
+            assertEquals(800, result?.bundleCostCents)
+        }
+    }
+
+    @Test
+    fun `updateProduct replaces bundle components`() {
+        runBlocking {
+            val componentA = ExposedTestDb.seedProduct(name = "A", quantity = 10)
+            val componentB = ExposedTestDb.seedProduct(name = "B", quantity = 10)
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentA, quantity = 1)
+
+            val updated =
+                Product(
+                    id = bundleId,
+                    name = "Bundle",
+                    costCents = 0,
+                    quantity = 0,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 500,
+                    isBundle = true,
+                    bundleComponents = listOf(BundleComponent(componentB, quantity = 3)),
+                )
+            assertTrue(service.updateProduct(updated))
+
+            val result = service.getProductById(bundleId)
+            assertEquals(1, result?.bundleComponents?.size)
+            assertEquals(componentB, result?.bundleComponents?.get(0)?.componentId)
+            assertEquals(3, result?.bundleComponents?.get(0)?.quantity)
+        }
+    }
+
+    @Test
+    fun `updateProduct clears bundle components when switching to non-bundle`() {
+        runBlocking {
+            val componentId = ExposedTestDb.seedProduct(name = "Part", quantity = 10)
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId, quantity = 1)
+
+            val updated =
+                Product(
+                    id = bundleId,
+                    name = "Bundle",
+                    costCents = 0,
+                    quantity = 5,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 500,
+                    isBundle = false,
+                    bundleComponents = emptyList(),
+                )
+            assertTrue(service.updateProduct(updated))
+
+            val result = service.getProductById(bundleId)
+            assertFalse(result?.isBundle ?: true)
+            assertTrue(result?.bundleComponents?.isEmpty() ?: false)
+        }
+    }
+
+    @Test
+    fun `deleteProduct returns true when deleting a bundle itself`() {
+        runBlocking {
+            val componentId = ExposedTestDb.seedProduct(name = "Part")
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentId)
+
+            assertTrue(service.deleteProduct(bundleId))
+            assertNull(service.getProductById(bundleId))
+            assertNotNull(service.getProductById(componentId))
+        }
+    }
+
+    @Test
+    fun `updateProduct returns false when bundle has no components`() {
+        runBlocking {
+            val bundleId = ExposedTestDb.seedProduct(name = "Bundle", isBundle = true)
+            val updated =
+                Product(
+                    id = bundleId,
+                    name = "Bundle",
+                    costCents = 0,
+                    quantity = 0,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 500,
+                    isBundle = true,
+                    bundleComponents = emptyList(),
+                )
+            assertFalse(service.updateProduct(updated))
         }
     }
 

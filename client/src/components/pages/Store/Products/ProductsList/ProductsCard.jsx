@@ -11,7 +11,7 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function ProductsCard({ product, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
-  const t = useTranslations("products");
+  const productsTranslation = useTranslations("products");
   const imageUrl = storedAssetUrl(product?.imageUrl);
 
   return (
@@ -34,7 +34,7 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
         <div className="flex flex-col justify-center flex-1 min-w-0">
           <p className="font-medium wrap-break-word text-sm my-1">{product.name}</p>
           <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
-          <div className="flex gap-1.5 my-1">
+          <div className="flex gap-1.5 my-1 flex-wrap">
             <Chip
               className={
                 status === "out"
@@ -57,19 +57,24 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
               }
               size="sm"
             >
-              {t(`status.${status}`)}
+              {productsTranslation(`status.${status}`)}
             </Chip>
+            {product.isBundle && (
+              <Chip size="sm" className="bg-blue-100 text-xs text-blue-800 border border-blue-200">
+                {productsTranslation("bundle")}
+              </Chip>
+            )}
           </div>
         </div>
         <div className="flex flex-col justify-between shrink-0 gap-1">
-          <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
+          <ViewButton onPress={() => onViewProduct(product)} aria-label={productsTranslation("viewDetails")} />
           {canManageProducts && (
             <>
               <RequirePermission allOf={["products_update"]}>
-                <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
+                <EditButton onPress={() => onEditProduct(product)} aria-label={productsTranslation("edit")} />
               </RequirePermission>
               <RequirePermission allOf={["products_delete"]}>
-                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
+                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={productsTranslation("delete")} />
               </RequirePermission>
             </>
           )}

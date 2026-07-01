@@ -51,6 +51,7 @@ const componentsEn = {
     takePhoto: "Take a photo",
   },
   productDetails: {
+    bundle: "Bundle",
     description: "Description",
     close: "Close",
     add: "Add",

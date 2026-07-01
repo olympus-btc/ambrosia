@@ -27,6 +27,7 @@ import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.PrintTicketException
+import pos.ambrosia.utils.ProductIsBundleComponentException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.UnauthorizedApiException
 import pos.ambrosia.utils.WalletOnlyException
@@ -123,6 +124,10 @@ fun Application.handler() {
         exception<PaymentNotConfirmedException> { call, cause ->
             logger.info("Payment not yet confirmed: ${cause.message}")
             call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
+        }
+        exception<ProductIsBundleComponentException> { call, cause ->
+            logger.warn("Attempt to delete product used as bundle component: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Product is used as a bundle component"))
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

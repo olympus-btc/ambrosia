@@ -359,6 +359,12 @@ data class Config(
 )
 
 @Serializable
+data class BundleComponent(
+    val componentId: String,
+    val quantity: Int,
+)
+
+@Serializable
 data class Product(
     val id: String? = null,
     val SKU: String? = null,
@@ -371,6 +377,9 @@ data class Product(
     val minStockThreshold: Int,
     val maxStockThreshold: Int,
     val priceCents: Int,
+    val isBundle: Boolean = false,
+    val bundleComponents: List<BundleComponent> = emptyList(),
+    val bundleCostCents: Int = 0,
 )
 
 @Serializable

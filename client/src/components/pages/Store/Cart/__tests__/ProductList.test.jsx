@@ -211,4 +211,32 @@ describe("ProductList", () => {
 
     expect(screen.queryByTestId("product-details-modal")).not.toBeInTheDocument();
   });
+
+  it("shows bundle chip for bundle products", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[{ ...products[0], isBundle: true }]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText("card.bundle")).toBeInTheDocument();
+  });
+
+  it("does not show bundle chip for non-bundle products", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={products}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.queryByText("card.bundle")).not.toBeInTheDocument();
+  });
 });
