@@ -1,0 +1,18 @@
+[Unit]
+Description=Ambrosia Wi-Fi setup portal (hotspot + captive portal when no known Wi-Fi)
+After=NetworkManager.service
+Wants=NetworkManager.service
+ConditionPathExists=/usr/local/bin/ambrosia-wifi-portal
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ambrosia-wifi-portal
+Restart=on-failure
+RestartSec=10
+# After the portal exits (Wi-Fi set, Flask gone, port 80 free), bring Caddy
+# back up so the POS is reachable. "-" prefix ignores failure — harmless if
+# Caddy is already running (clean-boot "known Wi-Fi" path never stopped it).
+ExecStopPost=-/usr/bin/systemctl start caddy
+
+[Install]
+WantedBy=multi-user.target

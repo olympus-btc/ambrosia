@@ -1,0 +1,489 @@
+#!/usr/bin/env python3
+"""
+Ambrosia Wi-Fi setup portal.
+
+Runs at boot. Waits briefly for NetworkManager to auto-connect to a known
+Wi-Fi. If none is found, takes wlan0 out of NM management, brings up hostapd
+(AP) and dnsmasq (DHCP) directly, and serves a Flask captive portal on port 80
+where the user types an SSID + password. On successful connection we tear down
+hostapd/dnsmasq, hand wlan0 back to NM, and exit; systemd treats clean exit
+as success and won't restart us.
+
+Uses hostapd directly because NetworkManager's built-in AP mode relies on
+wpa_supplicant, which doesn't work reliably on the Orange Pi Zero 2W's Wi-Fi
+driver (wpa_supplicant times out after 30s trying to start AP mode).
+"""
+
+import os
+import signal
+import subprocess
+import sys
+import threading
+import time
+from pathlib import Path
+
+from flask import Flask, redirect, render_template_string, request
+
+WLAN = "wlan0"
+AP_IP = "10.42.1.1"
+AP_SUBNET = "10.42.1.0/24"
+DHCP_START = "10.42.1.100"
+DHCP_END = "10.42.1.150"
+HOSTAPD_CONF = Path("/run/ambrosia-wifi-portal/hostapd.conf")
+DNSMASQ_CONF = Path("/run/ambrosia-wifi-portal/dnsmasq.conf")
+DNSMASQ_LEASES = Path("/run/ambrosia-wifi-portal/dnsmasq.leases")
+BOOT_WAIT_SECONDS = 30
+
+app = Flask(__name__)
+hostapd_proc = None
+dnsmasq_proc = None
+# Populated by main() before start_ap(). AP mode disables scanning, so we have
+# to capture the airwaves while wlan0 is still managed by NM.
+scanned_ssids = []
+
+
+def sh(cmd, timeout=None):
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+
+
+def get_hostname():
+    return sh(["hostname"]).stdout.strip() or "ambrosia"
+
+
+def wifi_is_real():
+    """True if wlan0 is currently on a non-AP Wi-Fi managed by NM."""
+    r = sh(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"])
+    for line in r.stdout.splitlines():
+        parts = line.split(":")
+        if len(parts) >= 3 and parts[0] == WLAN and parts[1] == "wifi" and parts[2] == "connected":
+            return True
+    return False
+
+
+def scan_ssids():
+    """Return a list of nearby SSIDs sorted by signal strength (strongest first).
+
+    Must run while wlan0 is still managed by NM — once we flip to AP mode the
+    radio can't scan. Hidden SSIDs (empty name) and duplicates are dropped."""
+    sh(["nmcli", "device", "wifi", "rescan", "ifname", WLAN], timeout=15)
+    time.sleep(3)
+    r = sh(["nmcli", "-t", "-f", "SSID,SIGNAL", "device", "wifi", "list", "ifname", WLAN])
+    seen = {}
+    for line in r.stdout.splitlines():
+        # nmcli -t escapes ":" inside SSIDs as "\:" — rsplit on the last
+        # unescaped colon to split SSID from SIGNAL.
+        if not line:
+            continue
+        idx = line.rfind(":")
+        if idx < 0:
+            continue
+        ssid = line[:idx].replace("\\:", ":").strip()
+        try:
+            signal = int(line[idx + 1 :])
+        except ValueError:
+            signal = 0
+        if not ssid:
+            continue
+        if ssid not in seen or signal > seen[ssid]:
+            seen[ssid] = signal
+    return [s for s, _ in sorted(seen.items(), key=lambda kv: -kv[1])]
+
+
+def write_confs():
+    HOSTAPD_CONF.parent.mkdir(parents=True, exist_ok=True)
+    ap_ssid = f"{get_hostname()}-setup"
+    HOSTAPD_CONF.write_text(
+        f"interface={WLAN}\n"
+        f"driver=nl80211\n"
+        f"ssid={ap_ssid}\n"
+        "hw_mode=g\n"
+        "channel=6\n"
+        "auth_algs=1\n"
+        "wmm_enabled=0\n"
+        "ignore_broadcast_ssid=0\n"
+    )
+    DNSMASQ_CONF.write_text(
+        f"interface={WLAN}\n"
+        f"bind-interfaces\n"
+        f"dhcp-range={DHCP_START},{DHCP_END},255.255.255.0,12h\n"
+        f"dhcp-option=3,{AP_IP}\n"     # gateway
+        f"dhcp-option=6,{AP_IP}\n"     # DNS
+        # Redirect all DNS lookups to the portal IP for captive-portal detection
+        f"address=/#/{AP_IP}\n"
+        f"dhcp-authoritative\n"
+        f"dhcp-leasefile={DNSMASQ_LEASES}\n"
+        f"log-queries\n"
+        f"log-dhcp\n"
+    )
+
+
+def start_ap():
+    """Take wlan0 out of NM, kill wpa_supplicant, reset iftype, start hostapd + dnsmasq.
+
+    Order matters: NM's supplicant keeps a handle on wlan0 that prevents hostapd
+    from setting beacon parameters. We unmanage first, then stop the supplicant,
+    then explicitly set the interface to AP type on a down interface. Without
+    this exact sequence the driver returns -EIO and hostapd fails."""
+    global hostapd_proc, dnsmasq_proc
+
+    # Caddy (and anything else binding port 80) has to step aside for the
+    # captive portal. We'll start Caddy back up in stop_ap().
+    sh(["systemctl", "stop", "caddy"])
+    sh(["nmcli", "device", "set", WLAN, "managed", "no"])
+    sh(["systemctl", "stop", "wpa_supplicant"])
+    sh(["ip", "link", "set", WLAN, "down"])
+    sh(["iw", WLAN, "set", "type", "__ap"])
+    sh(["ip", "link", "set", WLAN, "up"])
+    sh(["ip", "addr", "flush", "dev", WLAN])
+    sh(["ip", "addr", "add", f"{AP_IP}/24", "dev", WLAN])
+
+    write_confs()
+
+    hostapd_proc = subprocess.Popen(
+        ["hostapd", str(HOSTAPD_CONF)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+    )
+    # Give hostapd ~2s to establish; then start dnsmasq
+    time.sleep(2)
+    if hostapd_proc.poll() is not None:
+        print("hostapd exited immediately — giving up.", flush=True)
+        return False
+
+    dnsmasq_proc = subprocess.Popen(
+        ["dnsmasq", "--conf-file=" + str(DNSMASQ_CONF), "--no-daemon"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+    )
+    time.sleep(1)
+    return True
+
+
+def stop_ap():
+    """Shut down hostapd + dnsmasq and hand wlan0 back to NM.
+
+    Does NOT restart Caddy — callers must do that only when we're fully done
+    with port 80, i.e. after Flask shuts down. If we restart Caddy here while
+    Flask is still bound to :80, Caddy fails with EADDRINUSE."""
+    global hostapd_proc, dnsmasq_proc
+    for proc in (dnsmasq_proc, hostapd_proc):
+        if proc and proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+    dnsmasq_proc = None
+    hostapd_proc = None
+    sh(["ip", "addr", "flush", "dev", WLAN])
+    sh(["ip", "link", "set", WLAN, "down"])
+    sh(["iw", WLAN, "set", "type", "managed"])
+    sh(["ip", "link", "set", WLAN, "up"])
+    sh(["systemctl", "start", "wpa_supplicant"])
+    sh(["nmcli", "device", "set", WLAN, "managed", "yes"])
+    time.sleep(2)
+
+
+def restart_caddy():
+    """Restore Caddy after Flask has fully released port 80."""
+    sh(["systemctl", "start", "caddy"])
+
+
+TEMPLATE = """<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurar Wi-Fi — {{ hostname }}</title>
+<style>
+body { font-family: system-ui, -apple-system, Arial, sans-serif; max-width: 480px; margin: 30px auto; padding: 0 20px; color: #111; }
+h1 { font-size: 22pt; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+label { display: block; margin: 16px 0 4px; font-weight: 600; }
+input { width: 100%; padding: 12px; font-size: 14pt; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+button { margin-top: 24px; width: 100%; padding: 14px; font-size: 14pt; background: #1a73e8; color: #fff; border: 0; border-radius: 4px; font-weight: 600; }
+.msg { padding: 12px; border-radius: 4px; margin: 16px 0; }
+.err { background: #fde7e7; color: #a00; }
+small { color: #666; }
+code { font-family: ui-monospace, Menlo, monospace; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+.ssid-list { list-style: none; padding: 0; margin: 6px 0 0; border: 1px solid #ddd; border-radius: 4px; max-height: 220px; overflow-y: auto; }
+.ssid-list li { padding: 12px 14px; font-size: 13pt; cursor: pointer; border-bottom: 1px solid #eee; }
+.ssid-list li:last-child { border-bottom: 0; }
+.ssid-list li:hover, .ssid-list li:active { background: #eef3fb; }
+.ssid-list li.selected { background: #1a73e8; color: #fff; }
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 52px; }
+.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); margin: 0; width: auto; padding: 6px 10px; font-size: 12pt; background: transparent; color: #555; border: 0; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Configurar Wi-Fi</h1>
+<p>Elige una red Wi-Fi para <b>{{ hostname }}</b> y escribe su contraseña.</p>
+{% if msg %}<div class="msg err">{{ msg|safe }}</div>{% endif %}
+<form method="post" action="/">
+  <label for="ssid">Nombre del Wi-Fi (SSID)</label>
+  <input id="ssid" name="ssid" autocapitalize="off" autocorrect="off" spellcheck="false" value="{{ last_ssid or '' }}" required>
+  {% if ssids %}
+  <ul class="ssid-list" id="ssid-list">
+    {% for s in ssids %}<li data-ssid="{{ s }}">{{ s }}</li>{% endfor %}
+  </ul>
+  <small>Toca una red para usarla, o escribe el nombre arriba si la red está oculta.</small>
+  {% else %}
+  <small>No se detectaron redes cercanas. Escribe el nombre manualmente.</small>
+  {% endif %}
+  <label for="password">Contraseña</label>
+  <div class="pw-wrap">
+    <input id="password" name="password" type="password" required>
+    <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Mostrar contraseña">Mostrar</button>
+  </div>
+  <button type="submit">Conectar</button>
+</form>
+<p style="margin-top: 24px;"><small>Si sale bien, esta red (<code>{{ ap_ssid }}</code>) desaparecerá en unos segundos. Podrás acceder al POS en <code>https://{{ hostname }}.local/</code> desde tu Wi-Fi.</small></p>
+<script>
+(function(){
+  var ssidInput = document.getElementById('ssid');
+  var list = document.getElementById('ssid-list');
+  if (list) {
+    function highlight(){
+      var v = ssidInput.value;
+      Array.prototype.forEach.call(list.children, function(li){
+        li.classList.toggle('selected', li.getAttribute('data-ssid') === v);
+      });
+    }
+    list.addEventListener('click', function(e){
+      var li = e.target.closest('li');
+      if (!li) return;
+      ssidInput.value = li.getAttribute('data-ssid');
+      highlight();
+      document.getElementById('password').focus();
+    });
+    ssidInput.addEventListener('input', highlight);
+    highlight();
+  }
+  var pw = document.getElementById('password');
+  var tog = document.getElementById('pw-toggle');
+  tog.addEventListener('click', function(){
+    var showing = pw.type === 'text';
+    pw.type = showing ? 'password' : 'text';
+    tog.textContent = showing ? 'Mostrar' : 'Ocultar';
+  });
+})();
+</script>
+</body>
+</html>"""
+
+
+SUCCESS = """<!doctype html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casi listo</title>
+<style>
+body{font-family:system-ui,-apple-system,Arial,sans-serif;max-width:480px;margin:30px auto;padding:0 20px;color:#111;}
+h1{font-size:22pt;color:#0a7d2a;margin-bottom:8px;}
+.step{background:#f4f7fb;border-left:4px solid #1a73e8;padding:14px 14px;border-radius:4px;margin:18px 0;}
+.step h3{margin:0 0 8px;font-size:12pt;color:#1a73e8;}
+.url-box{background:#111;color:#fff;font-family:ui-monospace,Menlo,monospace;font-size:15pt;padding:14px 16px;border-radius:6px;text-align:center;word-break:break-all;margin:10px 0;user-select:all;}
+.btn{display:block;width:100%;padding:18px;border:0;border-radius:8px;font-size:15pt;font-weight:700;text-align:center;cursor:pointer;}
+.btn-primary{background:#1a73e8;color:#fff;}
+.btn-primary.done{background:#0a7d2a;}
+.btn-primary[disabled]{opacity:.7;cursor:not-allowed;}
+code{font-family:ui-monospace,monospace;background:#f4f4f4;padding:1px 4px;border-radius:3px;}
+small{color:#666;}
+.pending{display:none;margin-top:14px;padding:12px;background:#fff4d6;border-left:4px solid #e0a100;border-radius:4px;}
+.pending.show{display:block;}
+</style>
+</head><body>
+<h1>Casi listo</h1>
+<p>Ya guardamos el nombre y contraseña de <b>{{ ssid }}</b>. Lee esto antes de tocar el botón:</p>
+
+<div class="step">
+  <h3>Qué va a pasar</h3>
+  <ol style="margin:0 0 10px;padding-left:1.4em;">
+    <li>Se <b>copia</b> la dirección del POS a tu portapapeles.</li>
+    <li>Esta red de configuración (<code>{{ ap_ssid }}</code>) se <b>cierra</b> y esta ventana se cerrará sola.</li>
+    <li>Tu teléfono se conectará solo a <b>{{ ssid }}</b> (espera unos segundos).</li>
+    <li>Entonces abre <b>Chrome</b> o <b>Safari</b> y <b>pega</b> la dirección en la barra para entrar al POS.</li>
+  </ol>
+  <div class="url-box" id="posurl">https://{{ hostname }}.local/</div>
+  <button class="btn btn-primary" id="btn-go" type="button">Copiar dirección y terminar</button>
+  <div class="pending" id="pending">
+    <b>¡Listo!</b> Dirección copiada. Tu teléfono se está conectando a <b>{{ ssid }}</b> — pégala en Chrome o Safari cuando esté listo.
+  </div>
+</div>
+
+<p><small>No pasa nada hasta que toques el botón. Si te equivocaste de contraseña, cierra esta ventana, vuelve a conectarte a <code>{{ ap_ssid }}</code> y comienza de nuevo.</small></p>
+
+<form id="commit-form" method="post" action="/commit" style="display:none;">
+  <input type="hidden" name="ssid" value="{{ ssid }}">
+  <input type="hidden" name="password" value="{{ password }}">
+</form>
+
+<script>
+(function(){
+  var btn = document.getElementById('btn-go');
+  var pending = document.getElementById('pending');
+  var url = "https://{{ hostname }}.local/";
+
+  function commit(){
+    btn.disabled = true;
+    btn.textContent = '✓ Dirección copiada — cambiando red…';
+    btn.classList.add('done');
+    pending.classList.add('show');
+    // Fire-and-forget POST; phone may lose the AP mid-request, that's fine.
+    try {
+      fetch('/commit', {method:'POST', body:new FormData(document.getElementById('commit-form'))}).catch(function(){});
+    } catch(e) {}
+  }
+
+  // navigator.clipboard.writeText requires a secure context (HTTPS or
+  // localhost); we're on plain HTTP at 10.42.1.1 so it'll reject. The
+  // document.execCommand('copy') path works on HTTP in any browser engine
+  // old enough to care, including Android's captive-portal WebView.
+  function legacyCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0'; ta.style.left = '0';
+    ta.style.width = '1px'; ta.style.height = '1px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function selectUrl(){
+    // Nothing copied — at least highlight the URL so the user can long-press.
+    var sel = window.getSelection(); var r = document.createRange();
+    r.selectNodeContents(document.getElementById('posurl'));
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+
+  btn.addEventListener('click', function(){
+    var copied = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Try modern API first; if it rejects (insecure context) fall through.
+      navigator.clipboard.writeText(url).then(function(){ copied = true; commit(); },
+        function(){ copied = legacyCopy(url); if (!copied) selectUrl(); commit(); });
+    } else {
+      copied = legacyCopy(url);
+      if (!copied) selectUrl();
+      commit();
+    }
+  });
+})();
+</script>
+</body></html>"""
+
+
+def _do_connect(ssid, pw):
+    """Background task: tear down AP, try to join the user's Wi-Fi.
+
+    Runs from /commit. By that point the user has already seen the
+    confirmation page and copied the POS URL to their clipboard, so there's
+    no race with Android's captive-portal sheet closing — the AP can drop
+    immediately. On successful association systemd's ExecStopPost restarts
+    Caddy as soon as Flask releases port 80. On failure we bring the AP back
+    up and stay running so the user can re-associate with the setup AP and
+    try again.
+    """
+    # Small delay so the /commit HTTP response reaches the phone before the
+    # radio flips mode.
+    time.sleep(1)
+    stop_ap()
+    r = sh(["nmcli", "device", "wifi", "connect", ssid,
+            "password", pw, "ifname", WLAN], timeout=60)
+    if r.returncode == 0:
+        os._exit(0)
+    start_ap()
+
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    last_ssid = ""
+    msg = None
+    if request.method == "POST":
+        ssid = request.form.get("ssid", "").strip()
+        pw = request.form.get("password", "")
+        last_ssid = ssid
+        if not ssid:
+            msg = "Escribe el nombre de la red."
+        else:
+            # Don't touch the radio yet — just render the confirmation page.
+            # The AP stays up and Caddy stays down until the user clicks the
+            # copy button on the next page, which posts to /commit.
+            return render_template_string(
+                SUCCESS,
+                ssid=ssid,
+                password=pw,
+                hostname=get_hostname(),
+                ap_ssid=f"{get_hostname()}-setup",
+            )
+    return render_template_string(
+        TEMPLATE,
+        hostname=get_hostname(),
+        ap_ssid=f"{get_hostname()}-setup",
+        msg=msg, last_ssid=last_ssid,
+        ssids=scanned_ssids,
+    )
+
+
+@app.route("/commit", methods=["POST"])
+def commit():
+    """Actually trigger the Wi-Fi switch. Called by the copy button on the
+    success page once the user has the POS URL on their clipboard."""
+    ssid = request.form.get("ssid", "").strip()
+    pw = request.form.get("password", "")
+    if not ssid:
+        return "missing ssid", 400
+    threading.Thread(target=_do_connect, args=(ssid, pw), daemon=True).start()
+    # Response body is rarely seen — the phone is about to lose the AP.
+    return "ok", 200
+
+
+# Captive-portal detection endpoints — phones probe these to detect a portal.
+@app.route("/generate_204")              # Android
+@app.route("/gen_204")                   # Android variant
+@app.route("/hotspot-detect.html")       # iOS/macOS
+@app.route("/library/test/success.html")  # iOS/macOS
+@app.route("/ncsi.txt")                  # Windows
+@app.route("/connecttest.txt")           # Windows
+def captive_probe():
+    return redirect("/", code=302)
+
+
+def shutdown_on_signal(signum, frame):
+    stop_ap()
+    os._exit(0)
+
+
+def main():
+    signal.signal(signal.SIGTERM, shutdown_on_signal)
+    signal.signal(signal.SIGINT, shutdown_on_signal)
+
+    for _ in range(BOOT_WAIT_SECONDS):
+        if wifi_is_real():
+            print("Known Wi-Fi already connected, exiting.", flush=True)
+            return
+        time.sleep(1)
+
+    print("No known Wi-Fi — scanning for nearby SSIDs before AP mode.", flush=True)
+    global scanned_ssids
+    try:
+        scanned_ssids = scan_ssids()
+        print(f"Found {len(scanned_ssids)} SSIDs: {scanned_ssids}", flush=True)
+    except Exception as e:
+        print(f"Scan failed (continuing without list): {e}", flush=True)
+        scanned_ssids = []
+
+    print("Bringing up setup AP (hostapd + dnsmasq).", flush=True)
+    if not start_ap():
+        sys.exit(1)
+    try:
+        app.run(host="0.0.0.0", port=80, debug=False, use_reloader=False)
+    finally:
+        stop_ap()
+
+
+if __name__ == "__main__":
+    main()

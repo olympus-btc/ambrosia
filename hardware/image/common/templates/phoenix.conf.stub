@@ -1,0 +1,4 @@
+auto-liquidity=off
+max-mining-fee=5000
+http-password=__PHOENIX_HTTP_PASSWORD__
+webhook-secret=__PHOENIX_WEBHOOK_SECRET__

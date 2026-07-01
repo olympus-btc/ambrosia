@@ -1,0 +1,9 @@
+{
+  local_certs
+}
+
+https://__HOSTNAME__.local {
+  tls internal
+  reverse_proxy /ws/* 127.0.0.1:9154
+  reverse_proxy 127.0.0.1:3000
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Ambrosia first boot provisioning
+DefaultDependencies=no
+After=local-fs.target systemd-remount-fs.service
+Before=network-pre.target network.target NetworkManager.service caddy.service ambrosia.service ambrosia-client.service phoenixd.service ambrosia-wifi-portal.service ssh.service sshd.service
+ConditionPathExists=/opt/ambrosia/bin/ambrosia-firstboot
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ambrosia/bin/ambrosia-firstboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

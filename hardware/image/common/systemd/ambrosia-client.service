@@ -1,0 +1,20 @@
+[Unit]
+Description=Ambrosia POS client
+After=network.target ambrosia.service
+Wants=ambrosia.service
+
+[Service]
+Type=simple
+User=__RUNTIME_USER__
+Group=__RUNTIME_GROUP__
+WorkingDirectory=/opt/ambrosia/client
+Environment=HOME=/home/__RUNTIME_USER__
+Environment=NODE_ENV=production
+ExecStart=/opt/ambrosia/bin/ambrosia-client
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

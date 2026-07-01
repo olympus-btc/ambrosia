@@ -1,0 +1,16 @@
+# Base runtime
+avahi-daemon
+caddy
+curl
+dnsmasq
+hostapd
+iw
+network-manager
+nodejs
+openssh-server
+openssl
+python3-flask
+rsync
+sudo
+temurin-21-jre
+unzip

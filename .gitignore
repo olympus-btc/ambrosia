@@ -6,8 +6,15 @@
 CLAUDE.md
 GEMINI.md
 Claude.md
-.claude
-*PLAN.md
 .codex
 AGENTS.md
+.claude
+*PLAN.md
 client/.codex
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Image build artifacts
+hardware/image/out/

@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+RUNTIME_USER="ambrosia"
+RUNTIME_GROUP="ambrosia"
+RUNTIME_HOME="/home/${RUNTIME_USER}"
+STATE_DIR="/var/lib/ambrosia"
+MARKER_FILE="${STATE_DIR}/firstboot-complete"
+LOG_FILE="/var/log/ambrosia-firstboot.log"
+DEVICE_ENV_FILE=""
+DEVICE_ENV_ARCHIVE="${STATE_DIR}/consumed-device.env"
+TEMPLATES_DIR="/etc/ambrosia"
+CADDY_TEMPLATE="${TEMPLATES_DIR}/Caddyfile.template"
+AMBROSIA_STUB="${TEMPLATES_DIR}/ambrosia.conf.stub"
+PHOENIX_STUB="${TEMPLATES_DIR}/phoenix.conf.stub"
+TARGET_CADDYFILE="/etc/caddy/Caddyfile"
+TARGET_AMBROSIA_CONF="${RUNTIME_HOME}/.Ambrosia-POS/ambrosia.conf"
+TARGET_PHOENIX_CONF="${RUNTIME_HOME}/.phoenix/phoenix.conf"
+DEFAULT_ADMIN_PASSWORD="Ambrosia2026!"
+
+ambrosia_hostname=""
+ambrosia_admin_password=""
+ambrosia_wifi_country="US"
+ambrosia_lang="en_US.UTF-8"
+
+find_device_env_file() {
+  local c
+  for c in "/boot/firmware/ambrosia-device.env" "/boot/ambrosia-device.env"; do
+    [[ -f "$c" ]] && { printf '%s' "$c"; return 0; }
+  done
+  return 1
+}
+
+log() {
+  printf '[ambrosia-firstboot] %s\n' "$*"
+}
+
+init_logging() {
+  touch "$LOG_FILE"
+  chmod 0644 "$LOG_FILE"
+  exec >>"$LOG_FILE" 2>&1
+  log "Starting first boot provisioning"
+}
+
+ensure_machine_id() {
+  if [[ ! -s /etc/machine-id ]]; then
+    systemd-machine-id-setup >/dev/null
+  fi
+}
+
+load_preseed() {
+  local resolved
+  resolved=$(find_device_env_file) || return 0
+  DEVICE_ENV_FILE="$resolved"
+
+  while IFS='=' read -r key value; do
+    [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+    key=$(printf '%s' "$key" | tr -d '[:space:]')
+    value=$(printf '%s' "$value" | sed 's/^[[:space:]]*//')
+    case "$key" in
+      AMBROSIA_HOSTNAME)
+        ambrosia_hostname="$value"
+        ;;
+      AMBROSIA_ADMIN_PASSWORD)
+        ambrosia_admin_password="$value"
+        ;;
+      AMBROSIA_WIFI_COUNTRY)
+        ambrosia_wifi_country="$value"
+        ;;
+      AMBROSIA_LANG)
+        ambrosia_lang="$value"
+        ;;
+    esac
+  done < "$DEVICE_ENV_FILE"
+
+  install -D -m 0600 "$DEVICE_ENV_FILE" "$DEVICE_ENV_ARCHIVE"
+  rm -f "$DEVICE_ENV_FILE"
+}
+
+default_hostname() {
+  local machine_id suffix short_name
+  machine_id=$(tr -d '\n' </etc/machine-id)
+  suffix=${machine_id:0:6}
+  short_name="device"
+  if [[ -f /etc/ambrosia/board-identity ]]; then
+    # shellcheck source=/dev/null
+    source /etc/ambrosia/board-identity
+    short_name="${BOARD_SHORT_NAME:-device}"
+  fi
+  printf 'ambrosia-%s-%s' "$short_name" "${suffix:-000000}"
+}
+
+apply_hostname() {
+  local hostname_value="$1"
+  printf '%s\n' "$hostname_value" > /etc/hostname
+  hostname "$hostname_value" || true
+  awk -v host="$hostname_value" '
+    BEGIN { done = 0 }
+    /^127\.0\.1\.1[[:space:]]/ {
+      print "127.0.1.1 " host " " host ".local"
+      done = 1
+      next
+    }
+    { print }
+    END {
+      if (!done) {
+        print "127.0.1.1 " host " " host ".local"
+      }
+    }
+  ' /etc/hosts > /etc/hosts.tmp
+  mv /etc/hosts.tmp /etc/hosts
+}
+
+render_caddyfile() {
+  local hostname_value="$1"
+  sed "s/__HOSTNAME__/${hostname_value}/g" "$CADDY_TEMPLATE" > "$TARGET_CADDYFILE"
+}
+
+ensure_runtime_dirs() {
+  install -d -m 0700 -o "$RUNTIME_USER" -g "$RUNTIME_GROUP" \
+    "$RUNTIME_HOME/.phoenix" \
+    "$RUNTIME_HOME/.Ambrosia-POS"
+  install -d -m 0755 "$STATE_DIR"
+}
+
+random_secret() {
+  openssl rand -hex 24
+}
+
+render_phoenix_conf() {
+  local hostname_value="$1"
+  local http_password webhook_secret
+
+  http_password=$(random_secret)
+  webhook_secret=$(random_secret)
+
+  sed \
+    -e "s/__PHOENIX_HTTP_PASSWORD__/${http_password}/g" \
+    -e "s/__PHOENIX_WEBHOOK_SECRET__/${webhook_secret}/g" \
+    -e "s/__HOSTNAME__/${hostname_value}/g" \
+    "$PHOENIX_STUB" > "$TARGET_PHOENIX_CONF"
+
+  chown "$RUNTIME_USER:$RUNTIME_GROUP" "$TARGET_PHOENIX_CONF"
+  chmod 0600 "$TARGET_PHOENIX_CONF"
+}
+
+render_ambrosia_conf() {
+  cp "$AMBROSIA_STUB" "$TARGET_AMBROSIA_CONF"
+  chown "$RUNTIME_USER:$RUNTIME_GROUP" "$TARGET_AMBROSIA_CONF"
+  chmod 0600 "$TARGET_AMBROSIA_CONF"
+}
+
+apply_admin_password() {
+  local password_to_apply="${ambrosia_admin_password:-$DEFAULT_ADMIN_PASSWORD}"
+  printf '%s:%s\n' "$RUNTIME_USER" "$password_to_apply" | chpasswd
+}
+
+configure_locale() {
+  printf 'LANG=%s\n' "$ambrosia_lang" > /etc/default/locale
+}
+
+configure_wifi_country() {
+  printf 'REGDOMAIN=%s\n' "$ambrosia_wifi_country" > /etc/default/crda
+  if command -v iw >/dev/null 2>&1; then
+    iw reg set "$ambrosia_wifi_country" || true
+  fi
+}
+
+clean_residual_state() {
+  rm -f "$RUNTIME_HOME/.phoenix/seed.dat"
+  rm -f "$RUNTIME_HOME/.Ambrosia-POS/ambrosia.db"
+  rm -f "$RUNTIME_HOME/.Ambrosia-POS/keystore.jks"
+  rm -rf /var/lib/caddy/.local/share/caddy/* 2>/dev/null || true
+  rm -f /var/lib/caddy/.config/caddy/autosave.json 2>/dev/null || true
+  rm -rf /var/log/journal/* 2>/dev/null || true
+}
+
+ensure_ssh_host_keys() {
+  if ! compgen -G "/etc/ssh/ssh_host_*" >/dev/null; then
+    ssh-keygen -A >/dev/null
+  fi
+}
+
+main() {
+  init_logging
+
+  if [[ -f "$MARKER_FILE" ]]; then
+    log "First boot already completed"
+    exit 0
+  fi
+
+  ensure_machine_id
+  ensure_runtime_dirs
+  load_preseed
+  clean_residual_state
+  ensure_ssh_host_keys
+
+  local final_hostname="${ambrosia_hostname:-$(default_hostname)}"
+  apply_hostname "$final_hostname"
+  configure_locale
+  configure_wifi_country
+  apply_admin_password
+  render_caddyfile "$final_hostname"
+  render_phoenix_conf "$final_hostname"
+  render_ambrosia_conf
+
+  touch "$MARKER_FILE"
+  chmod 0644 "$MARKER_FILE"
+  log "Completed first boot provisioning for ${final_hostname}"
+}
+
+main "$@"

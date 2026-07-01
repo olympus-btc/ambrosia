@@ -1,0 +1,19 @@
+[Unit]
+Description=Phoenix daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__RUNTIME_USER__
+Group=__RUNTIME_GROUP__
+WorkingDirectory=/home/__RUNTIME_USER__
+Environment=HOME=/home/__RUNTIME_USER__
+ExecStartPre=/bin/sh -c 'if [ -f /home/__RUNTIME_USER__/.phoenix/seed.dat ] && [ ! -s /home/__RUNTIME_USER__/.phoenix/seed.dat ]; then rm -f /home/__RUNTIME_USER__/.phoenix/seed.dat; fi'
+ExecStart=/usr/local/bin/phoenixd --agree-to-terms-of-service
+Restart=always
+RestartSec=5
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

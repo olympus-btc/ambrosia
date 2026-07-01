@@ -1,0 +1,19 @@
+[Unit]
+Description=Ambrosia POS server
+After=network.target
+
+[Service]
+Type=simple
+User=__RUNTIME_USER__
+Group=__RUNTIME_GROUP__
+WorkingDirectory=/opt/ambrosia/server
+Environment=HOME=/home/__RUNTIME_USER__
+Environment=AMBROSIA_DATADIR=/home/__RUNTIME_USER__/.Ambrosia-POS
+Environment=PHOENIX_DATADIR=/home/__RUNTIME_USER__/.phoenix
+ExecStart=/opt/ambrosia/bin/ambrosia-server
+Restart=always
+RestartSec=5
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
