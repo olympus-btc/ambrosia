@@ -163,7 +163,8 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
           paymentHash: invoiceReadyData.invoice.paymentHash,
           userId: prevConfig.userId,
           items: (prevConfig.cartItems || []).map((item) => ({
-            productId: String(item?.id ?? ""),
+            productId: String(item?.productId ?? item?.id ?? ""),
+            variantId: item?.variantId ?? null,
             quantity: Number(item?.quantity) || 0,
             priceAtOrder: Number(item?.price) || 0,
           })),

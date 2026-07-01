@@ -2,6 +2,7 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import pos.ambrosia.db.SQLiteUUIDTable
@@ -53,10 +54,10 @@ class OrderDishEntity(
     var shouldPrepare by OrdersDishesTable.shouldPrepare
 }
 
-object OrderProductsTable : Table("order_products") {
+object OrderProductsTable : IntIdTable("order_products") {
     val orderId = reference("order_id", OrdersTable)
     val productId = reference("product_id", ProductsTable)
+    val variantId = varchar("variant_id", 36).nullable()
     val quantity = integer("quantity").default(1)
     val priceAtOrder = integer("price_at_order")
-    override val primaryKey = PrimaryKey(orderId, productId)
 }

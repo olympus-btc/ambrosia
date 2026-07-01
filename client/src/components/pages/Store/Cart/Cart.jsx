@@ -21,9 +21,10 @@ import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
   const syncedItems = cart
-    .filter((cartItem) => products.some((product) => product.id === cartItem.id))
+    .filter((cartItem) => products.some((product) => product.id === (cartItem.productId ?? cartItem.id)))
     .map((cartItem) => {
-      const catalogProduct = products.find((product) => product.id === cartItem.id);
+      if (cartItem.variantId) return cartItem;
+      const catalogProduct = products.find((product) => product.id === (cartItem.productId ?? cartItem.id));
       return catalogProduct.priceCents === cartItem.price
         ? cartItem
         : { ...cartItem, price: catalogProduct.priceCents, subtotal: cartItem.quantity * catalogProduct.priceCents };
@@ -51,9 +52,9 @@ export function Cart() {
   } = usePersistentCart();
 
   const handleApplyDiscount = useCallback(
-    (value, type) => {
-      setDiscount(value);
-      setDiscountType(type);
+    (discountValue, selectedDiscountType) => {
+      setDiscount(discountValue);
+      setDiscountType(selectedDiscountType);
     },
     [setDiscount, setDiscountType],
   );
@@ -79,17 +80,18 @@ export function Cart() {
   } = usePendingRemoval();
 
   const visibleCart = useMemo(
-    () => cart.filter((item) => !pendingRemovals.has(item.id)),
+    () => cart.filter((cartItem) => !pendingRemovals.has(cartItem.id)),
     [cart, pendingRemovals],
   );
 
   const handleAddProduct = useCallback(
-    (product) => {
-      if (pendingRemovals.has(product.id)) {
-        cancelRemoval(product.id);
+    (product, variant = null) => {
+      const cartItemId = variant?.id ?? product.id;
+      if (pendingRemovals.has(cartItemId)) {
+        cancelRemoval(cartItemId);
         return;
       }
-      addProduct(product);
+      addProduct(product, variant);
     },
     [addProduct, cancelRemoval, pendingRemovals],
   );

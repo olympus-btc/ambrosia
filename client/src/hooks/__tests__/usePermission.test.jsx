@@ -14,43 +14,43 @@ jest.mock("@/hooks/auth/useAuth", () => ({
 
 function PermissionCheck({ allOf, anyOf }) {
   const allowed = usePermission({ allOf, anyOf });
-  return <span data-testid="result">{allowed ? "yes" : "no"}</span>;
+  return <span data-testid="permission result">{allowed ? "yes" : "no"}</span>;
 }
 
 describe("usePermission", () => {
   it("returns true when allOf permissions are present", () => {
     render(<PermissionCheck allOf={["orders_read", "products_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("yes");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("yes");
   });
 
   it("returns false when one of allOf permissions is missing", () => {
     render(<PermissionCheck allOf={["orders_read", "roles_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("no");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("no");
   });
 
   it("returns true when at least one anyOf permission is present", () => {
     render(<PermissionCheck anyOf={["roles_read", "orders_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("yes");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("yes");
   });
 
   it("returns false when none of anyOf permissions are present", () => {
     render(<PermissionCheck anyOf={["roles_read", "payments_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("no");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("no");
   });
 
   it("returns true when both allOf and anyOf are empty", () => {
     render(<PermissionCheck allOf={[]} anyOf={[]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("yes");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("yes");
   });
 
   it("returns true when allOf and anyOf both pass", () => {
     render(<PermissionCheck allOf={["orders_read"]} anyOf={["products_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("yes");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("yes");
   });
 
   it("returns false when allOf passes but anyOf fails", () => {
     render(<PermissionCheck allOf={["orders_read"]} anyOf={["roles_read"]} />);
-    expect(screen.getByTestId("result")).toHaveTextContent("no");
+    expect(screen.getByTestId("permission result")).toHaveTextContent("no");
   });
 });
 

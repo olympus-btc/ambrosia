@@ -2,17 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { useCurrency } from "@/components/hooks/useCurrency";
 import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { usePermission } from "@/hooks/usePermission";
 
 import { ProductsCard } from "./ProductsCard";
 import { ProductsTable } from "./ProductsTable";
+import { buildCategoryNameById } from "./utils/productCategories";
 
-export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct }) {
-  const { formatAmount } = useCurrency();
+export function ProductsList({ products, categories = [], onEditProduct, onDeleteProduct, onManageVariants }) {
   const canManageProducts = usePermission({ anyOf: ["products_update", "products_delete"] });
-  const defaultMaxStock = 11;
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -21,22 +19,7 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
     setShowProductDetails(true);
   };
 
-  const categoryNameById = useMemo(() => categories.reduce((map, category) => {
-    map[String(category.id)] = category.name;
-    return map;
-  }, {}), [categories]);
-
-  const normalizeNumber = (value, fallback = 0) => {
-    const numeric = Number(value ?? fallback);
-    return Number.isFinite(numeric) ? numeric : fallback;
-  };
-
-  const stockStatus = (product) => {
-    const quantity = normalizeNumber(product.quantity ?? product.productStock);
-    if (quantity <= 0) return "out";
-    if (quantity < defaultMaxStock) return "low";
-    return "ok";
-  };
+  const categoryNameById = useMemo(() => buildCategoryNameById(categories), [categories]);
 
   return (
     <>
@@ -46,13 +29,11 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
             <ProductsCard
               key={product.id}
               product={product}
-              status={stockStatus(product)}
-              normalizeNumber={normalizeNumber}
-              formatAmount={formatAmount}
               canManageProducts={canManageProducts}
               onEditProduct={onEditProduct}
               onDeleteProduct={onDeleteProduct}
               onViewProduct={handleViewProductDetails}
+              onManageVariants={onManageVariants}
             />
           ))}
         </div>
@@ -61,13 +42,11 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
           <ProductsTable
             products={products}
             categoryNameById={categoryNameById}
-            status={stockStatus}
-            normalizeNumber={normalizeNumber}
-            formatAmount={formatAmount}
             canManageProducts={canManageProducts}
             onEditProduct={onEditProduct}
             onDeleteProduct={onDeleteProduct}
             onViewProduct={handleViewProductDetails}
+            onManageVariants={onManageVariants}
           />
         </div>
       </section>

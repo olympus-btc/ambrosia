@@ -378,10 +378,11 @@ describe("paymentHandlers", () => {
       checkoutPayload: expect.objectContaining({
         paymentHash: "hash-1",
         userId: "user-1",
-        items: [{ productId: "prod-1", quantity: 2, priceAtOrder: 500 }],
+        items: [{ productId: "prod-1", variantId: null, quantity: 2, priceAtOrder: 500 }],
         paymentMethodId: "btc",
         currencyId: "cur-1",
         amount: 10,
+        discountAmount: 0,
         transactionId: "ln-invoice",
         satoshiAmount: 20000,
         exchangeRateAtPayment: 50000,

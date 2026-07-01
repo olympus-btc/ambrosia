@@ -9,12 +9,20 @@ const cartEs = {
     },
     card: {
       add: "Agregar",
+      hasVariants: "Variantes",
+      noCategory: "Sin categoría",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripción",
-      errors: {
-        unknownCategory: "Categoría desconocida",
-      },
+    },
+    variantSelector: {
+      title: "Seleccionar variante",
+      addToCart: "Agregar al carrito",
+      cancel: "Cancelar",
+      loading: "Cargando...",
+      outOfStock: "Sin stock",
+      inStock: "en almacén",
+      noVariantFound: "Esta combinación no está disponible",
     },
     summary: {
       clearCart: "Remover Todo",

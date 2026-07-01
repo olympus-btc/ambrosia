@@ -22,10 +22,10 @@ export function useReports() {
     setError(null);
     try {
       const endpoint = buildReportsQueryString(params);
-      const response = await httpClient(endpoint);
-      const data = await parseJsonResponse(response, null);
-      setReportData(data);
-      return data;
+      const reportsResponse = await httpClient(endpoint);
+      const reportResult = await parseJsonResponse(reportsResponse, null);
+      setReportData(reportResult);
+      return reportResult;
     } catch (error) {
       setError(error);
       throw error;

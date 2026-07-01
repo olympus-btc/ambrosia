@@ -17,7 +17,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
   const categoryNames = categories
     .filter((cat) => categoryIds.includes(cat.id))
     .map((cat) => cat.name)
-    .join(", ") || t("unknownCategory");
+    .join(", ");
 
   const quantity = Number(product.quantity ?? 0);
   const isOutOfStock = quantity <= 0;
@@ -62,21 +62,32 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
           </div>
         )}
 
-        <ModalHeader className="flex flex-col pb-2">
-          {product.name}
-          <span className="text-sm font-normal text-gray-500">{categoryNames}</span>
+        <ModalHeader className="flex flex-row items-start justify-between pb-2">
+          <div className="flex flex-col">
+            {product.name}
+            <span className="text-sm font-normal text-gray-500">{categoryNames || t("noCategory")}</span>
+          </div>
+          {product.hasVariants && (
+            <Chip size="sm" className="shrink-0 ml-2 bg-blue-100 text-blue-700 border border-blue-200">
+              {t("hasVariants")}
+            </Chip>
+          )}
         </ModalHeader>
 
         <ModalBody className="space-y-3 pt-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-green-800">{formatAmount(product.priceCents)}</h2>
+              <h2 className="text-2xl font-bold text-green-800">
+                {product.hasVariants
+                  ? `${t("priceFrom")} ${formatAmount(product.priceCents)}`
+                  : formatAmount(product.priceCents)}
+              </h2>
               <p className="text-xs">
                 SKU: <span className="text-gray-800">{product.SKU ?? "—"}</span>
               </p>
             </div>
             <Chip size="sm" className={stockChipClassName}>
-              {quantity} {t("stock")}
+              {quantity} {product.hasVariants ? t("totalStock") : t("stock")}
             </Chip>
           </div>
 

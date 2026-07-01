@@ -6,15 +6,13 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({ formatAmount: (cents) => `$${cents}` }),
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   usePermission: () => true,
   RequirePermission: ({ children }) => children,
-}));
-
-jest.mock("@/components/hooks/useCurrency", () => ({
-  useCurrency: () => ({
-    formatAmount: (cents) => `$${(cents / 100).toFixed(2)}`,
-  }),
 }));
 
 jest.mock("@/components/shared/EditButton", () => ({
@@ -30,7 +28,9 @@ jest.mock("@/components/shared/ViewButton", () => ({
 }));
 
 jest.mock("@/components/shared/ProductDetailsModal", () => ({
-  ProductDetailsModal: ({ isOpen, product }) => (isOpen ? <div data-testid="product-details-modal">{product?.name}</div> : null),
+  ProductDetailsModal: ({ isOpen, product }) => (isOpen ? (
+    <div data-testid="product-details-modal">{product?.name}</div>
+  ) : null),
 }));
 
 const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
@@ -47,32 +47,29 @@ const categories = [
 const products = [
   {
     id: 1,
-    sku: "jade-wallet",
+    SKU: "jade-wallet",
     name: "Jade Wallet",
     description: "Hardware wallet",
     categoryIds: ["cat-1"],
-    priceCents: 1600,
-    quantity: 10,
+    hasVariants: false,
     imageUrl: "/images/jade.png",
   },
   {
     id: 2,
-    sku: "jade-plus",
+    SKU: "jade-plus",
     name: "Jade Plus",
     description: "Hardware wallet plus",
     categoryIds: ["cat-1"],
-    priceCents: 4000,
-    quantity: 5,
+    hasVariants: true,
     imageUrl: "/images/jade-plus.png",
   },
   {
     id: 3,
-    sku: "unknown-cat",
+    SKU: "unknown-cat",
     name: "No Cat",
     description: "Missing category",
     categoryIds: ["missing"],
-    priceCents: 0,
-    quantity: 1,
+    hasVariants: false,
     imageUrl: "/images/no-cat.png",
   },
 ];
@@ -99,12 +96,11 @@ describe("ProductsList", () => {
     jest.clearAllMocks();
   });
 
-  it("renders rows with product data and formatted price", () => {
+  it("renders rows with product names and categories", () => {
     renderList();
 
     expect(screen.getAllByText("Jade Wallet").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Category 1").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("$16.00").length).toBeGreaterThan(0);
   });
 
   it("falls back to noCategory translation for unknown category ids and formats image src via storedAssetUrl", () => {
@@ -144,7 +140,6 @@ describe("ProductsList", () => {
 
     fireEvent.click(screen.getAllByTestId("view-button")[0]);
 
-    expect(screen.getByTestId("product-details-modal")).toBeInTheDocument();
     expect(screen.getByTestId("product-details-modal")).toHaveTextContent("Jade Wallet");
   });
 });

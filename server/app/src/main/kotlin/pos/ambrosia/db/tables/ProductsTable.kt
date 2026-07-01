@@ -12,11 +12,10 @@ object ProductsTable : SQLiteUUIDTable("products") {
     val name = varchar("name", 255)
     val description = text("description").nullable()
     val imageUrl = text("image_url").nullable()
-    val costCents = integer("cost_cents")
-    val quantity = integer("quantity")
+    val quantity = integer("quantity").default(0)
     val minStockThreshold = integer("min_stock_threshold").default(0)
     val maxStockThreshold = integer("max_stock_threshold").default(0)
-    val priceCents = integer("price_cents")
+    val hasVariants = bool("has_variants").default(false)
     val isDeleted = bool("is_deleted").default(false)
 }
 
@@ -29,11 +28,10 @@ class ProductEntity(
     var name by ProductsTable.name
     var description by ProductsTable.description
     var imageUrl by ProductsTable.imageUrl
-    var costCents by ProductsTable.costCents
     var quantity by ProductsTable.quantity
     var minStockThreshold by ProductsTable.minStockThreshold
     var maxStockThreshold by ProductsTable.maxStockThreshold
-    var priceCents by ProductsTable.priceCents
+    var hasVariants by ProductsTable.hasVariants
     var isDeleted by ProductsTable.isDeleted
 }
 

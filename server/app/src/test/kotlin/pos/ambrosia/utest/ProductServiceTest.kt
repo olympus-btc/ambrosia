@@ -5,7 +5,6 @@ import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.Product
-import pos.ambrosia.models.ProductStockAdjustment
 import pos.ambrosia.services.ProductService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
@@ -35,12 +34,9 @@ class ProductServiceTest {
         id: String? = null,
         sku: String? = "SKU-1",
         name: String = "Prod1",
-        costCents: Int = 100,
         categoryIds: List<String> = emptyList(),
-        quantity: Int = 5,
         minStockThreshold: Int = 1,
         maxStockThreshold: Int = 10,
-        priceCents: Int = 199,
     ): Product =
         Product(
             id = id,
@@ -48,12 +44,9 @@ class ProductServiceTest {
             name = name,
             description = null,
             imageUrl = null,
-            costCents = costCents,
             categoryIds = categoryIds,
-            quantity = quantity,
             minStockThreshold = minStockThreshold,
             maxStockThreshold = maxStockThreshold,
-            priceCents = priceCents,
         )
 
     @Test
@@ -158,8 +151,7 @@ class ProductServiceTest {
     @Test
     fun `addProduct returns null if invalid data`() {
         runBlocking {
-            val invalid =
-                newProduct(sku = " ", costCents = -1, quantity = -5, minStockThreshold = -1, maxStockThreshold = -1, priceCents = -10)
+            val invalid = newProduct(sku = " ", name = " ", minStockThreshold = -1, maxStockThreshold = -1)
             val result = service.addProduct(invalid)
             assertNull(result)
         }
@@ -189,7 +181,7 @@ class ProductServiceTest {
     }
 
     @Test
-    fun `addProduct succeeds with null SKU and description`() {
+    fun `addProduct succeeds with null SKU`() {
         runBlocking {
             val newProductData = newProduct(sku = null, name = "No SKU Product")
             val result = service.addProduct(newProductData)
@@ -198,7 +190,7 @@ class ProductServiceTest {
     }
 
     @Test
-    fun `addProduct succeeds with blank SKU and does not check uniqueness`() {
+    fun `addProduct succeeds with blank SKU`() {
         runBlocking {
             val newProductData = newProduct(sku = "   ", name = "Blank SKU Product")
             val result = service.addProduct(newProductData)
@@ -219,17 +211,7 @@ class ProductServiceTest {
     @Test
     fun `updateProduct returns false if ID is null`() {
         runBlocking {
-            val productWithNullId =
-                newProduct(
-                    id = null,
-                    sku = "SKU-1",
-                    name = "Name",
-                    categoryIds = listOf("cat-1"),
-                    quantity = 1,
-                    minStockThreshold = 0,
-                    maxStockThreshold = 0,
-                    priceCents = 100,
-                )
+            val productWithNullId = newProduct(id = null, sku = "SKU-1", name = "Name")
             val result = service.updateProduct(productWithNullId)
             assertFalse(result)
         }
@@ -238,18 +220,7 @@ class ProductServiceTest {
     @Test
     fun `updateProduct returns false if invalid data`() {
         runBlocking {
-            val invalid =
-                newProduct(
-                    id = "p-1",
-                    sku = "",
-                    name = "Valid Name",
-                    costCents = -1,
-                    categoryIds = emptyList(),
-                    quantity = -1,
-                    minStockThreshold = -1,
-                    maxStockThreshold = -1,
-                    priceCents = -1,
-                )
+            val invalid = newProduct(id = "p-1", name = " ", minStockThreshold = -1, maxStockThreshold = -1)
             val result = service.updateProduct(invalid)
             assertFalse(result)
         }
@@ -261,17 +232,7 @@ class ProductServiceTest {
             ExposedTestDb.seedProduct(name = "Other", sku = "SKU-TAKEN")
             val id = ExposedTestDb.seedProduct(name = "Mine", sku = "SKU-MINE")
 
-            val toUpdate =
-                newProduct(
-                    id = id,
-                    sku = "SKU-TAKEN",
-                    name = "New Name",
-                    categoryIds = listOf("cat-1"),
-                    quantity = 5,
-                    minStockThreshold = 1,
-                    maxStockThreshold = 10,
-                    priceCents = 250,
-                )
+            val toUpdate = newProduct(id = id, sku = "SKU-TAKEN", name = "New Name")
             assertFailsWith<ExposedSQLException> { service.updateProduct(toUpdate) }
 
             val unchanged = service.getProductById(id)
@@ -285,17 +246,7 @@ class ProductServiceTest {
             val categoryId = ExposedTestDb.seedCategory(type = "product")
             val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-OLD")
 
-            val toUpdate =
-                newProduct(
-                    id = id,
-                    sku = "SKU-OK",
-                    name = "Updated",
-                    categoryIds = listOf(categoryId),
-                    quantity = 5,
-                    minStockThreshold = 1,
-                    maxStockThreshold = 10,
-                    priceCents = 250,
-                )
+            val toUpdate = newProduct(id = id, sku = "SKU-OK", name = "Updated", categoryIds = listOf(categoryId))
             val result = service.updateProduct(toUpdate)
             assertTrue(result)
 
@@ -311,17 +262,7 @@ class ProductServiceTest {
         runBlocking {
             val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-OLD")
 
-            val toUpdate =
-                newProduct(
-                    id = id,
-                    sku = null,
-                    name = "Updated No SKU",
-                    categoryIds = emptyList(),
-                    quantity = 5,
-                    minStockThreshold = 1,
-                    maxStockThreshold = 10,
-                    priceCents = 250,
-                )
+            val toUpdate = newProduct(id = id, sku = null, name = "Updated No SKU", categoryIds = emptyList())
             val result = service.updateProduct(toUpdate)
             assertTrue(result)
 
@@ -337,17 +278,7 @@ class ProductServiceTest {
             val id = ExposedTestDb.seedProduct(name = "Old Name", sku = "SKU-1")
             ExposedTestDb.seedProductCategory(id, categoryId)
 
-            val toUpdate =
-                newProduct(
-                    id = id,
-                    sku = "SKU-1",
-                    name = "Updated Name",
-                    categoryIds = emptyList(),
-                    quantity = 5,
-                    minStockThreshold = 1,
-                    maxStockThreshold = 10,
-                    priceCents = 250,
-                )
+            val toUpdate = newProduct(id = id, sku = "SKU-1", name = "Updated Name", categoryIds = emptyList())
             val result = service.updateProduct(toUpdate)
             assertTrue(result)
 
@@ -367,11 +298,6 @@ class ProductServiceTest {
                             .toString(),
                     sku = "SKU-OK",
                     name = "Updated",
-                    categoryIds = listOf("cat-1"),
-                    quantity = 5,
-                    minStockThreshold = 1,
-                    maxStockThreshold = 10,
-                    priceCents = 250,
                 )
             val result = service.updateProduct(toUpdate)
             assertFalse(result)
@@ -398,56 +324,6 @@ class ProductServiceTest {
                         .randomUUID()
                         .toString(),
                 )
-            assertFalse(result)
-        }
-    }
-
-    @Test
-    fun `adjustStock returns true when all updates succeed`() {
-        runBlocking {
-            val productId1 = ExposedTestDb.seedProduct(name = "Prod1", quantity = 5)
-            val productId2 = ExposedTestDb.seedProduct(name = "Prod2", quantity = 3)
-
-            val adjustments =
-                listOf(
-                    ProductStockAdjustment(productId = productId1, quantity = 2),
-                    ProductStockAdjustment(productId = productId2, quantity = 1),
-                )
-            val result = service.adjustStock(adjustments)
-            assertTrue(result)
-
-            assertEquals(3, service.getProductById(productId1)?.quantity)
-            assertEquals(2, service.getProductById(productId2)?.quantity)
-        }
-    }
-
-    @Test
-    fun `adjustStock returns false when stock is insufficient`() {
-        runBlocking {
-            val productId = ExposedTestDb.seedProduct(name = "Prod1", quantity = 1)
-
-            val adjustments = listOf(ProductStockAdjustment(productId = productId, quantity = 2))
-            val result = service.adjustStock(adjustments)
-            assertFalse(result)
-
-            assertEquals(1, service.getProductById(productId)?.quantity)
-        }
-    }
-
-    @Test
-    fun `adjustStock returns false when product not found`() {
-        runBlocking {
-            val adjustments =
-                listOf(
-                    ProductStockAdjustment(
-                        productId =
-                            java.util.UUID
-                                .randomUUID()
-                                .toString(),
-                        quantity = 1,
-                    ),
-                )
-            val result = service.adjustStock(adjustments)
             assertFalse(result)
         }
     }

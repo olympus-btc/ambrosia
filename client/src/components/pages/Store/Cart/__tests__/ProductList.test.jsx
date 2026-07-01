@@ -6,7 +6,7 @@ import { ProductList } from "../ProductList";
 
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({
-    formatAmount: (value) => `fmt-${value}`,
+    formatAmount: (amountCents) => `fmt-${amountCents}`,
   }),
 }));
 
@@ -97,7 +97,7 @@ describe("ProductList", () => {
     expect(screen.getByTestId("product-image-placeholder-2")).toBeInTheDocument();
     expect(screen.getAllByText("SKU:")).toHaveLength(2);
     expect(screen.getByText("jade-wallet")).toBeInTheDocument();
-    expect(screen.getByText("card.errors.unknownCategory")).toBeInTheDocument();
+    expect(screen.getByText("card.noCategory")).toBeInTheDocument();
   });
 
   it("calls onAddProduct when add button is clicked", () => {

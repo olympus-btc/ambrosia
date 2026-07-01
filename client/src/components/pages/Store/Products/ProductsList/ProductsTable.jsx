@@ -15,30 +15,31 @@ import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsTable({ products, categoryNameById, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
-  const t = useTranslations("products");
+import { getProductCategories } from "./utils/productCategories";
+
+export function ProductsTable({ products, categoryNameById, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
+  const productsTranslations = useTranslations("products");
 
   return (
-    <Table className="min-w-[700px]" removeWrapper aria-label={t("tableAriaLabel")}>
+    <Table className="min-w-[600px]" removeWrapper aria-label={productsTranslations("tableAriaLabel")}>
       <TableHeader>
-        <TableColumn className="py-2 px-3 w-20">{t("image")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[50px]">{t("name")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[50px]">{t("description")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[100px]">{t("category")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-20">{t("sku")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[70px]">{t("price")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[60px]">{t("stock")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[90px]">{t("stockStatus")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-40 text-right">{t("actions")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-20">{productsTranslations("image")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[50px]">{productsTranslations("name")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[50px]">{productsTranslations("description")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[100px]">{productsTranslations("category")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-20">{productsTranslations("sku")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[90px]">{productsTranslations("stock")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-40 text-right">{productsTranslations("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {products.map((product) => {
-          const productStatus = status(product);
           const imageUrl = storedAssetUrl(product?.imageUrl);
+          const productCategories = getProductCategories(product, categoryNameById);
           return (
             <TableRow key={product.id}>
               <TableCell>
@@ -52,7 +53,7 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                     />
                   ) : (
                     <div data-testid={`product-table-image-placeholder-${product.id}`}>
-                      <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                      <ImageIcon className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
                 </div>
@@ -64,17 +65,17 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                 <span className="block max-w-[50px] truncate">{product.description}</span>
               </TableCell>
               <TableCell>
-                {product.categoryIds?.some((catId) => categoryNameById[String(catId)]) ? (
+                {productCategories.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {product.categoryIds.filter((catId) => categoryNameById[String(catId)]).map((catId) => (
-                      <Chip key={catId} className="bg-green-200 text-xs text-green-800 border border-green-300">
-                        {categoryNameById[String(catId)]}
+                    {productCategories.map((category) => (
+                      <Chip key={category.id} className="bg-green-200 text-xs text-green-800 border border-green-300">
+                        {category.name}
                       </Chip>
                     ))}
                   </div>
                 ) : (
                   <Chip className="bg-gray-200 text-xs text-gray-500 border border-gray-300">
-                    {t("noCategory")}
+                    {productsTranslations("noCategory")}
                   </Chip>
                 )}
               </TableCell>
@@ -82,44 +83,23 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                 <span className="whitespace-nowrap">{product.SKU}</span>
               </TableCell>
               <TableCell>
-                <span className="whitespace-nowrap">{formatAmount(product.priceCents)}</span>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    productStatus === "out"
-                      ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                      : productStatus === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : "bg-green-200 text-xs text-green-800 border border-green-300"
-                  }
-                >
-                  {normalizeNumber(product.quantity ?? product.productStock)}
-                </Chip>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  className={
-                    productStatus === "out"
-                      ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                      : productStatus === "low"
-                        ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                        : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs"
-                  }
-                >
-                  {t(`status.${productStatus}`)}
-                </Chip>
+                <span className="font-medium">{product.quantity}</span>
               </TableCell>
               <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">
-                  <ViewButton onPress={() => onViewProduct(product)}>{t("viewDetails")}</ViewButton>
+                  <ViewButton onPress={() => onViewProduct(product)}>{productsTranslations("viewDetails")}</ViewButton>
                   {canManageProducts && (
                     <>
+                      {product.hasVariants && (
+                        <RequirePermission allOf={["products_update"]}>
+                          <VariantsButton onPress={() => onManageVariants(product)}>{productsTranslations("manageVariants")}</VariantsButton>
+                        </RequirePermission>
+                      )}
                       <RequirePermission allOf={["products_update"]}>
-                        <EditButton onPress={() => onEditProduct(product)}>{t("edit")}</EditButton>
+                        <EditButton onPress={() => onEditProduct(product)}>{productsTranslations("edit")}</EditButton>
                       </RequirePermission>
                       <RequirePermission allOf={["products_delete"]}>
-                        <DeleteButton onPress={() => onDeleteProduct(product)}>{t("delete")}</DeleteButton>
+                        <DeleteButton onPress={() => onDeleteProduct(product)}>{productsTranslations("delete")}</DeleteButton>
                       </RequirePermission>
                     </>
                   )}

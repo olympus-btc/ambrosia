@@ -4,15 +4,23 @@ import { Card, CardBody, Chip, Image } from "@heroui/react";
 import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
+import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-export function ProductsCard({ product, status, normalizeNumber, formatAmount, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct }) {
-  const t = useTranslations("products");
+import { getProductStockQuantity, getProductStockStatus, getStockChipClassName } from "./utils/productStockStatus";
+
+export function ProductsCard({ product, canManageProducts, onEditProduct, onDeleteProduct, onViewProduct, onManageVariants }) {
+  const productsTranslations = useTranslations("products");
+  const { formatAmount } = useCurrency();
   const imageUrl = storedAssetUrl(product?.imageUrl);
+  const stockQuantity = getProductStockQuantity(product);
+  const stockStatus = getProductStockStatus(product);
+  const stockChipClassName = getStockChipClassName(stockStatus);
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
@@ -27,49 +35,42 @@ export function ProductsCard({ product, status, normalizeNumber, formatAmount, c
             />
           ) : (
             <div className="flex justify-center items-center" data-testid={`product-card-image-placeholder-${product.id}`}>
-              <ImageIcon aria-hidden="true" className="h-6 w-6 text-gray-400" />
+              <ImageIcon className="h-6 w-6 text-gray-400" />
             </div>
           )}
         </div>
         <div className="flex flex-col justify-center flex-1 min-w-0">
           <p className="font-medium wrap-break-word text-sm my-1">{product.name}</p>
           <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
-          <div className="flex gap-1.5 my-1">
+          <div className="flex flex-wrap gap-1.5 my-1">
             <Chip
-              className={
-                status === "out"
-                  ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                  : status === "low"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                    : "bg-green-200 text-xs text-green-800 border border-green-300"
-              }
+              className={stockChipClassName}
               size="sm"
             >
-              {normalizeNumber(product.quantity ?? product.productStock)}
+              {stockQuantity}
             </Chip>
             <Chip
-              className={
-                status === "out"
-                  ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                  : status === "low"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                    : "bg-green-200 text-green-800 border border-green-300 text-xs"
-              }
+              className={stockChipClassName}
               size="sm"
             >
-              {t(`status.${status}`)}
+              {productsTranslations(`status.${stockStatus}`)}
             </Chip>
           </div>
         </div>
         <div className="flex flex-col justify-between shrink-0 gap-1">
-          <ViewButton onPress={() => onViewProduct(product)} aria-label={t("viewDetails")} />
+          <ViewButton onPress={() => onViewProduct(product)} aria-label={productsTranslations("viewDetails")} />
           {canManageProducts && (
             <>
+              {product.hasVariants && (
+                <RequirePermission allOf={["products_update"]}>
+                  <VariantsButton onPress={() => onManageVariants(product)} aria-label={productsTranslations("manageVariants")} />
+                </RequirePermission>
+              )}
               <RequirePermission allOf={["products_update"]}>
-                <EditButton onPress={() => onEditProduct(product)} aria-label={t("edit")} />
+                <EditButton onPress={() => onEditProduct(product)} aria-label={productsTranslations("edit")} />
               </RequirePermission>
               <RequirePermission allOf={["products_delete"]}>
-                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={t("delete")} />
+                <DeleteButton onPress={() => onDeleteProduct(product)} aria-label={productsTranslations("delete")} />
               </RequirePermission>
             </>
           )}

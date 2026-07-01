@@ -34,22 +34,25 @@ export function useCartOperations({ cart, setCart, products }) {
   }, []);
 
   const getAvailableQuantity = useCallback(
-    (productId) => {
-      const product = products.find((product) => product.id === productId);
-      return Number(product?.quantity) || 0;
+    (productId, variant) => {
+      if (variant) return Number(variant.quantity) || 0;
+      const matchedProduct = products.find((product) => product.id === productId);
+      return Number(matchedProduct?.quantity) || 0;
     },
     [products],
   );
 
   const addProduct = useCallback(
-    (product) => {
-      const availableQuantity = getAvailableQuantity(product.id);
+    (product, variant = null) => {
+      const availableQuantity = getAvailableQuantity(product.id, variant);
       if (availableQuantity <= 0) {
         notifyOutOfStock();
         return;
       }
 
-      const nextCart = addCartItem(cart, product, availableQuantity);
+      const variantName = variant?.displayName ?? null;
+
+      const nextCart = addCartItem(cart, product, variant, availableQuantity, variantName);
       if (nextCart === cart) {
         notifyOutOfStock();
         return;
@@ -60,31 +63,38 @@ export function useCartOperations({ cart, setCart, products }) {
   );
 
   const updateQuantity = useCallback(
-    (productId, quantity) => {
+    (cartItemId, quantity) => {
       if (!Number.isFinite(quantity)) {
         return;
       }
 
-      const availableQuantity = getAvailableQuantity(productId);
+      const cartItem = cart.find((existingCartItem) => existingCartItem.id === cartItemId);
+      const availableQuantity = cartItem?.maxQuantity
+        ?? getAvailableQuantity(cartItem?.productId ?? cartItemId);
+
       if (quantity > availableQuantity) {
         notifyOutOfStock();
-        setCart(setCartItemQuantity(cart, productId, availableQuantity, availableQuantity));
+        if (availableQuantity <= 0) {
+          setCart(removeCartItem(cart, cartItemId));
+        } else {
+          setCart(setCartItemQuantity(cart, cartItemId, availableQuantity, availableQuantity));
+        }
         return;
       }
 
       if (quantity <= 0) {
-        setCart(removeCartItem(cart, productId));
+        setCart(removeCartItem(cart, cartItemId));
         return;
       }
 
-      setCart(setCartItemQuantity(cart, productId, quantity, availableQuantity));
+      setCart(setCartItemQuantity(cart, cartItemId, quantity, availableQuantity));
     },
     [cart, getAvailableQuantity, notifyOutOfStock, setCart],
   );
 
   const removeProduct = useCallback(
-    (productId) => {
-      setCart(removeCartItem(cart, productId));
+    (cartItemId) => {
+      setCart(removeCartItem(cart, cartItemId));
     },
     [cart, setCart],
   );

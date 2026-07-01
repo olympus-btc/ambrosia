@@ -14,7 +14,7 @@ jest.mock("@heroui/react", () => ({
   TableRow: ({ children }) => <tr>{children}</tr>,
   TableCell: ({ children, className }) => <td className={className}>{children}</td>,
   Chip: ({ children, className }) => <span className={className}>{children}</span>,
-  Image: ({ src, alt, width }) => <div role="img" aria-label={alt} data-src={src} data-width={width} />,
+  Image: ({ src, alt }) => <div role="img" aria-label={alt} data-src={src} />,
 }));
 
 jest.mock("@/components/shared/EditButton", () => ({
@@ -27,6 +27,10 @@ jest.mock("@/components/shared/DeleteButton", () => ({
 
 jest.mock("@/components/shared/ViewButton", () => ({
   ViewButton: ({ onPress, children }) => <button data-testid="view-button" onClick={onPress}>{children}</button>,
+}));
+
+jest.mock("@/components/shared/VariantsButton", () => ({
+  VariantsButton: ({ onPress, children }) => <button data-testid="variants-button" onClick={onPress}>{children}</button>,
 }));
 
 jest.mock("@/hooks/usePermission", () => ({
@@ -50,8 +54,7 @@ const products = [
     description: "Hardware wallet",
     SKU: "jade-wallet",
     categoryIds: ["cat-1"],
-    priceCents: 1600,
-    quantity: 10,
+    hasVariants: false,
     imageUrl: "/images/jade.png",
   },
   {
@@ -60,28 +63,19 @@ const products = [
     description: "Missing category",
     SKU: "no-cat",
     categoryIds: ["missing"],
-    priceCents: 0,
-    quantity: 0,
+    hasVariants: true,
     imageUrl: "/images/no-cat.png",
   },
 ];
 
-const mockStatus = jest.fn((product) => {
-  if (product.quantity <= 0) return "out";
-  if (product.quantity < 11) return "low";
-  return "ok";
-});
-
 const defaultProps = {
   products,
   categoryNameById,
-  status: mockStatus,
-  normalizeNumber: (v) => Number(v ?? 0),
-  formatAmount: (cents) => `$${(cents / 100).toFixed(2)}`,
   canManageProducts: true,
   onEditProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
   onViewProduct: jest.fn(),
+  onManageVariants: jest.fn(),
 };
 
 function renderTable(props = {}) {
@@ -98,43 +92,38 @@ describe("ProductsTable", () => {
 
     expect(screen.getByText("image")).toBeInTheDocument();
     expect(screen.getByText("name")).toBeInTheDocument();
-    expect(screen.getByText("price")).toBeInTheDocument();
+    expect(screen.getByText("description")).toBeInTheDocument();
+    expect(screen.getByText("category")).toBeInTheDocument();
+    expect(screen.getByText("sku")).toBeInTheDocument();
     expect(screen.getByText("stock")).toBeInTheDocument();
-    expect(screen.getByText("stockStatus")).toBeInTheDocument();
     expect(screen.getByText("actions")).toBeInTheDocument();
   });
 
-  it("renders product name, SKU and formatted price", () => {
+  it("renders product name and SKU", () => {
     renderTable();
 
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
     expect(screen.getByText("jade-wallet")).toBeInTheDocument();
-    expect(screen.getByText("$16.00")).toBeInTheDocument();
+  });
+
+  it("does not render variants button for simple product", () => {
+    renderTable({ products: [products[0]] });
+    expect(screen.queryByTestId("variants-button")).not.toBeInTheDocument();
+  });
+
+  it("renders variants button for variant product", () => {
+    renderTable({ products: [products[1]] });
+    expect(screen.getByTestId("variants-button")).toBeInTheDocument();
   });
 
   it("renders category name chip when category is found", () => {
     renderTable();
-
     expect(screen.getByText("Category 1")).toBeInTheDocument();
   });
 
   it("renders noCategory chip when category id is unknown", () => {
     renderTable();
-
     expect(screen.getByText("noCategory")).toBeInTheDocument();
-  });
-
-  it("calls status function for each product", () => {
-    renderTable();
-
-    expect(mockStatus).toHaveBeenCalledTimes(products.length);
-  });
-
-  it("renders status chip with translation key", () => {
-    renderTable();
-
-    expect(screen.getByText("status.low")).toBeInTheDocument();
-    expect(screen.getByText("status.out")).toBeInTheDocument();
   });
 
   it("renders product images via storedAssetUrl", () => {

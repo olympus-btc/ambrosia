@@ -359,23 +359,81 @@ data class Config(
 )
 
 @Serializable
+data class ProductOptionValue(
+    val id: String? = null,
+    val optionTypeId: String? = null,
+    val value: String,
+    val displayOrder: Int = 0,
+)
+
+@Serializable
+data class ProductOptionType(
+    val id: String? = null,
+    val productId: String? = null,
+    val name: String,
+    val displayOrder: Int = 0,
+    val values: List<ProductOptionValue> = emptyList(),
+)
+
+@Serializable
+data class ProductVariant(
+    val id: String? = null,
+    val productId: String? = null,
+    val SKU: String? = null,
+    val priceCents: Int,
+    val costCents: Int? = null,
+    val quantity: Int = 0,
+    val isActive: Boolean = true,
+    val imageUrl: String? = null,
+    val optionValueIds: List<String> = emptyList(),
+)
+
+@Serializable
+data class UpsertVariantRequest(
+    val SKU: String? = null,
+    val priceCents: Int,
+    val costCents: Int? = null,
+    val quantity: Int = 0,
+    val isActive: Boolean = true,
+    val imageUrl: String? = null,
+    val optionValueIds: List<String> = emptyList(),
+)
+
+@Serializable
+data class UpsertOptionTypeRequest(
+    val name: String,
+    val displayOrder: Int = 0,
+    val values: List<UpsertOptionValueRequest> = emptyList(),
+)
+
+@Serializable
+data class UpsertOptionValueRequest(
+    val value: String,
+    val displayOrder: Int = 0,
+)
+
+@Serializable
 data class Product(
     val id: String? = null,
     val SKU: String? = null,
     val name: String,
     val description: String? = null,
     val imageUrl: String? = null,
-    val costCents: Int,
+    val priceCents: Int = 0,
+    val maxPriceCents: Int = 0,
+    val quantity: Int = 0,
+    val minStockThreshold: Int = 0,
+    val maxStockThreshold: Int = 0,
+    val hasVariants: Boolean = false,
     val categoryIds: List<String> = emptyList(),
-    val quantity: Int,
-    val minStockThreshold: Int,
-    val maxStockThreshold: Int,
-    val priceCents: Int,
+    val options: List<ProductOptionType> = emptyList(),
+    val variants: List<ProductVariant> = emptyList(),
 )
 
 @Serializable
 data class ProductStockAdjustment(
     val productId: String,
+    val variantId: String? = null,
     val quantity: Int,
 )
 
@@ -420,6 +478,7 @@ data class SetBaseCurrencyRequest(
 @Serializable
 data class CreateStoreOrderItemRequest(
     val productId: String,
+    val variantId: String? = null,
     val quantity: Int,
 )
 
@@ -431,6 +490,7 @@ data class CreateStoreOrderRequest(
 @Serializable
 data class StoreOrderItem(
     val productId: String,
+    val variantId: String? = null,
     val quantity: Int,
     val priceAtOrder: Int,
 )
@@ -449,6 +509,7 @@ data class StoreOrder(
 @Serializable
 data class StoreCheckoutItem(
     val productId: String,
+    val variantId: String? = null,
     val quantity: Int,
     val priceAtOrder: Int,
 )
@@ -481,6 +542,7 @@ data class StoreCheckoutResponse(
 data class ProductSaleItem(
     val orderId: String,
     val productName: String,
+    val variantId: String? = null,
     val quantity: Int,
     val priceAtOrder: Int,
     val userName: String,

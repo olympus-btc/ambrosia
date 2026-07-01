@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Button,
   Input,
-  NumberInput,
+  Switch,
   Textarea,
   Modal,
   ModalContent,
@@ -18,6 +18,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { ImageUploader } from "@components/shared/ImageUploader";
 
 import { CategorySelector } from "./CategorySelector";
+import { ProductPricingFields } from "./ProductPricingFields";
 
 export function EditProductsModal({
   data,
@@ -31,11 +32,12 @@ export function EditProductsModal({
   editProductsShowModal,
   onClose,
 }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+
+  const handleSubmit = async (productFormSubmission) => {
+    productFormSubmission.preventDefault();
     if (isSubmitting || isUploading) return;
 
     try {
@@ -65,26 +67,24 @@ export function EditProductsModal({
       placement="center"
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleEdit")}</ModalHeader>
+        <ModalHeader>{productsTranslations("modal.titleEdit")}</ModalHeader>
 
         <ModalBody>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
-              label={t("modal.productNameLabel")}
-              placeholder={t("modal.productNamePlaceholder")}
+              label={productsTranslations("modal.productNameLabel")}
+              placeholder={productsTranslations("modal.productNamePlaceholder")}
               isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
+              errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
               value={data.productName}
-              onChange={(e) => onChange({ productName: e.target.value })
-              }
+              onChange={({ target: productNameInput }) => onChange({ productName: productNameInput.value })}
             />
 
             <Textarea
-              label={t("modal.productDescriptionLabel")}
-              placeholder={t("modal.productDescriptionPlaceholder")}
+              label={productsTranslations("modal.productDescriptionLabel")}
+              placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
               value={data.productDescription ?? ""}
-              onChange={(e) => onChange({ productDescription: e.target.value })
-              }
+              onChange={({ target: productDescriptionInput }) => onChange({ productDescription: productDescriptionInput.value })}
             />
 
             <CategorySelector
@@ -96,57 +96,33 @@ export function EditProductsModal({
             />
 
             <Input
-              label={t("modal.productSKULabel")}
-              placeholder={t("modal.productSKUPlaceholder")}
+              label={productsTranslations("modal.productSKULabel")}
+              placeholder={productsTranslations("modal.productSKUPlaceholder")}
               value={data.productSKU ?? ""}
-              onChange={(e) => onChange({ productSKU: e.target.value })
-              }
+              onChange={({ target: productSkuInput }) => onChange({ productSKU: productSkuInput.value })}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <NumberInput
-                label={t("modal.productPriceLabel")}
-                placeholder={t("modal.productPricePlaceholder")}
-                isRequired
-                errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                startContent={
-                  (
-                    <span className="text-default-400 text-small">
-                      {currency?.acronym || "$"}
-                    </span>
-                  )
-                }
-                minValue={0}
-                value={data.productPrice}
-                onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
-                  onChange({ productPrice: numeric });
-                }}
-                min={0}
-                step={0.01}
+            <div className="flex items-center gap-3">
+              <Switch
+                isSelected={data.hasVariants ?? false}
+                onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
+                size="sm"
               />
-
-              <NumberInput
-                label={t("modal.productStockLabel")}
-                placeholder={t("modal.productStockPlaceholder")}
-                isRequired
-                errorMessage={t("modal.errorMsgInputFieldEmpty")}
-                minValue={0}
-                maxValue={1000000}
-                value={data.productStock}
-                onValueChange={(value) => {
-                  const numeric = value === null ? "" : Number(value);
-                  onChange({ productStock: numeric });
-                }}
-                min={0}
-                step={1}
-              />
+              <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
             </div>
+
+            {!data.hasVariants && (
+              <ProductPricingFields data={data} onChange={onChange} currency={currency} />
+            )}
+
+            {data.hasVariants && (
+              <p className="text-xs text-gray-400">{productsTranslations("variantsHintEditModal")}</p>
+            )}
 
             <ImageUploader
               title=""
-              uploadText={t("modal.productImageUpload")}
-              uploadDescription={t("modal.productImageUploadMessage")}
+              uploadText={productsTranslations("modal.productImageUpload")}
+              uploadDescription={productsTranslations("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file, productImageRemoved: file === null })}
               image={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
             />
@@ -158,7 +134,7 @@ export function EditProductsModal({
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => onClose?.()}
               >
-                {t("modal.cancelButton")}
+                {productsTranslations("modal.cancelButton")}
               </Button>
 
               <Button
@@ -167,7 +143,7 @@ export function EditProductsModal({
                 type="submit"
                 isLoading={isSubmitting || isUploading}
               >
-                {t("modal.editButton")}
+                {productsTranslations("modal.editButton")}
               </Button>
             </ModalFooter>
           </form>

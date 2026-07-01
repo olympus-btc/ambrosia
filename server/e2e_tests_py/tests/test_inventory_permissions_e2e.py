@@ -11,6 +11,20 @@ logger = logging.getLogger(__name__)
 DUMMY_ID = "00000000-0000-0000-0000-000000000000"
 
 
+async def assert_permission_gate(client_factory, method, path, permission, body=None):
+    """Assert path returns 403 without permission and a non-403 with it."""
+    kwargs = (
+        {"json": body}
+        if body is not None and method in ("post", "put", "patch")
+        else {}
+    )
+    no_perm = await client_factory(permissions=["permissions_read"])
+    assert_status_code(await getattr(no_perm, method)(path, **kwargs), 403)
+
+    with_perm = await client_factory(permissions=[permission])
+    assert (await getattr(with_perm, method)(path, **kwargs)).status_code != 403
+
+
 class TestCategoriesPermissions:
     """Permission enforcement tests for /categories."""
 
@@ -126,6 +140,100 @@ class TestProductsPermissions:
         with_perm = await client_factory(permissions=["products_read"])
         assert (await with_perm.get("/products")).status_code != 403
         logger.info("✓ products_read correctly gates GET /products")
+
+    @pytest.mark.asyncio
+    async def test_products_read_required_for_get_variants(self, client_factory):
+        """GET /products/{id}/variants returns 403 without products_read permission."""
+        await assert_permission_gate(
+            client_factory, "get", f"/products/{DUMMY_ID}/variants", "products_read"
+        )
+        logger.info("✓ products_read correctly gates GET /products/{id}/variants")
+
+    @pytest.mark.asyncio
+    async def test_products_read_required_for_get_options(self, client_factory):
+        """GET /products/{id}/options returns 403 without products_read permission."""
+        await assert_permission_gate(
+            client_factory, "get", f"/products/{DUMMY_ID}/options", "products_read"
+        )
+        logger.info("✓ products_read correctly gates GET /products/{id}/options")
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_post_variant(self, client_factory):
+        """POST /products/{id}/variants returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "post",
+            f"/products/{DUMMY_ID}/variants",
+            "products_update",
+            body={},
+        )
+        logger.info("✓ products_update correctly gates POST /products/{id}/variants")
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_put_variant(self, client_factory):
+        """PUT /products/{id}/variants/{variantId} returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "put",
+            f"/products/{DUMMY_ID}/variants/{DUMMY_ID}",
+            "products_update",
+            body={},
+        )
+        logger.info(
+            "✓ products_update correctly gates PUT /products/{id}/variants/{variantId}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_delete_variant(self, client_factory):
+        """DELETE /products/{id}/variants/{variantId} returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "delete",
+            f"/products/{DUMMY_ID}/variants/{DUMMY_ID}",
+            "products_update",
+        )
+        logger.info(
+            "✓ products_update correctly gates DELETE /products/{id}/variants/{variantId}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_post_option(self, client_factory):
+        """POST /products/{id}/options returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "post",
+            f"/products/{DUMMY_ID}/options",
+            "products_update",
+            body={},
+        )
+        logger.info("✓ products_update correctly gates POST /products/{id}/options")
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_put_option(self, client_factory):
+        """PUT /products/{id}/options/{optionTypeId} returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "put",
+            f"/products/{DUMMY_ID}/options/{DUMMY_ID}",
+            "products_update",
+            body={},
+        )
+        logger.info(
+            "✓ products_update correctly gates PUT /products/{id}/options/{optionTypeId}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_products_update_required_for_delete_option(self, client_factory):
+        """DELETE /products/{id}/options/{optionTypeId} returns 403 without products_update permission."""
+        await assert_permission_gate(
+            client_factory,
+            "delete",
+            f"/products/{DUMMY_ID}/options/{DUMMY_ID}",
+            "products_update",
+        )
+        logger.info(
+            "✓ products_update correctly gates DELETE /products/{id}/options/{optionTypeId}"
+        )
 
     @pytest.mark.asyncio
     async def test_products_create_required_for_post(self, client_factory):

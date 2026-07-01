@@ -6,10 +6,10 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
-export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
+export function CartItemCard({ item: cartItem, onRemove, onUpdateQuantity }) {
   const translateCart = useTranslations("cart");
   const { formatAmount } = useCurrency();
-  const imageUrl = storedAssetUrl(item.imageUrl);
+  const imageUrl = storedAssetUrl(cartItem.imageUrl);
 
   return (
     <Card className="shadow-none border-1 border-green-600">
@@ -20,20 +20,23 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
               {imageUrl ? (
                 <Image
                   removeWrapper
-                  alt={item.name}
+                  alt={cartItem.name}
                   src={imageUrl}
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div data-testid={`summary-image-placeholder-${item.id}`}>
-                  <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                <div data-testid={`summary-image-placeholder-${cartItem.id}`}>
+                  <ImageIcon className="h-5 w-5 text-gray-400" />
                 </div>
               )}
             </div>
             <div className="flex min-w-0 flex-col">
-              <h3 className="text-sm font-medium text-green-900">{item.name}</h3>
+              <h3 className="text-sm font-medium text-green-900">{cartItem.name}</h3>
+              {cartItem.variantName && (
+                <p className="text-xs text-gray-400">{cartItem.variantName}</p>
+              )}
               <div className="text-xs text-gray-700">
-                {formatAmount(item.price)} {translateCart("summary.each")}
+                {formatAmount(cartItem.price)} {translateCart("summary.each")}
               </div>
             </div>
           </div>
@@ -48,12 +51,12 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
             minValue={1}
             size="sm"
             placeholder="Enter the amount"
-            value={item.quantity}
-            onChange={(value) => onUpdateQuantity(item.id, Number(value))}
+            value={cartItem.quantity}
+            onChange={(quantityValue) => onUpdateQuantity(cartItem.id, Number(quantityValue))}
             classNames={{ inputWrapper: "shadow-none" }}
           />
           <div className="text-sm font-semibold text-green-900">
-            {formatAmount(item.subtotal)}
+            {formatAmount(cartItem.subtotal)}
           </div>
         </div>
       </CardBody>

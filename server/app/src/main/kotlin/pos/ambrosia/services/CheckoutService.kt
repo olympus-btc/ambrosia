@@ -20,6 +20,7 @@ import pos.ambrosia.db.tables.OrdersTable
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.db.tables.PaymentMethodsTable
 import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.ProductVariantsTable
 import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.db.tables.TicketPaymentsTable
@@ -61,6 +62,7 @@ class CheckoutService(
                 .map {
                     StoreOrderItem(
                         productId = it[OrderProductsTable.productId].value.toString(),
+                        variantId = it[OrderProductsTable.variantId],
                         quantity = it[OrderProductsTable.quantity],
                         priceAtOrder = it[OrderProductsTable.priceAtOrder],
                     )
@@ -88,27 +90,27 @@ class CheckoutService(
 
     fun getStoreOrderById(id: String): StoreOrder? =
         transaction {
-            val uuid =
+            val orderUuid =
                 try {
                     UUID.fromString(id)
                 } catch (_: IllegalArgumentException) {
                     return@transaction null
                 }
             OrderEntity
-                .findById(uuid)
+                .findById(orderUuid)
                 ?.takeIf { !it.isDeleted && it.tableId == null }
                 ?.let { toStoreOrder(it) }
         }
 
     fun cancelStoreOrder(id: String): Boolean =
         transaction {
-            val uuid =
+            val orderUuid =
                 try {
                     UUID.fromString(id)
                 } catch (_: IllegalArgumentException) {
                     return@transaction false
                 }
-            val entity = OrderEntity.findById(uuid)
+            val entity = OrderEntity.findById(orderUuid)
             if (entity == null || entity.status != "open" || entity.tableId != null) {
                 false
             } else {
@@ -177,6 +179,7 @@ class CheckoutService(
             UUID.fromString(request.paymentMethodId)
             UUID.fromString(request.currencyId)
             request.items.forEach { UUID.fromString(it.productId) }
+            request.items.mapNotNull { it.variantId }.forEach { UUID.fromString(it) }
         } catch (_: IllegalArgumentException) {
             return null
         }
@@ -196,19 +199,36 @@ class CheckoutService(
 
                 for (item in request.items) {
                     val productEntityId = EntityID(UUID.fromString(item.productId), ProductsTable)
-                    val updated =
-                        ProductsTable.update({
-                            (ProductsTable.id eq productEntityId) and
-                                (ProductsTable.isDeleted eq false) and
-                                (ProductsTable.quantity greaterEq item.quantity)
+
+                    val effectiveVariantId: UUID? =
+                        item.variantId?.let { UUID.fromString(it) }
+                            ?: ProductVariantsTable
+                                .selectAll()
+                                .where {
+                                    (ProductVariantsTable.productId eq productEntityId) and
+                                        (ProductVariantsTable.isActive eq true)
+                                }.firstOrNull()
+                                ?.get(ProductVariantsTable.id)
+                                ?.value
+
+                    if (effectiveVariantId == null) throw InsufficientStockException()
+
+                    val variantEntityId = EntityID(effectiveVariantId, ProductVariantsTable)
+                    val stockRowsUpdated =
+                        ProductVariantsTable.update({
+                            (ProductVariantsTable.id eq variantEntityId) and
+                                (ProductVariantsTable.productId eq productEntityId) and
+                                (ProductVariantsTable.isActive eq true) and
+                                (ProductVariantsTable.quantity greaterEq item.quantity)
                         }) {
-                            it[ProductsTable.quantity] = ProductsTable.quantity - item.quantity
+                            it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - item.quantity
                         }
-                    if (updated == 0) throw InsufficientStockException()
+                    if (stockRowsUpdated == 0) throw InsufficientStockException()
 
                     OrderProductsTable.insert {
                         it[orderId] = order.id
-                        it[productId] = productEntityId
+                        it[OrderProductsTable.productId] = productEntityId
+                        it[variantId] = effectiveVariantId.toString()
                         it[quantity] = item.quantity
                         it[priceAtOrder] = item.priceAtOrder
                     }

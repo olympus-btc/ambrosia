@@ -237,6 +237,7 @@ class ReportService {
                         ProductSaleItem(
                             orderId = row[OrdersTable.id].value.toString(),
                             productName = row[ProductsTable.name],
+                            variantId = row[OrderProductsTable.variantId]?.toString(),
                             quantity = row[OrderProductsTable.quantity],
                             priceAtOrder = row[OrderProductsTable.priceAtOrder],
                             userName = row[UsersTable.name],

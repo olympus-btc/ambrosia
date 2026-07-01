@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { storedAssetUrl } from "@components/utils/storedAssetUrl";
 
-export function ImageUploader({ title, uploadText, uploadDescription, onChange, image }) {
+export function ImageUploader({ title, uploadText, uploadDescription, onChange, image, isCompact = false }) {
   const imageUploaderTranslations = useTranslations("imageUploader");
   const [filePreview, setFilePreview] = useState(null);
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && navigator.maxTouchPoints > 0);
@@ -53,12 +53,13 @@ export function ImageUploader({ title, uploadText, uploadDescription, onChange, 
       {imagePreview ? (
         <div className="flex flex-col gap-2">
           <div
-            className="
+            className={`
               flex flex-col items-center justify-center
               bg-[conic-gradient(#aaa_90deg,#eee_90deg_180deg,#aaa_180deg_270deg,#eee_270deg)]
               bg-size-[20px_20px]
-              relative w-32 h-32 md:w-48 md:h-48 rounded-lg border border-gray-200 overflow-hidden
-            "
+              relative rounded-lg border border-gray-200 overflow-hidden
+              ${isCompact ? "w-24 h-24" : "w-32 h-32 md:w-48 md:h-48"}
+            `}
           >
             <Image src={imagePreview} alt="Image preview" className="w-full h-full object-contain" />
             <Button
@@ -93,11 +94,11 @@ export function ImageUploader({ title, uploadText, uploadDescription, onChange, 
           <Button
             variant="bordered"
             fullWidth
-            className="h-auto py-6 px-3 rounded-lg border-2 border-dashed flex flex-col items-center justify-center"
+            className={`h-auto rounded-lg border-2 border-dashed flex flex-col items-center justify-center ${isCompact ? "py-3 px-3" : "py-6 px-3"}`}
             onPress={() => galleryInputRef.current?.click()}
           >
-            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <p className="text-sm font-medium text-foreground">{uploadText}</p>
+            <Upload className={`text-muted-foreground ${isCompact ? "w-5 h-5 mb-1" : "w-8 h-8 mb-2"}`} />
+            <p className={`font-medium text-foreground ${isCompact ? "text-xs" : "text-sm"}`}>{uploadText}</p>
             {!isTouchDevice && <p className="text-xs text-muted-foreground text-center leading-tight">{uploadDescription}</p>}
           </Button>
         </div>

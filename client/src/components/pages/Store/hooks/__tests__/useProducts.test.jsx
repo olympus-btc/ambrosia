@@ -102,9 +102,10 @@ describe("useProducts", () => {
   });
 
   it("adds a product and uploads a file when provided", async () => {
-    const upload = jest.fn().mockResolvedValue([{ url: "https://img.test/item.png" }]);
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn().mockResolvedValue([{ url: "https://img.test/item.png" }]);
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
+    httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -132,7 +133,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).toHaveBeenCalledWith([imageFile]);
+    expect(uploadFile).toHaveBeenCalledWith([imageFile]);
     expect(httpClient).toHaveBeenCalledWith("/products", {
       method: "POST",
       headers: {
@@ -143,26 +144,35 @@ describe("useProducts", () => {
         name: "Cafe",
         description: "Caliente",
         imageUrl: "https://img.test/item.png",
-        costCents: 1050,
         categoryIds: [7],
+        hasVariants: false,
+        priceCents: 1050,
         quantity: 3,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 1050,
       }),
       notShowError: false,
     });
   });
 
   it("sends null SKU when the SKU field is blank", async () => {
-    const upload = jest.fn();
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    httpClient.mockReset();
+    parseJsonResponse.mockReset();
 
-    httpClient.mockResolvedValueOnce({ ok: true });
-    httpClient.mockResolvedValueOnce({ ok: true });
-    parseJsonResponse.mockResolvedValueOnce([]);
-    parseJsonResponse.mockResolvedValueOnce({ id: 2, message: "Product added successfully" });
-    parseJsonResponse.mockResolvedValueOnce([]);
+    const uploadFile = jest.fn();
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
+
+    httpClient.mockImplementation((url, options = {}) => Promise.resolve({
+      ok: true,
+      isProductPost: url === "/products" && options?.method === "POST",
+    }),
+    );
+    parseJsonResponse.mockImplementation((response, fallback) => Promise.resolve(
+      response?.isProductPost
+        ? { id: 2, message: "Product added successfully" }
+        : (Array.isArray(fallback) ? [] : null),
+    ),
+    );
 
     renderWithProvider();
 
@@ -193,20 +203,20 @@ describe("useProducts", () => {
         name: "No SKU",
         description: null,
         imageUrl: null,
-        costCents: 1000,
         categoryIds: [],
+        hasVariants: false,
+        priceCents: 1000,
         quantity: 1,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 1000,
       }),
       notShowError: false,
     });
   });
 
   it("updates a product without uploading when no file is provided", async () => {
-    const upload = jest.fn();
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn();
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
@@ -234,7 +244,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
     expect(httpClient).toHaveBeenCalledWith("/products/22", {
       method: "PUT",
       headers: {
@@ -246,20 +256,20 @@ describe("useProducts", () => {
         name: "Te",
         description: null,
         imageUrl: "https://cdn.test/te.png",
-        costCents: 425,
         categoryIds: [2],
+        hasVariants: false,
+        priceCents: 425,
         quantity: 1,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 425,
       }),
       notShowError: false,
     });
   });
 
   it("uploads a file when updating a product with a new image", async () => {
-    const upload = jest.fn().mockResolvedValue([{ path: "/files/tea.png" }]);
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn().mockResolvedValue([{ path: "/files/tea.png" }]);
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
@@ -289,7 +299,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).toHaveBeenCalledWith([imageFile]);
+    expect(uploadFile).toHaveBeenCalledWith([imageFile]);
     expect(httpClient).toHaveBeenCalledWith("/products/30", {
       method: "PUT",
       headers: {
@@ -301,12 +311,12 @@ describe("useProducts", () => {
         name: "Te Verde",
         description: "Suave",
         imageUrl: "/files/tea.png",
-        costCents: 350,
         categoryIds: [4],
+        hasVariants: false,
+        priceCents: 350,
         quantity: 8,
         minStockThreshold: 0,
         maxStockThreshold: 0,
-        priceCents: 350,
       }),
       notShowError: false,
     });
