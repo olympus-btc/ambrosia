@@ -127,7 +127,7 @@ describe("VariantCard", () => {
     fireEvent.click(screen.getByTestId("edit-variant"));
     fireEvent.click(screen.getByText("form-cancel"));
     expect(screen.queryByTestId("variant-form")).not.toBeInTheDocument();
-    expect(screen.getByText("Red / S")).toBeInTheDocument();
+    expect(screen.getByTestId("variant-display-name")).toHaveTextContent("Red / S");
   });
 
   it("calls onSave with variant id and form data when form is saved", async () => {

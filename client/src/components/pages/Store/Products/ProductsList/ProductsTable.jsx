@@ -50,7 +50,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                     />
                   ) : (
                     <div data-testid={`product-table-image-placeholder-${product.id}`}>
-                      <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                      <ImageIcon className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
                 </div>
@@ -62,11 +62,11 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                 <span className="block max-w-[50px] truncate">{product.description}</span>
               </TableCell>
               <TableCell>
-                {product.categoryIds?.some((catId) => categoryNameById[String(catId)]) ? (
+                {product.categoryIds?.some((categoryId) => categoryNameById[String(categoryId)]) ? (
                   <div className="flex flex-wrap gap-1">
-                    {product.categoryIds.filter((catId) => categoryNameById[String(catId)]).map((catId) => (
-                      <Chip key={catId} className="bg-green-200 text-xs text-green-800 border border-green-300">
-                        {categoryNameById[String(catId)]}
+                    {product.categoryIds.filter((categoryId) => categoryNameById[String(categoryId)]).map((categoryId) => (
+                      <Chip key={categoryId} className="bg-green-200 text-xs text-green-800 border border-green-300">
+                        {categoryNameById[String(categoryId)]}
                       </Chip>
                     ))}
                   </div>

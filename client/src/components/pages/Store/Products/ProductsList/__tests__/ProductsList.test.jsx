@@ -28,7 +28,9 @@ jest.mock("@/components/shared/ViewButton", () => ({
 }));
 
 jest.mock("@/components/shared/ProductDetailsModal", () => ({
-  ProductDetailsModal: ({ isOpen, product }) => (isOpen ? <div data-testid="product-details-modal">{product?.name}</div> : null),
+  ProductDetailsModal: ({ isOpen, product }) => (isOpen ? (
+    <div data-testid="product-details-modal">{product?.name}</div>
+  ) : null),
 }));
 
 const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
@@ -138,7 +140,6 @@ describe("ProductsList", () => {
 
     fireEvent.click(screen.getAllByTestId("view-button")[0]);
 
-    expect(screen.getByTestId("product-details-modal")).toBeInTheDocument();
     expect(screen.getByTestId("product-details-modal")).toHaveTextContent("Jade Wallet");
   });
 });

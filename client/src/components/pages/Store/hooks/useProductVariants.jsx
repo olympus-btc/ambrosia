@@ -7,26 +7,57 @@ import { useTranslations } from "next-intl";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export function useProductVariants() {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
 
   const notifyError = useCallback(
     (status) => {
       if (status === 409) {
         addToast({
-          title: t("toasts.duplicateVariantSkuTitle"),
-          description: t("toasts.duplicateVariantSkuDescription"),
+          title: productsTranslations("toasts.duplicateVariantSkuTitle"),
+          description: productsTranslations("toasts.duplicateVariantSkuDescription"),
           color: "danger",
         });
         return;
       }
       addToast({
-        title: t("toasts.genericErrorTitle"),
-        description: t("toasts.genericErrorDescription"),
+        title: productsTranslations("toasts.genericErrorTitle"),
+        description: productsTranslations("toasts.genericErrorDescription"),
         color: "danger",
       });
     },
-    [t],
+    [productsTranslations],
   );
+
+  const postAndReturnCreatedId = useCallback(async (endpoint, requestPayload) => {
+    const postResponse = await httpClient(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestPayload),
+      notShowError: false,
+    });
+    const createdResource = await parseJsonResponse(postResponse, null);
+    if (!postResponse.ok) {
+      notifyError(postResponse.status);
+      return null;
+    }
+    return createdResource?.id ?? null;
+  }, [notifyError]);
+
+  const sendMutationRequest = useCallback(async (endpoint, method, requestPayload = null) => {
+    const mutationResponse = await httpClient(endpoint, {
+      method,
+      ...(requestPayload !== null ? {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestPayload),
+      } : {}),
+      notShowError: false,
+    });
+    if (!mutationResponse.ok) {
+      notifyError(mutationResponse.status);
+      return false;
+    }
+    return true;
+  }, [notifyError]);
 
   const fetchProductDetail = useCallback(async (productId) => {
     const productDetailResponse = await httpClient(`/products/${productId}`);
@@ -39,98 +70,42 @@ export function useProductVariants() {
   }, [notifyError]);
 
   const addVariant = useCallback(
-    async (productId, variantData) => {
-      const addVariantResponse = await httpClient(`/products/${productId}/variants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(variantData),
-        notShowError: false,
-      });
-      const createdVariant = await parseJsonResponse(addVariantResponse, null);
-      if (!addVariantResponse.ok) {
-        notifyError(addVariantResponse.status);
-        return null;
-      }
-      return createdVariant?.id ?? null;
-    },
-    [notifyError],
+    async (productId, variantRequest) => postAndReturnCreatedId(`/products/${productId}/variants`, variantRequest),
+    [postAndReturnCreatedId],
   );
 
   const updateVariant = useCallback(
-    async (productId, variantId, variantData) => {
-      const updateVariantResponse = await httpClient(`/products/${productId}/variants/${variantId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(variantData),
-        notShowError: false,
-      });
-      if (!updateVariantResponse.ok) {
-        notifyError(updateVariantResponse.status);
-        return false;
-      }
-      return true;
-    },
-    [notifyError],
+    async (productId, variantId, variantRequest) => sendMutationRequest(
+      `/products/${productId}/variants/${variantId}`,
+      "PUT",
+      variantRequest,
+    ),
+    [sendMutationRequest],
   );
 
-  const deleteVariant = useCallback(async (productId, variantId) => {
-    const deleteVariantResponse = await httpClient(`/products/${productId}/variants/${variantId}`, {
-      method: "DELETE",
-      notShowError: false,
-    });
-    if (!deleteVariantResponse.ok) {
-      notifyError(deleteVariantResponse.status);
-      return false;
-    }
-    return true;
-  }, [notifyError]);
+  const deleteVariant = useCallback(
+    async (productId, variantId) => sendMutationRequest(`/products/${productId}/variants/${variantId}`, "DELETE"),
+    [sendMutationRequest],
+  );
 
   const addOptionType = useCallback(
-    async (productId, optionData) => {
-      const addOptionTypeResponse = await httpClient(`/products/${productId}/options`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(optionData),
-        notShowError: false,
-      });
-      const createdOptionType = await parseJsonResponse(addOptionTypeResponse, null);
-      if (!addOptionTypeResponse.ok) {
-        notifyError(addOptionTypeResponse.status);
-        return null;
-      }
-      return createdOptionType?.id ?? null;
-    },
-    [notifyError],
+    async (productId, optionTypeRequest) => postAndReturnCreatedId(`/products/${productId}/options`, optionTypeRequest),
+    [postAndReturnCreatedId],
   );
 
   const updateOptionType = useCallback(
-    async (productId, optionTypeId, optionData) => {
-      const updateOptionTypeResponse = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(optionData),
-        notShowError: false,
-      });
-      if (!updateOptionTypeResponse.ok) {
-        notifyError(updateOptionTypeResponse.status);
-        return false;
-      }
-      return true;
-    },
-    [notifyError],
+    async (productId, optionTypeId, optionTypeRequest) => sendMutationRequest(
+      `/products/${productId}/options/${optionTypeId}`,
+      "PUT",
+      optionTypeRequest,
+    ),
+    [sendMutationRequest],
   );
 
-  const deleteOptionType = useCallback(async (productId, optionTypeId) => {
-    const deleteOptionTypeResponse = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
-      method: "DELETE",
-      notShowError: false,
-    });
-    if (!deleteOptionTypeResponse.ok) {
-      notifyError(deleteOptionTypeResponse.status);
-      return false;
-    }
-    return true;
-  }, [notifyError]);
+  const deleteOptionType = useCallback(
+    async (productId, optionTypeId) => sendMutationRequest(`/products/${productId}/options/${optionTypeId}`, "DELETE"),
+    [sendMutationRequest],
+  );
 
   return {
     fetchProductDetail,

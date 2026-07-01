@@ -33,7 +33,7 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
             />
           ) : (
             <div className="flex justify-center items-center" data-testid={`product-card-image-placeholder-${product.id}`}>
-              <ImageIcon aria-hidden="true" className="h-6 w-6 text-gray-400" />
+              <ImageIcon className="h-6 w-6 text-gray-400" />
             </div>
           )}
         </div>

@@ -102,8 +102,8 @@ describe("useProducts", () => {
   });
 
   it("adds a product and uploads a file when provided", async () => {
-    const upload = jest.fn().mockResolvedValue([{ url: "https://img.test/item.png" }]);
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn().mockResolvedValue([{ url: "https://img.test/item.png" }]);
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
@@ -133,7 +133,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).toHaveBeenCalledWith([imageFile]);
+    expect(uploadFile).toHaveBeenCalledWith([imageFile]);
     expect(httpClient).toHaveBeenCalledWith("/products", {
       method: "POST",
       headers: {
@@ -159,8 +159,8 @@ describe("useProducts", () => {
     httpClient.mockReset();
     parseJsonResponse.mockReset();
 
-    const upload = jest.fn();
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn();
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockImplementation((url, options = {}) => Promise.resolve({
       ok: true,
@@ -215,8 +215,8 @@ describe("useProducts", () => {
   });
 
   it("updates a product without uploading when no file is provided", async () => {
-    const upload = jest.fn();
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn();
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
@@ -244,7 +244,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
     expect(httpClient).toHaveBeenCalledWith("/products/22", {
       method: "PUT",
       headers: {
@@ -268,8 +268,8 @@ describe("useProducts", () => {
   });
 
   it("uploads a file when updating a product with a new image", async () => {
-    const upload = jest.fn().mockResolvedValue([{ path: "/files/tea.png" }]);
-    useUpload.mockReturnValue({ upload, isUploading: false });
+    const uploadFile = jest.fn().mockResolvedValue([{ path: "/files/tea.png" }]);
+    useUpload.mockReturnValue({ upload: uploadFile, isUploading: false });
 
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: true });
@@ -299,7 +299,7 @@ describe("useProducts", () => {
       });
     });
 
-    expect(upload).toHaveBeenCalledWith([imageFile]);
+    expect(uploadFile).toHaveBeenCalledWith([imageFile]);
     expect(httpClient).toHaveBeenCalledWith("/products/30", {
       method: "PUT",
       headers: {

@@ -23,7 +23,7 @@ jest.mock("@heroui/react", () => {
 });
 
 jest.mock("lucide-react", () => ({
-  ImageIcon: () => <span data-testid="image-icon" />,
+  ImageIcon: () => <span aria-hidden="true" />,
 }));
 
 const defaultItem = {

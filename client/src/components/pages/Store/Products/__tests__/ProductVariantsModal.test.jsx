@@ -26,10 +26,10 @@ jest.mock("../hooks/useEditProduct", () => ({
 }));
 
 jest.mock("../VariantManager", () => ({
-  VariantManager: (props) => (
-    <div data-testid="variant-manager" data-product-id={props.productId}>
-      <span data-testid="variants-count">{props.variants.length}</span>
-      <span data-testid="options-count">{props.options.length}</span>
+  VariantManager: ({ productId, variants, options }) => (
+    <div data-testid="variant-manager" data-product-id={productId}>
+      <span data-testid="variants-count">{variants.length}</span>
+      <span data-testid="options-count">{options.length}</span>
     </div>
   ),
 }));
@@ -43,9 +43,9 @@ jest.mock("@heroui/react", () => ({
 
 const product = { id: "p1", name: "Café Latte" };
 
-function renderModal(props = {}) {
+function renderModal(modalProps = {}) {
   return render(
-    <ProductVariantsModal product={product} isOpen onClose={jest.fn()} {...props} />,
+    <ProductVariantsModal product={product} isOpen onClose={jest.fn()} {...modalProps} />,
   );
 }
 

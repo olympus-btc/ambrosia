@@ -218,6 +218,7 @@ export function OptionTypeManager({
                   <button
                     type="button"
                     data-testid={`edit-option-type-${optionType.id}`}
+                    aria-label={`${productsTranslations("edit")} ${optionType.name}`}
                     onClick={() => setEditingOptionTypeId(optionType.id)}
                     className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                   >
@@ -226,6 +227,7 @@ export function OptionTypeManager({
                   <button
                     type="button"
                     data-testid={`delete-option-type-${optionType.id}`}
+                    aria-label={`${productsTranslations("delete")} ${optionType.name}`}
                     onClick={() => handleDelete(optionType.id)}
                     disabled={isSaving}
                     className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"

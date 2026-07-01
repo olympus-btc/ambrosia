@@ -16,7 +16,7 @@ jest.mock("../../utils/resolveImageUrl", () => ({
 
 jest.mock("../OptionTypeManager", () => ({
   OptionTypeManager: ({ options }) => (
-    <div data-testid="option-type-manager" data-options-count={options.length} />
+    <div data-testid="option-type-manager">options-{options.length}</div>
   ),
 }));
 
@@ -77,7 +77,7 @@ beforeEach(() => {
 describe("VariantManager", () => {
   it("renders the OptionTypeManager", () => {
     renderManager();
-    expect(screen.getByTestId("option-type-manager")).toBeInTheDocument();
+    expect(screen.getByTestId("option-type-manager")).toHaveTextContent("options-0");
   });
 
   it("shows warning when no option types exist", () => {

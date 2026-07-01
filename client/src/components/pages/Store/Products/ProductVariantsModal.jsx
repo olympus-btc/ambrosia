@@ -30,12 +30,14 @@ export function ProductVariantsModal({ product, isOpen, onClose }) {
     }
   }, [isOpen, product?.id, loadProductDetail]);
 
-  const handleRefresh = () => loadProductDetail(product.id);
+  const handleRefresh = () => {
+    if (product?.id) loadProductDetail(product.id);
+  };
 
   return (
     <Modal
       isOpen={isOpen}
-      onOpenChange={(open) => { if (!open) onClose(); }}
+      onOpenChange={(modalIsOpen) => { if (!modalIsOpen) onClose(); }}
       backdrop="blur"
       shouldBlockScroll={false}
       size="lg"

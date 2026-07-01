@@ -103,7 +103,7 @@ export function ProductList({ products, onAddProduct, categories }) {
                       />
                     ) : (
                       <div data-testid={`product-image-placeholder-${id}`}>
-                        <ImageIcon aria-hidden="true" className="h-8 w-8 text-gray-400" />
+                        <ImageIcon className="h-8 w-8 text-gray-400" />
                       </div>
                     )}
                   </div>

@@ -7,10 +7,10 @@ export function useEditProduct({ fetchProductDetail }) {
 
   const loadProductDetail = useCallback(async (productId) => {
     if (!productId) return;
-    const productDetail = await fetchProductDetail(productId);
-    if (!productDetail) return;
-    setProductVariants(productDetail.variants ?? []);
-    setProductOptions(productDetail.options ?? []);
+    const loadedProductDetail = await fetchProductDetail(productId);
+    if (!loadedProductDetail) return;
+    setProductVariants(loadedProductDetail.variants ?? []);
+    setProductOptions(loadedProductDetail.options ?? []);
   }, [fetchProductDetail]);
 
   return { productVariants, productOptions, loadProductDetail };

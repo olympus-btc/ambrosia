@@ -11,7 +11,7 @@ jest.mock("@/lib/http", () => ({
 
 const mockAddToast = jest.fn();
 jest.mock("@heroui/react", () => ({
-  addToast: (...args) => mockAddToast(...args),
+  addToast: (...toastArgs) => mockAddToast(...toastArgs),
 }));
 
 beforeEach(() => {
@@ -19,22 +19,22 @@ beforeEach(() => {
 });
 
 function setup() {
-  const { result } = renderHook(() => useProductVariants());
-  return result.current;
+  const hookRenderResult = renderHook(() => useProductVariants());
+  return hookRenderResult.result.current;
 }
 
 describe("useProductVariants", () => {
   describe("fetchProductDetail", () => {
     it("returns parsed data on success", async () => {
-      const detail = { id: "p1", variants: [], options: [] };
+      const productDetail = { id: "p1", variants: [], options: [] };
       httpClient.mockResolvedValue({ ok: true });
-      parseJsonResponse.mockResolvedValue(detail);
+      parseJsonResponse.mockResolvedValue(productDetail);
 
       const { fetchProductDetail } = setup();
-      const result = await act(async () => fetchProductDetail("p1"));
+      const fetchedProductDetail = await act(async () => fetchProductDetail("p1"));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1");
-      expect(result).toEqual(detail);
+      expect(fetchedProductDetail).toEqual(productDetail);
     });
 
     it("returns null and shows generic toast on failure", async () => {
@@ -42,9 +42,9 @@ describe("useProductVariants", () => {
       parseJsonResponse.mockResolvedValue(null);
 
       const { fetchProductDetail } = setup();
-      const result = await act(async () => fetchProductDetail("p1"));
+      const fetchedProductDetail = await act(async () => fetchProductDetail("p1"));
 
-      expect(result).toBeNull();
+      expect(fetchedProductDetail).toBeNull();
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });
@@ -55,10 +55,10 @@ describe("useProductVariants", () => {
       parseJsonResponse.mockResolvedValue({ id: "v-new" });
 
       const { addVariant } = setup();
-      const result = await act(async () => addVariant("p1", { priceCents: 1000, quantity: 5 }));
+      const createdVariantId = await act(async () => addVariant("p1", { priceCents: 1000, quantity: 5 }));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/variants", expect.objectContaining({ method: "POST" }));
-      expect(result).toBe("v-new");
+      expect(createdVariantId).toBe("v-new");
     });
 
     it("returns null and shows generic toast on failure", async () => {
@@ -66,9 +66,9 @@ describe("useProductVariants", () => {
       parseJsonResponse.mockResolvedValue(null);
 
       const { addVariant } = setup();
-      const result = await act(async () => addVariant("p1", { priceCents: 1000 }));
+      const createdVariantId = await act(async () => addVariant("p1", { priceCents: 1000 }));
 
-      expect(result).toBeNull();
+      expect(createdVariantId).toBeNull();
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
 
@@ -93,19 +93,19 @@ describe("useProductVariants", () => {
       httpClient.mockResolvedValue({ ok: true });
 
       const { updateVariant } = setup();
-      const result = await act(async () => updateVariant("p1", "v1", { priceCents: 800 }));
+      const variantWasUpdated = await act(async () => updateVariant("p1", "v1", { priceCents: 800 }));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/variants/v1", expect.objectContaining({ method: "PUT" }));
-      expect(result).toBe(true);
+      expect(variantWasUpdated).toBe(true);
     });
 
     it("returns false and shows toast on failure", async () => {
       httpClient.mockResolvedValue({ ok: false, status: 500 });
 
       const { updateVariant } = setup();
-      const result = await act(async () => updateVariant("p1", "v1", { priceCents: -1 }));
+      const variantWasUpdated = await act(async () => updateVariant("p1", "v1", { priceCents: -1 }));
 
-      expect(result).toBe(false);
+      expect(variantWasUpdated).toBe(false);
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });
@@ -115,19 +115,19 @@ describe("useProductVariants", () => {
       httpClient.mockResolvedValue({ ok: true });
 
       const { deleteVariant } = setup();
-      const result = await act(async () => deleteVariant("p1", "v1"));
+      const variantWasDeleted = await act(async () => deleteVariant("p1", "v1"));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/variants/v1", expect.objectContaining({ method: "DELETE" }));
-      expect(result).toBe(true);
+      expect(variantWasDeleted).toBe(true);
     });
 
     it("returns false and shows toast on failure", async () => {
       httpClient.mockResolvedValue({ ok: false, status: 500 });
 
       const { deleteVariant } = setup();
-      const result = await act(async () => deleteVariant("p1", "v1"));
+      const variantWasDeleted = await act(async () => deleteVariant("p1", "v1"));
 
-      expect(result).toBe(false);
+      expect(variantWasDeleted).toBe(false);
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });
@@ -138,10 +138,10 @@ describe("useProductVariants", () => {
       parseJsonResponse.mockResolvedValue({ id: "ot-new" });
 
       const { addOptionType } = setup();
-      const result = await act(async () => addOptionType("p1", { name: "Color", values: [] }));
+      const createdOptionTypeId = await act(async () => addOptionType("p1", { name: "Color", values: [] }));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/options", expect.objectContaining({ method: "POST" }));
-      expect(result).toBe("ot-new");
+      expect(createdOptionTypeId).toBe("ot-new");
     });
 
     it("returns null and shows toast on failure", async () => {
@@ -149,9 +149,9 @@ describe("useProductVariants", () => {
       parseJsonResponse.mockResolvedValue(null);
 
       const { addOptionType } = setup();
-      const result = await act(async () => addOptionType("p1", { name: "Color" }));
+      const createdOptionTypeId = await act(async () => addOptionType("p1", { name: "Color" }));
 
-      expect(result).toBeNull();
+      expect(createdOptionTypeId).toBeNull();
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });
@@ -161,19 +161,19 @@ describe("useProductVariants", () => {
       httpClient.mockResolvedValue({ ok: true });
 
       const { updateOptionType } = setup();
-      const result = await act(async () => updateOptionType("p1", "ot1", { name: "Size", values: [] }));
+      const optionTypeWasUpdated = await act(async () => updateOptionType("p1", "ot1", { name: "Size", values: [] }));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/options/ot1", expect.objectContaining({ method: "PUT" }));
-      expect(result).toBe(true);
+      expect(optionTypeWasUpdated).toBe(true);
     });
 
     it("returns false and shows toast on failure", async () => {
       httpClient.mockResolvedValue({ ok: false, status: 404 });
 
       const { updateOptionType } = setup();
-      const result = await act(async () => updateOptionType("p1", "ot1", { name: "Size" }));
+      const optionTypeWasUpdated = await act(async () => updateOptionType("p1", "ot1", { name: "Size" }));
 
-      expect(result).toBe(false);
+      expect(optionTypeWasUpdated).toBe(false);
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });
@@ -183,19 +183,19 @@ describe("useProductVariants", () => {
       httpClient.mockResolvedValue({ ok: true });
 
       const { deleteOptionType } = setup();
-      const result = await act(async () => deleteOptionType("p1", "ot1"));
+      const optionTypeWasDeleted = await act(async () => deleteOptionType("p1", "ot1"));
 
       expect(httpClient).toHaveBeenCalledWith("/products/p1/options/ot1", expect.objectContaining({ method: "DELETE" }));
-      expect(result).toBe(true);
+      expect(optionTypeWasDeleted).toBe(true);
     });
 
     it("returns false and shows toast on failure", async () => {
       httpClient.mockResolvedValue({ ok: false, status: 500 });
 
       const { deleteOptionType } = setup();
-      const result = await act(async () => deleteOptionType("p1", "ot1"));
+      const optionTypeWasDeleted = await act(async () => deleteOptionType("p1", "ot1"));
 
-      expect(result).toBe(false);
+      expect(optionTypeWasDeleted).toBe(false);
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
   });

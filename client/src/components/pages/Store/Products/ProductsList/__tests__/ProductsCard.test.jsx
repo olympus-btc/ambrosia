@@ -14,19 +14,19 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("@/components/shared/EditButton", () => ({
-  EditButton: ({ onPress }) => <button data-testid="edit-button" onClick={onPress}><span data-testid="pencil-icon" /></button>,
+  EditButton: ({ onPress }) => <button data-testid="edit-button" onClick={onPress}>edit</button>,
 }));
 
 jest.mock("@/components/shared/DeleteButton", () => ({
-  DeleteButton: ({ onPress }) => <button data-testid="delete-button" onClick={onPress}><span data-testid="trash-icon" /></button>,
+  DeleteButton: ({ onPress }) => <button data-testid="delete-button" onClick={onPress}>delete</button>,
 }));
 
 jest.mock("@/components/shared/ViewButton", () => ({
-  ViewButton: ({ onPress }) => <button data-testid="view-button" onClick={onPress} />,
+  ViewButton: ({ onPress }) => <button data-testid="view-button" onClick={onPress}>view</button>,
 }));
 
 jest.mock("@/components/shared/VariantsButton", () => ({
-  VariantsButton: ({ onPress }) => <button data-testid="variants-button" onClick={onPress} />,
+  VariantsButton: ({ onPress }) => <button data-testid="variants-button" onClick={onPress}>variants</button>,
 }));
 
 jest.mock("@/components/hooks/useCurrency", () => ({
@@ -100,28 +100,28 @@ describe("ProductsCard", () => {
 
   it("renders edit and delete icon buttons", () => {
     renderCard();
-    expect(screen.getByTestId("pencil-icon")).toBeInTheDocument();
-    expect(screen.getByTestId("trash-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("edit-button")).toBeInTheDocument();
+    expect(screen.getByTestId("delete-button")).toBeInTheDocument();
   });
 
   it("calls onEditProduct when edit button is pressed", () => {
     const onEditProduct = jest.fn();
     renderCard({ onEditProduct });
-    fireEvent.click(screen.getByTestId("pencil-icon").closest("button"));
+    fireEvent.click(screen.getByTestId("edit-button"));
     expect(onEditProduct).toHaveBeenCalledWith(product);
   });
 
   it("calls onDeleteProduct when delete button is pressed", () => {
     const onDeleteProduct = jest.fn();
     renderCard({ onDeleteProduct });
-    fireEvent.click(screen.getByTestId("trash-icon").closest("button"));
+    fireEvent.click(screen.getByTestId("delete-button"));
     expect(onDeleteProduct).toHaveBeenCalledWith(product);
   });
 
   it("hides edit and delete buttons when canManageProducts is false", () => {
     renderCard({ canManageProducts: false });
-    expect(screen.queryByTestId("pencil-icon")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("trash-icon")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("edit-button")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("delete-button")).not.toBeInTheDocument();
   });
 
   it("always renders view button regardless of canManageProducts", () => {
