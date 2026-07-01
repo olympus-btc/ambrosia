@@ -1,6 +1,7 @@
 "use client";
 
 import { addToast, Card, CardBody, CardHeader, Switch } from "@heroui/react";
+import { AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useAutoLiquidity } from "@/hooks/useAutoLiquidity";
@@ -39,8 +40,9 @@ export function LightningCard() {
                 {t("autoLiquidityDescription")}
               </span>
               {enabled && (
-                <span className="text-xs text-amber-600 mt-1">
-                  ⚠ {t("autoLiquidityWarning")}
+                <span className="flex items-start gap-1 text-xs text-amber-600 mt-1">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{t("autoLiquidityWarning")}</span>
                 </span>
               )}
             </div>

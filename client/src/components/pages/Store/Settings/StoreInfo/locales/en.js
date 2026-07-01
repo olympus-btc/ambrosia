@@ -26,9 +26,8 @@ const storeInfoEn = {
     editButton: "Save",
     logo: "Logo",
     logoUpload: "Upload your logo",
-    logoUploadMessage: "PNG, JPG or GIF (máx. 5MB)",
+    logoUploadMessage: "PNG, JPG or GIF (max. 5MB)",
     updateSuccess: "Store info saved successfully",
-    errorTitle: "Error",
   },
 };
 

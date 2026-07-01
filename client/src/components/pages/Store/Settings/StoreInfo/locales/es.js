@@ -27,8 +27,7 @@ const storeInfoEs = {
     logo: "Logo",
     logoUpload: "Sube tu logo",
     logoUploadMessage: "PNG, JPG o GIF (máx. 5MB)",
-    updateSuccess: "Informacion de la tienda guardada exitosamente",
-    errorTitle: "Error",
+    updateSuccess: "Información de la tienda guardada exitosamente",
   },
 };
 
