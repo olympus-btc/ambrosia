@@ -119,6 +119,28 @@ class CheckoutServiceTest {
     }
 
     @Test
+    fun `checkout returns Invalid when variant id is malformed`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val checkoutItems =
+                listOf(
+                    StoreCheckoutItem(
+                        productId = productId,
+                        variantId = "not-a-uuid",
+                        quantity = 1,
+                        priceAtOrder = 500,
+                    ),
+                )
+
+            val result = service.checkout(validStoreRequest(userId, items = checkoutItems))
+
+            assertTrue(result is CheckoutResult.Invalid)
+            assertTrue(service.getStoreOrders().isEmpty())
+        }
+    }
+
+    @Test
     fun `checkout returns Success with unique non-blank IDs when paymentHash is absent`() {
         runBlocking {
             val userId = seedUser()

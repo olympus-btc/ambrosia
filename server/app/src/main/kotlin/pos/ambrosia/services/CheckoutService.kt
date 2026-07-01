@@ -90,27 +90,27 @@ class CheckoutService(
 
     fun getStoreOrderById(id: String): StoreOrder? =
         transaction {
-            val uuid =
+            val orderUuid =
                 try {
                     UUID.fromString(id)
                 } catch (_: IllegalArgumentException) {
                     return@transaction null
                 }
             OrderEntity
-                .findById(uuid)
+                .findById(orderUuid)
                 ?.takeIf { !it.isDeleted && it.tableId == null }
                 ?.let { toStoreOrder(it) }
         }
 
     fun cancelStoreOrder(id: String): Boolean =
         transaction {
-            val uuid =
+            val orderUuid =
                 try {
                     UUID.fromString(id)
                 } catch (_: IllegalArgumentException) {
                     return@transaction false
                 }
-            val entity = OrderEntity.findById(uuid)
+            val entity = OrderEntity.findById(orderUuid)
             if (entity == null || entity.status != "open" || entity.tableId != null) {
                 false
             } else {
@@ -179,6 +179,7 @@ class CheckoutService(
             UUID.fromString(request.paymentMethodId)
             UUID.fromString(request.currencyId)
             request.items.forEach { UUID.fromString(it.productId) }
+            request.items.mapNotNull { it.variantId }.forEach { UUID.fromString(it) }
         } catch (_: IllegalArgumentException) {
             return null
         }
@@ -213,7 +214,7 @@ class CheckoutService(
                     if (effectiveVariantId == null) throw InsufficientStockException()
 
                     val variantEntityId = EntityID(effectiveVariantId, ProductVariantsTable)
-                    val updated =
+                    val stockRowsUpdated =
                         ProductVariantsTable.update({
                             (ProductVariantsTable.id eq variantEntityId) and
                                 (ProductVariantsTable.productId eq productEntityId) and
@@ -222,7 +223,7 @@ class CheckoutService(
                         }) {
                             it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - item.quantity
                         }
-                    if (updated == 0) throw InsufficientStockException()
+                    if (stockRowsUpdated == 0) throw InsufficientStockException()
 
                     OrderProductsTable.insert {
                         it[orderId] = order.id

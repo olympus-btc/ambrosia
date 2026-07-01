@@ -221,9 +221,10 @@ open class ProductVariantService {
                 ProductOptionValuesTable.deleteWhere { ProductOptionValuesTable.id inList removedOptionValueIds }
             }
 
-            val existingByValue = existingRows.associate { (id, v) -> v to id }
+            val existingOptionValueIdByName =
+                existingRows.associate { (optionValueId, optionValueName) -> optionValueName to optionValueId }
             for ((valueIndex, optionValueRequest) in optionTypeRequest.values.withIndex()) {
-                val existingOptionValueId = existingByValue[optionValueRequest.value]
+                val existingOptionValueId = existingOptionValueIdByName[optionValueRequest.value]
                 val optionValueDisplayOrder =
                     if (optionValueRequest.displayOrder != 0) optionValueRequest.displayOrder else valueIndex
                 if (existingOptionValueId != null) {
@@ -277,13 +278,13 @@ open class ProductVariantService {
 
     fun getVariantById(variantId: String): ProductVariant? =
         transaction {
-            val uuid =
+            val variantUuid =
                 try {
                     UUID.fromString(variantId)
                 } catch (_: IllegalArgumentException) {
                     return@transaction null
                 }
-            ProductVariantEntity.findById(uuid)?.let { toVariantModel(it) }
+            ProductVariantEntity.findById(variantUuid)?.let { toVariantModel(it) }
         }
 
     fun getDefaultVariant(productId: String): ProductVariant? =
@@ -366,7 +367,7 @@ open class ProductVariantService {
                 for (adjustment in adjustments) {
                     if (adjustment.quantity == 0) continue
 
-                    val updated =
+                    val stockRowsUpdated =
                         if (adjustment.variantId != null) {
                             val variantEntityId =
                                 EntityID(
@@ -407,7 +408,7 @@ open class ProductVariantService {
                             }
                         }
 
-                    if (updated == 0) error("Insufficient stock for adjustment")
+                    if (stockRowsUpdated == 0) error("Insufficient stock for adjustment")
                 }
             }
             true
