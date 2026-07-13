@@ -33,7 +33,7 @@ const onboardingEn = {
       confirmPasswordLabel: "Confirm Password",
       confirmPasswordPlaceholder: "Confirm your secure password",
       userPinLabel: "PIN",
-      userPinPlaceholder: "Enter a 4-digit PIN",
+      userPinPlaceholder: "Enter a 6-digit PIN",
     },
     passwordsDoNotMatch: "Passwords do not match",
     tooltips: {

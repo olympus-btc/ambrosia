@@ -144,7 +144,7 @@ describe("Onboarding Wizard", () => {
 
     const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
     await act(async () => {
-      fireEvent.change(userPinInput, { target: { value: "0000" } });
+      fireEvent.change(userPinInput, { target: { value: "000000" } });
     });
 
     const passwordInput = screen.getByPlaceholderText("step2.fields.passwordPlaceholder");
@@ -186,7 +186,7 @@ describe("Onboarding Wizard", () => {
 
     await act(async () => {
       fireEvent.change(userNameInput, { target: { value: "testuser" } });
-      fireEvent.change(userPinInput, { target: { value: "0000" } });
+      fireEvent.change(userPinInput, { target: { value: "000000" } });
       fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
       fireEvent.change(confirmPasswordInput, { target: { value: "Different123$" } });
     });
@@ -273,7 +273,7 @@ describe("Onboarding Wizard", () => {
       const confirmPasswordInput = screen.getByPlaceholderText("step2.fields.confirmPasswordPlaceholder");
 
       fireEvent.change(userNameInput, { target: { value: "testuser" } });
-      fireEvent.change(userPinInput, { target: { value: "0000" } });
+      fireEvent.change(userPinInput, { target: { value: "000000" } });
       fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
       fireEvent.change(confirmPasswordInput, { target: { value: "Abcd123$" } });
 

@@ -77,8 +77,8 @@ export function AddUsersModal({ data, setData, roles, onChange, addUsersShowModa
               type={showPin ? "text" : "password"}
               placeholder={t("users.modal.userPinPlaceholder")}
               isRequired
-              minLength={4}
-              maxLength={4}
+              minLength={6}
+              maxLength={6}
               errorMessage={t("users.modal.userPinError")}
               value={data.userPin ?? ""}
               onChange={(e) => {

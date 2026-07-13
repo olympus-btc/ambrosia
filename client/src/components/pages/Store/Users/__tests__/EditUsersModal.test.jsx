@@ -30,7 +30,7 @@ const roles = [
 const baseData = {
   userId: 7,
   userName: "Jane Doe",
-  userPin: "4321",
+  userPin: "654321",
   userPhone: "0987654321",
   userEmail: "jane@test.com",
   userRole: "admin",
@@ -179,7 +179,7 @@ describe("EditUsersModal", () => {
     renderModal();
 
     const pinInput = screen.getByLabelText("users.modal.userPinLabel");
-    expect(pinInput).toHaveAttribute("minlength", "4");
+    expect(pinInput).toHaveAttribute("minlength", "6");
     expect(pinInput).not.toHaveAttribute("required");
     expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
   });

@@ -34,7 +34,7 @@ const onboardingEs = {
       confirmPasswordLabel: "Confirmar Contraseña",
       confirmPasswordPlaceholder: "Confirma tu contraseña segura",
       userPinLabel: "PIN",
-      userPinPlaceholder: "Ingresa un PIN de 4 dígitos",
+      userPinPlaceholder: "Ingresa un PIN de 6 dígitos",
     },
     passwordsDoNotMatch: "Las contraseñas no coinciden",
     tooltips: {
