@@ -159,7 +159,7 @@ The CI workflow:
 ## Requirements
 
 The tests require:
-- Development database with default user (`cooluser1` / `0000`)
+- Development database with default user (`cooluser1` / `000000`)
 - No additional configuration needed - tests automatically provide Phoenix credentials via command-line arguments
 
 ## Troubleshooting

@@ -353,7 +353,7 @@ class TestAuthentication:
             suffix = random.randint(1000, 9999)
             role_id = await create_role(admin_client, f"TempRole_{suffix}")
             user_name = f"testuser_{suffix}"
-            user_pin = "1234"
+            user_pin = "123456"
             await create_user(admin_client, user_name, user_pin, role_id)
 
             delete_response = await admin_client.delete(f"/roles/{role_id}")
