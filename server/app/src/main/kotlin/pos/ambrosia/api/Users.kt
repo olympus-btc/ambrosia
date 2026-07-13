@@ -110,8 +110,8 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user, user name and/or pin cannot be null or blank")
                 return@post
             }
-            if (user.pin.length < 4) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be at least 4 characters long")
+            if (user.pin.length != 6 || !user.pin.all(Char::isDigit)) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be exactly 6 digits")
                 return@post
             }
             val result = userService.addUser(user)
@@ -149,8 +149,10 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to update user, user name cannot be blank")
                 return@put
             }
-            if (updatedUser.pin != null && updatedUser.pin.isNotBlank() && updatedUser.pin.length < 4) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be at least 4 characters long")
+            if (updatedUser.pin != null && updatedUser.pin.isNotBlank() &&
+                (updatedUser.pin.length != 6 || !updatedUser.pin.all(Char::isDigit))
+            ) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be exactly 6 digits")
                 return@put
             }
 

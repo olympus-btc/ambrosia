@@ -54,9 +54,8 @@ class UsersService(
                 logger.error("User name and/or pin cannot be null or blank")
                 return@transaction null
             }
-
-            if (user.pin.length < 4) {
-                logger.error("Pin must be at least 4 characters long")
+            if (user.pin.length != 6 || !user.pin.all(Char::isDigit)) {
+                logger.error("Pin must be exactly 6 digits")
                 return@transaction null
             }
 
