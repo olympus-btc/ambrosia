@@ -29,6 +29,7 @@ jest.mock("@/providers/configurations/configurationsProvider", () => ({ useConfi
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 const mockLogin = jest.fn();
 
 const employees = [
@@ -49,9 +50,9 @@ const renderPinLogin = async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
-  useRouter.mockReturnValue({ push: jest.fn(), replace: mockReplace });
+  useRouter.mockReturnValue({ push: mockPush, replace: mockReplace });
   useAuth.mockReturnValue({ login: mockLogin, isAuth: false, isLoading: false });
-  useConfigurations.mockReturnValue({ config: { businessName: "Test Store", businessLogoUrl: null } });
+  useConfigurations.mockReturnValue({ config: { businessName: "Test Store", businessLogoUrl: null }, businessType: "store" });
   getUsers.mockResolvedValue(employees);
 });
 
@@ -60,7 +61,7 @@ describe("PinLogin", () => {
     await renderPinLogin();
     expect(screen.getByText("Test Store")).toBeInTheDocument();
     expect(screen.getAllByText("selectLabel")[0]).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("----")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("------")).toBeInTheDocument();
   });
 
   it("loads and displays employees from the API", async () => {
@@ -139,5 +140,41 @@ describe("PinLogin", () => {
     });
 
     expect(screen.getByText(specificMessage)).toBeInTheDocument();
+  });
+
+  it("shows the PIN deprecation modal after a successful login with a 4-digit PIN", async () => {
+    mockLogin.mockResolvedValue({});
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText("pinDeprecation.title")).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("pinDeprecation.goToUsersButton"));
+    expect(mockPush).toHaveBeenCalledWith("/store/users");
+  });
+
+  it("does not show the deprecation modal and redirects home after a 6-digit PIN login", async () => {
+    mockLogin.mockResolvedValue({});
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    "123456".split("").forEach((digit) => fireEvent.keyDown(window, { key: digit }));
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.queryByText("pinDeprecation.title")).not.toBeInTheDocument();
+    expect(mockPush).toHaveBeenCalledWith("/");
   });
 });

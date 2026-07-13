@@ -57,8 +57,8 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
         type="password"
         value={pin}
         readOnly
-        placeholder="----"
-        maxLength={4}
+        placeholder="------"
+        maxLength={6}
         isInvalid={!!error && !isLocked}
       />
 

@@ -13,9 +13,11 @@ import { getUsers } from "@/services/authService";
 
 import { BusinessHeader } from "./BusinessHeader";
 import { EmployeeSelect } from "./EmployeeSelect";
+import { PinDeprecationModal } from "./PinDeprecationModal";
 import { PinPad } from "./PinPad";
 
-const PIN_LENGTH = 4;
+const PIN_MAX_LENGTH = 6;
+const PIN_MIN_LENGTH = 4;
 
 export default function PinLogin() {
   const t = useTranslations("pinLogin");
@@ -24,6 +26,7 @@ export default function PinLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [lockedUntil, setLockedUntil] = useState(null);
+  const [showPinDeprecationModal, setShowPinDeprecationModal] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("pinLockoutUntil");
@@ -34,7 +37,7 @@ export default function PinLogin() {
   const [employees, setEmployees] = useState([]);
   const router = useRouter();
   const { login, isAuth, isLoading: isAuthLoading } = useAuth();
-  const { config } = useConfigurations();
+  const { config, businessType } = useConfigurations();
 
   useEffect(() => {
     if (!isAuthLoading && isAuth) {
@@ -58,7 +61,7 @@ export default function PinLogin() {
   }, []);
 
   const handleNumberClick = (number) => {
-    if (pin.length < PIN_LENGTH) {
+    if (pin.length < PIN_MAX_LENGTH) {
       setPin((prev) => prev + number);
       setError("");
     }
@@ -82,7 +85,7 @@ export default function PinLogin() {
       return;
     }
 
-    if (pin.length < PIN_LENGTH) {
+    if (pin.length < PIN_MIN_LENGTH) {
       setError(t("errorMessages.enterPin"));
       return;
     }
@@ -99,11 +102,16 @@ export default function PinLogin() {
         description: `${t("successMessages.firstMessage")} ${employee.name} ${t("successMessages.secondMessage")} ${employee.role}.`,
         color: "success",
       });
+      const isPinDeprecated = pin.length < PIN_MAX_LENGTH;
       setPin("");
       setSelectedUser("");
       setLockedUntil(null);
       localStorage.removeItem("pinLockoutUntil");
-      router.push("/");
+      if (isPinDeprecated) {
+        setShowPinDeprecationModal(true);
+      } else {
+        router.push("/");
+      }
     } catch (error) {
       if (error?.status === 429) {
         const ts = Date.now() + (error.retryAfter ?? 180) * 1000;
@@ -119,6 +127,16 @@ export default function PinLogin() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoToUsers = () => {
+    setShowPinDeprecationModal(false);
+    router.push(businessType ? `/${businessType}/users` : "/");
+  };
+
+  const handleDeprecationLater = () => {
+    setShowPinDeprecationModal(false);
+    router.push("/");
   };
 
   return (
@@ -153,6 +171,12 @@ export default function PinLogin() {
           />
         </CardBody>
       </Card>
+
+      <PinDeprecationModal
+        isOpen={showPinDeprecationModal}
+        onGoToUsers={handleGoToUsers}
+        onLater={handleDeprecationLater}
+      />
     </div>
   );
 }

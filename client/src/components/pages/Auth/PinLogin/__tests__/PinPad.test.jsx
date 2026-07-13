@@ -61,7 +61,7 @@ describe("PinPad", () => {
   });
 
   it("calls onLogin when login is pressed", () => {
-    renderPinPad({ pin: "1234" });
+    renderPinPad({ pin: "123456" });
     fireEvent.click(screen.getByRole("button", { name: /loginButton/i }));
     expect(mockHandlers.onLogin).toHaveBeenCalled();
   });
@@ -83,14 +83,14 @@ describe("PinPad", () => {
   });
 
   it("shows loading spinner when isLoading is true", () => {
-    renderPinPad({ pin: "1234", isLoading: true });
+    renderPinPad({ pin: "123456", isLoading: true });
     expect(screen.getByText("loading")).toBeInTheDocument();
     expect(screen.queryByText("loginButton")).not.toBeInTheDocument();
   });
 
   it("renders PIN input with placeholder", () => {
     renderPinPad();
-    expect(screen.getByPlaceholderText("----")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("------")).toBeInTheDocument();
   });
 
   it("does not show lockout message when lockedUntil is in the past", async () => {
