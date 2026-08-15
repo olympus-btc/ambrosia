@@ -5,12 +5,29 @@ import {
   savePendingCheckout,
 } from "@/lib/btcCheckoutStore";
 
+import { getCheckoutErrorDescription } from "../utils/checkoutErrors";
 import {
   classifyPaymentMethod,
   PAYMENT_METHODS,
 } from "../utils/paymentMethods";
 
 import { processCheckout } from "./paymentFlows";
+
+function logPaymentError(context, paymentError) {
+  const errorDetails = {
+    status: paymentError?.status,
+    code: paymentError?.code,
+    source: paymentError?.source,
+    message: paymentError?.responseMessage || paymentError?.message,
+  };
+
+  if (paymentError?.status) {
+    console.error(context, errorDetails);
+    return;
+  }
+
+  console.error(context, paymentError);
+}
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -146,8 +163,8 @@ export function buildHandlePay({
       onResetCart?.();
       onPay?.({ items: cartItems, ...paymentAmounts, paymentMethod: selectedPaymentMethod, ...storeCheckoutResult });
     } catch (paymentProcessingError) {
-      console.error("Error processing payment:", paymentProcessingError);
-      notifyError(paymentProcessingError?.message || "errors.process");
+      logPaymentError("Error processing payment", paymentProcessingError);
+      notifyError(getCheckoutErrorDescription(paymentProcessingError, "errors.process"));
     } finally {
       dispatch({ type: "stop" });
     }
@@ -234,8 +251,8 @@ async function runDeferredCheckout({
     onResetCart?.();
     notifySuccess(successKey);
   } catch (paymentCompletionError) {
-    console.error("Error completing payment:", paymentCompletionError);
-    notifyError(paymentCompletionError?.message || errorKey);
+    logPaymentError("Error completing payment", paymentCompletionError);
+    notifyError(getCheckoutErrorDescription(paymentCompletionError, errorKey));
   } finally {
     finalize();
     dispatch({ type: "stop" });

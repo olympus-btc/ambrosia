@@ -96,6 +96,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val result = service.checkout(validStoreRequest(userId, items = emptyList()))
             assertTrue(result is CheckoutResult.Invalid)
+            assertEquals("checkout_empty", result.code)
         }
     }
 
@@ -107,6 +108,7 @@ class CheckoutServiceTest {
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 0, priceAtOrder = 500))
             val result = service.checkout(validStoreRequest(userId, items = items))
             assertTrue(result is CheckoutResult.Invalid)
+            assertEquals("checkout_invalid_quantity", result.code)
         }
     }
 
@@ -139,6 +141,7 @@ class CheckoutServiceTest {
             val result = service.checkout(validStoreRequest(userId, items = checkoutItems))
 
             assertTrue(result is CheckoutResult.Invalid)
+            assertEquals("checkout_invalid_reference", result.code)
             assertTrue(transaction { OrderEntity.all().toList() }.isEmpty())
         }
     }
@@ -290,6 +293,7 @@ class CheckoutServiceTest {
             val result = service.checkout(validStoreRequest(userId, items = items))
 
             assertTrue(result is CheckoutResult.Invalid)
+            assertEquals("checkout_insufficient_stock", result.code)
             assertEquals(1, productQuantity(productId))
             assertTrue(transaction { OrderEntity.all().toList() }.isEmpty())
         }

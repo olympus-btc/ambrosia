@@ -11,14 +11,13 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
+import pos.ambrosia.models.WalletErrorResponse
 import pos.ambrosia.services.ActiveLightningBackend
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.authorizePermission
 import pos.ambrosia.utils.requirePermission
-
-private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock levels, and payment details"
 
 fun Application.configureCheckout() {
     val checkoutService = CheckoutService(ActiveLightningBackend)
@@ -42,8 +41,11 @@ fun Route.checkout(checkoutService: CheckoutService) {
                     throw PaymentNotConfirmedException()
                 }
 
-                CheckoutResult.Invalid -> {
-                    call.respond(HttpStatusCode.BadRequest, Message(CHECKOUT_FAILED_MSG))
+                is CheckoutResult.Invalid -> {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        WalletErrorResponse(result.message, result.code, "ambrosia"),
+                    )
                 }
             }
         }
