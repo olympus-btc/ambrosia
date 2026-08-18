@@ -129,7 +129,7 @@ fun Route.auth(
             return@post
         }
 
-        logger.info(userInfo.toString())
+        logger.info("User authenticated successfully: ${userInfo.id}")
         val isSecureRequest =
             call.request.origin.scheme == "https" ||
                 call.request.header("X-Forwarded-Proto") == "https"

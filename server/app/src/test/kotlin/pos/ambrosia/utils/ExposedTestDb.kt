@@ -1,5 +1,6 @@
 package pos.ambrosia.utils
 
+import io.ktor.server.application.ApplicationEnvironment
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -210,6 +211,36 @@ object ExposedTestDb {
                         this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
                     }.id.value
                     .toString()
+        }
+
+    /**
+     * Seeds a user whose stored pin is a real PBKDF2 hash, so it can authenticate through
+     * [pos.ambrosia.services.AuthService]. Unlike [seedUser], which stores the "****" mask.
+     * The pin length is not validated here on purpose: legacy four digit pins must remain
+     * representable so login backwards compatibility can be tested.
+     */
+    fun seedUserWithPin(
+        name: String,
+        pin: String,
+        env: ApplicationEnvironment,
+        roleId: String? = null,
+    ): String =
+        transaction {
+            val generatedId = UUID.randomUUID()
+            val hashedPin = SecurePinProcessor.hashPinForStorage(pin.toCharArray(), generatedId.toString(), env)
+            UserEntity
+                .new(generatedId) {
+                    this.name = name
+                    this.pin = SecurePinProcessor.byteArrayToBase64(hashedPin)
+                    this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
+                }.id.value
+                .toString()
+        }
+
+    /** Reads the raw pin column, to assert it was stored hashed rather than in clear text. */
+    fun readStoredPin(userId: String): String? =
+        transaction {
+            UserEntity.findById(UUID.fromString(userId))?.pin
         }
 
     fun seedCategory(
