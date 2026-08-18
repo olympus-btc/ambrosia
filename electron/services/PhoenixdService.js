@@ -1,3 +1,4 @@
+const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -6,7 +7,7 @@ const treeKill = require('tree-kill');
 
 const { checkPhoenixd } = require('../utils/healthCheck');
 const logger = require('../utils/logger');
-const { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
+const { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory, getBasePath } = require('../utils/resourcePaths');
 
 class PhoenixdService {
   constructor() {
@@ -33,6 +34,10 @@ class PhoenixdService {
         fs.mkdirSync(dataDir, { recursive: true });
       }
 
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+
       const logFile = path.join(logsDir, `phoenixd-${new Date().toISOString().split('T')[0]}.log`);
       this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
@@ -53,7 +58,6 @@ class PhoenixdService {
 
       if (process.platform === 'win32') {
         // Both win-x64 and win-arm64 use the JVM phoenixd version with the bundled x64 JRE.
-        const { getBasePath } = require('../utils/resourcePaths');
         const bundledJreHome = path.join(getBasePath(), 'jre', 'win-x64');
         ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS', 'JAVA_OPTS', 'JAVA_HOME'].forEach(
           (key) => delete env[key],
@@ -125,7 +129,6 @@ class PhoenixdService {
   }
 
   async killByPort(port) {
-    const { exec } = require('child_process');
     const targetPort = port || this.port;
     if (!targetPort) return;
     if (!Number.isInteger(targetPort)) return;

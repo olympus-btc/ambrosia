@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { addToast, Modal, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -14,13 +14,14 @@ import { ModalSuccess } from "./ModalSuccess";
 const isValidBitcoinAddress = (addr) => /^(1|3|bc1q|bc1p|m|n|2|tb1q|tb1p)[a-zA-HJ-NP-Z0-9]{25,89}$/.test(addr);
 
 export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const [step, setStep] = useState("form");
   const [address, setAddress] = useState("");
   const [feerate, setFeerate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [txId, setTxId] = useState("");
+  const isCloseChannelRequestPendingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -30,20 +31,21 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
       setIsLoading(false);
       setErrors({});
       setTxId("");
+      isCloseChannelRequestPendingRef.current = false;
     }
   }, [isOpen]);
 
   const validate = () => {
     const newErrors = {};
     if (!address.trim()) {
-      newErrors.address = t("closeChannel.validationAddressRequired");
+      newErrors.address = walletTranslations("closeChannel.validationAddressRequired");
     } else if (!isValidBitcoinAddress(address.trim())) {
-      newErrors.address = t("closeChannel.validationAddressInvalid");
+      newErrors.address = walletTranslations("closeChannel.validationAddressInvalid");
     }
     if (!feerate.trim()) {
-      newErrors.feerate = t("closeChannel.validationFeerateRequired");
+      newErrors.feerate = walletTranslations("closeChannel.validationFeerateRequired");
     } else if (!Number.isInteger(Number(feerate)) || Number(feerate) <= 0) {
-      newErrors.feerate = t("closeChannel.validationFeerateInvalid");
+      newErrors.feerate = walletTranslations("closeChannel.validationFeerateInvalid");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -54,20 +56,30 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
   };
 
   const handleConfirm = async () => {
+    if (isCloseChannelRequestPendingRef.current) return;
+
+    isCloseChannelRequestPendingRef.current = true;
     setIsLoading(true);
     try {
-      const result = await closeChannel(channel.channelId, address.trim(), parseInt(feerate, 10));
-      setTxId(result?.txId ?? "");
+      const closeChannelResult = await closeChannel(channel.channelId, address.trim(), parseInt(feerate, 10));
+      setTxId(closeChannelResult?.txId ?? "");
       setStep("success");
-      onSuccess?.();
-    } catch (err) {
       addToast({
-        title: t("closeChannel.errorToast"),
-        description: err?.message,
+        title: walletTranslations("closeChannel.successTitle"),
+        description: walletTranslations("closeChannel.successToast"),
+        variant: "solid",
+        color: "success",
+      });
+      onSuccess?.();
+    } catch (closeChannelError) {
+      addToast({
+        title: walletTranslations("closeChannel.errorToast"),
+        description: closeChannelError?.message,
         variant: "solid",
         color: "danger",
       });
     } finally {
+      isCloseChannelRequestPendingRef.current = false;
       setIsLoading(false);
     }
   };
@@ -97,7 +109,7 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("closeChannel.modalTitle")}</ModalHeader>
+        <ModalHeader>{walletTranslations("closeChannel.modalTitle")}</ModalHeader>
 
         {step === "success" ? (
           <ModalSuccess txId={txId} onClose={onClose} />

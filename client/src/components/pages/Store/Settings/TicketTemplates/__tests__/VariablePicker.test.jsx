@@ -22,16 +22,16 @@ jest.mock("lucide-react", () => ({
   Braces: () => <svg data-testid="braces-icon" />,
 }));
 
-const t = (key) => key;
+const settingsTranslations = (key) => key;
 
 describe("TemplateVariablePicker", () => {
   it("renders the trigger button", () => {
-    render(<TemplateVariablePicker onSelect={jest.fn()} t={t} />);
+    render(<TemplateVariablePicker onSelect={jest.fn()} settingsTranslations={settingsTranslations} />);
     expect(screen.getByRole("button", { name: "templates.variables.title" })).toBeInTheDocument();
   });
 
   it("renders config variable chips", () => {
-    render(<TemplateVariablePicker onSelect={jest.fn()} t={t} />);
+    render(<TemplateVariablePicker onSelect={jest.fn()} settingsTranslations={settingsTranslations} />);
     expect(screen.getByText("templates.variables.businessName")).toBeInTheDocument();
     expect(screen.getByText("templates.variables.businessAddress")).toBeInTheDocument();
     expect(screen.getByText("templates.variables.businessPhone")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("TemplateVariablePicker", () => {
   });
 
   it("does not render ticket group chips", () => {
-    render(<TemplateVariablePicker onSelect={jest.fn()} t={t} />);
+    render(<TemplateVariablePicker onSelect={jest.fn()} settingsTranslations={settingsTranslations} />);
     expect(screen.queryByText("templates.variables.ticketId")).not.toBeInTheDocument();
     expect(screen.queryByText("templates.variables.tableName")).not.toBeInTheDocument();
     expect(screen.queryByText("templates.variables.total")).not.toBeInTheDocument();
@@ -47,14 +47,14 @@ describe("TemplateVariablePicker", () => {
 
   it("calls onSelect with the correct variable key when a chip is clicked", () => {
     const onSelect = jest.fn();
-    render(<TemplateVariablePicker onSelect={onSelect} t={t} />);
+    render(<TemplateVariablePicker onSelect={onSelect} settingsTranslations={settingsTranslations} />);
     fireEvent.click(screen.getByText("templates.variables.businessName"));
     expect(onSelect).toHaveBeenCalledWith("{{config.businessName}}");
   });
 
   it("calls onSelect with the correct key for each config variable", () => {
     const onSelect = jest.fn();
-    render(<TemplateVariablePicker onSelect={onSelect} t={t} />);
+    render(<TemplateVariablePicker onSelect={onSelect} settingsTranslations={settingsTranslations} />);
 
     fireEvent.click(screen.getByText("templates.variables.businessAddress"));
     expect(onSelect).toHaveBeenCalledWith("{{config.businessAddress}}");

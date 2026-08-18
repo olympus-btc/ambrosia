@@ -14,6 +14,8 @@ import { httpClient, parseJsonResponse } from "@/lib/http";
 import { useCartPayment } from "../useCartPayment";
 
 let mockPaymentMethods;
+let mockPaymentMethodsForbidden;
+let mockPaymentCurrencyForbidden;
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -38,19 +40,21 @@ jest.mock("@/hooks/auth/useAuth", () => ({
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({
     currency: { id: "cur-1", acronym: "MXN" },
-    formatAmount: (value) => `fmt-${value}`,
+    formatAmount: (amount) => `fmt-${amount}`,
   }),
 }));
 
 jest.mock("../usePaymentMethod", () => ({
   usePaymentMethods: () => ({
     paymentMethods: mockPaymentMethods,
+    forbidden: mockPaymentMethodsForbidden,
   }),
 }));
 
-jest.mock("../../../hooks/usePayments", () => ({
-  usePayments: () => ({
+jest.mock("../../../hooks/usePaymentCurrency", () => ({
+  usePaymentCurrency: () => ({
     getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
+    forbidden: mockPaymentCurrencyForbidden,
   }),
 }));
 
@@ -68,6 +72,8 @@ describe("useCartPayment", () => {
       { id: "btc", name: "BTC" },
       { id: "cash", name: "Cash" },
     ];
+    mockPaymentMethodsForbidden = false;
+    mockPaymentCurrencyForbidden = false;
 
     addToast.mockClear();
     getCompletedCheckouts.mockReset().mockResolvedValue([]);
@@ -179,6 +185,26 @@ describe("useCartPayment", () => {
     const { result } = renderHook(() => useCartPayment());
 
     expect(typeof result.current.handlePay).toBe("function");
+  });
+
+  it("reports paymentsForbidden when payment methods are forbidden", () => {
+    mockPaymentMethodsForbidden = true;
+    const { result } = renderHook(() => useCartPayment());
+
+    expect(result.current.paymentsForbidden).toBe(true);
+  });
+
+  it("reports paymentsForbidden when payment currency is forbidden", () => {
+    mockPaymentCurrencyForbidden = true;
+    const { result } = renderHook(() => useCartPayment());
+
+    expect(result.current.paymentsForbidden).toBe(true);
+  });
+
+  it("reports paymentsForbidden as false when neither is forbidden", () => {
+    const { result } = renderHook(() => useCartPayment());
+
+    expect(result.current.paymentsForbidden).toBe(false);
   });
 
   describe("BTC checkout recovery", () => {

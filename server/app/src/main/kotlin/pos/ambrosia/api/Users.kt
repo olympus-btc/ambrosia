@@ -21,6 +21,7 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.UsersService
 import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.requireAdmin
 
 fun Application.configureUsers() {
     val userService = UsersService(environment)
@@ -34,28 +35,34 @@ fun Route.users(
     tokenService: TokenService,
     permissionsService: PermissionsService,
 ) {
-    get("") {
-        val users = userService.getUsers()
-        if (users.isEmpty()) {
-            call.respond(HttpStatusCode.OK, "No users found")
-            return@get
+    authorizePermission("users_read") {
+        get("") {
+            val users = userService.getUsers()
+            if (users.isEmpty()) {
+                call.respond(HttpStatusCode.OK, "No users found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, users)
         }
-        call.respond(HttpStatusCode.OK, users)
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@get
+            }
+
+            val user = userService.getUserById(id)
+            if (user == null) {
+                call.respond(HttpStatusCode.NotFound, "User not found")
+                return@get
+            }
+
+            call.respond(HttpStatusCode.OK, user)
+        }
     }
-    get("/{id}") {
-        val id = call.parameters["id"]
-        if (id == null) {
-            call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-            return@get
-        }
 
-        val user = userService.getUserById(id)
-        if (user == null) {
-            call.respond(HttpStatusCode.NotFound, "User not found")
-            return@get
-        }
-
-        call.respond(HttpStatusCode.OK, user)
+    get("/public") {
+        call.respond(HttpStatusCode.OK, userService.getUserIdentities())
     }
 
     authenticate("auth-jwt") {
@@ -114,6 +121,9 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be exactly 6 digits")
                 return@post
             }
+            if (user.role?.let(userService::isRoleAdmin) == true) {
+                call.requireAdmin()
+            }
             val result = userService.addUser(user)
             if (result == null) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user")
@@ -154,6 +164,9 @@ fun Route.users(
             ) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be exactly 6 digits")
                 return@put
+            }
+            if (updatedUser.roleId?.let(userService::isRoleAdmin) == true) {
+                call.requireAdmin()
             }
 
             val isUpdated = userService.updateUser(id, updatedUser)

@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { toNumberInputValue } from "@/components/utils/numberParsers";
 
 export function CashPaymentModal({
   isOpen,
@@ -97,12 +98,9 @@ export function CashPaymentModal({
               setCashReceived(receivedAmount ?? 0);
               setError("");
             }}
-            onChange={(e) => {
-              if (e?.target) {
-                const parsedAmount = parseFloat(e.target.value.replace(/[^0-9.]/g, "")) || 0;
-                setCashReceived(Math.min(parsedAmount, 9999999));
-                setError("");
-              }
+            onChange={(receivedAmountChange) => {
+              setCashReceived(Math.min(toNumberInputValue(receivedAmountChange), 9999999));
+              setError("");
             }}
             onKeyDown={(e) => {
               if (!/^[0-9]$/.test(e.key)) return;

@@ -2,14 +2,11 @@
 
 import { useTranslations } from "next-intl";
 
-import { usePermission } from "@/hooks/usePermission";
-
 import { RolesCard } from "./RolesCard";
 import { RolesTable } from "./RolesTable";
 
-export function RolesList({ roles, loading, onEdit, onDelete }) {
+export function RolesList({ roles, loading, canManageRoles = false, onEdit, onDelete }) {
   const t = useTranslations();
-  const canManageRoles = usePermission({ anyOf: ["roles_update", "roles_delete"] });
 
   if (loading) {
     return <p className="text-default-500">{t("roles.state.loading")}</p>;

@@ -47,7 +47,7 @@ async function proxyRequest(request, params, method) {
   if (method === "POST") {
     fetchOptions.body = request.body;
     fetchOptions.duplex = "half";
-  } else if (method === "PUT" || method === "PATCH") {
+  } else if (method === "PUT" || method === "PATCH" || method === "DELETE") {
     fetchOptions.body = await request.text();
   }
 

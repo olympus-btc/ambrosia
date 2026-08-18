@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { ShiftWidget } from "@/components/turn/ShiftWidget";
 import { useSeedTour } from "@/hooks/tour/useSeedTour";
@@ -14,16 +14,25 @@ import { useNavigation } from "@hooks/useNavigation";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { BottomNav } from "./BottomNav";
+import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
 import { MobileDrawer } from "./MobileDrawer";
 import { SidebarContent } from "./Sidebar";
 
 export function StoreLayout({ children }) {
   const pathname = usePathname();
-  const t = useTranslations("navbar");
+  const locale = useLocale();
+  const navbarTranslations = useTranslations("navbar");
+  const notificationsTranslations = useTranslations("notifications");
   const { config } = useConfigurations();
-  const { availableNavigation, isAuth, logout } = useNavigation();
+  const { availableNavigation, isAuth, isAdmin, logout } = useNavigation();
   const logoSrc = storedAssetUrl(config?.businessLogoUrl);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { notificationUnreadCount } = useAdminNotificationSignals({
+    enabled: isAuth && isAdmin,
+    locale,
+    pathname,
+    notificationsTranslations,
+  });
 
   useSeedTour(isAuth);
   useWalletTour(isAuth);
@@ -36,10 +45,11 @@ export function StoreLayout({ children }) {
     availableNavigation,
     isAuth,
     pathname,
-    t,
+    navbarTranslations,
     logout,
     config,
     logoSrc,
+    notificationUnreadCount,
   };
 
   return (
@@ -66,7 +76,8 @@ export function StoreLayout({ children }) {
         isAuth={isAuth}
         items={bottomNavItems}
         pathname={pathname}
-        t={t}
+        navbarTranslations={navbarTranslations}
+        notificationUnreadCount={notificationUnreadCount}
         onMenuClick={() => setDrawerOpen(true)}
       />
 

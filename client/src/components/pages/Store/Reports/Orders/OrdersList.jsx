@@ -5,8 +5,11 @@ import { ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DataTable } from "@/components/shared/DataTable";
+import { StatusChip } from "@/components/shared/StatusChip";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { formatDateParts } from "@lib/formatDate";
+
+import { refundedToStatus } from "../utils/refundedToStatus";
 
 import { OrderDetailModal } from "./OrderDetailModal";
 import { OrdersCard } from "./OrdersCard";
@@ -41,6 +44,11 @@ export function ReportsOrdersList({ orders, formatCurrency, currentRate }) {
           #{shortId}
         </span>
       ),
+    },
+    {
+      key: "status",
+      label: reportsTranslations("orders.statusLabel"),
+      render: ({ refunded }) => <StatusChip status={refundedToStatus(refunded)} />,
     },
     {
       key: "date",

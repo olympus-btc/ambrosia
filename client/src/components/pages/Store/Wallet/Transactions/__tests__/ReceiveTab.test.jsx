@@ -1,3 +1,4 @@
+import { addToast } from "@heroui/react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -12,6 +13,14 @@ jest.mock("@/components/hooks/useCurrency", () => ({
     currency: { acronym: "USD", symbol: "$", locale: "en-US" },
   }),
 }));
+
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return {
+    ...actual,
+    addToast: jest.fn(),
+  };
+});
 
 jest.mock("@/services/bitcoinPriceService", () => {
   const satoshisToFiat = jest.fn(() => new Promise(() => {}));
@@ -321,7 +330,12 @@ describe("ReceiveTab Component", () => {
 
     it("handles API error gracefully without crashing", async () => {
       jest.spyOn(walletService, "createInvoice").mockRejectedValue(new Error("API Error"));
-      renderReceiveTab();
+      const invoiceActions = {
+        createInvoice: jest.fn(),
+        closeModal: jest.fn(),
+        markAsPaid: jest.fn(),
+      };
+      renderReceiveTab({ invoiceActions });
 
       fireEvent.change(screen.getByLabelText("payments.receive.invoiceAmountSatLabel"), {
         target: { value: "1000" },
@@ -331,6 +345,13 @@ describe("ReceiveTab Component", () => {
 
       await waitFor(() => {
         expect(screen.getByText("payments.receive.invoiceLightningButton")).toBeInTheDocument();
+      });
+      expect(invoiceActions.createInvoice).not.toHaveBeenCalled();
+      expect(addToast).toHaveBeenCalledWith({
+        title: "errorTitle",
+        description: "payments.receive.invoiceCreateError",
+        variant: "solid",
+        color: "danger",
       });
     });
   });

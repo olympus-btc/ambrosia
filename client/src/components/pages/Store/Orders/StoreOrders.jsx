@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -16,35 +16,31 @@ import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymentMethod";
 
-import { useOrders } from "../hooks/useOrders";
-
+import { useOrdersFilters } from "./hooks/useOrdersFilters";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { OrdersFilterBar } from "./OrdersFilterBar";
 import { OrdersList } from "./OrdersList";
 import { EmptyOrdersState } from "./OrdersList/EmptyOrdersState";
 
-const DEFAULT_FILTERS = {
-  startDate: null,
-  endDate: null,
-  status: null,
-  userId: null,
-  paymentMethod: null,
-  minTotal: null,
-  maxTotal: null,
-  sortBy: "date",
-  sortOrder: "desc",
-};
-
 export default function StoreOrders() {
-  const t = useTranslations("orders");
+  const ordersTranslations = useTranslations("orders");
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const { orders, fetchOrders, fetchOrdersFiltered } = useOrders();
+  const {
+    filteredOrders,
+    paginatedOrders,
+    page,
+    setPage,
+    totalPages,
+    filters,
+    fetchOrdersFiltered,
+    search,
+    pagination,
+    onFiltersChange,
+    onApplyFilters,
+    onClearFilters,
+  } = useOrdersFilters();
   const { paymentMethods } = usePaymentMethods();
   const { formatAmount, currency } = useCurrency();
   const { currentRate } = useBitcoinPrice({ currencyAcronym: currency?.acronym });
@@ -60,67 +56,23 @@ export default function StoreOrders() {
     setShowDetails(false);
   };
 
-  const filteredOrders = useMemo(
-    () => orders.filter((order) => {
-      const normalizedSearch = searchTerm.toLowerCase();
-      return (
-        searchTerm === "" ||
-        order.id.toLowerCase().includes(normalizedSearch) ||
-        order.userName?.toLowerCase().includes(normalizedSearch) ||
-        order.tableId?.toLowerCase().includes(normalizedSearch)
-      );
-    }),
-    [orders, searchTerm],
-  );
-
-  const handleFiltersChange = (partialFilters) => {
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      ...partialFilters,
-    }));
-  };
-
-  const handleApplyFilters = async () => {
+  const handleRefunded = async () => {
     await fetchOrdersFiltered(filters);
-    setPage(1);
+    setShowDetails(false);
   };
-
-  const handleClearFilters = async () => {
-    setFilters(DEFAULT_FILTERS);
-    await fetchOrders();
-    setPage(1);
-  };
-
-  const handleSearchChange = (value) => {
-    setSearchTerm(value);
-    setPage(1);
-  };
-
-  const handleRowsPerPageChange = (value) => {
-    setRowsPerPage(parseInt(value, 10));
-    setPage(1);
-  };
-
-  const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
-  const startIndex = (page - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-  const filterSearch = { term: searchTerm, onChange: handleSearchChange };
-  const filterPagination = { rowsPerPage, onChange: handleRowsPerPageChange };
 
   return (
     <div className="max-w-7xl mx-auto">
       <Card shadow="none" className="mb-6 shadow-lg bg-white rounded-lg p-4 lg:p-8">
         <CardBody>
           <OrdersFilterBar
-            search={filterSearch}
-            pagination={filterPagination}
+            search={search}
+            pagination={pagination}
             filters={filters}
             paymentMethods={paymentMethods}
-            onFiltersChange={handleFiltersChange}
-            onApplyFilters={handleApplyFilters}
-            onClearFilters={handleClearFilters}
+            onFiltersChange={onFiltersChange}
+            onApplyFilters={onApplyFilters}
+            onClearFilters={onClearFilters}
           />
         </CardBody>
       </Card>
@@ -128,7 +80,7 @@ export default function StoreOrders() {
       <Card shadow="none" className="bg-white rounded-lg shadow-lg p-4 lg:p-8">
         <CardHeader>
           <h3 className="text-lg font-semibold text-green-900">
-            {t("header.paid", { count: filteredOrders.length })}
+            {ordersTranslations("header.paid", { count: filteredOrders.length })}
           </h3>
         </CardHeader>
         <CardBody>
@@ -148,13 +100,13 @@ export default function StoreOrders() {
                     color="primary"
                     showControls
 
-                    aria-label={t("filter.paginationAria")}
+                    aria-label={ordersTranslations("filter.paginationAria")}
                   />
                 </div>
               )}
             </div>
           ) : (
-            <EmptyOrdersState filter="paid" searchTerm={searchTerm} />
+            <EmptyOrdersState filter="paid" searchTerm={search.term} />
           )}
         </CardBody>
       </Card>
@@ -164,6 +116,7 @@ export default function StoreOrders() {
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
         onEdit={handleEditOrder}
+        onRefunded={handleRefunded}
         formatAmount={formatAmount}
         currentRate={currentRate}
       />

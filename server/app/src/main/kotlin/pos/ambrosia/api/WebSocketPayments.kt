@@ -6,30 +6,42 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import pos.ambrosia.logger
 import java.util.concurrent.ConcurrentHashMap
 
+@Serializable
+data class PaymentNotification(
+    val type: String,
+    val timestamp: Long? = null,
+    val amountSat: Long? = null,
+    val paymentHash: String? = null,
+    val externalId: String? = null,
+    val payerNote: String? = null,
+    val payerKey: String? = null,
+)
+
 fun Application.configurePaymentWebsocket() {
     routing {
         authenticate("auth-jwt") {
             webSocket("/ws/payments") {
-                PhoenixWebhookNotifier.register(this)
+                PaymentNotifier.register(this)
                 try {
                     send(Frame.Text("""{"type":"connected"}"""))
                     for (frame in incoming) {
                         if (frame is Frame.Close) break
                     }
                 } finally {
-                    PhoenixWebhookNotifier.unregister(this)
+                    PaymentNotifier.unregister(this)
                 }
             }
         }
     }
 }
 
-object PhoenixWebhookNotifier {
+object PaymentNotifier {
     private val sessions = ConcurrentHashMap.newKeySet<DefaultWebSocketServerSession>()
     private val serializer = Json { encodeDefaults = false }
 
@@ -41,7 +53,7 @@ object PhoenixWebhookNotifier {
         sessions.remove(session)
     }
 
-    suspend fun broadcast(payload: PhoenixWebhookPayload) {
+    suspend fun broadcast(payload: PaymentNotification) {
         val message = serializer.encodeToString(payload)
         val stale = mutableListOf<DefaultWebSocketServerSession>()
         sessions.forEach { session ->

@@ -7,7 +7,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useTurn } from "@/hooks/turn/useTurn";
 
-import { usePayments } from "../../hooks/usePayments";
+import { usePaymentCurrency } from "../../hooks/usePaymentCurrency";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 import {
   ensureCartReady,
@@ -30,8 +30,9 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const { currency, formatAmount } = useCurrency();
   const { refreshShiftTickets } = useTurn();
   const { printCustomerReceipt } = useCustomerReceipt();
-  const { paymentMethods } = usePaymentMethods();
-  const { getPaymentCurrencyById } = usePayments();
+  const { paymentMethods, forbidden: paymentMethodsForbidden } = usePaymentMethods();
+  const { getPaymentCurrencyById, forbidden: paymentCurrencyForbidden } = usePaymentCurrency();
+  const paymentsForbidden = paymentMethodsForbidden || paymentCurrencyForbidden;
 
   const { isPaying, paymentError, dispatch, notifyError, notifySuccess, clearPaymentError } = usePaymentState(paymentTranslations);
 
@@ -117,6 +118,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     isPaying,
     paymentError,
     clearPaymentError,
+    paymentsForbidden,
     btcPayment,
     cashPayment,
     cardPayment,

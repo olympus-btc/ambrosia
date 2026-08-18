@@ -8,6 +8,9 @@ function buildReportsQueryString(filters = {}) {
   if (filters.period) params.set("period", filters.period);
   if (filters.startDate) params.set("startDate", filters.startDate);
   if (filters.endDate) params.set("endDate", filters.endDate);
+  if (typeof filters.utcOffsetMinutes === "number") {
+    params.set("utcOffsetMinutes", String(filters.utcOffsetMinutes));
+  }
   const query = params.toString();
   return `/reports${query ? `?${query}` : ""}`;
 }

@@ -1,0 +1,107 @@
+# See docker/cln-regtest-nwc/README.md for topology, quickstart, and teardown.
+
+services:
+  bitcoind:
+    image: lightninglabs/bitcoin-core:25
+    container_name: ambrosia-regtest-bitcoind
+    restart: unless-stopped
+    command:
+      - -regtest
+      - -server
+      - -txindex
+      - -fallbackfee=0.0002
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=ambrosia
+      - -rpcpassword=ambrosia
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "127.0.0.1:18443:18443"
+    volumes:
+      - bitcoind_regtest_data:/home/bitcoin/.bitcoin
+
+  lightningd:
+    build:
+      context: ./docker/cln-regtest-nwc
+    container_name: ambrosia-regtest-lightningd
+    restart: unless-stopped
+    depends_on:
+      - bitcoind
+      - nostr-relay
+    environment:
+      # Upstream entrypoint passes --network=$LIGHTNINGD_NETWORK before our args,
+      # so override here instead of adding a duplicate --network flag.
+      LIGHTNINGD_NETWORK: regtest
+    command:
+      - --bitcoin-rpcconnect=bitcoind
+      - --bitcoin-rpcport=18443
+      - --bitcoin-rpcuser=ambrosia
+      - --bitcoin-rpcpassword=ambrosia
+      - --bind-addr=0.0.0.0:9735
+      - --log-level=info
+      - --plugin=/opt/cln_nwc/src/nwc.py
+    ports:
+      - "127.0.0.1:9735:9735"
+    volumes:
+      - lightningd_regtest_data:/root/.lightning
+
+  nostr-relay:
+    image: scsibug/nostr-rs-relay:latest
+    container_name: ambrosia-regtest-nostr-relay
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7778:8080"
+    volumes:
+      - nostr_relay_regtest_data:/usr/src/app/db
+
+  ambrosia-dev:
+    build: server/
+    container_name: ambrosia-regtest-server
+    restart: unless-stopped
+    depends_on:
+      - lightningd
+      - nostr-relay
+    ports:
+      - "127.0.0.1:9156:9155"
+      - "127.0.0.1:9446:9445"
+    environment:
+      NWC_URI: ${NWC_URI:-}
+    volumes:
+      - ambrosia_regtest_data:/root/.Ambrosia-POS
+    entrypoint:
+      - java
+      - -jar
+      - /app/ambrosia.jar
+      - --http-bind-ip=0.0.0.0
+      - --http-bind-port=9155
+      - --ssl-bind-port=9445
+      - --phoenixd-url=http://localhost:9740
+      - --phoenixd-password=noop
+      - --phoenixd-webhook-secret=noop
+      - --docker
+
+  client-dev:
+    image: node:20-alpine
+    container_name: ambrosia-regtest-client
+    working_dir: /app
+    depends_on:
+      - ambrosia-dev
+    ports:
+      - "127.0.0.1:3002:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:9156
+      INTERNAL_API_URL: http://ambrosia-dev:9155
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./client:/app
+      - client_regtest_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --port 3001"
+    restart: unless-stopped
+
+volumes:
+  bitcoind_regtest_data:
+  lightningd_regtest_data:
+  nostr_relay_regtest_data:
+  ambrosia_regtest_data:
+  client_regtest_modules:

@@ -1,0 +1,19 @@
+# NWC overlay: use with `docker compose -f docker-compose.yml -f docker-compose.nwc.yml up -d`
+# Requires NWC_URI env var: nostr+walletconnect://pubkey?relay=wss://...&secret=...
+services:
+  ambrosia:
+    depends_on: {}
+    environment:
+      NWC_URI: ${NWC_URI}
+    entrypoint:
+      - java
+      - -jar
+      - /app/ambrosia.jar
+      - --http-bind-ip=0.0.0.0
+      - --docker
+    volumes:
+      - ambrosia_datadir:/root/.Ambrosia-POS
+
+  phoenixd:
+    profiles:
+      - phoenixd

@@ -1,10 +1,13 @@
+import { buildParsedHttpError } from "@/components/pages/Store/utils/buildHttpError";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export async function getTurnOpen() {
-  const response = await httpClient("/shifts/open");
-  if (response.status === 204) return null;
-  if (!response.ok) throw new Error(`Failed to get open shift: ${response.status}`);
-  const shift = await parseJsonResponse(response, null);
+  const openShiftResponse = await httpClient("/shifts/open", { skipForbiddenRedirect: true });
+  if (openShiftResponse.status === 204) return null;
+  if (!openShiftResponse.ok) {
+    throw await buildParsedHttpError(openShiftResponse, "Failed to get open shift");
+  }
+  const shift = await parseJsonResponse(openShiftResponse, null);
   return shift ?? null;
 }
 
@@ -17,7 +20,7 @@ export async function openTurn(userId, initialAmount = 0) {
   ].join("-");
   const startTime = now.toTimeString().split(" ")[0];
 
-  const response = await httpClient("/shifts", {
+  const openShiftResponse = await httpClient("/shifts", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,19 +32,25 @@ export async function openTurn(userId, initialAmount = 0) {
       notes: "",
       initialAmount,
     }),
+    skipForbiddenRedirect: true,
   });
-  if (response.status === 409) throw new Error("shift_already_open");
-  if (!response.ok) throw new Error(`Failed to open shift: ${response.status}`);
-  return await parseJsonResponse(response, null);
+  if (openShiftResponse.status === 409) throw new Error("shift_already_open");
+  if (!openShiftResponse.ok) {
+    throw await buildParsedHttpError(openShiftResponse, "Failed to open shift");
+  }
+  return await parseJsonResponse(openShiftResponse, null);
 }
 
 export async function closeTurn(openTurnId, finalAmount = null, difference = null) {
   const body = JSON.stringify({ finalAmount, difference });
-  const response = await httpClient(`/shifts/${openTurnId}/close`, {
+  const closeShiftResponse = await httpClient(`/shifts/${openTurnId}/close`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,
+    skipForbiddenRedirect: true,
   });
-  if (!response.ok) throw new Error(`Close failed: ${response.status}`);
-  return await parseJsonResponse(response, null);
+  if (!closeShiftResponse.ok) {
+    throw await buildParsedHttpError(closeShiftResponse, "Failed to close shift");
+  }
+  return await parseJsonResponse(closeShiftResponse, null);
 }

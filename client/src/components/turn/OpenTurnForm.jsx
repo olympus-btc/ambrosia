@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Button, NumberInput } from "@heroui/react";
+import { Button, NumberInput, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useTurn } from "@/hooks/turn/useTurn";
@@ -12,7 +12,7 @@ import { useTurn } from "@/hooks/turn/useTurn";
 export default function OpenTurnForm({ onOpened }) {
   const [initialAmount, setInitialAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const { updateTurn, openShift, refreshTurn } = useTurn();
   const router = useRouter();
 
@@ -22,25 +22,31 @@ export default function OpenTurnForm({ onOpened }) {
     setInitialAmount(value);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (isLoading) return;
+    setFormError("");
 
     if (initialAmount == null || isNaN(Number(initialAmount)) || initialAmount < 0) {
-      setError(shiftTranslations("invalidAmount"));
+      setFormError(shiftTranslations("invalidAmount"));
       return;
     }
 
     setIsLoading(true);
     try {
-      const id = await openShift(initialAmount);
-      updateTurn(id);
-      onOpened?.(id);
+      const openedShiftId = await openShift(initialAmount);
+      updateTurn(openedShiftId);
+      onOpened?.(openedShiftId);
+      addToast({ color: "success", description: shiftTranslations("openShiftSuccess") });
     } catch (caughtError) {
       if (caughtError?.message === "shift_already_open") {
         await refreshTurn();
       } else {
-        setError(shiftTranslations("openShiftError"));
+        setFormError(shiftTranslations("openShiftError"));
+        addToast({
+          color: "danger",
+          description: caughtError?.responseMessage || caughtError?.message || shiftTranslations("openShiftError"),
+        });
       }
     } finally {
       setIsLoading(false);
@@ -49,9 +55,9 @@ export default function OpenTurnForm({ onOpened }) {
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {error && (
+      {formError && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-base text-center">
-          {error}
+          {formError}
         </div>
       )}
 

@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
-import { getUsers } from "@/services/authService";
+import { getPublicUsers } from "@/services/authService";
 
 import { BusinessHeader } from "./BusinessHeader";
 import { EmployeeSelect } from "./EmployeeSelect";
@@ -20,19 +20,19 @@ const PIN_MAX_LENGTH = 6;
 const PIN_MIN_LENGTH = 4;
 
 export default function PinLogin() {
-  const t = useTranslations("pinLogin");
+  const pinLoginTranslations = useTranslations("pinLogin");
   const [pin, setPin] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [lockedUntil, setLockedUntil] = useState(null);
   const [showPinDeprecationModal, setShowPinDeprecationModal] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("pinLockoutUntil");
-    if (!stored) return;
-    const ts = parseInt(stored, 10);
-    if (ts > Date.now()) setLockedUntil(ts);
+    const storedLockoutUntil = localStorage.getItem("pinLockoutUntil");
+    if (!storedLockoutUntil) return;
+    const lockoutUntilTimestamp = parseInt(storedLockoutUntil, 10);
+    if (lockoutUntilTimestamp > Date.now()) setLockedUntil(lockoutUntilTimestamp);
   }, []);
   const [employees, setEmployees] = useState([]);
   const router = useRouter();
@@ -48,58 +48,64 @@ export default function PinLogin() {
   useEffect(() => {
     async function fetchEmployees() {
       try {
-        const users = await getUsers({ silentAuth: true });
+        const publicUsers = await getPublicUsers();
         setEmployees(
-          users.map((user) => ({
+          publicUsers.map((user) => ({
             ...user,
             avatar: user.name.slice(0, 2),
           })),
         );
-      } catch {}
+      } catch {
+        addToast({
+          title: pinLoginTranslations("errorMessages.loadEmployeesTitle"),
+          description: pinLoginTranslations("errorMessages.loadEmployeesDescription"),
+          color: "danger",
+        });
+      }
     }
     fetchEmployees();
-  }, []);
+  }, [pinLoginTranslations]);
 
   const handleNumberClick = (number) => {
     if (pin.length < PIN_MAX_LENGTH) {
       setPin((prev) => prev + number);
-      setError("");
+      setLoginErrorMessage("");
     }
   };
 
   const handleDelete = () => {
     setPin((prev) => prev.slice(0, -1));
-    setError("");
+    setLoginErrorMessage("");
   };
 
   const handleClear = () => {
     setPin("");
-    setError("");
+    setLoginErrorMessage("");
   };
 
   const handleLogin = async () => {
     if (lockedUntil && Date.now() < lockedUntil) return;
 
     if (!selectedUser) {
-      setError(t("errorMessages.selectEmployee"));
+      setLoginErrorMessage(pinLoginTranslations("errorMessages.selectEmployee"));
       return;
     }
 
     if (pin.length < PIN_MIN_LENGTH) {
-      setError(t("errorMessages.enterPin"));
+      setLoginErrorMessage(pinLoginTranslations("errorMessages.enterPin"));
       return;
     }
 
     setIsLoading(true);
-    setError("");
+    setLoginErrorMessage("");
 
-    const employee = employees.find((emp) => emp.id === selectedUser);
+    const employee = employees.find((currentEmployee) => currentEmployee.id === selectedUser);
 
     try {
       await login({ name: employee.name, pin });
       addToast({
-        title: t("successMessages.toastTitle"),
-        description: `${t("successMessages.firstMessage")} ${employee.name} ${t("successMessages.secondMessage")} ${employee.role}.`,
+        title: pinLoginTranslations("successMessages.toastTitle"),
+        description: `${pinLoginTranslations("successMessages.firstMessage")} ${employee.name} ${pinLoginTranslations("successMessages.secondMessage")} ${employee.role}.`,
         color: "success",
       });
       const isPinDeprecated = pin.length < PIN_MAX_LENGTH;
@@ -112,16 +118,16 @@ export default function PinLogin() {
       } else {
         router.push("/");
       }
-    } catch (error) {
-      if (error?.status === 429) {
-        const ts = Date.now() + (error.retryAfter ?? 180) * 1000;
-        setLockedUntil(ts);
-        localStorage.setItem("pinLockoutUntil", ts.toString());
-        setError("");
-      } else if (error?.message === "No assigned role for this user, contact Admin") {
-        setError(error.message);
+    } catch (loginError) {
+      if (loginError?.status === 429) {
+        const lockoutUntilTimestamp = Date.now() + (loginError.retryAfter ?? 180) * 1000;
+        setLockedUntil(lockoutUntilTimestamp);
+        localStorage.setItem("pinLockoutUntil", lockoutUntilTimestamp.toString());
+        setLoginErrorMessage("");
+      } else if (loginError?.message === "No assigned role for this user, contact Admin") {
+        setLoginErrorMessage(loginError.message);
       } else {
-        setError(t("errorMessages.incorrectPin"));
+        setLoginErrorMessage(pinLoginTranslations("errorMessages.incorrectPin"));
       }
       setPin("");
     } finally {
@@ -157,7 +163,7 @@ export default function PinLogin() {
           />
           <PinPad
             pin={pin}
-            error={error}
+            error={loginErrorMessage}
             isLoading={isLoading}
             lockedUntil={lockedUntil}
             onNumberClick={handleNumberClick}

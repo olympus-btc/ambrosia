@@ -9,17 +9,23 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+let mockCanReadPaymentMethods = true;
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => mockCanReadPaymentMethods,
+}));
+
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
 }));
 
 function TestComponent() {
-  const { paymentMethods, loading, error } = usePaymentMethods();
+  const { paymentMethods, loading, error, forbidden } = usePaymentMethods();
   return (
     <div>
       <span data-testid="loading">{loading ? "yes" : "no"}</span>
       <span data-testid="count">{paymentMethods.length}</span>
       <span data-testid="error">{error ? "yes" : "no"}</span>
+      <span data-testid="forbidden">{forbidden ? "yes" : "no"}</span>
     </div>
   );
 }
@@ -27,6 +33,7 @@ function TestComponent() {
 describe("usePaymentMethods", () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockCanReadPaymentMethods = true;
   });
 
   it("loads payment methods when response returns array", async () => {
@@ -56,5 +63,16 @@ describe("usePaymentMethods", () => {
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
     expect(screen.getByTestId("error")).toHaveTextContent("yes");
     console.error.mockRestore();
+  });
+
+  it("does not fetch payment methods when the user lacks payments_read", async () => {
+    mockCanReadPaymentMethods = false;
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+    expect(screen.getByTestId("forbidden")).toHaveTextContent("yes");
+    expect(httpClient).not.toHaveBeenCalled();
   });
 });

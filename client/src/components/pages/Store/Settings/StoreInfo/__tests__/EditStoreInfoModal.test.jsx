@@ -12,6 +12,7 @@ function renderModal(props = {}) {
       businessType: "store",
       businessTaxId: "",
       businessAddress: "",
+      timezone: "America/Mexico_City",
       businessEmail: "",
       businessPhone: "",
       businessLogoUrl: null,
@@ -93,6 +94,7 @@ describe("EditStoreInfoModal", () => {
       expect(screen.getByLabelText("modal.name")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.rfc")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.address")).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "modal.timezone" })).toBeInTheDocument();
       expect(screen.getByLabelText("modal.email")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.phone")).toBeInTheDocument();
     });

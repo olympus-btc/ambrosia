@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.engine.defaultExceptionStatusCode
 import io.ktor.server.plugins.statuspages.StatusPages
@@ -20,6 +21,10 @@ import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.MissingRoleException
+import pos.ambrosia.utils.NwcConnectionException
+import pos.ambrosia.utils.NwcServiceException
+import pos.ambrosia.utils.OrderAlreadyRefundedException
+import pos.ambrosia.utils.OrderNotRefundableException
 import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.PermissionDeniedException
 import pos.ambrosia.utils.PhoenixBalanceException
@@ -30,8 +35,16 @@ import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.ProductIsBundleComponentException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 import pos.ambrosia.utils.WalletOnlyException
 import java.sql.SQLException
+
+private suspend fun ApplicationCall.respondWalletError(
+    status: HttpStatusCode,
+    message: String,
+    code: String,
+    source: String,
+) = respond(status, WalletErrorResponse(message = message, code = code, source = source))
 
 fun Application.handler() {
     install(StatusPages) {
@@ -112,13 +125,23 @@ fun Application.handler() {
         exception<PhoenixServiceException> { call, cause ->
             logger.error("Phoenix service error: ${cause.message}")
             val statusCode = cause.statusCode?.let(HttpStatusCode::fromValue) ?: HttpStatusCode.ServiceUnavailable
-            call.respond(
-                statusCode,
-                WalletErrorResponse(
-                    message = cause.message ?: "Lightning node service error",
-                    code = cause.code,
-                    source = cause.source,
-                ),
+            call.respondWalletError(statusCode, cause.message ?: "Lightning node service error", cause.code, cause.source)
+        }
+        exception<NwcConnectionException> { call, cause ->
+            logger.error("NWC relay connection error: ${cause.message}")
+            call.respondWalletError(HttpStatusCode.ServiceUnavailable, "NWC wallet relay is unavailable", cause.code, cause.source)
+        }
+        exception<NwcServiceException> { call, cause ->
+            logger.error("NWC service error: ${cause.message}")
+            call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet service error"))
+        }
+        exception<UnsupportedBackendOperationException> { call, cause ->
+            logger.warn("Unsupported backend operation: ${cause.message}")
+            call.respondWalletError(
+                HttpStatusCode.NotImplemented,
+                cause.message ?: "Operation not supported by current Lightning backend",
+                cause.code,
+                cause.source,
             )
         }
         exception<PaymentNotConfirmedException> { call, cause ->
@@ -128,6 +151,14 @@ fun Application.handler() {
         exception<ProductIsBundleComponentException> { call, cause ->
             logger.warn("Attempt to delete product used as bundle component: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Product is used as a bundle component"))
+        }
+        exception<OrderAlreadyRefundedException> { call, cause ->
+            logger.warn("Refund attempt on already-refunded order: ${cause.message}")
+            call.respondWalletError(HttpStatusCode.Conflict, cause.message ?: "Order has already been refunded", cause.code, cause.source)
+        }
+        exception<OrderNotRefundableException> { call, cause ->
+            logger.warn("Refund rejected: ${cause.message}")
+            call.respondWalletError(HttpStatusCode.Conflict, cause.message ?: "Order cannot be refunded", cause.code, cause.source)
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

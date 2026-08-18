@@ -69,6 +69,12 @@ export async function getUsers({ silentAuth = false } = {}) {
   return users ?? [];
 }
 
+export async function getPublicUsers() {
+  const publicUsersResponse = await httpClient("/users/public");
+  const publicUsers = await parseJsonResponse(publicUsersResponse, []);
+  return publicUsers ?? [];
+}
+
 export async function addUser(user) {
   const response = await httpClient("/users", {
     method: "POST",

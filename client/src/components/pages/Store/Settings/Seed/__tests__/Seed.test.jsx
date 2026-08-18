@@ -126,6 +126,23 @@ describe("Seed", () => {
 
       expect(screen.getByText("cardSeed.revealButton")).toBeInTheDocument();
     });
+
+    it("shows the NWC-specific message when getSeed fails with an unsupported_operation code", async () => {
+      const { addToast } = require("@heroui/react");
+      const nwcError = new Error("Seed export is not available with NWC backend");
+      nwcError.code = "unsupported_operation";
+      jest.spyOn(walletService, "getSeed").mockRejectedValue(nwcError);
+      render(<Seed />);
+      fireEvent.click(screen.getByText("cardSeed.revealButton"));
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("guard-confirm"));
+      });
+
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "cardSeed.notAvailableNwc" }),
+      );
+    });
   });
 
   describe("Hide (return to locked state)", () => {

@@ -11,6 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.db.tables.ProductOptionTypeEntity
 import pos.ambrosia.db.tables.ProductOptionTypesTable
 import pos.ambrosia.db.tables.ProductOptionValueEntity
@@ -359,6 +360,18 @@ open class ProductVariantService {
             true
         }
 
+    private fun productTracksStock(adjustment: ProductStockAdjustment): Boolean {
+        val productId =
+            if (adjustment.variantId != null) {
+                val variantUuid = parseUuid(adjustment.variantId) ?: return true
+                ProductVariantEntity.findById(variantUuid)?.productId?.value ?: return true
+            } else {
+                parseUuid(adjustment.productId) ?: return true
+            }
+
+        return ProductEntity.findById(productId)?.trackStock ?: true
+    }
+
     fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean {
         if (adjustments.isEmpty()) return true
         if (adjustments.any { it.quantity < 0 }) return false
@@ -366,16 +379,13 @@ open class ProductVariantService {
             transaction {
                 for (adjustment in adjustments) {
                     if (adjustment.quantity == 0) continue
+                    if (!productTracksStock(adjustment)) continue
 
                     val stockRowsUpdated =
                         if (adjustment.variantId != null) {
                             val variantEntityId =
                                 EntityID(
-                                    try {
-                                        UUID.fromString(adjustment.variantId)
-                                    } catch (_: IllegalArgumentException) {
-                                        error("Invalid variantId: ${adjustment.variantId}")
-                                    },
+                                    parseUuid(adjustment.variantId) ?: error("Invalid variantId: ${adjustment.variantId}"),
                                     ProductVariantsTable,
                                 )
                             ProductVariantsTable.update({
@@ -387,11 +397,7 @@ open class ProductVariantService {
                         } else {
                             val productEntityId =
                                 EntityID(
-                                    try {
-                                        UUID.fromString(adjustment.productId)
-                                    } catch (_: IllegalArgumentException) {
-                                        error("Invalid productId: ${adjustment.productId}")
-                                    },
+                                    parseUuid(adjustment.productId) ?: error("Invalid productId: ${adjustment.productId}"),
                                     ProductsTable,
                                 )
                             val defaultVariant =

@@ -10,9 +10,9 @@ import {
   ModalFooter,
   ModalHeader,
   Checkbox,
-  Spinner,
 } from "@heroui/react";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { PermissionSelector } from "./PermissionSelector";
 import { roleTemplates, resolveRoleName } from "./utils/roleTemplates";
@@ -26,9 +26,9 @@ export function CreateRoleModal({
   permissionOptions = [],
   togglePermission,
   creating = false,
-  t,
   businessType = null,
 }) {
+  const roleTranslations = useTranslations();
   const [advanced, setAdvanced] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
@@ -36,8 +36,8 @@ export function CreateRoleModal({
 
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template.key);
-    setForm((prev) => ({
-      ...prev,
+    setForm((previousForm) => ({
+      ...previousForm,
       name: template.key,
       isAdmin: template.isAdmin ?? false,
       permissions: template.permissions,
@@ -80,14 +80,14 @@ export function CreateRoleModal({
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
-          {t("roles.create.title")}
+          {roleTranslations("roles.create.title")}
         </ModalHeader>
 
         <ModalBody className="max-h-[70vh] overflow-y-auto space-y-4">
           {!advanced ? (
             <>
               <p className="text-sm text-default-500">
-                {t("roles.create.templateLegend")}
+                {roleTranslations("roles.create.templateLegend")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {templates.map((template) => {
@@ -108,10 +108,10 @@ export function CreateRoleModal({
                       </div>
                       <div>
                         <p className="font-semibold text-sm text-foreground">
-                          {t(`roles.templates.${template.key}.name`)}
+                          {roleTranslations(`roles.templates.${template.key}.name`)}
                         </p>
                         <p className="text-xs text-default-400">
-                          {t(`roles.templates.${template.key}.description`)}
+                          {roleTranslations(`roles.templates.${template.key}.description`)}
                         </p>
                       </div>
                     </button>
@@ -121,39 +121,33 @@ export function CreateRoleModal({
             </>
           ) : (
             <>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4">
                 <Input
-                  label={t("roles.create.roleName")}
-                  placeholder={t("roles.create.roleNamePlaceholder")}
-                  value={resolveRoleName(form.name, t)}
-                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  label={roleTranslations("roles.create.roleName")}
+                  placeholder={roleTranslations("roles.create.roleNamePlaceholder")}
+                  value={resolveRoleName(form.name, roleTranslations)}
+                  onChange={(event) => setForm((previousForm) => ({ ...previousForm, name: event.target.value }))}
                   isRequired
                 />
-                <Input
-                  label={t("roles.create.password")}
-                  placeholder={t("roles.create.passwordPlaceholder")}
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                />
-                <Checkbox
-                  isSelected={form.isAdmin}
-                  onValueChange={(v) => setForm((prev) => ({ ...prev, isAdmin: v }))}
-                >
-                  {t("roles.create.isAdmin")}
-                </Checkbox>
               </div>
 
-              <div className="mt-4 space-y-4">
+              <Checkbox
+                isSelected={form.isAdmin}
+                onValueChange={(isSelected) => setForm((previousForm) => ({ ...previousForm, isAdmin: isSelected }))}
+              >
+                {roleTranslations("roles.create.isAdmin")}
+              </Checkbox>
+
+              <div className="space-y-4">
                 <p className="text-sm text-default-600">
-                  {t("roles.permissions.legend")}
+                  {roleTranslations("roles.permissions.legend")}
                 </p>
                 <PermissionSelector
                   catalog={permissionOptions}
                   selected={form.permissions}
                   togglePermission={togglePermission}
-                  t={t}
                   businessType={businessType}
+                  isAdmin={form.isAdmin}
                 />
               </div>
             </>
@@ -167,7 +161,7 @@ export function CreateRoleModal({
                 variant="flat"
                 onPress={handleAdvanced}
               >
-                {t("roles.create.advanced")}
+                {roleTranslations("roles.create.advanced")}
               </Button>
             )}
           </div>
@@ -177,15 +171,16 @@ export function CreateRoleModal({
               className="border border-border text-foreground hover:bg-muted transition-colors"
               onPress={handleClose}
             >
-              {t("roles.actions.cancel")}
+              {roleTranslations("roles.actions.cancel")}
             </Button>
             <Button
               color="primary"
               className="bg-green-800"
               onPress={onSubmit}
-              isDisabled={!form.name.trim()}
+              isDisabled={!form.name.trim() || creating}
+              isLoading={creating}
             >
-              {creating ? <Spinner color="white" size="sm" /> : t("roles.actions.create")}
+              {roleTranslations("roles.actions.create")}
             </Button>
           </div>
         </ModalFooter>

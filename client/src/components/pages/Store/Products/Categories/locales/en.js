@@ -28,6 +28,15 @@ const categoriesEn = {
     toasts: {
       genericErrorTitle: "Error",
       genericErrorDescription: "Could not complete the operation.",
+      createSuccess: "Category created successfully",
+      createErrorTitle: "Could not create category",
+      createErrorDescription: "Check the category name and try again.",
+      updateSuccess: "Category updated successfully",
+      updateErrorTitle: "Could not update category",
+      updateErrorDescription: "Check the category name and try again.",
+      deleteSuccess: "Category deleted successfully",
+      deleteErrorTitle: "Could not delete category",
+      deleteErrorDescription: "Try again or check whether this category is still in use.",
     },
   },
 };

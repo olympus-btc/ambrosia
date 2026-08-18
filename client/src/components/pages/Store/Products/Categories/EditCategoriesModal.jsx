@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   Button,
@@ -14,30 +14,35 @@ import {
 import { useTranslations } from "next-intl";
 
 export function EditCategoriesModal({
-  data,
-  setData,
+  categoryForm,
+  setCategoryForm,
   onChange,
   updateCategory,
   editCategoriesShowModal,
   setEditCategoriesShowModal,
 }) {
-  const t = useTranslations("categories");
+  const categoryTranslations = useTranslations("categories");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const handleOnCloseModal = () => {
-    setData({ categoryId: "", categoryName: "" });
+    setCategoryForm({ categoryId: "", categoryName: "" });
     setEditCategoriesShowModal(false);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmittingRef.current) return;
 
+    isSubmittingRef.current = true;
     try {
       setIsSubmitting(true);
-      await updateCategory(data);
+      await updateCategory(categoryForm);
       setEditCategoriesShowModal(false);
+    } catch {
+      return;
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -56,17 +61,17 @@ export function EditCategoriesModal({
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleEdit")}</ModalHeader>
+        <ModalHeader>{categoryTranslations("modal.titleEdit")}</ModalHeader>
         <ModalBody>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
-              label={t("modal.categoryNameLabel")}
+              label={categoryTranslations("modal.categoryNameLabel")}
               type="text"
-              placeholder={t("modal.categoryNamePlaceholder")}
+              placeholder={categoryTranslations("modal.categoryNamePlaceholder")}
               isRequired
-              errorMessage={t("modal.errorMsgInputFieldEmpty")}
-              value={data.categoryName ?? ""}
-              onChange={(e) => onChange({ categoryName: e.target.value })}
+              errorMessage={categoryTranslations("modal.errorMsgInputFieldEmpty")}
+              value={categoryForm.categoryName ?? ""}
+              onChange={(event) => onChange({ categoryName: event.target.value })}
             />
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
@@ -75,15 +80,16 @@ export function EditCategoriesModal({
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => handleOnCloseModal()}
               >
-                {t("modal.cancelButton")}
+                {categoryTranslations("modal.cancelButton")}
               </Button>
               <Button
                 color="primary"
                 className="bg-green-800"
                 type="submit"
+                isDisabled={isSubmitting}
                 isLoading={isSubmitting}
               >
-                {t("modal.editButton")}
+                {categoryTranslations("modal.editButton")}
               </Button>
             </ModalFooter>
           </form>

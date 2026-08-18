@@ -1,4 +1,4 @@
-import { render, act } from "@testing-library/react";
+import { render, act, fireEvent, screen } from "@testing-library/react";
 import { driver } from "driver.js";
 
 import * as walletService from "@/services/walletService";
@@ -190,5 +190,25 @@ describe("WalletGuard — driver.js tour", () => {
     });
 
     expect(driver).not.toHaveBeenCalled();
+  });
+
+  it("shows a password error when wallet login fails", async () => {
+    walletService.loginWallet.mockRejectedValueOnce(new Error("Invalid password"));
+
+    await act(async () => {
+      renderWalletGuard();
+    });
+
+    fireEvent.change(screen.getByLabelText("Contraseña"), {
+      target: { value: "wrong-password" },
+    });
+
+    await act(async () => {
+      fireEvent.submit(document.getElementById("wallet-guard-form"));
+    });
+
+    expect(screen.getByText("guardLoginError")).toBeInTheDocument();
+    expect(walletService.loginWallet).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Protected content")).not.toBeInTheDocument();
   });
 });

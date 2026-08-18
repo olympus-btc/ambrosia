@@ -16,8 +16,8 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("next-intl", () => {
-  const t = (key) => key;
-  return { useTranslations: () => t };
+  const errorsTranslations = (key) => key;
+  return { useTranslations: () => errorsTranslations };
 });
 
 const handlers = {};
@@ -285,8 +285,8 @@ describe("usePrinters", () => {
       await handlers.refetchAll();
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/printers/available");
-    expect(httpClient).toHaveBeenCalledWith("/printers/configs");
+    expect(httpClient).toHaveBeenCalledWith("/printers/available", {});
+    expect(httpClient).toHaveBeenCalledWith("/printers/configs", {});
     expect(screen.getByTestId("available-count")).toHaveTextContent("1");
     expect(screen.getByTestId("config-count")).toHaveTextContent("1");
   });

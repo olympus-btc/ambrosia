@@ -27,16 +27,18 @@ object AppConfig {
             FileInputStream(configFile).use { fis ->
                 properties.load(fis)
             }
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             logger.error("Error loading configuration from {}", configFile)
         }
 
-        try {
-            FileInputStream(phoenixConfFile).use { fis ->
-                phoenixProperties.load(fis)
+        if (properties.getProperty("nwc-uri").isNullOrBlank()) {
+            try {
+                FileInputStream(phoenixConfFile).use { fis ->
+                    phoenixProperties.load(fis)
+                }
+            } catch (exception: Exception) {
+                logger.error("Error loading Phoenix configuration from {}", phoenixConfFile)
             }
-        } catch (e: Exception) {
-            logger.error("Error loading Phoenix configuration from {}", phoenixConfFile)
         }
     }
 
@@ -46,7 +48,7 @@ object AppConfig {
 
         try {
             seed = seedFile.readText()
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             logger.error("Error loading Phoenix seed from {}", seedFile)
         }
         return seed

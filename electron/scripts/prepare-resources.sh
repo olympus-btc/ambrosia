@@ -132,6 +132,13 @@ node scripts/build-client.js
 print_status "Client build complete"
 
 echo ""
+echo "=== Step 6: Bundle Preload Scripts ==="
+echo ""
+
+node scripts/build-preload.js
+print_status "Preload bundling complete"
+
+echo ""
 echo "==========================================="
 echo "  Resource Preparation Summary"
 echo "==========================================="
@@ -215,6 +222,21 @@ if [ -f "resources/client/server.js" ]; then
     print_status "Next.js Client: Found"
 else
     print_error "Next.js Client: Missing"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check Preload bundles
+if [ -f "preload.js" ]; then
+    print_status "Preload bundle: Found"
+else
+    print_error "Preload bundle: Missing"
+    ERRORS=$((ERRORS + 1))
+fi
+
+if [ -f "splash-preload.js" ]; then
+    print_status "Splash preload bundle: Found"
+else
+    print_error "Splash preload bundle: Missing"
     ERRORS=$((ERRORS + 1))
 fi
 

@@ -94,6 +94,12 @@ describe("VariantCard", () => {
     expect(screen.getByText(/4/)).toBeInTheDocument();
   });
 
+  it("shows only the price when the product does not track stock", () => {
+    renderCard({ isStockTrackedForProduct: false });
+    expect(screen.getByText("$15.00")).toBeInTheDocument();
+    expect(screen.queryByText(/variantStockUnit/)).not.toBeInTheDocument();
+  });
+
   it("shows the SKU below the display name when present", () => {
     renderCard();
     expect(screen.getByText("T-RED-S")).toBeInTheDocument();

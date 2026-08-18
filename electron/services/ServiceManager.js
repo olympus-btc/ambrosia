@@ -66,19 +66,27 @@ class ServiceManager extends EventEmitter {
 
       logger.log('[ServiceManager] Production mode: starting all bundled services');
 
-      // Step 1: Check if phoenixd is already running on default port
-      logger.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
-      const phoenixdAlreadyRunning = await isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
+      const nwcUriConfigured = Boolean(this.configs.ambrosia['nwc-uri']);
 
-      if (phoenixdAlreadyRunning) {
-        logger.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
-        this.ports.phoenixd = DEFAULT_PORTS.phoenixd;
+      // Step 1: Start Phoenixd, unless NWC is the configured Lightning backend
+      if (nwcUriConfigured) {
+        logger.log('[ServiceManager] Step 1: NWC is the configured backend, skipping Phoenixd startup');
         this.externalServices.phoenixd = true;
+        this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd, skipped: true });
       } else {
-        logger.log('[ServiceManager] Starting Phoenixd...');
-        await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
+        logger.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
+        const phoenixdAlreadyRunning = await isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
+
+        if (phoenixdAlreadyRunning) {
+          logger.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
+          this.ports.phoenixd = DEFAULT_PORTS.phoenixd;
+          this.externalServices.phoenixd = true;
+        } else {
+          logger.log('[ServiceManager] Starting Phoenixd...');
+          await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
+        }
+        this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd });
       }
-      this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd });
 
       // Step 2: Check if backend is already running on default port
       logger.log('[ServiceManager] Step 2: Checking for existing Backend...');

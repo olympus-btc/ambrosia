@@ -6,9 +6,11 @@ import { Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter
 import { useTranslations } from "next-intl";
 
 import { ImageUploader } from "@components/shared/ImageUploader";
+import { TimezoneInput } from "@components/shared/TimezoneInput";
+import { TIMEZONES } from "@components/utils/timezones";
 
 export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, setIsOpen }) {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const [rfcError, setRfcError] = useState("");
 
   if (!data) return null;
@@ -18,14 +20,14 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
     setIsOpen(false);
   };
 
-  const validateRFC = (value) => {
-    const upperValue = value.toUpperCase();
+  const validateRFC = (rfcValue) => {
+    const upperValue = rfcValue.toUpperCase();
     const rfcRegex = /^[A-ZÑ&]{3,4}(?:\d{2})(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[A-Z0-9]{3}$/;
 
     if (!upperValue) {
       setRfcError("");
     } else if (upperValue.length === 13 && !rfcRegex.test(upperValue)) {
-      setRfcError(t("step3.fields.businessRFCInvalid") || "RFC inválido. Debe tener formato correcto.");
+      setRfcError(settingsTranslations("step3.fields.businessRFCInvalid") || "RFC inválido. Debe tener formato correcto.");
     } else {
       setRfcError("");
     }
@@ -48,7 +50,7 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
     >
       <ModalContent>
         <ModalHeader>
-          {t("modal.title")}
+          {settingsTranslations("modal.title")}
         </ModalHeader>
         <ModalBody>
           <form
@@ -56,52 +58,60 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
             onSubmit={onSubmit}
           >
             <Input
-              label={t("modal.name")}
+              label={settingsTranslations("modal.name")}
               type="text"
-              placeholder={t("modal.namePlaceholder")}
+              placeholder={settingsTranslations("modal.namePlaceholder")}
               value={data.businessName ?? ""}
-              onChange={(e) => onChange({ ...data, businessName: e.target.value })}
+              onChange={(event) => onChange({ ...data, businessName: event.target.value })}
             />
             <Input
-              label={t("modal.rfc")}
+              label={settingsTranslations("modal.rfc")}
               type="text"
               placeholder="RFC"
               maxLength={13}
               value={data.businessTaxId}
-              onChange={(e) => validateRFC(e.target.value)}
+              onChange={(event) => validateRFC(event.target.value)}
               isInvalid={!!rfcError}
               errorMessage={rfcError}
             />
             <Input
-              label={t("modal.address")}
+              label={settingsTranslations("modal.address")}
               type="text"
-              placeholder={t("modal.addressPlaceholder")}
+              placeholder={settingsTranslations("modal.addressPlaceholder")}
               value={data.businessAddress ?? ""}
-              onChange={(e) => onChange({ ...data, businessAddress: e.target.value })}
+              onChange={(event) => onChange({ ...data, businessAddress: event.target.value })}
+            />
+            <TimezoneInput
+              label={settingsTranslations("modal.timezone")}
+              timezones={TIMEZONES}
+              selectedKey={data.timezone ?? null}
+              onSelectionChange={(zoneId) => {
+                if (zoneId) onChange({ ...data, timezone: zoneId });
+              }}
             />
             <Input
-              label={t("modal.email")}
+              label={settingsTranslations("modal.email")}
               type="email"
-              placeholder={t("modal.emailPlaceholder")}
+              placeholder={settingsTranslations("modal.emailPlaceholder")}
               value={data?.businessEmail ?? ""}
-              onChange={(e) => onChange({ ...data, businessEmail: e.target.value })}
+              onChange={(event) => onChange({ ...data, businessEmail: event.target.value })}
             />
             <Input
-              label={t("modal.phone")}
+              label={settingsTranslations("modal.phone")}
               type="tel"
-              placeholder={t("modal.phonePlaceholder")}
+              placeholder={settingsTranslations("modal.phonePlaceholder")}
               maxLength={10}
               value={data.businessPhone ?? ""}
-              onChange={(e) => {
-                const onlyNumbers = e.target.value.replace(/\D/g, "");
+              onChange={(event) => {
+                const onlyNumbers = event.target.value.replace(/\D/g, "");
                 onChange({ ...data, businessPhone: onlyNumbers });
               }}
             />
 
             <ImageUploader
-              title={t("modal.logo")}
-              uploadText={t("modal.logoUpload")}
-              uploadDescription={t("modal.logoUploadMessage")}
+              title={settingsTranslations("modal.logo")}
+              uploadText={settingsTranslations("modal.logoUpload")}
+              uploadDescription={settingsTranslations("modal.logoUploadMessage")}
               onChange={(file) => onChange({ ...data, businessLogo: file, businessLogoRemoved: file === null })}
               image={data.businessLogoRemoved ? null : (data.businessLogo || data.businessLogoUrl)}
             />
@@ -113,14 +123,14 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={handleOnClose}
               >
-                {t("modal.cancelButton")}
+                {settingsTranslations("modal.cancelButton")}
               </Button>
               <Button
                 color="primary"
                 className="bg-green-800"
                 type="submit"
               >
-                {t("modal.editButton")}
+                {settingsTranslations("modal.editButton")}
               </Button>
             </ModalFooter>
           </form>

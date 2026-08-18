@@ -17,6 +17,8 @@ export function TurnProvider({ children }) {
 
   const {
     totalBalance,
+    cashTotal,
+    refundedCashTotal,
     totalTickets,
     byPaymentMethod,
     ticketsLoading,
@@ -88,6 +90,8 @@ export function TurnProvider({ children }) {
       openShift,
       closeShift,
       totalBalance,
+      cashTotal,
+      refundedCashTotal,
       totalTickets,
       byPaymentMethod,
       ticketsLoading,
@@ -97,7 +101,7 @@ export function TurnProvider({ children }) {
     [
       openTurnId, openShiftData, loading, error,
       updateTurn, refreshTurn, loadOpenTurn, openShift, closeShift,
-      totalBalance, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
+      totalBalance, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
       refreshShiftTickets,
     ],
   );

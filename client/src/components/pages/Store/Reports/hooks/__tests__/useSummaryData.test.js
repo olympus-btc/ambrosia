@@ -55,4 +55,25 @@ describe("useSummaryData", () => {
     const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 0, sales: [] }));
     expect(summaryDataHook.current.uniqueProducts).toBe(0);
   });
+
+  it("totalRefunded, totalRefundedSatoshis and refundCount are 0 when reportData is null", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.totalRefunded).toBe(0);
+    expect(summaryDataHook.current.totalRefundedSatoshis).toBe(0);
+    expect(summaryDataHook.current.refundCount).toBe(0);
+  });
+
+  it("totalRefunded, totalRefundedSatoshis and refundCount derive from reportData", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({
+      totalRevenueCents: 0,
+      totalItemsSold: 0,
+      sales: [],
+      totalRefundedCents: 1500,
+      totalRefundedSatoshis: 895,
+      refundCount: 2,
+    }));
+    expect(summaryDataHook.current.totalRefunded).toBe(1500);
+    expect(summaryDataHook.current.totalRefundedSatoshis).toBe(895);
+    expect(summaryDataHook.current.refundCount).toBe(2);
+  });
 });

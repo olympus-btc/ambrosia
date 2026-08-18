@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { isStockTracked, UNTRACKED_STOCK_LIMIT } from "@/components/pages/Store/utils/productStockStatus";
+
 import {
   addCartItem,
   removeCartItem,
@@ -35,8 +37,9 @@ export function useCartOperations({ cart, setCart, products }) {
 
   const getAvailableQuantity = useCallback(
     (productId, variant) => {
-      if (variant) return Number(variant.quantity) || 0;
       const matchedProduct = products.find((product) => product.id === productId);
+      if (matchedProduct && !isStockTracked(matchedProduct)) return UNTRACKED_STOCK_LIMIT;
+      if (variant) return Number(variant.quantity) || 0;
       return Number(matchedProduct?.quantity) || 0;
     },
     [products],

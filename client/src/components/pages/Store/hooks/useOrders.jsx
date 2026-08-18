@@ -29,30 +29,33 @@ function buildOrdersQueryString(filters = {}) {
   return queryString ? `/orders/with-payments?${queryString}` : "/orders/with-payments";
 }
 
-export function useOrders() {
+export function useOrders({ skipForbiddenRedirect = false } = {}) {
   const { fetchList } = useFetchList();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [forbidden, setForbidden] = useState(false);
 
   const fetchOrdersRequest = useCallback(async (filters = {}) => {
     setLoading(true);
     setError(null);
+    setForbidden(false);
 
     try {
       const endpoint = buildOrdersQueryString(filters);
-      const ordersData = await fetchList(endpoint);
+      const ordersData = await fetchList(endpoint, [], { skipForbiddenRedirect });
       if (ordersData === null) return null;
       setOrders(toArray(ordersData));
       return toArray(ordersData);
-    } catch (err) {
-      setError(err);
+    } catch (loadError) {
+      if (loadError?.status === 403) setForbidden(true);
+      setError(loadError);
       setOrders([]);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [fetchList]);
+  }, [fetchList, skipForbiddenRedirect]);
 
   const fetchOrders = useCallback(async () => {
     await fetchOrdersRequest();
@@ -71,6 +74,7 @@ export function useOrders() {
     orders,
     loading,
     error,
+    forbidden,
     refetch: fetchOrders,
     fetchOrders,
     fetchOrdersFiltered,

@@ -3,11 +3,13 @@
 import { Card, CardBody, CardHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { RequirePermission } from "@/hooks/usePermission";
+
 import { PrinterAddForm } from "./PrinterAddForm";
 import { PrinterConfigRow } from "./PrinterConfigRow";
 
 export function PrintersCard({ formState, data, loading, state }) {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const { configRows } = data;
   const { configs: loadingConfigs } = loading;
   const { error, saving, onAdd, onUpdateConfig, onDeleteConfig, onSetDefaultConfig } = state;
@@ -18,45 +20,47 @@ export function PrintersCard({ formState, data, loading, state }) {
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-0">
         <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-          {t("cardPrinters.title")}
+          {settingsTranslations("cardPrinters.title")}
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 mt-1">
-          {t("cardPrinters.subtitle")}
+          {settingsTranslations("cardPrinters.subtitle")}
         </p>
       </CardHeader>
 
       <CardBody>
         <div className="flex flex-col gap-6">
-          <PrinterAddForm
-            formState={addFormState}
-            data={data}
-            loading={loading}
-            saving={saving}
-          />
+          <RequirePermission allOf={["printer_update"]}>
+            <PrinterAddForm
+              formState={addFormState}
+              data={data}
+              loading={loading}
+              saving={saving}
+            />
+          </RequirePermission>
 
           {error && (
             <p className="text-sm text-red-600">
-              {t("cardPrinters.error")}
+              {settingsTranslations("cardPrinters.error")}
             </p>
           )}
 
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
               <h3 className="text-sm sm:text-base font-semibold text-green-900">
-                {t("cardPrinters.listTitle")}
+                {settingsTranslations("cardPrinters.listTitle")}
               </h3>
               <span className="text-xs text-gray-500">
-                {t("cardPrinters.listHint")}
+                {settingsTranslations("cardPrinters.listHint")}
               </span>
             </div>
             {loadingConfigs && (
               <p className="text-sm text-gray-600">
-                {t("cardPrinters.loading")}
+                {settingsTranslations("cardPrinters.loading")}
               </p>
             )}
             {!loadingConfigs && configRows.length === 0 && (
               <p className="text-sm text-gray-600">
-                {t("cardPrinters.empty")}
+                {settingsTranslations("cardPrinters.empty")}
               </p>
             )}
             {configRows.map((config) => (
@@ -65,10 +69,10 @@ export function PrintersCard({ formState, data, loading, state }) {
                 config={config}
                 templates={data.templates}
                 loadingTemplates={loading.templates}
-                onTemplateChange={(value) => onUpdateConfig(config.id, { templateName: value })}
+                onTemplateChange={(templateName) => onUpdateConfig(config.id, { templateName })}
                 onSetDefault={() => onSetDefaultConfig(config.id)}
-                onToggleDefault={(value) => onUpdateConfig(config.id, { isDefault: value })}
-                onToggleEnabled={(value) => onUpdateConfig(config.id, { enabled: value })}
+                onToggleDefault={(isDefault) => onUpdateConfig(config.id, { isDefault })}
+                onToggleEnabled={(enabled) => onUpdateConfig(config.id, { enabled })}
                 onRemove={() => onDeleteConfig(config.id)}
               />
             ))}

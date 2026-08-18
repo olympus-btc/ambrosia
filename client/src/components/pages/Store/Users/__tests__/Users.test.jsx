@@ -14,6 +14,11 @@ let mockRoles = [
   { id: "seller", role: "Seller" },
 ];
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return { ...actual, addToast: jest.fn() };
+});
+
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store/users"),
 }));
@@ -47,7 +52,7 @@ jest.mock("../AddUsersModal", () => ({
           <input
             aria-label="modal.userNameLabel"
             value={data?.userName || ""}
-            onChange={(e) => onChange?.({ userName: e.target.value })}
+            onChange={(event) => onChange?.({ userName: event.target.value })}
           />
         </label>
         <button onClick={() => addUser?.(data)}>modal.submitButton</button>
@@ -64,12 +69,12 @@ jest.mock("../EditUsersModal", () => ({
         <input
           aria-label="modal.userNameLabel"
           value={data?.userName || user?.name || ""}
-          onChange={(e) => onChange?.({ userName: e.target.value })}
+          onChange={(event) => onChange?.({ userName: event.target.value })}
         />
         <input
           aria-label="modal.userPhoneLabel"
           value={data?.userPhone || user?.phone || ""}
-          onChange={(e) => onChange?.({ userPhone: e.target.value })}
+          onChange={(event) => onChange?.({ userPhone: event.target.value })}
         />
         <button onClick={() => updateUser?.(data)}>modal.editButton</button>
       </div>
@@ -78,14 +83,34 @@ jest.mock("../EditUsersModal", () => ({
 }));
 
 jest.mock("../DeleteUsersModal", () => ({
-  DeleteUsersModal: ({ deleteUsersShowModal, onConfirm }) => (
-    deleteUsersShowModal ? (
+  DeleteUsersModal: ({ deleteUsersShowModal, onConfirm }) => {
+    const React = require("react");
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const isDeletingRef = React.useRef(false);
+
+    const handleConfirmDeleteUser = async () => {
+      if (isDeletingRef.current) {
+        return;
+      }
+
+      isDeletingRef.current = true;
+      setIsDeleting(true);
+
+      try {
+        await onConfirm?.();
+      } finally {
+        isDeletingRef.current = false;
+        setIsDeleting(false);
+      }
+    };
+
+    return deleteUsersShowModal ? (
       <div>
         modal.titleDelete
-        <button onClick={() => onConfirm?.()}>modal.deleteButton</button>
+        <button disabled={isDeleting} onClick={handleConfirmDeleteUser}>modal.deleteButton</button>
       </div>
-    ) : null
-  ),
+    ) : null;
+  },
 }));
 
 jest.mock("../../hooks/useUsers", () => ({
@@ -129,6 +154,8 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+const { addToast } = require("@heroui/react");
 
 function renderUsers() {
   return render(
@@ -296,6 +323,67 @@ describe("Users page", () => {
     });
 
     expect(mockDeleteUser).toHaveBeenCalledWith(1);
+    expect(addToast).toHaveBeenCalledWith({
+      description: "toasts.deleteSuccess",
+      color: "success",
+    });
+  });
+
+  it("keeps delete modal open when deleteUser fails", async () => {
+    mockDeleteUser.mockRejectedValueOnce(new Error("delete failed"));
+
+    await act(async () => {
+      renderUsers();
+    });
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Delete User",
+    });
+
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("modal.deleteButton"));
+    });
+
+    expect(mockDeleteUser).toHaveBeenCalledWith(1);
+    expect(addToast).not.toHaveBeenCalledWith({
+      description: "toasts.deleteSuccess",
+      color: "success",
+    });
+    expect(screen.getByText("modal.titleDelete")).toBeInTheDocument();
+  });
+
+  it("does not confirm delete twice while delete is pending", async () => {
+    let resolveDeleteUser;
+    mockDeleteUser.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveDeleteUser = resolve;
+    }));
+
+    await act(async () => {
+      renderUsers();
+    });
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Delete User",
+    });
+
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("modal.deleteButton"));
+      fireEvent.click(screen.getByText("modal.deleteButton"));
+    });
+
+    expect(mockDeleteUser).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveDeleteUser();
+    });
   });
 
   it("does not delete when user id is missing", async () => {

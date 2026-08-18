@@ -1,0 +1,86 @@
+import { render, screen, fireEvent } from "@testing-library/react";
+
+import { RefreshButton } from "../RefreshButton";
+
+jest.mock("lucide-react", () => ({
+  RefreshCw: () => <span data-testid="refresh-icon" />,
+}));
+
+jest.mock("@heroui/react", () => ({
+  Button: ({ children, onPress, variant, className, size, "aria-label": ariaLabel }) => (
+    <button
+      aria-label={ariaLabel}
+      className={className}
+      data-size={size}
+      data-variant={variant}
+      onClick={onPress}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+describe("RefreshButton", () => {
+  it("renders the refresh icon", () => {
+    render(<RefreshButton onPress={jest.fn()} />);
+
+    expect(screen.getByTestId("refresh-icon")).toBeInTheDocument();
+  });
+
+  it("calls onPress when clicked", () => {
+    const onPress = jest.fn();
+    render(<RefreshButton onPress={onPress} />);
+
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses outline variant with green styles", () => {
+    render(<RefreshButton onPress={jest.fn()} />);
+
+    const button = screen.getByRole("button");
+
+    expect(button).toHaveAttribute("data-variant", "outline");
+    expect(button).toHaveClass("border-green-800", "text-green-800");
+  });
+
+  it("applies icon-only sizing classes when no children", () => {
+    render(<RefreshButton onPress={jest.fn()} />);
+
+    expect(screen.getByRole("button")).toHaveClass("w-8", "h-8", "min-w-0", "px-0");
+  });
+
+  it("applies responsive label sizing when children are provided", () => {
+    render(<RefreshButton onPress={jest.fn()}>Refresh</RefreshButton>);
+
+    const button = screen.getByRole("button");
+
+    expect(button).toHaveClass("w-8", "min-w-0", "px-0");
+    expect(button).toHaveClass("sm:w-auto", "sm:min-w-16", "sm:px-3");
+    expect(screen.getByText("Refresh")).toHaveClass("hidden", "sm:inline");
+  });
+
+  it("shows full label sizing on mobile when requested", () => {
+    render(
+      <RefreshButton onPress={jest.fn()} showLabelOnMobile>
+        Refresh
+      </RefreshButton>,
+    );
+
+    const button = screen.getByRole("button");
+
+    expect(button).toHaveClass("w-auto", "min-w-16", "px-3");
+    expect(screen.getByText("Refresh")).not.toHaveClass("hidden", "sm:inline");
+  });
+
+  it("uses sm size by default and accepts a custom size", () => {
+    const { rerender } = render(<RefreshButton onPress={jest.fn()} />);
+
+    expect(screen.getByRole("button")).toHaveAttribute("data-size", "sm");
+
+    rerender(<RefreshButton onPress={jest.fn()} size="md" />);
+
+    expect(screen.getByRole("button")).toHaveAttribute("data-size", "md");
+  });
+});

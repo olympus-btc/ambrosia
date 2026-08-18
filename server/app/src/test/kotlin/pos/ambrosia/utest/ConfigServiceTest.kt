@@ -7,6 +7,7 @@ import pos.ambrosia.models.Config
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
+import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -83,5 +84,49 @@ class ConfigServiceTest {
 
             assertTrue(updated)
             assertEquals(newConfig, service.getConfig())
+        }
+
+    @Test
+    fun `updateConfig persists a non-default timezone`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    timezone = "Europe/Madrid",
+                ),
+            )
+
+            assertEquals("Europe/Madrid", service.getConfig()?.timezone)
+        }
+
+    @Test
+    fun `getConfiguredZoneId returns the configured timezone`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    timezone = "Pacific/Kiritimati",
+                ),
+            )
+
+            assertEquals(ZoneId.of("Pacific/Kiritimati"), service.getConfiguredZoneId())
+        }
+
+    @Test
+    fun `getConfiguredZoneId falls back to America Mexico City when no config exists`() =
+        runBlocking {
+            assertEquals(ZoneId.of("America/Mexico_City"), service.getConfiguredZoneId())
         }
 }

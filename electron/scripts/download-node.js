@@ -57,7 +57,8 @@ function downloadFile(url, destination, redirectCount = 0) {
     const file = fs.createWriteStream(destination);
 
     https.get(url, (response) => {
-      if (response.statusCode === 302 || response.statusCode === 301) {
+      if (response.statusCode === 301 || response.statusCode === 302 ||
+          response.statusCode === 307 || response.statusCode === 308) {
         file.close();
         if (redirectCount >= MAX_REDIRECTS) {
           reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));

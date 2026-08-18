@@ -18,6 +18,7 @@ object ProductsTable : SQLiteUUIDTable("products") {
     val hasVariants = bool("has_variants").default(false)
     val isDeleted = bool("is_deleted").default(false)
     val isBundle = bool("is_bundle").default(false)
+    val trackStock = bool("track_stock").default(true)
 }
 
 class ProductEntity(
@@ -35,6 +36,7 @@ class ProductEntity(
     var hasVariants by ProductsTable.hasVariants
     var isDeleted by ProductsTable.isDeleted
     var isBundle by ProductsTable.isBundle
+    var trackStock by ProductsTable.trackStock
 }
 
 object ProductBundleComponentsTable : Table("product_bundle_components") {

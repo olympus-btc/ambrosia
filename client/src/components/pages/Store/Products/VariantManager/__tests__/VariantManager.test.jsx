@@ -40,7 +40,9 @@ jest.mock("../VariantForm", () => ({
   ),
 }));
 
+const mockAddToast = jest.fn();
 jest.mock("@heroui/react", () => ({
+  addToast: (...toastArguments) => mockAddToast(...toastArguments),
   Button: ({ children, onPress, isDisabled }) => (
     <button onClick={onPress} disabled={isDisabled}>
       {children}
@@ -53,7 +55,7 @@ const variants = [
   { id: "v1", priceCents: 1000, quantity: 5, optionValueIds: ["val-red"] },
 ];
 
-const defaultProps = {
+const defaultVariantManagerProps = {
   product: { id: "p1", variants: [], options: [] },
   variantActions: {
     add: jest.fn(),
@@ -68,14 +70,19 @@ const defaultProps = {
   onRefresh: jest.fn(),
 };
 
-function renderManager({ product = {}, variantActions = {}, optionTypeActions = {}, ...props } = {}) {
+function renderManager({
+  product = {},
+  variantActions = {},
+  optionTypeActions = {},
+  ...variantManagerProps
+} = {}) {
   return render(
     <VariantManager
-      {...defaultProps}
-      {...props}
-      product={{ ...defaultProps.product, ...product }}
-      variantActions={{ ...defaultProps.variantActions, ...variantActions }}
-      optionTypeActions={{ ...defaultProps.optionTypeActions, ...optionTypeActions }}
+      {...defaultVariantManagerProps}
+      {...variantManagerProps}
+      product={{ ...defaultVariantManagerProps.product, ...product }}
+      variantActions={{ ...defaultVariantManagerProps.variantActions, ...variantActions }}
+      optionTypeActions={{ ...defaultVariantManagerProps.optionTypeActions, ...optionTypeActions }}
     />,
   );
 }
@@ -144,6 +151,10 @@ describe("VariantManager", () => {
 
     await waitFor(() => expect(addVariant).toHaveBeenCalledWith("p1", expect.objectContaining({ priceCents: 500 })));
     await waitFor(() => expect(onRefresh).toHaveBeenCalled());
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.variantCreateSuccess",
+      color: "success",
+    });
     expect(screen.queryByTestId("variant-form")).not.toBeInTheDocument();
   });
 
@@ -155,6 +166,7 @@ describe("VariantManager", () => {
     fireEvent.click(screen.getByText("form-save"));
 
     await waitFor(() => expect(addVariant).toHaveBeenCalled());
+    expect(mockAddToast).not.toHaveBeenCalled();
     expect(screen.getByTestId("variant-form")).toBeInTheDocument();
   });
 
@@ -166,6 +178,10 @@ describe("VariantManager", () => {
     fireEvent.click(screen.getByText("save-v1"));
 
     await waitFor(() => expect(updateVariant).toHaveBeenCalledWith("p1", "v1", expect.anything()));
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.variantUpdateSuccess",
+      color: "success",
+    });
     expect(onRefresh).toHaveBeenCalled();
   });
 
@@ -177,6 +193,10 @@ describe("VariantManager", () => {
     fireEvent.click(screen.getByText("delete-v1"));
 
     await waitFor(() => expect(deleteVariant).toHaveBeenCalledWith("p1", "v1"));
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.variantDeleteSuccess",
+      color: "success",
+    });
     expect(onRefresh).toHaveBeenCalled();
   });
 });

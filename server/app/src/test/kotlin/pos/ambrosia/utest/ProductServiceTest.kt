@@ -43,6 +43,8 @@ class ProductServiceTest {
         categoryIds: List<String> = emptyList(),
         minStockThreshold: Int = 1,
         maxStockThreshold: Int = 10,
+        quantity: Int = 0,
+        trackStock: Boolean = true,
     ): Product =
         Product(
             id = id,
@@ -53,6 +55,8 @@ class ProductServiceTest {
             categoryIds = categoryIds,
             minStockThreshold = minStockThreshold,
             maxStockThreshold = maxStockThreshold,
+            quantity = quantity,
+            trackStock = trackStock,
         )
 
     @Test
@@ -211,6 +215,63 @@ class ProductServiceTest {
             val result = service.addProduct(newProductData)
             assertNotNull(result)
             assertTrue(result.isNotBlank())
+        }
+    }
+
+    @Test
+    fun `addProduct defaults trackStock to true`() {
+        runBlocking {
+            val id = service.addProduct(newProduct(sku = "SKU-TRACKED", name = "Tracked"))
+            assertNotNull(id)
+            assertTrue(service.getProductById(id)!!.trackStock)
+        }
+    }
+
+    @Test
+    fun `addProduct persists trackStock false and zeroes stock fields`() {
+        runBlocking {
+            val untracked =
+                newProduct(
+                    sku = "SKU-SERVICE",
+                    name = "Consulting service",
+                    minStockThreshold = 5,
+                    maxStockThreshold = 50,
+                    quantity = 7,
+                    trackStock = false,
+                )
+            val id = service.addProduct(untracked)
+            assertNotNull(id)
+
+            val created = service.getProductById(id)!!
+            assertFalse(created.trackStock)
+            assertEquals(0, created.minStockThreshold)
+            assertEquals(0, created.maxStockThreshold)
+            assertEquals(0, created.quantity)
+        }
+    }
+
+    @Test
+    fun `updateProduct toggles trackStock off and back on`() {
+        runBlocking {
+            val id = ExposedTestDb.seedProduct(name = "Prod1", sku = "SKU-1", minStockThreshold = 3)
+
+            val turnedOff =
+                service.updateProduct(
+                    newProduct(id = id, sku = "SKU-1", name = "Prod1", minStockThreshold = 3, trackStock = false),
+                )
+            assertTrue(turnedOff)
+            val untracked = service.getProductById(id)!!
+            assertFalse(untracked.trackStock)
+            assertEquals(0, untracked.minStockThreshold)
+
+            val turnedOn =
+                service.updateProduct(
+                    newProduct(id = id, sku = "SKU-1", name = "Prod1", minStockThreshold = 3, trackStock = true),
+                )
+            assertTrue(turnedOn)
+            val tracked = service.getProductById(id)!!
+            assertTrue(tracked.trackStock)
+            assertEquals(3, tracked.minStockThreshold)
         }
     }
 
@@ -408,6 +469,35 @@ class ProductServiceTest {
 
             val result = service.getProductById(bundleId)
             assertEquals(5, result?.quantity)
+        }
+    }
+
+    @Test
+    fun `getProductById ignores untracked components when computing bundle quantity`() {
+        runBlocking {
+            val trackedComponent = ExposedTestDb.seedProduct(name = "Mug", quantity = 10)
+            val untrackedComponent = ExposedTestDb.seedProduct(name = "Coffee", quantity = 0, trackStock = false)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, trackedComponent, quantity = 1)
+            ExposedTestDb.seedBundleComponent(bundleId, untrackedComponent, quantity = 1)
+
+            val result = service.getProductById(bundleId)
+            assertEquals(10, result?.quantity)
+            assertTrue(result?.trackStock == true)
+        }
+    }
+
+    @Test
+    fun `getProductById reports a bundle as untracked when every component is untracked`() {
+        runBlocking {
+            val componentA = ExposedTestDb.seedProduct(name = "Coffee", quantity = 0, trackStock = false)
+            val componentB = ExposedTestDb.seedProduct(name = "Water", quantity = 0, trackStock = false)
+            val bundleId = ExposedTestDb.seedProduct(name = "Kit", isBundle = true)
+            ExposedTestDb.seedBundleComponent(bundleId, componentA, quantity = 1)
+            ExposedTestDb.seedBundleComponent(bundleId, componentB, quantity = 1)
+
+            val result = service.getProductById(bundleId)
+            assertEquals(false, result?.trackStock)
         }
     }
 
@@ -640,6 +730,32 @@ class ProductServiceTest {
             assertFalse(result)
 
             assertEquals(1, service.getProductById(productId)?.quantity)
+        }
+    }
+
+    @Test
+    fun `adjustStock skips products that do not track stock`() {
+        runBlocking {
+            val untrackedId = ExposedTestDb.seedProduct(name = "Service", quantity = 0, trackStock = false)
+
+            val adjustments = listOf(ProductStockAdjustment(productId = untrackedId, quantity = 4))
+            assertTrue(service.adjustStock(adjustments))
+
+            assertEquals(0, service.getProductById(untrackedId)?.quantity)
+        }
+    }
+
+    @Test
+    fun `adjustStock skips untracked products addressed by variant id`() {
+        runBlocking {
+            val untrackedId = ExposedTestDb.seedProduct(name = "Service", quantity = 0, trackStock = false)
+            val variantId = variantService.getVariants(untrackedId).first().id
+
+            val adjustments =
+                listOf(ProductStockAdjustment(productId = untrackedId, variantId = variantId, quantity = 4))
+            assertTrue(service.adjustStock(adjustments))
+
+            assertEquals(0, service.getProductById(untrackedId)?.quantity)
         }
     }
 

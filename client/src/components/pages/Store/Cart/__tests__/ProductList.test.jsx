@@ -260,4 +260,33 @@ describe("ProductList", () => {
     expect(screen.getByText("10 card.stock")).toHaveClass("bg-amber-100");
     expect(screen.getByText("11 card.stock")).toHaveClass("bg-green-200");
   });
+
+  it("hides the stock chip and keeps add enabled for products without stock tracking", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[{ ...products[0], id: "service", quantity: 0, trackStock: false }]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.queryByText("0 card.stock")).not.toBeInTheDocument();
+    expect(screen.getByText("card.add")).not.toBeDisabled();
+  });
+
+  it("keeps add disabled for tracked products that are out of stock", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[{ ...products[0], id: "out", quantity: 0 }]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText("card.add")).toBeDisabled();
+  });
 });

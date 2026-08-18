@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { resolveRoleName } from "./utils/roleTemplates";
 
 export function DeleteRoleModal({ role, onClose, onConfirm, deleting }) {
-  const t = useTranslations();
+  const roleTranslations = useTranslations();
 
   return (
     <Modal
@@ -17,9 +17,9 @@ export function DeleteRoleModal({ role, onClose, onConfirm, deleting }) {
       classNames={{ backdrop: "backdrop-blur-xs bg-white/10" }}
     >
       <ModalContent>
-        <ModalHeader>{t("roles.actions.deleteConfirmTitle")}</ModalHeader>
+        <ModalHeader>{roleTranslations("roles.actions.deleteConfirmTitle")}</ModalHeader>
         <ModalBody>
-          <p>{t("roles.actions.deleteConfirmBody", { name: resolveRoleName(role?.role ?? "", t) })}</p>
+          <p>{roleTranslations("roles.actions.deleteConfirmBody", { name: resolveRoleName(role?.role ?? "", roleTranslations) })}</p>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -28,14 +28,15 @@ export function DeleteRoleModal({ role, onClose, onConfirm, deleting }) {
             onPress={onClose}
             isDisabled={deleting}
           >
-            {t("roles.actions.cancel")}
+            {roleTranslations("roles.actions.cancel")}
           </Button>
           <Button
             color="danger"
             onPress={onConfirm}
+            isDisabled={deleting}
             isLoading={deleting}
           >
-            {t("roles.actions.delete")}
+            {roleTranslations("roles.actions.delete")}
           </Button>
         </ModalFooter>
       </ModalContent>

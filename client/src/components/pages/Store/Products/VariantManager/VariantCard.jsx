@@ -10,7 +10,15 @@ import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { VariantForm } from "./VariantForm";
 
-export function VariantCard({ variant, currency, options, onSave, onDelete, isProcessing }) {
+export function VariantCard({
+  variant,
+  currency,
+  options,
+  isStockTrackedForProduct = true,
+  onSave,
+  onDelete,
+  isProcessing,
+}) {
   const productsTranslation = useTranslations("products");
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -30,6 +38,7 @@ export function VariantCard({ variant, currency, options, onSave, onDelete, isPr
         initial={variant}
         currency={currency}
         options={options}
+        isStockTrackedForProduct={isStockTrackedForProduct}
         onSave={handleSaveEdit}
         onCancel={() => setIsEditing(false)}
         isLoading={isProcessing}
@@ -62,7 +71,9 @@ export function VariantCard({ variant, currency, options, onSave, onDelete, isPr
               <p className="text-xs text-gray-400 truncate">{variant.SKU}</p>
             )}
             <p className="text-xs text-gray-500">
-              {price} · {variant.quantity} {productsTranslation("variantStockUnit")}
+              {isStockTrackedForProduct
+                ? `${price} · ${variant.quantity} ${productsTranslation("variantStockUnit")}`
+                : price}
             </p>
           </div>
 

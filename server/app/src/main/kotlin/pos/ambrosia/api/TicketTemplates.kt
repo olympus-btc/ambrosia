@@ -15,6 +15,7 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.services.TicketTemplateService
+import pos.ambrosia.utils.authorizePermission
 
 fun Application.configureTicketTemplates() {
     val ticketTemplateService = TicketTemplateService()
@@ -23,16 +24,6 @@ fun Application.configureTicketTemplates() {
 
 fun Route.templatesAPI(ticketTemplateService: TicketTemplateService) {
     authenticate("auth-jwt") {
-        post {
-            val templateRequest = call.receive<TicketTemplateRequest>()
-            val templateId = ticketTemplateService.addTemplate(templateRequest)
-            if (templateId != null) {
-                call.respond(HttpStatusCode.Created, mapOf("id" to templateId))
-            } else {
-                call.respond(HttpStatusCode.Conflict, mapOf("error" to "Template name already exists"))
-            }
-        }
-
         get {
             val templates = ticketTemplateService.getTemplates()
             call.respond(templates)
@@ -45,6 +36,17 @@ fun Route.templatesAPI(ticketTemplateService: TicketTemplateService) {
                 call.respond(template)
             } else {
                 call.respond(HttpStatusCode.NotFound)
+            }
+        }
+    }
+    authorizePermission("printer_update") {
+        post {
+            val templateRequest = call.receive<TicketTemplateRequest>()
+            val templateId = ticketTemplateService.addTemplate(templateRequest)
+            if (templateId != null) {
+                call.respond(HttpStatusCode.Created, mapOf("id" to templateId))
+            } else {
+                call.respond(HttpStatusCode.Conflict, mapOf("error" to "Template name already exists"))
             }
         }
 

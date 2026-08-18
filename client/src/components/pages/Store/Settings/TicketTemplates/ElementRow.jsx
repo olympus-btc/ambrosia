@@ -27,7 +27,7 @@ const ELEMENT_TYPES = [
 const JUSTIFICATIONS = ["LEFT", "CENTER", "RIGHT"];
 const FONT_SIZES = ["NORMAL", "LARGE", "EXTRA_LARGE"];
 
-export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemove, config, t }) {
+export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemove, config, settingsTranslations }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: element.localId,
   });
@@ -50,7 +50,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
 
   const selectVariable = (variable) => handleChange({ value: variable });
 
-  const typeLabel = t(`templates.elementTypes.${type}`);
+  const typeLabel = settingsTranslations(`templates.elementTypes.${type}`);
   const resolvedSummary = resolveValue(element.value ?? "", config);
   const valueSummary = resolvedSummary ? `— "${resolvedSummary}"` : "";
 
@@ -62,7 +62,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
       >
         <span
           className="cursor-grab text-gray-400 hover:text-gray-600 shrink-0"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
           {...attributes}
           {...listeners}
         >
@@ -74,18 +74,18 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
           <span className="text-xs text-gray-400 truncate">{valueSummary}</span>
         )}
 
-        <div className="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="ml-auto flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
           <Button
             isIconOnly
             size="sm"
             variant="light"
             onPress={onToggle}
-            aria-label={isOpen ? t("templates.collapse") : t("templates.expand")}
+            aria-label={isOpen ? settingsTranslations("templates.collapse") : settingsTranslations("templates.expand")}
           >
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
           <DeleteButton onPress={() => onRemove(element.localId)}>
-            <span className="hidden sm:inline">{t("templates.removeElement")}</span>
+            <span className="hidden sm:inline">{settingsTranslations("templates.removeElement")}</span>
           </DeleteButton>
         </div>
       </div>
@@ -94,13 +94,13 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
         <div className="border-t border-gray-100 px-3 pb-3 pt-3">
           <div className="mb-3">
             <Select
-              label={t("templates.elementTypeLabel")}
+              label={settingsTranslations("templates.elementTypeLabel")}
               selectedKeys={element.type ? [element.type] : []}
-              onChange={(e) => { if (e.target.value) handleChange({ type: e.target.value }); }}
+              onChange={(event) => { if (event.target.value) handleChange({ type: event.target.value }); }}
             >
               {ELEMENT_TYPES.map((typeOption) => (
                 <SelectItem key={typeOption} value={typeOption}>
-                  {t(`templates.elementTypes.${typeOption}`)}
+                  {settingsTranslations(`templates.elementTypes.${typeOption}`)}
                 </SelectItem>
               ))}
             </Select>
@@ -110,19 +110,19 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
             <div className="grid gap-3 lg:grid-cols-[1.2fr_160px_160px_auto] lg:items-end">
               {showValue && (
                 <Input
-                  label={t("templates.elementValueLabel")}
+                  label={settingsTranslations("templates.elementValueLabel")}
                   value={element.value ?? ""}
-                  onChange={(e) => handleChange({ value: e.target.value })}
+                  onChange={(event) => handleChange({ value: event.target.value })}
                   endContent={showVariablePicker ? (
                     <Tooltip
                       showArrow
                       placement="right"
                       size="sm"
-                      content={t("templates.variables.tooltip")}
+                      content={settingsTranslations("templates.variables.tooltip")}
                       classNames={{ base: "before:rounded-none before:shadow-none shadow-none", content: "rounded-md border-none shadow-none" }}
                     >
                       <div>
-                        <TemplateVariablePicker onSelect={selectVariable} t={t} />
+                        <TemplateVariablePicker onSelect={selectVariable} settingsTranslations={settingsTranslations} />
                       </div>
                     </Tooltip>
                   ) : null}
@@ -131,15 +131,15 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
 
               {showJustification && (
                 <Select
-                  label={t("templates.justificationLabel")}
+                  label={settingsTranslations("templates.justificationLabel")}
                   selectedKeys={element.style?.justification ? [element.style.justification] : []}
-                  onChange={(e) => handleChange({
-                    style: { ...element.style, justification: e.target.value },
+                  onChange={(event) => handleChange({
+                    style: { ...element.style, justification: event.target.value },
                   })}
                 >
                   {JUSTIFICATIONS.map((justification) => (
                     <SelectItem key={justification} value={justification}>
-                      {t(`templates.justifications.${justification}`)}
+                      {settingsTranslations(`templates.justifications.${justification}`)}
                     </SelectItem>
                   ))}
                 </Select>
@@ -147,15 +147,15 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
 
               {showFontSize && (
                 <Select
-                  label={t("templates.fontSizeLabel")}
+                  label={settingsTranslations("templates.fontSizeLabel")}
                   selectedKeys={element.style?.fontSize ? [element.style.fontSize] : []}
-                  onChange={(e) => handleChange({
-                    style: { ...element.style, fontSize: e.target.value },
+                  onChange={(event) => handleChange({
+                    style: { ...element.style, fontSize: event.target.value },
                   })}
                 >
                   {FONT_SIZES.map((fontSize) => (
                     <SelectItem key={fontSize} value={fontSize}>
-                      {t(`templates.fontSizes.${fontSize}`)}
+                      {settingsTranslations(`templates.fontSizes.${fontSize}`)}
                     </SelectItem>
                   ))}
                 </Select>
@@ -170,7 +170,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
                   onPress={() => handleChange({
                     style: { ...element.style, bold: !element.style?.bold },
                   })}
-                  aria-label={t("templates.boldToggle")}
+                  aria-label={settingsTranslations("templates.boldToggle")}
                 >
                   <Bold className="w-4 h-4" />
                 </Button>

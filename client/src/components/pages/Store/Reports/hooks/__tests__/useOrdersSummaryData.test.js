@@ -15,6 +15,14 @@ describe("useOrdersSummaryData", () => {
     expect(result.current.orderCount).toBe(0);
     expect(result.current.averageTicket).toBe(0);
     expect(result.current.avgItemsPerOrder).toBe(0);
+    expect(result.current.totalRefunded).toBe(0);
+    expect(result.current.refundCount).toBe(0);
+  });
+
+  it("totalRefunded and refundCount read reportData.totalRefundedCents/refundCount", () => {
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRefundedCents: 4500, refundCount: 3 }, []));
+    expect(result.current.totalRefunded).toBe(4500);
+    expect(result.current.refundCount).toBe(3);
   });
 
   it("totalRevenue reads reportData.totalRevenueCents", () => {

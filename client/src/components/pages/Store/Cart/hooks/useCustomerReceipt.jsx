@@ -43,8 +43,8 @@ export function useCustomerReceipt() {
           printerType: "CUSTOMER",
           broadcast: false,
         });
-      } catch (err) {
-        console.error("Error printing customer ticket:", err);
+      } catch (customerReceiptPrintError) {
+        console.error("Error printing customer ticket:", customerReceiptPrintError);
         addToast({
           color: "warning",
           description: paymentTranslations("errors.printCustomer"),

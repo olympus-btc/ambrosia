@@ -19,6 +19,8 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import pos.ambrosia.api.configureAdminNotifications
+import pos.ambrosia.api.configureAdminNotificationsWebsocket
 import pos.ambrosia.api.configureAuth
 import pos.ambrosia.api.configureCategories
 import pos.ambrosia.api.configureCheckout
@@ -61,7 +63,6 @@ public val logger = LoggerFactory.getLogger("Server")
 class Api {
     fun Application.module() {
         AppConfig.loadConfig() // Load the configuration
-        val config = environment.config // Configure the application
         handler() // Install exception handlers
         install(ContentNegotiation) { json() }
         install(CORS) {
@@ -77,75 +78,11 @@ class Api {
             timeout = 15.seconds
         }
 
-        install(Authentication) {
-            jwt("auth-jwt") {
-                authHeader { call ->
-                    try {
-                        val token = call.request.cookies["accessToken"]
-                        if (token != null) {
-                            HttpAuthHeader.Single("Bearer", token)
-                        } else {
-                            null
-                        }
-                    } catch (cause: Throwable) {
-                        null
-                    }
-                }
-                verifier(
-                    JWT
-                        .require(Algorithm.HMAC256(config.property("secret").getString()))
-                        .withIssuer(config.property("jwt.issuer").getString())
-                        .withAudience(config.property("jwt.audience").getString())
-                        .withClaim("realm", "Ambrosia-Server")
-                        .build(),
-                )
-                validate { credential ->
-                    if (credential.payload.getClaim("userId").asString() != "") {
-                        JWTPrincipal(credential.payload)
-                    } else {
-                        null
-                    }
-                }
-                challenge { _, _ -> throw UnauthorizedApiException() }
-            }
-
-            jwt("auth-jwt-wallet") {
-                authHeader { call ->
-                    try {
-                        val token = call.request.cookies["walletAccessToken"]
-                        if (token != null) {
-                            HttpAuthHeader.Single("Bearer", token)
-                        } else {
-                            null
-                        }
-                    } catch (cause: Throwable) {
-                        null
-                    }
-                }
-                verifier(
-                    JWT
-                        .require(Algorithm.HMAC256(config.property("secret").getString()))
-                        .withIssuer(config.property("jwt.issuer").getString())
-                        .withAudience(config.property("jwt.audience").getString())
-                        .withClaim("realm", "Ambrosia-Server")
-                        .build(),
-                )
-                validate { credential ->
-                    val scope = credential.payload.getClaim("scope").asString()
-                    val userId = credential.payload.getClaim("userId").asString()
-                    val walletAccessToken = request.cookies["walletAccessToken"]
-                    val tokenService = TokenService(application.environment)
-                    val isValidWalletSession =
-                        scope == "wallet_access" &&
-                            userId.isNotEmpty() &&
-                            walletAccessToken != null &&
-                            tokenService.isWalletTokenValid(userId, walletAccessToken)
-                    if (isValidWalletSession) JWTPrincipal(credential.payload) else null
-                }
-            }
-        }
+        configureAuthentication()
         configureRouting()
         configureAuth()
+        configureAdminNotifications()
+        configureAdminNotificationsWebsocket()
         configureUsers()
         configureRoles()
         configurePermissions()
@@ -171,8 +108,82 @@ class Api {
         configureCategories()
         configureCurrency()
         configureInitialSetup()
-        configurePhoenixWebhook()
+        if (environment.config.propertyOrNull("nwc-uri") == null) {
+            configurePhoenixWebhook()
+        }
         configurePaymentWebsocket()
         configureHealth()
+    }
+}
+
+fun Application.configureAuthentication() {
+    val applicationConfig = environment.config
+
+    install(Authentication) {
+        jwt("auth-jwt") {
+            authHeader { call ->
+                try {
+                    val token = call.request.cookies["accessToken"]
+                    if (token != null) {
+                        HttpAuthHeader.Single("Bearer", token)
+                    } else {
+                        null
+                    }
+                } catch (cause: Throwable) {
+                    null
+                }
+            }
+            verifier(
+                JWT
+                    .require(Algorithm.HMAC256(applicationConfig.property("secret").getString()))
+                    .withIssuer(applicationConfig.property("jwt.issuer").getString())
+                    .withAudience(applicationConfig.property("jwt.audience").getString())
+                    .withClaim("realm", "Ambrosia-Server")
+                    .build(),
+            )
+            validate { credential ->
+                if (credential.payload.getClaim("userId").asString() != "") {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+            challenge { _, _ -> throw UnauthorizedApiException() }
+        }
+
+        jwt("auth-jwt-wallet") {
+            authHeader { call ->
+                try {
+                    val token = call.request.cookies["walletAccessToken"]
+                    if (token != null) {
+                        HttpAuthHeader.Single("Bearer", token)
+                    } else {
+                        null
+                    }
+                } catch (cause: Throwable) {
+                    null
+                }
+            }
+            verifier(
+                JWT
+                    .require(Algorithm.HMAC256(applicationConfig.property("secret").getString()))
+                    .withIssuer(applicationConfig.property("jwt.issuer").getString())
+                    .withAudience(applicationConfig.property("jwt.audience").getString())
+                    .withClaim("realm", "Ambrosia-Server")
+                    .build(),
+            )
+            validate { credential ->
+                val scope = credential.payload.getClaim("scope").asString()
+                val userId = credential.payload.getClaim("userId").asString()
+                val walletAccessToken = request.cookies["walletAccessToken"]
+                val tokenService = TokenService(application.environment)
+                val isValidWalletSession =
+                    scope == "wallet_access" &&
+                        userId.isNotEmpty() &&
+                        walletAccessToken != null &&
+                        tokenService.isWalletTokenValid(userId, walletAccessToken)
+                if (isValidWalletSession) JWTPrincipal(credential.payload) else null
+            }
+        }
     }
 }

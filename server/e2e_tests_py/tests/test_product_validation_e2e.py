@@ -106,6 +106,63 @@ class TestProductValidation:
         logger.info("✓ Null SKU correctly accepted on create")
 
     @pytest.mark.asyncio
+    async def test_create_product_defaults_to_tracking_stock(
+        self, admin_client, category_id
+    ):
+        """POST /products without trackStock should default the flag to true."""
+        uid = str(uuid.uuid4())[:8]
+        response = await admin_client.post(
+            "/products",
+            json={
+                **VALID_PRODUCT,
+                "SKU": f"SKU-{uid}",
+                "name": f"product_{uid}",
+                "categoryIds": [category_id],
+            },
+        )
+        assert_status_code(response, 201, "Product create should succeed")
+        product_id = response.json()["id"]
+
+        detail = await admin_client.get(f"/products/{product_id}")
+        assert_status_code(detail, 200, "Product fetch should succeed")
+        assert detail.json()["trackStock"] is True, "trackStock should default to true"
+
+        await admin_client.delete(f"/products/{product_id}")
+        logger.info("✓ trackStock defaults to true")
+
+    @pytest.mark.asyncio
+    async def test_create_product_without_stock_tracking_succeeds(
+        self, admin_client, category_id
+    ):
+        """POST /products with trackStock false should persist the flag and zero the stock fields."""
+        uid = str(uuid.uuid4())[:8]
+        response = await admin_client.post(
+            "/products",
+            json={
+                **VALID_PRODUCT,
+                "SKU": f"SKU-{uid}",
+                "name": f"product_{uid}",
+                "categoryIds": [category_id],
+                "trackStock": False,
+            },
+        )
+        assert_status_code(
+            response, 201, "Product without stock tracking should be accepted"
+        )
+        product_id = response.json()["id"]
+
+        detail = await admin_client.get(f"/products/{product_id}")
+        assert_status_code(detail, 200, "Product fetch should succeed")
+        product = detail.json()
+        assert product["trackStock"] is False, "trackStock should be persisted as false"
+        assert product["quantity"] == 0, "Untracked product should report zero quantity"
+        assert product["minStockThreshold"] == 0, "Thresholds should be zeroed"
+        assert product["maxStockThreshold"] == 0, "Thresholds should be zeroed"
+
+        await admin_client.delete(f"/products/{product_id}")
+        logger.info("✓ Product without stock tracking created and persisted")
+
+    @pytest.mark.asyncio
     async def test_create_product_with_negative_price_fails(
         self, admin_client, category_id
     ):

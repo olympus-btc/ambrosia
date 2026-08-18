@@ -12,6 +12,8 @@ export function useOrdersSummaryData(reportData, orders) {
     for (const order of orders) {
       totalDiscounts += order.discountAmount ?? 0;
     }
-    return { totalRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts };
+    const totalRefunded = reportData?.totalRefundedCents ?? 0;
+    const refundCount = reportData?.refundCount ?? 0;
+    return { totalRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts, totalRefunded, refundCount };
   }, [reportData, orders]);
 }

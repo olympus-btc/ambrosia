@@ -14,7 +14,7 @@ export function PaymentForm({
   onInvoiceChange,
   onSubmit,
 }) {
-  const translation = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const [isScanning, setIsScanning] = useState(false);
   const [isTouchDevice] = useState(() => typeof window !== "undefined" && navigator.maxTouchPoints > 0);
   const cameraInputRef = useRef(null);
@@ -53,15 +53,15 @@ export function PaymentForm({
           canvasContext.drawImage(img, 0, 0, width, height);
 
           const imageData = canvasContext.getImageData(0, 0, width, height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
 
-          if (code) {
-            const cleanInvoice = code.data.replace(/^lightning:/i, "").trim();
+          if (qrCode) {
+            const cleanInvoice = qrCode.data.replace(/^lightning:/i, "").trim();
 
             if (!cleanInvoice.toLowerCase().startsWith("ln")) {
               addToast({
-                title: "Invalid QR",
-                description: "The scanned QR is not a Lightning invoice.",
+                title: walletTranslations("payments.send.qrInvalidTitle"),
+                description: walletTranslations("payments.send.qrInvalidDescription"),
                 color: "danger",
               });
               setIsScanning(false);
@@ -70,14 +70,14 @@ export function PaymentForm({
 
             onInvoiceChange(cleanInvoice);
             addToast({
-              title: "QR Scanned",
-              description: "Invoice loaded successfully",
+              title: walletTranslations("payments.send.qrScannedTitle"),
+              description: walletTranslations("payments.send.qrScannedDescription"),
               color: "success",
             });
           } else {
             addToast({
-              title: "Scan Failed",
-              description: "Could not find a valid QR code. Try to get closer.",
+              title: walletTranslations("payments.send.qrScanFailedTitle"),
+              description: walletTranslations("payments.send.qrScanFailedDescription"),
               color: "danger",
             });
           }
@@ -86,8 +86,8 @@ export function PaymentForm({
         img.src = fileEvent.target.result;
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      console.error("QR Scan Error:", err);
+    } catch (qrScanError) {
+      console.error("QR Scan Error:", qrScanError);
       setIsScanning(false);
     } finally {
       if (cameraInputRef.current) cameraInputRef.current.value = "";
@@ -98,7 +98,7 @@ export function PaymentForm({
     <div className="p-6 space-y-4">
       <div className="flex gap-2 items-end">
         <Input
-          label={translation("payments.send.payInvoiceLabel")}
+          label={walletTranslations("payments.send.payInvoiceLabel")}
           placeholder="lnbc1..."
           value={payInvoice}
           onChange={(event) => onInvoiceChange(event.target.value)}
@@ -111,7 +111,7 @@ export function PaymentForm({
           <>
             <Button
               isIconOnly
-              aria-label={translation("payments.send.scanQRButton")}
+              aria-label={walletTranslations("payments.send.scanQRButton")}
               onPress={() => cameraInputRef.current?.click()}
               isDisabled={isLoading || isScanning}
               className="h-14 w-14 min-w-14 bg-forest text-white shadow-md hover:opacity-90 transition-opacity"
@@ -137,7 +137,7 @@ export function PaymentForm({
         isDisabled={isScanning}
         className="w-full bg-forest text-white"
       >
-        {isLoading ? translation("payments.send.payLightningLoading") : translation("payments.send.payLightningButton")}
+        {isLoading ? walletTranslations("payments.send.payLightningLoading") : walletTranslations("payments.send.payLightningButton")}
       </Button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 
@@ -22,6 +22,11 @@ jest.mock("framer-motion", () => {
   };
 });
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return { ...actual, addToast: jest.fn() };
+});
+
 const roles = [
   { id: "seller", role: "Seller" },
   { id: "admin", role: "Admin" },
@@ -42,6 +47,8 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+const { addToast } = require("@heroui/react");
 
 const renderModal = (props = {}) => render(
   <I18nProvider>
@@ -100,16 +107,20 @@ describe("EditUsersModal", () => {
     expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
   });
 
-  it("saves changes and closes on submit", () => {
+  it("saves changes and closes on submit", async () => {
     const setData = jest.fn();
     const setEditUsersShowModal = jest.fn();
-    const updateUser = jest.fn();
+    const updateUser = jest.fn(() => Promise.resolve());
 
     renderModal({ setData, setEditUsersShowModal, updateUser });
 
     fireEvent.click(screen.getByText("users.modal.editButton"));
 
-    expect(updateUser).toHaveBeenCalledWith(baseData);
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(baseData));
+    expect(addToast).toHaveBeenCalledWith({
+      description: "users.toasts.updateSuccess",
+      color: "success",
+    });
     expect(setData).toHaveBeenCalledWith({
       userId: "",
       userName: "",
@@ -119,6 +130,47 @@ describe("EditUsersModal", () => {
       userRole: "Vendedor",
     });
     expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
+  });
+
+  it("does not reset or close when updateUser fails", async () => {
+    const setData = jest.fn();
+    const setEditUsersShowModal = jest.fn();
+    const updateUser = jest.fn(() => Promise.reject(new Error("update failed")));
+
+    renderModal({ setData, setEditUsersShowModal, updateUser });
+
+    fireEvent.click(screen.getByText("users.modal.editButton"));
+
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(baseData));
+    expect(addToast).not.toHaveBeenCalledWith({
+      description: "users.toasts.updateSuccess",
+      color: "success",
+    });
+    expect(setData).not.toHaveBeenCalled();
+    expect(setEditUsersShowModal).not.toHaveBeenCalledWith(false);
+  });
+
+  it("does not submit twice while update is pending", async () => {
+    const setData = jest.fn();
+    const setEditUsersShowModal = jest.fn();
+    let resolveUpdateUser;
+    const updateUser = jest.fn(() => new Promise((resolve) => {
+      resolveUpdateUser = resolve;
+    }));
+
+    renderModal({ setData, setEditUsersShowModal, updateUser });
+
+    const submitButton = screen.getByText("users.modal.editButton");
+    fireEvent.click(submitButton);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => expect(updateUser).toHaveBeenCalledTimes(1));
+
+    resolveUpdateUser();
+
+    await waitFor(() => {
+      expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
+    });
   });
 
   it("normalizes phone and pin to digits and toggles pin visibility", () => {

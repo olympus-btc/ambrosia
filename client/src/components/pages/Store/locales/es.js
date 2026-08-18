@@ -1,4 +1,5 @@
 import cartEs from "../Cart/locales/es";
+import notificationsEs from "../Notifications/locales/es";
 import ordersEs from "../Orders/locales/es";
 import productsEs from "../Products/locales/es";
 import reportsEs from "../Reports/locales/es";
@@ -23,6 +24,7 @@ const storeEs = {
     cart: "Venta",
     orders: "Ordenes",
     reports: "Reportes",
+    notifications: "Notificaciones",
   },
   dashboard: {
     title: "Panel de control",
@@ -31,6 +33,7 @@ const storeEs = {
       users: "Usuarios",
       products: "Productos",
       sales: "Ventas",
+      revenue: "Ingresos",
     },
   },
   ...usersEs,
@@ -39,6 +42,7 @@ const storeEs = {
   ...walletEs,
   ...ordersEs,
   ...reportsEs,
+  ...notificationsEs,
   ...settingsEs,
 };
 

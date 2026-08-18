@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import {
+  addToast,
   Button,
   Input,
   Switch,
@@ -23,7 +24,7 @@ import { CategorySelector } from "./CategorySelector";
 import { ProductPricingFields } from "./ProductPricingFields";
 
 export function AddProductsModal({
-  data,
+  productForm,
   allProducts,
   addProduct,
   onChange,
@@ -35,7 +36,7 @@ export function AddProductsModal({
   addProductsShowModal,
   onClose,
 }) {
-  const productsTranslation = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,7 +46,8 @@ export function AddProductsModal({
 
     try {
       setIsSubmitting(true);
-      await addProduct(data);
+      await addProduct(productForm);
+      addToast({ description: productsTranslations("toasts.createSuccess"), color: "success" });
       onClose?.();
       onProductCreated?.();
     } finally {
@@ -56,11 +58,21 @@ export function AddProductsModal({
   const handleBundleToggle = (isBundleSelected) => {
     onChange({
       isBundle: isBundleSelected,
-      hasVariants: isBundleSelected ? false : data.hasVariants,
+      hasVariants: isBundleSelected ? false : productForm.hasVariants,
       bundleComponents: [],
-      productStock: isBundleSelected ? 0 : data.productStock,
-      productMinStock: isBundleSelected ? 0 : data.productMinStock,
-      productMaxStock: isBundleSelected ? 0 : data.productMaxStock,
+      trackStock: isBundleSelected ? true : productForm.trackStock,
+      productStock: isBundleSelected ? 0 : productForm.productStock,
+      productMinStock: isBundleSelected ? 0 : productForm.productMinStock,
+      productMaxStock: isBundleSelected ? 0 : productForm.productMaxStock,
+    });
+  };
+
+  const handleTrackStockToggle = (isStockTrackingSelected) => {
+    onChange({
+      trackStock: isStockTrackingSelected,
+      productStock: isStockTrackingSelected ? productForm.productStock : 0,
+      productMinStock: isStockTrackingSelected ? productForm.productMinStock : 0,
+      productMaxStock: isStockTrackingSelected ? productForm.productMaxStock : 0,
     });
   };
 
@@ -81,75 +93,87 @@ export function AddProductsModal({
       placement="center"
     >
       <ModalContent>
-        <ModalHeader>{productsTranslation("modal.titleAdd")}</ModalHeader>
+        <ModalHeader>{productsTranslations("modal.titleAdd")}</ModalHeader>
 
         <ModalBody>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Switch
-              isSelected={data.isBundle}
+              isSelected={productForm.isBundle}
               onValueChange={handleBundleToggle}
             >
-              {productsTranslation("modal.isBundle")}
+              {productsTranslations("modal.isBundle")}
             </Switch>
 
             <Input
-              label={productsTranslation("modal.productNameLabel")}
-              placeholder={productsTranslation("modal.productNamePlaceholder")}
+              label={productsTranslations("modal.productNameLabel")}
+              placeholder={productsTranslations("modal.productNamePlaceholder")}
               isRequired
-              errorMessage={productsTranslation("modal.errorMsgInputFieldEmpty")}
-              value={data.productName}
+              errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
+              value={productForm.productName}
               onChange={({ target: productNameInput }) => onChange({ productName: productNameInput.value })}
             />
 
             <Textarea
-              label={productsTranslation("modal.productDescriptionLabel")}
-              placeholder={productsTranslation("modal.productDescriptionPlaceholder")}
-              value={data.productDescription}
+              label={productsTranslations("modal.productDescriptionLabel")}
+              placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
+              value={productForm.productDescription}
               onChange={({ target: productDescriptionInput }) => onChange({ productDescription: productDescriptionInput.value })}
             />
 
             <CategorySelector
               categories={categories}
               categoriesLoading={categoriesLoading}
-              selectedCategories={data.productCategories}
+              selectedCategories={productForm.productCategories}
               onSelectionChange={(keys) => onChange({ productCategories: keys })}
               createCategory={createCategory}
             />
 
             <Input
-              label={productsTranslation("modal.productSKULabel")}
-              placeholder={productsTranslation("modal.productSKUPlaceholder")}
-              value={data.productSKU}
+              label={productsTranslations("modal.productSKULabel")}
+              placeholder={productsTranslations("modal.productSKUPlaceholder")}
+              value={productForm.productSKU}
               onChange={({ target: productSkuInput }) => onChange({ productSKU: productSkuInput.value })}
             />
 
-            {!data.isBundle && (
+            {!productForm.isBundle && (
               <div className="flex items-center gap-3">
                 <Switch
-                  isSelected={data.hasVariants ?? false}
-                  onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
+                  isSelected={productForm.trackStock ?? true}
+                  onValueChange={handleTrackStockToggle}
                   size="sm"
+                  aria-label={productsTranslations("trackStock")}
                 />
-                <span className="text-sm text-gray-700">{productsTranslation("hasVariants")}</span>
+                <span className="text-sm text-gray-700">{productsTranslations("trackStock")}</span>
               </div>
             )}
 
-            {!data.hasVariants && (
+            {!productForm.isBundle && (
+              <div className="flex items-center gap-3">
+                <Switch
+                  isSelected={productForm.hasVariants ?? false}
+                  onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
+                  size="sm"
+                />
+                <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
+              </div>
+            )}
+
+            {!productForm.hasVariants && (
               <ProductPricingFields
-                data={data}
+                productForm={productForm}
                 onChange={onChange}
                 currency={currency}
-                includeStock={!data.isBundle}
+                includeStock={!productForm.isBundle && (productForm.trackStock ?? true)}
               />
             )}
 
-            {data.hasVariants && !data.isBundle && (
-              <p className="text-xs text-gray-400">{productsTranslation("hasVariantsHint")}</p>
+            {productForm.hasVariants && !productForm.isBundle && (
+              <p className="text-xs text-gray-400">{productsTranslations("hasVariantsHint")}</p>
             )}
 
-            {data.isBundle && (
+            {productForm.isBundle && (
               <BundleProductSelector
-                selectedProducts={data.bundleComponents ?? []}
+                selectedProducts={productForm.bundleComponents ?? []}
                 allProducts={allProducts ?? []}
                 onComponentsChange={(bundleComponents) => onChange({ bundleComponents })}
               />
@@ -157,10 +181,10 @@ export function AddProductsModal({
 
             <ImageUploader
               title=""
-              uploadText={productsTranslation("modal.productImageUpload")}
-              uploadDescription={productsTranslation("modal.productImageUploadMessage")}
+              uploadText={productsTranslations("modal.productImageUpload")}
+              uploadDescription={productsTranslations("modal.productImageUploadMessage")}
               onChange={(file) => onChange({ productImage: file })}
-              image={data.productImage || data.productImageUrl}
+              image={productForm.productImage || productForm.productImageUrl}
             />
 
             <ModalFooter className="flex justify-between p-0 my-4">
@@ -170,7 +194,7 @@ export function AddProductsModal({
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 onPress={() => onClose?.()}
               >
-                {productsTranslation("modal.cancelButton")}
+                {productsTranslations("modal.cancelButton")}
               </Button>
 
               <Button
@@ -179,7 +203,7 @@ export function AddProductsModal({
                 type="submit"
                 isLoading={isSubmitting || isUploading}
               >
-                {productsTranslation("modal.submitButton")}
+                {productsTranslations("modal.submitButton")}
               </Button>
             </ModalFooter>
           </form>

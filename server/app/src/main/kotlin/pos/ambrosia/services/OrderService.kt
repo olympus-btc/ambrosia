@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 class OrderService {
-    private val validStatuses = setOf("open", "closed", "paid")
+    private val validStatuses = setOf("open", "closed", "paid", "refunded")
     private val orderDishService = OrderDishService()
 
     private fun userExists(userId: String): Boolean =

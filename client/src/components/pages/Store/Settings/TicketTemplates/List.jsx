@@ -2,6 +2,8 @@
 
 import { Button, Select, SelectItem } from "@heroui/react";
 
+import { RequirePermission } from "@/hooks/usePermission";
+
 export function TemplateList({
   templates,
   selectedId,
@@ -9,10 +11,10 @@ export function TemplateList({
   error,
   onSelect,
   onNew,
-  t,
+  settingsTranslations,
 }) {
-  const handleSelectionChange = (e) => {
-    const templateId = e.target.value;
+  const handleSelectionChange = (event) => {
+    const templateId = event.target.value;
     if (!templateId) return;
     const template = templates.find((tpl) => tpl.id === templateId);
     if (template) {
@@ -23,12 +25,12 @@ export function TemplateList({
   return (
     <div className="flex w-full flex-col gap-3">
       {error && (
-        <p className="text-sm text-red-600">{t("templates.error")}</p>
+        <p className="text-sm text-red-600">{settingsTranslations("templates.error")}</p>
       )}
       <div className="flex flex-col gap-3">
         <Select
-          label={t("templates.listTitle")}
-          placeholder={t("templates.selectPlaceholder")}
+          label={settingsTranslations("templates.listTitle")}
+          placeholder={settingsTranslations("templates.selectPlaceholder")}
           selectedKeys={selectedId ? [selectedId] : []}
           onChange={handleSelectionChange}
           isLoading={loading}
@@ -39,15 +41,17 @@ export function TemplateList({
             </SelectItem>
           ))}
         </Select>
-        <div className="flex justify-end">
-          <Button
-            color="primary"
-            className="h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium bg-green-800"
-            onPress={onNew}
-          >
-            {t("templates.addTemplate")}
-          </Button>
-        </div>
+        <RequirePermission allOf={["printer_update"]}>
+          <div className="flex justify-end">
+            <Button
+              color="primary"
+              className="h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium bg-green-800"
+              onPress={onNew}
+            >
+              {settingsTranslations("templates.addTemplate")}
+            </Button>
+          </div>
+        </RequirePermission>
       </div>
     </div>
   );

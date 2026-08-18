@@ -9,6 +9,7 @@ from ambrosia.api_utils import assert_status_code
 logger = logging.getLogger(__name__)
 
 DUMMY_ID = "00000000-0000-0000-0000-000000000000"
+BASELINE_PERMISSIONS = ["wallet_read"]
 
 
 class TestPaymentsPermissions:
@@ -17,7 +18,7 @@ class TestPaymentsPermissions:
     @pytest.mark.asyncio
     async def test_payments_read_required_for_get(self, client_factory):
         """GET /payments returns 403 without payments_read permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.get("/payments"), 403)
 
         with_perm = await client_factory(permissions=["payments_read"])
@@ -27,7 +28,7 @@ class TestPaymentsPermissions:
     @pytest.mark.asyncio
     async def test_payments_create_required_for_post(self, client_factory):
         """POST /payments returns 403 without payments_create permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.post("/payments", json={}), 403)
 
         with_perm = await client_factory(permissions=["payments_create"])
@@ -37,7 +38,7 @@ class TestPaymentsPermissions:
     @pytest.mark.asyncio
     async def test_payments_update_required_for_put(self, client_factory):
         """PUT /payments/{id} returns 403 without payments_update permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.put(f"/payments/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["payments_update"])
@@ -49,7 +50,7 @@ class TestPaymentsPermissions:
     @pytest.mark.asyncio
     async def test_payments_delete_required_for_delete(self, client_factory):
         """DELETE /payments/{id} returns 403 without payments_delete permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.delete(f"/payments/{DUMMY_ID}"), 403)
 
         with_perm = await client_factory(permissions=["payments_delete"])
@@ -63,7 +64,7 @@ class TestSuppliersPermissions:
     @pytest.mark.asyncio
     async def test_suppliers_read_required_for_get(self, client_factory):
         """GET /suppliers returns 403 without suppliers_read permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.get("/suppliers"), 403)
 
         with_perm = await client_factory(permissions=["suppliers_read"])
@@ -73,7 +74,7 @@ class TestSuppliersPermissions:
     @pytest.mark.asyncio
     async def test_suppliers_create_required_for_post(self, client_factory):
         """POST /suppliers returns 403 without suppliers_create permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.post("/suppliers", json={}), 403)
 
         with_perm = await client_factory(permissions=["suppliers_create"])
@@ -83,7 +84,7 @@ class TestSuppliersPermissions:
     @pytest.mark.asyncio
     async def test_suppliers_update_required_for_put(self, client_factory):
         """PUT /suppliers/{id} returns 403 without suppliers_update permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.put(f"/suppliers/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["suppliers_update"])
@@ -95,7 +96,7 @@ class TestSuppliersPermissions:
     @pytest.mark.asyncio
     async def test_suppliers_delete_required_for_delete(self, client_factory):
         """DELETE /suppliers/{id} returns 403 without suppliers_delete permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.delete(f"/suppliers/{DUMMY_ID}"), 403)
 
         with_perm = await client_factory(permissions=["suppliers_delete"])
@@ -109,7 +110,7 @@ class TestSpacesPermissions:
     @pytest.mark.asyncio
     async def test_spaces_read_required_for_get(self, client_factory):
         """GET /spaces returns 403 without spaces_read permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.get("/spaces"), 403)
 
         with_perm = await client_factory(permissions=["spaces_read"])
@@ -119,7 +120,7 @@ class TestSpacesPermissions:
     @pytest.mark.asyncio
     async def test_spaces_create_required_for_post(self, client_factory):
         """POST /spaces returns 403 without spaces_create permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.post("/spaces", json={}), 403)
 
         with_perm = await client_factory(permissions=["spaces_create"])
@@ -129,7 +130,7 @@ class TestSpacesPermissions:
     @pytest.mark.asyncio
     async def test_spaces_update_required_for_put(self, client_factory):
         """PUT /spaces/{id} returns 403 without spaces_update permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.put(f"/spaces/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["spaces_update"])
@@ -139,7 +140,7 @@ class TestSpacesPermissions:
     @pytest.mark.asyncio
     async def test_spaces_delete_required_for_delete(self, client_factory):
         """DELETE /spaces/{id} returns 403 without spaces_delete permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.delete(f"/spaces/{DUMMY_ID}"), 403)
 
         with_perm = await client_factory(permissions=["spaces_delete"])
@@ -153,7 +154,7 @@ class TestTablesPermissions:
     @pytest.mark.asyncio
     async def test_tables_read_required_for_get(self, client_factory):
         """GET /tables returns 403 without tables_read permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.get("/tables"), 403)
 
         with_perm = await client_factory(permissions=["tables_read"])
@@ -163,7 +164,7 @@ class TestTablesPermissions:
     @pytest.mark.asyncio
     async def test_tables_create_required_for_post(self, client_factory):
         """POST /tables returns 403 without tables_create permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.post("/tables", json={}), 403)
 
         with_perm = await client_factory(permissions=["tables_create"])
@@ -173,7 +174,7 @@ class TestTablesPermissions:
     @pytest.mark.asyncio
     async def test_tables_update_required_for_put(self, client_factory):
         """PUT /tables/{id} returns 403 without tables_update permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.put(f"/tables/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["tables_update"])
@@ -183,7 +184,7 @@ class TestTablesPermissions:
     @pytest.mark.asyncio
     async def test_tables_delete_required_for_delete(self, client_factory):
         """DELETE /tables/{id} returns 403 without tables_delete permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.delete(f"/tables/{DUMMY_ID}"), 403)
 
         with_perm = await client_factory(permissions=["tables_delete"])
@@ -197,7 +198,7 @@ class TestShiftsPermissions:
     @pytest.mark.asyncio
     async def test_shifts_read_required_for_get(self, client_factory):
         """GET /shifts returns 403 without shifts_read permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.get("/shifts"), 403)
 
         with_perm = await client_factory(permissions=["shifts_read"])
@@ -207,7 +208,7 @@ class TestShiftsPermissions:
     @pytest.mark.asyncio
     async def test_shifts_create_required_for_post(self, client_factory):
         """POST /shifts returns 403 without shifts_create permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.post("/shifts", json={}), 403)
 
         with_perm = await client_factory(permissions=["shifts_create"])
@@ -217,7 +218,7 @@ class TestShiftsPermissions:
     @pytest.mark.asyncio
     async def test_shifts_update_required_for_put(self, client_factory):
         """PUT /shifts/{id} returns 403 without shifts_update permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.put(f"/shifts/{DUMMY_ID}", json={}), 403)
 
         with_perm = await client_factory(permissions=["shifts_update"])
@@ -227,7 +228,7 @@ class TestShiftsPermissions:
     @pytest.mark.asyncio
     async def test_shifts_delete_required_for_delete(self, client_factory):
         """DELETE /shifts/{id} returns 403 without shifts_delete permission."""
-        no_perm = await client_factory(permissions=["permissions_read"])
+        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
         assert_status_code(await no_perm.delete(f"/shifts/{DUMMY_ID}"), 403)
 
         with_perm = await client_factory(permissions=["shifts_delete"])

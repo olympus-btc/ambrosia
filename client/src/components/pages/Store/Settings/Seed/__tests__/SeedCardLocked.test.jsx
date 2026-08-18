@@ -15,7 +15,7 @@ jest.mock("@heroui/react", () => ({
 const t = (key) => key;
 
 function renderLocked(props = {}) {
-  return render(<SeedCardLocked t={t} onReveal={jest.fn()} {...props} />);
+  return render(<SeedCardLocked seedCardTranslations={t} onReveal={jest.fn()} {...props} />);
 }
 
 describe("SeedCardLocked", () => {

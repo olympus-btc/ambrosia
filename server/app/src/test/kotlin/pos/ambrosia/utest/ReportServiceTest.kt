@@ -4,12 +4,13 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.models.OrderWithPaymentFilters
+import pos.ambrosia.services.ConfigService
 import pos.ambrosia.services.ReportService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -81,8 +82,53 @@ class ReportServiceTest {
     }
 
     @Test
+    fun `period=day filters to orders from today`() {
+        val today = LocalDate.now(ConfigService().getConfiguredZoneId())
+        val recent = seedSale(createdAt = "${today}T12:00:00")
+        addOrderProduct(recent.orderId)
+        val old = seedSale(createdAt = "2020-01-01T12:00:00")
+        addOrderProduct(old.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = "day",
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.sales.size)
+        assertEquals(recent.orderId, report.sales[0].orderId)
+    }
+
+    @Test
+    fun `period=day reads the configured timezone from Config, not a hardcoded default`() {
+        ExposedTestDb.seedConfig("Pacific/Kiritimati")
+        val today = LocalDate.now(ZoneId.of("Pacific/Kiritimati"))
+        val recent = seedSale(createdAt = "${today}T12:00:00")
+        addOrderProduct(recent.orderId)
+        val old = seedSale(createdAt = "2020-01-01T12:00:00")
+        addOrderProduct(old.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = "day",
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.sales.size)
+        assertEquals(recent.orderId, report.sales[0].orderId)
+    }
+
+    @Test
     fun `period=week filters to orders from Monday of the current week`() {
-        val monday = LocalDate.now(ZoneOffset.UTC).with(DayOfWeek.MONDAY)
+        val monday = LocalDate.now(ConfigService().getConfiguredZoneId()).with(DayOfWeek.MONDAY)
         val recent = seedSale(createdAt = "${monday}T12:00:00")
         addOrderProduct(recent.orderId)
         val old = seedSale(createdAt = "2020-01-01T12:00:00")
@@ -104,7 +150,7 @@ class ReportServiceTest {
 
     @Test
     fun `period=month filters to orders from the first day of the current month`() {
-        val firstOfMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
+        val firstOfMonth = LocalDate.now(ConfigService().getConfiguredZoneId()).withDayOfMonth(1)
         val recent = seedSale(createdAt = "${firstOfMonth}T12:00:00")
         addOrderProduct(recent.orderId)
         val old = seedSale(createdAt = "2020-01-01T12:00:00")
@@ -126,7 +172,7 @@ class ReportServiceTest {
 
     @Test
     fun `period=year filters to orders from the first day of the current year`() {
-        val firstOfYear = LocalDate.now(ZoneOffset.UTC).withDayOfYear(1)
+        val firstOfYear = LocalDate.now(ConfigService().getConfiguredZoneId()).withDayOfYear(1)
         val recent = seedSale(createdAt = "${firstOfYear}T12:00:00")
         addOrderProduct(recent.orderId)
         val old = seedSale(createdAt = "2019-01-01T12:00:00")
@@ -203,7 +249,7 @@ class ReportServiceTest {
 
     @Test
     fun `period takes precedence over startDate and endDate`() {
-        val firstOfMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1)
+        val firstOfMonth = LocalDate.now(ConfigService().getConfiguredZoneId()).withDayOfMonth(1)
         val sale = seedSale(createdAt = "${firstOfMonth}T12:00:00")
         addOrderProduct(sale.orderId)
 
@@ -218,6 +264,110 @@ class ReportServiceTest {
             )
 
         assertEquals(1, report.sales.size)
+    }
+
+    @Test
+    fun `utcOffsetMinutes includes an order created just before local midnight in the store's timezone`() {
+        ExposedTestDb.seedConfig("America/Mexico_City")
+        val sale = seedSale(createdAt = "2024-06-15T23:59:00")
+        addOrderProduct(sale.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-15",
+                endDate = "2024-06-15",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+                utcOffsetMinutes = 360,
+            )
+
+        assertEquals(1, report.sales.size)
+        assertEquals(sale.orderId, report.sales[0].orderId)
+    }
+
+    @Test
+    fun `utcOffsetMinutes excludes an order created just after local midnight in the store's timezone`() {
+        ExposedTestDb.seedConfig("America/Mexico_City")
+        val sale = seedSale(createdAt = "2024-06-16T00:00:01")
+        addOrderProduct(sale.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-15",
+                endDate = "2024-06-15",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+                utcOffsetMinutes = 360,
+            )
+
+        assertTrue(report.sales.isEmpty())
+    }
+
+    @Test
+    fun `utcOffsetMinutes translates between the viewer's zone and a differently configured store zone`() {
+        ExposedTestDb.seedConfig("America/Mexico_City")
+        val sameUtcDay = seedSale(createdAt = "2024-06-15T11:00:00")
+        addOrderProduct(sameUtcDay.orderId)
+        val nextUtcDay = seedSale(createdAt = "2024-06-15T23:00:00")
+        addOrderProduct(nextUtcDay.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-15",
+                endDate = "2024-06-15",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+                utcOffsetMinutes = 0,
+            )
+
+        assertEquals(1, report.sales.size)
+        assertEquals(sameUtcDay.orderId, report.sales[0].orderId)
+    }
+
+    @Test
+    fun `without utcOffsetMinutes, an order just after local midnight is still excluded by date-only comparison`() {
+        val sale = seedSale(createdAt = "2024-06-16T04:00:00")
+        addOrderProduct(sale.orderId)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-15",
+                endDate = "2024-06-15",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertTrue(report.sales.isEmpty())
+    }
+
+    @Test
+    fun `utcOffsetMinutes includes a refund recorded just before local midnight in the store's timezone`() {
+        ExposedTestDb.seedConfig("America/Mexico_City")
+        val sale = seedSale(orderStatus = "refunded", total = 30.0, createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(sale.orderId, quantity = 1, priceAtOrder = 3000)
+        ExposedTestDb.seedRefund(sale.orderId, refundedAt = "2024-06-15T23:59:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-15",
+                endDate = "2024-06-15",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+                utcOffsetMinutes = 360,
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(3000L, report.totalRefundedCents)
     }
 
     @Test
@@ -454,6 +604,185 @@ class ReportServiceTest {
 
         assertEquals(2, report.sales.size)
         assertEquals(100_000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
+    }
+
+    @Test
+    fun `refunded orders still appear as sales and are flagged as refunded`() {
+        val sale = seedSale(orderStatus = "refunded", createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(sale.orderId, productName = "Widget", quantity = 2, priceAtOrder = 1000)
+        ExposedTestDb.seedRefund(sale.orderId, refundedAt = "2024-06-16T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.sales.size)
+        assertTrue(report.sales[0].refunded)
+        assertEquals(2000L, report.totalRevenueCents)
+        assertEquals(2, report.totalItemsSold)
+    }
+
+    @Test
+    fun `totalRefundedCents and refundCount reflect a refund within the report's date range`() {
+        val sale = seedSale(orderStatus = "refunded", total = 50.0, createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(sale.orderId)
+        ExposedTestDb.seedRefund(sale.orderId, refundedAt = "2024-06-16T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(5000L, report.totalRefundedCents)
+        assertEquals(0L, report.totalRefundedSatoshis)
+    }
+
+    @Test
+    fun `a BTC refund populates both totalRefundedCents and totalRefundedSatoshis`() {
+        val sale =
+            seedSale(
+                orderStatus = "refunded",
+                paymentMethodName = "BTC",
+                satoshiAmount = 10_000L,
+                total = 10.0,
+                createdAt = "2024-06-15T12:00:00",
+            )
+        addOrderProduct(sale.orderId)
+        ExposedTestDb.seedRefund(sale.orderId, satoshiAmount = 895L, refundedAt = "2024-06-16T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(895L, report.totalRefundedSatoshis)
+        assertEquals(1000L, report.totalRefundedCents)
+    }
+
+    @Test
+    fun `a sale from one period stays stable in its own report even after being refunded in a later period`() {
+        val sale = seedSale(orderStatus = "refunded", total = 30.0, createdAt = "2024-06-15T12:00:00")
+        addOrderProduct(sale.orderId, quantity = 1, priceAtOrder = 3000)
+        ExposedTestDb.seedRefund(sale.orderId, refundedAt = "2024-07-05T09:00:00")
+
+        val juneReport =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+        val julyReport =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-07-01",
+                endDate = "2024-07-31",
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, juneReport.sales.size)
+        assertEquals(3000L, juneReport.totalRevenueCents)
+        assertEquals(0, juneReport.refundCount)
+
+        assertTrue(julyReport.sales.isEmpty())
+        assertEquals(1, julyReport.refundCount)
+        assertEquals(3000L, julyReport.totalRefundedCents)
+    }
+
+    @Test
+    fun `refund totals attribute userId via the order's original cashier`() {
+        val alice = seedSale(userName = "alice", orderStatus = "refunded", total = 40.0, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(alice.orderId)
+        ExposedTestDb.seedRefund(alice.orderId, refundedAt = "2024-06-11T09:00:00")
+
+        val bob = seedSale(userName = "bob", orderStatus = "refunded", total = 40.0, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(bob.orderId)
+        ExposedTestDb.seedRefund(bob.orderId, refundedAt = "2024-06-11T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = alice.userId,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(4000L, report.totalRefundedCents)
+    }
+
+    @Test
+    fun `refund totals include refunds of orders with the matching payment method`() {
+        val cash = seedSale(paymentMethodName = "Cash", orderStatus = "refunded", total = 20.0, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(cash.orderId)
+        ExposedTestDb.seedRefund(cash.orderId, refundedAt = "2024-06-11T09:00:00")
+
+        val btc =
+            seedSale(paymentMethodName = "BTC", orderStatus = "refunded", satoshiAmount = 500L, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(btc.orderId)
+        ExposedTestDb.seedRefund(btc.orderId, satoshiAmount = 500L, refundedAt = "2024-06-11T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = null,
+                userId = null,
+                paymentMethod = "cash",
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(2000L, report.totalRefundedCents)
+        assertEquals(0L, report.totalRefundedSatoshis)
+    }
+
+    @Test
+    fun `refund totals include refunds of orders with the matching product name`() {
+        val widget = seedSale(orderStatus = "refunded", total = 15.0, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(widget.orderId, productName = "Widget")
+        ExposedTestDb.seedRefund(widget.orderId, refundedAt = "2024-06-11T09:00:00")
+
+        val gadget = seedSale(orderStatus = "refunded", total = 25.0, createdAt = "2024-06-10T12:00:00")
+        addOrderProduct(gadget.orderId, productName = "Gadget")
+        ExposedTestDb.seedRefund(gadget.orderId, refundedAt = "2024-06-11T09:00:00")
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = "2024-06-01",
+                endDate = "2024-06-30",
+                productName = "Widget",
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(1, report.refundCount)
+        assertEquals(1500L, report.totalRefundedCents)
     }
 
     @Test

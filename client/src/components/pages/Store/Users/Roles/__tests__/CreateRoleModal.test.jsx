@@ -13,12 +13,9 @@ global.localStorage = localStorageMock;
 
 const baseForm = {
   name: "",
-  password: "",
   isAdmin: false,
   permissions: [],
 };
-
-const t = (key) => key;
 
 const renderModal = (props = {}) => render(
   <I18nProvider>
@@ -31,7 +28,6 @@ const renderModal = (props = {}) => render(
       permissionOptions={[]}
       togglePermission={jest.fn()}
       creating={false}
-      t={t}
       businessType="store"
       {...props}
     />
@@ -62,8 +58,13 @@ describe("CreateRoleModal", () => {
     renderModal();
     fireEvent.click(screen.getByText("roles.create.advanced"));
     expect(screen.getByLabelText("roles.create.roleName")).toBeInTheDocument();
-    expect(screen.getByLabelText("roles.create.password")).toBeInTheDocument();
     expect(screen.getByText("roles.create.isAdmin")).toBeInTheDocument();
+  });
+
+  it("does not render a password field in advanced form", () => {
+    renderModal();
+    fireEvent.click(screen.getByText("roles.create.advanced"));
+    expect(screen.queryByLabelText("roles.create.password")).not.toBeInTheDocument();
   });
 
   it("goes back to template view from advanced", () => {
@@ -121,10 +122,10 @@ describe("CreateRoleModal", () => {
     expect(onSubmit).toHaveBeenCalled();
   });
 
-  it("shows spinner when creating", () => {
+  it("disables submit button when creating", () => {
     renderModal({ creating: true, form: { ...baseForm, name: "cashier" } });
     fireEvent.click(screen.getByText("roles.create.advanced"));
-    expect(screen.queryByText("roles.actions.create")).not.toBeInTheDocument();
+    expect(screen.getByText("roles.actions.create").closest("button")).toBeDisabled();
   });
 
   it("resolves template key to translated name in advanced name input", () => {

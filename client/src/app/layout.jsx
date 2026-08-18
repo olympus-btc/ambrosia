@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono as GeistMono } from "next/font/google";
 
+import { SerwistProvider } from "@serwist/turbopack/react";
+
 import "./globals.css";
 import Providers from "@/providers";
 import UpdateBanner from "@components/UpdateBanner";
@@ -15,6 +17,7 @@ const geistMono = GeistMono({
 });
 
 const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
+const isSerwistDisabled = isElectron || process.env.NODE_ENV === "development";
 
 export const metadata = {
   title: "Ambrosia PoS",
@@ -46,10 +49,16 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <UpdateBanner />
-          {children}
-        </Providers>
+        <SerwistProvider
+          disable={isSerwistDisabled}
+          options={{ scope: "/" }}
+          swUrl="/serwist/sw.js"
+        >
+          <Providers>
+            <UpdateBanner />
+            {children}
+          </Providers>
+        </SerwistProvider>
       </body>
     </html>
   );

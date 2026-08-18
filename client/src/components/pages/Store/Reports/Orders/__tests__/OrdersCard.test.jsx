@@ -5,6 +5,7 @@ import { OrdersCard } from "../OrdersCard";
 jest.mock("@heroui/react", () => ({
   Card: ({ children }) => <div data-testid="card">{children}</div>,
   CardBody: ({ children }) => <div>{children}</div>,
+  Chip: ({ children }) => <span>{children}</span>,
 }));
 
 jest.mock("@/components/shared/ViewButton", () => ({
@@ -76,5 +77,16 @@ describe("OrdersCard", () => {
     render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={onClick} />);
     fireEvent.click(screen.getByTestId("view-button"));
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the refunded status chip when the order is refunded", () => {
+    render(<OrdersCard order={{ ...ORDER, refunded: true }} formatCurrency={formatCurrency} onClick={jest.fn()} />);
+    expect(screen.getByText("refunded")).toBeInTheDocument();
+  });
+
+  it("shows the paid status chip when the order is not refunded", () => {
+    render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={jest.fn()} />);
+    expect(screen.queryByText("refunded")).not.toBeInTheDocument();
+    expect(screen.getByText("paid")).toBeInTheDocument();
   });
 });

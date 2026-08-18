@@ -15,13 +15,13 @@ import { EditButton } from "@/components/shared/EditButton";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function CategoriesTable({ categories, canManageCategories, onEditCategory, onDeleteCategory }) {
-  const t = useTranslations("categories");
+  const categoryTranslations = useTranslations("categories");
 
   return (
-    <Table className="min-w-[400px]" removeWrapper aria-label={t("tableAriaLabel")}>
+    <Table className="min-w-[400px]" removeWrapper aria-label={categoryTranslations("tableAriaLabel")}>
       <TableHeader>
-        <TableColumn className="py-2 px-3 w-[200px]">{t("name")}</TableColumn>
-        <TableColumn className={canManageCategories ? "py-2 px-3 w-40 text-right" : "hidden"}>{t("actions")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[200px]">{categoryTranslations("name")}</TableColumn>
+        <TableColumn className={canManageCategories ? "py-2 px-3 w-40 text-right" : "hidden"}>{categoryTranslations("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
         {categories.map((category) => (
@@ -30,10 +30,10 @@ export function CategoriesTable({ categories, canManageCategories, onEditCategor
             <TableCell className={canManageCategories ? "py-2 px-3" : "hidden"}>
               <div className="flex justify-end gap-2">
                 <RequirePermission allOf={["categories_update"]}>
-                  <EditButton onPress={() => onEditCategory(category)}>{t("edit")}</EditButton>
+                  <EditButton onPress={() => onEditCategory(category)}>{categoryTranslations("edit")}</EditButton>
                 </RequirePermission>
                 <RequirePermission allOf={["categories_delete"]}>
-                  <DeleteButton onPress={() => onDeleteCategory(category)}>{t("delete")}</DeleteButton>
+                  <DeleteButton onPress={() => onDeleteCategory(category)}>{categoryTranslations("delete")}</DeleteButton>
                 </RequirePermission>
               </div>
             </TableCell>

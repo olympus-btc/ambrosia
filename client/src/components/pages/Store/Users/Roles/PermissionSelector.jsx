@@ -2,14 +2,16 @@
 import { useMemo } from "react";
 
 import { Checkbox, Chip, Divider } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 export function PermissionSelector({
   catalog = [],
   selected = [],
   togglePermission,
-  t,
   businessType,
+  isAdmin = false,
 }) {
+  const roleTranslations = useTranslations();
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
   const groupedPermissions = useMemo(() => catalog.reduce((permissionsByGroup, permission) => {
@@ -21,43 +23,45 @@ export function PermissionSelector({
 
   return (
     <div className="space-y-4">
-      {businessType && (
-        <div className="flex justify-end">
-          <Chip size="sm" variant="flat">
-            {businessType === "store"
-              ? t("roles.permissions.scope.store")
-              : t("roles.permissions.scope.restaurant")}
-          </Chip>
+      {(businessType || isAdmin) && (
+        <div className="space-y-2">
+          <p className={`text-xs text-primary-600 ${isAdmin ? "" : "invisible"}`}>
+            {roleTranslations("roles.permissions.adminNotice")}
+          </p>
+          {businessType && (
+            <div className="flex justify-end">
+              <Chip size="sm" variant="flat">
+                {businessType === "store"
+                  ? roleTranslations("roles.permissions.scope.store")
+                  : roleTranslations("roles.permissions.scope.restaurant")}
+              </Chip>
+            </div>
+          )}
         </div>
       )}
-      {Object.entries(groupedPermissions).map(([groupKey, perms]) => (
+      {Object.entries(groupedPermissions).map(([groupKey, permissions]) => (
         <div key={groupKey} className="border border-primary-200 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-default-700">
-              {t(`roles.permissions.groups.${groupKey}`, { defaultValue: groupKey })}
+              {roleTranslations(`roles.permissions.groups.${groupKey}`, { defaultValue: groupKey })}
             </p>
           </div>
           <Divider className="mb-3 bg-primary-200" />
           <div className="grid md:grid-cols-2 gap-2">
-            {perms.map((perm) => (
-              <div key={perm.key} className="flex flex-col gap-1">
+            {permissions.map((permission) => (
+              <div key={permission.key} className="flex flex-col gap-1">
                 <Checkbox
-                  isSelected={selectedSet.has(perm.key)}
-                  onValueChange={() => togglePermission(perm.key)}
+                  isSelected={isAdmin || selectedSet.has(permission.key)}
+                  isDisabled={isAdmin}
+                  onValueChange={() => togglePermission(permission.key)}
                 >
-                  {t(`roles.permissions.items.${perm.key}.label`, { defaultValue: perm.key })}
+                  {roleTranslations(`roles.permissions.items.${permission.key}.label`, { defaultValue: permission.key })}
                 </Checkbox>
                 <p className="text-xs text-default-500">
-                  {t(`roles.permissions.items.${perm.key}.description`, {
-                    defaultValue: perm.key,
+                  {roleTranslations(`roles.permissions.items.${permission.key}.description`, {
+                    defaultValue: permission.key,
                   })}
                 </p>
-                {perm.related && perm.related.length > 0 && (
-                  <p className="text-[11px] text-default-400">
-                    {t("roles.permissions.affects")}{" "}
-                    {perm.related.map((relatedSection) => t(`roles.permissions.related.${relatedSection}`, { defaultValue: relatedSection })).join(", ")}
-                  </p>
-                )}
               </div>
             ))}
           </div>

@@ -71,16 +71,23 @@ class ProductService {
         return VariantAggregate(minPriceCents, maxPriceCents, quantity, minCostCents)
     }
 
+    private fun componentTracksStock(component: BundleComponent): Boolean {
+        val componentProductId = EntityID(UUID.fromString(component.componentId), ProductsTable)
+        return ProductEntity.findById(componentProductId)?.trackStock ?: true
+    }
+
     private fun computeBundleQuantity(components: List<BundleComponent>): Int {
         if (components.isEmpty()) return 0
-        return components.minOf { component ->
-            val componentProductId = EntityID(UUID.fromString(component.componentId), ProductsTable)
-            val componentStock =
-                component.variantId
-                    ?.let { componentVariantId -> variantQuantity(componentProductId, UUID.fromString(componentVariantId)) }
-                    ?: variantAggregate(componentProductId).quantity
-            componentStock / component.quantity
-        }
+        return components
+            .filter { component -> componentTracksStock(component) }
+            .minOfOrNull { component ->
+                val componentProductId = EntityID(UUID.fromString(component.componentId), ProductsTable)
+                val componentStock =
+                    component.variantId
+                        ?.let { componentVariantId -> variantQuantity(componentProductId, UUID.fromString(componentVariantId)) }
+                        ?: variantAggregate(componentProductId).quantity
+                componentStock / component.quantity
+            } ?: 0
     }
 
     private fun computeBundleCostCents(components: List<BundleComponent>): Int =
@@ -192,6 +199,13 @@ class ProductService {
         val bundleCostCents = if (entity.isBundle) computeBundleCostCents(bundleComponents) else 0
         val productQuantity = if (entity.isBundle) computeBundleQuantity(bundleComponents) else aggregate.quantity
         val productCostCents = if (entity.isBundle) bundleCostCents else aggregate.minCostCents
+        val productTracksStock =
+            entity.trackStock &&
+                (
+                    !entity.isBundle ||
+                        bundleComponents.isEmpty() ||
+                        bundleComponents.any { component -> componentTracksStock(component) }
+                )
         return Product(
             id = entity.id.value.toString(),
             SKU = entity.sku,
@@ -209,6 +223,7 @@ class ProductService {
             isBundle = entity.isBundle,
             bundleComponents = bundleComponents,
             bundleCostCents = bundleCostCents,
+            trackStock = productTracksStock,
         )
     }
 
@@ -294,6 +309,13 @@ class ProductService {
                 }.count() == 1L
         }
 
+    private fun normalizeStockFields(product: Product): Product =
+        if (product.trackStock) {
+            product
+        } else {
+            product.copy(quantity = 0, minStockThreshold = 0, maxStockThreshold = 0)
+        }
+
     private fun valid(product: Product): Boolean {
         if (product.name.isBlank()) return false
         if (product.priceCents < 0) return false
@@ -307,9 +329,10 @@ class ProductService {
         return true
     }
 
-    fun addProduct(product: Product): String? =
+    fun addProduct(requested: Product): String? =
         transaction {
-            if (!valid(product)) return@transaction null
+            if (!valid(requested)) return@transaction null
+            val product = normalizeStockFields(requested)
             val normalizedSku = normalizeSku(product.SKU)
 
             val productId =
@@ -323,6 +346,7 @@ class ProductService {
                         this.maxStockThreshold = product.maxStockThreshold
                         this.hasVariants = if (product.isBundle) false else product.hasVariants
                         this.isBundle = product.isBundle
+                        this.trackStock = product.trackStock
                     }.id.value
 
             ProductVariantEntity.new(UUID.randomUUID()) {
@@ -389,15 +413,16 @@ class ProductService {
                 .map { toModel(it) }
         }
 
-    fun updateProduct(product: Product): Boolean =
+    fun updateProduct(requested: Product): Boolean =
         transaction {
             val productId =
                 try {
-                    product.id?.let { UUID.fromString(it) } ?: return@transaction false
+                    requested.id?.let { UUID.fromString(it) } ?: return@transaction false
                 } catch (_: IllegalArgumentException) {
                     return@transaction false
                 }
-            if (!valid(product)) return@transaction false
+            if (!valid(requested)) return@transaction false
+            val product = normalizeStockFields(requested)
             val productEntity = ProductEntity.findById(productId) ?: return@transaction false
 
             productEntity.sku = normalizeSku(product.SKU)
@@ -408,6 +433,7 @@ class ProductService {
             productEntity.maxStockThreshold = product.maxStockThreshold
             productEntity.hasVariants = if (product.isBundle) false else product.hasVariants
             productEntity.isBundle = product.isBundle
+            productEntity.trackStock = product.trackStock
             productEntity.flush()
 
             replaceCategories(productId, product.categoryIds)

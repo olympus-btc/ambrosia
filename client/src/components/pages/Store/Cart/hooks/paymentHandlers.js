@@ -5,12 +5,29 @@ import {
   savePendingCheckout,
 } from "@/lib/btcCheckoutStore";
 
+import { getCheckoutErrorDescription } from "../utils/checkoutErrors";
 import {
   classifyPaymentMethod,
   PAYMENT_METHODS,
 } from "../utils/paymentMethods";
 
 import { processCheckout } from "./paymentFlows";
+
+function logPaymentError(context, paymentError) {
+  const errorDetails = {
+    status: paymentError?.status,
+    code: paymentError?.code,
+    source: paymentError?.source,
+    message: paymentError?.responseMessage || paymentError?.message,
+  };
+
+  if (paymentError?.status) {
+    console.error(context, errorDetails);
+    return;
+  }
+
+  console.error(context, paymentError);
+}
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -61,8 +78,8 @@ export function buildHandlePay({
         userId: user?.userId,
         currencyId: currency?.id,
       });
-    } catch (err) {
-      notifyError(err.message);
+    } catch (cartValidationError) {
+      notifyError(cartValidationError.message);
       return;
     }
 
@@ -145,9 +162,9 @@ export function buildHandlePay({
       notifySuccess("success.paid");
       onResetCart?.();
       onPay?.({ items: cartItems, ...paymentAmounts, paymentMethod: selectedPaymentMethod, ...storeCheckoutResult });
-    } catch (err) {
-      console.error("Error processing payment:", err);
-      notifyError(err?.message || "errors.process");
+    } catch (paymentProcessingError) {
+      logPaymentError("Error processing payment", paymentProcessingError);
+      notifyError(getCheckoutErrorDescription(paymentProcessingError, "errors.process"));
     } finally {
       dispatch({ type: "stop" });
     }
@@ -233,9 +250,9 @@ async function runDeferredCheckout({
     onPay?.(buildOnPayPayload(storeCheckoutResult));
     onResetCart?.();
     notifySuccess(successKey);
-  } catch (err) {
-    console.error("Error completing payment:", err);
-    notifyError(err?.message || errorKey);
+  } catch (paymentCompletionError) {
+    logPaymentError("Error completing payment", paymentCompletionError);
+    notifyError(getCheckoutErrorDescription(paymentCompletionError, errorKey));
   } finally {
     finalize();
     dispatch({ type: "stop" });

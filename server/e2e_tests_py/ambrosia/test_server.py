@@ -29,15 +29,29 @@ class AmbrosiaTestServer:
     # Server configuration constants (matching TestServer.kt)
     SERVER_PORT = 9154
     SERVER_HOST = "127.0.0.1"
-    HEALTH_CHECK_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/"
+    DEFAULT_DATADIR = "/tmp/ambrosia-test-data"
+    DEFAULT_EXTRA_ARGS = (
+        "--phoenixd-url=http://localhost:9740 "
+        "--phoenixd-password=test-password "
+        "--phoenixd-webhook-secret=test-webhook-secret"
+    )
 
     # Timeout settings
     STARTUP_TIMEOUT = 30  # seconds
     HEALTH_CHECK_INTERVAL = 1  # seconds
 
-    def __init__(self):
+    def __init__(
+        self,
+        port: int = SERVER_PORT,
+        extra_args: str = DEFAULT_EXTRA_ARGS,
+        datadir: str = DEFAULT_DATADIR,
+    ):
         self.server_process: subprocess.Popen | None = None
-        self.server_url = f"http://{self.SERVER_HOST}:{self.SERVER_PORT}"
+        self.port = port
+        self.extra_args = extra_args
+        self.datadir = datadir
+        self.server_url = f"http://{self.SERVER_HOST}:{self.port}"
+        self.health_check_url = f"{self.server_url}/"
         self._gradle_dir = Path(__file__).parent.parent.parent
 
     def start_server(self) -> None:
@@ -48,23 +62,21 @@ class AmbrosiaTestServer:
 
         logger.info(f"Starting server from directory: {self._gradle_dir}")
 
-        # Change to the app directory and run gradlew with Phoenix configuration
+        # Change to the app directory and run gradlew with the configured backend.
+        # Note: All application arguments must be in a single quoted string after --args
+        # Use shorter access token expiration (5 seconds) for faster E2E testing
         cmd = [
             "./gradlew",
             "run",
             "--no-daemon",
-            # Note: All application arguments must be in a single quoted string after --args
-            # Use shorter access token expiration (5 seconds) for faster E2E testing
-            "--args=--phoenixd-url=http://localhost:9740 "
-            "--phoenixd-password=test-password "
-            "--phoenixd-webhook-secret=test-webhook-secret "
+            f"--args=--http-bind-port={self.port} {self.extra_args} "
             "--jwt-access-token-expiration 5",
         ]
 
         logger.info(f"Starting server with command: {' '.join(cmd)}")
 
         env = os.environ.copy()
-        env["AMBROSIA_DATADIR"] = "/tmp/ambrosia-test-data"
+        env["AMBROSIA_DATADIR"] = self.datadir
 
         try:
             self.server_process = subprocess.Popen(
@@ -126,7 +138,7 @@ class AmbrosiaTestServer:
         while time.time() - start_time < timeout:
             try:
                 # Check if server is responding
-                response = httpx.get(self.HEALTH_CHECK_URL, timeout=5.0)
+                response = httpx.get(self.health_check_url, timeout=5.0)
                 if response.status_code == 200:
                     logger.info("Server is ready and responding")
                     return

@@ -48,6 +48,7 @@ fun Route.reports(reportService: ReportService) {
             val productName = call.request.queryParameters["productName"]?.takeIf { it.isNotBlank() }
             val userId = call.request.queryParameters["userId"]?.takeIf { it.isNotBlank() }
             val paymentMethod = call.request.queryParameters["paymentMethod"]?.takeIf { it.isNotBlank() }
+            val utcOffsetMinutes = call.request.queryParameters["utcOffsetMinutes"]?.toIntOrNull()
 
             val startDate: String?
             val endDate: String?
@@ -77,6 +78,7 @@ fun Route.reports(reportService: ReportService) {
                         productName = productName,
                         userId = userId,
                         paymentMethod = paymentMethod,
+                        utcOffsetMinutes = utcOffsetMinutes,
                     )
                 } catch (exception: IllegalArgumentException) {
                     call.respond(HttpStatusCode.BadRequest, Message(exception.message ?: "Invalid query parameters"))

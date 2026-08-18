@@ -13,12 +13,13 @@ jest.mock("@heroui/react", () => ({
     const filteredChildren = require("react").Children.toArray(children).filter((child) => (
       !inputValue || defaultFilter(child.props.textValue, inputValue)
     ));
+    const inputId = `autocomplete-search-${label}`;
 
     return (
       <div data-testid="autocomplete-wrapper">
-        <label htmlFor="currency-search">{label}</label>
+        <label htmlFor={inputId}>{label}</label>
         <input
-          id="currency-search"
+          id={inputId}
           aria-label={label}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -51,6 +52,7 @@ describe("Step 3 Business Details", () => {
     businessEmail: "",
     businessRFC: "",
     businessCurrency: "MXN",
+    timezone: "America/Mexico_City",
     businessLogo: null,
   };
 
@@ -116,6 +118,20 @@ describe("Step 3 Business Details", () => {
 
     expect(screen.getByRole("option", { name: "MXN - Peso mexicano" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "USD - United States Dollar" })).not.toBeInTheDocument();
+  });
+
+  it("renders the timezone selector", () => {
+    remderBusinessDetails();
+    expect(screen.getByLabelText("step3.fields.businessTimezone")).toBeInTheDocument();
+  });
+
+  it("filters timezones by label", async () => {
+    remderBusinessDetails();
+    const searchInput = screen.getByLabelText("step3.fields.businessTimezone");
+    fireEvent.change(searchInput, { target: { value: "Madrid" } });
+
+    expect(screen.getByRole("option", { name: /Europe\/Madrid/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /America\/Mexico City/ })).not.toBeInTheDocument();
   });
 
   it("handles logo upload and preview", async () => {

@@ -12,6 +12,7 @@ const products = [
   { id: 1, name: "Jade Wallet", priceCents: 100, quantity: 5 },
   { id: 2, name: "M5 Stick", priceCents: 200, quantity: 3 },
   { id: 3, name: "Out of Stock Item", priceCents: 50, quantity: 0 },
+  { id: 4, name: "Consulting", priceCents: 5000, quantity: 0, trackStock: false },
 ];
 
 function setupHook(cart = []) {
@@ -91,9 +92,46 @@ describe("useCartOperations", () => {
       jest.runAllTimers();
       expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
     });
+
+    it("adds a product without stock tracking even when its quantity is zero", () => {
+      const { result, setCart } = setupHook([]);
+
+      act(() => {
+        result.current.addProduct({ id: 4, name: "Consulting", priceCents: 5000 });
+      });
+
+      expect(setCart).toHaveBeenCalledWith([
+        expect.objectContaining({ id: 4, quantity: 1, maxQuantity: Number.MAX_SAFE_INTEGER }),
+      ]);
+      jest.runAllTimers();
+      expect(mockAddToast).not.toHaveBeenCalled();
+    });
   });
 
   describe("updateQuantity", () => {
+    it("does not cap the quantity of a product without stock tracking", () => {
+      const cart = [{
+        id: 4,
+        productId: 4,
+        name: "Consulting",
+        price: 5000,
+        quantity: 1,
+        subtotal: 5000,
+        maxQuantity: Number.MAX_SAFE_INTEGER,
+      }];
+      const { result, setCart } = setupHook(cart);
+
+      act(() => {
+        result.current.updateQuantity(4, 50);
+      });
+
+      expect(setCart).toHaveBeenCalledWith([
+        expect.objectContaining({ id: 4, quantity: 50, subtotal: 250000 }),
+      ]);
+      jest.runAllTimers();
+      expect(mockAddToast).not.toHaveBeenCalled();
+    });
+
     it("updates quantity and recalculates subtotal", () => {
       const cart = [{ id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 }];
       const { result, setCart } = setupHook(cart);

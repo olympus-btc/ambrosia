@@ -2,7 +2,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { OptionTypeManager } from "../OptionTypeManager";
 
+const mockAddToast = jest.fn();
 jest.mock("@heroui/react", () => ({
+  addToast: (...toastArguments) => mockAddToast(...toastArguments),
   Button: ({ children, onPress, isDisabled }) => (
     <button onClick={onPress} disabled={isDisabled}>
       {children}
@@ -38,7 +40,7 @@ const options = [
   },
 ];
 
-const defaultProps = {
+const defaultOptionTypeManagerProps = {
   productId: "p1",
   optionTypes: [],
   optionTypeActions: {
@@ -49,12 +51,12 @@ const defaultProps = {
   onRefresh: jest.fn(),
 };
 
-function renderManager({ optionTypeActions = {}, ...props } = {}) {
+function renderManager({ optionTypeActions = {}, ...optionTypeManagerProps } = {}) {
   return render(
     <OptionTypeManager
-      {...defaultProps}
-      {...props}
-      optionTypeActions={{ ...defaultProps.optionTypeActions, ...optionTypeActions }}
+      {...defaultOptionTypeManagerProps}
+      {...optionTypeManagerProps}
+      optionTypeActions={{ ...defaultOptionTypeManagerProps.optionTypeActions, ...optionTypeActions }}
     />,
   );
 }
@@ -119,6 +121,10 @@ describe("OptionTypeManager", () => {
       "p1",
       expect.objectContaining({ name: "Size" }),
     ));
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.optionTypeCreateSuccess",
+      color: "success",
+    });
     expect(onRefresh).toHaveBeenCalled();
   });
 
@@ -146,7 +152,29 @@ describe("OptionTypeManager", () => {
     fireEvent.click(screen.getByText("saveVariant"));
 
     await waitFor(() => expect(addOptionType).toHaveBeenCalled());
+    expect(mockAddToast).not.toHaveBeenCalled();
     expect(screen.getByLabelText("optionTypeName")).toBeInTheDocument();
+  });
+
+  it("calls onUpdateOptionType, closes the edit form, and shows a success toast", async () => {
+    const updateOptionType = jest.fn().mockResolvedValue(true);
+    const onRefresh = jest.fn().mockResolvedValue(undefined);
+    renderManager({ optionTypes: options, optionTypeActions: { update: updateOptionType }, onRefresh });
+
+    fireEvent.click(screen.getByTestId("edit-option-type-ot1"));
+    fireEvent.click(screen.getByText("saveVariant"));
+
+    await waitFor(() => expect(updateOptionType).toHaveBeenCalledWith(
+      "p1",
+      "ot1",
+      expect.objectContaining({ name: "Color" }),
+    ));
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.optionTypeUpdateSuccess",
+      color: "success",
+    });
+    expect(onRefresh).toHaveBeenCalled();
+    expect(screen.queryByLabelText("optionTypeName")).not.toBeInTheDocument();
   });
 
   it("switches to edit form when the edit button is clicked", () => {
@@ -163,6 +191,10 @@ describe("OptionTypeManager", () => {
     fireEvent.click(screen.getByTestId("delete-option-type-ot1"));
 
     await waitFor(() => expect(deleteOptionType).toHaveBeenCalledWith("p1", "ot1"));
+    expect(mockAddToast).toHaveBeenCalledWith({
+      description: "toasts.optionTypeDeleteSuccess",
+      color: "success",
+    });
     expect(onRefresh).toHaveBeenCalled();
   });
 });

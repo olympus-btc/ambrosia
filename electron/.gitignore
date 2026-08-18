@@ -3,6 +3,8 @@ node_modules
 
 # Build outputs
 dist
+preload.js
+splash-preload.js
 
 # Downloaded resources (binaries, JRE, etc.)
 resources

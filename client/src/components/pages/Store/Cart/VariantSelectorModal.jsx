@@ -24,6 +24,7 @@ export function VariantSelectorModal({ product, isOpen, onClose, onAddToCart }) 
     isDisabled,
     matchedVariant,
     isOutOfStock,
+    isStockTrackedForProduct,
     isValueAvailable,
     toggleOptionValue,
     handleAddToCart,
@@ -73,11 +74,13 @@ export function VariantSelectorModal({ product, isOpen, onClose, onAddToCart }) 
               <span className="text-lg font-bold text-green-800">
                 {formatAmount(matchedVariant.priceCents)}
               </span>
-              <span className={`text-sm ${isOutOfStock ? "text-rose-600" : "text-gray-500"}`}>
-                {isOutOfStock
-                  ? cartTranslation("variantSelector.outOfStock")
-                  : `${matchedVariant.quantity} ${cartTranslation("variantSelector.inStock")}`}
-              </span>
+              {isStockTrackedForProduct && (
+                <span className={`text-sm ${isOutOfStock ? "text-rose-600" : "text-gray-500"}`}>
+                  {isOutOfStock
+                    ? cartTranslation("variantSelector.outOfStock")
+                    : `${matchedVariant.quantity} ${cartTranslation("variantSelector.inStock")}`}
+                </span>
+              )}
             </div>
           )}
         </ModalBody>

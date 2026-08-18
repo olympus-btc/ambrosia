@@ -52,7 +52,7 @@ export function SalesDetailCard({ sales, formatCurrency, disabled, currentRate }
             size="sm"
             className="border border-green-800 text-green-800"
             startContent={<Download aria-hidden="true" className="w-3.5 h-3.5" />}
-            isDisabled={!sales.length}
+            isDisabled={!filteredSales.length}
             onPress={exportToCsv}
           >
             {reportsTranslations("sales.export")}

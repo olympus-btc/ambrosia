@@ -22,3 +22,9 @@ export async function getPaymentByTicketId(id) {
   const response = await httpClient(`/payments/ticket-payments/by-ticket/${id}`);
   return await parseJsonResponse(response, null);
 }
+
+export async function getOrdersWithPayments() {
+  const response = await httpClient("/orders/with-payments");
+  const orders = await parseJsonResponse(response, []);
+  return orders ?? [];
+}

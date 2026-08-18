@@ -26,7 +26,8 @@ export const features = {
       { path: "/store/cart", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["orders_create"] },
       { path: "/store/orders", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["orders_read"] },
       { path: "/store/wallet", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["wallet_read"] },
-      { path: "/store/reports", requiresAuth: true, requiresAdmin: true, types: ["store"], permissions: ["wallet_read"] },
+      { path: "/store/reports", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["reports_read"] },
+      { path: "/store/notifications", requiresAuth: true, requiresAdmin: true, types: ["store"] },
       { path: "/store/settings", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["settings_update"] },
     ],
     navItems: [
@@ -36,6 +37,7 @@ export const features = {
       { path: "/store/orders", label: "orders", icon: "clipboard-clock", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 3 },
       { path: "/store/wallet", label: "wallet", icon: "wallet", showInNavbar: true, tourId: "nav-wallet" },
       { path: "/store/reports", label: "reports", icon: "chart-line", showInNavbar: true },
+      { path: "/store/notifications", label: "notifications", icon: "bell", showInNavbar: true, requiresAdmin: true },
       { path: "/store/settings", label: "settings", icon: "settings", showInNavbar: true, tourId: "nav-settings" },
     ],
   },

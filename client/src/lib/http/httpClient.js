@@ -17,7 +17,7 @@ async function refreshToken() {
 }
 
 export async function httpClient(endpoint, options = {}) {
-  const { skipRefresh = false, ...httpOptions } = options;
+  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
 
   const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet"];
 
@@ -26,24 +26,24 @@ export async function httpClient(endpoint, options = {}) {
     return !AUTH_EXCLUDED_PATHS.some((path) => endpoint.startsWith(path));
   };
 
-  const response = await httpWrapper(endpoint, httpOptions);
+  const initialResponse = await httpWrapper(endpoint, httpOptions);
 
-  if (shouldRefreshToken(response.status, endpoint, skipRefresh)) {
+  if (shouldRefreshToken(initialResponse.status, endpoint, skipRefresh)) {
     const refreshResponse = await refreshToken();
 
     if (refreshResponse.status === 401) {
       dispatchAuthEvent("auth:expired");
-      return response;
+      return initialResponse;
     }
     return await httpWrapper(endpoint, httpOptions);
   }
 
-  if (response.status === 401 && !skipRefresh) {
+  if (initialResponse.status === 401 && !skipRefresh) {
     const event = endpoint.startsWith("/wallet") ? "wallet:unauthorized" : "auth:expired";
     dispatchAuthEvent(event);
   }
-  if (response.status === 403 && !skipRefresh)
+  if (initialResponse.status === 403 && !skipForbiddenRedirect)
     dispatchAuthEvent("auth:forbidden");
 
-  return response;
+  return initialResponse;
 }

@@ -3,6 +3,12 @@ import { useRouter } from "next/navigation";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const mockAddToast = jest.fn();
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  addToast: (...toastArguments) => mockAddToast(...toastArguments),
+}));
+
 jest.mock("@/hooks/turn/useTurn", () => ({
   useTurn: jest.fn(),
 }));
@@ -87,6 +93,33 @@ describe("OpenTurnForm", () => {
       fireEvent.submit(container.querySelector("form"));
       await screen.findByText("openShiftButton");
     });
+
+    it("shows a success toast after opening the shift", async () => {
+      mockOpenShift.mockResolvedValue(1);
+      const { container } = render(<OpenTurnForm />);
+
+      fireEvent.submit(container.querySelector("form"));
+
+      await screen.findByText("openShiftButton");
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "success", description: "openShiftSuccess" }),
+      );
+    });
+
+    it("does not submit twice while the shift is opening", async () => {
+      let resolveOpenShift;
+      mockOpenShift.mockReturnValue(new Promise((resolveShift) => { resolveOpenShift = resolveShift; }));
+      const { container } = render(<OpenTurnForm />);
+      const form = container.querySelector("form");
+
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+
+      expect(mockOpenShift).toHaveBeenCalledTimes(1);
+
+      resolveOpenShift(1);
+      await screen.findByText("openShiftButton");
+    });
   });
 
   describe("error handling", () => {
@@ -97,6 +130,18 @@ describe("OpenTurnForm", () => {
       fireEvent.submit(container.querySelector("form"));
 
       expect(await screen.findByText("openShiftError")).toBeInTheDocument();
+    });
+
+    it("shows an error toast when openShift throws", async () => {
+      mockOpenShift.mockRejectedValue(new Error("Server error"));
+      const { container } = render(<OpenTurnForm />);
+
+      fireEvent.submit(container.querySelector("form"));
+
+      await screen.findByText("openShiftError");
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "Server error" }),
+      );
     });
 
     it("clears error on subsequent submit attempt", async () => {

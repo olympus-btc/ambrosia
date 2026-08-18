@@ -1,7 +1,9 @@
+import { isStockTracked } from "./productStockStatus";
+
 export function variantIsActive(variant) {
   return variant.isActive !== false;
 }
 
-export function variantIsAvailableForSale(variant) {
-  return variantIsActive(variant) && variant.quantity > 0;
+export function variantIsAvailableForSale(variant, product) {
+  return variantIsActive(variant) && (!isStockTracked(product ?? {}) || variant.quantity > 0);
 }

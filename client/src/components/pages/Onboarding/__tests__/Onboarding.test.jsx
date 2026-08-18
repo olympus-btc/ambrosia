@@ -1,9 +1,16 @@
+import { addToast } from "@heroui/react";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { submitInitialSetup } from "@services/initialSetupService";
 
 import { Onboarding } from "../Onboarding";
+
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  addToast: jest.fn(),
+}));
 
 jest.mock("@services/initialSetupService", () => ({
   getInitialSetupStatus: jest.fn(() => Promise.resolve({ initialized: false, needsBusinessType: false })),
@@ -16,6 +23,81 @@ function renderOnboarding() {
       <Onboarding />
     </I18nProvider>,
   );
+}
+
+async function navigateToStep(button, targetStep) {
+  for (let i = 1; i < targetStep; i++) {
+    await act(async () => {
+      fireEvent.click(button);
+    });
+  }
+}
+
+const VALID_PIN = "123456";
+
+const validNwcUri = `nostr+walletconnect://${"a".repeat(64)}?relay=wss://relay.test&secret=${"b".repeat(64)}`;
+
+async function completeOnboardingWithNwcUri(user, nwcUri) {
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await act(async () => {
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.userNamePlaceholder"), { target: { value: "testuser" } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.userPinPlaceholder"), { target: { value: VALID_PIN } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.passwordPlaceholder"), { target: { value: "Abcd123$" } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.confirmPasswordPlaceholder"), { target: { value: "Abcd123$" } });
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await act(async () => {
+    fireEvent.change(screen.getByPlaceholderText("step3.fields.businessNamePlaceholder"), { target: { value: "My Business" } });
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await user.click(screen.getByText("stepWallet.nwcName"));
+  await act(async () => {
+    fireEvent.change(screen.getByPlaceholderText("nostr+walletconnect://..."), {
+      target: { value: nwcUri },
+    });
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.finish"));
+  });
+}
+
+async function completeOnboardingWithPhoenixd() {
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await act(async () => {
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.userNamePlaceholder"), { target: { value: "testuser" } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.userPinPlaceholder"), { target: { value: VALID_PIN } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.passwordPlaceholder"), { target: { value: "Abcd123$" } });
+    fireEvent.change(screen.getByPlaceholderText("step2.fields.confirmPasswordPlaceholder"), { target: { value: "Abcd123$" } });
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+
+  await act(async () => {
+    fireEvent.change(screen.getByPlaceholderText("step3.fields.businessNamePlaceholder"), { target: { value: "My Business" } });
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("buttons.next"));
+  });
 }
 
 const originalError = console.error;
@@ -96,9 +178,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 2);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -127,15 +207,64 @@ describe("Onboarding Wizard", () => {
     expect(nextButton).toBeDisabled();
   });
 
+  it("keeps Next disabled until the PIN has exactly 6 digits in step 2", async () => {
+    await act(async () => {
+      renderOnboarding();
+    });
+
+    const nextButton = screen.getByText("buttons.next");
+    await navigateToStep(nextButton, 2);
+
+    const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
+    const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
+    const passwordInput = screen.getByPlaceholderText("step2.fields.passwordPlaceholder");
+    const confirmPasswordInput = screen.getByPlaceholderText("step2.fields.confirmPasswordPlaceholder");
+
+    await act(async () => {
+      fireEvent.change(userNameInput, { target: { value: "testuser" } });
+      fireEvent.change(passwordInput, { target: { value: "Abcd123$" } });
+      fireEvent.change(confirmPasswordInput, { target: { value: "Abcd123$" } });
+    });
+
+    await act(async () => {
+      fireEvent.change(userPinInput, { target: { value: "1234" } });
+    });
+    expect(nextButton).toBeDisabled();
+
+    await act(async () => {
+      fireEvent.change(userPinInput, { target: { value: "12345" } });
+    });
+    expect(nextButton).toBeDisabled();
+
+    await act(async () => {
+      fireEvent.change(userPinInput, { target: { value: VALID_PIN } });
+    });
+    expect(nextButton).not.toBeDisabled();
+  });
+
+  it("strips non-numeric characters from the PIN and caps it at 6 digits", async () => {
+    await act(async () => {
+      renderOnboarding();
+    });
+
+    const nextButton = screen.getByText("buttons.next");
+    await navigateToStep(nextButton, 2);
+
+    const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
+    await act(async () => {
+      fireEvent.change(userPinInput, { target: { value: "12ab34cd" } });
+    });
+    expect(userPinInput).toHaveValue("1234");
+    expect(userPinInput).toHaveAttribute("maxLength", "6");
+  });
+
   it("disables the Next button if password does not meet requirements in step 2", async () => {
     await act(async () => {
       renderOnboarding();
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 2);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     await act(async () => {
@@ -175,9 +304,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 2);
 
     const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
     const userPinInput = screen.getByPlaceholderText("step2.fields.userPinPlaceholder");
@@ -262,9 +389,7 @@ describe("Onboarding Wizard", () => {
     });
 
     const nextButton = screen.getByText("buttons.next");
-    await act(async () => {
-      fireEvent.click(nextButton);
-    });
+    await navigateToStep(nextButton, 2);
 
     await act(async () => {
       const userNameInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
@@ -305,5 +430,112 @@ describe("Onboarding Wizard", () => {
       fireEvent.change(rfcInput, { target: { value: "GODE561231GR8" } });
     });
     expect(nextButton).not.toBeDisabled();
+  });
+
+  describe("NWC onboarding result toast", () => {
+    it("shows the NWC activated toast when the backend connects successfully", async () => {
+      submitInitialSetup.mockResolvedValueOnce({
+        json: () => Promise.resolve({ nwcSaved: true }),
+      });
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      await completeOnboardingWithNwcUri(user, validNwcUri);
+
+      await waitFor(() => {
+        expect(addToast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: "submitOnboardingToast.nwcSavedTitle", color: "primary" }),
+        );
+      });
+    });
+
+    it("shows an error toast when the NWC backend could not be connected", async () => {
+      submitInitialSetup.mockResolvedValueOnce({
+        json: () => Promise.resolve({ nwcSaved: false }),
+      });
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderOnboarding();
+      });
+
+      await completeOnboardingWithNwcUri(user, validNwcUri);
+
+      await waitFor(() => {
+        expect(addToast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: "submitOnboardingToast.nwcErrorTitle", color: "danger" }),
+        );
+      });
+    });
+  });
+
+  describe("timezone", () => {
+    it("sends the browser-detected timezone in the setup payload", async () => {
+      await act(async () => {
+        renderOnboarding();
+      });
+      await completeOnboardingWithPhoenixd();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("buttons.finish"));
+      });
+
+      await waitFor(() => {
+        expect(submitInitialSetup).toHaveBeenCalledWith(
+          expect.objectContaining({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+        );
+      });
+    });
+  });
+
+  describe("setup submit feedback", () => {
+    it("shows a localized error toast when setup submission fails", async () => {
+      submitInitialSetup.mockRejectedValueOnce(new Error("Server unavailable"));
+
+      await act(async () => {
+        renderOnboarding();
+      });
+      await completeOnboardingWithPhoenixd();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("buttons.finish"));
+      });
+
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "submitOnboardingToast.errorTitle",
+          description: "Server unavailable",
+          color: "danger",
+        }),
+      );
+    });
+
+    it("prevents duplicate setup submissions while finish is pending", async () => {
+      let resolveSetupSubmission;
+      submitInitialSetup.mockImplementationOnce(() => new Promise((resolveSetup) => {
+        resolveSetupSubmission = resolveSetup;
+      }));
+
+      await act(async () => {
+        renderOnboarding();
+      });
+      await completeOnboardingWithPhoenixd();
+      submitInitialSetup.mockClear();
+
+      const finishButton = screen.getByText("buttons.finish");
+      await act(async () => {
+        fireEvent.click(finishButton);
+        fireEvent.click(finishButton);
+      });
+
+      expect(submitInitialSetup).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveSetupSubmission({});
+      });
+    });
   });
 });

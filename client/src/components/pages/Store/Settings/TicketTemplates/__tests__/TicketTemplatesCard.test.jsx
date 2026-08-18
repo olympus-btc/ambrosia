@@ -14,7 +14,7 @@ jest.mock("../List", () => ({
   ),
 }));
 
-const t = (key) => key;
+const settingsTranslations = (key) => key;
 
 describe("TicketTemplatesCard", () => {
   it("renders title and template list", () => {
@@ -26,7 +26,7 @@ describe("TicketTemplatesCard", () => {
         selectedId=""
         onSelect={jest.fn()}
         onNew={jest.fn()}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
     expect(screen.getByText("templates.title")).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("TicketTemplatesCard", () => {
         selectedId=""
         onSelect={jest.fn()}
         onNew={jest.fn()}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
     expect(screen.getByTestId("template-list")).toHaveAttribute("data-loading", "true");

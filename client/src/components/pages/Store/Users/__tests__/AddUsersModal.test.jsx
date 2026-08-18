@@ -22,6 +22,11 @@ jest.mock("framer-motion", () => {
   };
 });
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return { ...actual, addToast: jest.fn() };
+});
+
 const roles = [
   { id: "seller", role: "Seller" },
   { id: "admin", role: "Admin" },
@@ -41,6 +46,8 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+const { addToast } = require("@heroui/react");
 
 const renderModal = (props = {}) => render(
   <I18nProvider>
@@ -151,6 +158,10 @@ describe("AddUsersModal", () => {
     fireEvent.click(screen.getByText("users.modal.submitButton"));
 
     await waitFor(() => expect(addUser).toHaveBeenCalledWith(baseData));
+    expect(addToast).toHaveBeenCalledWith({
+      description: "users.toasts.createSuccess",
+      color: "success",
+    });
     expect(setData).toHaveBeenCalledWith({
       userName: "",
       userPin: "",
@@ -159,6 +170,53 @@ describe("AddUsersModal", () => {
       userRole: "Vendedor",
     });
     expect(setAddUsersShowModal).toHaveBeenCalledWith(false);
+  });
+
+  it("does not reset or close when addUser fails", async () => {
+    const addUser = jest.fn(() => Promise.reject(new Error("add failed")));
+    const setData = jest.fn();
+    const setAddUsersShowModal = jest.fn();
+
+    renderModal({
+      addUser,
+      setData,
+      setAddUsersShowModal,
+    });
+
+    fireEvent.click(screen.getByText("users.modal.submitButton"));
+
+    await waitFor(() => expect(addUser).toHaveBeenCalledWith(baseData));
+    expect(addToast).not.toHaveBeenCalledWith({
+      description: "users.toasts.createSuccess",
+      color: "success",
+    });
+    expect(setData).not.toHaveBeenCalled();
+    expect(setAddUsersShowModal).not.toHaveBeenCalledWith(false);
+  });
+
+  it("does not submit twice while add is pending", async () => {
+    let resolveAddUser;
+    const addUser = jest.fn(() => new Promise((resolve) => {
+      resolveAddUser = resolve;
+    }));
+    const setAddUsersShowModal = jest.fn();
+
+    renderModal({
+      addUser,
+      setAddUsersShowModal,
+    });
+
+    const submitButton = screen.getByText("users.modal.submitButton");
+    fireEvent.click(submitButton);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => expect(addUser).toHaveBeenCalledTimes(1));
+
+    resolveAddUser();
+
+    await waitFor(() => {
+      expect(setAddUsersShowModal).toHaveBeenCalledWith(false);
+    });
   });
 
   it("requires name and pin fields", () => {

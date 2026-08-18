@@ -31,13 +31,18 @@ const SHIFT_DATA = {
 
 function setupMocks({
   totalBalance = 250,
+  cashTotal = totalBalance,
+  refundedCashTotal = 0,
   totalTickets = 5,
   byPaymentMethod = [],
   ticketsLoading = false,
+  breakdownLoading = false,
   printerConfigs = [],
   loadingConfigs = false,
 } = {}) {
-  useTurn.mockReturnValue({ totalBalance, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading: false });
+  useTurn.mockReturnValue({
+    totalBalance, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
+  });
   usePrinters.mockReturnValue({ printTicket: jest.fn(), printerConfigs, loadingConfigs });
 }
 
@@ -118,10 +123,41 @@ describe("CloseTurnModal", () => {
       expect(screen.getByText("$100.00")).toBeInTheDocument();
     });
 
-    it("shows expectedTotal = initialAmount + totalBalance", () => {
-      setupMocks({ totalBalance: 250, ticketsLoading: false });
+    it("shows expectedTotal = initialAmount + cashTotal, not totalBalance", () => {
+      setupMocks({ totalBalance: 250, cashTotal: 180, ticketsLoading: false });
       renderModal();
-      expect(screen.getByText("$350.00")).toBeInTheDocument();
+      expect(screen.getByText("$280.00")).toBeInTheDocument();
+      expect(screen.queryByText("$350.00")).not.toBeInTheDocument();
+    });
+
+    it("shows cashSales line with the cashTotal value", () => {
+      setupMocks({ totalBalance: 250, cashTotal: 180, ticketsLoading: false });
+      renderModal();
+      expect(screen.getByText("cashSales")).toBeInTheDocument();
+      expect(screen.getByText("+ $180.00")).toBeInTheDocument();
+    });
+
+    it("shows cashRefunds line and subtracts it from expectedTotal", () => {
+      setupMocks({ totalBalance: 300, cashTotal: 180, refundedCashTotal: 30, ticketsLoading: false });
+      renderModal();
+      expect(screen.getByText("cashRefunds")).toBeInTheDocument();
+      expect(screen.getByText("- $30.00")).toBeInTheDocument();
+      expect(screen.getByText("$250.00")).toBeInTheDocument();
+      expect(screen.queryByText("$280.00")).not.toBeInTheDocument();
+    });
+
+    it("rounds the difference to the nearest cent so floating-point residue doesn't show as a discrepancy", () => {
+      setupMocks({ cashTotal: 0.001, refundedCashTotal: 0, ticketsLoading: false });
+      renderModal({ shiftData: { ...SHIFT_DATA, initialAmount: 0 } });
+      const differenceRow = screen.getByText("difference").closest("div");
+      expect(differenceRow.className).toContain("text-green-600");
+      expect(differenceRow.className).not.toContain("text-red-600");
+    });
+
+    it("hides summary card while breakdown is loading even if tickets finished loading", () => {
+      setupMocks({ ticketsLoading: false, breakdownLoading: true });
+      renderModal();
+      expect(screen.queryByText("expectedTotal")).not.toBeInTheDocument();
     });
 
     it("shows payment method breakdown when available", () => {
@@ -157,10 +193,10 @@ describe("CloseTurnModal", () => {
     it("calls onConfirm with finalAmount=0 and computed difference", async () => {
       const user = userEvent.setup();
       const onConfirm = jest.fn();
-      setupMocks({ totalBalance: 250, ticketsLoading: false });
+      setupMocks({ totalBalance: 250, cashTotal: 180, ticketsLoading: false });
       renderModal({ onConfirm });
       await user.click(screen.getByText("close.confirm"));
-      expect(onConfirm).toHaveBeenCalledWith(0, -350);
+      expect(onConfirm).toHaveBeenCalledWith(0, -280);
     });
 
     it("disables confirm button while confirmLoading=true", () => {
@@ -240,6 +276,42 @@ describe("CloseTurnModal", () => {
       expect(mockAddToast).toHaveBeenCalledWith(
         expect.objectContaining({ color: "danger", description: "printCorteZError" }),
       );
+    });
+
+    it("shows success toast when printTicket succeeds", async () => {
+      const user = userEvent.setup();
+      const printTicket = jest.fn().mockResolvedValue({ ok: true });
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
+      usePrinters.mockReturnValue({
+        printTicket,
+        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
+        loadingConfigs: false,
+      });
+      renderModal();
+      await user.click(screen.getByText("printCorteZ"));
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "success", description: "printCorteZSuccess" }),
+      );
+    });
+
+    it("does not print twice while printTicket is pending", async () => {
+      const user = userEvent.setup();
+      let resolvePrintTicket;
+      const printTicket = jest.fn().mockReturnValue(new Promise((resolvePrint) => { resolvePrintTicket = resolvePrint; }));
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
+      usePrinters.mockReturnValue({
+        printTicket,
+        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
+        loadingConfigs: false,
+      });
+      renderModal();
+      await user.click(screen.getByText("printCorteZ"));
+      await user.click(screen.getByText("printCorteZ"));
+
+      expect(printTicket).toHaveBeenCalledTimes(1);
+
+      resolvePrintTicket({ ok: true });
+      await screen.findByText("printCorteZ");
     });
 
     it("calls printTicket with corte-z ticket data on print", async () => {

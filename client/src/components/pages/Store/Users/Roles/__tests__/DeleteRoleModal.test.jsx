@@ -64,4 +64,9 @@ describe("DeleteRoleModal", () => {
     renderModal({ deleting: true });
     expect(screen.getByText("roles.actions.cancel").closest("button")).toBeDisabled();
   });
+
+  it("disables delete button while deleting", () => {
+    renderModal({ deleting: true });
+    expect(screen.getByText("roles.actions.delete").closest("button")).toBeDisabled();
+  });
 });

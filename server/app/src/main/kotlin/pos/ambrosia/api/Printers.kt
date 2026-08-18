@@ -23,6 +23,7 @@ import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.PrinterConfigUpdateStatus
 import pos.ambrosia.services.TicketTemplateService
 import pos.ambrosia.utils.PrintTicketException
+import pos.ambrosia.utils.authorizePermission
 
 fun Application.configurePrinters() {
     val ticketTemplateService = TicketTemplateService()
@@ -40,6 +41,19 @@ fun Route.printers(
     authenticate("auth-jwt") {
         get("/available") { call.respond(printService.getAvailablePrinters()) }
         get("/configs") { call.respond(printerConfigService.getPrinterConfigs()) }
+        post("/print") {
+            val printRequest = call.receive<PrintRequest>()
+
+            try {
+                val appConfig = configService.getConfig()
+                printService.printTicket(printRequest, appConfig)
+                call.respondText("Print job sent", status = HttpStatusCode.OK)
+            } catch (printError: Exception) {
+                throw PrintTicketException(printError.message ?: "An unknown error occurred during printing.")
+            }
+        }
+    }
+    authorizePermission("printer_update") {
         post("/configs") {
             val request = call.receive<PrinterConfigCreateRequest>()
             val configId = printerConfigService.createPrinterConfig(request)
@@ -104,17 +118,6 @@ fun Route.printers(
                     "Printer ${request.printerName} set for ${request.printerType}",
                     status = HttpStatusCode.OK,
                 )
-            }
-        }
-        post("/print") {
-            val request = call.receive<PrintRequest>()
-
-            try {
-                val config = configService.getConfig()
-                printService.printTicket(request, config)
-                call.respondText("Print job sent", status = HttpStatusCode.OK)
-            } catch (e: Exception) {
-                throw PrintTicketException(e.message ?: "An unknown error occurred during printing.")
             }
         }
     }

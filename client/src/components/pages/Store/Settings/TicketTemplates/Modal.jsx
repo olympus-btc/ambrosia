@@ -63,7 +63,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    const payload = {
+    const templatePayload = {
       name: name.trim(),
       elements: elements.map((element) => ({
         type: element.type,
@@ -73,16 +73,16 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     };
     try {
       if (selectedId) {
-        await updateTemplate(selectedId, payload);
+        await updateTemplate(selectedId, templatePayload);
       } else {
-        const created = await createTemplate(payload);
-        if (created?.id) {
-          setSelectedId(created.id);
+        const createdTemplate = await createTemplate(templatePayload);
+        if (createdTemplate?.id) {
+          setSelectedId(createdTemplate.id);
         }
       }
       addToast({ color: "success", description: settingsTranslations("templates.saveSuccess") });
-    } catch (error) {
-      console.error("Failed to save template:", error);
+    } catch (saveError) {
+      console.error("Failed to save template:", saveError);
       addToast({ color: "danger", description: settingsTranslations("templates.saveError") });
     } finally {
       setSaving(false);
@@ -105,8 +105,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         description: settingsTranslations("templates.printSuccessDescription"),
         color: "success",
       });
-    } catch (error) {
-      console.error("Error printing test ticket:", error);
+    } catch (printTestError) {
+      console.error("Error printing test ticket:", printTestError);
       addToast({
         title: settingsTranslations("templates.printErrorTitle"),
         description: settingsTranslations("templates.printErrorDescription"),
@@ -129,8 +129,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
       await deleteTemplate(selectedId);
       resetForm();
       addToast({ color: "success", description: settingsTranslations("templates.deleteSuccess") });
-    } catch (error) {
-      console.error("Failed to delete template:", error);
+    } catch (deleteError) {
+      console.error("Failed to delete template:", deleteError);
       addToast({ color: "danger", description: settingsTranslations("templates.deleteError") });
     } finally {
       setDeleting(false);
@@ -157,30 +157,30 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
             <TicketTemplatesEditor
               name={name}
-              onNameChange={(e) => setName(e.target.value)}
+              onNameChange={(event) => setName(event.target.value)}
               elements={elements}
-              onElementChange={(updated) => setElements((prev) => prev.map((el) => (el.localId === updated.localId ? updated : el)))}
+              onElementChange={(updatedElement) => setElements((prev) => prev.map((element) => (element.localId === updatedElement.localId ? updatedElement : element)))}
               onElementAdd={() => {
-                const newEl = createElement();
-                setElements((prev) => [...prev, newEl]);
-                return newEl;
+                const newElement = createElement();
+                setElements((prev) => [...prev, newElement]);
+                return newElement;
               }}
-              onElementReorder={(newArray) => setElements(newArray)}
-              onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
+              onElementReorder={(reorderedElements) => setElements(reorderedElements)}
+              onElementRemove={(localId) => setElements((prev) => prev.filter((element) => element.localId !== localId))}
               config={config}
-              t={settingsTranslations}
+              settingsTranslations={settingsTranslations}
             />
 
             <TemplatePreview
               elements={elements}
               config={config}
               printerType={printerType}
-              onPrinterTypeChange={(e) => setPrinterType(e.target.value)}
+              onPrinterTypeChange={(event) => setPrinterType(event.target.value)}
               printerTypes={PRINTER_TYPES}
               onPrintTest={handlePrintTest}
               printing={printing}
               templateExists={templateExists}
-              t={settingsTranslations}
+              settingsTranslations={settingsTranslations}
             />
           </div>
         </ModalBody>
@@ -193,7 +193,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           onSave={handleSave}
           saving={saving}
           name={name}
-          t={settingsTranslations}
+          settingsTranslations={settingsTranslations}
         />
       </ModalContent>
     </Modal>

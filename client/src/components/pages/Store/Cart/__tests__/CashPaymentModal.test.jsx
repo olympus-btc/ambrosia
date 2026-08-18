@@ -17,20 +17,7 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
-    NumberInput: ({ label, value, onValueChange, onChange, minValue, maxValue, startContent, size, step, classNames, formatOptions, ...props }) => (
-      <input
-        type="number"
-        aria-label={label}
-        value={value}
-        onChange={(e) => {
-          onValueChange?.(parseFloat(e.target.value) || 0);
-          onChange?.(e);
-        }}
-        min={minValue}
-        step={step}
-        {...props}
-      />
-    ),
+    NumberInput: require("@/test-utils/numberInputMock").NumberInputMock,
   };
 });
 
@@ -67,6 +54,15 @@ describe("CashPaymentModal", () => {
     fireEvent.change(input, { target: { value: "12" } });
 
     expect(screen.getByText("$2.00")).toBeInTheDocument();
+  });
+
+  it("updates change when the value arrives as a number from the stepper", () => {
+    render(<CashPaymentModal {...baseProps} />);
+
+    fireEvent.change(screen.getByLabelText("receivedLabel"), { target: { value: "12" } });
+    fireEvent.click(screen.getByLabelText("receivedLabel increment"));
+
+    expect(screen.getByText("$2.01")).toBeInTheDocument();
   });
 
   it("calls onComplete with cashReceived and change when sufficient", async () => {

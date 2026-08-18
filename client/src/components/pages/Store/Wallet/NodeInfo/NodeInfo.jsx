@@ -11,16 +11,12 @@ import { CloseChannelModal } from "../CloseChannel/CloseChannelModal";
 import { ChannelCard } from "./ChannelCard";
 import { NodeSummary } from "./NodeSummary";
 
-export function NodeInfo({ info, onRefresh, currentRate, currencyAcronym, locale }) {
+export function NodeInfo({ info, balance, onRefresh, currentRate, currencyAcronym, locale }) {
   const walletTranslations = useTranslations("wallet");
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
-  const totalBalance = info?.channels
-    ? info.channels
-      .filter((channel) => channel.state === "Normal")
-      .reduce((total, channel) => total + channel.balanceSat, 0)
-    : 0;
+  const totalBalance = balance?.balanceSat ?? 0;
 
   const handleOpenCloseModal = (channel) => {
     setSelectedChannel(channel);

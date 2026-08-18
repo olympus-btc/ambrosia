@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-import { Button } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -14,7 +14,7 @@ export function OptionTypeManager({
   optionTypeActions,
   onRefresh,
 }) {
-  const productsTranslation = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingOptionTypeId, setEditingOptionTypeId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,10 +30,20 @@ export function OptionTypeManager({
     }
   };
 
+  const notifyOptionTypeSuccess = (toastDescriptionKey) => {
+    addToast({
+      description: productsTranslations(toastDescriptionKey),
+      color: "success",
+    });
+  };
+
   const handleAdd = async (optionTypeRequest) => {
     const createdOptionTypeId = await executeOptionTypeMutation(async () => {
       const createdOptionTypeId = await optionTypeActions.add(productId, optionTypeRequest);
-      if (createdOptionTypeId) setIsAddingNew(false);
+      if (createdOptionTypeId) {
+        setIsAddingNew(false);
+        notifyOptionTypeSuccess("toasts.optionTypeCreateSuccess");
+      }
       return createdOptionTypeId;
     });
     return createdOptionTypeId;
@@ -42,14 +52,21 @@ export function OptionTypeManager({
   const handleUpdate = async (optionTypeId, optionTypeRequest) => {
     const optionTypeWasUpdated = await executeOptionTypeMutation(async () => {
       const optionTypeWasUpdated = await optionTypeActions.update(productId, optionTypeId, optionTypeRequest);
-      if (optionTypeWasUpdated) setEditingOptionTypeId(null);
+      if (optionTypeWasUpdated) {
+        setEditingOptionTypeId(null);
+        notifyOptionTypeSuccess("toasts.optionTypeUpdateSuccess");
+      }
       return optionTypeWasUpdated;
     });
     return optionTypeWasUpdated;
   };
 
   const handleDelete = async (optionTypeId) => {
-    await executeOptionTypeMutation(() => optionTypeActions.delete(productId, optionTypeId));
+    await executeOptionTypeMutation(async () => {
+      const optionTypeWasDeleted = await optionTypeActions.delete(productId, optionTypeId);
+      if (optionTypeWasDeleted) notifyOptionTypeSuccess("toasts.optionTypeDeleteSuccess");
+      return optionTypeWasDeleted;
+    });
   };
 
   const renderOptionType = (optionType) => {
@@ -79,7 +96,7 @@ export function OptionTypeManager({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-semibold text-gray-700">{productsTranslation("optionTypes")}</span>
+        <span className="text-sm font-semibold text-gray-700">{productsTranslations("optionTypes")}</span>
         {!isAddingNew && (
           <Button
             size="sm"
@@ -87,13 +104,13 @@ export function OptionTypeManager({
             startContent={<Plus className="w-3.5 h-3.5" />}
             onPress={() => setIsAddingNew(true)}
           >
-            {productsTranslation("addOptionType")}
+            {productsTranslations("addOptionType")}
           </Button>
         )}
       </div>
 
       {optionTypes.length === 0 && !isAddingNew && (
-        <p className="text-sm text-gray-400 py-1">{productsTranslation("noOptionTypes")}</p>
+        <p className="text-sm text-gray-400 py-1">{productsTranslations("noOptionTypes")}</p>
       )}
 
       <div className="space-y-2">

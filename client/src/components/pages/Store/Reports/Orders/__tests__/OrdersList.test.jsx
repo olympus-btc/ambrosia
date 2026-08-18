@@ -41,7 +41,7 @@ jest.mock("@/components/shared/ViewButton", () => ({
 }));
 
 jest.mock("@lib/formatDate", () => ({
-  parseUtcDate: (dateString) => new Date(dateString),
+  parseDateValue: (dateString) => new Date(dateString),
   formatDateParts: (dateString) => {
     const parsed = new Date(dateString);
     if (isNaN(parsed.getTime())) return { localDay: "", date: "-", time: "" };
@@ -145,5 +145,17 @@ describe("ReportsOrdersList", () => {
     }];
     render(<ReportsOrdersList orders={orderWith3Items} formatCurrency={formatCurrency} />);
     expect(screen.getAllByText(/\+1 orders\.more/).length).toBeGreaterThan(0);
+  });
+
+  it("shows the refunded status chip in the desktop table when the order is refunded", () => {
+    const refundedOrder = [{ ...ORDER_FIXTURE[0], refunded: true }];
+    render(<ReportsOrdersList orders={refundedOrder} formatCurrency={formatCurrency} />);
+    expect(screen.getByText("refunded")).toBeInTheDocument();
+  });
+
+  it("shows the paid status chip in the desktop table when the order is not refunded", () => {
+    render(<ReportsOrdersList orders={ORDER_FIXTURE} formatCurrency={formatCurrency} />);
+    expect(screen.queryByText("refunded")).not.toBeInTheDocument();
+    expect(screen.getAllByText("paid").length).toBeGreaterThan(0);
   });
 });

@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { Button, ModalFooter } from "@heroui/react";
 
+import { RequirePermission } from "@/hooks/usePermission";
+
 export function TicketTemplatesFooter({
   selectedId,
   deleting,
@@ -12,7 +14,7 @@ export function TicketTemplatesFooter({
   onSave,
   saving,
   name,
-  t,
+  settingsTranslations,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -20,20 +22,22 @@ export function TicketTemplatesFooter({
     <ModalFooter className="flex justify-between">
       <div className="flex items-center gap-2">
         {selectedId && (
-          confirmDelete ? (
-            <>
-              <Button size="sm" color="danger" onPress={onDelete} isDisabled={deleting}>
-                {t("templates.confirmDelete")}
+          <RequirePermission allOf={["printer_update"]}>
+            {confirmDelete ? (
+              <>
+                <Button size="sm" color="danger" onPress={onDelete} isDisabled={deleting}>
+                  {settingsTranslations("templates.confirmDelete")}
+                </Button>
+                <Button size="sm" variant="light" onPress={() => setConfirmDelete(false)}>
+                  {settingsTranslations("templates.cancelDelete")}
+                </Button>
+              </>
+            ) : (
+              <Button color="danger" variant="bordered" onPress={() => setConfirmDelete(true)}>
+                {settingsTranslations("templates.deleteTemplate")}
               </Button>
-              <Button size="sm" variant="light" onPress={() => setConfirmDelete(false)}>
-                {t("templates.cancelDelete")}
-              </Button>
-            </>
-          ) : (
-            <Button color="danger" variant="bordered" onPress={() => setConfirmDelete(true)}>
-              {t("templates.deleteTemplate")}
-            </Button>
-          )
+            )}
+          </RequirePermission>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -42,16 +46,18 @@ export function TicketTemplatesFooter({
           className="border border-border text-foreground hover:bg-muted transition-colors"
           onPress={onClose}
         >
-          {t("templates.close")}
+          {settingsTranslations("templates.close")}
         </Button>
-        <Button
-          color="primary"
-          className="bg-green-800"
-          onPress={onSave}
-          isDisabled={saving || !name.trim()}
-        >
-          {selectedId ? t("templates.saveChanges") : t("templates.saveNew")}
-        </Button>
+        <RequirePermission allOf={["printer_update"]}>
+          <Button
+            color="primary"
+            className="bg-green-800"
+            onPress={onSave}
+            isDisabled={saving || !name.trim()}
+          >
+            {selectedId ? settingsTranslations("templates.saveChanges") : settingsTranslations("templates.saveNew")}
+          </Button>
+        </RequirePermission>
       </div>
     </ModalFooter>
   );

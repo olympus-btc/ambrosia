@@ -6,6 +6,10 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
+jest.mock("@/hooks/usePermission", () => ({
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("@components/shared/DeleteButton", () => ({
   DeleteButton: ({ onPress }) => (
     <button type="button" onClick={onPress} aria-label="delete">delete</button>
@@ -40,7 +44,7 @@ jest.mock("@heroui/react", () => ({
       <input
         type="checkbox"
         checked={!!isSelected}
-        onChange={(e) => onValueChange(e.target.checked)}
+        onChange={(event) => onValueChange(event.target.checked)}
       />
       {children}
     </label>

@@ -2,11 +2,10 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import withSerwistInit from "@serwist/next";
+import { withSerwist } from "@serwist/turbopack";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const isElectron = process.env.NEXT_PUBLIC_ELECTRON === "true";
 const isDev = process.env.NODE_ENV === "development";
 
 function getLocalNetworkIPs() {
@@ -16,21 +15,13 @@ function getLocalNetworkIPs() {
     .map((iface) => iface.address);
 }
 
-const withSerwist = withSerwistInit({
-  swSrc: "src/app/sw.js",
-  swDest: "public/sw.js",
-  disable: isElectron || isDev,
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: __dirname,
-  ...(isElectron && {
-    outputFileTracingIncludes: {
-      "/**": ["./node_modules/@swc/helpers/**"],
-    },
-  }),
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/@swc/helpers/**"],
+  },
   images: {
     unoptimized: true,
   },

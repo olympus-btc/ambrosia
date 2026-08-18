@@ -4,21 +4,21 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { AddCategoriesModal } from "../AddCategoriesModal";
 
-const baseData = {
+const baseCategoryForm = {
   categoryId: "",
   categoryName: "New Cat",
 };
 
-const renderModal = (props = {}) => render(
+const renderModal = (modalProps = {}) => render(
   <I18nProvider>
     <AddCategoriesModal
-      data={baseData}
-      setData={jest.fn()}
+      categoryForm={baseCategoryForm}
+      setCategoryForm={jest.fn()}
       addCategory={jest.fn(() => Promise.resolve())}
       onChange={jest.fn()}
       addCategoriesShowModal
       setAddCategoriesShowModal={jest.fn()}
-      {...props}
+      {...modalProps}
     />
   </I18nProvider>,
 );
@@ -55,18 +55,32 @@ describe("AddCategoriesModal", () => {
     expect(setAddCategoriesShowModal).toHaveBeenCalledWith(false);
   });
 
-  it("calls addCategory with data on submit and closes modal", async () => {
+  it("calls addCategory with category form on submit and closes modal", async () => {
     const addCategory = jest.fn(() => Promise.resolve());
     const setAddCategoriesShowModal = jest.fn();
-    const setData = jest.fn();
+    const setCategoryForm = jest.fn();
 
-    renderModal({ addCategory, setAddCategoriesShowModal, setData });
+    renderModal({ addCategory, setAddCategoriesShowModal, setCategoryForm });
 
     fireEvent.click(screen.getByText("modal.submitButton"));
 
-    await waitFor(() => expect(addCategory).toHaveBeenCalledWith(baseData));
-    expect(setData).toHaveBeenCalledWith({ categoryName: "" });
+    await waitFor(() => expect(addCategory).toHaveBeenCalledWith(baseCategoryForm));
+    expect(setCategoryForm).toHaveBeenCalledWith({ categoryName: "" });
     expect(setAddCategoriesShowModal).toHaveBeenCalledWith(false);
+  });
+
+  it("does not reset or close when addCategory fails", async () => {
+    const addCategory = jest.fn(() => Promise.reject(new Error("add failed")));
+    const setAddCategoriesShowModal = jest.fn();
+    const setCategoryForm = jest.fn();
+
+    renderModal({ addCategory, setAddCategoriesShowModal, setCategoryForm });
+
+    fireEvent.click(screen.getByText("modal.submitButton"));
+
+    await waitFor(() => expect(addCategory).toHaveBeenCalledWith(baseCategoryForm));
+    expect(setCategoryForm).not.toHaveBeenCalled();
+    expect(setAddCategoriesShowModal).not.toHaveBeenCalledWith(false);
   });
 
   it("prevents double submit while submitting", () => {

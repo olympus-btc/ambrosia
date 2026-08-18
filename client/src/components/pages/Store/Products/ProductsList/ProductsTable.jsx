@@ -14,7 +14,7 @@ import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { getProductStockQuantity, getProductStockStatus, getStockChipClassName } from "@/components/pages/Store/utils/productStockStatus";
+import { getProductStockQuantity, getProductStockStatus, getStockChipClassName, isStockTracked } from "@/components/pages/Store/utils/productStockStatus";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { VariantsButton } from "@/components/shared/VariantsButton";
@@ -54,9 +54,9 @@ export function ProductsTable({
         {products.map((product) => {
           const imageUrl = storedAssetUrl(product?.imageUrl);
           const productCategories = getProductCategories(product, categoryNameById);
-          const stockQuantity = getProductStockQuantity(product);
           const stockStatus = getProductStockStatus(product);
           const stockChipClassName = getStockChipClassName(stockStatus);
+          const stockQuantityLabel = isStockTracked(product) ? getProductStockQuantity(product) : "N/A";
           return (
             <TableRow key={product.id}>
               <TableCell>
@@ -123,7 +123,7 @@ export function ProductsTable({
               </TableCell>
               <TableCell>
                 <Chip className={stockChipClassName}>
-                  {stockQuantity}
+                  {stockQuantityLabel}
                 </Chip>
               </TableCell>
               <TableCell>

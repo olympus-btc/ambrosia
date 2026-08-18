@@ -15,7 +15,7 @@ const mockNavigation = [
   { path: "/store/products", label: "products", icon: "box", showInNavbar: true },
 ];
 
-const mockT = (key) => key;
+const mockNavbarTranslations = (key) => key;
 
 function renderSidebar(props = {}) {
   const mockLogout = jest.fn();
@@ -23,7 +23,7 @@ function renderSidebar(props = {}) {
     availableNavigation: mockNavigation,
     isAuth: true,
     pathname: "/store/users",
-    t: mockT,
+    navbarTranslations: mockNavbarTranslations,
     logout: mockLogout,
     config: { businessName: "Test Store" },
     logoSrc: null,

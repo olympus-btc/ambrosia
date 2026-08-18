@@ -7,6 +7,11 @@ import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -174,8 +179,8 @@ class ShiftServiceTest {
                     endTime = "2pm",
                     notes = "note-1",
                 )
-            val result = service.addShift(newShift)
-            assertNull(result)
+            val shiftId = service.addShift(newShift)
+            assertNull(shiftId)
         }
     }
 
@@ -194,8 +199,8 @@ class ShiftServiceTest {
                     endTime = null,
                     notes = "note-1",
                 )
-            val result = service.addShift(newShift)
-            assertNull(result)
+            val shiftId = service.addShift(newShift)
+            assertNull(shiftId)
         }
     }
 
@@ -212,9 +217,32 @@ class ShiftServiceTest {
                     endTime = "2pm",
                     notes = "note-1",
                 )
-            val result = service.addShift(newShift)
-            assertNotNull(result)
-            assertTrue(result.isNotBlank())
+            val shiftId = service.addShift(newShift)
+            assertNotNull(shiftId)
+            assertTrue(shiftId.isNotBlank())
+        }
+    }
+
+    @Test
+    fun `addShift computes shiftDate using the configured timezone, not what the client sent`() {
+        runBlocking {
+            ExposedTestDb.seedConfig("Pacific/Kiritimati")
+            val userId = seedUser()
+            val expectedDate = LocalDate.now(ZoneId.of("Pacific/Kiritimati")).toString()
+            val newShift =
+                Shift(
+                    id = null,
+                    userId = userId,
+                    shiftDate = "2000-01-01",
+                    startTime = "00:00:00",
+                    endTime = null,
+                    notes = "note-1",
+                )
+
+            val shiftId = service.addShift(newShift)
+
+            val stored = service.getShiftById(shiftId!!)
+            assertEquals(expectedDate, stored?.shiftDate)
         }
     }
 
@@ -231,6 +259,25 @@ class ShiftServiceTest {
             assertEquals(150.0, updated?.finalAmount)
             assertEquals(50.0, updated?.difference)
             assertNotNull(updated?.endTime)
+        }
+    }
+
+    @Test
+    fun `closeShift computes endTime using the configured timezone`() {
+        runBlocking {
+            ExposedTestDb.seedConfig("Pacific/Kiritimati")
+            val zoneId = ZoneId.of("Pacific/Kiritimati")
+            val userId = seedUser()
+            val shiftId = ExposedTestDb.seedShift(userId, shiftDate = "date-1", startTime = "7am", endTime = null)
+
+            val before = LocalDateTime.now(zoneId)
+            service.closeShift(shiftId)
+            val after = LocalDateTime.now(zoneId)
+
+            val parsedEndTime = LocalTime.parse(service.getShiftById(shiftId)!!.endTime, DateTimeFormatter.ofPattern("HH:mm:ss"))
+            val storedEndTime = LocalDateTime.of(LocalDate.now(zoneId), parsedEndTime)
+            assertFalse(storedEndTime.isBefore(before.withNano(0)))
+            assertFalse(storedEndTime.isAfter(after))
         }
     }
 

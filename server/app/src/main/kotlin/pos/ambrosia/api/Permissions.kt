@@ -7,13 +7,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.services.PermissionsService
-import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.authorizeAdminPermission
 
 fun Application.configurePermissions() {
     val permissionsService = PermissionsService()
     routing {
         route("/permissions") {
-            authorizePermission("permissions_read") {
+            authorizeAdminPermission("permissions_read") {
                 get("") {
                     val list = permissionsService.getAll()
                     if (list.isEmpty()) {

@@ -10,6 +10,8 @@ const eslintConfig = [
       'dist/**',
       'resources/**',
       'build/**',
+      'preload.js',
+      'splash-preload.js',
     ],
   },
   {

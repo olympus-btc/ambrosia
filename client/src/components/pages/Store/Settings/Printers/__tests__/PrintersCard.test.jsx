@@ -6,6 +6,10 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
+jest.mock("@/hooks/usePermission", () => ({
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
     <button type="button" onClick={onPress} {...props}>

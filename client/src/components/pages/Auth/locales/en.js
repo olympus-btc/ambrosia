@@ -24,6 +24,8 @@ const authEn = {
       selectEmployee: "Please select an employee.",
       enterPin: "The PIN must be at least 4 digits long.",
       incorrectPin: "Incorrect PIN for the selected employee.",
+      loadEmployeesTitle: "Could not load employees",
+      loadEmployeesDescription: "Refresh the page or contact an administrator.",
     },
     successMessages: {
       toastTitle: "Successful login",

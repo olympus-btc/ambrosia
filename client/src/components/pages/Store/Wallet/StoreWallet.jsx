@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl";
 import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import {
+  getBalance,
   getIncomingTransactions,
   getInfo,
   getOutgoingTransactions,
@@ -22,12 +23,15 @@ import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 import { useInvoiceState } from "./hooks/useInvoiceState";
 import { NodeError, NodeInfo } from "./NodeInfo";
 import { InvoiceModal, Transactions } from "./Transactions";
+import { WalletPasswordCard } from "./WalletPassword";
 
 export function StoreWallet() {
   const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const { currentRate } = useBitcoinPrice({ currencyAcronym: currency.acronym });
   const [info, setInfo] = useState(null);
+  const [infoLoading, setInfoLoading] = useState(true);
+  const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,11 +43,13 @@ export function StoreWallet() {
 
   const fetchInfo = useCallback(async () => {
     try {
-      const res = await getInfo();
-      setInfo(res);
+      setInfoLoading(true);
+      const [infoResponse, balanceResponse] = await Promise.all([getInfo(), getBalance()]);
+      setInfo(infoResponse);
+      setBalance(balanceResponse);
       setError("");
-    } catch (err) {
-      console.error(err);
+    } catch (walletInfoError) {
+      console.error(walletInfoError);
       setError(walletTranslations("nodeInfo.fetchInfoError"));
       addToast({
         title: walletTranslations("errorTitle"),
@@ -51,6 +57,8 @@ export function StoreWallet() {
         variant: "solid",
         color: "danger",
       });
+    } finally {
+      setInfoLoading(false);
     }
   }, [walletTranslations]);
 
@@ -59,20 +67,18 @@ export function StoreWallet() {
       try {
         setLoading(true);
         setTransactions([]);
-        let incoming = [];
-        let outgoing = [];
 
-        if (filter === "incoming" || filter === "all") {
-          incoming = await getIncomingTransactions();
-        }
-        if (filter === "outgoing" || filter === "all") {
-          outgoing = await getOutgoingTransactions();
-        }
+        const [incoming, outgoing] = await Promise.all([
+          filter === "incoming" || filter === "all" ? getIncomingTransactions() : [],
+          filter === "outgoing" || filter === "all" ? getOutgoingTransactions() : [],
+        ]);
 
-        const allTx = [...incoming, ...outgoing].sort(
-          (a, b) => b.completedAt - a.completedAt,
+        const sortedTransactions = [...incoming, ...outgoing].sort(
+          (firstTransaction, secondTransaction) => (
+            secondTransaction.completedAt - firstTransaction.completedAt
+          ),
         );
-        setTransactions(allTx);
+        setTransactions(sortedTransactions);
       } catch {
         addToast({
           title: walletTranslations("errorTitle"),
@@ -104,19 +110,19 @@ export function StoreWallet() {
   }, [invoiceState.created, setInvoiceHash]);
 
   useEffect(() => {
-    const off = onPayment((data) => {
+    const unsubscribePaymentListener = onPayment((paymentEvent) => {
       if (
         invoiceHashRef.current &&
-        data.paymentHash &&
-        data.paymentHash === invoiceHashRef.current
+        paymentEvent.paymentHash &&
+        paymentEvent.paymentHash === invoiceHashRef.current
       ) {
         invoiceActions.markAsPaid(Date.now());
       }
     });
-    return () => off?.();
+    return () => unsubscribePaymentListener?.();
   }, [onPayment, invoiceActions]);
 
-  if (!info) {
+  if (infoLoading) {
     return (
       <Card className="w-full max-w-md shadow-2xl border-0 bg-white">
         <CardBody className="flex flex-col items-center justify-center py-12">
@@ -142,6 +148,7 @@ export function StoreWallet() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-6">
             <NodeInfo
               info={info}
+              balance={balance}
               onRefresh={fetchInfo}
               currentRate={currentRate}
               currencyAcronym={currency.acronym}
@@ -159,6 +166,8 @@ export function StoreWallet() {
               currentRate={currentRate}
             />
           </div>
+
+          <WalletPasswordCard />
 
           <InvoiceModal
             invoiceState={invoiceState}

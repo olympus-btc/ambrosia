@@ -16,7 +16,7 @@ jest.mock("../ElementRow", () => ({
   ),
 }));
 
-const t = (key) => key;
+const settingsTranslations = (key) => key;
 
 describe("TemplateElementsEditor", () => {
   it("renders rows and triggers add", () => {
@@ -28,7 +28,7 @@ describe("TemplateElementsEditor", () => {
         onAdd={onAdd}
         onMove={jest.fn()}
         onRemove={jest.fn()}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
 

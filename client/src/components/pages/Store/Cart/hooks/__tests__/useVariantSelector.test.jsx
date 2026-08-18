@@ -147,6 +147,22 @@ describe("useVariantSelector", () => {
 
       expect(result.current.matchedVariant?.id).toBe("v2");
       expect(result.current.isOutOfStock).toBe(true);
+      expect(result.current.isStockTrackedForProduct).toBe(true);
+    });
+
+    it("keeps a zero-quantity variant sellable when the product does not track stock", async () => {
+      mockFetchProductDetail.mockResolvedValue({ ...productDetail, trackStock: false });
+      const { result } = setup();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => result.current.toggleOptionValue("type-color", "val-red"));
+      act(() => result.current.toggleOptionValue("type-size", "val-l"));
+
+      expect(result.current.matchedVariant?.id).toBe("v2");
+      expect(result.current.isStockTrackedForProduct).toBe(false);
+      expect(result.current.isOutOfStock).toBe(false);
+      expect(result.current.isDisabled).toBe(false);
+      expect(result.current.isValueAvailable({ id: "type-size" }, "val-l")).toBe(true);
     });
 
     it("isDisabled is false when a valid in-stock variant is matched", async () => {

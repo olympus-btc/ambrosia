@@ -13,6 +13,7 @@ import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.UpdateUserRequest
 import pos.ambrosia.models.User
+import pos.ambrosia.models.UserIdentity
 import pos.ambrosia.utils.DuplicateUserNameException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
@@ -103,6 +104,20 @@ class UsersService(
                 }
         }
 
+    fun getUserIdentities(): List<UserIdentity> =
+        transaction {
+            (UsersTable leftJoin RolesTable)
+                .selectAll()
+                .where { UsersTable.isDeleted eq false }
+                .map { row ->
+                    UserIdentity(
+                        id = row[UsersTable.id].value.toString(),
+                        name = row[UsersTable.name],
+                        role = row.getOrNull(RolesTable.role),
+                    )
+                }
+        }
+
     fun getUserCount(): Long =
         transaction {
             activeUserCount()
@@ -124,13 +139,15 @@ class UsersService(
                 id = user.id.value.toString(),
                 name = user.name,
                 pin = "****",
-                refreshToken = user.refreshToken,
+                refreshToken = "****",
                 role = role?.role,
                 isAdmin = role?.isAdmin ?: false,
                 email = user.email,
                 phone = user.phone,
             )
         }
+
+    fun isRoleAdmin(roleId: String): Boolean = adminGuard.isRoleAdmin(roleId) == true
 
     fun updateUser(
         id: String?,

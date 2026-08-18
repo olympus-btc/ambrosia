@@ -4,4 +4,4 @@ export function getApiUrl() {
   return process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL;
 }
 
-export const API_URL = getApiUrl();
+export const API_URL = process.env.INTERNAL_API_URL || getApiUrl();

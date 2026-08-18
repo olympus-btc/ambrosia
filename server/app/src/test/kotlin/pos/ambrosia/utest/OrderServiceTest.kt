@@ -169,6 +169,19 @@ class OrderServiceTest {
     }
 
     @Test
+    fun `getOrdersByStatus returns refunded orders when found`() {
+        runBlocking {
+            val userId = seedUser()
+            val orderId = ExposedTestDb.seedOrder(userId, status = "refunded")
+
+            val result = service.getOrdersByStatus("refunded")
+            assertNotNull(result)
+            assertEquals(1, result.size)
+            assertEquals(orderId, result[0].id)
+        }
+    }
+
+    @Test
     fun `getOrdersByStatus returns empty list when none found`() {
         runBlocking {
             val result = service.getOrdersByStatus("open")

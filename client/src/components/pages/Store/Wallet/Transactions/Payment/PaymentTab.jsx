@@ -3,11 +3,13 @@
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { getBolt11ValidationErrorCode } from "@/utils/validateBolt11Invoice";
+
 import { useSendPaymentFlow } from "./hooks/useSendPaymentFlow";
 import { PaymentConfirmModal } from "./PaymentConfirmModal";
 import { PaymentForm } from "./PaymentForm";
+import { getInvoiceValidationMessage } from "./utils/invoiceValidationMessages";
 import { getPaymentErrorDescription } from "./utils/paymentErrors";
-import { getBolt11ValidationError } from "./utils/validateBolt11Invoice";
 
 export function PaymentTab({ fetchInfo, fetchTransactions, currentRate }) {
   const walletTranslations = useTranslations("wallet");
@@ -23,7 +25,7 @@ export function PaymentTab({ fetchInfo, fetchTransactions, currentRate }) {
     fetchInfo,
     fetchTransactions,
     currentRate,
-    validateInvoice: (invoiceValue) => getBolt11ValidationError(invoiceValue, walletTranslations),
+    validateInvoice: (invoiceValue) => getInvoiceValidationMessage(walletTranslations, getBolt11ValidationErrorCode(invoiceValue)),
   });
 
   const handleOpenConfirm = async () => {

@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { useDateRangeFilters } from "../hooks/useFilters";
 
-const PERIODS = ["week", "month", "year"];
+const PERIODS = ["day", "week", "month", "year"];
 
 export function PeriodFilter({ filters, onFiltersChange, disabled }) {
   const reportsTranslations = useTranslations("reports");
@@ -53,7 +53,7 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
             <p className="text-xs text-default-500">{reportsTranslations("dates.subtitle")}</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {PERIODS.map((period) => (
               <Button
                 key={period}

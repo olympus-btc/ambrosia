@@ -16,19 +16,18 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("next-intl", () => {
-  const t = (key) => key;
-  return { useTranslations: () => t };
+  const errorsTranslations = (key) => key;
+  return { useTranslations: () => errorsTranslations };
 });
 
 const handlers = {};
 
 function TestComponent() {
-  const { payments, loading, error, refetch, getPaymentCurrencyById } = usePayments();
+  const { payments, loading, error, refetch } = usePayments();
 
   useEffect(() => {
     handlers.refetch = refetch;
-    handlers.getPaymentCurrencyById = getPaymentCurrencyById;
-  }, [refetch, getPaymentCurrencyById]);
+  }, [refetch]);
 
   return (
     <div>
@@ -92,38 +91,5 @@ describe("usePayments", () => {
     });
 
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("2"));
-  });
-
-  it("fetches payment currency by id", async () => {
-    httpClient.mockResolvedValue({ ok: true });
-    parseJsonResponse.mockResolvedValueOnce([]);
-    parseJsonResponse.mockResolvedValueOnce({ id: "c1", acronym: "USD" });
-
-    render(<TestComponent />);
-    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
-
-    let result;
-    await act(async () => {
-      result = await handlers.getPaymentCurrencyById("c1");
-    });
-
-    expect(httpClient).toHaveBeenCalledWith("/payments/currencies/c1");
-    expect(result).toEqual({ id: "c1", acronym: "USD" });
-  });
-
-  it("returns null when getPaymentCurrencyById called with no id", async () => {
-    httpClient.mockResolvedValue({ ok: true });
-    parseJsonResponse.mockResolvedValueOnce([]);
-
-    render(<TestComponent />);
-    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
-
-    let result;
-    await act(async () => {
-      result = await handlers.getPaymentCurrencyById(null);
-    });
-
-    expect(result).toBeNull();
-    expect(httpClient).toHaveBeenCalledTimes(1);
   });
 });

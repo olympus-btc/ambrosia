@@ -8,6 +8,8 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.models.Role
+import pos.ambrosia.services.AuthService
+import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.RolesService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
@@ -24,6 +26,8 @@ import kotlin.test.assertTrue
 class RoleServiceTest {
     private val env = applicationEnvironment { config = MapApplicationConfig("secret" to "test-secret") }
     private val service = RolesService(env)
+    private val authService = AuthService(env)
+    private val permissionsService = PermissionsService()
     private lateinit var dbFile: File
 
     @Before
@@ -58,6 +62,48 @@ class RoleServiceTest {
         runBlocking {
             val result = service.addRole(Role(role = "Cashier", password = "1234", isAdmin = false))
             assertNotNull(result)
+        }
+    }
+
+    @Test
+    fun `addRole assigns all enabled permissions when isAdmin is true`() {
+        runBlocking {
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            ExposedTestDb.seedPermission("perm.write", "Write")
+
+            val roleId = service.addRole(Role(role = "Admin", password = "1234", isAdmin = true))
+
+            assertNotNull(roleId)
+            val names = permissionsService.getByRole(roleId!!)!!.map { it.name }
+            assertEquals(listOf("perm.read", "perm.write"), names)
+        }
+    }
+
+    @Test
+    fun `addRole does not assign permissions when isAdmin is false`() {
+        runBlocking {
+            ExposedTestDb.seedPermission("perm.read", "Read")
+
+            val roleId = service.addRole(Role(role = "Cashier", password = "1234", isAdmin = false))
+
+            assertNotNull(roleId)
+            assertTrue(permissionsService.getByRole(roleId!!)!!.isEmpty())
+        }
+    }
+
+    @Test
+    fun `addRole assigns requested permissions atomically when role is not admin`() {
+        runBlocking {
+            ExposedTestDb.seedPermission("perm.read", "Read")
+
+            val roleId =
+                service.addRole(
+                    Role(role = "Cashier", password = "1234", isAdmin = false),
+                    listOf("perm.read"),
+                )
+
+            assertNotNull(roleId)
+            assertEquals(listOf("perm.read"), permissionsService.getByRole(roleId!!)!!.map { it.name })
         }
     }
 
@@ -104,6 +150,146 @@ class RoleServiceTest {
 
             val updated = service.getRoleById(roleId)
             assertEquals("Manager", updated?.role)
+        }
+    }
+
+    @Test
+    fun `updateRole does not change role password`() {
+        runBlocking {
+            val roleId = service.addRole(Role(role = "Cashier", password = "old-password", isAdmin = false))
+            assertNotNull(roleId)
+            val userId = ExposedTestDb.seedUser("cashier-user", roleId)
+
+            val roleUpdateSucceeded =
+                service.updateRole(roleId, Role(role = "Manager", password = "new-password", isAdmin = false))
+
+            assertTrue(roleUpdateSucceeded)
+            assertTrue(authService.authenticateByRole(userId, "old-password".toCharArray()))
+            assertFalse(authService.authenticateByRole(userId, "new-password".toCharArray()))
+        }
+    }
+
+    @Test
+    fun `updateWalletPasswordForUser changes the current user's role password`() {
+        runBlocking {
+            val roleId = service.addRole(Role(role = "Cashier", password = "old-password", isAdmin = false))
+            assertNotNull(roleId)
+            val userId = ExposedTestDb.seedUser("cashier-user", roleId)
+
+            val walletPasswordWasUpdated = service.updateWalletPasswordForUser(userId, "new-password".toCharArray())
+
+            assertTrue(walletPasswordWasUpdated)
+            assertFalse(authService.authenticateByRole(userId, "old-password".toCharArray()))
+            assertTrue(authService.authenticateByRole(userId, "new-password".toCharArray()))
+        }
+    }
+
+    @Test
+    fun `updateWalletPasswordForUser rejects blank passwords`() {
+        runBlocking {
+            val roleId = service.addRole(Role(role = "Cashier", password = "old-password", isAdmin = false))
+            assertNotNull(roleId)
+            val userId = ExposedTestDb.seedUser("cashier-user", roleId)
+
+            val blankPasswordWasRejected = service.updateWalletPasswordForUser(userId, charArrayOf())
+
+            assertFalse(blankPasswordWasRejected)
+            assertTrue(authService.authenticateByRole(userId, "old-password".toCharArray()))
+        }
+    }
+
+    @Test
+    fun `updateRole assigns all enabled permissions when isAdmin becomes true`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            ExposedTestDb.seedPermission("perm.write", "Write")
+
+            val result = service.updateRole(roleId, Role(role = "Manager", isAdmin = true))
+
+            assertTrue(result)
+            val names = permissionsService.getByRole(roleId)!!.map { it.name }
+            assertEquals(listOf("perm.read", "perm.write"), names)
+        }
+    }
+
+    @Test
+    fun `updateRole updates fields and permissions together`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            ExposedTestDb.seedPermission("perm.write", "Write")
+            permissionsService.replaceRolePermissions(roleId, listOf("perm.read"))
+
+            val result =
+                service.updateRole(
+                    roleId,
+                    Role(role = "Manager", isAdmin = false),
+                    listOf("perm.write"),
+                )
+
+            assertTrue(result)
+            assertEquals("Manager", service.getRoleById(roleId)?.role)
+            assertEquals(listOf("perm.write"), permissionsService.getByRole(roleId)!!.map { it.name })
+        }
+    }
+
+    @Test
+    fun `updateRole rolls back role fields when permission persistence fails`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            permissionsService.replaceRolePermissions(roleId, listOf("perm.read"))
+            val failingService =
+                RolesService(env) { _, _ ->
+                    throw IllegalStateException("Permission persistence failed")
+                }
+
+            assertFailsWith<IllegalStateException> {
+                failingService.updateRole(
+                    roleId,
+                    Role(role = "Manager", isAdmin = true),
+                    listOf("perm.read"),
+                )
+            }
+
+            val unchangedRole = service.getRoleById(roleId)
+            assertEquals("Cashier", unchangedRole?.role)
+            assertFalse(unchangedRole?.isAdmin ?: true)
+            assertEquals(listOf("perm.read"), permissionsService.getByRole(roleId)!!.map { it.name })
+        }
+    }
+
+    @Test
+    fun `updateRole preserves permissions when permission payload is omitted`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            permissionsService.replaceRolePermissions(roleId, listOf("perm.read"))
+
+            val result = service.updateRole(roleId, Role(role = "Seller", isAdmin = false))
+
+            assertTrue(result)
+            assertEquals(listOf("perm.read"), permissionsService.getByRole(roleId)!!.map { it.name })
+        }
+    }
+
+    @Test
+    fun `updateRole keeps all enabled permissions when admin payload is partial`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Admin", isAdmin = true)
+            ExposedTestDb.seedPermission("perm.read", "Read")
+            ExposedTestDb.seedPermission("perm.write", "Write")
+
+            val result =
+                service.updateRole(
+                    roleId,
+                    Role(role = "Administrator", isAdmin = true),
+                    listOf("perm.read"),
+                )
+
+            assertTrue(result)
+            assertEquals(listOf("perm.read", "perm.write"), permissionsService.getByRole(roleId)!!.map { it.name })
         }
     }
 

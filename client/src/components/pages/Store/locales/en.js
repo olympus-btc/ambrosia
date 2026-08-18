@@ -1,4 +1,5 @@
 import cartEn from "../Cart/locales/en";
+import notificationsEn from "../Notifications/locales/en";
 import ordersEn from "../Orders/locales/en";
 import productsEn from "../Products/locales/en";
 import reportsEn from "../Reports/locales/en";
@@ -23,6 +24,7 @@ const storeEn = {
     cart: "Sale",
     orders: "Orders",
     reports: "Reports",
+    notifications: "Notifications",
   },
   dashboard: {
     title: "Dashboard",
@@ -31,6 +33,7 @@ const storeEn = {
       users: "Users",
       products: "Products",
       sales: "Sales",
+      revenue: "Revenue",
     },
   },
   ...usersEn,
@@ -39,6 +42,7 @@ const storeEn = {
   ...walletEn,
   ...ordersEn,
   ...reportsEn,
+  ...notificationsEn,
   ...settingsEn,
 };
 

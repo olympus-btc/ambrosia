@@ -1,3 +1,4 @@
+import { addToast } from "@heroui/react";
 import { renderHook } from "@testing-library/react";
 
 import { useCustomerReceipt } from "../useCustomerReceipt";
@@ -5,6 +6,14 @@ import { useCustomerReceipt } from "../useCustomerReceipt";
 let mockPrinterConfigs;
 let mockLoadingConfigs;
 const mockPrintTicket = jest.fn(() => Promise.resolve());
+
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => ({
+  useTranslations: () => (translationKey) => translationKey,
+}));
 
 jest.mock("../../../hooks/usePrinter", () => ({
   usePrinters: () => ({
@@ -16,15 +25,21 @@ jest.mock("../../../hooks/usePrinter", () => ({
 
 beforeEach(() => {
   mockPrintTicket.mockClear();
+  addToast.mockClear();
   mockPrinterConfigs = [{ id: "cfg-1", printerType: "CUSTOMER", enabled: true }];
   mockLoadingConfigs = false;
+  jest.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  console.error.mockRestore();
 });
 
 describe("useCustomerReceipt", () => {
   it("prints a CUSTOMER ticket with mapped item data", async () => {
-    const { result } = renderHook(() => useCustomerReceipt());
+    const { result: receiptHook } = renderHook(() => useCustomerReceipt());
 
-    await result.current.printCustomerReceipt({
+    await receiptHook.current.printCustomerReceipt({
       items: [{ name: "Jade", price: 100, quantity: 2 }],
       totalCents: 200,
       ticketId: 42,
@@ -49,19 +64,35 @@ describe("useCustomerReceipt", () => {
 
   it("does not print when there is no enabled customer printer", async () => {
     mockPrinterConfigs = [{ id: "cfg-1", printerType: "KITCHEN", enabled: true }];
-    const { result } = renderHook(() => useCustomerReceipt());
+    const { result: receiptHook } = renderHook(() => useCustomerReceipt());
 
-    await result.current.printCustomerReceipt({ items: [], totalCents: 0, ticketId: 1 });
+    await receiptHook.current.printCustomerReceipt({ items: [], totalCents: 0, ticketId: 1 });
 
     expect(mockPrintTicket).not.toHaveBeenCalled();
   });
 
   it("does not print while printer configs are still loading", async () => {
     mockLoadingConfigs = true;
-    const { result } = renderHook(() => useCustomerReceipt());
+    const { result: receiptHook } = renderHook(() => useCustomerReceipt());
 
-    await result.current.printCustomerReceipt({ items: [], totalCents: 0, ticketId: 1 });
+    await receiptHook.current.printCustomerReceipt({ items: [], totalCents: 0, ticketId: 1 });
 
     expect(mockPrintTicket).not.toHaveBeenCalled();
+  });
+
+  it("shows a warning toast when customer receipt printing fails", async () => {
+    mockPrintTicket.mockRejectedValueOnce(new Error("printer offline"));
+    const { result: receiptHook } = renderHook(() => useCustomerReceipt());
+
+    await receiptHook.current.printCustomerReceipt({
+      items: [{ name: "Jade", price: 100, quantity: 2 }],
+      totalCents: 200,
+      ticketId: 42,
+    });
+
+    expect(addToast).toHaveBeenCalledWith({
+      color: "warning",
+      description: "errors.printCustomer",
+    });
   });
 });

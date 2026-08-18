@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-import { Button, Card, CardBody } from "@heroui/react";
+import { Button, Card, CardBody, addToast } from "@heroui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock, X } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -24,11 +24,21 @@ export function ShiftWidget() {
   const formatCurrency = (amount) => formatAmount(Math.round(amount * 100));
 
   const handleConfirmClose = async (finalAmount, difference) => {
+    if (closingTurn) return;
     setClosingTurn(true);
-    await closeShift(finalAmount, difference);
-    setClosingTurn(false);
-    setShowCloseModal(false);
-    setIsExpanded(false);
+    try {
+      await closeShift(finalAmount, difference);
+      addToast({ color: "success", description: shiftTranslations("closeShiftSuccess") });
+      setShowCloseModal(false);
+      setIsExpanded(false);
+    } catch (closeShiftError) {
+      addToast({
+        color: "danger",
+        description: closeShiftError?.responseMessage || closeShiftError?.message || shiftTranslations("closeShiftError"),
+      });
+    } finally {
+      setClosingTurn(false);
+    }
   };
 
   return (

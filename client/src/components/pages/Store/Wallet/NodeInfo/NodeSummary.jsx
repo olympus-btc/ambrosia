@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, Layers, Globe, Zap } from "lucide-react";
+import { Wallet, Layers, Globe, Zap, AtSign } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { formatFiat, formatSats } from "../utils/formatters";
@@ -22,6 +22,7 @@ function StatCard({ icon: Icon, label, value, secondaryValue }) {
 
 export function NodeSummary({ info, totalBalance, currentRate, currencyAcronym, locale }) {
   const walletTranslations = useTranslations("wallet");
+  const isNwcBackend = info.version === "NWC";
 
   const totalBalanceFiat = currentRate != null
     ? formatFiat({
@@ -44,16 +45,27 @@ export function NodeSummary({ info, totalBalance, currentRate, currencyAcronym, 
         label={walletTranslations("nodeInfo.network")}
         value={info.chain}
       />
-      <StatCard
-        icon={Zap}
-        label={walletTranslations("nodeInfo.channels")}
-        value={info.channels?.filter((channel) => channel.state === "Normal").length ?? 0}
-      />
-      <StatCard
-        icon={Layers}
-        label={walletTranslations("nodeInfo.block")}
-        value={info.blockHeight}
-      />
+      {!isNwcBackend && (
+        <>
+          <StatCard
+            icon={Zap}
+            label={walletTranslations("nodeInfo.channels")}
+            value={info.channels?.filter((channel) => channel.state?.toUpperCase() === "NORMAL").length ?? 0}
+          />
+          <StatCard
+            icon={Layers}
+            label={walletTranslations("nodeInfo.block")}
+            value={info.blockHeight}
+          />
+        </>
+      )}
+      {isNwcBackend && info.lud16 && (
+        <StatCard
+          icon={AtSign}
+          label={walletTranslations("nodeInfo.lightningAddress")}
+          value={info.lud16}
+        />
+      )}
     </div>
   );
 }

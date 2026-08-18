@@ -86,12 +86,17 @@ jest.mock("../hooks/usePersistentCart", () => ({
   }),
 }));
 
+let mockProductsForbidden = false;
+let mockCategoriesForbidden = false;
+let mockPaymentsForbidden = false;
+
 jest.mock("../../hooks/useProducts", () => ({
   useProducts: () => ({
     products: [
       { id: 1, quantity: 5, priceCents: 100 },
       { id: 2, quantity: 5, priceCents: 200 },
     ],
+    forbidden: mockProductsForbidden,
     refetch: jest.fn(),
   }),
 }));
@@ -99,6 +104,7 @@ jest.mock("../../hooks/useProducts", () => ({
 jest.mock("../../hooks/useCategories", () => ({
   useCategories: () => ({
     categories: [],
+    forbidden: mockCategoriesForbidden,
   }),
 }));
 
@@ -108,6 +114,7 @@ jest.mock("../hooks/useCartPayment", () => ({
     isPaying: false,
     paymentError: "",
     clearPaymentError: jest.fn(),
+    paymentsForbidden: mockPaymentsForbidden,
     btcPayment: {
       config: null,
       onInvoiceReady: jest.fn(),
@@ -164,6 +171,10 @@ beforeEach(() => {
   };
 
   jest.clearAllMocks();
+
+  mockProductsForbidden = false;
+  mockCategoriesForbidden = false;
+  mockPaymentsForbidden = false;
 
   jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
     availableFeatures: {},
@@ -281,5 +292,52 @@ describe("Cart page", () => {
 
     fireEvent.click(screen.getByText("clear"));
     expect(mockClearCart).toHaveBeenCalled();
+  });
+
+  it("shows the permission-blocked message when products are forbidden", async () => {
+    mockProductsForbidden = true;
+
+    await act(async () => {
+      renderCart();
+    });
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.getByText("permissionBlocked.products")).toBeInTheDocument();
+    expect(screen.queryByText("add-existing")).not.toBeInTheDocument();
+  });
+
+  it("still renders the sale normally when categories are forbidden", async () => {
+    mockCategoriesForbidden = true;
+
+    await act(async () => {
+      renderCart();
+    });
+
+    expect(screen.queryByText("permissionBlocked.title")).not.toBeInTheDocument();
+    expect(screen.getByText("add-existing")).toBeInTheDocument();
+  });
+
+  it("shows the permission-blocked message when payments are forbidden", async () => {
+    mockPaymentsForbidden = true;
+
+    await act(async () => {
+      renderCart();
+    });
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.getByText("permissionBlocked.payments")).toBeInTheDocument();
+  });
+
+  it("lists every missing permission when more than one is forbidden", async () => {
+    mockProductsForbidden = true;
+    mockPaymentsForbidden = true;
+
+    await act(async () => {
+      renderCart();
+    });
+
+    expect(screen.getByText("permissionBlocked.products")).toBeInTheDocument();
+    expect(screen.getByText("permissionBlocked.payments")).toBeInTheDocument();
+    expect(screen.queryByText("permissionBlocked.categories")).not.toBeInTheDocument();
   });
 });

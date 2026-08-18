@@ -8,14 +8,14 @@ import { useTranslations } from "next-intl";
 import { storedAssetUrl } from "../../../../utils/storedAssetUrl";
 
 export function StoreInfoCard({ data, onEdit }) {
-  const t = useTranslations("settings");
-  const srcLogo = storedAssetUrl(data?.businessLogoUrl);
+  const settingsTranslations = useTranslations("settings");
+  const logoSrc = storedAssetUrl(data?.businessLogoUrl);
 
   return (
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-0">
         <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-          {t("cardInfo.title")}
+          {settingsTranslations("cardInfo.title")}
         </h2>
       </CardHeader>
 
@@ -23,11 +23,11 @@ export function StoreInfoCard({ data, onEdit }) {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
             <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.name")}</div>
+              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.name")}</div>
               <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800 truncate">{data.businessName}</div>
             </div>
             <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.rfc")}</div>
+              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.rfc")}</div>
               <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800 truncate">
                 {data.businessTaxId ?
                   data.businessTaxId :
@@ -38,7 +38,7 @@ export function StoreInfoCard({ data, onEdit }) {
           </div>
 
           <div>
-            <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.address")}</div>
+            <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.address")}</div>
             <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800">
               {data.businessAddress ?
                 data.businessAddress :
@@ -47,9 +47,14 @@ export function StoreInfoCard({ data, onEdit }) {
             </div>
           </div>
 
+          <div>
+            <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.timezone")}</div>
+            <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800">{data.timezone}</div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
             <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.email")}</div>
+              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.email")}</div>
               <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800 truncate">
                 {data.businessEmail ?
                   data.businessEmail :
@@ -58,7 +63,7 @@ export function StoreInfoCard({ data, onEdit }) {
               </div>
             </div>
             <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.phone")}</div>
+              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.phone")}</div>
               <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800 truncate">
                 {data.businessPhone ?
                   data.businessPhone :
@@ -70,14 +75,14 @@ export function StoreInfoCard({ data, onEdit }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{t("cardInfo.logo")}</div>
-              {!srcLogo && (
-                <span className="text-sm text-gray-400 italic">{t("cardInfo.noLogo")}</span>
+              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.logo")}</div>
+              {!logoSrc && (
+                <span className="text-sm text-gray-400 italic">{settingsTranslations("cardInfo.noLogo")}</span>
               )}
             </div>
-            {srcLogo && (
+            {logoSrc && (
               <Image
-                src={srcLogo}
+                src={logoSrc}
                 width={120}
                 height={48}
                 alt="Logo"
@@ -94,7 +99,7 @@ export function StoreInfoCard({ data, onEdit }) {
           className="h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium"
           onPress={onEdit}
         >
-          {t("cardInfo.edit")}
+          {settingsTranslations("cardInfo.edit")}
         </Button>
       </CardFooter>
     </Card>

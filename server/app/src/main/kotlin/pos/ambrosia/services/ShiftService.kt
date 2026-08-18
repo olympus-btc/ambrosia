@@ -12,10 +12,13 @@ import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Shift
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class ShiftService {
+    private val configService = ConfigService()
+
     private fun toModel(entity: ShiftEntity): Shift =
         Shift(
             id = entity.id.value.toString(),
@@ -46,12 +49,13 @@ class ShiftService {
                 return@transaction null
             }
 
+            val openedAt = ZonedDateTime.now(configService.getConfiguredZoneId())
             val id =
                 ShiftEntity
                     .new(UUID.randomUUID()) {
                         this.userId = EntityID(UUID.fromString(shift.userId), UsersTable)
-                        this.shiftDate = shift.shiftDate
-                        this.startTime = shift.startTime
+                        this.shiftDate = openedAt.toLocalDate().toString()
+                        this.startTime = openedAt.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                         this.endTime = shift.endTime
                         this.notes = shift.notes
                         this.initialAmount = shift.initialAmount
@@ -171,7 +175,7 @@ class ShiftService {
         difference: Double? = null,
     ): Boolean =
         transaction {
-            val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+            val now = LocalTime.now(configService.getConfiguredZoneId()).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             val entity = ShiftEntity.findById(UUID.fromString(id))
             if (entity == null || entity.isDeleted || entity.endTime != null) {
                 logger.warn("Shift not closed (not found or already closed): $id")

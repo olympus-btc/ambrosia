@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { DeleteButton } from "@/components/shared/DeleteButton";
+import { toNumberInputValue } from "@/components/utils/numberParsers";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function CartItemCard({ item: cartItem, onRemove, onUpdateQuantity }) {
@@ -52,7 +53,8 @@ export function CartItemCard({ item: cartItem, onRemove, onUpdateQuantity }) {
             size="sm"
             placeholder="Enter the amount"
             value={cartItem.quantity}
-            onChange={(quantityValue) => onUpdateQuantity(cartItem.id, Number(quantityValue))}
+            onValueChange={(quantityValue) => onUpdateQuantity(cartItem.id, toNumberInputValue(quantityValue, NaN))}
+            onChange={(quantityChange) => onUpdateQuantity(cartItem.id, toNumberInputValue(quantityChange, NaN))}
             classNames={{ inputWrapper: "shadow-none" }}
           />
           <div className="text-sm font-semibold text-green-900">

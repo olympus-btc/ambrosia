@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 
-import { Button } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useUpload } from "@/components/hooks/useUpload";
+import { isStockTracked } from "@/components/pages/Store/utils/productStockStatus";
 import { resolveImageUrl } from "@/components/pages/Store/utils/resolveImageUrl";
 
 import { OptionTypeManager } from "./OptionTypeManager";
@@ -19,7 +20,7 @@ export function VariantManager({
   optionTypeActions,
   onRefresh,
 }) {
-  const productsTranslation = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const { upload, isUploading } = useUpload();
   const [isAddingNewVariant, setIsAddingNewVariant] = useState(false);
@@ -27,6 +28,7 @@ export function VariantManager({
   const productId = product?.id;
   const variants = product?.variants ?? [];
   const options = product?.options ?? [];
+  const isStockTrackedForProduct = isStockTracked(product ?? {});
 
   const setVariantMutating = (variantId, isMutating) => {
     setVariantIdsInProgress((previousVariantIdsInProgress) => {
@@ -51,6 +53,13 @@ export function VariantManager({
     }
   };
 
+  const notifyVariantSuccess = (toastDescriptionKey) => {
+    addToast({
+      description: productsTranslations(toastDescriptionKey),
+      color: "success",
+    });
+  };
+
   const buildVariantRequest = async (variantFormData) => ({
     SKU: variantFormData.SKU,
     priceCents: variantFormData.priceCents,
@@ -70,16 +79,25 @@ export function VariantManager({
   const handleAddVariant = (variantFormData) => executeVariantMutation("new", async () => {
     const variantRequest = await buildVariantRequest(variantFormData);
     const createdVariantId = await variantActions.add(productId, variantRequest);
-    if (createdVariantId !== null) setIsAddingNewVariant(false);
+    if (createdVariantId !== null) {
+      setIsAddingNewVariant(false);
+      notifyVariantSuccess("toasts.variantCreateSuccess");
+    }
     return createdVariantId;
   });
 
   const handleUpdateVariant = (variantId, variantFormData) => executeVariantMutation(variantId, async () => {
     const variantRequest = await buildVariantRequest(variantFormData);
-    return variantActions.update(productId, variantId, variantRequest);
+    const variantWasUpdated = await variantActions.update(productId, variantId, variantRequest);
+    if (variantWasUpdated) notifyVariantSuccess("toasts.variantUpdateSuccess");
+    return variantWasUpdated;
   });
 
-  const handleDeleteVariant = (variantId) => executeVariantMutation(variantId, () => variantActions.delete(productId, variantId));
+  const handleDeleteVariant = (variantId) => executeVariantMutation(variantId, async () => {
+    const variantWasDeleted = await variantActions.delete(productId, variantId);
+    if (variantWasDeleted) notifyVariantSuccess("toasts.variantDeleteSuccess");
+    return variantWasDeleted;
+  });
 
   const isAddFormMutating = variantIdsInProgress.has("new") || isUploading;
 
@@ -94,7 +112,7 @@ export function VariantManager({
 
       <div className="border-t border-gray-100 pt-3 space-y-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-semibold text-gray-700">{productsTranslation("variants")}</span>
+          <span className="text-sm font-semibold text-gray-700">{productsTranslations("variants")}</span>
           {!isAddingNewVariant && (
             <Button
               size="sm"
@@ -103,17 +121,17 @@ export function VariantManager({
               onPress={() => setIsAddingNewVariant(true)}
               isDisabled={options.length === 0}
             >
-              {productsTranslation("addVariant")}
+              {productsTranslations("addVariant")}
             </Button>
           )}
         </div>
 
         {options.length === 0 && (
-          <p className="text-xs text-amber-600">{productsTranslation("noOptionTypesWarning")}</p>
+          <p className="text-xs text-amber-600">{productsTranslations("noOptionTypesWarning")}</p>
         )}
 
         {variants.length === 0 && !isAddingNewVariant && options.length > 0 && (
-          <p className="text-sm text-gray-400 py-1">{productsTranslation("noVariants")}</p>
+          <p className="text-sm text-gray-400 py-1">{productsTranslations("noVariants")}</p>
         )}
 
         <div className="space-y-2">
@@ -123,6 +141,7 @@ export function VariantManager({
               variant={variant}
               currency={currency}
               options={options}
+              isStockTrackedForProduct={isStockTrackedForProduct}
               onSave={handleUpdateVariant}
               onDelete={handleDeleteVariant}
               isProcessing={variantIdsInProgress.has(variant.id) || isUploading}
@@ -134,6 +153,7 @@ export function VariantManager({
               initial={{}}
               currency={currency}
               options={options}
+              isStockTrackedForProduct={isStockTrackedForProduct}
               onSave={handleAddVariant}
               onCancel={() => setIsAddingNewVariant(false)}
               isLoading={isAddFormMutating}

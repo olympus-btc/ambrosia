@@ -12,6 +12,7 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.models.Config
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.utils.authorizePermission
+import java.time.ZoneId
 
 fun Application.configureConfig() {
     val configService = ConfigService()
@@ -30,6 +31,10 @@ fun Route.config(configService: ConfigService) {
     authorizePermission("settings_update") {
         put("") {
             val config = call.receive<Config>()
+            if (config.timezone !in ZoneId.getAvailableZoneIds()) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid timezone: ${config.timezone}")
+                return@put
+            }
             val isUpdated = configService.updateConfig(config)
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Failed to update config")

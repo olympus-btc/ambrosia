@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import {
+  addToast,
   Button,
   Input,
   Switch,
@@ -23,7 +24,7 @@ import { CategorySelector } from "./CategorySelector";
 import { ProductPricingFields } from "./ProductPricingFields";
 
 export function EditProductsModal({
-  data,
+  productForm,
   allProducts,
   onChange,
   updateProduct,
@@ -35,12 +36,12 @@ export function EditProductsModal({
   editProductsShowModal,
   onClose,
 }) {
-  const productsTranslation = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBundleConversionConfirmation, setShowBundleConversionConfirmation] = useState(false);
-  const selectedBundleComponents = data.bundleComponents ?? [];
-  const bundleRequiresComponents = data.isBundle && selectedBundleComponents.length === 0;
+  const selectedBundleComponents = productForm.bundleComponents ?? [];
+  const bundleRequiresComponents = productForm.isBundle && selectedBundleComponents.length === 0;
 
   const handleSubmit = async (productFormSubmission) => {
     productFormSubmission.preventDefault();
@@ -49,10 +50,12 @@ export function EditProductsModal({
 
     try {
       setIsSubmitting(true);
-      await updateProduct(data);
+      await updateProduct(productForm);
+      addToast({ description: productsTranslations("toasts.updateSuccess"), color: "success" });
       onClose?.();
       onProductUpdated?.();
     } catch {
+      return;
     } finally {
       setIsSubmitting(false);
     }
@@ -61,16 +64,17 @@ export function EditProductsModal({
   const applyBundleSelection = (isBundleSelected) => {
     onChange({
       isBundle: isBundleSelected,
-      hasVariants: isBundleSelected ? false : data.hasVariants,
+      hasVariants: isBundleSelected ? false : productForm.hasVariants,
       bundleComponents: [],
-      productStock: isBundleSelected ? 0 : data.productStock,
-      productMinStock: isBundleSelected ? 0 : data.productMinStock,
-      productMaxStock: isBundleSelected ? 0 : data.productMaxStock,
+      trackStock: isBundleSelected ? true : productForm.trackStock,
+      productStock: isBundleSelected ? 0 : productForm.productStock,
+      productMinStock: isBundleSelected ? 0 : productForm.productMinStock,
+      productMaxStock: isBundleSelected ? 0 : productForm.productMaxStock,
     });
   };
 
   const handleBundleToggle = (isBundleSelected) => {
-    const willConvertVariantProductToBundle = isBundleSelected && !data.isBundle && data.hasVariants;
+    const willConvertVariantProductToBundle = isBundleSelected && !productForm.isBundle && productForm.hasVariants;
     if (willConvertVariantProductToBundle) {
       setShowBundleConversionConfirmation(true);
       return;
@@ -85,6 +89,15 @@ export function EditProductsModal({
 
   const cancelBundleConversion = () => {
     setShowBundleConversionConfirmation(false);
+  };
+
+  const handleTrackStockToggle = (isStockTrackingSelected) => {
+    onChange({
+      trackStock: isStockTrackingSelected,
+      productStock: isStockTrackingSelected ? productForm.productStock : 0,
+      productMinStock: isStockTrackingSelected ? productForm.productMinStock : 0,
+      productMaxStock: isStockTrackingSelected ? productForm.productMaxStock : 0,
+    });
   };
 
   return (
@@ -105,73 +118,85 @@ export function EditProductsModal({
         placement="center"
       >
         <ModalContent>
-          <ModalHeader>{productsTranslation("modal.titleEdit")}</ModalHeader>
+          <ModalHeader>{productsTranslations("modal.titleEdit")}</ModalHeader>
 
           <ModalBody>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <Switch
-                isSelected={data.isBundle}
+                isSelected={productForm.isBundle}
                 onValueChange={handleBundleToggle}
               >
-                {productsTranslation("modal.isBundle")}
+                {productsTranslations("modal.isBundle")}
               </Switch>
 
               <Input
-                label={productsTranslation("modal.productNameLabel")}
-                placeholder={productsTranslation("modal.productNamePlaceholder")}
+                label={productsTranslations("modal.productNameLabel")}
+                placeholder={productsTranslations("modal.productNamePlaceholder")}
                 isRequired
-                errorMessage={productsTranslation("modal.errorMsgInputFieldEmpty")}
-                value={data.productName}
+                errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
+                value={productForm.productName}
                 onChange={({ target: productNameInput }) => onChange({ productName: productNameInput.value })}
               />
 
               <Textarea
-                label={productsTranslation("modal.productDescriptionLabel")}
-                placeholder={productsTranslation("modal.productDescriptionPlaceholder")}
-                value={data.productDescription ?? ""}
+                label={productsTranslations("modal.productDescriptionLabel")}
+                placeholder={productsTranslations("modal.productDescriptionPlaceholder")}
+                value={productForm.productDescription ?? ""}
                 onChange={({ target: productDescriptionInput }) => onChange({ productDescription: productDescriptionInput.value })}
               />
 
               <CategorySelector
                 categories={categories}
                 categoriesLoading={categoriesLoading}
-                selectedCategories={data.productCategories}
+                selectedCategories={productForm.productCategories}
                 onSelectionChange={(keys) => onChange({ productCategories: keys })}
                 createCategory={createCategory}
               />
 
               <Input
-                label={productsTranslation("modal.productSKULabel")}
-                placeholder={productsTranslation("modal.productSKUPlaceholder")}
-                value={data.productSKU ?? ""}
+                label={productsTranslations("modal.productSKULabel")}
+                placeholder={productsTranslations("modal.productSKUPlaceholder")}
+                value={productForm.productSKU ?? ""}
                 onChange={({ target: productSkuInput }) => onChange({ productSKU: productSkuInput.value })}
               />
 
-              {!data.isBundle && (
+              {!productForm.isBundle && (
                 <div className="flex items-center gap-3">
                   <Switch
-                    isSelected={data.hasVariants ?? false}
-                    onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
+                    isSelected={productForm.trackStock ?? true}
+                    onValueChange={handleTrackStockToggle}
                     size="sm"
+                    aria-label={productsTranslations("trackStock")}
                   />
-                  <span className="text-sm text-gray-700">{productsTranslation("hasVariants")}</span>
+                  <span className="text-sm text-gray-700">{productsTranslations("trackStock")}</span>
                 </div>
               )}
 
-              {!data.hasVariants && (
+              {!productForm.isBundle && (
+                <div className="flex items-center gap-3">
+                  <Switch
+                    isSelected={productForm.hasVariants ?? false}
+                    onValueChange={(hasVariantsSelected) => onChange({ hasVariants: hasVariantsSelected })}
+                    size="sm"
+                  />
+                  <span className="text-sm text-gray-700">{productsTranslations("hasVariants")}</span>
+                </div>
+              )}
+
+              {!productForm.hasVariants && (
                 <ProductPricingFields
-                  data={data}
+                  productForm={productForm}
                   onChange={onChange}
                   currency={currency}
-                  includeStock={!data.isBundle}
+                  includeStock={!productForm.isBundle && (productForm.trackStock ?? true)}
                 />
               )}
 
-              {data.hasVariants && !data.isBundle && (
-                <p className="text-xs text-gray-400">{productsTranslation("variantsHintEditModal")}</p>
+              {productForm.hasVariants && !productForm.isBundle && (
+                <p className="text-xs text-gray-400">{productsTranslations("variantsHintEditModal")}</p>
               )}
 
-              {data.isBundle && (
+              {productForm.isBundle && (
                 <>
                   <BundleProductSelector
                     selectedProducts={selectedBundleComponents}
@@ -180,7 +205,7 @@ export function EditProductsModal({
                   />
                   {bundleRequiresComponents && (
                     <p className="text-xs text-red-500">
-                      {productsTranslation("modal.bundleComponentsRequired")}
+                      {productsTranslations("modal.bundleComponentsRequired")}
                     </p>
                   )}
                 </>
@@ -188,10 +213,10 @@ export function EditProductsModal({
 
               <ImageUploader
                 title=""
-                uploadText={productsTranslation("modal.productImageUpload")}
-                uploadDescription={productsTranslation("modal.productImageUploadMessage")}
+                uploadText={productsTranslations("modal.productImageUpload")}
+                uploadDescription={productsTranslations("modal.productImageUploadMessage")}
                 onChange={(file) => onChange({ productImage: file, productImageRemoved: file === null })}
-                image={data.productImageRemoved ? null : (data.productImage || data.productImageUrl)}
+                image={productForm.productImageRemoved ? null : (productForm.productImage || productForm.productImageUrl)}
               />
 
               <ModalFooter className="flex justify-between p-0 my-4">
@@ -201,7 +226,7 @@ export function EditProductsModal({
                   className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   onPress={() => onClose?.()}
                 >
-                  {productsTranslation("modal.cancelButton")}
+                  {productsTranslations("modal.cancelButton")}
                 </Button>
 
                 <Button
@@ -211,7 +236,7 @@ export function EditProductsModal({
                   isLoading={isSubmitting || isUploading}
                   isDisabled={bundleRequiresComponents}
                 >
-                  {productsTranslation("modal.editButton")}
+                  {productsTranslations("modal.editButton")}
                 </Button>
               </ModalFooter>
             </form>
@@ -231,10 +256,10 @@ export function EditProductsModal({
         placement="center"
       >
         <ModalContent>
-          <ModalHeader>{productsTranslation("modal.confirmBundleConversionTitle")}</ModalHeader>
+          <ModalHeader>{productsTranslations("modal.confirmBundleConversionTitle")}</ModalHeader>
           <ModalBody>
             <p className="text-sm text-gray-600">
-              {productsTranslation("modal.confirmBundleConversionDescription")}
+              {productsTranslations("modal.confirmBundleConversionDescription")}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -244,10 +269,10 @@ export function EditProductsModal({
               className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onPress={cancelBundleConversion}
             >
-              {productsTranslation("modal.cancelButton")}
+              {productsTranslations("modal.cancelButton")}
             </Button>
             <Button color="warning" onPress={confirmBundleConversion}>
-              {productsTranslation("modal.confirmBundleConversionButton")}
+              {productsTranslations("modal.confirmBundleConversionButton")}
             </Button>
           </ModalFooter>
         </ModalContent>

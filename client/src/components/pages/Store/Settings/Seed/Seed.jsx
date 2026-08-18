@@ -15,8 +15,8 @@ const SEED_SETTINGS_TOUR_KEY = "ambrosia:tour:seed-settings";
 export const SEED_SEEN_KEY = "ambrosia:tour:seed-seen";
 
 export function Seed() {
-  const t = useTranslations("settings");
-  const tTour = useTranslations("seedTour");
+  const seedTranslations = useTranslations("settings");
+  const seedTourTranslations = useTranslations("seedTour");
   const [showAccess, setShowAccess] = useState(false);
   const [seed, setSeed] = useState(null);
 
@@ -39,11 +39,11 @@ export function Seed() {
         {
           element: "#settings-seed-card",
           popover: {
-            title: tTour("settingsTitle"),
-            description: tTour.raw("settingsDescription"),
+            title: seedTourTranslations("settingsTitle"),
+            description: seedTourTranslations.raw("settingsDescription"),
             side: "bottom",
             align: "start",
-            nextBtnText: tTour("settingsButton"),
+            nextBtnText: seedTourTranslations("settingsButton"),
             showButtons: ["next"],
           },
         },
@@ -59,10 +59,12 @@ export function Seed() {
     try {
       const seedText = await getSeed();
       setSeed(seedText);
-    } catch {
+    } catch (error) {
       addToast({
-        title: t("cardSeed.errorTitle"),
-        description: t("cardSeed.errorDescription"),
+        title: seedTranslations("cardSeed.errorTitle"),
+        description: error?.code === "unsupported_operation"
+          ? seedTranslations("cardSeed.notAvailableNwc")
+          : seedTranslations("cardSeed.errorDescription"),
         color: "danger",
       });
       setShowAccess(false);
@@ -80,7 +82,7 @@ export function Seed() {
         seed={seed}
         onAuthorized={handleAuthorized}
         onHide={handleHide}
-        t={t}
+        seedCardTranslations={seedTranslations}
       />
     );
   }
@@ -88,7 +90,7 @@ export function Seed() {
   return (
     <SeedCardLocked
       onReveal={() => setShowAccess(true)}
-      t={t}
+      seedCardTranslations={seedTranslations}
     />
   );
 }

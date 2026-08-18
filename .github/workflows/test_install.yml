@@ -1,4 +1,4 @@
-name: Test Installer Script
+name: Test Install & Update Scripts
 
 on:
   pull_request:
@@ -10,15 +10,33 @@ on:
 permissions:
   contents: read
 
+# Pinned baseline: strictly OLDER than the latest release so update.sh has real
+# work to do. The "guard" step in install-and-update fails loudly if this ever
+# equals the resolved latest (i.e. the update would be a no-op skip).
+env:
+  BASELINE_AMBROSIA_TAG: v0.7.0-beta
+
 jobs:
-  test-install:
+  lint-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v5
+
+      - name: Shellcheck install & update scripts
+        run: shellcheck scripts/install.sh scripts/update.sh
+
+      - name: Bash syntax check
+        run: bash -n scripts/install.sh scripts/update.sh
+
+  install-and-update:
     strategy:
       matrix:
         # Test on Linux (x64) and macOS (ARM64/x64)
         os: [ubuntu-latest, macos-latest]
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout project
         uses: actions/checkout@v5
@@ -34,49 +52,122 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Make install script executable
-        run: chmod +x scripts/install.sh
+      - name: Make scripts executable
+        run: chmod +x scripts/install.sh scripts/update.sh
 
-      - name: Run install script
+      # --- Install a pinned OLD baseline so the subsequent update has real work ---
+      - name: Install pinned baseline version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AMBROSIA_TAG: ${{ env.BASELINE_AMBROSIA_TAG }}
         run: ./scripts/install.sh --yes --no-service
 
-      - name: Verify phoenixd binary
+      - name: Verify baseline install
         run: |
-          export PATH="/usr/local/bin:$PATH"
-          echo "Checking phoenixd in PATH..."
-          which phoenixd
-          phoenixd --version || echo "phoenixd executed (exit code may be non-zero for version flag)"
+          export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
 
-      - name: Verify Ambrosia Server
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          echo "Checking ambrosia symlink..."
+          echo "Checking symlinks..."
           which ambrosia
-          ls -l $(which ambrosia)
-          
+          which ambrosia-client
+          which phoenixd
+
           echo "Checking server files..."
           if [ ! -f "$HOME/.local/ambrosia/ambrosia.jar" ]; then
             echo "Error: ambrosia.jar not found"
             exit 1
           fi
 
-      - name: Verify Ambrosia Client
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          echo "Checking ambrosia-client symlink..."
-          which ambrosia-client
-          ls -l $(which ambrosia-client)
-          
           echo "Checking client files and dependencies..."
           if [ ! -f "$HOME/.local/ambrosia/run-client.sh" ]; then
             echo "Error: run-client.sh not found"
             exit 1
           fi
-          
-          # Verify npm install ran (node_modules should exist)
           if [ ! -d "$HOME/.local/ambrosia/client/node_modules" ]; then
             echo "Error: node_modules not found in client directory"
             exit 1
           fi
+
+          baseline_tag="${BASELINE_AMBROSIA_TAG#v}"
+          server_version=$(unzip -p "$HOME/.local/ambrosia/ambrosia.jar" META-INF/MANIFEST.MF 2>/dev/null \
+            | tr -d '\r' | sed -n 's/^Implementation-Version: *//p' | head -n1)
+
+          echo "Baseline server version:  $server_version (expected $baseline_tag)"
+
+          if [ "$server_version" != "$baseline_tag" ]; then
+            echo "Error: baseline server version mismatch (got '$server_version', want '$baseline_tag')"
+            exit 1
+          fi
+
+      # --- Run the update script under test ---
+      - name: Run update script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/update.sh --yes
+
+      - name: Verify update applied
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
+
+          # Resolve the latest tags the same way the scripts do.
+          resolve_latest_tag() {
+            local repo="$1"
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${repo}/releases" \
+              | sed -E -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/p' \
+              | sed -n '1p'
+          }
+
+          latest_ambrosia=$(resolve_latest_tag "olympus-btc/ambrosia")
+          latest_phoenixd=$(resolve_latest_tag "ACINQ/phoenixd")
+          baseline_tag="${BASELINE_AMBROSIA_TAG#v}"
+
+          echo "Latest Ambrosia release: $latest_ambrosia"
+          echo "Latest phoenixd release: $latest_phoenixd"
+
+          # Significance guard: if the pinned baseline already equals latest, the
+          # update is a no-op skip and this test proves nothing. Fail loudly so a
+          # maintainer bumps BASELINE_AMBROSIA_TAG.
+          if [ "$baseline_tag" = "$latest_ambrosia" ]; then
+            echo "Error: pinned baseline ($baseline_tag) equals latest ($latest_ambrosia)."
+            echo "       Bump BASELINE_AMBROSIA_TAG to an older release so update.sh has work to do."
+            exit 1
+          fi
+
+          # Read installed versions using update.sh's own detection logic.
+          server_version=$(unzip -p "$HOME/.local/ambrosia/ambrosia.jar" META-INF/MANIFEST.MF 2>/dev/null \
+            | tr -d '\r' | sed -n 's/^Implementation-Version: *//p' | head -n1)
+          client_version=$(cat "$HOME/.local/ambrosia/client/.ambrosia-version" 2>/dev/null || echo "")
+          phoenixd_version=$(phoenixd --version 2>&1 | awk '{print $3}' | cut -d'-' -f1)
+
+          echo "Post-update server version:   $server_version (expected $latest_ambrosia)"
+          echo "Post-update client version:   $client_version (expected $latest_ambrosia)"
+          echo "Post-update phoenixd version: $phoenixd_version (expected $latest_phoenixd)"
+
+          fail=0
+          if [ "$server_version" != "$latest_ambrosia" ]; then
+            echo "Error: server not updated to latest (got '$server_version', want '$latest_ambrosia')"
+            fail=1
+          fi
+          if [ "$server_version" = "$baseline_tag" ]; then
+            echo "Error: server still at baseline version '$baseline_tag' — update did not apply"
+            fail=1
+          fi
+          if [ "$client_version" != "$latest_ambrosia" ]; then
+            echo "Error: client not updated to latest (got '$client_version', want '$latest_ambrosia')"
+            fail=1
+          fi
+          if [ "$phoenixd_version" != "$latest_phoenixd" ]; then
+            echo "Error: phoenixd not updated to latest (got '$phoenixd_version', want '$latest_phoenixd')"
+            fail=1
+          fi
+
+          echo "Checking symlinks still valid..."
+          which ambrosia || fail=1
+          which ambrosia-client || fail=1
+
+          if [ "$fail" -ne 0 ]; then
+            exit 1
+          fi
+          echo "✅ update.sh correctly updated server, client, and phoenixd to latest."

@@ -9,11 +9,23 @@ export const defaultFilters = {
   endDate: "",
 };
 
+function getUtcOffsetMinutes() {
+  return new Date().getTimezoneOffset();
+}
+
+function buildReportQuery(filters) {
+  if (filters.activePeriod) return { period: filters.activePeriod };
+  if (filters.startDate && filters.endDate) {
+    return { startDate: filters.startDate, endDate: filters.endDate, utcOffsetMinutes: getUtcOffsetMinutes() };
+  }
+  return null;
+}
+
 export function useDateRangeFilters(filters, onFiltersChange) {
   const dateRangeValue = useMemo(() => {
-    if (!filters.startDate || !filters.endDate) return null;
+    if (filters.activePeriod || !filters.startDate || !filters.endDate) return null;
     return { start: parseDate(filters.startDate), end: parseDate(filters.endDate) };
-  }, [filters.startDate, filters.endDate]);
+  }, [filters.activePeriod, filters.startDate, filters.endDate]);
 
   const handlePeriodChange = (period) => onFiltersChange({ activePeriod: period, startDate: "", endDate: "" });
 
@@ -33,7 +45,7 @@ export function useFiltersState(fetchReport) {
   useEffect(() => { latestFiltersRef.current = filters; }, [filters]);
 
   useEffect(() => {
-    fetchReport({ period: defaultFilters.activePeriod });
+    fetchReport(buildReportQuery(defaultFilters));
   }, [fetchReport]);
 
   const handleFiltersChange = useCallback(
@@ -42,25 +54,17 @@ export function useFiltersState(fetchReport) {
       const next = { ...prev, ...patch };
       setFilters(next);
 
-      if ("activePeriod" in patch && patch.activePeriod) {
-        return fetchReport({ period: next.activePeriod });
-      }
-
-      if ("startDate" in patch || "endDate" in patch) {
-        if (!next.startDate || !next.endDate) return;
-        return fetchReport({ startDate: next.startDate, endDate: next.endDate });
-      }
+      const query = buildReportQuery(next);
+      if (!query) return;
+      return fetchReport(query);
     },
     [fetchReport],
   );
 
   const refetch = useCallback(() => {
-    const snapshotFilters = latestFiltersRef.current;
-    fetchReport({
-      period: snapshotFilters.activePeriod || undefined,
-      startDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.startDate || undefined,
-      endDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.endDate || undefined,
-    });
+    const query = buildReportQuery(latestFiltersRef.current);
+    if (!query) return;
+    return fetchReport(query);
   }, [fetchReport]);
 
   return { filters, handleFilters: handleFiltersChange, refetch };

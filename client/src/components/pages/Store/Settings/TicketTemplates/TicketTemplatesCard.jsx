@@ -11,16 +11,16 @@ export function TicketTemplatesCard({
   selectedId,
   onSelect,
   onNew,
-  t,
+  settingsTranslations,
 }) {
   return (
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-0">
         <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-          {t("templates.title")}
+          {settingsTranslations("templates.title")}
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 mt-1">
-          {t("templates.subtitle")}
+          {settingsTranslations("templates.subtitle")}
         </p>
       </CardHeader>
       <CardBody>
@@ -32,7 +32,7 @@ export function TicketTemplatesCard({
             error={error}
             onSelect={onSelect}
             onNew={onNew}
-            t={t}
+            settingsTranslations={settingsTranslations}
           />
         </div>
       </CardBody>

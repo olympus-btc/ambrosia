@@ -3,6 +3,7 @@ package pos.ambrosia.utest
 import pos.ambrosia.utils.Bolt11Decoder
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class Bolt11DecoderTest {
@@ -78,5 +79,46 @@ class Bolt11DecoderTest {
         assert(result != null)
         assertEquals(2000000L, result!!.amountSat)
         assertNull(result.description)
+    }
+
+    @Test
+    fun `decodeInvoice extracts a 64-character hex payment hash`() {
+        val result = Bolt11Decoder.decodeInvoice(invoiceWithDescription)
+        assert(result != null)
+        assertEquals(64, result!!.paymentHash?.length)
+        assert(result.paymentHash!!.matches(Regex("^[0-9a-fA-F]{64}$")))
+    }
+
+    @Test
+    fun `extractAmountSat returns null for null invoice`() {
+        assertNull(Bolt11Decoder.extractAmountSat(null))
+    }
+
+    @Test
+    fun `extractAmountSat returns null for malformed invoice`() {
+        assertNull(Bolt11Decoder.extractAmountSat("not-a-bolt11"))
+    }
+
+    @Test
+    fun `extractAmountSat returns correct satoshi amount for lnbc2500u invoice`() {
+        assertEquals(250_000L, Bolt11Decoder.extractAmountSat(invoiceWithDescription))
+    }
+
+    @Test
+    fun `extractPaymentHash returns null for null invoice`() {
+        assertNull(Bolt11Decoder.extractPaymentHash(null))
+    }
+
+    @Test
+    fun `extractPaymentHash returns null for malformed invoice`() {
+        assertNull(Bolt11Decoder.extractPaymentHash("not-a-bolt11"))
+    }
+
+    @Test
+    fun `extractPaymentHash returns 64-char hex string for valid invoice`() {
+        val hash = Bolt11Decoder.extractPaymentHash(invoiceWithDescription)
+        assertNotNull(hash)
+        assertEquals(64, hash.length)
+        assertEquals("0001020304050607080900010203040506070809000102030405060708090102", hash)
     }
 }

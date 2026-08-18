@@ -29,13 +29,17 @@ class PermissionsServiceTest {
     fun `getAll returns list ordered by name when found`() {
         ExposedTestDb.seedPermission("perm.write", "Write")
         ExposedTestDb.seedPermission("perm.read", "Read")
+        ExposedTestDb.seedPermission("roles_update", "Update roles")
 
         val list = service.getAll()
 
-        assertEquals(2, list.size)
+        assertEquals(3, list.size)
         assertEquals("perm.read", list[0].name)
         assertEquals("perm.write", list[1].name)
+        assertEquals("roles_update", list[2].name)
         assertTrue(list.all { it.enabled })
+        assertTrue(!list[0].adminOnly)
+        assertTrue(list[2].adminOnly)
     }
 
     @Test
@@ -122,6 +126,52 @@ class PermissionsServiceTest {
         assertEquals(1, count)
         val names = service.getByRole(roleId)!!.map { it.name }
         assertEquals(listOf("perm.write"), names)
+    }
+
+    @Test
+    fun `replaceRolePermissions excludes admin-only permissions from limited roles`() {
+        val roleId = ExposedTestDb.seedRole("Manager", isAdmin = false)
+        ExposedTestDb.seedPermission("roles_read", "Read roles")
+        ExposedTestDb.seedPermission("roles_create", "Create roles")
+        ExposedTestDb.seedPermission("roles_update", "Update roles")
+        ExposedTestDb.seedPermission("roles_delete", "Delete roles")
+        ExposedTestDb.seedPermission("permissions_read", "Read permissions")
+
+        val count =
+            service.replaceRolePermissions(
+                roleId,
+                listOf("roles_read", "roles_create", "roles_update", "roles_delete", "permissions_read"),
+            )
+
+        assertEquals(1, count)
+        assertEquals(listOf("roles_read"), service.getByRole(roleId)!!.map { it.name })
+    }
+
+    @Test
+    fun `replaceRolePermissions assigns all enabled permissions when role is admin`() {
+        val roleId = ExposedTestDb.seedRole("Admin", isAdmin = true)
+        ExposedTestDb.seedPermission("perm.read", "Read")
+        ExposedTestDb.seedPermission("perm.write", "Write")
+        ExposedTestDb.seedPermission("perm.disabled", "Disabled", enabled = false)
+
+        val count = service.replaceRolePermissions(roleId, emptyList())
+
+        assertEquals(2, count)
+        val names = service.getByRole(roleId)!!.map { it.name }
+        assertEquals(listOf("perm.read", "perm.write"), names)
+    }
+
+    @Test
+    fun `replaceRolePermissions ignores partial list and assigns all enabled permissions when role is admin`() {
+        val roleId = ExposedTestDb.seedRole("Admin", isAdmin = true)
+        ExposedTestDb.seedPermission("perm.read", "Read")
+        ExposedTestDb.seedPermission("perm.write", "Write")
+
+        val count = service.replaceRolePermissions(roleId, listOf("perm.read"))
+
+        assertEquals(2, count)
+        val names = service.getByRole(roleId)!!.map { it.name }
+        assertEquals(listOf("perm.read", "perm.write"), names)
     }
 
     @Test

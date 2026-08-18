@@ -34,7 +34,7 @@ describe("shiftsService", () => {
       const result = await getTurnOpen();
 
       expect(result).toEqual(shift);
-      expect(httpClient).toHaveBeenCalledWith("/shifts/open");
+      expect(httpClient).toHaveBeenCalledWith("/shifts/open", { skipForbiddenRedirect: true });
     });
 
     it("returns null when parseJsonResponse returns null", async () => {
@@ -49,7 +49,10 @@ describe("shiftsService", () => {
     it("throws when response is not ok", async () => {
       httpClient.mockResolvedValue({ status: 500, ok: false });
 
-      await expect(getTurnOpen()).rejects.toThrow("Failed to get open shift: 500");
+      await expect(getTurnOpen()).rejects.toMatchObject({
+        message: "Failed to get open shift",
+        status: 500,
+      });
     });
   });
 
@@ -67,6 +70,7 @@ describe("shiftsService", () => {
 
       expect(url).toBe("/shifts");
       expect(options.method).toBe("POST");
+      expect(options.skipForbiddenRedirect).toBe(true);
       expect(body.userId).toBe(42);
       expect(body.initialAmount).toBe(150);
     });
@@ -128,6 +132,7 @@ describe("shiftsService", () => {
 
       expect(url).toBe("/shifts/7/close");
       expect(options.method).toBe("POST");
+      expect(options.skipForbiddenRedirect).toBe(true);
       expect(body.finalAmount).toBe(150.5);
       expect(body.difference).toBe(-10.2);
     });
@@ -146,7 +151,10 @@ describe("shiftsService", () => {
     it("throws when response is not ok", async () => {
       httpClient.mockResolvedValue({ status: 404, ok: false });
 
-      await expect(closeTurn(99, null, null)).rejects.toThrow("Close failed: 404");
+      await expect(closeTurn(99, null, null)).rejects.toMatchObject({
+        message: "Failed to close shift",
+        status: 404,
+      });
     });
 
     it("returns the parsed response on success", async () => {

@@ -73,6 +73,11 @@ describe("PeriodFilter", () => {
     buttons.forEach((button) => expect(button).toBeDisabled());
   });
 
+  it("renders the day period button", () => {
+    render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
+    expect(screen.getByText("dates.period.day")).toBeInTheDocument();
+  });
+
   it("shows custom date range as label when no activePeriod", () => {
     render(
       <PeriodFilter

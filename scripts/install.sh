@@ -60,8 +60,13 @@ check_dependencies() {
 download_file() {
   local url="$1"
   local dest="$2"
-  # Retry 3 times, fail on error, follow redirects, silent unless error
-  if ! curl -fL --retry 3 --retry-delay 2 -o "$dest" "$url"; then
+  if ! curl -fL \
+    --retry 5 \
+    --retry-delay 5 \
+    --retry-all-errors \
+    --connect-timeout 30 \
+    -o "$dest" \
+    "$url"; then
     log_error "Failed to download $url"
     exit 1
   fi
@@ -75,7 +80,7 @@ print_header() {
 
 # --- Phoenixd Installation Logic ---
 
-PHOENIXD_TAG="0.7.2"
+PHOENIXD_TAG="0.9.0"
 PHOENIXD_RELEASE_BASE_URL="https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_TAG}"
 PHOENIXD_INSTALL_DIR="/usr/local/bin"
 PHOENIXD_OS=""
@@ -405,8 +410,9 @@ client_setup_systemd() {
 
     if [[ ! $reply =~ ^[Yy]$ ]]; then return 0; fi
 
-    local npm_path=$(which npm)
-    local node_path=$(which node)
+    local npm_path node_path
+    npm_path=$(which npm)
+    node_path=$(which node)
 
     if [ -z "$npm_path" ]; then
         log_error "Could not find npm executable."

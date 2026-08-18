@@ -24,6 +24,8 @@ const authEs = {
       selectEmployee: "Por favor selecciona un empleado",
       enterPin: "El PIN debe tener al menos 4 dígitos",
       incorrectPin: "PIN incorrecto para el empleado seleccionado.",
+      loadEmployeesTitle: "No se pudieron cargar los empleados",
+      loadEmployeesDescription: "Actualiza la página o contacta a un administrador.",
     },
     successMessages: {
       toastTitle: "Inicio de sesión exitoso",

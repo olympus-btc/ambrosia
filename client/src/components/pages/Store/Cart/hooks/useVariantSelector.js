@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useProductVariants } from "@/components/pages/Store/hooks/useProductVariants";
+import { isStockTracked } from "@/components/pages/Store/utils/productStockStatus";
 import { variantIsAvailableForSale } from "@/components/pages/Store/utils/productVariantAvailability";
 import {
   deriveVariantDisplayName,
@@ -51,14 +52,16 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
   const selectedValueIds = options.map((option) => selectedValues[option.id]).filter(Boolean);
   const allSelected = options.length > 0 && selectedValueIds.length === options.length;
   const matchedVariant = allSelected ? findMatchingVariant(variants, selectedValueIds) : null;
-  const isOutOfStock = matchedVariant ? matchedVariant.quantity <= 0 : false;
+  const tracksStock = isStockTracked(productDetail ?? product ?? {});
+  const isOutOfStock = matchedVariant && tracksStock ? matchedVariant.quantity <= 0 : false;
   const isDisabled = isLoading || !allSelected || !matchedVariant || isOutOfStock;
 
   const isValueAvailable = (optionType, valueId) => {
     const selectionWithCandidateValue = { ...selectedValues, [optionType.id]: valueId };
     const candidateOptionValueIds = options.map((option) => selectionWithCandidateValue[option.id]).filter(Boolean);
     return variants.some((variant) => (
-      variantIsAvailableForSale(variant) && variantHasOptionValues(variant, candidateOptionValueIds)
+      variantIsAvailableForSale(variant, productDetail ?? product)
+      && variantHasOptionValues(variant, candidateOptionValueIds)
     ));
   };
 
@@ -84,6 +87,7 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
     isDisabled,
     matchedVariant,
     isOutOfStock,
+    isStockTrackedForProduct: tracksStock,
     isValueAvailable,
     toggleOptionValue,
     handleAddToCart,

@@ -3,6 +3,7 @@ package pos.ambrosia.services
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.db.tables.ConfigEntity
 import pos.ambrosia.models.Config
+import java.time.ZoneId
 
 class ConfigService {
     private fun toModel(entity: ConfigEntity): Config =
@@ -16,6 +17,7 @@ class ConfigService {
             businessTaxId = entity.businessTaxId,
             businessLogoUrl = entity.businessLogoUrl,
             businessTypeConfirmed = entity.businessTypeConfirmed,
+            timezone = entity.timezone,
         )
 
     fun getConfig(): Config? =
@@ -34,6 +36,9 @@ class ConfigService {
             entity.businessTaxId = config.businessTaxId
             entity.businessLogoUrl = config.businessLogoUrl
             entity.businessTypeConfirmed = config.businessTypeConfirmed
+            entity.timezone = config.timezone
             true
         }
+
+    fun getConfiguredZoneId(): ZoneId = getConfig()?.timezone?.let { ZoneId.of(it) } ?: ZoneId.of("America/Mexico_City")
 }

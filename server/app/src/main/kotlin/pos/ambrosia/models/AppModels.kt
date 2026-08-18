@@ -2,6 +2,12 @@ package pos.ambrosia.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Instant
+
+object AdminNotificationLiveEventTypes {
+    const val ADMIN_NOTIFICATION = "admin_notification"
+    const val CONNECTED = "connected"
+}
 
 @Serializable data class AuthRequest(
     val name: String,
@@ -66,6 +72,11 @@ data class WalletAuthResponse(
 )
 
 @Serializable
+data class UpdateNwcUriRequest(
+    val nwcUri: String,
+)
+
+@Serializable
 data class User(
     val id: String? = null,
     val name: String,
@@ -76,6 +87,13 @@ data class User(
     val email: String? = null,
     val phone: String? = null,
     val isAdmin: Boolean? = false,
+)
+
+@Serializable
+data class UserIdentity(
+    val id: String,
+    val name: String,
+    val role: String? = null,
 )
 
 @Serializable
@@ -94,6 +112,14 @@ data class Role(
     val role: String,
     val password: String? = null,
     val isAdmin: Boolean? = false,
+)
+
+@Serializable
+data class UpsertRoleRequest(
+    val role: String,
+    val password: String? = null,
+    val isAdmin: Boolean? = false,
+    val permissions: List<String>? = null,
 )
 
 @Serializable data class Space(
@@ -175,6 +201,7 @@ data class OrderWithPayment(
     val fiatAmountAtPayment: Double? = null,
     val paymentHash: String? = null,
     val items: List<OrderItem> = emptyList(),
+    val refund: StoreRefund? = null,
 )
 
 data class OrderWithPaymentFilters(
@@ -291,11 +318,125 @@ data class CloseShiftRequest(
 )
 
 @Serializable
+data class WalletPasswordChangeRequest(
+    val currentPassword: String,
+    val newPassword: String,
+)
+
+@Serializable
 data class Permission(
     val id: String? = null,
     val name: String,
     val description: String? = null,
     val enabled: Boolean = true,
+    val adminOnly: Boolean = false,
+)
+
+@Serializable
+data class AdminNotification(
+    val id: String,
+    val category: String,
+    val type: String,
+    val title: String,
+    val body: String,
+    val actorUserId: String? = null,
+    val actorUserName: String? = null,
+    val actorRole: String? = null,
+    val status: String? = null,
+    val occurredAt: String,
+    val createdAt: String,
+    val readAt: String? = null,
+    val metadataJson: String? = null,
+)
+
+@Serializable
+data class AdminNotificationLiveEvent(
+    val type: String = AdminNotificationLiveEventTypes.ADMIN_NOTIFICATION,
+    val notification: AdminNotification,
+)
+
+@Serializable
+data class AdminNotificationCountResponse(
+    val updated: Int? = null,
+    val deleted: Int? = null,
+)
+
+@Serializable
+data class AdminNotificationMutationResponse(
+    val id: String,
+    val read: Boolean? = null,
+    val deleted: Boolean? = null,
+)
+
+data class AdminNotificationEvent(
+    val category: String,
+    val type: String,
+    val title: String,
+    val body: String,
+    val actorUserId: String? = null,
+    val actorUserName: String? = null,
+    val actorRole: String? = null,
+    val status: String? = null,
+    val occurredAt: String = Instant.now().toString(),
+    val dedupeKey: String? = null,
+    val metadataJson: String? = null,
+)
+
+@Serializable
+data class AdminNotificationPreferences(
+    val category: String,
+    val inAppEnabled: Boolean = true,
+    val pushEnabled: Boolean = true,
+)
+
+@Serializable
+data class AdminNotificationPreferenceUpdateRequest(
+    val category: String,
+    val inAppEnabled: Boolean = true,
+    val pushEnabled: Boolean = true,
+)
+
+@Serializable
+data class AdminNotificationPreferencesResponse(
+    val adminUserId: String,
+    val category: String,
+    val inAppEnabled: Boolean,
+    val pushEnabled: Boolean,
+    val createdAt: String,
+    val updatedAt: String,
+)
+
+@Serializable
+data class WebPushKeys(
+    val p256dh: String,
+    val auth: String,
+)
+
+@Serializable
+data class WebPushSubscriptionRequest(
+    val endpoint: String,
+    val keys: WebPushKeys,
+    val userAgent: String? = null,
+)
+
+@Serializable
+data class WebPushUnsubscribeRequest(
+    val endpoint: String,
+)
+
+@Serializable
+data class WebPushSubscriptionResponse(
+    val id: String,
+    val endpoint: String,
+    val userAgent: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+    val revokedAt: String? = null,
+)
+
+@Serializable
+data class VapidPublicKeyResponse(
+    val publicKey: String,
 )
 
 @Serializable data class RolePermissionsUpdateRequest(
@@ -358,6 +499,7 @@ data class Config(
     val businessTaxId: String?,
     val businessLogoUrl: String?,
     val businessTypeConfirmed: Boolean = false,
+    val timezone: String = "America/Mexico_City",
 )
 
 @Serializable
@@ -441,6 +583,7 @@ data class Product(
     val isBundle: Boolean = false,
     val bundleComponents: List<BundleComponent> = emptyList(),
     val bundleCostCents: Int = 0,
+    val trackStock: Boolean = true,
 )
 
 @Serializable
@@ -448,6 +591,20 @@ data class ProductStockAdjustment(
     val productId: String,
     val variantId: String? = null,
     val quantity: Int,
+)
+
+@Serializable
+data class StoreRefund(
+    val id: String,
+    val orderId: String,
+    val refundInvoice: String,
+    val satoshiAmount: Long,
+    val refundedAt: String,
+)
+
+@Serializable
+data class RefundRequest(
+    val invoice: String = "",
 )
 
 @Serializable data class CategoryItem(
@@ -473,8 +630,18 @@ data class InitialSetupRequest(
     val businessRFC: String? = null,
     val businessTaxId: String? = null,
     val businessCurrency: String? = null,
+    val timezone: String? = null,
     val businessLogo: String? = null,
     val businessLogoUrl: String? = null,
+    val nwcUri: String? = null,
+)
+
+@Serializable
+data class InitialSetupResponse(
+    val message: String,
+    val userId: String,
+    val roleId: String,
+    val nwcSaved: Boolean = false,
 )
 
 @Serializable
@@ -548,6 +715,7 @@ data class ProductSaleItem(
     val fiatAmountAtPayment: Double? = null,
     val paymentId: String? = null,
     val discountAmount: Double = 0.0,
+    val refunded: Boolean = false,
 )
 
 @Serializable
@@ -556,6 +724,9 @@ data class ProductSalesReport(
     val totalItemsSold: Int,
     val sales: List<ProductSaleItem>,
     val totalBtcSatoshis: Long = 0L,
+    val totalRefundedCents: Long = 0L,
+    val totalRefundedSatoshis: Long = 0L,
+    val refundCount: Int = 0,
 )
 
 @Serializable
@@ -576,6 +747,7 @@ data class OutgoingPaymentWithRate(
     val exchangeRateAtPayment: Double? = null,
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
+    val refunded: Boolean,
 )
 
 data class WalletInvoiceRate(
@@ -613,4 +785,5 @@ data class IncomingPaymentWithRate(
     val exchangeRateAtPayment: Double? = null,
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
+    val refunded: Boolean,
 )

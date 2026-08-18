@@ -1,9 +1,18 @@
+import { addToast } from "@heroui/react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 import * as walletService from "@/services/walletService";
 
 import { CloseChannelModal } from "../CloseChannelModal";
+
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return {
+    ...actual,
+    addToast: jest.fn(),
+  };
+});
 
 jest.mock("framer-motion", () => {
   const React = require("react");
@@ -37,6 +46,19 @@ const mockChannel = {
 };
 
 const VALID_ADDRESS = "tb1q8tsk6x7y9m2lqz3p4r5w6e7i8u9o0zsqe22cy";
+
+function createDeferredCloseChannel() {
+  let resolveCloseChannel;
+
+  const closeChannelPromise = new Promise((resolve) => {
+    resolveCloseChannel = resolve;
+  });
+
+  return {
+    closeChannelPromise,
+    resolveCloseChannel,
+  };
+}
 
 const renderModal = (props = {}) => render(
   <I18nProvider>
@@ -177,6 +199,30 @@ describe("CloseChannelModal", () => {
           10,
         );
         expect(screen.getByText("closeChannel.successTitle")).toBeInTheDocument();
+        expect(addToast).toHaveBeenCalledWith({
+          title: "closeChannel.successTitle",
+          description: "closeChannel.successToast",
+          variant: "solid",
+          color: "success",
+        });
+      });
+    });
+
+    it("does not submit a close-channel request twice while one is pending", async () => {
+      const { closeChannelPromise, resolveCloseChannel } = createDeferredCloseChannel();
+      jest.spyOn(walletService, "closeChannel").mockReturnValue(closeChannelPromise);
+      goToConfirm();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("closeChannel.confirmButton"));
+        fireEvent.click(screen.getByText("closeChannel.confirmButton"));
+      });
+
+      expect(walletService.closeChannel).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveCloseChannel({ txId: "abc-tx-123" });
+        await closeChannelPromise;
       });
     });
 
@@ -215,6 +261,12 @@ describe("CloseChannelModal", () => {
 
       await waitFor(() => {
         expect(screen.getByText("closeChannel.confirmTitle")).toBeInTheDocument();
+        expect(addToast).toHaveBeenCalledWith({
+          title: "closeChannel.errorToast",
+          description: "Lightning node service error",
+          variant: "solid",
+          color: "danger",
+        });
       });
     });
   });

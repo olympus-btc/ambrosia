@@ -11,7 +11,9 @@ import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UsersServiceTest {
@@ -65,6 +67,33 @@ class UsersServiceTest {
             val userId = ExposedTestDb.seedUser("cashier-user", roleId = cashierRoleId)
 
             assertTrue(service.deleteUser(userId))
+        }
+    }
+
+    @Test
+    fun `getUserById masks refresh token`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            val userId = ExposedTestDb.seedUser("cashier-user", roleId = roleId)
+
+            val user = service.getUserById(userId)
+
+            assertNotNull(user)
+            assertEquals("****", user.pin)
+            assertEquals("****", user.refreshToken)
+        }
+    }
+
+    @Test
+    fun `getUserIdentities returns id, name and role`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+            val userId = ExposedTestDb.seedUser("cashier-user", roleId = roleId)
+
+            val identity = service.getUserIdentities().single { it.id == userId }
+
+            assertEquals("cashier-user", identity.name)
+            assertEquals("Cashier", identity.role)
         }
     }
 }

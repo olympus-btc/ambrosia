@@ -114,6 +114,17 @@ fun Route.authorizePermission(
         build()
     }
 
+fun Route.authorizeAdminPermission(
+    key: String,
+    name: String = "auth-jwt",
+    build: Route.() -> Unit,
+): Route =
+    authenticate(name) {
+        install(RequirePermission) { this.key = key }
+        install(AdminAccess)
+        build()
+    }
+
 class PermissionPluginConfig {
     lateinit var key: String
 }

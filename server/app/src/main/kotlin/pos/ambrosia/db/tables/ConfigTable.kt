@@ -15,6 +15,7 @@ object ConfigTable : IntIdTable("config") {
     val businessTaxId = varchar("business_tax_id", 100).nullable()
     val businessLogoUrl = text("business_logo_url").nullable()
     val businessTypeConfirmed = bool("business_type_confirmed").default(false)
+    val timezone = varchar("timezone", 50).default("America/Mexico_City")
 }
 
 class ConfigEntity(
@@ -30,4 +31,5 @@ class ConfigEntity(
     var businessTaxId by ConfigTable.businessTaxId
     var businessLogoUrl by ConfigTable.businessLogoUrl
     var businessTypeConfirmed by ConfigTable.businessTypeConfirmed
+    var timezone by ConfigTable.timezone
 }

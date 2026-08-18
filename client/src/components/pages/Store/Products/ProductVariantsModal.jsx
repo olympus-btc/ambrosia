@@ -60,6 +60,7 @@ export function ProductVariantsModal({ product, isOpen, onClose }) {
           <VariantManager
             product={{
               id: product?.id,
+              trackStock: product?.trackStock ?? true,
               variants: productVariants,
               options: productOptions,
             }}

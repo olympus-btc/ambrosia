@@ -459,6 +459,50 @@ class PhoenixServiceTest {
     }
 
     @Test
+    fun `payInvoice extracts the reason field from phoenixd's actual error shape instead of the raw JSON`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content =
+                        ByteReadChannel(
+                            """{"paymentHash":"73efce678777fe31e4f2049121369f0bd65afdcb","reason":"recipient node rejected the payment"}""",
+                        ),
+                    status = HttpStatusCode.BadRequest,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("recipient_rejected_payment", exception.code)
+        assertEquals(422, exception.statusCode)
+        assertEquals("recipient node rejected the payment", exception.message)
+    }
+
+    @Test
     fun `payInvoice maps unknown phoenix error payload with 200 status to bad gateway`() {
         // Arrange
         val mockEngine =

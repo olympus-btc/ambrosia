@@ -11,13 +11,18 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+let mockCanReadCategories = true;
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => mockCanReadCategories,
+}));
+
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
 }));
 
 jest.mock("next-intl", () => {
-  const t = (key) => key;
-  return { useTranslations: () => t };
+  const categoryTranslations = (key) => key;
+  return { useTranslations: () => categoryTranslations };
 });
 
 const handlers = {};
@@ -27,6 +32,7 @@ function TestComponent() {
     categories,
     loading,
     error,
+    forbidden,
     createCategory,
     updateCategory,
     deleteCategory,
@@ -44,6 +50,7 @@ function TestComponent() {
       <span data-testid="count">{categories.length}</span>
       <span data-testid="first-name">{categories[0]?.name ?? ""}</span>
       <span data-testid="error">{error ? "yes" : "no"}</span>
+      <span data-testid="forbidden">{forbidden ? "yes" : "no"}</span>
     </div>
   );
 }
@@ -52,6 +59,7 @@ describe("useCategories", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => {});
+    mockCanReadCategories = true;
   });
 
   afterEach(() => {
@@ -71,7 +79,7 @@ describe("useCategories", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("2");
     expect(screen.getByTestId("first-name")).toHaveTextContent("Hardware");
     expect(screen.getByTestId("error")).toHaveTextContent("no");
-    expect(httpClient).toHaveBeenCalledWith("/categories?type=product");
+    expect(httpClient).toHaveBeenCalledWith("/categories?type=product", {});
   });
 
   it("sets empty categories when api returns non-array", async () => {
@@ -102,9 +110,9 @@ describe("useCategories", () => {
     render(<TestComponent />);
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
 
-    let result;
+    let createdCategoryId;
     await act(async () => {
-      result = await handlers.createCategory("Electronics");
+      createdCategoryId = await handlers.createCategory("Electronics");
     });
 
     expect(httpClient).toHaveBeenCalledWith("/categories", {
@@ -113,7 +121,7 @@ describe("useCategories", () => {
       headers: { "Content-Type": "application/json" },
       notShowError: false,
     });
-    expect(result).toBe("cat-3");
+    expect(createdCategoryId).toBe("cat-3");
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
   });
 
@@ -133,6 +141,24 @@ describe("useCategories", () => {
     expect(httpClient).toHaveBeenCalledWith("/categories", expect.objectContaining({
       body: JSON.stringify({ name: "Dishes", type: "dish" }),
     }));
+  });
+
+  it("rejects when category creation returns a failed response", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Category already exists" });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+
+    await expect(handlers.createCategory("Electronics")).rejects.toMatchObject({
+      message: "Error creating category",
+      status: 409,
+      responseMessage: "Category already exists",
+    });
+
+    expect(httpClient).toHaveBeenCalledTimes(2);
   });
 
   it("updates a category and refetches", async () => {
@@ -155,6 +181,26 @@ describe("useCategories", () => {
     await waitFor(() => expect(screen.getByTestId("first-name")).toHaveTextContent("Hardware Updated"));
   });
 
+  it("throws when updating a category is rejected by the API", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 400 });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    let thrownError;
+    await act(async () => {
+      try {
+        await handlers.updateCategory({ categoryId: "cat-1", categoryName: "Hardware Updated" });
+      } catch (updateCategoryError) {
+        thrownError = updateCategoryError;
+      }
+    });
+
+    expect(thrownError?.status).toBe(400);
+  });
+
   it("deletes a category and refetches", async () => {
     httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware" }]);
@@ -171,5 +217,36 @@ describe("useCategories", () => {
       method: "DELETE",
     });
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+  });
+
+  it("throws when deleting a category is rejected by the API", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: "cat-1", name: "Hardware" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    let thrownError;
+    await act(async () => {
+      try {
+        await handlers.deleteCategory("cat-1");
+      } catch (deleteCategoryError) {
+        thrownError = deleteCategoryError;
+      }
+    });
+
+    expect(thrownError?.status).toBe(409);
+  });
+
+  it("does not fetch categories when the user lacks categories_read", async () => {
+    mockCanReadCategories = false;
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+    expect(screen.getByTestId("forbidden")).toHaveTextContent("yes");
+    expect(httpClient).not.toHaveBeenCalled();
   });
 });

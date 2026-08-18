@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 
 import * as walletService from "@/services/walletService";
+import { BOLT11_VALIDATION_ERROR } from "@/utils/validateBolt11Invoice";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { useSendPaymentFlow } from "../useSendPaymentFlow";
@@ -111,10 +112,10 @@ describe("useSendPaymentFlow", () => {
     await waitFor(() => {
       expect(openResult).toEqual({
         status: "validation_error",
-        error: "payments.send.noInvoiceToPay",
+        error: BOLT11_VALIDATION_ERROR.EMPTY,
       });
       expect(walletService.decodeInvoice).not.toHaveBeenCalled();
-      expect(result.current.invoiceValidationError).toBe("payments.send.noInvoiceToPay");
+      expect(result.current.invoiceValidationError).toBe(BOLT11_VALIDATION_ERROR.EMPTY);
       expect(result.current.isConfirmOpen).toBe(false);
     });
   });

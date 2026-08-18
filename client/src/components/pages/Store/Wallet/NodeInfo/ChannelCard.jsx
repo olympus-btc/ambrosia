@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { formatSats } from "../utils/formatters";
 
-const CHANNEL_STATE_NORMAL = "Normal";
+const CHANNEL_STATE_NORMAL = "NORMAL";
 
 const CLOSING_STATES = {
   ShuttingDown: "stateShuttingDown",
@@ -14,8 +14,10 @@ const CLOSING_STATES = {
   Closed: "stateClosed",
 };
 
-function ChannelStateLabel({ state, t }) {
-  if (state === CHANNEL_STATE_NORMAL) {
+function ChannelStateLabel({ state }) {
+  const walletTranslations = useTranslations("wallet");
+
+  if (state?.toUpperCase() === CHANNEL_STATE_NORMAL) {
     return (
       <div className="flex items-center space-x-1 mt-1">
         <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -28,7 +30,7 @@ function ChannelStateLabel({ state, t }) {
     return (
       <div className="flex items-center space-x-1 mt-1">
         <span className="w-2 h-2 rounded-full bg-orange-400" />
-        <span className="text-sm text-orange-600">{t(`nodeInfo.${closingKey}`)}</span>
+        <span className="text-sm text-orange-600">{walletTranslations(`nodeInfo.${closingKey}`)}</span>
       </div>
     );
   }
@@ -41,8 +43,8 @@ function ChannelStateLabel({ state, t }) {
 }
 
 export function ChannelCard({ channel, index, onClose }) {
-  const t = useTranslations("wallet");
-  const isNormal = channel.state === CHANNEL_STATE_NORMAL;
+  const walletTranslations = useTranslations("wallet");
+  const isNormal = channel.state?.toUpperCase() === CHANNEL_STATE_NORMAL;
 
   return (
     <Card className="border" shadow="none">
@@ -50,30 +52,30 @@ export function ChannelCard({ channel, index, onClose }) {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h5 className="font-semibold text-deep">
-              {t("nodeInfo.channel")}{index + 1}
+              {walletTranslations("nodeInfo.channel")}{index + 1}
             </h5>
-            <ChannelStateLabel state={channel.state} t={t} />
+            <ChannelStateLabel state={channel.state} />
           </div>
           <div className="flex items-start gap-3">
             <div className="text-right">
               <p className="font-bold text-deep">
-                {formatSats(channel.balanceSat)} {t("nodeInfo.sats")}
+                {formatSats(channel.balanceSat)} {walletTranslations("nodeInfo.sats")}
               </p>
-              <p className="text-sm text-forest">{t("nodeInfo.balanceSat")}</p>
+              <p className="text-sm text-forest">{walletTranslations("nodeInfo.balanceSat")}</p>
             </div>
           </div>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-forest">{t("nodeInfo.capacitySat")}</span>
+            <span className="text-forest">{walletTranslations("nodeInfo.capacitySat")}</span>
             <span className="font-medium">
-              {formatSats(channel.capacitySat)} {t("nodeInfo.sats")}
+              {formatSats(channel.capacitySat)} {walletTranslations("nodeInfo.sats")}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-forest">{t("nodeInfo.inboundLiquidity")}</span>
+            <span className="text-forest">{walletTranslations("nodeInfo.inboundLiquidity")}</span>
             <span className="font-medium">
-              {formatSats(channel.inboundLiquiditySat)} {t("nodeInfo.sats")}
+              {formatSats(channel.inboundLiquiditySat)} {walletTranslations("nodeInfo.sats")}
             </span>
           </div>
           <Progress
@@ -90,7 +92,7 @@ export function ChannelCard({ channel, index, onClose }) {
             onPress={() => onClose(channel)}
             isDisabled={!isNormal}
           >
-            {t("closeChannel.buttonLabel")}
+            {walletTranslations("closeChannel.buttonLabel")}
           </Button>
         </div>
       </CardBody>

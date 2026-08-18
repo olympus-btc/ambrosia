@@ -30,7 +30,7 @@ jest.mock("lucide-react", () => ({
   PenLine: () => <svg data-testid="icon-pen" />,
 }));
 
-const t = (key) => key;
+const translate = (key) => key;
 const SEED = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
 function renderUnlocked(props = {}) {
@@ -39,7 +39,7 @@ function renderUnlocked(props = {}) {
       seed={null}
       onAuthorized={jest.fn()}
       onHide={jest.fn()}
-      t={t}
+      seedCardTranslations={translate}
       {...props}
     />,
   );

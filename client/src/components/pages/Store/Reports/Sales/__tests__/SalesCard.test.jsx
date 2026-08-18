@@ -74,4 +74,15 @@ describe("SalesCard", () => {
     expect(formatCurrency).toHaveBeenCalledWith(3000);
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
+
+  it("shows the refunded status chip when the sale is refunded", () => {
+    render(<SalesCard sale={{ ...baseSale, refunded: true }} formatCurrency={formatCurrency} />);
+    expect(screen.getByText("refunded")).toBeInTheDocument();
+  });
+
+  it("shows the paid status chip when the sale is not refunded", () => {
+    render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} />);
+    expect(screen.queryByText("refunded")).not.toBeInTheDocument();
+    expect(screen.getByText("paid")).toBeInTheDocument();
+  });
 });

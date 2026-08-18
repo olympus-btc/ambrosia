@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 
 import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
 import * as useTemplatesHook from "@/components/pages/Store/hooks/useTemplates";
+import * as useAuthHook from "@/hooks/auth/useAuth";
+import * as useAdminWebPushHook from "@/hooks/useAdminWebPush";
 import * as useAutoLiquidityHook from "@/hooks/useAutoLiquidity";
+import * as adminNotificationsService from "@/services/adminNotificationsService";
 import * as useCurrencyHook from "@components/hooks/useCurrency";
 import * as useNavigationHook from "@hooks/useNavigation";
 import { I18nProvider } from "@i18n/I18nProvider";
@@ -35,7 +38,7 @@ jest.mock("@heroui/react", () => {
   const SelectItem = ({ value, children }) => (
     <option value={value ?? ""}>{children}</option>
   );
-  return { ...actual, Select, SelectItem };
+  return { ...actual, Select, SelectItem, addToast: jest.fn() };
 });
 
 function renderSettings() {
@@ -117,6 +120,14 @@ beforeEach(() => {
     logout: mockLogout,
   });
 
+  jest.spyOn(useAuthHook, "useAuth").mockReturnValue({
+    isAuth: true,
+    isLoading: false,
+    user: { userId: "user-1", name: "Tester" },
+    permissions: [],
+    logout: jest.fn(),
+  });
+
   jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
     config: mockConfig,
     isLoading: false,
@@ -159,8 +170,34 @@ beforeEach(() => {
     loading: false,
     restarting: false,
     error: null,
-    toggle: jest.fn(),
+    loadAutoLiquidity: jest.fn(),
+    toggleAutoLiquidity: jest.fn(),
   });
+
+  jest.spyOn(useAdminWebPushHook, "useAdminWebPush").mockReturnValue({
+    isSupported: true,
+    permission: "granted",
+    subscriptionEndpoint: "https://push.example/subscription",
+    subscriptionSummary: {
+      endpointHost: "push.example",
+      endpointHash: "abcdef123456",
+    },
+    loading: false,
+    error: null,
+    subscribe: jest.fn(async () => ({ ok: true })),
+    unsubscribe: jest.fn(async () => ({ ok: true })),
+    showTestNotification: jest.fn(async () => ({ ok: true })),
+    refreshSubscription: jest.fn(),
+  });
+
+  jest.spyOn(adminNotificationsService, "getAdminNotificationPreferences").mockResolvedValue([
+    {
+      category: "wallet",
+      inAppEnabled: true,
+      pushEnabled: true,
+    },
+  ]);
+  jest.spyOn(adminNotificationsService, "updateAdminNotificationPreference").mockImplementation(async (preference) => preference);
 });
 
 afterEach(() => {
@@ -179,6 +216,80 @@ describe("Settings page", () => {
       expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
       expect(screen.getByText("cardLanguage.title")).toBeInTheDocument();
       expect(screen.getByText("cardTours.title")).toBeInTheDocument();
+    });
+
+    it("renders notification preferences card only for admins", async () => {
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await waitFor(() => expect(screen.getByText("cardNotifications.title")).toBeInTheDocument());
+      expect(screen.getByText("cardNotifications.walletTitle")).toBeInTheDocument();
+      expect(screen.getByText("cardNotifications.inApp")).toBeInTheDocument();
+      expect(screen.getByText("cardNotifications.push")).toBeInTheDocument();
+    });
+
+    it("shows a toast when enabling Web Push fails", async () => {
+      const { addToast } = require("@heroui/react");
+      const subscribe = jest.fn(async () => ({ ok: false, reason: "vapidUnavailable" }));
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+      jest.spyOn(useAdminWebPushHook, "useAdminWebPush").mockReturnValue({
+        isSupported: true,
+        permission: "granted",
+        subscriptionEndpoint: null,
+        subscriptionSummary: null,
+        loading: false,
+        error: null,
+        subscribe,
+        unsubscribe: jest.fn(async () => ({ ok: true })),
+        showTestNotification: jest.fn(async () => ({ ok: true })),
+        refreshSubscription: jest.fn(),
+      });
+      jest.spyOn(adminNotificationsService, "getAdminNotificationPreferences").mockResolvedValueOnce([
+        {
+          category: "wallet",
+          inAppEnabled: true,
+          pushEnabled: false,
+        },
+      ]);
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await waitFor(() => expect(screen.getByText("cardNotifications.push")).toBeInTheDocument());
+      await user.click(screen.getByText("cardNotifications.push"));
+
+      await waitFor(() => {
+        expect(subscribe).toHaveBeenCalled();
+        expect(addToast).toHaveBeenCalledWith({
+          color: "danger",
+          title: "cardNotifications.pushErrorTitle",
+          description: "cardNotifications.pushErrors.vapidUnavailable",
+        });
+      });
+      expect(adminNotificationsService.updateAdminNotificationPreference).not.toHaveBeenCalledWith(
+        expect.objectContaining({ pushEnabled: true }),
+      );
     });
 
     it("renders business name", async () => {
@@ -380,7 +491,7 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      expect(screen.queryByText("autoLiquidityLabel")).not.toBeInTheDocument();
+      expect(screen.queryByText("manageButton")).not.toBeInTheDocument();
     });
 
     it("renders LightningCard when in Electron context", async () => {
@@ -390,7 +501,7 @@ describe("Settings page", () => {
         renderSettings();
       });
 
-      expect(screen.getByText("autoLiquidityLabel")).toBeInTheDocument();
+      expect(screen.getByText("manageButton")).toBeInTheDocument();
 
       global.__mockIsElectron = false;
     });

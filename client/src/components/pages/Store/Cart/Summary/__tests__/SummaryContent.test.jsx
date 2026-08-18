@@ -60,9 +60,7 @@ jest.mock("@heroui/react", () => {
     ...actual,
     addToast: (...args) => mockAddToast(...args),
     closeToast: (...args) => mockCloseToast(...args),
-    NumberInput: ({ label, value, onChange }) => (
-      <input aria-label={label} value={value} onChange={(e) => onChange?.(e.target.value)} />
-    ),
+    NumberInput: require("@/test-utils/numberInputMock").NumberInputMock,
     Select: ({ label, selectedKeys, onSelectionChange, children, isDisabled }) => (
       <select
         aria-label={label}

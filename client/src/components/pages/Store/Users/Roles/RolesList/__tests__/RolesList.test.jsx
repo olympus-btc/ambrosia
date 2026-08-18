@@ -6,29 +6,25 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  usePermission: () => true,
-}));
-
 jest.mock("../RolesCard", () => ({
-  RolesCard: ({ role, onEdit, onDelete }) => (
+  RolesCard: ({ role, canManageRoles, onEdit, onDelete }) => (
     <div>
       <span>{role.role}</span>
-      <button aria-label="Edit Role" onClick={() => onEdit(role)}>edit</button>
-      <button aria-label="Delete Role" onClick={() => onDelete(role)}>delete</button>
+      {canManageRoles && <button aria-label="Edit Role" onClick={() => onEdit(role)}>edit</button>}
+      {canManageRoles && <button aria-label="Delete Role" onClick={() => onDelete(role)}>delete</button>}
     </div>
   ),
 }));
 
 jest.mock("../RolesTable", () => ({
-  RolesTable: ({ roles, onEdit, onDelete }) => (
+  RolesTable: ({ roles, canManageRoles, onEdit, onDelete }) => (
     <table>
       <tbody>
         {roles.map((role) => (
           <tr key={role.id}>
             <td>{role.role}</td>
-            <td><button aria-label="Edit Role" onClick={() => onEdit(role)}>edit</button></td>
-            <td><button aria-label="Delete Role" onClick={() => onDelete(role)}>delete</button></td>
+            <td>{canManageRoles && <button aria-label="Edit Role" onClick={() => onEdit(role)}>edit</button>}</td>
+            <td>{canManageRoles && <button aria-label="Delete Role" onClick={() => onDelete(role)}>delete</button>}</td>
           </tr>
         ))}
       </tbody>
@@ -70,14 +66,14 @@ describe("RolesList", () => {
 
   it("calls onEdit when edit is pressed", () => {
     const onEdit = jest.fn();
-    render(<RolesList roles={roles} loading={false} onEdit={onEdit} onDelete={jest.fn()} />);
+    render(<RolesList roles={roles} loading={false} canManageRoles onEdit={onEdit} onDelete={jest.fn()} />);
     fireEvent.click(screen.getAllByLabelText("Edit Role")[0]);
     expect(onEdit).toHaveBeenCalledWith(roles[0]);
   });
 
   it("calls onDelete when delete is pressed", () => {
     const onDelete = jest.fn();
-    render(<RolesList roles={roles} loading={false} onEdit={jest.fn()} onDelete={onDelete} />);
+    render(<RolesList roles={roles} loading={false} canManageRoles onEdit={jest.fn()} onDelete={onDelete} />);
     fireEvent.click(screen.getAllByLabelText("Delete Role")[0]);
     expect(onDelete).toHaveBeenCalledWith(roles[0]);
   });

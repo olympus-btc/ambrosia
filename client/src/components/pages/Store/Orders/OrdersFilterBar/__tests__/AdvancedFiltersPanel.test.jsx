@@ -77,6 +77,36 @@ describe("AdvancedFiltersPanel", () => {
     expect(screen.getByLabelText("filter.maxTotalLabel")).toBeInTheDocument();
   });
 
+  it("includes refunded in the status options", () => {
+    render(
+      <AdvancedFiltersPanel
+        filters={defaultFilters}
+        paymentMethods={[]}
+        onFiltersChange={jest.fn()}
+        onApplyFilters={jest.fn()}
+        onClearFilters={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "refunded" })).toBeInTheDocument();
+  });
+
+  it("calls onFiltersChange when status changes to refunded", () => {
+    const onFiltersChange = jest.fn();
+    render(
+      <AdvancedFiltersPanel
+        filters={defaultFilters}
+        paymentMethods={[]}
+        onFiltersChange={onFiltersChange}
+        onApplyFilters={jest.fn()}
+        onClearFilters={jest.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "refunded" } });
+    expect(onFiltersChange).toHaveBeenCalledWith({ status: "refunded" });
+  });
+
   it("calls onFiltersChange when status changes", () => {
     const onFiltersChange = jest.fn();
     render(

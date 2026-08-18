@@ -13,12 +13,12 @@ export function TicketTemplatesEditor({
   onElementReorder,
   onElementRemove,
   config,
-  t,
+  settingsTranslations,
 }) {
   return (
     <div className="flex min-w-0 flex-2 flex-col gap-4">
       <Input
-        label={t("templates.nameLabel")}
+        label={settingsTranslations("templates.nameLabel")}
         value={name}
         onChange={onNameChange}
       />
@@ -30,7 +30,7 @@ export function TicketTemplatesEditor({
         onReorder={onElementReorder}
         onRemove={onElementRemove}
         config={config}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />
     </div>
   );

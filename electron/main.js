@@ -1,15 +1,17 @@
 const path = require('path');
+const { URL } = require('url');
 
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, Notification, dialog, shell, ipcMain } = require('electron');
 
 const AutoUpdater = require('./services/AutoUpdater');
 const { readConfig, writeConfig } = require('./services/ConfigurationBootstrap');
 const ServiceManager = require('./services/ServiceManager');
 const logger = require('./utils/logger');
-const { getPhoenixDataDirectory } = require('./utils/resourcePaths');
+const { getDataDirectory, getLogsDirectory, getPhoenixDataDirectory } = require('./utils/resourcePaths');
 
 // To prevent multiple instances of the application
 const gotTheLock = app.requestSingleInstanceLock();
+app.setName('Ambrosia');
 
 if (!gotTheLock) {
   logger.log('[Electron] Another instance is already running. Exiting...');
@@ -32,6 +34,10 @@ let serviceManager = null;
 let autoUpdaterService = null;
 let updateMenuItem = null;
 
+const ADMIN_NOTIFICATIONS_ROUTE = '/store/notifications';
+const ADMIN_ACTIVITY_NOTIFICATION_CHANNEL = 'notifications:admin-activity';
+const MAX_NOTIFICATION_TEXT_LENGTH = 160;
+
 function updateMenuItemState({ label, enabled, click }) {
   if (!updateMenuItem) return;
   updateMenuItem.label = label;
@@ -45,6 +51,76 @@ function updateMenuItemState({ label, enabled, click }) {
       }
     };
   }
+}
+
+function normalizeNotificationText(value, fallbackText) {
+  if (typeof value !== 'string') return fallbackText;
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return fallbackText;
+  return trimmedValue.slice(0, MAX_NOTIFICATION_TEXT_LENGTH);
+}
+
+function getAdminNotificationsUrl() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      return new URL(ADMIN_NOTIFICATIONS_ROUTE, mainWindow.webContents.getURL()).toString();
+    } catch {
+      logger.log('[Electron] Could not resolve current window URL for admin notifications');
+    }
+  }
+
+  const nextJsPort = serviceManager?.getPorts?.().nextjs;
+  return nextJsPort ? `http://localhost:${nextJsPort}${ADMIN_NOTIFICATIONS_ROUTE}` : null;
+}
+
+function focusMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
+
+function openAdminNotificationsFeed() {
+  const adminNotificationsUrl = getAdminNotificationsUrl();
+  focusMainWindow();
+  if (adminNotificationsUrl && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.loadURL(adminNotificationsUrl);
+  }
+}
+
+function showAdminActivityNotification(notificationPayload = {}) {
+  if (!Notification.isSupported()) {
+    logger.log('[Electron] Native notifications are not supported on this platform');
+    return;
+  }
+
+  const notificationTitle = normalizeNotificationText(
+    notificationPayload.systemTitle,
+    'Ambrosia',
+  );
+  const notificationBody = normalizeNotificationText(
+    notificationPayload.body,
+    notificationPayload.title ||
+      notificationPayload.fallbackActivityTitle ||
+      notificationPayload.systemBody ||
+      'New admin activity',
+  );
+
+  const nativeNotification = new Notification({
+    title: notificationTitle,
+    body: notificationBody,
+    silent: false,
+  });
+
+  logger.log(`[Electron] Showing admin activity notification: title="${notificationTitle}"`);
+  nativeNotification.on('show', () => {
+    logger.log('[Electron] Admin activity notification shown');
+  });
+  nativeNotification.on('failed', (error) => {
+    logger.error('[Electron] Admin activity notification failed:', error);
+  });
+  nativeNotification.on('click', openAdminNotificationsFeed);
+  nativeNotification.show();
 }
 
 // Splash Screen Creation
@@ -139,7 +215,7 @@ async function handleStartupError(error) {
     ? '\n\nIf you have another Java version installed (Oracle JDK, OpenJDK, etc.), it may be conflicting with the bundled runtime. Try uninstalling other Java versions.'
     : '';
 
-  const response = await dialog.showMessageBox({
+  const startupDialogResult = await dialog.showMessageBox({
     type: 'error',
     title: 'Startup Error',
     message: 'The application Ambrosia could not be started',
@@ -149,11 +225,11 @@ async function handleStartupError(error) {
     cancelId: 2,
   });
 
-  if (response.response === 0) {
+  if (startupDialogResult.response === 0) {
     app.relaunch();
     app.quit();
-  } else if (response.response === 1) {
-    const logsDir = path.join(require('os').homedir(), '.Ambrosia-POS', 'logs');
+  } else if (startupDialogResult.response === 1) {
+    const logsDir = getLogsDirectory();
     shell.openPath(logsDir);
     setTimeout(() => app.quit(), 500);
   } else {
@@ -260,73 +336,8 @@ function createAppMenu() {
   }
 }
 
-// IPC Handlers to communicate with renderer
-ipcMain.handle('services:get-statuses', () => {
-  if (!serviceManager) {
-    return null;
-  }
-  return {
-    statuses: serviceManager.getServiceStatuses(),
-    ports: serviceManager.getPorts(),
-    devMode: serviceManager.isDevMode(),
-  };
-});
-
-ipcMain.handle('services:restart', async (event, serviceName) => {
-  if (!serviceManager) {
-    throw new Error('ServiceManager not initialized');
-  }
-  try {
-    await serviceManager.restartService(serviceName);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('services:get-logs', () => {
-  const logsDir = path.join(require('os').homedir(), '.Ambrosia-POS', 'logs');
-  return { logsDir };
-});
-
-const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
-
-let phoenixdRestartInProgress = false;
-
-ipcMain.handle('phoenixd:get-auto-liquidity', () => {
-  const phoenixConfig = readConfig(phoenixConfigPath);
-  return phoenixConfig['auto-liquidity'] ?? 'off';
-});
-
-ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
-  if (!serviceManager) {
-    throw new Error('ServiceManager not initialized');
-  }
-  if (phoenixdRestartInProgress) {
-    throw new Error('A restart is already in progress');
-  }
-
-  const phoenixConfig = readConfig(phoenixConfigPath);
-  phoenixConfig['auto-liquidity'] = value;
-  writeConfig(phoenixConfigPath, phoenixConfig);
-
-  if (!serviceManager.isDevMode()) {
-    if (serviceManager.configs?.phoenix) {
-      serviceManager.configs.phoenix['auto-liquidity'] = value;
-    }
-    phoenixdRestartInProgress = true;
-    try {
-      await serviceManager.restartService('phoenixd');
-    } finally {
-      phoenixdRestartInProgress = false;
-    }
-  }
-
-  return true;
-});
-
-// App initialization
-app.whenReady().then(async () => {
+// Runs on first launch and again if reactivated from the dock after all windows closed.
+async function initializeApp() {
   try {
     logger.log('[Electron] Initializing Ambrosia POS...');
 
@@ -366,7 +377,7 @@ app.whenReady().then(async () => {
     // Track service startup progress
     updateSplash(null, 0, 'Initializing...');
 
-    serviceManager.on('service:started', ({ service, port }) => {
+    serviceManager.on('service:started', ({ service, port, skipped }) => {
       logger.log(`[Electron] Service started: ${service} on port ${port}`);
 
       // Update progress based on service
@@ -375,7 +386,7 @@ app.whenReady().then(async () => {
 
       if (service === 'phoenixd') {
         progress = 33;
-        message = 'Lightning Network ready';
+        message = skipped ? 'NWC wallet configured' : 'Lightning Network ready';
         completeSplashStep('phoenixd');
         updateSplash('backend', progress, 'Starting Backend...');
       } else if (service === 'backend') {
@@ -411,7 +422,13 @@ app.whenReady().then(async () => {
       updateSplash(null, 33, 'Development mode');
       updateSplash('nextjs', 66, 'Starting Frontend...');
     } else {
-      updateSplash('phoenixd', 10, 'Starting Lightning Network...');
+      const ambrosiaConfigPath = path.join(getDataDirectory(), 'ambrosia.conf');
+      const nwcUriConfigured = Boolean(readConfig(ambrosiaConfigPath)['nwc-uri']);
+      updateSplash(
+        'phoenixd',
+        10,
+        nwcUriConfigured ? 'Connecting to NWC wallet...' : 'Starting Lightning Network...',
+      );
     }
 
     const url = await serviceManager.startAll();
@@ -444,15 +461,95 @@ app.whenReady().then(async () => {
     }
     await handleStartupError(error);
   }
+}
+
+// IPC Handlers to communicate with renderer
+ipcMain.handle('services:get-statuses', () => {
+  if (!serviceManager) {
+    return null;
+  }
+  return {
+    statuses: serviceManager.getServiceStatuses(),
+    ports: serviceManager.getPorts(),
+    devMode: serviceManager.isDevMode(),
+  };
 });
+
+ipcMain.handle('services:restart', async (event, serviceName) => {
+  if (!serviceManager) {
+    throw new Error('ServiceManager not initialized');
+  }
+  try {
+    await serviceManager.restartService(serviceName);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('services:get-logs', () => {
+  const logsDir = getLogsDirectory();
+  return { logsDir };
+});
+
+ipcMain.on(ADMIN_ACTIVITY_NOTIFICATION_CHANNEL, (_event, notificationPayload) => {
+  logger.log('[Electron] Admin activity notification IPC received');
+  showAdminActivityNotification(notificationPayload);
+});
+
+const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
+
+let phoenixdRestartInProgress = false;
+
+ipcMain.handle('phoenixd:get-auto-liquidity', () => {
+  if (serviceManager?.configs?.ambrosia?.['nwc-uri']) {
+    return { nwcConfigured: true };
+  }
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  return phoenixConfig['auto-liquidity'] ?? 'off';
+});
+
+ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
+  if (!serviceManager) {
+    throw new Error('ServiceManager not initialized');
+  }
+  if (serviceManager.configs?.ambrosia?.['nwc-uri']) {
+    return { nwcConfigured: true };
+  }
+  if (phoenixdRestartInProgress) {
+    throw new Error('A restart is already in progress');
+  }
+
+  const phoenixConfig = readConfig(phoenixConfigPath);
+  phoenixConfig['auto-liquidity'] = value;
+  writeConfig(phoenixConfigPath, phoenixConfig);
+
+  if (!serviceManager.isDevMode()) {
+    if (serviceManager.externalServices.phoenixd) {
+      return { requiresManualRestart: true };
+    }
+
+    if (serviceManager.configs?.phoenix) {
+      serviceManager.configs.phoenix['auto-liquidity'] = value;
+    }
+    phoenixdRestartInProgress = true;
+    try {
+      await serviceManager.restartService('phoenixd');
+    } finally {
+      phoenixdRestartInProgress = false;
+    }
+  }
+
+  return true;
+});
+
+// App initialization
+app.whenReady().then(initializeApp);
 
 // Activation handler (macOS)
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0 && serviceManager) {
-    const ports = serviceManager.getPorts();
-    if (ports.nextjs) {
-      createWindow(`http://localhost:${ports.nextjs}`);
-    }
+  if (BrowserWindow.getAllWindows().length === 0 && !serviceManager) {
+    initializeApp();
   }
 });
 

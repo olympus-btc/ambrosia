@@ -13,12 +13,9 @@ global.localStorage = localStorageMock;
 
 const baseForm = {
   name: "cashier",
-  password: "",
   isAdmin: false,
   permissions: ["products_read", "orders_read"],
 };
-
-const t = (key) => key;
 
 const renderModal = (props = {}) => render(
   <I18nProvider>
@@ -32,7 +29,6 @@ const renderModal = (props = {}) => render(
       togglePermission={jest.fn()}
       updating={false}
       roleName="cashier"
-      t={t}
       businessType="store"
       {...props}
     />
@@ -53,8 +49,12 @@ describe("EditRoleModal", () => {
   it("renders form fields with current values", () => {
     renderModal();
     expect(screen.getByLabelText("roles.edit.roleName")).toHaveValue("cashier");
-    expect(screen.getByLabelText("roles.edit.password")).toBeInTheDocument();
     expect(screen.getByText("roles.edit.isAdmin")).toBeInTheDocument();
+  });
+
+  it("does not render a password field", () => {
+    renderModal();
+    expect(screen.queryByLabelText("roles.edit.password")).not.toBeInTheDocument();
   });
 
   it("updates name field on change", () => {
@@ -66,13 +66,19 @@ describe("EditRoleModal", () => {
     expect(result.name).toBe("supervisor");
   });
 
-  it("updates password field on change", () => {
-    const setForm = jest.fn((updater) => updater(baseForm));
-    renderModal({ setForm });
-    fireEvent.change(screen.getByLabelText("roles.edit.password"), { target: { value: "secret" } });
+  it("clears inherited permissions when admin privileges are removed", () => {
+    const adminForm = { ...baseForm, isAdmin: true };
+    const setForm = jest.fn((updater) => updater(adminForm));
+    renderModal({ form: adminForm, setForm });
+
+    fireEvent.click(screen.getByText("roles.edit.isAdmin"));
+
     expect(setForm).toHaveBeenCalled();
-    const result = setForm.mock.results[0].value;
-    expect(result.password).toBe("secret");
+    expect(setForm.mock.results[0].value).toEqual({
+      ...adminForm,
+      isAdmin: false,
+      permissions: [],
+    });
   });
 
   it("save button is disabled when name is empty", () => {
@@ -101,8 +107,9 @@ describe("EditRoleModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("shows spinner when updating", () => {
+  it("disables action buttons when updating", () => {
     renderModal({ updating: true });
-    expect(screen.queryByText("roles.actions.save")).not.toBeInTheDocument();
+    expect(screen.getByText("roles.actions.save").closest("button")).toBeDisabled();
+    expect(screen.getByText("roles.actions.cancel").closest("button")).toBeDisabled();
   });
 });

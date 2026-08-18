@@ -339,6 +339,51 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
+  it("prioritizes a localized checkout key for a known server error code", async () => {
+    const notifyError = jest.fn();
+    const checkoutError = new Error("errors.checkout");
+    checkoutError.status = 400;
+    checkoutError.code = "checkout_insufficient_stock";
+    checkoutError.responseMessage = "Insufficient stock for checkout";
+    processCheckout.mockRejectedValueOnce(checkoutError);
+
+    const handlePay = buildHandlePay({
+      currency: { id: "cur-1" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { bank: { id: "bank", name: "Bank Transfer" } },
+      getPaymentCurrencyById: jest.fn(),
+      setBtcPaymentConfig: jest.fn(),
+      setCashPaymentConfig: jest.fn(),
+      setCardPaymentConfig: jest.fn(),
+      notifyError,
+      dispatch: jest.fn(),
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [{ id: 1 }],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "bank",
+    });
+
+    expect(notifyError).toHaveBeenCalledWith("errors.checkoutInsufficientStock");
+    expect(console.error).toHaveBeenCalledWith("Error processing payment", {
+      status: 400,
+      code: "checkout_insufficient_stock",
+      source: undefined,
+      message: "Insufficient stock for checkout",
+    });
+  });
+
   it("stores exchangeRate in btcPaymentConfig on invoice ready", () => {
     let captured = { existing: true };
     const setBtcPaymentConfig = jest.fn((fn) => {

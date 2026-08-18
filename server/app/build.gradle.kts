@@ -1,4 +1,4 @@
-version = "0.7.1-beta"
+version = "0.8.0-beta"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -40,9 +40,18 @@ dependencies {
 
     implementation(libs.clikt)
     implementation(libs.lightning.kmp)
+    implementation(libs.nostrino)
+    implementation(libs.okio)
 
     implementation(libs.escpos.coffee)
     implementation(libs.zxing.core)
+    implementation(libs.web.push.java) {
+        exclude(group = "org.bouncycastle", module = "bcprov-jdk15on")
+        exclude(group = "org.apache.httpcomponents", module = "httpasyncclient")
+    }
+    implementation(libs.bouncycastle.provider)
+    implementation(libs.jose4j)
+    implementation(libs.async.http.client)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit)
@@ -68,6 +77,7 @@ tasks.named<Jar>("jar") {
         attributes("Implementation-Version" to project.version)
     }
 
+    exclude("META-INF/*.DSA", "META-INF/*.RSA", "META-INF/*.SF")
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 
     from("src/main/resources") {

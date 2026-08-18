@@ -17,7 +17,15 @@ function buildInitialOptionValuesByType(options, initialOptionValueIds = []) {
   }, {});
 }
 
-export function VariantForm({ initial = {}, currency, options = [], onSave, onCancel, isLoading }) {
+export function VariantForm({
+  initial = {},
+  currency,
+  options = [],
+  isStockTrackedForProduct = true,
+  onSave,
+  onCancel,
+  isLoading,
+}) {
   const productsTranslation = useTranslations("products");
 
   const [form, setForm] = useState({
@@ -54,7 +62,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
     onSave({
       SKU: form.SKU.trim() || null,
       priceCents: form.priceCents,
-      quantity: Number(form.quantity),
+      quantity: isStockTrackedForProduct ? Number(form.quantity) : 0,
       isActive: initial.isActive ?? true,
       optionValueIds,
       imageFile: form.imageFile,
@@ -98,7 +106,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
         onChange={(skuChangeEvent) => updateForm({ SKU: skuChangeEvent.target.value })}
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className={isStockTrackedForProduct ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
         <NumberInput
           size="sm"
           label={productsTranslation("variantPrice")}
@@ -111,15 +119,17 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
           }
           onValueChange={(priceValue) => updateForm({ priceCents: Math.round((priceValue ?? 0) * 100) })}
         />
-        <NumberInput
-          size="sm"
-          label={productsTranslation("variantStock")}
-          placeholder={productsTranslation("variantStockPlaceholder")}
-          value={form.quantity}
-          minValue={0}
-          step={1}
-          onValueChange={(quantityValue) => updateForm({ quantity: quantityValue ?? 0 })}
-        />
+        {isStockTrackedForProduct && (
+          <NumberInput
+            size="sm"
+            label={productsTranslation("variantStock")}
+            placeholder={productsTranslation("variantStockPlaceholder")}
+            value={form.quantity}
+            minValue={0}
+            step={1}
+            onValueChange={(quantityValue) => updateForm({ quantity: quantityValue ?? 0 })}
+          />
+        )}
       </div>
 
       <ImageUploader

@@ -24,22 +24,20 @@ describe("useFiltersState", () => {
     expect(filtersStateHook.current.filters).toEqual(defaultFilters);
   });
 
-  it("auto-fetches with default period on mount", async () => {
+  it("auto-fetches the default period on mount", async () => {
     renderHook(() => useFiltersState(mockFetch));
     await act(async () => {});
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ period: defaultFilters.activePeriod }),
-    );
+    expect(mockFetch).toHaveBeenCalledWith({ period: defaultFilters.activePeriod });
   });
 
-  it("handleFilters with activePeriod fetches immediately", async () => {
+  it("handleFilters with activePeriod fetches with period only", async () => {
     const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
       filtersStateHook.current.handleFilters({ activePeriod: "week", startDate: "", endDate: "" });
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ period: "week" }));
+    expect(mockFetch).toHaveBeenCalledWith({ period: "week" });
   });
 
   it("handleFilters with activePeriod updates filters state", async () => {
@@ -87,7 +85,7 @@ describe("useFiltersState", () => {
     expect(calls.some((fetchParams) => fetchParams.endDate === "2024-01-31")).toBe(true);
   });
 
-  it("refetch calls fetchReport with current filter state", async () => {
+  it("refetch calls fetchReport with the current period", async () => {
     const { result: filtersStateHook } = await setupHook();
 
     await act(async () => {
@@ -99,7 +97,26 @@ describe("useFiltersState", () => {
       filtersStateHook.current.refetch();
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ period: "year" }));
+    expect(mockFetch).toHaveBeenCalledWith({ period: "year" });
+  });
+
+  it("refetch calls fetchReport with the current custom date range", async () => {
+    const { result: filtersStateHook } = await setupHook();
+
+    await act(async () => {
+      filtersStateHook.current.handleFilters({ activePeriod: null, startDate: "2026-01-01", endDate: "2026-08-07" });
+    });
+    jest.clearAllMocks();
+
+    await act(async () => {
+      filtersStateHook.current.refetch();
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith({
+      startDate: "2026-01-01",
+      endDate: "2026-08-07",
+      utcOffsetMinutes: expect.any(Number),
+    });
   });
 });
 
@@ -118,11 +135,23 @@ describe("useDateRangeFilters", () => {
     expect(dateRangeFiltersHook.current.dateRangeValue.end.toString()).toBe("2024-01-31");
   });
 
-  it("handlePeriodChange calls onFiltersChange with period and clears dates", () => {
-    const onFiltersChange = jest.fn();
-    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
-    dateRangeFiltersHook.current.handlePeriodChange("week");
-    expect(onFiltersChange).toHaveBeenCalledWith({ activePeriod: "week", startDate: "", endDate: "" });
+  it("handlePeriodChange calls onFiltersChange with the period and no dates, for every period", () => {
+    ["day", "week", "month", "year"].forEach((period) => {
+      const onFiltersChange = jest.fn();
+      const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+
+      dateRangeFiltersHook.current.handlePeriodChange(period);
+
+      expect(onFiltersChange).toHaveBeenCalledWith({ activePeriod: period, startDate: "", endDate: "" });
+    });
+  });
+
+  it("dateRangeValue is null when activePeriod is set, even with dates present", () => {
+    const { result: dateRangeFiltersHook } = renderHook(() => useDateRangeFilters(
+      { ...baseFilters, activePeriod: "month", startDate: "2024-01-01", endDate: "2024-01-31" },
+      jest.fn(),
+    ));
+    expect(dateRangeFiltersHook.current.dateRangeValue).toBeNull();
   });
 
   it("handleDateRangeChange with a range calls onFiltersChange with stringified dates", () => {

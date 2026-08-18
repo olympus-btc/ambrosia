@@ -90,4 +90,19 @@ describe("useOrdersData", () => {
     expect(cashOrder.exchangeRateCurrency).toBeNull();
     expect(cashOrder.fiatAmountAtPayment).toBeNull();
   });
+
+  it("defaults refunded to false when no line item is refunded", () => {
+    const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
+    const orderA = result.current.find((order) => order.orderId === "order-aaa-00000001");
+    expect(orderA.refunded).toBe(false);
+  });
+
+  it("sets refunded to true when any line item of the order is refunded", () => {
+    const refundedSales = [
+      { orderId: "order-ccc-00000003", productName: "Widget D", quantity: 1, priceAtOrder: 100, refunded: false },
+      { orderId: "order-ccc-00000003", productName: "Widget E", quantity: 1, priceAtOrder: 200, refunded: true },
+    ];
+    const { result } = renderHook(() => useOrdersData(refundedSales));
+    expect(result.current[0].refunded).toBe(true);
+  });
 });

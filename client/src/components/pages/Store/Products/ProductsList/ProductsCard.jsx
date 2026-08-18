@@ -5,7 +5,7 @@ import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { getProductStockQuantity, getProductStockStatus, getStockChipClassName } from "@/components/pages/Store/utils/productStockStatus";
+import { getProductStockQuantity, getProductStockStatus, getStockChipClassName, isStockTracked } from "@/components/pages/Store/utils/productStockStatus";
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { VariantsButton } from "@/components/shared/VariantsButton";
@@ -24,9 +24,9 @@ export function ProductsCard({
   const productsTranslation = useTranslations("products");
   const { formatAmount } = useCurrency();
   const imageUrl = storedAssetUrl(product?.imageUrl);
-  const stockQuantity = getProductStockQuantity(product);
   const stockStatus = getProductStockStatus(product);
   const stockChipClassName = getStockChipClassName(stockStatus);
+  const stockQuantityLabel = isStockTracked(product) ? getProductStockQuantity(product) : "N/A";
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
@@ -53,7 +53,7 @@ export function ProductsCard({
               className={stockChipClassName}
               size="sm"
             >
-              {stockQuantity}
+              {stockQuantityLabel}
             </Chip>
             <Chip
               className={stockChipClassName}

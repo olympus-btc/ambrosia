@@ -16,9 +16,7 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   return {
     ...actual,
-    NumberInput: ({ label, value, onChange }) => (
-      <input aria-label={label} value={value} onChange={(e) => onChange?.(e.target.value)} />
-    ),
+    NumberInput: require("@/test-utils/numberInputMock").NumberInputMock,
   };
 });
 
@@ -73,10 +71,24 @@ describe("CartItemCard", () => {
     expect(onRemove).toHaveBeenCalled();
   });
 
-  it("calls onUpdateQuantity with item id and new value when quantity changes", () => {
+  it("calls onUpdateQuantity with item id and new value when quantity is typed", () => {
     const onUpdateQuantity = jest.fn();
     render(<CartItemCard item={defaultItem} onRemove={jest.fn()} onUpdateQuantity={onUpdateQuantity} />);
     fireEvent.change(screen.getByLabelText("summary.quantity"), { target: { value: "5" } });
     expect(onUpdateQuantity).toHaveBeenCalledWith(1, 5);
+  });
+
+  it("calls onUpdateQuantity with a number when the stepper is used", () => {
+    const onUpdateQuantity = jest.fn();
+    render(<CartItemCard item={defaultItem} onRemove={jest.fn()} onUpdateQuantity={onUpdateQuantity} />);
+    fireEvent.click(screen.getByLabelText("summary.quantity increment"));
+    expect(onUpdateQuantity).toHaveBeenCalledWith(1, 3);
+  });
+
+  it("reports NaN instead of zero while the quantity field is empty", () => {
+    const onUpdateQuantity = jest.fn();
+    render(<CartItemCard item={defaultItem} onRemove={jest.fn()} onUpdateQuantity={onUpdateQuantity} />);
+    fireEvent.change(screen.getByLabelText("summary.quantity"), { target: { value: "" } });
+    expect(onUpdateQuantity).toHaveBeenCalledWith(1, NaN);
   });
 });

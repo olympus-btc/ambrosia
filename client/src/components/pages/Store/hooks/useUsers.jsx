@@ -6,60 +6,69 @@ import { useTranslations } from "next-intl";
 
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
-import { useFetchList } from "@/lib/http/useFetchList";
 
-async function buildHttpRequestError(response, fallbackMessage) {
-  const responsePayload = await parseJsonResponse(response, null);
-  const requestError = new Error(fallbackMessage);
-  requestError.status = response.status;
-  requestError.responseMessage = responsePayload?.message;
-  return requestError;
-}
+import { buildParsedHttpError } from "../utils/buildHttpError";
 
 function isLastAdminConflict(requestError) {
   return requestError?.status === 409 && requestError?.responseMessage?.includes("last admin");
 }
 
-export function useUsers() {
-  const t = useTranslations("users");
-  const { fetchList } = useFetchList();
+function isAdminPrivilegesRequired(requestError) {
+  return requestError?.status === 403 && requestError?.responseMessage === "Admin privileges required";
+}
+
+export function useUsers({ skipForbiddenRedirect = false } = {}) {
+  const usersTranslations = useTranslations("users");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [forbidden, setForbidden] = useState(false);
 
   const showGenericMutationErrorToast = useCallback(() => {
     addToast({
-      title: t("toasts.genericErrorTitle"),
-      description: t("toasts.genericErrorDescription"),
+      title: usersTranslations("toasts.genericErrorTitle"),
+      description: usersTranslations("toasts.genericErrorDescription"),
       color: "danger",
     });
-  }, [t]);
+  }, [usersTranslations]);
+
+  const showAdminRequiredToast = useCallback(() => {
+    addToast({
+      title: usersTranslations("toasts.adminRequiredTitle"),
+      description: usersTranslations("toasts.adminRequiredDescription"),
+      color: "warning",
+    });
+  }, [usersTranslations]);
 
   const showUserConflictToast = useCallback((requestError, fallbackConflictToast) => {
     if (isLastAdminConflict(requestError)) {
       addToast({
-        title: t("toasts.lastAdminTitle"),
-        description: t("toasts.lastAdminDescription"),
+        title: usersTranslations("toasts.lastAdminTitle"),
+        description: usersTranslations("toasts.lastAdminDescription"),
         color: "warning",
       });
       return;
     }
 
     addToast(fallbackConflictToast);
-  }, [t]);
+  }, [usersTranslations]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const usersData = await fetchList("/users");
-      if (usersData === null) return;
+      const usersResponse = await httpClient("/users", { skipForbiddenRedirect });
+      setForbidden(usersResponse.status === 403);
+      if (!usersResponse.ok) return;
+      const usersData = await parseJsonResponse(usersResponse, []);
       setUsers(toArray(usersData));
+    } catch (loadError) {
+      setError(loadError);
     } finally {
       setLoading(false);
     }
-  }, [fetchList]);
+  }, [skipForbiddenRedirect]);
 
   const updateUser = async (user) => {
     try {
@@ -83,7 +92,7 @@ export function useUsers() {
       });
 
       if (updateUserResponse.ok === false) {
-        throw await buildHttpRequestError(updateUserResponse, "Error updating user");
+        throw await buildParsedHttpError(updateUserResponse, "Error updating user");
       }
 
       await fetchUsers();
@@ -92,16 +101,21 @@ export function useUsers() {
 
       return updatedUserData;
     } catch (requestError) {
+      if (isAdminPrivilegesRequired(requestError)) {
+        showAdminRequiredToast();
+        throw requestError;
+      }
       if (requestError?.status === 409) {
         showUserConflictToast(requestError, {
-          title: t("toasts.duplicateNameTitle"),
-          description: t("toasts.duplicateNameDescription"),
+          title: usersTranslations("toasts.duplicateNameTitle"),
+          description: usersTranslations("toasts.duplicateNameDescription"),
           color: "danger",
         });
-        return;
+        throw requestError;
       }
 
       showGenericMutationErrorToast();
+      throw requestError;
     }
   };
 
@@ -122,22 +136,27 @@ export function useUsers() {
       });
 
       if (createUserResponse.ok === false) {
-        throw await buildHttpRequestError(createUserResponse, "Error adding user");
+        throw await buildParsedHttpError(createUserResponse, "Error adding user");
       }
 
       await fetchUsers();
       return createUserResponse;
     } catch (requestError) {
+      if (isAdminPrivilegesRequired(requestError)) {
+        showAdminRequiredToast();
+        throw requestError;
+      }
       if (requestError?.status === 409) {
         showUserConflictToast(requestError, {
-          title: t("toasts.duplicateNameTitle"),
-          description: t("toasts.duplicateNameDescription"),
+          title: usersTranslations("toasts.duplicateNameTitle"),
+          description: usersTranslations("toasts.duplicateNameDescription"),
           color: "danger",
         });
-        return;
+        throw requestError;
       }
 
       showGenericMutationErrorToast();
+      throw requestError;
     }
   };
 
@@ -148,7 +167,7 @@ export function useUsers() {
       });
 
       if (deleteUserResponse.ok === false) {
-        throw await buildHttpRequestError(deleteUserResponse, "Error deleting user");
+        throw await buildParsedHttpError(deleteUserResponse, "Error deleting user");
       }
 
       await fetchUsers();
@@ -156,14 +175,15 @@ export function useUsers() {
     } catch (requestError) {
       if (requestError?.status === 409) {
         showUserConflictToast(requestError, {
-          title: t("toasts.lastUserTitle"),
-          description: t("toasts.lastUserDescription"),
+          title: usersTranslations("toasts.lastUserTitle"),
+          description: usersTranslations("toasts.lastUserDescription"),
           color: "warning",
         });
-        return;
+        throw requestError;
       }
 
       showGenericMutationErrorToast();
+      throw requestError;
     }
   };
 
@@ -177,6 +197,7 @@ export function useUsers() {
     deleteUser,
     loading,
     error,
+    forbidden,
     refetch: fetchUsers,
   };
 }

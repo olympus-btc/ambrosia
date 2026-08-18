@@ -8,19 +8,12 @@ jest.mock("@/components/hooks/useCurrency", () => ({
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
+  const { NumberInputMock } = require("@/test-utils/numberInputMock");
   return {
     ...actual,
     Button: ({ children, onPress }) => <button onClick={onPress}>{children}</button>,
-    NumberInput: ({ value, onValueChange, onChange, onKeyDown }) => (
-      <input
-        data-testid="discount-number-input"
-        value={value}
-        onChange={(event) => {
-          onValueChange?.(parseFloat(event.target.value) || 0);
-          onChange?.(event);
-        }}
-        onKeyDown={onKeyDown}
-      />
+    NumberInput: (numberInputProps) => (
+      <NumberInputMock {...numberInputProps} data-testid="discount-number-input" />
     ),
   };
 });

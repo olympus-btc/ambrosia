@@ -34,6 +34,7 @@ const defaultHookState = {
   isDisabled: true,
   matchedVariant: null,
   isOutOfStock: false,
+  isStockTrackedForProduct: true,
   isValueAvailable: jest.fn().mockReturnValue(true),
   toggleOptionValue: jest.fn(),
   handleAddToCart: jest.fn(),

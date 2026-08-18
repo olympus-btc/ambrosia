@@ -5,6 +5,7 @@ import fr.acinq.lightning.payment.Bolt11Invoice
 data class DecodedInvoice(
     val amountSat: Long?,
     val description: String?,
+    val paymentHash: String?,
 )
 
 object Bolt11Decoder {
@@ -13,7 +14,7 @@ object Bolt11Decoder {
         return try {
             val parsedInvoice = Bolt11Invoice.read(invoice).get()
             parsedInvoice.description
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             null
         }
     }
@@ -25,8 +26,29 @@ object Bolt11Decoder {
             DecodedInvoice(
                 amountSat = parsedInvoice.amount?.truncateToSatoshi()?.toLong(),
                 description = parsedInvoice.description,
+                paymentHash = parsedInvoice.paymentHash.toString(),
             )
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
+            null
+        }
+    }
+
+    fun extractAmountSat(invoice: String?): Long? {
+        if (invoice.isNullOrBlank()) return null
+        return try {
+            val parsedInvoice = Bolt11Invoice.read(invoice).get()
+            parsedInvoice.amount?.msat?.div(1000)
+        } catch (exception: Exception) {
+            null
+        }
+    }
+
+    fun extractPaymentHash(invoice: String?): String? {
+        if (invoice.isNullOrBlank()) return null
+        return try {
+            val parsedInvoice = Bolt11Invoice.read(invoice).get()
+            parsedInvoice.paymentHash.toHex()
+        } catch (exception: Exception) {
             null
         }
     }

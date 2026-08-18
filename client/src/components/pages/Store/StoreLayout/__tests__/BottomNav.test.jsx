@@ -15,14 +15,14 @@ const mockItems = [
   { path: "/store/products", label: "products", icon: "box", showInBottomNav: true, bottomNavOrder: 2 },
 ];
 
-const mockT = (key) => key;
+const mockNavbarTranslations = (key) => key;
 
 function renderBottomNav(props = {}) {
   const defaults = {
     isAuth: true,
     items: mockItems,
     pathname: "/store",
-    t: mockT,
+    navbarTranslations: mockNavbarTranslations,
     onMenuClick: jest.fn(),
   };
   return render(<BottomNav {...defaults} {...props} />);

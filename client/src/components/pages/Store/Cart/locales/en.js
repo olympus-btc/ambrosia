@@ -54,11 +54,17 @@ const cartEn = {
         noUser: "No authenticated user to register the sale.",
         noCurrency: "Could not fetch the base currency.",
         checkout: "Could not complete the checkout",
+        checkoutEmpty: "Add products before completing the checkout.",
+        checkoutInvalidQuantity: "One or more products have an invalid quantity.",
+        checkoutInvalidReference: "The checkout contains invalid information. Refresh and try again.",
+        checkoutProductNotFound: "One of the products is no longer available.",
+        checkoutVariantNotFound: "One of the selected product variants is no longer available.",
+        checkoutInsufficientStock: "There is not enough stock to complete the sale.",
         process: "Error processing the payment",
         btcComplete: "Error completing the BTC payment",
         cashComplete: "Error completing the cash payment",
         cardComplete: "Error completing the card payment",
-        printCustomer: "Ticket printed failed. Check printer settings.",
+        printCustomer: "Could not print the receipt. Check printer settings.",
       },
       success: {
         paid: "Payment registered successfully",
@@ -74,6 +80,13 @@ const cartEn = {
     },
     errors: {
       outOfStock: "Not enough stock available for this product.",
+    },
+    permissionBlocked: {
+      title: "You can't complete the sale",
+      subtitle: "Ask an administrator to grant you the missing permissions:",
+      products: "View products",
+      categories: "View categories",
+      payments: "View payment methods",
     },
     paymentModal: {
       bitcoin: {

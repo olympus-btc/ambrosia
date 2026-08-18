@@ -25,7 +25,6 @@ services:
       - phoenixd_datadir:/root/.phoenix  
     depends_on:
       - phoenixd
-
   ambrosia-client:
     build:
       context: client/

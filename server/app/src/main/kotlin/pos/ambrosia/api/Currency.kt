@@ -14,14 +14,14 @@ import pos.ambrosia.services.CurrencyService
 import pos.ambrosia.utils.authorizePermission
 
 fun Application.configureCurrency() {
-    val service = CurrencyService()
+    val currencyService = CurrencyService()
 
     routing {
         route("/currencies") {
             authorizePermission("settings_read") {
                 get("") {
-                    val list = service.list()
-                    call.respond(HttpStatusCode.OK, list)
+                    val currencies = currencyService.list()
+                    call.respond(HttpStatusCode.OK, currencies)
                 }
             }
         }
@@ -29,28 +29,28 @@ fun Application.configureCurrency() {
         route("/base-currency") {
             authorizePermission("settings_read") {
                 get("") {
-                    val curr = service.getBaseCurrency()
-                    if (curr == null) {
+                    val baseCurrency = currencyService.getBaseCurrency()
+                    if (baseCurrency == null) {
                         call.respond(HttpStatusCode.NotFound, Message("Base currency not set"))
                     } else {
-                        call.respond(HttpStatusCode.OK, curr)
+                        call.respond(HttpStatusCode.OK, baseCurrency)
                     }
                 }
             }
             authorizePermission("settings_update") {
                 put("") {
-                    val req = call.receive<SetBaseCurrencyRequest>()
-                    if (req.acronym.isNullOrBlank()) {
+                    val setBaseCurrencyRequest = call.receive<SetBaseCurrencyRequest>()
+                    if (setBaseCurrencyRequest.acronym.isNullOrBlank()) {
                         call.respond(HttpStatusCode.BadRequest, Message("Acronym is required"))
                         return@put
                     }
-                    val ok = service.setBaseCurrencyByAcronym(req.acronym)
-                    if (!ok) {
-                        call.respond(HttpStatusCode.NotFound, Message("Unknown currency acronym: ${req.acronym}"))
+                    val wasUpdated = currencyService.setBaseCurrencyByAcronym(setBaseCurrencyRequest.acronym)
+                    if (!wasUpdated) {
+                        call.respond(HttpStatusCode.NotFound, Message("Unknown currency acronym: ${setBaseCurrencyRequest.acronym}"))
                         return@put
                     }
-                    val curr = service.getBaseCurrency()
-                    call.respond(HttpStatusCode.OK, curr ?: Message("Base currency updated"))
+                    val baseCurrency = currencyService.getBaseCurrency()
+                    call.respond(HttpStatusCode.OK, baseCurrency ?: Message("Base currency updated"))
                 }
             }
         }

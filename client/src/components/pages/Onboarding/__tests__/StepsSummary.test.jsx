@@ -17,6 +17,7 @@ describe("Step 4 Summary", () => {
     businessEmail: "tienda@correo.com",
     businessRFC: "RFC123456ABC",
     businessCurrency: "MXN",
+    timezone: "Europe/Madrid",
     businessLogo: null,
   };
 
@@ -38,6 +39,7 @@ describe("Step 4 Summary", () => {
     expect(screen.getByText(baseData.businessEmail)).toBeInTheDocument();
     expect(screen.getByText(baseData.businessRFC)).toBeInTheDocument();
     expect(screen.getByText(baseData.businessCurrency)).toBeInTheDocument();
+    expect(screen.getByText(baseData.timezone)).toBeInTheDocument();
   });
 
   it("calls onEdit with correct step index", async () => {

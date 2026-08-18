@@ -48,6 +48,22 @@ class PrintTicketException(
     message: String = "Error processing print job",
 ) : RuntimeException(message)
 
+class NwcConnectionException(
+    message: String = "Unable to connect to NWC relay",
+    val code: String = "nwc_connection_failed",
+    val source: String = "ambrosia",
+) : RuntimeException(message)
+
+class NwcServiceException(
+    message: String = "NWC wallet service error",
+) : RuntimeException(message)
+
+class UnsupportedBackendOperationException(
+    message: String = "Operation not supported by current Lightning backend",
+    val code: String = "unsupported_operation",
+    val source: String = "ambrosia",
+) : RuntimeException(message)
+
 class DuplicateUserNameException(
     message: String = "User name already exists",
 ) : IllegalStateException(message)
@@ -83,3 +99,15 @@ class PaymentNotConfirmedException(
 class ProductIsBundleComponentException(
     val bundleNames: List<String>,
 ) : IllegalStateException("Product is a component of bundles: ${bundleNames.joinToString(", ")}")
+
+class OrderAlreadyRefundedException(
+    message: String = "Order has already been refunded",
+    val code: String = "already_refunded",
+    val source: String = "ambrosia",
+) : IllegalStateException(message)
+
+class OrderNotRefundableException(
+    message: String = "Order cannot be refunded",
+    val code: String = "not_refundable",
+    val source: String = "ambrosia",
+) : IllegalStateException(message)

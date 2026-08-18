@@ -6,6 +6,7 @@ import { Button, NumberInput } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { toNumberInputValue } from "@/components/utils/numberParsers";
 
 export function DiscountInput({ discount, discountType, onApply, onPreview }) {
   const translateCart = useTranslations("cart");
@@ -71,9 +72,8 @@ export function DiscountInput({ discount, discountType, onApply, onPreview }) {
               setInputValue(value);
               onPreview?.(value, activeType);
             }}
-            onChange={(event) => {
-              if (!event?.target) return;
-              const numericValue = parseFloat(event.target.value.replace(/[^0-9.]/g, "")) || 0;
+            onChange={(discountChange) => {
+              const numericValue = toNumberInputValue(discountChange);
               setInputValue(numericValue);
               onPreview?.(numericValue, activeType);
             }}

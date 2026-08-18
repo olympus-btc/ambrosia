@@ -4,6 +4,13 @@ import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import {
+  getProductStockQuantity,
+  getProductStockStatus,
+  getStockChipClassName,
+  isStockTracked,
+  PRODUCT_STOCK_STATUS,
+} from "@/components/pages/Store/utils/productStockStatus";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButton = true, product, categories = [] }) {
@@ -19,16 +26,14 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
     .map((category) => category.name)
     .join(", ") || productDetailsTranslation("noCategory");
 
-  const quantity = Number(product.quantity ?? 0);
-  const isOutOfStock = quantity <= 0;
+  const tracksStock = isStockTracked(product);
+  const quantity = getProductStockQuantity(product);
+  const stockStatus = getProductStockStatus(product);
+  const isOutOfStock = stockStatus === PRODUCT_STOCK_STATUS.OUT;
   const shouldShowVariantPriceRange =
     product.hasVariants && !product.isBundle && product.maxPriceCents !== product.priceCents;
 
-  const stockChipClassName = isOutOfStock
-    ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-    : quantity < 11
-      ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-      : "bg-green-200 text-xs text-green-800 border border-green-300";
+  const stockChipClassName = getStockChipClassName(stockStatus);
 
   const handleAddToCart = () => {
     onAddProduct?.(product);
@@ -98,9 +103,11 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
                 SKU: <span className="text-gray-800">{product.SKU ?? "—"}</span>
               </p>
             </div>
-            <Chip size="sm" className={stockChipClassName}>
-              {quantity} {product.hasVariants && !product.isBundle ? productDetailsTranslation("totalStock") : productDetailsTranslation("stock")}
-            </Chip>
+            {tracksStock && (
+              <Chip size="sm" className={stockChipClassName}>
+                {quantity} {product.hasVariants && !product.isBundle ? productDetailsTranslation("totalStock") : productDetailsTranslation("stock")}
+              </Chip>
+            )}
           </div>
 
           {product.description && (

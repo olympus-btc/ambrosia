@@ -12,6 +12,7 @@ const seedEs = {
     confirmButton: "Confirmar",
     errorTitle: "Error de autenticación",
     errorDescription: "Contraseña incorrecta o error al obtener la SEED",
+    notAvailableNwc: "La exportación de la seed no está disponible al usar un backend Nostr Wallet Connect (NWC).",
   },
 };
 

@@ -1,6 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const mockAddToast = jest.fn();
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  addToast: (...toastArguments) => mockAddToast(...toastArguments),
+}));
+
 jest.mock("@/hooks/turn/useTurn", () => ({
   useTurn: jest.fn(),
 }));
@@ -168,6 +174,70 @@ describe("ShiftWidget", () => {
       await user.click(screen.getByText("confirm-close"));
       await waitFor(() => {
         expect(screen.queryByText(/shiftOpenedAt/)).not.toBeInTheDocument();
+      });
+    });
+
+    it("shows a success toast after closing the shift", async () => {
+      const user = userEvent.setup();
+      mockCloseShift.mockResolvedValue(true);
+      setupMocks();
+      render(<ShiftWidget />);
+      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await user.click(screen.getByText("closeShiftButton"));
+      await user.click(screen.getByText("confirm-close"));
+
+      expect(mockAddToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "success", description: "closeShiftSuccess" }),
+      );
+    });
+
+    it("shows an error toast when closeShift fails", async () => {
+      const user = userEvent.setup();
+      mockCloseShift.mockRejectedValue(new Error("Server error"));
+      setupMocks();
+      render(<ShiftWidget />);
+      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await user.click(screen.getByText("closeShiftButton"));
+      await user.click(screen.getByText("confirm-close"));
+
+      await waitFor(() => {
+        expect(mockAddToast).toHaveBeenCalledWith(
+          expect.objectContaining({ color: "danger", description: "Server error" }),
+        );
+      });
+    });
+
+    it("keeps the close modal open when closeShift fails", async () => {
+      const user = userEvent.setup();
+      mockCloseShift.mockRejectedValue(new Error("Server error"));
+      setupMocks();
+      render(<ShiftWidget />);
+      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await user.click(screen.getByText("closeShiftButton"));
+      await user.click(screen.getByText("confirm-close"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("close-turn-modal")).toBeInTheDocument();
+      });
+    });
+
+    it("does not call closeShift twice while close is pending", async () => {
+      const user = userEvent.setup();
+      let resolveCloseShift;
+      mockCloseShift.mockReturnValue(new Promise((resolveShiftClose) => { resolveCloseShift = resolveShiftClose; }));
+      setupMocks();
+      render(<ShiftWidget />);
+      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await user.click(screen.getByText("closeShiftButton"));
+
+      await user.click(screen.getByText("confirm-close"));
+      await user.click(screen.getByText("confirm-close"));
+
+      expect(mockCloseShift).toHaveBeenCalledTimes(1);
+
+      resolveCloseShift(true);
+      await waitFor(() => {
+        expect(screen.queryByTestId("close-turn-modal")).not.toBeInTheDocument();
       });
     });
 

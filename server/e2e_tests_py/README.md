@@ -252,6 +252,7 @@ Basic test structure:
 import pytest
 from ambrosia.http_client import AmbrosiaHttpClient
 
+
 class TestMyAPI:
     @pytest.mark.asyncio
     async def test_my_endpoint(self, server_url: str):

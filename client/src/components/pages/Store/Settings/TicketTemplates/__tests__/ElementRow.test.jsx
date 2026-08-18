@@ -68,7 +68,7 @@ jest.mock("@dnd-kit/utilities", () => ({
   CSS: { Transform: { toString: jest.fn(() => "") } },
 }));
 
-const t = (key) => key;
+const settingsTranslations = (key) => key;
 
 const element = {
   localId: "el-1",
@@ -90,7 +90,7 @@ describe("TemplateElementRow", () => {
         onChange={onChange}
         onRemove={onRemove}
         config={null}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
 
@@ -141,7 +141,7 @@ describe("TemplateElementRow", () => {
         onChange={jest.fn()}
         onRemove={jest.fn()}
         config={null}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
 
@@ -160,7 +160,7 @@ describe("TemplateElementRow", () => {
         onChange={jest.fn()}
         onRemove={jest.fn()}
         config={null}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
 
@@ -180,7 +180,7 @@ describe("TemplateElementRow", () => {
           onChange={jest.fn()}
           onRemove={jest.fn()}
           config={null}
-          t={t}
+          settingsTranslations={settingsTranslations}
         />,
       );
       expect(screen.getByTestId("variable-picker")).toBeInTheDocument();
@@ -198,7 +198,7 @@ describe("TemplateElementRow", () => {
           onChange={jest.fn()}
           onRemove={jest.fn()}
           config={null}
-          t={t}
+          settingsTranslations={settingsTranslations}
         />,
       );
       expect(screen.queryByTestId("variable-picker")).not.toBeInTheDocument();
@@ -215,7 +215,7 @@ describe("TemplateElementRow", () => {
         onChange={onChange}
         onRemove={jest.fn()}
         config={null}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />,
     );
     fireEvent.click(screen.getByTestId("variable-picker"));

@@ -6,7 +6,7 @@ import { Braces } from "lucide-react";
 const VARIABLE_GROUPS = [
   {
     group: "config",
-    vars: [
+    variables: [
       { key: "{{config.businessName}}", label: "businessName" },
       { key: "{{config.businessAddress}}", label: "businessAddress" },
       { key: "{{config.businessPhone}}", label: "businessPhone" },
@@ -15,7 +15,7 @@ const VARIABLE_GROUPS = [
   },
 ];
 
-export function TemplateVariablePicker({ onSelect, t }) {
+export function TemplateVariablePicker({ onSelect, settingsTranslations }) {
   return (
     <Popover placement="bottom-end">
       <PopoverTrigger>
@@ -24,19 +24,19 @@ export function TemplateVariablePicker({ onSelect, t }) {
           size="sm"
           variant="light"
           className="text-gray-400 hover:text-primary-500"
-          aria-label={t("templates.variables.title")}
+          aria-label={settingsTranslations("templates.variables.title")}
         >
           <Braces className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-3 w-60">
         <p className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          {t("templates.variables.title")}
+          {settingsTranslations("templates.variables.title")}
         </p>
-        {VARIABLE_GROUPS.map(({ group, vars }) => (
+        {VARIABLE_GROUPS.map(({ group, variables }) => (
           <div key={group} className="mb-3 last:mb-0">
             <div className="flex flex-wrap gap-1">
-              {vars.map(({ key, label }) => (
+              {variables.map(({ key, label }) => (
                 <Chip
                   key={key}
                   size="sm"
@@ -45,7 +45,7 @@ export function TemplateVariablePicker({ onSelect, t }) {
                   className="cursor-pointer bg-green-200 text-xs text-green-800 border border-green-300"
                   onClick={() => onSelect(key)}
                 >
-                  {t(`templates.variables.${label}`)}
+                  {settingsTranslations(`templates.variables.${label}`)}
                 </Chip>
               ))}
             </div>

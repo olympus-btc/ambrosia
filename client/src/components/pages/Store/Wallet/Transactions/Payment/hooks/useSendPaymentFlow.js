@@ -4,8 +4,7 @@ import { useState } from "react";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { decodeInvoice, payInvoiceFromService } from "@/services/walletService";
-
-import { getBolt11ValidationError } from "../utils/validateBolt11Invoice";
+import { getBolt11ValidationErrorCode } from "@/utils/validateBolt11Invoice";
 
 export function useSendPaymentFlow({
   fetchInfo,
@@ -29,7 +28,7 @@ export function useSendPaymentFlow({
   const openConfirm = async () => {
     const validationError = validateInvoice
       ? validateInvoice(payInvoice)
-      : getBolt11ValidationError(payInvoice, (key) => key);
+      : getBolt11ValidationErrorCode(payInvoice);
 
     if (validationError) {
       setInvoiceValidationError(validationError);

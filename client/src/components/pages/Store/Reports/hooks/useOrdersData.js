@@ -17,6 +17,7 @@ export function useOrdersData(sales) {
       exchangeRateCurrency,
       fiatAmountAtPayment,
       discountAmount,
+      refunded,
     } of sales) {
       if (!byOrder[orderId]) {
         byOrder[orderId] = {
@@ -34,11 +35,13 @@ export function useOrdersData(sales) {
           exchangeRateAtPayment: exchangeRateAtPayment ?? null,
           exchangeRateCurrency: exchangeRateCurrency ?? null,
           fiatAmountAtPayment: fiatAmountAtPayment ?? null,
+          refunded: false,
         };
       }
       byOrder[orderId].items.push({ productName, quantity, priceAtOrder });
       byOrder[orderId].subtotal += quantity * priceAtOrder;
       byOrder[orderId].itemCount += quantity;
+      if (refunded) byOrder[orderId].refunded = true;
     }
     return Object.values(byOrder)
       .map((order) => ({

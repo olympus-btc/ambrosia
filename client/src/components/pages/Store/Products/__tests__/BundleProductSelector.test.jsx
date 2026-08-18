@@ -15,17 +15,7 @@ jest.mock("@heroui/react", () => ({
       onChange={onChange}
     />
   ),
-  NumberInput: ({ "aria-label": ariaLabel, value, onValueChange, onChange }) => (
-    <input
-      aria-label={ariaLabel}
-      type="number"
-      value={value}
-      onChange={(event) => {
-        onValueChange?.(Number(event.target.value));
-        onChange?.(event);
-      }}
-    />
-  ),
+  NumberInput: require("@/test-utils/numberInputMock").NumberInputMock,
   Select: ({ "aria-label": ariaLabel, children, selectedKeys = [], onSelectionChange }) => (
     <select
       aria-label={ariaLabel}
@@ -62,16 +52,16 @@ jest.mock("@/components/shared/DeleteButton", () => ({
   ),
 }));
 
-const productA = { id: "prod-a", name: "Arduino Nano", SKU: "ARD-NANO", costCents: 500, isBundle: false };
-const productB = { id: "prod-b", name: "Breadboard", SKU: "BB-400", costCents: 300, isBundle: false };
-const variantProduct = { id: "prod-variant", name: "T-Shirt", SKU: "TSHIRT", costCents: 700, hasVariants: true, isBundle: false };
-const bundleProduct = { id: "prod-bundle", name: "Starter Kit", SKU: "KIT-1", costCents: 1000, isBundle: true };
+const productA = { id: "prod-a", name: "Arduino Nano", SKU: "ARD-NANO", priceCents: 1500, costCents: 500, isBundle: false };
+const productB = { id: "prod-b", name: "Breadboard", SKU: "BB-400", priceCents: 900, costCents: 300, isBundle: false };
+const variantProduct = { id: "prod-variant", name: "T-Shirt", SKU: "TSHIRT", priceCents: 1200, costCents: 0, hasVariants: true, isBundle: false };
+const bundleProduct = { id: "prod-bundle", name: "Starter Kit", SKU: "KIT-1", priceCents: 3000, costCents: 1000, isBundle: true };
 
 const variantProductDetail = {
   variants: [
-    { id: "variant-red", optionValueIds: ["red"], costCents: 800, priceCents: 1200, quantity: 4, isActive: true },
-    { id: "variant-blue", optionValueIds: ["blue"], costCents: 900, priceCents: 1400, quantity: 3, isActive: true },
-    { id: "variant-inactive", optionValueIds: ["inactive"], costCents: 100, priceCents: 100, quantity: 3, isActive: false },
+    { id: "variant-red", optionValueIds: ["red"], costCents: null, priceCents: 1200, quantity: 4, isActive: true },
+    { id: "variant-blue", optionValueIds: ["blue"], costCents: null, priceCents: 1400, quantity: 3, isActive: true },
+    { id: "variant-inactive", optionValueIds: ["inactive"], costCents: null, priceCents: 100, quantity: 3, isActive: false },
   ],
   options: [
     {
@@ -239,6 +229,18 @@ describe("BundleProductSelector", () => {
     expect(onChange).toHaveBeenCalledWith([{ productId: "prod-variant", variantId: "variant-blue", quantity: 1 }]);
   });
 
+  it("calls onComponentsChange with updated quantity when the stepper is used", () => {
+    const onChange = jest.fn();
+    renderSelector({
+      selectedProducts: [{ productId: "prod-a", quantity: 2 }],
+      onComponentsChange: onChange,
+    });
+
+    fireEvent.click(screen.getByLabelText("modal.bundleComponentQuantityLabel increment"));
+
+    expect(onChange).toHaveBeenCalledWith([{ productId: "prod-a", quantity: 3 }]);
+  });
+
   it("enforces a minimum quantity of 1", () => {
     const onChange = jest.fn();
     renderSelector({
@@ -253,7 +255,7 @@ describe("BundleProductSelector", () => {
     expect(onChange).toHaveBeenCalledWith([{ productId: "prod-a", quantity: 1 }]);
   });
 
-  it("displays the cost reference based on selected product costs and quantities", () => {
+  it("displays the price reference based on selected product prices and quantities", () => {
     renderSelector({
       selectedProducts: [
         { productId: "prod-a", quantity: 2 },
@@ -261,19 +263,33 @@ describe("BundleProductSelector", () => {
       ],
     });
 
-    const costLine = screen.getByText(/modal\.bundleCostReference/, { selector: "p" });
-    expect(costLine).toBeInTheDocument();
-    expect(costLine).toHaveTextContent("$13.00");
+    const priceLine = screen.getByText(/modal\.bundleComponentsPriceReference/, { selector: "p" });
+    expect(priceLine).toBeInTheDocument();
+    expect(priceLine).toHaveTextContent("$39.00");
   });
 
-  it("uses selected variant cost in the cost reference", async () => {
+  it("uses selected variant price in the price reference", async () => {
     renderSelector({
       selectedProducts: [{ productId: "prod-variant", variantId: "variant-blue", quantity: 2 }],
     });
 
     await screen.findByLabelText("modal.bundleComponentVariantLabel");
-    const costLine = screen.getByText(/modal\.bundleCostReference/, { selector: "p" });
+    const priceLine = screen.getByText(/modal\.bundleComponentsPriceReference/, { selector: "p" });
 
-    expect(costLine).toHaveTextContent("$18.00");
+    expect(priceLine).toHaveTextContent("$28.00");
+  });
+
+  it("counts variant components that carry no cost data in the price reference", async () => {
+    renderSelector({
+      selectedProducts: [
+        { productId: "prod-a", quantity: 1 },
+        { productId: "prod-variant", variantId: "variant-red", quantity: 1 },
+      ],
+    });
+
+    await screen.findByLabelText("modal.bundleComponentVariantLabel");
+    const priceLine = screen.getByText(/modal\.bundleComponentsPriceReference/, { selector: "p" });
+
+    expect(priceLine).toHaveTextContent("$27.00");
   });
 });

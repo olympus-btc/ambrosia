@@ -6,6 +6,10 @@ import { useTemplates } from "@components/pages/Store/hooks/useTemplates";
 
 import { TicketTemplatesModal } from "../Modal";
 
+jest.mock("@/hooks/usePermission", () => ({
+  RequirePermission: ({ children }) => children,
+}));
+
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
   Button: ({ onPress, isDisabled, children, isIconOnly, ...props }) => (

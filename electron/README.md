@@ -137,7 +137,6 @@ electron/
 │   ├── build-backend.js
 │   ├── build-client.js
 │   ├── platform-utils.js            # Shared platform/arch detection helpers
-│   ├── dev.sh / dev.bat             # Dev launcher scripts
 │   └── clean-build.js
 ├── build/                           # electron-builder assets
 │   ├── icon.icns / icon.ico / icon.png

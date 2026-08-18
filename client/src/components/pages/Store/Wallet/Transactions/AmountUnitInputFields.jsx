@@ -3,6 +3,7 @@
 import { Button, NumberInput } from "@heroui/react";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { toNumberInputValue } from "@/components/utils/numberParsers";
 
 import { formatFiat, formatSats } from "../utils/formatters";
 
@@ -89,8 +90,8 @@ export function AmountUnitInputFields({
         label={amountInputMode === "fiat" ? fiatLabel : satLabel}
         placeholder={amountInputMode === "fiat" ? fiatPlaceholder : satPlaceholder}
         value={inputValue === "" ? null : Number(inputValue)}
-        onValueChange={onAmountChange}
-        onChange={(event) => onAmountChange(event.target.value)}
+        onValueChange={(amountValue) => onAmountChange(toNumberInputValue(amountValue, null))}
+        onChange={(amountChange) => onAmountChange(toNumberInputValue(amountChange, null))}
         minValue={0}
         maxValue={amountInputMode === "fiat" ? Number.MAX_SAFE_INTEGER / 100 : Number.MAX_SAFE_INTEGER}
         formatOptions={{

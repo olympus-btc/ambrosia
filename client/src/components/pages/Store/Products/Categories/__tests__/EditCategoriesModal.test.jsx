@@ -4,21 +4,21 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { EditCategoriesModal } from "../EditCategoriesModal";
 
-const baseData = {
+const baseCategoryForm = {
   categoryId: "cat-1",
   categoryName: "Hardware",
 };
 
-const renderModal = (props = {}) => render(
+const renderModal = (modalProps = {}) => render(
   <I18nProvider>
     <EditCategoriesModal
-      data={baseData}
-      setData={jest.fn()}
+      categoryForm={baseCategoryForm}
+      setCategoryForm={jest.fn()}
       onChange={jest.fn()}
       updateCategory={jest.fn(() => Promise.resolve())}
       editCategoriesShowModal
       setEditCategoriesShowModal={jest.fn()}
-      {...props}
+      {...modalProps}
     />
   </I18nProvider>,
 );
@@ -47,18 +47,18 @@ describe("EditCategoriesModal", () => {
     expect(onChange).toHaveBeenCalledWith({ categoryName: "Hardware Updated" });
   });
 
-  it("resets data and closes modal when cancel is clicked", () => {
-    const setData = jest.fn();
+  it("resets category form and closes modal when cancel is clicked", () => {
+    const setCategoryForm = jest.fn();
     const setEditCategoriesShowModal = jest.fn();
-    renderModal({ setData, setEditCategoriesShowModal });
+    renderModal({ setCategoryForm, setEditCategoriesShowModal });
 
     fireEvent.click(screen.getByText("modal.cancelButton"));
 
-    expect(setData).toHaveBeenCalledWith({ categoryId: "", categoryName: "" });
+    expect(setCategoryForm).toHaveBeenCalledWith({ categoryId: "", categoryName: "" });
     expect(setEditCategoriesShowModal).toHaveBeenCalledWith(false);
   });
 
-  it("calls updateCategory with data on submit and closes modal", async () => {
+  it("calls updateCategory with category form on submit and closes modal", async () => {
     const updateCategory = jest.fn(() => Promise.resolve());
     const setEditCategoriesShowModal = jest.fn();
 
@@ -66,8 +66,20 @@ describe("EditCategoriesModal", () => {
 
     fireEvent.click(screen.getByText("modal.editButton"));
 
-    await waitFor(() => expect(updateCategory).toHaveBeenCalledWith(baseData));
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledWith(baseCategoryForm));
     expect(setEditCategoriesShowModal).toHaveBeenCalledWith(false);
+  });
+
+  it("does not close when updateCategory fails", async () => {
+    const updateCategory = jest.fn(() => Promise.reject(new Error("update failed")));
+    const setEditCategoriesShowModal = jest.fn();
+
+    renderModal({ updateCategory, setEditCategoriesShowModal });
+
+    fireEvent.click(screen.getByText("modal.editButton"));
+
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledWith(baseCategoryForm));
+    expect(setEditCategoriesShowModal).not.toHaveBeenCalledWith(false);
   });
 
   it("prevents double submit while submitting", () => {

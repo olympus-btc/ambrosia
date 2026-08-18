@@ -6,7 +6,7 @@ const path = require('path');
 const { getBuildPlatform } = require('./platform-utils');
 const { verifySha256, fetchSha256SumsChecksum } = require('./verify-checksum');
 
-const PHOENIXD_VERSION = '0.7.2';
+const PHOENIXD_VERSION = '0.9.0';
 const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'phoenixd');
 
 const GITHUB_BASE = `https://github.com/ACINQ/phoenixd/releases/download/v${PHOENIXD_VERSION}`;

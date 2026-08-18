@@ -23,10 +23,10 @@ jest.mock("../TicketElements", () => ({
   TicketElementsPreview: ({ elements }) => (
     <div data-testid="elements-preview" data-count={elements.length} />
   ),
-  hasVisibleContent: (elements) => Array.isArray(elements) && elements.some((el) => ["SEPARATOR", "LINE_BREAK", "TABLE_ROW"].includes(el.type) || el.value?.trim()),
+  hasVisibleContent: (elements) => Array.isArray(elements) && elements.some((element) => ["SEPARATOR", "LINE_BREAK", "TABLE_ROW"].includes(element.type) || element.value?.trim()),
 }));
 
-const t = (key) => key;
+const settingsTranslations = (key) => key;
 
 const defaultProps = {
   elements: [],
@@ -37,7 +37,7 @@ const defaultProps = {
   onPrintTest: jest.fn(),
   printing: false,
   templateExists: false,
-  t,
+  settingsTranslations,
 };
 
 describe("TemplatePreview", () => {

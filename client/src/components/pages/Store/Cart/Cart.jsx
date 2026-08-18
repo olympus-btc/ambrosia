@@ -14,6 +14,7 @@ import { CashPaymentModal } from "./CashPaymentModal";
 import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
+import { PermissionBlockedState } from "./PermissionBlockedState";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
@@ -58,7 +59,7 @@ export function Cart() {
     },
     [setDiscount, setDiscountType],
   );
-  const { products, refetch: refetchProducts } = useProducts();
+  const { products, forbidden: productsForbidden, refetch: refetchProducts } = useProducts({ skipForbiddenRedirect: true });
   const { categories } = useCategories();
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export function Cart() {
     isPaying,
     paymentError,
     clearPaymentError,
+    paymentsForbidden,
     btcPayment: {
       config: btcPaymentConfig,
       onClose: clearBtcPaymentConfig,
@@ -139,6 +141,20 @@ export function Cart() {
     () => calculateCartTotals(visibleCart, discount).total,
     [visibleCart, discount],
   );
+
+  const missingPermissions = [
+    ...(productsForbidden ? ["products_read"] : []),
+    ...(paymentsForbidden ? ["payments_read"] : []),
+  ];
+
+  if (missingPermissions.length > 0) {
+    return (
+      <div>
+        <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
+        <PermissionBlockedState missingPermissions={missingPermissions} />
+      </div>
+    );
+  }
 
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${visibleCart.length ? "pt-14" : "pt-0"}`}>

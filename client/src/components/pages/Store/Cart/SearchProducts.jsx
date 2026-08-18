@@ -15,8 +15,8 @@ export function SearchProducts({ products, onAddProduct, categories }) {
   const filteredProducts = products.filter((product) => {
     const categoryIds = product.categoryIds ?? [];
     const categoryNames = categories
-      .filter((cat) => categoryIds.includes(cat.id))
-      .map((cat) => cat.name)
+      .filter((category) => categoryIds.includes(category.id))
+      .map((category) => category.name)
       .join(" ");
 
     const searchMatch = product.name.toLowerCase().includes(search.toLowerCase())
@@ -41,29 +41,37 @@ export function SearchProducts({ products, onAddProduct, categories }) {
         }
         value={search}
         onClear={() => setSearch("")}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(event) => setSearch(event.target.value)}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
-          color="primary"
+          color={categoryFilter === null ? "primary" : undefined}
+          className={categoryFilter === null ? "" : "bg-slate-100"}
           radius="full"
           size="sm"
+          aria-pressed={categoryFilter === null}
           onPress={() => setCategoryFilter(null)}
         >
           {cartTranslations("search.filterAll")}
         </Button>
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            onPress={() => setCategoryFilter(category.id)}
-            className="bg-slate-100"
-            radius="full"
-            size="sm"
-          >
-            {category.name}
-          </Button>
-        ))
+        {categories.map((category) => {
+          const isSelectedCategory = categoryFilter === category.id;
+
+          return (
+            <Button
+              key={category.id}
+              color={isSelectedCategory ? "primary" : undefined}
+              className={isSelectedCategory ? "" : "bg-slate-100"}
+              radius="full"
+              size="sm"
+              aria-pressed={isSelectedCategory}
+              onPress={() => setCategoryFilter(category.id)}
+            >
+              {category.name}
+            </Button>
+          );
+        })
 
         }
       </div>

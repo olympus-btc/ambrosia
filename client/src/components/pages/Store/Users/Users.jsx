@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Button } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -63,13 +63,13 @@ export function Users() {
     setData((prev) => ({ ...prev, ...newData }));
   };
 
-  const t = useTranslations("users");
+  const userTranslations = useTranslations("users");
 
   return (
     <>
       <PageHeader
-        title={t("title")}
-        subtitle={t("subtitle")}
+        title={userTranslations("title")}
+        subtitle={userTranslations("subtitle")}
         actions={(
           <RequirePermission allOf={["users_create"]}>
             <Button
@@ -87,7 +87,7 @@ export function Users() {
                 setAddUsersShowModal(true);
               }}
             >
-              {t("addUser")}
+              {userTranslations("addUser")}
             </Button>
           </RequirePermission>
         )}
@@ -138,10 +138,14 @@ export function Users() {
         deleteUsersShowModal={deleteUsersShowModal}
         setDeleteUsersShowModal={setDeleteUsersShowModal}
         onConfirm={async () => {
-          if (userToDelete?.id) {
-            await deleteUser(userToDelete.id);
+          try {
+            if (userToDelete?.id) {
+              await deleteUser(userToDelete.id);
+              addToast({ description: userTranslations("toasts.deleteSuccess"), color: "success" });
+            }
+            setDeleteUsersShowModal(false);
+          } catch {
           }
-          setDeleteUsersShowModal(false);
         }}
       />
     </>

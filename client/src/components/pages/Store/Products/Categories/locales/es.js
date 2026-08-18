@@ -28,6 +28,15 @@ const categoriesEs = {
     toasts: {
       genericErrorTitle: "Error",
       genericErrorDescription: "No se pudo completar la operación.",
+      createSuccess: "Categoría creada correctamente",
+      createErrorTitle: "No se pudo crear la categoría",
+      createErrorDescription: "Revisa el nombre de la categoría e inténtalo de nuevo.",
+      updateSuccess: "Categoría actualizada correctamente",
+      updateErrorTitle: "No se pudo actualizar la categoría",
+      updateErrorDescription: "Revisa el nombre de la categoría e inténtalo de nuevo.",
+      deleteSuccess: "Categoría eliminada correctamente",
+      deleteErrorTitle: "No se pudo eliminar la categoría",
+      deleteErrorDescription: "Inténtalo de nuevo o revisa si esta categoría sigue en uso.",
     },
   },
 };

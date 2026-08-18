@@ -21,7 +21,12 @@ jest.mock("../../hooks/useOrdersDetailData", () => ({
 }));
 
 jest.mock("../OrdersFilters", () => ({
-  OrdersFilters: () => <div data-testid="orders-filters" />,
+  OrdersFilters: ({ onSearchChange }) => (
+    <input
+      data-testid="orders-search"
+      onChange={(changeEvent) => onSearchChange(changeEvent.target.value)}
+    />
+  ),
 }));
 
 jest.mock("../OrdersList", () => ({
@@ -110,6 +115,14 @@ describe("OrdersDetailCard", () => {
     expect(screen.getByTestId("export-button")).not.toBeDisabled();
   });
 
+  it("export button is disabled when filters have no matching orders", () => {
+    render(<OrdersDetailCard orders={ORDERS} formatCurrency={formatCurrency} />);
+
+    fireEvent.change(screen.getByTestId("orders-search"), { target: { value: "no matches" } });
+
+    expect(screen.getByTestId("export-button")).toBeDisabled();
+  });
+
   it("export button calls exportToCsv", () => {
     render(<OrdersDetailCard orders={ORDERS} formatCurrency={formatCurrency} />);
     fireEvent.click(screen.getByTestId("export-button"));
@@ -129,7 +142,7 @@ describe("OrdersDetailCard", () => {
 
   it("renders OrdersFilters and ReportsOrdersList", () => {
     render(<OrdersDetailCard orders={ORDERS} formatCurrency={formatCurrency} />);
-    expect(screen.getByTestId("orders-filters")).toBeInTheDocument();
+    expect(screen.getByTestId("orders-search")).toBeInTheDocument();
     expect(screen.getByTestId("orders-list")).toBeInTheDocument();
   });
 });

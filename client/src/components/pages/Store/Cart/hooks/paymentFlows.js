@@ -1,3 +1,4 @@
+import { buildParsedHttpError } from "@/components/pages/Store/utils/buildHttpError";
 import { httpClient } from "@/lib/http";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
@@ -40,6 +41,10 @@ export async function processCheckout({
 
   if (checkoutHttpResponse.status === 202) {
     return { pending: true };
+  }
+
+  if (checkoutHttpResponse.ok === false) {
+    throw await buildParsedHttpError(checkoutHttpResponse, "errors.checkout");
   }
 
   const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);

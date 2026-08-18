@@ -5,6 +5,7 @@ export const PAYMENT_ERROR_TRANSLATIONS = {
   invalid_invoice: "payments.send.errors.invalidInvoice",
   insufficient_funds: "payments.send.errors.insufficientFunds",
   node_unavailable: "payments.send.errors.nodeUnavailable",
+  amount_override_not_supported: "payments.send.errors.amountOverrideNotSupported",
   invalid_payment_response: "payments.send.errors.unknown",
 };
 

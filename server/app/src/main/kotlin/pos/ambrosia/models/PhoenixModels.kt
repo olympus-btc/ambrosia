@@ -118,6 +118,7 @@ data class NodeInfo(
     val chain: String,
     val blockHeight: Int?,
     val version: String,
+    val lud16: String? = null,
 )
 
 @Serializable data class PhoenixBalance(

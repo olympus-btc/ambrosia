@@ -99,6 +99,7 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 "businessPhone": "1234567890",
                 "businessEmail": "test@example.com",
                 "businessCurrency": "USD",
+                "timezone": "America/Mexico_City",
             }
 
             setup_response = await client.post("/initial-setup", json=setup_data)

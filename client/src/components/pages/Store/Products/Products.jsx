@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-import { Button } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { toArray } from "@/components/utils/array";
@@ -31,6 +31,7 @@ function createEmptyProductForm() {
     productMinStock: 0,
     productMaxStock: 0,
     hasVariants: false,
+    trackStock: true,
     productVariantId: null,
     productImage: null,
     productImageUrl: "",
@@ -41,7 +42,7 @@ function createEmptyProductForm() {
 }
 
 export function Products() {
-  const productsTranslation = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const [addProductsShowModal, setAddProductsShowModal] = useState(false);
   const [editProductsShowModal, setEditProductsShowModal] = useState(false);
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
@@ -91,6 +92,7 @@ export function Products() {
       productCategories: toArray(product.categoryIds),
       productSKU: product.SKU ?? "",
       hasVariants: product.isBundle ? false : (product.hasVariants ?? false),
+      trackStock: product.trackStock ?? true,
       productVariantId: primaryVariant?.id ?? null,
       productPrice: primaryVariant?.priceCents ? primaryVariant.priceCents / 100 : "",
       productStock: primaryVariant?.quantity ?? 0,
@@ -131,8 +133,8 @@ export function Products() {
   return (
     <>
       <PageHeader
-        title={productsTranslation("title")}
-        subtitle={productsTranslation("subtitle")}
+        title={productsTranslations("title")}
+        subtitle={productsTranslations("subtitle")}
         actions={(
           <RequirePermission allOf={["products_create"]}>
             <Button
@@ -143,7 +145,7 @@ export function Products() {
                 setAddProductsShowModal(true);
               }}
             >
-              {productsTranslation("addProduct")}
+              {productsTranslations("addProduct")}
             </Button>
           </RequirePermission>
         )}
@@ -161,7 +163,7 @@ export function Products() {
       <AddProductsModal
         addProductsShowModal={addProductsShowModal}
         onClose={handleCloseAddProductsModal}
-        data={productForm}
+        productForm={productForm}
         allProducts={products}
         addProduct={addProduct}
         isUploading={isUploading}
@@ -173,7 +175,7 @@ export function Products() {
       />
 
       <EditProductsModal
-        data={productForm}
+        productForm={productForm}
         allProducts={products}
         onChange={handleProductFormChange}
         updateProduct={updateProduct}
@@ -198,7 +200,11 @@ export function Products() {
         setDeleteProductsShowModal={setDeleteProductsShowModal}
         onConfirm={async () => {
           const wasDeleted = await deleteProduct(productToDelete);
-          if (wasDeleted) setDeleteProductsShowModal(false);
+          if (wasDeleted) {
+            addToast({ description: productsTranslations("toasts.deleteSuccess"), color: "success" });
+            setProductToDelete(null);
+            setDeleteProductsShowModal(false);
+          }
         }}
       />
 

@@ -10,7 +10,7 @@ import { TicketTemplatesModal } from "./Modal";
 import { TicketTemplatesCard } from "./TicketTemplatesCard";
 
 export function TicketTemplates() {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const { templates, loading, error, refetch } = useTemplates();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -35,7 +35,7 @@ export function TicketTemplates() {
         selectedId={selectedTemplate?.id || ""}
         onSelect={handleOpen}
         onNew={() => handleOpen(null)}
-        t={t}
+        settingsTranslations={settingsTranslations}
       />
       <TicketTemplatesModal
         isOpen={modalOpen}

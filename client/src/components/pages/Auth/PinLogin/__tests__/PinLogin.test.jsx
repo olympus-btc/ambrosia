@@ -1,11 +1,12 @@
 import { useRouter } from "next/navigation";
 
+import { addToast } from "@heroui/react";
 import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
-import { getUsers } from "@/services/authService";
+import { getPublicUsers } from "@/services/authService";
 
 import PinLogin from "../PinLogin";
 
@@ -14,8 +15,8 @@ jest.mock("../EmployeeSelect", () => ({
     <div>
       <label>selectLabel</label>
       {employees.length > 0
-        ? employees.map((emp) => (
-          <button key={emp.id} onClick={() => onSelect(emp.id)}>{emp.name}</button>
+        ? employees.map((employee) => (
+          <button key={employee.id} onClick={() => onSelect(employee.id)}>{employee.name}</button>
         ))
         : <span>noEmployees</span>
       }
@@ -23,7 +24,12 @@ jest.mock("../EmployeeSelect", () => ({
   ),
 }));
 
-jest.mock("@/services/authService", () => ({ getUsers: jest.fn() }));
+jest.mock("@heroui/react", () => ({
+  ...jest.requireActual("@heroui/react"),
+  addToast: jest.fn(),
+}));
+
+jest.mock("@/services/authService", () => ({ getPublicUsers: jest.fn() }));
 jest.mock("@/hooks/auth/useAuth", () => ({ useAuth: jest.fn() }));
 jest.mock("@/providers/configurations/configurationsProvider", () => ({ useConfigurations: jest.fn() }));
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
@@ -38,13 +44,13 @@ const employees = [
 ];
 
 const renderPinLogin = async () => {
-  const result = render(
+  const pinLoginScreen = render(
     <I18nProvider>
       <PinLogin />
     </I18nProvider>,
   );
   await act(async () => {});
-  return result;
+  return pinLoginScreen;
 };
 
 beforeEach(() => {
@@ -52,8 +58,11 @@ beforeEach(() => {
   localStorage.clear();
   useRouter.mockReturnValue({ push: mockPush, replace: mockReplace });
   useAuth.mockReturnValue({ login: mockLogin, isAuth: false, isLoading: false });
-  useConfigurations.mockReturnValue({ config: { businessName: "Test Store", businessLogoUrl: null }, businessType: "store" });
-  getUsers.mockResolvedValue(employees);
+  useConfigurations.mockReturnValue({
+    config: { businessName: "Test Store", businessLogoUrl: null },
+    businessType: "store",
+  });
+  getPublicUsers.mockResolvedValue(employees);
 });
 
 describe("PinLogin", () => {
@@ -66,15 +75,27 @@ describe("PinLogin", () => {
 
   it("loads and displays employees from the API", async () => {
     await renderPinLogin();
-    expect(getUsers).toHaveBeenCalledWith({ silentAuth: true });
+    expect(getPublicUsers).toHaveBeenCalledWith();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
   it("shows no-employees message when API returns empty array", async () => {
-    getUsers.mockResolvedValue([]);
+    getPublicUsers.mockResolvedValue([]);
     await renderPinLogin();
     expect(screen.getByText("noEmployees")).toBeInTheDocument();
+  });
+
+  it("shows an error toast when employees cannot be loaded", async () => {
+    getPublicUsers.mockRejectedValueOnce(new Error("Users unavailable"));
+
+    await renderPinLogin();
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "errorMessages.loadEmployeesTitle",
+      description: "errorMessages.loadEmployeesDescription",
+      color: "danger",
+    });
   });
 
   it("redirects to '/' when already authenticated", async () => {
@@ -84,10 +105,10 @@ describe("PinLogin", () => {
   });
 
   it("shows lockout message after a 429 response from the server", async () => {
-    const error = new Error("Too many requests");
-    error.status = 429;
-    error.retryAfter = 180;
-    mockLogin.mockRejectedValue(error);
+    const rateLimitError = new Error("Too many requests");
+    rateLimitError.status = 429;
+    rateLimitError.retryAfter = 180;
+    mockLogin.mockRejectedValue(rateLimitError);
 
     await renderPinLogin();
 
@@ -124,8 +145,8 @@ describe("PinLogin", () => {
 
   it("shows the specific error message when the user's role is deleted", async () => {
     const specificMessage = "No assigned role for this user, contact Admin";
-    const error = new Error(specificMessage);
-    mockLogin.mockRejectedValue(error);
+    const missingRoleError = new Error(specificMessage);
+    mockLogin.mockRejectedValue(missingRoleError);
 
     await renderPinLogin();
 
@@ -161,6 +182,44 @@ describe("PinLogin", () => {
 
     fireEvent.click(screen.getByText("pinDeprecation.goToUsersButton"));
     expect(mockPush).toHaveBeenCalledWith("/store/users");
+  });
+
+  it("redirects home from the deprecation modal when the business type is unknown", async () => {
+    useConfigurations.mockReturnValue({
+      config: { businessName: "Test Store", businessLogoUrl: null },
+      businessType: null,
+    });
+    mockLogin.mockResolvedValue({});
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    "1234".split("").forEach((digit) => fireEvent.keyDown(window, { key: digit }));
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    fireEvent.click(screen.getByText("pinDeprecation.goToUsersButton"));
+    expect(mockPush).toHaveBeenCalledWith("/");
+  });
+
+  it("closes the deprecation modal and redirects home when the user postpones the PIN update", async () => {
+    mockLogin.mockResolvedValue({});
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    "12345".split("").forEach((digit) => fireEvent.keyDown(window, { key: digit }));
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText("pinDeprecation.title")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("pinDeprecation.laterButton"));
+    });
+    expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   it("does not show the deprecation modal and redirects home after a 6-digit PIN login", async () => {

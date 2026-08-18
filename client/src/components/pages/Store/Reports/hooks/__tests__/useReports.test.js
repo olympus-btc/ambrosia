@@ -37,136 +37,136 @@ describe("useReports — fetch", () => {
   });
 
   it("exposes fetchReport as a function", async () => {
-    const { result } = renderHook(() => useReports());
+    const { result: reportsHook } = renderHook(() => useReports());
     await act(async () => {});
-    expect(typeof result.current.fetchReport).toBe("function");
+    expect(typeof reportsHook.current.fetchReport).toBe("function");
   });
 
   it("loading=false and error=null after initial auto-fetch completes", async () => {
-    const { result } = renderHook(() => useReports());
+    const { result: reportsHook } = renderHook(() => useReports());
     await act(async () => {});
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBeNull();
+    expect(reportsHook.current.loading).toBe(false);
+    expect(reportsHook.current.error).toBeNull();
   });
 
   it("loading=true during explicit fetch and false when done", async () => {
     let resolveHttp;
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     httpClient.mockReturnValueOnce(new Promise((r) => { resolveHttp = r; }));
     parseJsonResponse.mockResolvedValue(successReport);
 
     act(() => {
-      result.current.fetchReport({ period: "month" });
+      reportsHook.current.fetchReport({ period: "month" });
     });
 
-    expect(result.current.loading).toBe(true);
+    expect(reportsHook.current.loading).toBe(true);
 
     await act(async () => {
       resolveHttp({});
     });
 
-    expect(result.current.loading).toBe(false);
+    expect(reportsHook.current.loading).toBe(false);
   });
 
   it("error is set when fetchReport throws an exception", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     const networkError = new Error("Network error");
     httpClient.mockRejectedValueOnce(networkError);
 
     await act(async () => {
-      await result.current.fetchReport({ period: "month" }).catch(() => {});
+      await reportsHook.current.fetchReport({ period: "month" }).catch(() => {});
     });
 
-    expect(result.current.error).toBe(networkError);
-    expect(result.current.loading).toBe(false);
+    expect(reportsHook.current.error).toBe(networkError);
+    expect(reportsHook.current.loading).toBe(false);
   });
 
   it("error is cleared when a new successful fetch starts", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     httpClient.mockRejectedValueOnce(new Error("fail"));
 
     await act(async () => {
-      await result.current.fetchReport({ period: "month" }).catch(() => {});
+      await reportsHook.current.fetchReport({ period: "month" }).catch(() => {});
     });
-    expect(result.current.error).not.toBeNull();
+    expect(reportsHook.current.error).not.toBeNull();
 
     httpClient.mockResolvedValueOnce({});
     await act(async () => {
-      await result.current.fetchReport({ period: "week" });
+      await reportsHook.current.fetchReport({ period: "week" });
     });
-    expect(result.current.error).toBeNull();
+    expect(reportsHook.current.error).toBeNull();
   });
 
   it("fetchReport re-throws the error for the caller to handle", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     httpClient.mockRejectedValueOnce(new Error("fail"));
 
     await expect(
-      act(async () => result.current.fetchReport({ period: "month" })),
+      act(async () => reportsHook.current.fetchReport({ period: "month" })),
     ).rejects.toThrow("fail");
   });
 
   it("reportData is set with the server response after a successful fetch", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     const mockReport = { totalRevenueCents: 5000, totalItemsSold: 3, sales: [] };
     parseJsonResponse.mockResolvedValueOnce(mockReport);
 
     await act(async () => {
-      await result.current.fetchReport({ period: "month" });
+      await reportsHook.current.fetchReport({ period: "month" });
     });
 
-    expect(result.current.reportData).toEqual(mockReport);
+    expect(reportsHook.current.reportData).toEqual(mockReport);
   });
 
   it("fetchReport returns the same value it stores in reportData", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
     const mockReport = { totalRevenueCents: 5000, totalItemsSold: 3, sales: [] };
     parseJsonResponse.mockResolvedValueOnce(mockReport);
     let returned;
 
     await act(async () => {
-      returned = await result.current.fetchReport({ period: "month" });
+      returned = await reportsHook.current.fetchReport({ period: "month" });
     });
 
     expect(returned).toEqual(mockReport);
-    expect(result.current.reportData).toEqual(mockReport);
+    expect(reportsHook.current.reportData).toEqual(mockReport);
   });
 
   it("fetchReport with period sends ?period=month", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ period: "month" });
+      await reportsHook.current.fetchReport({ period: "month" });
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports?period=month");
   });
 
   it("fetchReport with period=week sends ?period=week", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ period: "week" });
+      await reportsHook.current.fetchReport({ period: "week" });
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports?period=week");
   });
 
   it("fetchReport with period=year sends ?period=year", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ period: "year" });
+      await reportsHook.current.fetchReport({ period: "year" });
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports?period=year");
   });
 
   it("fetchReport with startDate and endDate includes both in the URL", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31" });
+      await reportsHook.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31" });
     });
 
     const url = httpClient.mock.calls[0][0];
@@ -175,50 +175,50 @@ describe("useReports — fetch", () => {
   });
 
   it("fetchReport with no parameters calls /reports without query string", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({});
+      await reportsHook.current.fetchReport({});
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports");
   });
 
   it("fetchReport with no arguments calls /reports without query string", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport();
+      await reportsHook.current.fetchReport();
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports");
   });
 
   it("fetchReport with empty productName does not include it in the URL", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ productName: "   " });
+      await reportsHook.current.fetchReport({ productName: "   " });
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports");
   });
 
   it("fetchReport with empty paymentMethod does not include it in the URL", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ paymentMethod: "" });
+      await reportsHook.current.fetchReport({ paymentMethod: "" });
     });
 
     expect(httpClient).toHaveBeenCalledWith("/reports");
   });
 
   it("fetchReport with multiple filters builds the URL correctly", async () => {
-    const { result } = await setupHook();
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({
+      await reportsHook.current.fetchReport({
         period: "month",
         startDate: "2024-01-01",
         endDate: "2024-01-31",
@@ -231,11 +231,31 @@ describe("useReports — fetch", () => {
     expect(url).toContain("endDate=2024-01-31");
   });
 
-  it("GAP: fetchReport does not send userId even though the server supports it", async () => {
-    const { result } = await setupHook();
+  it("fetchReport with utcOffsetMinutes includes it in the URL", async () => {
+    const { result: reportsHook } = await setupHook();
 
     await act(async () => {
-      await result.current.fetchReport({ period: "month" });
+      await reportsHook.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31", utcOffsetMinutes: 360 });
+    });
+
+    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=360");
+  });
+
+  it("fetchReport with utcOffsetMinutes=0 still includes it in the URL", async () => {
+    const { result: reportsHook } = await setupHook();
+
+    await act(async () => {
+      await reportsHook.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31", utcOffsetMinutes: 0 });
+    });
+
+    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=0");
+  });
+
+  it("GAP: fetchReport does not send userId even though the server supports it", async () => {
+    const { result: reportsHook } = await setupHook();
+
+    await act(async () => {
+      await reportsHook.current.fetchReport({ period: "month" });
     });
 
     const url = httpClient.mock.calls[0][0];

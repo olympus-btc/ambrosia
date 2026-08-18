@@ -1,10 +1,31 @@
 "use client";
 
+import { useRef, useState } from "react";
+
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 export function DeleteUsersModal({ user, deleteUsersShowModal, setDeleteUsersShowModal, onConfirm }) {
-  const t = useTranslations("users");
+  const userTranslations = useTranslations("users");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isDeletingRef = useRef(false);
+
+  const handleConfirmDeleteUser = async () => {
+    if (isDeletingRef.current) {
+      return;
+    }
+
+    isDeletingRef.current = true;
+    setIsDeleting(true);
+
+    try {
+      await onConfirm?.();
+    } finally {
+      isDeletingRef.current = false;
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={deleteUsersShowModal}
@@ -16,10 +37,10 @@ export function DeleteUsersModal({ user, deleteUsersShowModal, setDeleteUsersSho
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleDelete")}</ModalHeader>
+        <ModalHeader>{userTranslations("modal.titleDelete")}</ModalHeader>
         <ModalBody>
-          <p>{t("modal.subtitleDelete")}<b> {user?.name}</b>?</p>
-          <p className="text-red-500 text-sm">{t("modal.warningDelete")}</p>
+          <p>{userTranslations("modal.subtitleDelete")}<b> {user?.name}</b>?</p>
+          <p className="text-red-500 text-sm">{userTranslations("modal.warningDelete")}</p>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -28,10 +49,15 @@ export function DeleteUsersModal({ user, deleteUsersShowModal, setDeleteUsersSho
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onPress={() => setDeleteUsersShowModal(false)}
           >
-            {t("modal.cancelButton")}
+            {userTranslations("modal.cancelButton")}
           </Button>
-          <Button color="danger" onPress={onConfirm}>
-            {t("modal.deleteButton")}
+          <Button
+            color="danger"
+            onPress={handleConfirmDeleteUser}
+            isDisabled={isDeleting}
+            isLoading={isDeleting}
+          >
+            {userTranslations("modal.deleteButton")}
           </Button>
         </ModalFooter>
       </ModalContent>

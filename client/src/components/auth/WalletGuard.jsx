@@ -36,12 +36,13 @@ export default function WalletGuard({
   onCancel,
 }) {
   const router = useRouter();
-  const tTour = useTranslations("walletTour");
+  const walletTourTranslations = useTranslations("walletTour");
   const [isOpen, setIsOpen] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => () => {
     logoutWallet().catch(() => {});
@@ -73,11 +74,11 @@ export default function WalletGuard({
         {
           element: "#wallet-guard-anchor",
           popover: {
-            title: tTour("guardTitle"),
-            description: tTour("guardDescription"),
+            title: walletTourTranslations("guardTitle"),
+            description: walletTourTranslations("guardDescription"),
             side: "top",
             align: "center",
-            nextBtnText: tTour("guardButton"),
+            nextBtnText: walletTourTranslations("guardButton"),
             showButtons: ["next"],
           },
         },
@@ -101,18 +102,20 @@ export default function WalletGuard({
     },
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!password) return;
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (!password || submitting) return;
     setSubmitting(true);
+    setPasswordError("");
     try {
       await loginWallet(password);
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((resolveLoginDelay) => setTimeout(resolveLoginDelay, 150));
       setAuthorized(true);
       setIsOpen(false);
       if (onAuthorized) onAuthorized();
-    } catch {}
-    finally {
+    } catch {
+      setPasswordError(walletTourTranslations("guardLoginError"));
+    } finally {
       setSubmitting(false);
       setPassword("");
     }
@@ -142,8 +145,13 @@ export default function WalletGuard({
                   label={passwordLabel}
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(changeEvent) => {
+                    setPassword(changeEvent.target.value);
+                    setPasswordError("");
+                  }}
                   isDisabled={submitting}
+                  isInvalid={Boolean(passwordError)}
+                  errorMessage={passwordError}
                   endContent={(
                     <button
                       type="button"
@@ -171,7 +179,7 @@ export default function WalletGuard({
               color="primary"
               type="submit"
               form="wallet-guard-form"
-              isDisabled={!password}
+              isDisabled={!password || submitting}
               isLoading={submitting}
             >
               {confirmText}

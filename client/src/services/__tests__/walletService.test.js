@@ -12,6 +12,7 @@ import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 import {
   loginWallet,
   logoutWallet,
+  changeWalletPassword,
   getInfo,
   createInvoiceForCart,
   createInvoice,
@@ -46,13 +47,13 @@ describe("walletService", () => {
     });
 
     it("returns parsed response", async () => {
-      const data = { token: "abc" };
+      const walletLoginData = { token: "abc" };
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue(data);
+      parseJsonResponse.mockResolvedValue(walletLoginData);
 
-      const result = await loginWallet("secret");
+      const walletLoginResult = await loginWallet("secret");
 
-      expect(result).toEqual(data);
+      expect(walletLoginResult).toEqual(walletLoginData);
     });
   });
 
@@ -63,7 +64,42 @@ describe("walletService", () => {
 
       await logoutWallet();
 
-      expect(httpClient).toHaveBeenCalledWith("/wallet/logout", { method: "POST" });
+      expect(httpClient).toHaveBeenCalledWith("/wallet/logout", { method: "POST", skipForbiddenRedirect: true });
+    });
+  });
+
+  describe("changeWalletPassword", () => {
+    it("calls /wallet/password with current and new password", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "Wallet password updated" });
+
+      await changeWalletPassword({
+        currentPassword: "old-secret",
+        newPassword: "new-secret",
+      });
+
+      expect(httpClient).toHaveBeenCalledWith("/wallet/password", {
+        method: "POST",
+        skipRefresh: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: "old-secret",
+          newPassword: "new-secret",
+        }),
+      });
+    });
+
+    it("throws when password change response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(401, false));
+      parseJsonResponse.mockResolvedValue({ message: "Current password is incorrect" });
+
+      await expect(changeWalletPassword({
+        currentPassword: "wrong-secret",
+        newPassword: "new-secret",
+      })).rejects.toMatchObject({
+        message: "Current password is incorrect",
+        status: 401,
+      });
     });
   });
 
@@ -82,9 +118,19 @@ describe("walletService", () => {
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue(info);
 
-      const result = await getInfo();
+      const walletInfoResult = await getInfo();
 
-      expect(result).toEqual(info);
+      expect(walletInfoResult).toEqual(info);
+    });
+
+    it("throws when wallet info response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(503, false));
+      parseJsonResponse.mockResolvedValue({ message: "Wallet service unavailable" });
+
+      await expect(getInfo()).rejects.toMatchObject({
+        message: "Wallet service unavailable",
+        status: 503,
+      });
     });
   });
 
@@ -108,18 +154,18 @@ describe("walletService", () => {
 
       await createInvoiceForCart("500", "desc");
 
-      const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.amountSat).toBe(500);
+      const cartInvoiceRequestBody = JSON.parse(httpClient.mock.calls[0][1].body);
+      expect(cartInvoiceRequestBody.amountSat).toBe(500);
     });
 
     it("returns the created invoice", async () => {
-      const invoice = { serialized: "lnbc...", paymentHash: "hash-abc" };
+      const cartInvoice = { serialized: "lnbc...", paymentHash: "hash-abc" };
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue(invoice);
+      parseJsonResponse.mockResolvedValue(cartInvoice);
 
-      const result = await createInvoiceForCart(1000, "desc");
+      const createdCartInvoice = await createInvoiceForCart(1000, "desc");
 
-      expect(result).toEqual(invoice);
+      expect(createdCartInvoice).toEqual(cartInvoice);
     });
   });
 
@@ -149,18 +195,28 @@ describe("walletService", () => {
 
       await createInvoice({ amountSat: "2500", description: "Wallet invoice" });
 
-      const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.amountSat).toBe(2500);
+      const walletInvoiceRequestBody = JSON.parse(httpClient.mock.calls[0][1].body);
+      expect(walletInvoiceRequestBody.amountSat).toBe(2500);
     });
 
     it("returns the created invoice", async () => {
-      const invoice = { serialized: "lnbc...", paymentHash: "hash-xyz" };
+      const walletInvoice = { serialized: "lnbc...", paymentHash: "hash-xyz" };
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue(invoice);
+      parseJsonResponse.mockResolvedValue(walletInvoice);
 
-      const result = await createInvoice({ amountSat: 2000, description: "desc" });
+      const createdWalletInvoice = await createInvoice({ amountSat: 2000, description: "desc" });
 
-      expect(result).toEqual(invoice);
+      expect(createdWalletInvoice).toEqual(walletInvoice);
+    });
+
+    it("throws when invoice creation response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(500, false));
+      parseJsonResponse.mockResolvedValue({ message: "Phoenix is unavailable" });
+
+      await expect(createInvoice({ amountSat: 2000, description: "desc" })).rejects.toMatchObject({
+        message: "Phoenix is unavailable",
+        status: 500,
+      });
     });
   });
 
@@ -175,8 +231,8 @@ describe("walletService", () => {
 
       await payInvoiceFromService("  lnbc...  ");
 
-      const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.invoice).toBe("lnbc...");
+      const payInvoiceRequestBody = JSON.parse(httpClient.mock.calls[0][1].body);
+      expect(payInvoiceRequestBody.invoice).toBe("lnbc...");
     });
 
     it("uses POST method", async () => {
@@ -230,22 +286,32 @@ describe("walletService", () => {
     });
 
     it("returns transactions list", async () => {
-      const txs = [{ paymentId: "1" }, { paymentId: "2" }];
+      const incomingTransactions = [{ paymentId: "1" }, { paymentId: "2" }];
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue(txs);
+      parseJsonResponse.mockResolvedValue(incomingTransactions);
 
-      const result = await getIncomingTransactions();
+      const incomingTransactionsResult = await getIncomingTransactions();
 
-      expect(result).toEqual(txs);
+      expect(incomingTransactionsResult).toEqual(incomingTransactions);
     });
 
     it("returns empty array when response is null", async () => {
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue(null);
 
-      const result = await getIncomingTransactions();
+      const incomingTransactionsResult = await getIncomingTransactions();
 
-      expect(result).toEqual([]);
+      expect(incomingTransactionsResult).toEqual([]);
+    });
+
+    it("throws when incoming transactions response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(500, false));
+      parseJsonResponse.mockResolvedValue({ message: "Incoming history failed" });
+
+      await expect(getIncomingTransactions()).rejects.toMatchObject({
+        message: "Incoming history failed",
+        status: 500,
+      });
     });
   });
 
@@ -263,9 +329,19 @@ describe("walletService", () => {
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue(null);
 
-      const result = await getOutgoingTransactions();
+      const outgoingTransactionsResult = await getOutgoingTransactions();
 
-      expect(result).toEqual([]);
+      expect(outgoingTransactionsResult).toEqual([]);
+    });
+
+    it("throws when outgoing transactions response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(500, false));
+      parseJsonResponse.mockResolvedValue({ message: "Outgoing history failed" });
+
+      await expect(getOutgoingTransactions()).rejects.toMatchObject({
+        message: "Outgoing history failed",
+        status: 500,
+      });
     });
   });
 
@@ -277,6 +353,21 @@ describe("walletService", () => {
       await getSeed();
 
       expect(httpClient).toHaveBeenCalledWith("/wallet/seed");
+    });
+
+    it("throws with the server code when the backend does not support seed export", async () => {
+      httpClient.mockResolvedValue(makeResponse(501, false));
+      parseJsonResponse.mockResolvedValue({
+        message: "Seed export is not available with NWC backend",
+        code: "unsupported_operation",
+        source: "ambrosia",
+      });
+
+      await expect(getSeed()).rejects.toMatchObject({
+        message: "Seed export is not available with NWC backend",
+        status: 501,
+        code: "unsupported_operation",
+      });
     });
   });
 
@@ -309,13 +400,13 @@ describe("walletService", () => {
     });
 
     it("returns result when response is ok", async () => {
-      const result = { status: "closed" };
+      const closeChannelResult = { status: "closed" };
       httpClient.mockResolvedValue(makeResponse(200));
-      parseJsonResponse.mockResolvedValue(result);
+      parseJsonResponse.mockResolvedValue(closeChannelResult);
 
-      const res = await closeChannel("ch-1", "bc1qxyz", 5);
+      const closedChannel = await closeChannel("ch-1", "bc1qxyz", 5);
 
-      expect(res).toEqual(result);
+      expect(closedChannel).toEqual(closeChannelResult);
     });
   });
 });

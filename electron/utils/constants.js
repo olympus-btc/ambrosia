@@ -30,7 +30,7 @@ module.exports = {
   // Downloads
   DOWNLOAD: {
     MAX_REDIRECTS: 5,
-    PHOENIXD_VERSION: '0.7.2',
+    PHOENIXD_VERSION: '0.9.0',
     JRE_VERSION: 21,
   },
 };

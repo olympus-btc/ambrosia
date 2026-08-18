@@ -60,18 +60,6 @@ function fetchText(url) {
 }
 
 /**
- * Downloads a .sha256 file from the given URL and extracts the hash.
- * The file format is expected to be "<hash>  <filename>" or just "<hash>".
- * @param {string} sha256Url
- * @returns {Promise<string>} - The SHA256 hex hash
- */
-async function fetchRemoteSha256(sha256Url) {
-  const content = await fetchText(sha256Url);
-  // Handle both "<hash>  <filename>" and plain "<hash>" formats
-  return content.split(/\s+/)[0].toLowerCase();
-}
-
-/**
  * Fetches JSON from a URL, follows redirects, and returns the parsed object.
  * @param {string} url
  * @returns {Promise<any>}
@@ -121,7 +109,7 @@ async function fetchAdoptiumChecksum(assetsApiUrl) {
  * the hash for a specific filename.
  * Format per line: "<hash> *<filename>"
  * @param {string} sha256sumsUrl - URL of the SHA256SUMS.asc file
- * @param {string} filename - The filename to look up (e.g. "phoenixd-0.7.2-macos-arm64.zip")
+ * @param {string} filename - The filename to look up (e.g. "phoenixd-0.9.0-macos-arm64.zip")
  * @returns {Promise<string>} - The SHA256 hex hash
  */
 async function fetchSha256SumsChecksum(sha256sumsUrl, filename) {
@@ -135,4 +123,4 @@ async function fetchSha256SumsChecksum(sha256sumsUrl, filename) {
   throw new Error(`No entry for "${filename}" found in ${sha256sumsUrl}`);
 }
 
-module.exports = { computeSha256, verifySha256, fetchRemoteSha256, fetchAdoptiumChecksum, fetchSha256SumsChecksum };
+module.exports = { computeSha256, verifySha256, fetchAdoptiumChecksum, fetchSha256SumsChecksum };

@@ -5,6 +5,7 @@ import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
+import { StatusChip } from "@/components/shared/StatusChip";
 
 import { formatSats } from "../utils/formatters";
 
@@ -76,10 +77,13 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline gap-2">
-                        <span className="text-deep">
+                        <span className="text-deep flex items-center gap-2">
                           {transaction.type === "outgoing_payment"
                             ? walletTranslations("payments.history.sent")
                             : walletTranslations("payments.history.received")}
+                          {transaction.refunded && (
+                            <StatusChip status={transaction.type === "outgoing_payment" ? "refund" : "refunded"} />
+                          )}
                         </span>
                         <span className="text-xs text-gray-400 shrink-0">
                           {transaction.completedAt

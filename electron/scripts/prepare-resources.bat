@@ -102,6 +102,17 @@ if errorlevel 1 (
 echo [OK] Client build complete
 
 echo.
+echo === Step 6: Bundle Preload Scripts ===
+echo.
+
+node scripts\build-preload.js
+if errorlevel 1 (
+    echo [ERROR] Preload bundling failed
+    exit /b 1
+)
+echo [OK] Preload bundling complete
+
+echo.
 echo ===========================================
 echo   Resource Preparation Summary
 echo ===========================================
@@ -172,6 +183,21 @@ if exist "resources\client\server.js" (
     echo [OK] Next.js Client: Found
 ) else (
     echo [ERROR] Next.js Client: Missing
+    set /a ERRORS+=1
+)
+
+REM Check Preload bundles
+if exist "preload.js" (
+    echo [OK] Preload bundle: Found
+) else (
+    echo [ERROR] Preload bundle: Missing
+    set /a ERRORS+=1
+)
+
+if exist "splash-preload.js" (
+    echo [OK] Splash preload bundle: Found
+) else (
+    echo [ERROR] Splash preload bundle: Missing
     set /a ERRORS+=1
 )
 

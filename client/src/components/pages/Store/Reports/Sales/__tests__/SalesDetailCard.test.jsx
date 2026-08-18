@@ -21,7 +21,12 @@ jest.mock("../../hooks/useSalesData", () => ({
 }));
 
 jest.mock("../SalesFilters", () => ({
-  SalesFilters: () => <div data-testid="sales-filters" />,
+  SalesFilters: ({ onSearchChange }) => (
+    <input
+      data-testid="sales-search"
+      onChange={(changeEvent) => onSearchChange(changeEvent.target.value)}
+    />
+  ),
 }));
 
 jest.mock("../SalesList", () => ({
@@ -102,6 +107,14 @@ describe("SalesDetailCard", () => {
     expect(screen.getByTestId("export-button")).not.toBeDisabled();
   });
 
+  it("export button is disabled when filters have no matching sales", () => {
+    render(<SalesDetailCard sales={SALES} formatCurrency={formatCurrency} />);
+
+    fireEvent.change(screen.getByTestId("sales-search"), { target: { value: "no matches" } });
+
+    expect(screen.getByTestId("export-button")).toBeDisabled();
+  });
+
   it("export button calls exportToCsv", () => {
     render(<SalesDetailCard sales={SALES} formatCurrency={formatCurrency} />);
     fireEvent.click(screen.getByTestId("export-button"));
@@ -121,7 +134,7 @@ describe("SalesDetailCard", () => {
 
   it("renders SalesFilters and SalesList", () => {
     render(<SalesDetailCard sales={SALES} formatCurrency={formatCurrency} />);
-    expect(screen.getByTestId("sales-filters")).toBeInTheDocument();
+    expect(screen.getByTestId("sales-search")).toBeInTheDocument();
     expect(screen.getByTestId("sales-list")).toBeInTheDocument();
   });
 });

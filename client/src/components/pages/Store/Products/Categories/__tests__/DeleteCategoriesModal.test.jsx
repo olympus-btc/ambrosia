@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { I18nProvider } from "@/i18n/I18nProvider";
 
@@ -46,6 +46,26 @@ describe("DeleteCategoriesModal", () => {
 
     fireEvent.click(screen.getByText("modal.deleteButton"));
     expect(onConfirm).toHaveBeenCalled();
+  });
+
+  it("prevents double confirm while deleting", async () => {
+    const onConfirm = jest.fn(() => new Promise(() => {}));
+    renderModal({ onConfirm });
+
+    fireEvent.click(screen.getByText("modal.deleteButton"));
+    fireEvent.click(screen.getByText("modal.deleteButton"));
+
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
+  });
+
+  it("disables action buttons while deleting", async () => {
+    const onConfirm = jest.fn(() => new Promise(() => {}));
+    renderModal({ onConfirm });
+
+    fireEvent.click(screen.getByText("modal.deleteButton"));
+
+    await waitFor(() => expect(screen.getByText("modal.deleteButton").closest("button")).toBeDisabled());
+    expect(screen.getByText("modal.cancelButton").closest("button")).toBeDisabled();
   });
 
   it("does not render when deleteCategoriesShowModal is false", () => {

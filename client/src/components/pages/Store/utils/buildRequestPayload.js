@@ -11,6 +11,7 @@ export const buildRequestPayload = (product, imageUrl, { includeId = false } = {
   const priceCents = Math.round(toFiniteNumber(product.productPrice) * 100);
   const isBundle = product.isBundle ?? false;
   const hasVariants = isBundle ? false : (product.hasVariants ?? false);
+  const tracksStock = isBundle ? true : (product.trackStock ?? true);
 
   return {
     ...(includeId ? { id: product.productId } : {}),
@@ -20,10 +21,11 @@ export const buildRequestPayload = (product, imageUrl, { includeId = false } = {
     imageUrl,
     costCents: priceCents,
     categoryIds: toArray(product.productCategories),
-    quantity: isBundle ? 0 : toFiniteNumber(product.productStock),
-    minStockThreshold: toFiniteNumber(product.productMinStock),
-    maxStockThreshold: toFiniteNumber(product.productMaxStock),
+    quantity: isBundle || !tracksStock ? 0 : toFiniteNumber(product.productStock),
+    minStockThreshold: tracksStock ? toFiniteNumber(product.productMinStock) : 0,
+    maxStockThreshold: tracksStock ? toFiniteNumber(product.productMaxStock) : 0,
     hasVariants,
+    trackStock: tracksStock,
     priceCents,
     isBundle,
     bundleComponents: isBundle

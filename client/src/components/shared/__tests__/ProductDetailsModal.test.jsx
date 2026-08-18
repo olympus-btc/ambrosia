@@ -137,6 +137,18 @@ describe("ProductDetailsModal", () => {
     expect(screen.getByText("add")).toBeDisabled();
   });
 
+  it("hides the stock chip and keeps add enabled for products without stock tracking", () => {
+    render(
+      <ProductDetailsModal
+        {...defaultProps}
+        product={{ ...baseProduct, quantity: 0, trackStock: false }}
+      />,
+    );
+
+    expect(screen.queryByText(/stock/)).not.toBeInTheDocument();
+    expect(screen.getByText("add")).not.toBeDisabled();
+  });
+
   it("shows bundle chip in header when product is a bundle", () => {
     render(
       <ProductDetailsModal {...defaultProps} product={{ ...baseProduct, isBundle: true }} />,

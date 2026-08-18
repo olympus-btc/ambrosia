@@ -21,7 +21,7 @@ jest.mock("@/components/shared/ViewButton", () => ({
   ),
 }));
 
-jest.mock("../StatusChip", () => ({
+jest.mock("@/components/shared/StatusChip", () => ({
   StatusChip: ({ status }) => <span>{`status-${status}`}</span>,
 }));
 

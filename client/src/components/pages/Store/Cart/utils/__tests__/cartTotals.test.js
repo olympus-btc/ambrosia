@@ -58,4 +58,21 @@ describe("calculateCartTotals", () => {
       total: 2000,
     });
   });
+
+  it("rounds a percentage discount that would leave a fraction of a cent", () => {
+    const fractionalItems = [{ id: 1, subtotal: 999 }];
+    expect(calculateCartTotals(fractionalItems, 15)).toEqual({
+      subtotal: 999,
+      discountAmount: 150,
+      total: 849,
+    });
+  });
+
+  it("rounds a fixed discount that would leave a fraction of a cent", () => {
+    expect(calculateCartTotals(items, 19.995, "fixed")).toEqual({
+      subtotal: 2000,
+      discountAmount: 2000,
+      total: 0,
+    });
+  });
 });

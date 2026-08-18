@@ -1,16 +1,19 @@
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const path = require('path');
 
-/**
- * afterPack hook for electron-builder
- * Re-signs the macOS app bundle with ad-hoc signature to fix ARM64 signing issues
- *
- * electron-builder's automatic signing doesn't properly sign ARM64 builds,
- * resulting in 'is damaged and can't be opened' errors when downloaded from internet.
- * This script manually re-signs with --deep --force to ensure all binaries are signed.
- */
+function getCodeSignIdentity() {
+  return process.env.MACOS_CODE_SIGN_IDENTITY || process.env.CSC_NAME || '-';
+}
+
+function getCodeSignLabel(codeSignIdentity) {
+  return codeSignIdentity === '-' ? 'ad-hoc' : codeSignIdentity;
+}
+
+function runCommand(command, args) {
+  execFileSync(command, args, { stdio: 'inherit' });
+}
+
 async function afterPack(context) {
-  // Only run for macOS builds
   if (context.electronPlatformName !== 'darwin') {
     return;
   }
@@ -29,20 +32,26 @@ async function afterPack(context) {
   console.log(`\n🔐 Re-signing macOS app bundle: ${appPath}`);
 
   try {
-    // Fix permissions on JRE files (classes.jsa and others may be read-only)
     const resourcesPath = path.join(appPath, 'Contents', 'Resources');
     console.log(`   Fixing file permissions...`);
-    execSync(`chmod -R u+w '${resourcesPath}'`, { stdio: 'inherit' });
+    runCommand('chmod', ['-R', 'u+w', resourcesPath]);
 
-    // Re-sign the entire app bundle with ad-hoc signature
-    const signCommand = `codesign --force --deep --sign - --entitlements '${entitlementsPath}' '${appPath}'`;
+    const codeSignIdentity = getCodeSignIdentity();
+    const codeSignLabel = getCodeSignLabel(codeSignIdentity);
 
-    console.log(`   Running: codesign --force --deep --sign - ...`);
-    execSync(signCommand, { stdio: 'inherit' });
+    console.log(`   Running: codesign --force --deep --sign ${codeSignLabel} ...`);
+    runCommand('codesign', [
+      '--force',
+      '--deep',
+      '--sign',
+      codeSignIdentity,
+      '--entitlements',
+      entitlementsPath,
+      appPath,
+    ]);
 
-    // Verify the signature
     console.log(`   Verifying signature...`);
-    execSync(`codesign --verify --deep --strict '${appPath}'`, { stdio: 'inherit' });
+    runCommand('codesign', ['--verify', '--deep', '--strict', appPath]);
 
     console.log(`✅ App bundle re-signed successfully\n`);
   } catch (error) {

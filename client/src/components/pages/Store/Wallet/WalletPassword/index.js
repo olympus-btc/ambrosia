@@ -1,0 +1,1 @@
+export { WalletPasswordCard } from "./WalletPasswordCard";

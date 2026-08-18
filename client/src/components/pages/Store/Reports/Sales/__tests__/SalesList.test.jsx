@@ -29,7 +29,8 @@ jest.mock("@/components/shared/DataTable", () => ({
 jest.mock("@heroui/react", () => {
   const Card = ({ children, ...props }) => <div {...props}>{children}</div>;
   const CardBody = ({ children, className }) => <div className={className}>{children}</div>;
-  return { Card, CardBody };
+  const Chip = ({ children }) => <span>{children}</span>;
+  return { Card, CardBody, Chip };
 });
 
 const mockFormatCurrency = jest.fn((cents) => `$${cents / 100}`);
@@ -223,5 +224,41 @@ describe("SalesList", () => {
 
     expect(mockFormatCurrency).toHaveBeenCalledWith(4500);
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
+  });
+
+  it("shows the refunded status chip when the sale is refunded", () => {
+    const sales = [
+      {
+        productName: "Widget",
+        quantity: 1,
+        priceAtOrder: 500,
+        userName: "test",
+        paymentMethod: "Cash",
+        saleDate: "2024-01-01 00:00:00",
+        refunded: true,
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
+
+    expect(screen.getByText("refunded")).toBeInTheDocument();
+  });
+
+  it("shows the paid status chip when the sale is not refunded", () => {
+    const sales = [
+      {
+        productName: "Widget",
+        quantity: 1,
+        priceAtOrder: 500,
+        userName: "test",
+        paymentMethod: "Cash",
+        saleDate: "2024-01-01 00:00:00",
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
+
+    expect(screen.queryByText("refunded")).not.toBeInTheDocument();
+    expect(screen.getByText("paid")).toBeInTheDocument();
   });
 });

@@ -33,39 +33,83 @@ export default function Reports() {
   const sales = useMemo(() => reportData?.sales ?? [], [reportData]);
   const orders = useOrdersData(sales);
 
-  const { totalRevenue: ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts } = useOrdersSummaryData(reportData, orders);
-  const { totalRevenue: productsRevenue, totalItems, productLines, uniqueProducts } = useSummaryData(reportData);
+  const {
+    totalRevenue: ordersRevenue,
+    orderCount,
+    averageTicket,
+    avgItemsPerOrder,
+    totalDiscounts,
+    totalRefunded: ordersRefunded,
+  } = useOrdersSummaryData(reportData, orders);
+  const {
+    totalRevenue: productsRevenue,
+    totalItems,
+    productLines,
+    uniqueProducts,
+    totalRefunded: productsRefunded,
+    totalRefundedSatoshis,
+  } = useSummaryData(reportData);
 
   const orderStats = useMemo(() => {
-    const stats = [
-      { label: reportsTranslations("summary.revenue"), value: formatAmount(ordersRevenue) },
-      { label: reportsTranslations("summary.orderCount"), value: orderCount },
-      { label: reportsTranslations("summary.averageTicket"), value: formatAmount(averageTicket) },
-      { label: reportsTranslations("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
-    ];
+    const stats = [];
+    if (ordersRefunded > 0) {
+      stats.push({ label: reportsTranslations("summary.netRevenue"), value: formatAmount(ordersRevenue - ordersRefunded) });
+    }
+    stats.push({ label: reportsTranslations("summary.revenue"), value: formatAmount(ordersRevenue) });
     if (totalDiscounts > 0) {
       stats.push({ label: reportsTranslations("summary.totalDiscounts"), value: formatAmount(totalDiscounts) });
     }
+    if (ordersRefunded > 0) {
+      stats.push({ label: reportsTranslations("summary.totalRefunded"), value: formatAmount(ordersRefunded) });
+    }
+    stats.push(
+      { label: reportsTranslations("summary.orderCount"), value: orderCount },
+      { label: reportsTranslations("summary.averageTicket"), value: formatAmount(averageTicket) },
+      { label: reportsTranslations("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
+    );
     return stats;
-  }, [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts, formatAmount]);
+  }, [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts, ordersRefunded, formatAmount]);
 
   const totalBtcSatoshis = reportData?.totalBtcSatoshis ?? 0;
 
   const productStats = useMemo(() => {
-    const stats = [
-      { label: reportsTranslations("summary.revenue"), value: formatAmount(productsRevenue) },
-      { label: reportsTranslations("summary.items"), value: totalItems },
-      { label: reportsTranslations("summary.productLines"), value: productLines },
-      { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
-    ];
+    const stats = [];
+    if (productsRefunded > 0) {
+      stats.push({ label: reportsTranslations("summary.netRevenue"), value: formatAmount(productsRevenue - productsRefunded) });
+    }
+    stats.push({ label: reportsTranslations("summary.revenue"), value: formatAmount(productsRevenue) });
     if (totalBtcSatoshis > 0) {
       stats.push({
         label: reportsTranslations("summary.totalBtcSatoshis"),
         value: `${totalBtcSatoshis.toLocaleString()} sats`,
       });
     }
+    if (productsRefunded > 0) {
+      stats.push({ label: reportsTranslations("summary.totalRefunded"), value: formatAmount(productsRefunded) });
+    }
+    if (totalRefundedSatoshis > 0) {
+      stats.push({
+        label: reportsTranslations("summary.totalRefundedSatoshis"),
+        value: `${totalRefundedSatoshis.toLocaleString()} sats`,
+      });
+    }
+    stats.push(
+      { label: reportsTranslations("summary.items"), value: totalItems },
+      { label: reportsTranslations("summary.productLines"), value: productLines },
+      { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
+    );
     return stats;
-  }, [reportsTranslations, productsRevenue, totalItems, productLines, uniqueProducts, formatAmount, totalBtcSatoshis]);
+  }, [
+    reportsTranslations,
+    productsRevenue,
+    totalItems,
+    productLines,
+    uniqueProducts,
+    formatAmount,
+    totalBtcSatoshis,
+    productsRefunded,
+    totalRefundedSatoshis,
+  ]);
 
   if ((reportsLoading || currencyLoading) && !reportData) return <ReportSkeleton />;
 

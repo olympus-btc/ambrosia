@@ -77,7 +77,7 @@ jest.mock("../OrdersList/EmptyOrdersState", () => ({
 }));
 
 jest.mock("../OrderDetailsModal", () => ({
-  OrderDetailsModal: ({ order, isOpen, onClose, onEdit }) => (isOpen ? (
+  OrderDetailsModal: ({ order, isOpen, onClose, onEdit, onRefunded }) => (isOpen ? (
     <div>
       <span>{`selected-${order?.id}`}</span>
       <button type="button" onClick={onEdit}>
@@ -85,6 +85,9 @@ jest.mock("../OrderDetailsModal", () => ({
       </button>
       <button type="button" onClick={onClose}>
         close
+      </button>
+      <button type="button" onClick={onRefunded}>
+        refund
       </button>
     </div>
   ) : null),
@@ -171,5 +174,21 @@ describe("StoreOrders", () => {
     fireEvent.click(screen.getByText("clear-filters"));
 
     await waitFor(() => expect(mockFetchOrders).toHaveBeenCalledTimes(1));
+  });
+
+  it("re-fetches filtered orders and closes the modal when a refund completes", async () => {
+    mockFetchOrdersFiltered.mockResolvedValue([]);
+
+    render(<StoreOrders />);
+
+    fireEvent.click(screen.getByText("order-2"));
+    expect(screen.getByText("selected-order-2")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("refund"));
+
+    await waitFor(() => expect(mockFetchOrdersFiltered).toHaveBeenCalledWith(
+      expect.objectContaining({ status: null }),
+    ));
+    expect(screen.queryByText("selected-order-2")).toBeNull();
   });
 });

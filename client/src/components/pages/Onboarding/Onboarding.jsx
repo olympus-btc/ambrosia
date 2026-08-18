@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, Divider, addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -14,13 +14,28 @@ import { BusinessDetailsStep } from "./AddBusinessData";
 import { UserAccountStep } from "./AddUserAccount";
 import { BusinessTypeStep } from "./SelectBusiness";
 import { WizardSummary } from "./StepsSummary";
+import { WalletBackendStep } from "./WalletBackendStep";
+
+const TOAST_REDIRECT_TIMEOUT_MS = 3000;
+
+function addRedirectToast(toastProps) {
+  addToast({
+    ...toastProps,
+    timeout: TOAST_REDIRECT_TIMEOUT_MS,
+    shouldShowTimeoutProgress: true,
+  });
+}
 
 export function Onboarding() {
-  const t = useTranslations();
+  const onboardingTranslations = useTranslations();
   const [step, setStep] = useState(1);
   const [setupStatus, setSetupStatus] = useState(null);
+  const [isSubmittingSetup, setIsSubmittingSetup] = useState(false);
+  const isSubmittingSetupRef = useRef(false);
   const [data, setData] = useState({
     businessType: "store",
+    walletBackend: "phoenixd",
+    nwcUri: "",
     userName: "",
     userPassword: "",
     userPasswordConfirmation: "",
@@ -31,6 +46,7 @@ export function Onboarding() {
     businessEmail: "",
     businessRFC: "",
     businessCurrency: "USD",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     businessLogo: null,
   });
   const { upload } = useUpload();
@@ -67,8 +83,10 @@ export function Onboarding() {
     return /^\d{6}$/.test(pin);
   }
 
+  const NWC_URI_REGEX = /^nostr\+walletconnect:\/\/[0-9a-f]{64}\?/;
+
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     }
   };
@@ -84,17 +102,21 @@ export function Onboarding() {
   };
 
   const handleComplete = async () => {
+    if (isSubmittingSetupRef.current) return;
+    isSubmittingSetupRef.current = true;
+    setIsSubmittingSetup(true);
+
     try {
       if (needsBusinessType) {
         await submitInitialSetup({
           businessType: data.businessType,
         });
-        addToast({
-          title: t("submitOnboardingToast.title"),
-          description: t("submitOnboardingToast.description"),
+        addRedirectToast({
+          title: onboardingTranslations("submitOnboardingToast.title"),
+          description: onboardingTranslations("submitOnboardingToast.description"),
           color: "success",
+          onClose: () => window.location.reload(),
         });
-        window.location.reload();
         return;
       }
 
@@ -104,28 +126,57 @@ export function Onboarding() {
         logoUrl = uploaded?.url ?? uploaded?.path;
       }
 
-      await submitInitialSetup({
+      const setupResponse = await submitInitialSetup({
         ...data,
         businessLogoUrl: logoUrl,
         businessLogo: undefined,
         userPasswordConfirmation: undefined,
+        walletBackend: undefined,
+        nwcUri: data.walletBackend === "nwc" && data.nwcUri ? data.nwcUri : undefined,
       });
-      addToast({
-        title: t("submitOnboardingToast.title"),
-        description: t("submitOnboardingToast.description"),
+
+      const isNwcAttempt = data.walletBackend === "nwc";
+      let nwcSaved = false;
+      try {
+        const body = await setupResponse.json();
+        nwcSaved = Boolean(body?.nwcSaved);
+      } catch {}
+
+      addRedirectToast({
+        title: onboardingTranslations("submitOnboardingToast.title"),
+        description: onboardingTranslations("submitOnboardingToast.description"),
         color: "success",
+        onClose: isNwcAttempt ? undefined : () => window.location.reload(),
       });
-      window.location.reload();
-    } catch (error) {
+
+      if (nwcSaved) {
+        addRedirectToast({
+          title: onboardingTranslations("submitOnboardingToast.nwcSavedTitle"),
+          description: onboardingTranslations("submitOnboardingToast.nwcSavedDescription"),
+          color: "primary",
+          onClose: () => window.location.reload(),
+        });
+      } else if (isNwcAttempt) {
+        addRedirectToast({
+          title: onboardingTranslations("submitOnboardingToast.nwcErrorTitle"),
+          description: onboardingTranslations("submitOnboardingToast.nwcErrorDescription"),
+          color: "danger",
+          onClose: () => window.location.reload(),
+        });
+      }
+    } catch (setupSubmissionError) {
       addToast({
-        title: "Error",
-        description: error.message,
+        title: onboardingTranslations("submitOnboardingToast.errorTitle"),
+        description: setupSubmissionError.message,
         color: "danger",
       });
+    } finally {
+      isSubmittingSetupRef.current = false;
+      setIsSubmittingSetup(false);
     }
   };
 
-  const totalSteps = needsBusinessType ? 1 : 4;
+  const totalSteps = needsBusinessType ? 1 : 5;
   const progressValue = totalSteps === 1 ? 100 : ((step - 1) / (totalSteps - 1)) * 100;
 
   return (
@@ -144,7 +195,7 @@ export function Onboarding() {
                 className="absolute top-1/2 -translate-y-1/2 h-2 md:h-3 rounded-full bg-green-800 z-0 transition-all duration-300 left-0"
                 style={{ width: `${progressValue}%` }}
               />
-              {[1, 2, 3, 4].map((num) => (
+              {[1, 2, 3, 4, 5].map((num) => (
                 <div
                   key={num}
                   className={`relative z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-semibold transition-all ${num <= step ? "bg-green-800 text-white" : "bg-gray-300 text-gray-500"}`}
@@ -186,13 +237,21 @@ export function Onboarding() {
                 businessEmail: data.businessEmail,
                 businessRFC: data.businessRFC,
                 businessCurrency: data.businessCurrency,
+                timezone: data.timezone,
                 businessLogo: data.businessLogo,
               }}
               onChange={(businessData) => handleDataChange(businessData)}
             />
           )}
 
-          {step === 4 && <WizardSummary data={data} onEdit={(stepNum) => setStep(stepNum)} />}
+          {step === 4 && (
+            <WalletBackendStep
+              data={{ walletBackend: data.walletBackend, nwcUri: data.nwcUri }}
+              onChange={(walletData) => handleDataChange(walletData)}
+            />
+          )}
+
+          {step === 5 && <WizardSummary data={data} onEdit={(stepNum) => setStep(stepNum)} />}
 
           <Divider className="hidden md:block my-8 bg-gray-400" />
 
@@ -203,7 +262,7 @@ export function Onboarding() {
                 onPress={handlePrevious}
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
               >
-                {t("buttons.back")}
+                {onboardingTranslations("buttons.back")}
               </Button>
             )}
 
@@ -212,12 +271,13 @@ export function Onboarding() {
                 <Button
                   color="primary"
                   onPress={handleComplete}
-                  isDisabled={!data.businessType}
+                  isDisabled={!data.businessType || isSubmittingSetup}
+                  isLoading={isSubmittingSetup}
                   className="bg-green-800"
                 >
-                  {t("buttons.finish")}
+                  {onboardingTranslations("buttons.finish")}
                 </Button>
-              ) : step < 4 ? (
+              ) : step < 5 ? (
                 <Button
                   color="primary"
                   onPress={handleNext}
@@ -231,19 +291,22 @@ export function Onboarding() {
                       !isPasswordStrong(data.userPassword) ||
                       !isPinValid(data.userPin)
                     )) ||
-                    (step === 3 && (!data.businessName || !data.businessCurrency))
+                    (step === 3 && (!data.businessName || !data.businessCurrency || !data.timezone)) ||
+                    (step === 4 && data.walletBackend === "nwc" && (!data.nwcUri || !NWC_URI_REGEX.test(data.nwcUri)))
                   }
                   className="bg-green-800"
                 >
-                  {t("buttons.next")}
+                  {onboardingTranslations("buttons.next")}
                 </Button>
               ) : (
                 <Button
                   color="primary"
                   onPress={handleComplete}
+                  isDisabled={isSubmittingSetup}
+                  isLoading={isSubmittingSetup}
                   className="bg-green-800"
                 >
-                  {t("buttons.finish")}
+                  {onboardingTranslations("buttons.finish")}
                 </Button>
               )}
             </div>

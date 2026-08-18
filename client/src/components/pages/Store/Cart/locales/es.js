@@ -54,6 +54,12 @@ const cartEs = {
         noUser: "No hay usuario autenticado para registrar la venta.",
         noCurrency: "No se pudo obtener la moneda base.",
         checkout: "No se pudo completar el pago",
+        checkoutEmpty: "Agrega productos antes de completar el cobro.",
+        checkoutInvalidQuantity: "Uno o más productos tienen una cantidad inválida.",
+        checkoutInvalidReference: "El cobro contiene información inválida. Actualiza e inténtalo de nuevo.",
+        checkoutProductNotFound: "Uno de los productos ya no está disponible.",
+        checkoutVariantNotFound: "Una de las variantes seleccionadas ya no está disponible.",
+        checkoutInsufficientStock: "No hay suficiente stock para completar la venta.",
         process: "Error al procesar el pago",
         btcComplete: "Error al completar el pago BTC",
         cashComplete: "Error al completar el pago en efectivo",
@@ -74,6 +80,13 @@ const cartEs = {
     },
     errors: {
       outOfStock: "No hay stock suficiente para este producto.",
+    },
+    permissionBlocked: {
+      title: "No puedes completar la venta",
+      subtitle: "Pídele a un administrador que te otorgue los permisos que faltan:",
+      products: "Ver productos",
+      categories: "Ver categorías",
+      payments: "Ver métodos de pago",
     },
     paymentModal: {
       bitcoin: {

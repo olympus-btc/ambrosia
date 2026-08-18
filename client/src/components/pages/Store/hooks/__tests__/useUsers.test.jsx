@@ -17,14 +17,14 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("next-intl", () => {
-  const t = (key) => key;
-  return { useTranslations: () => t };
+  const usersTranslations = (key) => key;
+  return { useTranslations: () => usersTranslations };
 });
 
 const handlers = {};
 
-function TestComponent() {
-  const { users, loading, error, addUser, updateUser, deleteUser } = useUsers();
+function TestComponent({ skipForbiddenRedirect } = {}) {
+  const { users, loading, error, forbidden, addUser, updateUser, deleteUser } = useUsers({ skipForbiddenRedirect });
 
   useEffect(() => {
     handlers.addUser = addUser;
@@ -38,6 +38,7 @@ function TestComponent() {
       <span data-testid="count">{users.length}</span>
       <span data-testid="first-name">{users[0]?.name ?? ""}</span>
       <span data-testid="error">{error ? "yes" : "no"}</span>
+      <span data-testid="forbidden">{forbidden ? "yes" : "no"}</span>
     </div>
   );
 }
@@ -66,6 +67,24 @@ describe("useUsers", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
 
+  it("sets forbidden when the response is 403", async () => {
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    render(<TestComponent skipForbiddenRedirect />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("forbidden")).toHaveTextContent("yes");
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+  });
+
+  it("passes skipForbiddenRedirect through to httpClient", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    render(<TestComponent skipForbiddenRedirect />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(httpClient).toHaveBeenCalledWith("/users", { skipForbiddenRedirect: true });
+  });
+
   it("adds a user and refetches", async () => {
     httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -75,9 +94,9 @@ describe("useUsers", () => {
 
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
 
-    let response;
+    let addUserResponse;
     await act(async () => {
-      response = await handlers.addUser({
+      addUserResponse = await handlers.addUser({
         userName: "Luis",
         userPin: "123456",
         userRole: 2,
@@ -86,7 +105,7 @@ describe("useUsers", () => {
       });
     });
 
-    expect(response).toEqual({ ok: true });
+    expect(addUserResponse).toEqual({ ok: true });
     expect(httpClient).toHaveBeenCalledWith("/users", {
       method: "POST",
       headers: {
@@ -203,13 +222,88 @@ describe("useUsers", () => {
 
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
 
-    await act(async () => {
-      await handlers.deleteUser(6);
-    });
+    await expect(handlers.deleteUser(6)).rejects.toMatchObject({ status: 409 });
 
     expect(addToast).toHaveBeenCalledWith({
       title: "toasts.lastAdminTitle",
       description: "toasts.lastAdminDescription",
+      color: "warning",
+    });
+  });
+
+  it("shows duplicate name toast and rejects when adding user returns conflict", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 409 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Duplicate user" });
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+
+    await expect(handlers.addUser({
+      userName: "Luis",
+      userPin: "1234",
+      userRole: 2,
+      userEmail: "luis@example.com",
+      userPhone: "555-0101",
+    })).rejects.toMatchObject({ status: 409 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "toasts.duplicateNameTitle",
+      description: "toasts.duplicateNameDescription",
+      color: "danger",
+    });
+  });
+
+  it("shows generic error toast and rejects when updating user fails", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: 3, name: "Paula" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Server error" });
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    await expect(handlers.updateUser({
+      userId: 3,
+      userName: "Paula",
+      userRole: 1,
+      userEmail: "paula@example.com",
+      userPhone: "555-0202",
+      userPin: "",
+    })).rejects.toMatchObject({ status: 500 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "toasts.genericErrorTitle",
+      description: "toasts.genericErrorDescription",
+      color: "danger",
+    });
+  });
+
+  it("shows admin-required toast when assigning an admin role is forbidden", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: 3, name: "Paula" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Admin privileges required" });
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    await expect(handlers.updateUser({
+      userId: 3,
+      userName: "Paula",
+      userRole: "admin-role-id",
+      userEmail: "paula@example.com",
+      userPhone: "555-0202",
+      userPin: "",
+    })).rejects.toMatchObject({ status: 403 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "toasts.adminRequiredTitle",
+      description: "toasts.adminRequiredDescription",
       color: "warning",
     });
   });

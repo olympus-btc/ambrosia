@@ -135,4 +135,34 @@ describe("SearchProducts", () => {
     fireEvent.click(screen.getByText("search.filterAll"));
     expect(screen.getByTestId("product-list").textContent).toContain("Jade Wallet");
   });
+
+  it("updates the selected category filter button", () => {
+    render(
+      <SearchProducts
+        products={products}
+        categories={categories}
+        onAddProduct={jest.fn()}
+      />,
+    );
+
+    const allFilterButton = screen.getByRole("button", { name: "search.filterAll" });
+    const hardwareFilterButton = screen.getByRole("button", { name: "Hardware" });
+    const gadgetsFilterButton = screen.getByRole("button", { name: "Gadgets" });
+
+    expect(allFilterButton).toHaveAttribute("aria-pressed", "true");
+    expect(hardwareFilterButton).toHaveAttribute("aria-pressed", "false");
+    expect(gadgetsFilterButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(hardwareFilterButton);
+
+    expect(allFilterButton).toHaveAttribute("aria-pressed", "false");
+    expect(hardwareFilterButton).toHaveAttribute("aria-pressed", "true");
+    expect(gadgetsFilterButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(allFilterButton);
+
+    expect(allFilterButton).toHaveAttribute("aria-pressed", "true");
+    expect(hardwareFilterButton).toHaveAttribute("aria-pressed", "false");
+    expect(gadgetsFilterButton).toHaveAttribute("aria-pressed", "false");
+  });
 });

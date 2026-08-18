@@ -68,9 +68,13 @@ jest.mock("../Orders", () => ({
   ),
 }));
 
+let capturedStats;
 jest.mock("../Summary", () => ({
   ReportSkeleton: () => <div data-testid="report-skeleton" />,
-  SummaryCard: ({ stats }) => <div data-testid="summary-card">{stats?.length}</div>,
+  SummaryCard: ({ stats }) => {
+    capturedStats = stats;
+    return <div data-testid="summary-card">{stats?.length}</div>;
+  },
 }));
 
 jest.mock("@components/shared/PageHeader", () => ({
@@ -167,6 +171,7 @@ let mockUseCurrency;
 describe("Reports", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    capturedStats = undefined;
     mockUseReports = () => makeUseReports();
     mockUseFiltersState = () => makeUseFiltersState();
     mockUseCurrency = () => makeUseCurrency();
@@ -299,6 +304,34 @@ describe("Reports", () => {
       expect(summaryCards.length).toBeGreaterThan(0);
       expect(summaryCards[0]).toHaveTextContent("4");
     });
+
+    it("adds Net Revenue and Total Refunded stats in orders tab when there are refunds", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
+      render(<Reports />);
+      const summaryCards = screen.getAllByTestId("summary-card");
+      expect(summaryCards[0]).toHaveTextContent("6");
+    });
+
+    it("keeps Net Revenue, Total Revenue and Total Refunded adjacent, ahead of the count stats", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
+      render(<Reports />);
+      const labels = capturedStats.map((stat) => stat.label);
+      expect(labels.slice(0, 3)).toEqual(["summary.netRevenue", "summary.revenue", "summary.totalRefunded"]);
+    });
+
+    it("puts Net Revenue first with gross minus refunded as its value", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
+      render(<Reports />);
+      expect(capturedStats[0]).toEqual({ label: "summary.netRevenue", value: "$3500" });
+    });
+
+    it("does not add a refund stat in orders tab when totalRefundedCents is 0", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 0 } });
+      render(<Reports />);
+      const summaryCards = screen.getAllByTestId("summary-card");
+      expect(summaryCards[0]).toHaveTextContent("4");
+      expect(capturedStats.some((stat) => stat.label === "summary.netRevenue")).toBe(false);
+    });
   });
 
   describe("products tab", () => {
@@ -333,6 +366,25 @@ describe("Reports", () => {
       switchToProductsTab();
       const items = screen.getAllByTestId("chart-sale");
       expect(items).toHaveLength(SALES_FIXTURE.length);
+    });
+
+    it("adds Net Revenue and Total Refunded stats in products tab when totalRefundedCents is present", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
+      render(<Reports />);
+      switchToProductsTab();
+      const summaryCards = screen.getAllByTestId("summary-card");
+      expect(summaryCards[0]).toHaveTextContent("6");
+      expect(capturedStats[0]).toEqual({ label: "summary.netRevenue", value: "$3500" });
+    });
+
+    it("adds refund stats for both fiat and BTC when a period has both kinds of refunds", () => {
+      mockUseReports = () => makeUseReports({
+        reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, totalRefundedSatoshis: 895, refundCount: 2 },
+      });
+      render(<Reports />);
+      switchToProductsTab();
+      const summaryCards = screen.getAllByTestId("summary-card");
+      expect(summaryCards[0]).toHaveTextContent("7");
     });
   });
 
