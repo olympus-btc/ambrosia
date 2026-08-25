@@ -21,11 +21,6 @@ data class AuthCookies(
     val refreshToken: String,
 )
 
-/**
- * A standalone environment carrying only the "secret" property, for tests that need to hash or
- * verify pins outside of a running application. Pass [TEST_SECRET] to match what the test
- * application configures, so pins seeded here verify against pins rehashed by the routes.
- */
 fun testEnvironmentWithSecret(secret: String): ApplicationEnvironment =
     applicationEnvironment {
         config = MapApplicationConfig("secret" to secret)

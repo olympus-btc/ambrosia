@@ -12,11 +12,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-/**
- * Login must stay length agnostic so users created before the six digit pin change can still
- * sign in and update their pin. The six digit rule is enforced only when creating or updating
- * a user, never when authenticating.
- */
 class AuthServiceTest {
     private val testEnv =
         applicationEnvironment {

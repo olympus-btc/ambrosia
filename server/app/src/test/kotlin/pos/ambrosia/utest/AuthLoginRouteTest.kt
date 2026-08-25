@@ -22,15 +22,6 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/**
- * POST /auth/login must not enforce the six digit pin rule. That rule belongs to user creation
- * and update only; adding a length check here would lock out every user created before the
- * change, who needs to sign in precisely in order to update their pin.
- *
- * Only successful logins are exercised here: the login rate limiter keeps global per-IP state
- * and a success resets it, so these tests cannot leak a block into unrelated tests. Failure
- * paths are covered by the e2e suite.
- */
 class AuthLoginRouteTest {
     private lateinit var databaseFile: File
     private val testEnv = testEnvironmentWithSecret(TEST_SECRET)
@@ -50,7 +41,6 @@ class AuthLoginRouteTest {
         testApplication {
             installAdminAuth()
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
-            // Login answers 403 when the role carries no permissions at all.
             grantPermission("Cashier", "products_read")
             ExposedTestDb.seedUserWithPin("legacy-user", "1234", testEnv, roleId)
             application {
@@ -73,7 +63,6 @@ class AuthLoginRouteTest {
         testApplication {
             installAdminAuth()
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
-            // Login answers 403 when the role carries no permissions at all.
             grantPermission("Cashier", "products_read")
             ExposedTestDb.seedUserWithPin("current-user", "123456", testEnv, roleId)
             application {

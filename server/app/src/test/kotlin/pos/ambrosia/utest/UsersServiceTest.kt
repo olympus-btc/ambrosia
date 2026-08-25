@@ -20,8 +20,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class UsersServiceTest {
-    // A real environment is required because addUser hashes the pin through SecurePinProcessor,
-    // which reads the "secret" config property.
     private val testEnv =
         applicationEnvironment {
             config = MapApplicationConfig("secret" to "users-service-test-secret")

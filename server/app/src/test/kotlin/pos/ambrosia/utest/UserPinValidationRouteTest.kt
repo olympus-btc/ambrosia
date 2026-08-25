@@ -30,8 +30,6 @@ import kotlin.test.assertNull
 class UserPinValidationRouteTest {
     private lateinit var databaseFile: File
 
-    // Shares the secret the auth fixture configures on the test application, so pins seeded here
-    // and pins rehashed by the routes verify against each other.
     private val testEnv = testEnvironmentWithSecret(TEST_SECRET)
 
     @Before
@@ -114,10 +112,6 @@ class UserPinValidationRouteTest {
             assertEquals(HttpStatusCode.BadRequest, response.status)
         }
 
-    /**
-     * The migration path that makes login backwards compatibility matter: a user created before
-     * the six digit change signs in with their old pin and replaces it with a six digit one.
-     */
     @Test
     fun `legacy four digit user can sign in and change their pin to six digits`() =
         testApplication {

@@ -213,12 +213,6 @@ object ExposedTestDb {
                     .toString()
         }
 
-    /**
-     * Seeds a user whose stored pin is a real PBKDF2 hash, so it can authenticate through
-     * [pos.ambrosia.services.AuthService]. Unlike [seedUser], which stores the "****" mask.
-     * The pin length is not validated here on purpose: legacy four digit pins must remain
-     * representable so login backwards compatibility can be tested.
-     */
     fun seedUserWithPin(
         name: String,
         pin: String,
@@ -237,7 +231,6 @@ object ExposedTestDb {
                 .toString()
         }
 
-    /** Reads the raw pin column, to assert it was stored hashed rather than in clear text. */
     fun readStoredPin(userId: String): String? =
         transaction {
             UserEntity.findById(UUID.fromString(userId))?.pin
