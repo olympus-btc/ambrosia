@@ -5,7 +5,7 @@ import { ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function PinDeprecationModal({ isOpen, onGoToUsers, onLater }) {
-  const t = useTranslations("pinLogin");
+  const pinLoginTranslations = useTranslations("pinLogin");
 
   return (
     <Modal
@@ -16,7 +16,7 @@ export function PinDeprecationModal({ isOpen, onGoToUsers, onLater }) {
       placement="center"
       backdrop="blur"
       shouldBlockScroll={false}
-      aria-label={t("pinDeprecation.title")}
+      aria-label={pinLoginTranslations("pinDeprecation.title")}
       classNames={{
         backdrop: "backdrop-blur-xs bg-white/10",
         wrapper: "items-start h-auto",
@@ -27,27 +27,27 @@ export function PinDeprecationModal({ isOpen, onGoToUsers, onLater }) {
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-warning" aria-hidden="true" />
-          {t("pinDeprecation.title")}
+          {pinLoginTranslations("pinDeprecation.title")}
         </ModalHeader>
         <ModalBody>
-          <p className="text-sm text-foreground">{t("pinDeprecation.body")}</p>
-          <p className="text-xs text-muted-foreground">{t("pinDeprecation.adminNote")}</p>
+          <p className="text-sm text-foreground">{pinLoginTranslations("pinDeprecation.body")}</p>
+          <p className="text-xs text-muted-foreground">{pinLoginTranslations("pinDeprecation.adminNote")}</p>
         </ModalBody>
         <ModalFooter className="flex justify-between">
           <Button
             variant="bordered"
-            aria-label={t("pinDeprecation.laterButton")}
+            aria-label={pinLoginTranslations("pinDeprecation.laterButton")}
             className="border border-border text-foreground hover:bg-muted transition-colors"
             onPress={onLater}
           >
-            {t("pinDeprecation.laterButton")}
+            {pinLoginTranslations("pinDeprecation.laterButton")}
           </Button>
           <Button
             color="primary"
-            aria-label={t("pinDeprecation.goToUsersButton")}
+            aria-label={pinLoginTranslations("pinDeprecation.goToUsersButton")}
             onPress={onGoToUsers}
           >
-            {t("pinDeprecation.goToUsersButton")}
+            {pinLoginTranslations("pinDeprecation.goToUsersButton")}
           </Button>
         </ModalFooter>
       </ModalContent>
