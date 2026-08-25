@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -27,6 +27,7 @@ export default function PinLogin() {
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [lockedUntil, setLockedUntil] = useState(null);
   const [showPinDeprecationModal, setShowPinDeprecationModal] = useState(false);
+  const isPinDeprecationPendingRef = useRef(false);
 
   useEffect(() => {
     const storedLockoutUntil = localStorage.getItem("pinLockoutUntil");
@@ -40,10 +41,11 @@ export default function PinLogin() {
   const { config, businessType } = useConfigurations();
 
   useEffect(() => {
+    if (isPinDeprecationPendingRef.current || showPinDeprecationModal) return;
     if (!isAuthLoading && isAuth) {
       router.replace("/");
     }
-  }, [isAuth, isAuthLoading, router]);
+  }, [isAuth, isAuthLoading, showPinDeprecationModal, router]);
 
   useEffect(() => {
     async function fetchEmployees() {
@@ -100,6 +102,8 @@ export default function PinLogin() {
     setLoginErrorMessage("");
 
     const employee = employees.find((currentEmployee) => currentEmployee.id === selectedUser);
+    const isPinDeprecated = pin.length < PIN_MAX_LENGTH;
+    isPinDeprecationPendingRef.current = isPinDeprecated;
 
     try {
       await login({ name: employee.name, pin });
@@ -108,7 +112,6 @@ export default function PinLogin() {
         description: `${pinLoginTranslations("successMessages.firstMessage")} ${employee.name} ${pinLoginTranslations("successMessages.secondMessage")} ${employee.role}.`,
         color: "success",
       });
-      const isPinDeprecated = pin.length < PIN_MAX_LENGTH;
       setPin("");
       setSelectedUser("");
       setLockedUntil(null);
@@ -119,6 +122,7 @@ export default function PinLogin() {
         router.push("/");
       }
     } catch (loginError) {
+      isPinDeprecationPendingRef.current = false;
       if (loginError?.status === 429) {
         const lockoutUntilTimestamp = Date.now() + (loginError.retryAfter ?? 180) * 1000;
         setLockedUntil(lockoutUntilTimestamp);
@@ -136,11 +140,13 @@ export default function PinLogin() {
   };
 
   const handleGoToUsers = () => {
+    isPinDeprecationPendingRef.current = false;
     setShowPinDeprecationModal(false);
     router.push(businessType ? `/${businessType}/users` : "/");
   };
 
   const handleDeprecationLater = () => {
+    isPinDeprecationPendingRef.current = false;
     setShowPinDeprecationModal(false);
     router.push("/");
   };

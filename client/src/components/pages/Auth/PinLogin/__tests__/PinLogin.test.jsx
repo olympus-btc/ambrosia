@@ -184,6 +184,25 @@ describe("PinLogin", () => {
     expect(mockPush).toHaveBeenCalledWith("/store/users");
   });
 
+  it("keeps the deprecation modal open when the session turns authenticated", async () => {
+    mockLogin.mockImplementation(async () => {
+      useAuth.mockReturnValue({ login: mockLogin, isAuth: true, isLoading: false });
+      return {};
+    });
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    "1234".split("").forEach((digit) => fireEvent.keyDown(window, { key: digit }));
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText("pinDeprecation.title")).toBeInTheDocument();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it("redirects home from the deprecation modal when the business type is unknown", async () => {
     useConfigurations.mockReturnValue({
       config: { businessName: "Test Store", businessLogoUrl: null },
