@@ -234,11 +234,19 @@ data class AddOrderDishRequest(
     val notes: String? = null,
 )
 
+@Serializable
 data class CompleteOrder(
     val order: Order,
     val dishes: List<OrderDish>,
 )
 
+@Serializable
+data class OrderTotalResponse(
+    val message: String,
+    val total: Double,
+)
+
+@Serializable
 data class OrderWithDishesRequest(
     val order: Order,
     val dishes: List<OrderDish>,

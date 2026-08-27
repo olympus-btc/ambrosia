@@ -16,6 +16,7 @@ import pos.ambrosia.models.AddOrderDishRequest
 import pos.ambrosia.models.CompleteOrder
 import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
+import pos.ambrosia.models.OrderTotalResponse
 import pos.ambrosia.models.OrderWithDishesRequest
 import pos.ambrosia.services.OrderService
 import pos.ambrosia.utils.DatabaseException
@@ -297,7 +298,7 @@ fun Route.orders(orderService: OrderService) {
             }
             call.respond(
                 HttpStatusCode.OK,
-                mapOf("message" to "Order total updated successfully", "total" to newTotal),
+                OrderTotalResponse("Order total updated successfully", newTotal),
             )
         }
     }
