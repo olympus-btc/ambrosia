@@ -1,38 +1,37 @@
-# Cobertura de tests del server — estado y prioridades
+# Server test coverage — state and priorities
 
-Documento de referencia para planificar el refactor de arquitectura del server. Mide dónde está
-la red de seguridad hoy, qué se cubrió en la última pasada y qué queda pendiente por orden de
-urgencia.
+Reference document for planning the server architecture refactor. It measures where the safety net
+stands today, what the last pass covered, and what is still pending, in order of urgency.
 
-Medición: `./gradlew koverXmlReport` sobre la rama `development`.
+Measured with `./gradlew koverXmlReport`.
 
-## Por qué importa la distribución, no el total
+## Why the distribution matters more than the total
 
-Los tests que protegen un cambio de arquitectura son los de **contrato HTTP** (entra request →
-sale status + body): sobreviven a que se reorganicen las capas de dentro. Los tests de servicio,
-atados a la implementación, son justo lo que un refactor rompe y obliga a reescribir.
+The tests that protect an architecture change are the **HTTP contract** ones (request in → status
+and body out): they survive the inner layers being rearranged. Service tests, bound to the
+implementation, are exactly what a refactor breaks and forces you to rewrite.
 
-El punto de partida tenía esa proporción invertida: la capa de servicios al 88% y la capa HTTP al
-12.3%. Los 2.003 renglones sin cubrir de `api/` eran a la vez el mayor hueco de cobertura y la
-frontera que debe quedar congelada durante el refactor.
+The starting point had that ratio inverted: the service layer at 88% and the HTTP layer at 12.3%.
+The 2,003 uncovered lines in `api/` were both the largest coverage gap and the boundary that has to
+stay frozen during the refactor.
 
-**Matiz sobre la suite e2e.** Los 30 módulos Python de `e2e_tests_py/` (~237 tests) sí ejercen
-muchas de estas rutas, pero corren contra un proceso de servidor aparte, así que Kover no los ve.
-Cubren contratos, pero arrancan un servidor real y tardan minutos: no sirven como red de bucle
-corto durante un refactor. Los tests de ruta en JVM sí. Las dos suites son complementarias.
+**A note on the e2e suite.** The 30 Python modules in `e2e_tests_py/` (~237 tests) do exercise many
+of these routes, but they run against a separate server process, so Kover does not see them. They
+cover contracts, but they boot a real server and take minutes: they are not a short-loop safety net
+during a refactor. JVM route tests are. The two suites are complementary.
 
-## Estado actual
+## Current state
 
-| Métrica | Antes | Ahora |
+| Metric | Before | Now |
 |---|---|---|
-| Línea | 63.6% | **74.2%** |
-| Rama | 28.2% | **37.4%** |
-| Método | 71.6% | 79.8% |
-| Clase | 56.1% | 70.7% |
+| Line | 63.6% | **74.2%** |
+| Branch | 28.2% | **37.4%** |
+| Method | 71.6% | 79.8% |
+| Class | 56.1% | 70.7% |
 
-| Paquete | Antes | Ahora | Sin cubrir |
+| Package | Before | Now | Uncovered |
 |---|---|---|---|
-| `pos/ambrosia/api` | 12.3% | **44.1%** | 1.276 |
+| `pos/ambrosia/api` | 12.3% | **44.1%** | 1,276 |
 | `pos/ambrosia/services` | 88.0% | 91.1% | 411 |
 | `pos/ambrosia/utils` | 64.5% | 72.1% | 55 |
 | `pos/ambrosia/models` | 77.8% | 89.8% | 74 |
@@ -41,17 +40,17 @@ corto durante un refactor. Los tests de ruta en JVM sí. Las dos suites son comp
 | `pos/ambrosia/config` | 31.0% | 31.0% | 87 |
 | `pos/ambrosia/db/tables` | 92.7% | 92.7% | 48 |
 
-Suite: **873 tests, 0 fallos**, 59 clases. Cada clase nueva pasa también en solitario
-(`--tests <Clase> --rerun-tasks`), que es donde se delataría un seam de estado global mal cerrado.
+Suite: **873 tests, 0 failures**, 59 classes. Every new class also passes on its own
+(`--tests <Class> --rerun-tasks`), which is where a badly closed global-state seam would show up.
 
-`koverVerify` corre en CI (`.github/workflows/server_unit_tests.yml`). El suelo del ratchet está en
-`app/build.gradle.kts`, dos puntos por debajo de lo medido: **70% línea / 33% rama**.
+`koverVerify` runs in CI (`.github/workflows/server_unit_tests.yml`). The ratchet floor lives in
+`app/build.gradle.kts`, a couple of points below what was measured: **70% line / 33% branch**.
 
-## Cubierto en esta pasada (P0 + P1)
+## Covered in this pass (P0 + P1)
 
-128 tests nuevos en 8 ficheros, en `app/src/test/kotlin/pos/ambrosia/utest/`.
+128 new tests across 8 files, in `app/src/test/kotlin/pos/ambrosia/utest/`.
 
-| Fichero de producción | Antes | Ahora | Test |
+| Production file | Before | Now | Test |
 |---|---|---|---|
 | `api/Checkout.kt` | 0.0% | 85.2% | `CheckoutRoutesTest` (15) |
 | `api/Authorize.kt` | 0.0% | 84.2% | `AuthorizeRoutesTest` (14) |
@@ -63,73 +62,75 @@ Suite: **873 tests, 0 fallos**, 59 clases. Cada clase nueva pasa también en sol
 | `api/ProductVariants.kt` | 0.0% | 66.7% | `ProductsRoutesTest` |
 | `api/Payments.kt` | 0.0% | 66.4% | `PaymentsRoutesTest` (16) |
 | `api/StoreOrders.kt` | 0.0% | 54.5% | `CheckoutRoutesTest` |
-| `api/Handler.kt` | 43.1% | 50.5% | de rebote, en todos |
+| `api/Handler.kt` | 43.1% | 50.5% | incidentally, from all of them |
 
-### Contratos que quedan fijados
+### Contracts now pinned
 
-Lo que estos tests congelan de cara al refactor, más allá del CRUD:
+What these tests freeze ahead of the refactor, beyond plain CRUD:
 
-- **Separación de esquemas del wallet.** `walletAccessToken` con `scope=wallet_access` y cookie
-  `HttpOnly`/`SameSite=Strict`; el logout revoca contra la BD (`users.wallet_token`), no solo por
-  firma. `POST /wallet/invoice` es la excepción declarada que va con `accessToken` a secas.
-- **Rate limiter de login.** Bloqueo tras 5 fallos con `Retry-After`, y un login correcto no
-  atraviesa el bloqueo. Un login válido resetea el contador.
-- **PIN legacy de 4 dígitos.** La regla de 6 dígitos es de alta/edición; `/auth/login` nunca debe
-  validar longitud.
-- **`requireAdmin()` depende de la cookie `refreshToken`**, no del principal JWT ya validado.
-- **Uploads sin auth solo antes del initial setup**, y el nombre de fichero del cliente se descarta
-  (solo sobrevive la extensión), así que no hay traversal.
-- **`POST /products/stock` va con `orders_create`**, no con `products_update`.
-- **El descuento en checkout es un `requirePermission` en línea**, no un decorador de ruta.
-- **Idempotencia de checkout**: repetir el mismo `paymentHash` devuelve la venta original (200),
-  no crea una segunda (201). Una factura sin liquidar responde 202 `pending`, no una venta.
-- **Cancelación de pedido de tienda** solo sobre pedidos `open` y sin mesa.
+- **Wallet scheme separation.** `walletAccessToken` carries `scope=wallet_access` on an
+  `HttpOnly`/`SameSite=Strict` cookie; logout revokes against the database (`users.wallet_token`),
+  not just by signature. `POST /wallet/invoice` is the declared exception that works with a plain
+  `accessToken`.
+- **Login rate limiter.** Blocks after 5 failures with `Retry-After`, and a correct login does not
+  get through the block. A successful login resets the counter.
+- **Legacy 4-digit PINs.** The 6-digit rule belongs to user creation and editing; `/auth/login`
+  must never validate length.
+- **`requireAdmin()` depends on the `refreshToken` cookie**, not on the already-validated JWT
+  principal.
+- **Uploads are unauthenticated only before initial setup**, and the client filename is discarded
+  (only the extension survives), so there is no traversal.
+- **`POST /products/stock` is guarded by `orders_create`**, not by `products_update`.
+- **The checkout discount check is an inline `requirePermission`**, not a route decorator.
+- **Checkout idempotency**: replaying the same `paymentHash` returns the original sale (200), it
+  does not create a second one (201). An unsettled invoice answers 202 `pending`, not a sale.
+- **Store order cancellation** applies only to `open` orders with no table.
 
-## Bugs encontrados y corregidos
+## Bugs found and fixed
 
-Los tres los destapó la cobertura nueva; los tres eran fallos reales en producción.
+All three were surfaced by the new coverage, and all three were real production failures.
 
-1. **`GET /orders/{id}/complete` devolvía 500.** `CompleteOrder` cruzaba el límite HTTP sin
-   `@Serializable`. El endpoint nunca funcionó.
-2. **`POST /orders/with-dishes` devolvía 500.** Mismo motivo, en `OrderWithDishesRequest`.
-3. **`PUT /orders/{id}/calculate-total` devolvía 500.** Respondía un
-   `mapOf("message" to String, "total" to Double)`, es decir un `Map<String, Any>` que kotlinx no
-   sabe serializar. Sustituido por un `OrderTotalResponse` serializable que conserva el mismo JSON.
+1. **`GET /orders/{id}/complete` returned 500.** `CompleteOrder` crossed the HTTP boundary without
+   `@Serializable`. The endpoint had never worked.
+2. **`POST /orders/with-dishes` returned 500.** Same cause, in `OrderWithDishesRequest`.
+3. **`PUT /orders/{id}/calculate-total` returned 500.** It responded with
+   `mapOf("message" to String, "total" to Double)` — a `Map<String, Any>` kotlinx cannot serialize.
+   Replaced by a serializable `OrderTotalResponse` that keeps the same JSON shape.
 
-**Patrón a vigilar**: un modelo sin `@Serializable` o un `Map` heterogéneo en un `respond`/`receive`
-compila sin problemas y solo falla en tiempo de ejecución. Los `Map` homogéneos
-(`Map<String,String>`, `Map<String,Int>`) sí serializan. Queda un caso sin verificar fuera del
-alcance de esta pasada: `api/Routing.kt:19`, `mapOf("currency_id" to null)` en la ruta pública
-`/base-currency`.
+**Pattern to watch for**: a model without `@Serializable`, or a heterogeneous `Map`, inside a
+`respond`/`receive` compiles fine and only fails at runtime. Homogeneous maps
+(`Map<String,String>`, `Map<String,Int>`) do serialize. One case is still unverified, outside the
+scope of this pass: `api/Routing.kt:19`, `mapOf("currency_id" to null)` on the public
+`/base-currency` route.
 
-## Pendiente, por orden de urgencia
+## Pending, in order of urgency
 
-### P2 — Superficie admin/config
+### P2 — Admin and config surface
 
-| Fichero | Cobertura | Sin cubrir | Por qué |
+| File | Coverage | Uncovered | Why |
 |---|---|---|---|
-| `api/AdminNotifications.kt` | 2.5% | 119 | 9 endpoints admin más suscripciones web-push |
-| `api/InitialSetup.kt` | 21.0% | 79 | Sin auth; crea el primer admin y recarga el backend lightning |
-| `api/Reports.kt` | 0.0% | 71 | El servicio está al 96%, las rutas a cero |
-| `api/Shifts.kt` | 0.0% | 66 | `POST /{id}/close` cuelga de `shifts_create`, no de `shifts_update` |
-| `api/Users.kt` | 34.0% | 64 | `/public` sin auth; `requireAdmin()` en línea al tocar rol admin |
-| `api/Roles.kt` | 32.9% | 51 | `PUT /{id}/permissions` dentro del bloque admin de `roles_update` |
-| `api/Handler.kt` | 50.5% | 54 | **Rama al 5.3%**: ~30 mapeos de excepción casi sin ejercitar |
-| `api/Printers.kt` | 0.0% | 56 | Lecturas con `auth-jwt` a secas, mutaciones con `printer_update` |
+| `api/AdminNotifications.kt` | 2.5% | 119 | 9 admin endpoints plus web-push subscriptions |
+| `api/InitialSetup.kt` | 21.0% | 79 | No auth; creates the first admin and reloads the lightning backend |
+| `api/Reports.kt` | 0.0% | 71 | The service is at 96%, the routes at zero |
+| `api/Shifts.kt` | 0.0% | 66 | `POST /{id}/close` hangs off `shifts_create`, not `shifts_update` |
+| `api/Users.kt` | 34.0% | 64 | `/public` has no auth; inline `requireAdmin()` when the admin role is involved |
+| `api/Roles.kt` | 32.9% | 51 | `PUT /{id}/permissions` sits inside the `roles_update` admin block |
+| `api/Handler.kt` | 50.5% | 54 | **Branch at 5.3%**: ~30 exception mappings barely exercised |
+| `api/Printers.kt` | 0.0% | 56 | Reads use plain `auth-jwt`, mutations use `printer_update` |
 
-`Handler.kt` merece atención propia: es el que decide qué status ve el cliente ante cada
-excepción, y un refactor que mueva excepciones de sitio lo rompe en silencio. Sube algo de rebote
-con cada test de ruta, pero su cobertura de rama sigue en 5.3%.
+`Handler.kt` deserves attention of its own: it decides which status the client sees for every
+exception, and a refactor that moves exceptions around breaks it silently. It rises incidentally
+with each route test, but its branch coverage is still 5.3%.
 
-### P3 — CRUD de cola larga
+### P3 — CRUD long tail
 
 `Categories.kt` (59), `Tables.kt` (53), `Ingredients.kt` (53), `Suppliers.kt` (45), `Spaces.kt`
-(43), `Tickets.kt` (43), `Dishes.kt` (41), `TicketTemplates.kt` (34), `Currency.kt` (24), todos al
-0%. ~395 líneas. Mecánico: un fichero de test por módulo siguiendo el patrón ya establecido.
+(43), `Tickets.kt` (43), `Dishes.kt` (41), `TicketTemplates.kt` (34), `Currency.kt` (24), all at
+0%. ~395 lines. Mechanical: one test file per module following the established pattern.
 
-### P4 — Servicios con rama floja
+### P4 — Services with weak branch coverage
 
-| Fichero | Línea | Rama |
+| File | Line | Branch |
 |---|---|---|
 | `services/PrintService.kt` | 18.2% | 7.5% |
 | `services/AuthService.kt` | 42.0% | 25.0% |
@@ -140,76 +141,84 @@ con cada test de ruta, pero su cobertura de rama sigue en 5.3%.
 | `nwc/NwcClient.kt` | 19.2% | — |
 | `nwc/NostrEvent.kt` | 0.0% | — |
 
-`NostrEvent.createSignedEvent` (firma Schnorr) y `NwcClient` (cifrado NIP-04/NIP-47) están sin
-cubrir y son criptografía sobre el camino del dinero cuando NWC es el backend activo.
+`NostrEvent.createSignedEvent` (Schnorr signing) and `NwcClient` (NIP-04/NIP-47 encryption) are
+uncovered, and they are cryptography on the money path whenever NWC is the active backend.
 
-### No merece la pena
+### Not worth it
 
-`Ambrosia.kt` (175 líneas, CLI Clikt), `config/InjectLogs.kt`, `config/SeedGenerator.kt`,
-`config/AppConfig.kt`, `models/` restante (serialización), `db/tables/` (declarativo).
+`Ambrosia.kt` (175 lines, Clikt CLI), `config/InjectLogs.kt`, `config/SeedGenerator.kt`,
+`config/AppConfig.kt`, the rest of `models/` (serialization), `db/tables/` (declarative).
 
-## Cómo escribir un test de ruta
+## How to write a route test
 
-La infraestructura vive en `app/src/test/kotlin/pos/ambrosia/utils/`.
+The infrastructure lives in `app/src/test/kotlin/pos/ambrosia/utils/`.
 
-Casi todos los módulos de `api/` ya separan la construcción de dependencias de la definición de
-rutas, y ese seam es lo que hace el test barato:
+Almost every module in `api/` already separates dependency construction from route definition, and
+that seam is what makes the test cheap:
 
 ```kotlin
-fun Application.configureOrders() { /* construye servicios reales */ }
-fun Route.orders(orderService: OrderService) { /* rutas */ }
+fun Application.configureOrders() { /* builds real services */ }
+fun Route.orders(orderService: OrderService) { /* routes */ }
 ```
 
-El test monta el `fun Route.xxx(...)` con dependencias controladas y se salta el `configureXxx()`:
+The test mounts `fun Route.xxx(...)` with controlled dependencies and skips `configureXxx()`:
 
 ```kotlin
 private fun ordersTest(block: suspend ApplicationTestBuilder.(AuthCookies) -> Unit) =
-    routeTest {                                   // SQLite temporal + cleanup garantizado
-        val auth = installAdminAuth()             // instala auth-jwt y auth-jwt-wallet, siembra usuario
+    routeTest {
+        val auth = installAdminAuth()
         grantPermissions("admin-test-role", "orders_read", "orders_create")
-        installRoutes {                           // ContentNegotiation + handler() + el módulo
+        installRoutes {
             routing { route("/orders") { orders(OrderService()) } }
         }
         block(auth)
     }
 ```
 
-Piezas disponibles:
+`routeTest` opens the temporary SQLite database and guarantees cleanup; `installAdminAuth` installs
+both auth schemes and seeds a user; `installRoutes` adds `ContentNegotiation` and `handler()` on top
+of the module under test.
 
-| Helper | Fichero | Para qué |
+Available pieces:
+
+| Helper | File | Purpose |
 |---|---|---|
-| `routeTest { }` | `RouteTestSupport.kt` | Abre la BD temporal y la limpia en `finally` |
-| `installRoutes { }` | `RouteTestSupport.kt` | `ContentNegotiation` + `handler()` + rutas |
-| `grantPermissions(rol, vararg)` | `RouteTestSupport.kt` | Crea permisos si faltan y los asigna |
-| `jsonBody("…")` | `RouteTestSupport.kt` | `Content-Type` + cuerpo |
-| `installAuthentication()` | `RouteTestSupport.kt` | Solo los esquemas, sin sembrar usuario |
-| `setUserPin` / `setRolePassword` | `RouteTestSupport.kt` | Credenciales con hash PBKDF2 real |
-| `installAdminAuth` / `installNonAdminAuth` / `installWalletAuth` | `AdminAuthTestFixture.kt` | Cookies de sesión |
-| `withAuthCookies` / `withAccessTokenOnly` | `AdminAuthTestFixture.kt` | Con o sin cookie de wallet |
-| `ExposedTestDb.seedX(...)` | `ExposedTestDb.kt` | ~35 factorías de datos |
-| `FakeLightningBackend` | `FakeLightningBackend.kt` | Backend lightning falso, registra llamadas |
+| `routeTest { }` | `RouteTestSupport.kt` | Opens the temp database and cleans it up in `finally` |
+| `installRoutes { }` | `RouteTestSupport.kt` | `ContentNegotiation` + `handler()` + routes |
+| `grantPermissions(role, vararg)` | `RouteTestSupport.kt` | Creates missing permissions and assigns them |
+| `jsonBody("…")` | `RouteTestSupport.kt` | `Content-Type` + body |
+| `installAuthenticationWithoutUser()` | `RouteTestSupport.kt` | Schemes only, seeds no user |
+| `setUserPin` / `setRolePassword` | `RouteTestSupport.kt` | Credentials with a real PBKDF2 hash |
+| `installAdminAuth` / `installNonAdminAuth` / `installWalletAuth` | `AdminAuthTestFixture.kt` | Session cookies |
+| `withAuthCookies` / `withAccessTokenOnly` | `AdminAuthTestFixture.kt` | With or without the wallet cookie |
+| `ExposedTestDb.seedX(...)` | `ExposedTestDb.kt` | ~35 data factories |
+| `FakeLightningBackend` | `FakeLightningBackend.kt` | Fake lightning backend, records calls |
 
-Convenciones del repo: JUnit 4 (`org.junit.Before`/`After`) con `kotlin.test.Test`, `runBlocking`
-(no `runTest`), mockito-kotlin (no MockK), nombres de test entre backticks en inglés, paquete
+`installAuthenticationWithoutUser` must not be combined with `installAdminAuth` or
+`installWalletAuth`: those install the authentication plugin themselves, and installing it twice
+fails.
+
+Repo conventions: JUnit 4 (`org.junit.Before`/`After`) with `kotlin.test.Test`, `runBlocking` (not
+`runTest`), mockito-kotlin (not MockK), backtick-quoted test names in English, package
 `pos.ambrosia.utest`.
 
-Dos avisos de estado global, que es donde se rompe el aislamiento entre tests:
+Two global-state warnings, which is where isolation between tests breaks:
 
-- `LoginRateLimiter` (`api/Authorize.kt`) es un objeto de proceso cacheado por IP, y en
-  `testApplication` todas las peticiones comparten dirección. Llama a `LoginRateLimiter.resetAll()`
-  en el `@Before`. A largo plazo lo correcto es inyectarlo en `Route.auth(...)`.
-- `ActiveLightningBackend` es un singleton. Ponlo con `set(FakeLightningBackend())` y suéltalo con
-  `closeActive()` en el `@After`.
+- `LoginRateLimiter` (`api/Authorize.kt`) is a process-wide object keyed by IP, and under
+  `testApplication` every request shares one address. Call `LoginRateLimiter.resetAll()` in
+  `@Before`. The right long-term fix is to inject it into `Route.auth(...)`.
+- `ActiveLightningBackend` is a singleton. Set it with `set(FakeLightningBackend())` and release it
+  with `closeActive()` in `@After`.
 
-Los ficheros de test anteriores a esta pasada siguen con su pareja `@Before`/`@After` a mano; no se
-migraron. Los nuevos usan `routeTest`.
+Test files written before this pass still have their hand-written `@Before`/`@After` pair; they
+were not migrated. New ones use `routeTest`.
 
-## Comandos
+## Commands
 
 ```bash
-./gradlew test                              # suite completa
-./gradlew test --tests "WalletRoutesTest"   # una clase
+./gradlew test                              # full suite
+./gradlew test --tests "WalletRoutesTest"   # a single class
 ./gradlew koverHtmlReport                   # app/build/reports/kover/html/index.html
-./gradlew :app:koverVerify                  # el ratchet que corre en CI
-./gradlew ktlintFormat                      # obligatorio antes del PR
+./gradlew :app:koverVerify                  # the ratchet CI enforces
+./gradlew ktlintFormat                      # required before opening the PR
 ```
