@@ -19,20 +19,20 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class WalletAdminNotificationServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private lateinit var adminNotificationService: AdminNotificationService
     private lateinit var walletAdminNotificationService: WalletAdminNotificationService
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
         adminNotificationService = AdminNotificationService()
         walletAdminNotificationService = WalletAdminNotificationService(adminNotificationService)
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

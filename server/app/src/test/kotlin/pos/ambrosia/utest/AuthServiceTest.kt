@@ -18,16 +18,16 @@ class AuthServiceTest {
             config = MapApplicationConfig("secret" to "auth-service-test-secret")
         }
     private val service = AuthService(testEnv)
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

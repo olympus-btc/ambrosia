@@ -25,16 +25,16 @@ class UsersServiceTest {
             config = MapApplicationConfig("secret" to "users-service-test-secret")
         }
     private val service = UsersService(testEnv)
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

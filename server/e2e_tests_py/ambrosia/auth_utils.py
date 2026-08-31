@@ -9,7 +9,6 @@ import httpx
 from ambrosia.api_utils import assert_status_code
 from ambrosia.http_client import AmbrosiaHttpClient
 
-# Default test user credentials
 DEFAULT_TEST_USER = {"name": "cooluser1", "pin": "000000"}
 
 

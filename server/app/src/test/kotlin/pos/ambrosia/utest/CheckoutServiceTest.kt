@@ -37,19 +37,19 @@ private class FakePaymentVerifier : PaymentVerifier {
 }
 
 class CheckoutServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val variantService = ProductVariantService()
     private val verifier = FakePaymentVerifier()
     private val service = CheckoutService(verifier)
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     private fun seedUser(): String {
