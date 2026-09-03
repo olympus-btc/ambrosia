@@ -21,17 +21,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ShiftServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = ShiftService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     private fun seedUser(): String {

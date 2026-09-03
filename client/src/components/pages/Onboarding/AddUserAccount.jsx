@@ -72,7 +72,7 @@ export function UserAccountStep({ data, onChange }) {
               label={t("step2.fields.userPinLabel")}
               type={showPin ? "text" : "password"}
               placeholder={t("step2.fields.userPinPlaceholder")}
-              maxLength={4}
+              maxLength={6}
               value={data.userPin}
               onChange={(e) => {
                 const onlyNumbers = e.target.value.replace(/\D/g, "");

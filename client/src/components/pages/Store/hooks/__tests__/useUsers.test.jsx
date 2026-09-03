@@ -98,7 +98,7 @@ describe("useUsers", () => {
     await act(async () => {
       addUserResponse = await handlers.addUser({
         userName: "Luis",
-        userPin: "1234",
+        userPin: "123456",
         userRole: 2,
         userEmail: "luis@example.com",
         userPhone: "555-0101",
@@ -113,7 +113,7 @@ describe("useUsers", () => {
       },
       body: JSON.stringify({
         name: "Luis",
-        pin: "1234",
+        pin: "123456",
         role: 2,
         email: "luis@example.com",
         phone: "555-0101",
@@ -141,7 +141,7 @@ describe("useUsers", () => {
         userRole: 1,
         userEmail: "paula@example.com",
         userPhone: "555-0202",
-        userPin: "7777",
+        userPin: "777777",
       });
     });
 
@@ -155,7 +155,7 @@ describe("useUsers", () => {
         roleId: 1,
         email: "paula@example.com",
         phone: "555-0202",
-        pin: "7777",
+        pin: "777777",
       }),
       skipForbiddenRedirect: true,
     });

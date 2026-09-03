@@ -1,5 +1,6 @@
 package pos.ambrosia.utils
 
+import io.ktor.server.application.ApplicationEnvironment
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -248,6 +249,29 @@ object ExposedTestDb {
                         this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
                     }.id.value
                     .toString()
+        }
+
+    fun seedUserWithPin(
+        name: String,
+        pin: String,
+        env: ApplicationEnvironment,
+        roleId: String? = null,
+    ): String =
+        transaction {
+            val generatedId = UUID.randomUUID()
+            val hashedPin = SecurePinProcessor.hashPinForStorage(pin.toCharArray(), generatedId.toString(), env)
+            UserEntity
+                .new(generatedId) {
+                    this.name = name
+                    this.pin = SecurePinProcessor.byteArrayToBase64(hashedPin)
+                    this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
+                }.id.value
+                .toString()
+        }
+
+    fun readStoredPin(userId: String): String? =
+        transaction {
+            UserEntity.findById(UUID.fromString(userId))?.pin
         }
 
     fun seedCategory(

@@ -26,19 +26,19 @@ class TokenServiceTest {
             config = testJwtConfig()
         }
     private val service = TokenService(environment)
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     private fun confirmationTokenService(secret: String): TokenService =
         TokenService(applicationEnvironment { config = confirmationTokenConfig(secret) })
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

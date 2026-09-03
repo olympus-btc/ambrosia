@@ -34,7 +34,7 @@ const roles = [
 
 const baseData = {
   userName: "John Doe",
-  userPin: "1234",
+  userPin: "123456",
   userPhone: "1234567890",
   userEmail: "john@test.com",
   userRole: "seller",
@@ -224,7 +224,7 @@ describe("AddUsersModal", () => {
 
     expect(screen.getByLabelText("users.modal.userNameLabel")).toHaveAttribute("required");
     expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveAttribute("required");
-    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveAttribute("minlength", "4");
+    expect(screen.getByLabelText("users.modal.userPinLabel")).toHaveAttribute("minlength", "6");
   });
 
   it("toggles pin visibility and closes on cancel", () => {

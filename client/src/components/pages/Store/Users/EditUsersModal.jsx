@@ -111,8 +111,8 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
               label={userTranslations("users.modal.userPinLabel")}
               type={showPin ? "text" : "password"}
               placeholder={userTranslations("users.modal.userPinPlaceholder")}
-              minLength={4}
-              maxLength={4}
+              minLength={6}
+              maxLength={6}
               errorMessage={userTranslations("users.modal.userPinError")}
               value={data.userPin ?? ""}
               onChange={(event) => {

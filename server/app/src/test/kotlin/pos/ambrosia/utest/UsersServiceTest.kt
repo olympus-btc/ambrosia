@@ -1,11 +1,12 @@
 package pos.ambrosia.utest
 
-import io.ktor.server.application.ApplicationEnvironment
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.engine.applicationEnvironment
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
-import org.mockito.kotlin.mock
 import pos.ambrosia.models.UpdateUserRequest
+import pos.ambrosia.models.User
 import pos.ambrosia.services.UsersService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
@@ -13,22 +14,27 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class UsersServiceTest {
-    private val mockEnv: ApplicationEnvironment = mock()
-    private val service = UsersService(mockEnv)
-    private lateinit var dbFile: File
+    private val testEnv =
+        applicationEnvironment {
+            config = MapApplicationConfig("secret" to "users-service-test-secret")
+        }
+    private val service = UsersService(testEnv)
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test
@@ -81,6 +87,54 @@ class UsersServiceTest {
             assertNotNull(user)
             assertEquals("****", user.pin)
             assertEquals("****", user.refreshToken)
+        }
+    }
+
+    @Test
+    fun `addUser rejects a pin shorter than six digits`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "short-pin-user", pin = "12345", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a pin longer than six digits`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "long-pin-user", pin = "1234567", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a legacy four digit pin`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "legacy-pin-user", pin = "1234", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a non numeric pin`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "non-numeric-pin-user", pin = "12ab56", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser accepts a six digit pin and stores it hashed`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            val userId = service.addUser(User(name = "valid-pin-user", pin = "123456", role = roleId))
+
+            assertNotNull(userId)
+            assertNotEquals("123456", ExposedTestDb.readStoredPin(userId))
         }
     }
 

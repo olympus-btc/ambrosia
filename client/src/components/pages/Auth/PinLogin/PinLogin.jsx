@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -13,9 +13,11 @@ import { getPublicUsers } from "@/services/authService";
 
 import { BusinessHeader } from "./BusinessHeader";
 import { EmployeeSelect } from "./EmployeeSelect";
+import { PinDeprecationModal } from "./PinDeprecationModal";
 import { PinPad } from "./PinPad";
 
-const PIN_LENGTH = 4;
+const PIN_MAX_LENGTH = 6;
+const PIN_MIN_LENGTH = 4;
 
 export default function PinLogin() {
   const pinLoginTranslations = useTranslations("pinLogin");
@@ -24,6 +26,8 @@ export default function PinLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [lockedUntil, setLockedUntil] = useState(null);
+  const [showPinDeprecationModal, setShowPinDeprecationModal] = useState(false);
+  const isPinDeprecationPendingRef = useRef(false);
 
   useEffect(() => {
     const storedLockoutUntil = localStorage.getItem("pinLockoutUntil");
@@ -34,13 +38,14 @@ export default function PinLogin() {
   const [employees, setEmployees] = useState([]);
   const router = useRouter();
   const { login, isAuth, isLoading: isAuthLoading } = useAuth();
-  const { config } = useConfigurations();
+  const { config, businessType } = useConfigurations();
 
   useEffect(() => {
+    if (isPinDeprecationPendingRef.current || showPinDeprecationModal) return;
     if (!isAuthLoading && isAuth) {
       router.replace("/");
     }
-  }, [isAuth, isAuthLoading, router]);
+  }, [isAuth, isAuthLoading, showPinDeprecationModal, router]);
 
   useEffect(() => {
     async function fetchEmployees() {
@@ -64,7 +69,7 @@ export default function PinLogin() {
   }, [pinLoginTranslations]);
 
   const handleNumberClick = (number) => {
-    if (pin.length < PIN_LENGTH) {
+    if (pin.length < PIN_MAX_LENGTH) {
       setPin((prev) => prev + number);
       setLoginErrorMessage("");
     }
@@ -88,7 +93,7 @@ export default function PinLogin() {
       return;
     }
 
-    if (pin.length < PIN_LENGTH) {
+    if (pin.length < PIN_MIN_LENGTH) {
       setLoginErrorMessage(pinLoginTranslations("errorMessages.enterPin"));
       return;
     }
@@ -97,6 +102,8 @@ export default function PinLogin() {
     setLoginErrorMessage("");
 
     const employee = employees.find((currentEmployee) => currentEmployee.id === selectedUser);
+    const isPinDeprecated = pin.length < PIN_MAX_LENGTH;
+    isPinDeprecationPendingRef.current = isPinDeprecated;
 
     try {
       await login({ name: employee.name, pin });
@@ -109,8 +116,13 @@ export default function PinLogin() {
       setSelectedUser("");
       setLockedUntil(null);
       localStorage.removeItem("pinLockoutUntil");
-      router.push("/");
+      if (isPinDeprecated) {
+        setShowPinDeprecationModal(true);
+      } else {
+        router.push("/");
+      }
     } catch (loginError) {
+      isPinDeprecationPendingRef.current = false;
       if (loginError?.status === 429) {
         const lockoutUntilTimestamp = Date.now() + (loginError.retryAfter ?? 180) * 1000;
         setLockedUntil(lockoutUntilTimestamp);
@@ -125,6 +137,18 @@ export default function PinLogin() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoToUsers = () => {
+    isPinDeprecationPendingRef.current = false;
+    setShowPinDeprecationModal(false);
+    router.push(businessType ? `/${businessType}/users` : "/");
+  };
+
+  const handleDeprecationLater = () => {
+    isPinDeprecationPendingRef.current = false;
+    setShowPinDeprecationModal(false);
+    router.push("/");
   };
 
   return (
@@ -159,6 +183,12 @@ export default function PinLogin() {
           />
         </CardBody>
       </Card>
+
+      <PinDeprecationModal
+        isOpen={showPinDeprecationModal}
+        onGoToUsers={handleGoToUsers}
+        onLater={handleDeprecationLater}
+      />
     </div>
   );
 }

@@ -12,7 +12,7 @@ const NUMBER_PAD = [
 ];
 
 export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDelete, onClear, onLogin, onLockoutExpired }) {
-  const t = useTranslations("pinLogin");
+  const pinLoginTranslations = useTranslations("pinLogin");
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   useEffect(() => {
@@ -53,18 +53,18 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
   return (
     <>
       <Input
-        label={t("pinLabel")}
+        label={pinLoginTranslations("pinLabel")}
         type="password"
         value={pin}
         readOnly
-        placeholder="----"
-        maxLength={4}
+        placeholder="------"
+        maxLength={6}
         isInvalid={!!error && !isLocked}
       />
 
       {isLocked ? (
         <div className="text-warning text-base text-center font-semibold bg-warning-50 p-3 rounded-lg border border-warning-200">
-          {t("lockout.message")} {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
+          {pinLoginTranslations("lockout.message")} {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
         </div>
       ) : error ? (
         <div className="text-danger text-base text-center font-semibold bg-danger-50 p-3 rounded-lg border border-danger-200">
@@ -97,7 +97,7 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
           startContent={<Delete className="w-4 h-4" />}
           className="border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {t("eraseButton")}
+          {pinLoginTranslations("eraseButton")}
         </Button>
         <Button
           variant="bordered"
@@ -107,7 +107,7 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
           startContent={<Trash2 className="w-4 h-4" />}
           className="border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {t("clearButton")}
+          {pinLoginTranslations("clearButton")}
         </Button>
       </div>
 
@@ -120,7 +120,7 @@ export function PinPad({ pin, error, isLoading, lockedUntil, onNumberClick, onDe
         isLoading={isLoading}
         startContent={!isLoading && <LogIn className="w-5 h-5" />}
       >
-        {isLoading ? t("loading") : t("loginButton")}
+        {isLoading ? pinLoginTranslations("loading") : pinLoginTranslations("loginButton")}
       </Button>
     </>
   );

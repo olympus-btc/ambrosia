@@ -93,7 +93,7 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 "businessType": "store",
                 "userName": "cooluser1",
                 "userPassword": "password123",
-                "userPin": "0000",
+                "userPin": "000000",
                 "businessName": "Test Store",
                 "businessAddress": "123 Test St",
                 "businessPhone": "1234567890",
@@ -185,7 +185,7 @@ async def client_factory(server_url: str, admin_client):
         uid = str(uuid.uuid4())[:8]
         role_name = f"role_{uid}"
         user_name = f"user_{uid}"
-        user_pin = "1234"
+        user_pin = "123456"
 
         role_id = await create_role(admin_client, role_name)
         roles.append(role_id)

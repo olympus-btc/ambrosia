@@ -113,13 +113,13 @@ class TestUsersPermissions:
         """POST /users returns 403 without users_create permission."""
         no_permission = await client_factory(permissions=BASELINE_PERMISSIONS)
         response = await no_permission.post(
-            "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
+            "/users", json={"name": "x", "pin": "000000", "role": DUMMY_ID}
         )
         assert_status_code(response, 403, "POST /users should require users_create")
 
         with_permission = await client_factory(permissions=["users_create"])
         response = await with_permission.post(
-            "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
+            "/users", json={"name": "x", "pin": "000000", "role": DUMMY_ID}
         )
         assert response.status_code != 403, "users_create should allow POST /users"
         logger.info("✓ users_create correctly gates POST /users")
@@ -129,13 +129,13 @@ class TestUsersPermissions:
         """PUT /users/{id} returns 403 without users_update permission."""
         no_permission = await client_factory(permissions=BASELINE_PERMISSIONS)
         response = await no_permission.put(
-            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
+            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "000000"}
         )
         assert_status_code(response, 403, "PUT /users/{id} should require users_update")
 
         with_permission = await client_factory(permissions=["users_update"])
         response = await with_permission.put(
-            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
+            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "000000"}
         )
         assert response.status_code != 403, "users_update should allow PUT /users/{id}"
         logger.info("✓ users_update correctly gates PUT /users/{id}")

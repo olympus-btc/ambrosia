@@ -154,7 +154,7 @@ class UserPrivilegeEscalationRouteTest {
                 client.post("/users") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"name":"new-admin","pin":"1234","role":"$adminRoleId"}""")
+                    setBody("""{"name":"new-admin","pin":"123456","role":"$adminRoleId"}""")
                 }
 
             assertEquals(HttpStatusCode.Forbidden, response.status)

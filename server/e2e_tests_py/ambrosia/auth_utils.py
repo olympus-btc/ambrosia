@@ -9,8 +9,7 @@ import httpx
 from ambrosia.api_utils import assert_status_code
 from ambrosia.http_client import AmbrosiaHttpClient
 
-# Default test user credentials
-DEFAULT_TEST_USER = {"name": "cooluser1", "pin": "0000"}
+DEFAULT_TEST_USER = {"name": "cooluser1", "pin": "000000"}
 
 
 def get_tokens_from_response(response: httpx.Response) -> tuple[str, str]:

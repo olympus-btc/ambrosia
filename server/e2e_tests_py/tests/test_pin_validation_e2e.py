@@ -1,8 +1,10 @@
 """End-to-end tests for user PIN and name validation.
 
-Tests that the server enforces the 4-digit minimum PIN requirement
+Tests that the server enforces the exactly-6-digit PIN requirement
 on both the POST /users (create) and PUT /users/{id} (update) endpoints,
-and that blank name/PIN are rejected on create.
+and that blank name/PIN are rejected on create. On update, a blank PIN is
+allowed and means "keep the existing PIN" (backward compatible with legacy
+4-digit PINs, which continue to authenticate at login).
 """
 
 import logging
@@ -31,37 +33,42 @@ class TestUserPinValidation:
     async def existing_user(self, admin_client, role_id):
         """Create a temporary user for PUT tests and clean it up after."""
         uid = str(uuid.uuid4())[:8]
-        user_id = await create_user(admin_client, f"test_user_{uid}", "1234", role_id)
+        user_id = await create_user(admin_client, f"test_user_{uid}", "123456", role_id)
         yield user_id
         await admin_client.delete(f"/users/{user_id}")
 
     @pytest.mark.asyncio
-    async def test_create_user_with_1_digit_pin_fails(self, admin_client, role_id):
-        """POST /users with a 1-digit PIN should return 400."""
+    @pytest.mark.parametrize("pin", ["1", "123", "12345", "1234567"])
+    async def test_create_user_with_wrong_length_pin_fails(
+        self, admin_client, role_id, pin
+    ):
+        """POST /users with a PIN that is not 6 digits should return 400."""
         response = await admin_client.post(
             "/users",
             json={
                 "name": f"user_{uuid.uuid4().hex[:8]}",
-                "pin": "1",
+                "pin": pin,
                 "role": role_id,
             },
         )
-        assert_status_code(response, 400, "1-digit PIN should be rejected on create")
-        logger.info("✓ 1-digit PIN correctly rejected on create")
+        assert_status_code(
+            response, 400, f"{len(pin)}-digit PIN should be rejected on create"
+        )
+        logger.info("✓ %d-digit PIN correctly rejected on create", len(pin))
 
     @pytest.mark.asyncio
-    async def test_create_user_with_3_digit_pin_fails(self, admin_client, role_id):
-        """POST /users with a 3-digit PIN should return 400."""
+    async def test_create_user_with_non_digit_pin_fails(self, admin_client, role_id):
+        """POST /users with a 6-char non-digit PIN should return 400."""
         response = await admin_client.post(
             "/users",
             json={
                 "name": f"user_{uuid.uuid4().hex[:8]}",
-                "pin": "123",
+                "pin": "12ab56",
                 "role": role_id,
             },
         )
-        assert_status_code(response, 400, "3-digit PIN should be rejected on create")
-        logger.info("✓ 3-digit PIN correctly rejected on create")
+        assert_status_code(response, 400, "Non-digit PIN should be rejected on create")
+        logger.info("✓ Non-digit PIN correctly rejected on create")
 
     @pytest.mark.asyncio
     async def test_create_user_with_blank_pin_fails(self, admin_client, role_id):
@@ -84,7 +91,7 @@ class TestUserPinValidation:
             "/users",
             json={
                 "name": "",
-                "pin": "1234",
+                "pin": "123456",
                 "role": role_id,
             },
         )
@@ -100,40 +107,32 @@ class TestUserPinValidation:
 
     @pytest.mark.asyncio
     async def test_create_user_with_valid_pin_succeeds(self, admin_client, role_id):
-        """POST /users with a valid 4-digit PIN should return 201."""
+        """POST /users with a valid 6-digit PIN should return 201."""
         response = await admin_client.post(
             "/users",
             json={
                 "name": f"user_{uuid.uuid4().hex[:8]}",
-                "pin": "1234",
+                "pin": "123456",
                 "role": role_id,
             },
         )
         assert_status_code(
-            response, 201, "Valid 4-digit PIN should be accepted on create"
+            response, 201, "Valid 6-digit PIN should be accepted on create"
         )
         await admin_client.delete(f"/users/{response.json()['id']}")
-        logger.info("✓ Valid 4-digit PIN correctly accepted on create")
+        logger.info("✓ Valid 6-digit PIN correctly accepted on create")
 
     @pytest.mark.asyncio
-    async def test_update_user_with_1_digit_pin_fails(
-        self, admin_client, existing_user
+    @pytest.mark.parametrize("pin", ["1", "123", "12345", "1234567"])
+    async def test_update_user_with_wrong_length_pin_fails(
+        self, admin_client, existing_user, pin
     ):
-        """PUT /users/{id} with a 1-digit PIN should return 400."""
-        response = await admin_client.put(f"/users/{existing_user}", json={"pin": "1"})
-        assert_status_code(response, 400, "1-digit PIN should be rejected on update")
-        logger.info("✓ 1-digit PIN correctly rejected on update")
-
-    @pytest.mark.asyncio
-    async def test_update_user_with_3_digit_pin_fails(
-        self, admin_client, existing_user
-    ):
-        """PUT /users/{id} with a 3-digit PIN should return 400."""
-        response = await admin_client.put(
-            f"/users/{existing_user}", json={"pin": "123"}
+        """PUT /users/{id} with a PIN that is not 6 digits should return 400."""
+        response = await admin_client.put(f"/users/{existing_user}", json={"pin": pin})
+        assert_status_code(
+            response, 400, f"{len(pin)}-digit PIN should be rejected on update"
         )
-        assert_status_code(response, 400, "3-digit PIN should be rejected on update")
-        logger.info("✓ 3-digit PIN correctly rejected on update")
+        logger.info("✓ %d-digit PIN correctly rejected on update", len(pin))
 
     @pytest.mark.asyncio
     async def test_update_user_with_blank_pin_succeeds(
@@ -152,11 +151,11 @@ class TestUserPinValidation:
     async def test_update_user_with_valid_pin_succeeds(
         self, admin_client, existing_user
     ):
-        """PUT /users/{id} with a valid 4-digit PIN should return 200."""
+        """PUT /users/{id} with a valid 6-digit PIN should return 200."""
         response = await admin_client.put(
-            f"/users/{existing_user}", json={"pin": "5678"}
+            f"/users/{existing_user}", json={"pin": "567890"}
         )
         assert_status_code(
-            response, 200, "Valid 4-digit PIN should be accepted on update"
+            response, 200, "Valid 6-digit PIN should be accepted on update"
         )
-        logger.info("✓ Valid 4-digit PIN correctly accepted on update")
+        logger.info("✓ Valid 6-digit PIN correctly accepted on update")
