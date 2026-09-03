@@ -26,7 +26,7 @@ import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.InvalidTokenException
 import java.util.concurrent.ConcurrentHashMap
 
-private object LoginRateLimiter {
+internal object LoginRateLimiter {
     private data class IpState(
         val failureCount: Int,
         val blockUntil: Long,
@@ -90,6 +90,10 @@ private object LoginRateLimiter {
 
     fun reset(ip: String) {
         state.remove(ip)
+    }
+
+    internal fun resetAll() {
+        state.clear()
     }
 }
 

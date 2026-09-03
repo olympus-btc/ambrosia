@@ -17,28 +17,62 @@ import pos.ambrosia.models.phoenix.PhoenixBalance
 import pos.ambrosia.services.LightningBackend
 
 class FakeLightningBackend(
-    private val label: String,
+    private val label: String = "fake-backend",
 ) : LightningBackend {
     var closed = false
         private set
 
+    var balanceSat: Long = 0
+    var failNextPayment: Exception? = null
+    var incomingPaymentIsPaid: Boolean = true
+
+    var incomingPayments: List<IncomingPayment> = emptyList()
+    var outgoingPayments: List<OutgoingPayment> = emptyList()
+
+    val createInvoiceRequests = mutableListOf<CreateInvoiceRequest>()
+    val payInvoiceRequests = mutableListOf<PayInvoiceRequest>()
+    val payOnchainRequests = mutableListOf<PayOnchainRequest>()
+    val closeChannelRequests = mutableListOf<CloseChannelRequest>()
+
     override suspend fun getNodeInfo(): NodeInfo =
         NodeInfo(nodeId = label, channels = emptyList(), chain = "test", blockHeight = 0, version = label)
 
-    override suspend fun getBalance(): PhoenixBalance = PhoenixBalance(balanceSat = 0, feeCreditSat = 0)
+    override suspend fun getBalance(): PhoenixBalance = PhoenixBalance(balanceSat = balanceSat, feeCreditSat = 0)
 
     override suspend fun getSeed(): String = label
 
-    override suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse =
-        CreateInvoiceResponse(amountSat = request.amountSat, paymentHash = label, serialized = label)
+    override suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse {
+        createInvoiceRequests.add(request)
+        return CreateInvoiceResponse(amountSat = request.amountSat, paymentHash = label, serialized = label)
+    }
 
     override suspend fun createOffer(request: CreateOffer): String = label
 
-    override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse = fakePaymentResponse()
+    override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse {
+        payInvoiceRequests.add(request)
+        failNextPayment?.let { failure ->
+            failNextPayment = null
+            throw failure
+        }
+        return fakePaymentResponse(request.amountSat ?: 0)
+    }
 
-    override suspend fun payOffer(request: PayOfferRequest): PaymentResponse = fakePaymentResponse()
+    override suspend fun payOffer(request: PayOfferRequest): PaymentResponse {
+        failNextPayment?.let { failure ->
+            failNextPayment = null
+            throw failure
+        }
+        return fakePaymentResponse()
+    }
 
-    override suspend fun payOnchain(request: PayOnchainRequest): PaymentResponse = fakePaymentResponse()
+    override suspend fun payOnchain(request: PayOnchainRequest): PaymentResponse {
+        payOnchainRequests.add(request)
+        failNextPayment?.let { failure ->
+            failNextPayment = null
+            throw failure
+        }
+        return fakePaymentResponse(request.amountSat)
+    }
 
     override suspend fun bumpOnchainFees(feerateSatByte: Int): String = label
 
@@ -49,14 +83,14 @@ class FakeLightningBackend(
         offset: Int,
         all: Boolean,
         externalId: String?,
-    ): List<IncomingPayment> = emptyList()
+    ): List<IncomingPayment> = incomingPayments
 
     override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment =
         IncomingPayment(
             type = "incoming_payment",
             subType = "lightning",
             paymentHash = label,
-            isPaid = true,
+            isPaid = incomingPaymentIsPaid,
             receivedSat = 0,
             fees = 0,
             createdAt = 0,
@@ -68,7 +102,7 @@ class FakeLightningBackend(
         limit: Int,
         offset: Int,
         all: Boolean,
-    ): List<OutgoingPayment> = emptyList()
+    ): List<OutgoingPayment> = outgoingPayments
 
     override suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment = fakeOutgoingPayment()
 
@@ -76,15 +110,18 @@ class FakeLightningBackend(
 
     override suspend fun csvExport(request: CsvExport): String = label
 
-    override suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse = CloseChannelResponse(txId = label)
+    override suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse {
+        closeChannelRequests.add(request)
+        return CloseChannelResponse(txId = label)
+    }
 
     override fun close() {
         closed = true
     }
 
-    private fun fakePaymentResponse() =
+    private fun fakePaymentResponse(recipientAmountSat: Long = 0) =
         PaymentResponse(
-            recipientAmountSat = 0,
+            recipientAmountSat = recipientAmountSat,
             routingFeeSat = 0,
             paymentId = label,
             paymentHash = label,
