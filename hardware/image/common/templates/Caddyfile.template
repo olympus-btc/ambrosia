@@ -1,9 +1,56 @@
 {
   local_certs
+  skip_install_trust
+  admin unix//run/caddy-admin/admin.sock
+  pki {
+    ca local {
+      name "Ambrosia __HOSTNAME__"
+      root_cn "Ambrosia __HOSTNAME__ Root CA"
+    }
+  }
+}
+
+(ambrosia_trust) {
+  handle /trust {
+    redir * /trust/ 308
+  }
+  @trust_files path /trust/ /trust/index.html /trust/check.html /trust/metadata.json /trust/ambrosia-ca.crt /trust/ambrosia-ca.pem /trust/ambrosia-ca.mobileconfig
+  handle @trust_files {
+    @unsupported_method not method GET HEAD
+    respond @unsupported_method "Method not allowed" 405
+    @download_crt path /trust/ambrosia-ca.crt
+    @download_pem path /trust/ambrosia-ca.pem
+    @download_profile path /trust/ambrosia-ca.mobileconfig
+    header {
+      Cache-Control "no-store"
+      X-Content-Type-Options "nosniff"
+      Referrer-Policy "no-referrer"
+      Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    }
+    header @download_crt Content-Type application/x-x509-ca-cert
+    header @download_pem Content-Type application/x-pem-file
+    header @download_profile Content-Type application/x-apple-aspen-config
+    uri strip_prefix /trust
+    root * /var/lib/ambrosia/trust
+    file_server
+  }
+  handle /trust/* {
+    respond "Not found" 404
+  }
+}
+
+http://__HOSTNAME__.local {
+  import ambrosia_trust
+  handle {
+    redir https://__HOSTNAME__.local{uri} 308
+  }
 }
 
 https://__HOSTNAME__.local {
   tls internal
-  reverse_proxy /ws/* 127.0.0.1:9154
-  reverse_proxy 127.0.0.1:3000
+  import ambrosia_trust
+  handle {
+    reverse_proxy /ws/* 127.0.0.1:9154
+    reverse_proxy 127.0.0.1:3000
+  }
 }

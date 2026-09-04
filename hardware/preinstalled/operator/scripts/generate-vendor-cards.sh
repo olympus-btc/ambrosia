@@ -86,8 +86,8 @@ if [[ "$CARD_LANG" == "es" ]]; then
     T_SUPPORT_TEXT="Escanea para unirte al chat de soporte en <b>Telegram</b>."
     T_SUPPORT_NOTE="Requiere cuenta de Telegram."
     T_STEP_5_PRE="Abre la cámara del teléfono y <b>escanea el código QR &rarr;</b>"
-    # Step 6 (browser warning) — include the hostname inline
-    T_STEP_6_TEMPLATE='Tu navegador te advertirá que la conexión <b>"no es privada"</b>. Es esperado en una red local y <b>seguro aquí</b>. Toca <b>Avanzado</b> (o <b>Mostrar detalles</b> en Safari), luego <b>Continuar a %s.local</b> o <b>Aceptar el riesgo</b> (varía según el navegador).'
+    # Certificate installation — include the hostname inline
+    T_STEP_6_TEMPLATE='Verifica la huella de la CA de <b>%s.local</b> con la tarjeta de confianza del operador. Instala el certificado siguiendo el asistente y abre HTTPS sin advertencias.'
     T_STEP_7_PRE="Crea tu <b>cuenta de administrador</b> en el asistente. <em>Anota tu contraseña.</em>"
     T_SSH_TITLE="Acceso SSH"
     T_SSH_SUBTITLE="(solo para uso avanzado o fuera de la kermés):"
@@ -119,7 +119,7 @@ else
     T_SUPPORT_TEXT="Scan to join our <b>Telegram</b> support chat."
     T_SUPPORT_NOTE="Requires a Telegram account."
     T_STEP_5_PRE="Open the camera app and <b>scan the QR code &rarr;</b>"
-    T_STEP_6_TEMPLATE='Your browser will warn that the connection is <b>"Not private"</b>. This is expected on a local network and <b>safe here</b>. Tap <b>Advanced</b> (or <b>Show details</b> on Safari), then <b>Proceed to %s.local</b> / <b>Continue</b> / <b>Accept the Risk</b> (wording varies by browser).'
+    T_STEP_6_TEMPLATE='Verify the CA fingerprint for <b>%s.local</b> against the operator trust card. Follow the certificate installation guide and open HTTPS without warnings.'
     T_STEP_7_PRE="Create your <b>admin account</b> in the setup wizard. <em>Write down your password.</em>"
     T_SSH_TITLE="SSH access"
     T_SSH_SUBTITLE="(for advanced use or use outside of the kermés):"
@@ -345,7 +345,7 @@ HTML_HEAD
 
 while read -r NAME PASSWORD; do
     [[ -z "$NAME" || "$NAME" =~ ^# ]] && continue
-    URL="https://${NAME}.local/"
+    URL="http://${NAME}.local/trust/"
     NAME_H=$(html_escape "$NAME")
     PW_H=$(html_escape "$PASSWORD")
     URL_H=$(html_escape "$URL")

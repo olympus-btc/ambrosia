@@ -99,7 +99,7 @@ flowchart TD
     M["3 · Mount: losetup the .img, find boot (FAT) and\nroot (ext4) partitions, mount both"]
     CH["4 · Chroot setup: bind /dev /proc /sys /run,\ncopy qemu-aarch64-static in (x86 hosts)"]
     PK["5 · Packages: add Adoptium + NodeSource apt repos,\ninstall everything in packages.txt inside the chroot"]
-    U["6 · User: create 'ambrosia' (UID 1001),\ncreate /opt/ambrosia, /etc/ambrosia, /var/lib/ambrosia"]
+    U["6 · User: create operator 'ambrosia' and locked runtime 'ambrosia-service',\ncreate /opt/ambrosia, /etc/ambrosia, /var/lib/ambrosia"]
     AR["7 · Ambrosia: rsync staging/server + staging/client\nto /opt/ambrosia/, write launch wrappers"]
     PH["8 · Phoenixd: download ACINQ release (version pinned\nin board.conf), install to /usr/local/bin"]
     AS["9 · Repo assets: firstboot script, Wi-Fi captive portal,\n6 systemd units, config templates, preseed example"]
@@ -134,10 +134,10 @@ SD card
     ├── /etc/ambrosia/                   ← config templates, board-identity
     ├── /etc/systemd/system/             ← ambrosia, ambrosia-client, phoenixd,
     │                                       caddy, firstboot, wifi-portal
-    └── /home/ambrosia/                  ← runtime data dirs (empty until first boot)
+    └── /home/ambrosia-service/                  ← runtime data dirs (empty until first boot)
 ```
 
-Request flow once running: **browser → Caddy (:80) → Next.js client (:3000) → Ambrosia server → Phoenixd**.
+Request flow once running: **browser → Caddy (:443) → Next.js client (:3000) → Ambrosia server → Phoenixd**.
 
 ## First boot on the device
 
@@ -155,8 +155,12 @@ flowchart TD
     INIT --> DONE["Mark firstboot complete\n(never runs again)"]
     DONE --> W{"Known Wi-Fi\nreachable?"}
     W -- no --> CAP["Start '&lt;hostname&gt;-setup' access point\n→ captive portal at http://10.42.1.1"]
-    W -- yes --> POS["POS live at http://&lt;hostname&gt;.local"]
+    W -- yes --> POS["POS live at https://&lt;hostname&gt;.local"]
     CAP --> POS
 ```
 
 This takes 1–3 minutes and logs to `/var/log/ambrosia-firstboot.log`.
+
+## Per-unit TLS trust
+
+New clients enroll at `http://<hostname>.local/trust/`, then use HTTPS. See [installation, migration, identity cards and recovery](common/certificates/README.md). The runtime account is `ambrosia-service`; SSH operator access remains `ambrosia`.

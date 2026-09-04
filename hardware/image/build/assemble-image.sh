@@ -204,6 +204,7 @@ require_host_dependencies() {
     lsblk
     mount
     openssl
+    python3
     partx
     parted
     resize2fs
@@ -484,10 +485,12 @@ install_board_packages() {
 }
 
 ensure_runtime_user() {
+  install -d -m 0755 -o root -g root "$ROOTFS_MNT/opt/ambrosia" "$ROOTFS_MNT/opt/ambrosia/bin"
+  run_in_chroot "id -u ambrosia >/dev/null 2>&1 || useradd --groups sudo,netdev --create-home --shell /bin/bash ambrosia"
   run_in_chroot "getent group ${RUNTIME_GROUP} >/dev/null 2>&1 || groupadd --gid ${RUNTIME_GID} ${RUNTIME_GROUP} 2>/dev/null || groupadd ${RUNTIME_GROUP}"
-  run_in_chroot "id -u ${RUNTIME_USER} >/dev/null 2>&1 || useradd --uid ${RUNTIME_UID} --gid ${RUNTIME_GROUP} --groups sudo,netdev,audio,video,plugdev --create-home --shell /bin/bash ${RUNTIME_USER} 2>/dev/null || useradd --gid ${RUNTIME_GROUP} --groups sudo,netdev,audio,video,plugdev --create-home --shell /bin/bash ${RUNTIME_USER}"
+  run_in_chroot "id -u ${RUNTIME_USER} >/dev/null 2>&1 || useradd --uid ${RUNTIME_UID} --gid ${RUNTIME_GROUP} --groups audio,video,plugdev --create-home --shell /usr/sbin/nologin ${RUNTIME_USER} 2>/dev/null || useradd --gid ${RUNTIME_GROUP} --groups audio,video,plugdev --create-home --shell /usr/sbin/nologin ${RUNTIME_USER}"
   run_in_chroot "id ${RUNTIME_USER} >/dev/null 2>&1 || exit 1"
-  run_in_chroot "install -d -m 0755 -o ${RUNTIME_USER} -g ${RUNTIME_GROUP} /opt/ambrosia/server /opt/ambrosia/client /opt/ambrosia/bin /etc/ambrosia /var/lib/ambrosia"
+  run_in_chroot "install -d -m 0755 -o ${RUNTIME_USER} -g ${RUNTIME_GROUP} /opt/ambrosia/server /opt/ambrosia/client"
 }
 
 install_ambrosia_artifacts() {
@@ -515,7 +518,8 @@ exec /usr/bin/node /opt/ambrosia/client/server.js
 EOF
 
   chmod 0755 "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-server" "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-client"
-  run_in_chroot "chown -R ${RUNTIME_USER}:${RUNTIME_GROUP} /opt/ambrosia"
+  run_in_chroot "chown -R ${RUNTIME_USER}:${RUNTIME_GROUP} /opt/ambrosia/server /opt/ambrosia/client"
+  run_in_chroot "chown -R root:root /opt/ambrosia/bin; chown root:root /opt/ambrosia"
 }
 
 install_phoenixd() {
@@ -535,8 +539,10 @@ install_phoenixd() {
 }
 
 install_repo_assets() {
-  install -d "$ROOTFS_MNT/opt/ambrosia/bin" "$ROOTFS_MNT/etc/ambrosia" "$ROOTFS_MNT/etc/systemd/system"
+  install -d -m 0755 -o root -g root "$ROOTFS_MNT/opt/ambrosia/bin" "$ROOTFS_MNT/etc/ambrosia" "$ROOTFS_MNT/var/lib/ambrosia" "$ROOTFS_MNT/etc/systemd/system"
   install -d "$ROOTFS_MNT/etc/ssh/sshd_config.d"
+
+  python3 "$IMAGE_ROOT/common/certificates/install-trust.py" --image-root "$ROOTFS_MNT"
 
   install -m 0755 "$IMAGE_ROOT/common/portal/ambrosia-wifi-portal" "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-wifi-portal"
   install -m 0755 "$IMAGE_ROOT/common/firstboot/ambrosia-firstboot" "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-firstboot"
@@ -563,7 +569,7 @@ EOF
   chmod 0644 "$ROOTFS_MNT/etc/ambrosia/board-identity"
 
   if [[ -f "$ROOTFS_MNT/usr/lib/raspberrypi-sys-mods/firstboot" ]]; then
-    printf 'ambrosia:%s\n' "$(openssl passwd -6 'Ambrosia2026!')" > "$BOOT_MNT/userconf.txt"
+    printf 'ambrosia:%s\n' "$(openssl passwd -6 "$(openssl rand -hex 24)")" > "$BOOT_MNT/userconf.txt"
   fi
 
   sed -i \
@@ -598,6 +604,9 @@ write_base_configuration() {
 enable_services() {
   systemctl --root="$ROOTFS_MNT" disable dnsmasq.service hostapd.service >/dev/null 2>&1 || true
   systemctl --root="$ROOTFS_MNT" enable \
+    ambrosia-export-ca.service \
+    ambrosia-export-ca.path \
+    ambrosia-export-ca.timer \
     ambrosia-firstboot.service \
     ambrosia-wifi-portal.service \
     ambrosia.service \
@@ -621,6 +630,9 @@ clean_forbidden_state() {
   rm -f "$ROOTFS_MNT/var/lib/caddy/.config/caddy/autosave.json"
   rm -rf "$ROOTFS_MNT/var/log/journal"/* 2>/dev/null || true
   rm -rf "$ROOTFS_MNT/var/log/"*.log "$ROOTFS_MNT/var/log/"*.gz 2>/dev/null || true
+  rm -rf "$ROOTFS_MNT/var/lib/ambrosia/trust" "$ROOTFS_MNT/var/lib/ambrosia/trust-generations"
+  rm -f "$ROOTFS_MNT/var/lib/ambrosia/trust.next" "$ROOTFS_MNT/var/lib/ambrosia/trust.lock"
+  rm -f "$ROOTFS_MNT/var/lib/ambrosia/operator-password" "$ROOTFS_MNT/var/lib/ambrosia/consumed-device.env"
   rm -f "$ROOTFS_MNT/var/lib/ambrosia/firstboot-complete"
   if [[ "$(uname -m)" != "aarch64" ]]; then
     rm -f "$ROOTFS_MNT/usr/bin/qemu-aarch64-static"
@@ -628,6 +640,15 @@ clean_forbidden_state() {
 }
 
 verify_mounted_image() {
+  require_nonempty_file "$ROOTFS_MNT/usr/local/libexec/ambrosia/ambrosia-export-ca"
+  require_nonempty_file "$ROOTFS_MNT/usr/local/share/ambrosia/trust/index.html"
+  require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/caddy.service.d/ambrosia-trust.conf"
+  [[ ! -e "$ROOTFS_MNT/var/lib/ambrosia/trust" && ! -L "$ROOTFS_MNT/var/lib/ambrosia/trust" ]] || fail "Forbidden state: exported CA"
+  [[ ! -d "$ROOTFS_MNT/var/lib/ambrosia/trust-generations" ]] || fail "Forbidden state: CA generations"
+  [[ ! -d "$ROOTFS_MNT/var/lib/caddy/.local/share/caddy/pki" ]] || fail "Forbidden state: Caddy PKI"
+  for protected in /opt/ambrosia /opt/ambrosia/bin /etc/ambrosia /var/lib/ambrosia; do
+    [[ "$(stat -c '%u:%g:%a' "$ROOTFS_MNT$protected")" == "0:0:755" ]] || fail "Unsafe directory: $protected"
+  done
   require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/server/ambrosia.jar"
   require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-server"
   require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-client"
@@ -754,6 +775,8 @@ log "Writing base configuration"
 write_base_configuration
 log "Enabling services"
 enable_services
+log "Validating trust configuration with isolated PKI"
+run_in_chroot "python3 /usr/local/libexec/ambrosia/validate-trust.py /etc/ambrosia/Caddyfile.template"
 log "Cleaning forbidden state"
 clean_forbidden_state
 log "Verifying mounted image"

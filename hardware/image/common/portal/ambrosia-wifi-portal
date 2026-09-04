@@ -36,27 +36,41 @@ BOOT_WAIT_SECONDS = 30
 WIFI_RECOVERY_MARKER = Path("/run/ambrosia-wifi-recovery-attempted")
 
 app = Flask(__name__)
-hostapd_proc = None
-dnsmasq_proc = None
+hostapd_process = None
+dnsmasq_process = None
 # Populated by main() before start_ap(). AP mode disables scanning, so we have
 # to capture the airwaves while wlan0 is still managed by NM.
 scanned_ssids = []
+connection_lock = threading.Lock()
 
 
-def sh(cmd, timeout=None):
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+def run_command(command_arguments, timeout_seconds=None):
+    return subprocess.run(
+        command_arguments,
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+        check=False,
+    )
 
 
 def get_hostname():
-    return sh(["hostname"]).stdout.strip() or "ambrosia"
+    return run_command(["hostname"]).stdout.strip() or "ambrosia"
 
 
 def wifi_is_real():
     """True if wlan0 is currently on a non-AP Wi-Fi managed by NM."""
-    r = sh(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"])
-    for line in r.stdout.splitlines():
-        parts = line.split(":")
-        if len(parts) >= 3 and parts[0] == WLAN and parts[1] == "wifi" and parts[2] == "connected":
+    device_status_process = run_command(
+        ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    )
+    for device_status_line in device_status_process.stdout.splitlines():
+        device_fields = device_status_line.split(":")
+        if (
+            len(device_fields) >= 3
+            and device_fields[0] == WLAN
+            and device_fields[1] == "wifi"
+            and device_fields[2] == "connected"
+        ):
             return True
     return False
 
@@ -81,13 +95,21 @@ def recover_orange_pi_wifi_once():
         return
 
     WIFI_RECOVERY_MARKER.touch()
-    print("Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.", flush=True)
+    print(
+        "Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.",
+        flush=True,
+    )
     try:
-        sh(["nmcli", "device", "disconnect", WLAN], timeout=15)
+        run_command(["nmcli", "device", "disconnect", WLAN], timeout_seconds=15)
         time.sleep(2)
-        result = sh(["nmcli", "device", "connect", WLAN], timeout=45)
-        if result.returncode != 0:
-            print(f"Wi-Fi recovery failed: {result.stderr.strip()}", flush=True)
+        reconnect_process = run_command(
+            ["nmcli", "device", "connect", WLAN], timeout_seconds=45
+        )
+        if reconnect_process.returncode != 0:
+            print(
+                f"Wi-Fi recovery failed: {reconnect_process.stderr.strip()}",
+                flush=True,
+            )
         time.sleep(3)
     except subprocess.TimeoutExpired:
         print("Wi-Fi recovery timed out; continuing to the setup portal.", flush=True)
@@ -98,13 +120,15 @@ def uplink_is_real():
 
     The setup AP should stay down if Ethernet already has connectivity.
     """
-    r = sh(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"])
-    for line in r.stdout.splitlines():
-        parts = line.split(":")
-        if len(parts) >= 3 and parts[2] == "connected":
-            if parts[1] == "ethernet":
+    device_status_process = run_command(
+        ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    )
+    for device_status_line in device_status_process.stdout.splitlines():
+        device_fields = device_status_line.split(":")
+        if len(device_fields) >= 3 and device_fields[2] == "connected":
+            if device_fields[1] == "ethernet":
                 return True
-            if parts[1] == "wifi" and parts[0] != WLAN:
+            if device_fields[1] == "wifi" and device_fields[0] != WLAN:
                 return True
     return False
 
@@ -114,28 +138,42 @@ def scan_ssids():
 
     Must run while wlan0 is still managed by NM — once we flip to AP mode the
     radio can't scan. Hidden SSIDs (empty name) and duplicates are dropped."""
-    sh(["nmcli", "device", "wifi", "rescan", "ifname", WLAN], timeout=15)
+    run_command(
+        ["nmcli", "device", "wifi", "rescan", "ifname", WLAN],
+        timeout_seconds=15,
+    )
     time.sleep(3)
-    r = sh(["nmcli", "-t", "-f", "SSID,SIGNAL", "device", "wifi", "list", "ifname", WLAN])
-    seen = {}
-    for line in r.stdout.splitlines():
+    scan_process = run_command(
+        ["nmcli", "-t", "-f", "SSID,SIGNAL", "device", "wifi", "list", "ifname", WLAN]
+    )
+    networks_by_signal = {}
+    for scan_line in scan_process.stdout.splitlines():
         # nmcli -t escapes ":" inside SSIDs as "\:" — rsplit on the last
         # unescaped colon to split SSID from SIGNAL.
-        if not line:
+        if not scan_line:
             continue
-        idx = line.rfind(":")
-        if idx < 0:
+        separator_index = scan_line.rfind(":")
+        if separator_index < 0:
             continue
-        ssid = line[:idx].replace("\\:", ":").strip()
+        network_name = scan_line[:separator_index].replace("\\:", ":").strip()
         try:
-            signal = int(line[idx + 1 :])
+            signal_strength = int(scan_line[separator_index + 1 :])
         except ValueError:
-            signal = 0
-        if not ssid:
+            signal_strength = 0
+        if not network_name:
             continue
-        if ssid not in seen or signal > seen[ssid]:
-            seen[ssid] = signal
-    return [s for s, _ in sorted(seen.items(), key=lambda kv: -kv[1])]
+        if (
+            network_name not in networks_by_signal
+            or signal_strength > networks_by_signal[network_name]
+        ):
+            networks_by_signal[network_name] = signal_strength
+    return [
+        network_name
+        for network_name, _signal_strength in sorted(
+            networks_by_signal.items(),
+            key=lambda network_and_signal: -network_and_signal[1],
+        )
+    ]
 
 
 def write_confs():
@@ -155,8 +193,8 @@ def write_confs():
         f"interface={WLAN}\n"
         f"bind-interfaces\n"
         f"dhcp-range={DHCP_START},{DHCP_END},255.255.255.0,12h\n"
-        f"dhcp-option=3,{AP_IP}\n"     # gateway
-        f"dhcp-option=6,{AP_IP}\n"     # DNS
+        f"dhcp-option=3,{AP_IP}\n"  # gateway
+        f"dhcp-option=6,{AP_IP}\n"  # DNS
         # Redirect all DNS lookups to the portal IP for captive-portal detection
         f"address=/#/{AP_IP}\n"
         f"dhcp-authoritative\n"
@@ -173,39 +211,41 @@ def start_ap():
     from setting beacon parameters. We unmanage first, then stop the supplicant,
     then explicitly set the interface to AP type on a down interface. Without
     this exact sequence the driver returns -EIO and hostapd fails."""
-    global hostapd_proc, dnsmasq_proc
+    global hostapd_process, dnsmasq_process
 
     # Caddy (and anything else binding port 80) has to step aside for the
     # captive portal. We'll start Caddy back up in stop_ap().
-    sh(["systemctl", "stop", "caddy"])
-    sh(["systemctl", "stop", "dnsmasq"])
-    sh(["systemctl", "stop", "hostapd"])
-    sh(["nmcli", "device", "set", WLAN, "managed", "no"])
-    sh(["systemctl", "stop", "wpa_supplicant"])
-    sh(["ip", "link", "set", WLAN, "down"])
-    sh(["iw", WLAN, "set", "type", "__ap"])
-    sh(["ip", "link", "set", WLAN, "up"])
-    sh(["ip", "addr", "flush", "dev", WLAN])
-    sh(["ip", "addr", "add", f"{AP_IP}/24", "dev", WLAN])
+    run_command(["systemctl", "stop", "caddy"])
+    run_command(["systemctl", "stop", "dnsmasq"])
+    run_command(["systemctl", "stop", "hostapd"])
+    run_command(["nmcli", "device", "set", WLAN, "managed", "no"])
+    run_command(["systemctl", "stop", "wpa_supplicant"])
+    run_command(["ip", "link", "set", WLAN, "down"])
+    run_command(["iw", WLAN, "set", "type", "__ap"])
+    run_command(["ip", "link", "set", WLAN, "up"])
+    run_command(["ip", "addr", "flush", "dev", WLAN])
+    run_command(["ip", "addr", "add", f"{AP_IP}/24", "dev", WLAN])
 
     write_confs()
 
-    hostapd_proc = subprocess.Popen(
+    hostapd_process = subprocess.Popen(
         ["hostapd", str(HOSTAPD_CONF)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
     # Give hostapd ~2s to establish; then start dnsmasq
     time.sleep(2)
-    if hostapd_proc.poll() is not None:
+    if hostapd_process.poll() is not None:
         print("hostapd exited immediately — giving up.", flush=True)
         return False
 
-    dnsmasq_proc = subprocess.Popen(
+    dnsmasq_process = subprocess.Popen(
         ["dnsmasq", "--conf-file=" + str(DNSMASQ_CONF), "--no-daemon"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
     time.sleep(1)
-    if dnsmasq_proc.poll() is not None:
+    if dnsmasq_process.poll() is not None:
         print("dnsmasq exited immediately — giving up.", flush=True)
         return False
     return True
@@ -217,28 +257,28 @@ def stop_ap():
     Does NOT restart Caddy — callers must do that only when we're fully done
     with port 80, i.e. after Flask shuts down. If we restart Caddy here while
     Flask is still bound to :80, Caddy fails with EADDRINUSE."""
-    global hostapd_proc, dnsmasq_proc
-    for proc in (dnsmasq_proc, hostapd_proc):
-        if proc and proc.poll() is None:
-            proc.terminate()
+    global hostapd_process, dnsmasq_process
+    for service_process in (dnsmasq_process, hostapd_process):
+        if service_process and service_process.poll() is None:
+            service_process.terminate()
             try:
-                proc.wait(timeout=5)
+                service_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                proc.kill()
-    dnsmasq_proc = None
-    hostapd_proc = None
-    sh(["ip", "addr", "flush", "dev", WLAN])
-    sh(["ip", "link", "set", WLAN, "down"])
-    sh(["iw", WLAN, "set", "type", "managed"])
-    sh(["ip", "link", "set", WLAN, "up"])
-    sh(["systemctl", "start", "wpa_supplicant"])
-    sh(["nmcli", "device", "set", WLAN, "managed", "yes"])
+                service_process.kill()
+    dnsmasq_process = None
+    hostapd_process = None
+    run_command(["ip", "addr", "flush", "dev", WLAN])
+    run_command(["ip", "link", "set", WLAN, "down"])
+    run_command(["iw", WLAN, "set", "type", "managed"])
+    run_command(["ip", "link", "set", WLAN, "up"])
+    run_command(["systemctl", "start", "wpa_supplicant"])
+    run_command(["nmcli", "device", "set", WLAN, "managed", "yes"])
     time.sleep(2)
 
 
 def restart_caddy():
     """Restore Caddy after Flask has fully released port 80."""
-    sh(["systemctl", "start", "caddy"])
+    run_command(["systemctl", "start", "caddy"])
 
 
 TEMPLATE = """<!doctype html>
@@ -276,7 +316,7 @@ code { font-family: ui-monospace, Menlo, monospace; background: #f4f4f4; padding
   <input id="ssid" name="ssid" autocapitalize="off" autocorrect="off" spellcheck="false" value="{{ last_ssid or '' }}" required>
   {% if ssids %}
   <ul class="ssid-list" id="ssid-list">
-    {% for s in ssids %}<li data-ssid="{{ s }}">{{ s }}</li>{% endfor %}
+    {% for network_name in ssids %}<li data-ssid="{{ network_name }}">{{ network_name }}</li>{% endfor %}
   </ul>
   <small>Toca una red para usarla, o escribe el nombre arriba si la red está oculta.</small>
   {% else %}
@@ -289,34 +329,34 @@ code { font-family: ui-monospace, Menlo, monospace; background: #f4f4f4; padding
   </div>
   <button type="submit">Conectar</button>
 </form>
-<p style="margin-top: 24px;"><small>Si sale bien, esta red (<code>{{ ap_ssid }}</code>) desaparecerá en unos segundos. Podrás acceder al POS en <code>https://{{ hostname }}.local/</code> desde tu Wi-Fi.</small></p>
+<p style="margin-top: 24px;"><small>Si sale bien, esta red (<code>{{ ap_ssid }}</code>) desaparecerá en unos segundos. Podrás configurar la conexión segura en <code>http://{{ hostname }}.local/trust/</code> desde tu Wi-Fi.</small></p>
 <script>
 (function(){
-  var ssidInput = document.getElementById('ssid');
-  var list = document.getElementById('ssid-list');
-  if (list) {
+  var networkNameInput = document.getElementById('ssid');
+  var networkList = document.getElementById('ssid-list');
+  if (networkList) {
     function highlight(){
-      var v = ssidInput.value;
-      Array.prototype.forEach.call(list.children, function(li){
-        li.classList.toggle('selected', li.getAttribute('data-ssid') === v);
+      var selectedNetworkName = networkNameInput.value;
+      Array.prototype.forEach.call(networkList.children, function(networkItem){
+        networkItem.classList.toggle('selected', networkItem.getAttribute('data-ssid') === selectedNetworkName);
       });
     }
-    list.addEventListener('click', function(e){
-      var li = e.target.closest('li');
-      if (!li) return;
-      ssidInput.value = li.getAttribute('data-ssid');
+    networkList.addEventListener('click', function(clickEvent){
+      var networkItem = clickEvent.target.closest('li');
+      if (!networkItem) return;
+      networkNameInput.value = networkItem.getAttribute('data-ssid');
       highlight();
       document.getElementById('password').focus();
     });
-    ssidInput.addEventListener('input', highlight);
+    networkNameInput.addEventListener('input', highlight);
     highlight();
   }
-  var pw = document.getElementById('password');
-  var tog = document.getElementById('pw-toggle');
-  tog.addEventListener('click', function(){
-    var showing = pw.type === 'text';
-    pw.type = showing ? 'password' : 'text';
-    tog.textContent = showing ? 'Mostrar' : 'Ocultar';
+  var passwordInput = document.getElementById('password');
+  var passwordToggle = document.getElementById('pw-toggle');
+  passwordToggle.addEventListener('click', function(){
+    var isPasswordVisible = passwordInput.type === 'text';
+    passwordInput.type = isPasswordVisible ? 'password' : 'text';
+    passwordToggle.textContent = isPasswordVisible ? 'Mostrar' : 'Ocultar';
   });
 })();
 </script>
@@ -344,20 +384,20 @@ small{color:#666;}
 </style>
 </head><body>
 <h1>Casi listo</h1>
-<p>Ya guardamos el nombre y contraseña de <b>{{ ssid }}</b>. Lee esto antes de tocar el botón:</p>
+<p>Vamos a intentar conectar la unidad a <b>{{ ssid }}</b>. Lee esto antes de tocar el botón:</p>
 
 <div class="step">
   <h3>Qué va a pasar</h3>
   <ol style="margin:0 0 10px;padding-left:1.4em;">
-    <li>Se <b>copia</b> la dirección del POS a tu portapapeles.</li>
+    <li>Se <b>copia</b> la dirección para instalar el certificado a tu portapapeles.</li>
     <li>Esta red de configuración (<code>{{ ap_ssid }}</code>) se <b>cierra</b> y esta ventana se cerrará sola.</li>
-    <li>Tu teléfono se conectará solo a <b>{{ ssid }}</b> (espera unos segundos).</li>
-    <li>Entonces abre <b>Chrome</b> o <b>Safari</b> y <b>pega</b> la dirección en la barra para entrar al POS.</li>
+    <li>Conecta tu teléfono a <b>{{ ssid }}</b> si no se conecta automáticamente.</li>
+    <li>Entonces abre <b>Chrome</b> o <b>Safari</b> y <b>pega</b> la dirección en la barra. Instala el certificado y comprueba HTTPS antes de entrar al POS.</li>
   </ol>
-  <div class="url-box" id="posurl">https://{{ hostname }}.local/</div>
+  <div class="url-box" id="posurl">http://{{ hostname }}.local/trust/</div>
   <button class="btn btn-primary" id="btn-go" type="button">Copiar dirección y terminar</button>
   <div class="pending" id="pending">
-    <b>¡Listo!</b> Dirección copiada. Tu teléfono se está conectando a <b>{{ ssid }}</b> — pégala en Chrome o Safari cuando esté listo.
+    <b>¡Listo!</b> Dirección copiada. Conecta tu teléfono a <b>{{ ssid }}</b> — pégala en Chrome o Safari cuando esté listo.
   </div>
 </div>
 
@@ -370,59 +410,74 @@ small{color:#666;}
 
 <script>
 (function(){
-  var btn = document.getElementById('btn-go');
-  var pending = document.getElementById('pending');
-  var url = "https://{{ hostname }}.local/";
+  var connectButton = document.getElementById('btn-go');
+  var pendingMessage = document.getElementById('pending');
+  var trustUrl = document.getElementById('posurl').textContent.trim();
 
-  function commit(){
-    btn.disabled = true;
-    btn.textContent = '✓ Dirección copiada — cambiando red…';
-    btn.classList.add('done');
-    pending.classList.add('show');
-    // Fire-and-forget POST; phone may lose the AP mid-request, that's fine.
+  function showConnectionError(){
+    connectButton.disabled = false;
+    connectButton.textContent = 'Reintentar conexión';
+    connectButton.classList.remove('done');
+    pendingMessage.textContent = 'No pudimos confirmar la solicitud. Si la red de configuración sigue disponible, vuelve a intentarlo.';
+    pendingMessage.classList.add('show');
+  }
+
+  function commit(copied){
+    connectButton.textContent = 'Enviando solicitud…';
     try {
-      fetch('/commit', {method:'POST', body:new FormData(document.getElementById('commit-form'))}).catch(function(){});
-    } catch(e) {}
+      fetch('/commit', {
+        method: 'POST',
+        body: new FormData(document.getElementById('commit-form'))
+      }).then(function(connectionResponse){
+        if (!connectionResponse.ok) throw new Error('Connection request failed');
+        connectButton.textContent = copied ? '✓ Dirección copiada — cambiando red…' : 'Guarda la dirección — cambiando red…';
+        connectButton.classList.add('done');
+        pendingMessage.textContent = copied
+          ? 'Dirección copiada. Conecta tu teléfono a tu Wi-Fi y pégala en Chrome o Safari.'
+          : 'No se pudo copiar. Guarda la dirección que aparece arriba y ábrela cuando estés en tu Wi-Fi.';
+        pendingMessage.classList.add('show');
+      }).catch(showConnectionError);
+    } catch(error) {
+      showConnectionError();
+    }
   }
 
-  // navigator.clipboard.writeText requires a secure context (HTTPS or
-  // localhost); we're on plain HTTP at 10.42.1.1 so it'll reject. The
-  // document.execCommand('copy') path works on HTTP in any browser engine
-  // old enough to care, including Android's captive-portal WebView.
-  function legacyCopy(text){
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '0'; ta.style.left = '0';
-    ta.style.width = '1px'; ta.style.height = '1px';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    ta.setSelectionRange(0, text.length);
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta);
-    return ok;
+  // HTTP captive portals may not expose the Clipboard API. Copying is
+  // best-effort and must never prevent the Wi-Fi connection request.
+  function legacyCopy(textToCopy){
+    var textarea = document.createElement('textarea');
+    textarea.value = textToCopy;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    try {
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textToCopy.length);
+      return document.execCommand('copy');
+    } catch(error) {
+      return false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 
-  function selectUrl(){
-    // Nothing copied — at least highlight the URL so the user can long-press.
-    var sel = window.getSelection(); var r = document.createRange();
-    r.selectNodeContents(document.getElementById('posurl'));
-    sel.removeAllRanges(); sel.addRange(r);
+  function copyAndCommit(){
+    commit(legacyCopy(trustUrl));
   }
 
-  btn.addEventListener('click', function(){
-    var copied = false;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      // Try modern API first; if it rejects (insecure context) fall through.
-      navigator.clipboard.writeText(url).then(function(){ copied = true; commit(); },
-        function(){ copied = legacyCopy(url); if (!copied) selectUrl(); commit(); });
-    } else {
-      copied = legacyCopy(url);
-      if (!copied) selectUrl();
-      commit();
+  connectButton.addEventListener('click', function(){
+    if (connectButton.disabled) return;
+    connectButton.disabled = true;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(trustUrl).then(function(){ commit(true); }, copyAndCommit);
+      } else {
+        copyAndCommit();
+      }
+    } catch(error) {
+      copyAndCommit();
     }
   });
 })();
@@ -430,54 +485,90 @@ small{color:#666;}
 </body></html>"""
 
 
+@app.after_request
+def prevent_portal_caching(portal_response):
+    # Confirmation forms contain Wi-Fi credentials.
+    portal_response.headers["Cache-Control"] = "no-store"
+    portal_response.headers["Referrer-Policy"] = "no-referrer"
+    return portal_response
+
+
 def _monitor_connection():
     while True:
         time.sleep(15)
-        if wifi_is_real() or uplink_is_real():
-            stop_ap()
-            os._exit(0)
+        if not connection_lock.acquire(blocking=False):
+            continue
+        try:
+            if wifi_is_real() or uplink_is_real():
+                stop_ap()
+                os._exit(0)
+        finally:
+            connection_lock.release()
 
 
-def _do_connect(ssid, pw):
-    """Background task: tear down AP, try to join the user's Wi-Fi.
+def _connect_to_wifi(network_name, wifi_password):
+    """Switch the radio once; restore the portal when association fails.
 
-    Runs from /commit. By that point the user has already seen the
-    confirmation page and copied the POS URL to their clipboard, so there's
-    no race with Android's captive-portal sheet closing — the AP can drop
-    immediately. On successful association systemd's ExecStopPost restarts
-    Caddy as soon as Flask releases port 80. On failure we bring the AP back
-    up and stay running so the user can re-associate with the setup AP and
-    try again.
+    The caller holds connection_lock so requests and the uplink monitor
+    cannot change the interface while NetworkManager is connecting.
     """
-    # Small delay so the /commit HTTP response reaches the phone before the
-    # radio flips mode.
-    time.sleep(1)
-    stop_ap()
-    r = sh(["nmcli", "device", "wifi", "connect", ssid,
-            "password", pw, "ifname", WLAN], timeout=60)
-    if r.returncode == 0:
-        os._exit(0)
-    start_ap()
+    try:
+        # Give the HTTP response time to reach the phone before dropping AP.
+        time.sleep(1)
+        try:
+            stop_ap()
+            connection_process = run_command(
+                [
+                    "nmcli",
+                    "device",
+                    "wifi",
+                    "connect",
+                    network_name,
+                    "password",
+                    wifi_password,
+                    "ifname",
+                    WLAN,
+                ],
+                timeout_seconds=60,
+            )
+            if connection_process.returncode == 0:
+                os._exit(0)
+            print("Wi-Fi connection failed; restoring setup portal.", flush=True)
+        except (OSError, subprocess.SubprocessError) as error:
+            # Exception text can include the nmcli command and password.
+            print(
+                f"Wi-Fi connection interrupted ({type(error).__name__}); restoring setup portal.",
+                flush=True,
+            )
+        try:
+            restored = start_ap()
+        except (OSError, subprocess.SubprocessError):
+            restored = False
+        if not restored:
+            print("Could not restore setup portal; restarting service.", flush=True)
+            os._exit(1)
+    finally:
+        connection_lock.release()
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    last_ssid = ""
-    msg = None
+    last_network_name = ""
+    error_message = None
     if request.method == "POST":
-        ssid = request.form.get("ssid", "").strip()
-        pw = request.form.get("password", "")
-        last_ssid = ssid
-        if not ssid:
-            msg = "Escribe el nombre de la red."
+        network_name = request.form.get("ssid", "").strip()
+        wifi_password = request.form.get("password", "")
+        last_network_name = network_name
+        if not network_name:
+            error_message = "Escribe el nombre de la red."
         else:
             # Don't touch the radio yet — just render the confirmation page.
             # The AP stays up and Caddy stays down until the user clicks the
             # copy button on the next page, which posts to /commit.
             return render_template_string(
                 SUCCESS,
-                ssid=ssid,
-                password=pw,
+                ssid=network_name,
+                password=wifi_password,
                 hostname=get_hostname(),
                 ap_ssid=f"{get_hostname()}-setup",
             )
@@ -485,7 +576,8 @@ def index():
         TEMPLATE,
         hostname=get_hostname(),
         ap_ssid=f"{get_hostname()}-setup",
-        msg=msg, last_ssid=last_ssid,
+        msg=error_message,
+        last_ssid=last_network_name,
         ssids=scanned_ssids,
     )
 
@@ -494,22 +586,33 @@ def index():
 def commit():
     """Actually trigger the Wi-Fi switch. Called by the copy button on the
     success page once the user has the POS URL on their clipboard."""
-    ssid = request.form.get("ssid", "").strip()
-    pw = request.form.get("password", "")
-    if not ssid:
+    network_name = request.form.get("ssid", "").strip()
+    wifi_password = request.form.get("password", "")
+    if not network_name:
         return "missing ssid", 400
-    threading.Thread(target=_do_connect, args=(ssid, pw), daemon=True).start()
+    if not connection_lock.acquire(blocking=False):
+        return "connection already in progress", 409
+    try:
+        threading.Thread(
+            target=_connect_to_wifi,
+            args=(network_name, wifi_password),
+            daemon=True,
+        ).start()
+    except RuntimeError:
+        connection_lock.release()
+        app.logger.error("Could not start Wi-Fi connection worker")
+        return "could not start connection", 503
     # Response body is rarely seen — the phone is about to lose the AP.
     return "ok", 200
 
 
 # Captive-portal detection endpoints — phones probe these to detect a portal.
-@app.route("/generate_204")              # Android
-@app.route("/gen_204")                   # Android variant
-@app.route("/hotspot-detect.html")       # iOS/macOS
+@app.route("/generate_204")  # Android
+@app.route("/gen_204")  # Android variant
+@app.route("/hotspot-detect.html")  # iOS/macOS
 @app.route("/library/test/success.html")  # iOS/macOS
-@app.route("/ncsi.txt")                  # Windows
-@app.route("/connecttest.txt")           # Windows
+@app.route("/ncsi.txt")  # Windows
+@app.route("/connecttest.txt")  # Windows
 def captive_probe():
     return redirect("/", code=302)
 
@@ -523,8 +626,8 @@ def main():
     signal.signal(signal.SIGTERM, shutdown_on_signal)
     signal.signal(signal.SIGINT, shutdown_on_signal)
 
-    sh(["nmcli", "device", "set", WLAN, "managed", "yes"])
-    sh(["nmcli", "radio", "wifi", "on"])
+    run_command(["nmcli", "device", "set", WLAN, "managed", "yes"])
+    run_command(["nmcli", "radio", "wifi", "on"])
 
     for _ in range(BOOT_WAIT_SECONDS):
         if wifi_is_real():
@@ -542,8 +645,8 @@ def main():
     try:
         scanned_ssids = scan_ssids()
         print(f"Found {len(scanned_ssids)} SSIDs: {scanned_ssids}", flush=True)
-    except Exception as e:
-        print(f"Scan failed (continuing without list): {e}", flush=True)
+    except Exception as scan_error:  # noqa: BLE001 -- scanning must not block setup
+        print(f"Scan failed (continuing without list): {scan_error}", flush=True)
         scanned_ssids = []
 
     print("Bringing up setup AP (hostapd + dnsmasq).", flush=True)

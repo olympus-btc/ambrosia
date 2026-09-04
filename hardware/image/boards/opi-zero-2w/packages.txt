@@ -9,6 +9,7 @@ network-manager
 nodejs
 openssh-server
 openssl
+python3
 python3-flask
 rsync
 sudo

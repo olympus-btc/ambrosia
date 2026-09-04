@@ -6,7 +6,7 @@ This tree organises content by how the device got into the user's hands:
 
 ## DIY (per-board)
 
-You bought parts and want to build a unit yourself. Today's flow is a manual narrative — flash an OS, run install steps by hand. The long-term goal is a single command that produces a **reproducible image** (e.g., via Nix), which you flash to an SD card and boot. The per-board guides below double as the spec for what that build must produce.
+You bought parts and want to build a unit yourself. Use the [image build](image/README.md) to produce a flashable image, or follow the per-board manual guides. New images include [per-unit TLS enrollment](image/common/certificates/README.md).
 
 - [`rpi/`](rpi/) — Raspberry Pi Zero 2W
 - [`opi/`](opi/) — OrangePi Zero 2W

@@ -15,7 +15,7 @@
 #   4. Drops the EFF wordlist at ~/scripts/ so Ambrosia first-boot doesn't
 #      need internet
 #   5. Writes stub phoenix.conf + ambrosia.conf (auto-liquidity off, http
-#      bound to 0.0.0.0)
+#      bound to 127.0.0.1)
 #   6. Saves the kermés Wi-Fi as a NetworkManager auto-connect profile
 #   7. Disables the system dnsmasq (conflicts with the captive portal)
 #   8. Adds 127.0.1.1 <hostname>.local to /etc/hosts so local SSR fetches
@@ -52,7 +52,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
+REPO_ROOT=$(cd "$SCRIPT_DIR/../../../.." && pwd)
 
 HOST=""
 USER_NAME=""
@@ -130,7 +130,7 @@ $SSH "curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tag
 banner "Writing stub configs"
 $SSH "mkdir -p ~/.phoenix ~/.Ambrosia-POS && \
      printf 'auto-liquidity=off\nmax-mining-fee=5000\n' > ~/.phoenix/phoenix.conf && \
-     printf 'http-bind-ip=0.0.0.0\nhttp-bind-port=9154\n' > ~/.Ambrosia-POS/ambrosia.conf"
+     printf 'http-bind-ip=127.0.0.1\nhttp-bind-port=9154\n' > ~/.Ambrosia-POS/ambrosia.conf"
 
 banner "Copying EFF wordlist"
 if [[ ! -f "$WORDLIST" ]]; then
@@ -161,14 +161,22 @@ $SSH "H=\$(hostname); grep -q \"\$H.local\" /etc/hosts || echo \"127.0.1.1 \$H.l
 
 if [[ $SKIP_PORTAL -eq 0 ]]; then
     banner "Installing Wi-Fi captive-portal service"
-    scp -q -o BatchMode=yes "$SCRIPT_DIR/ambrosia-wifi-portal" "${USER_NAME}@${HOST}:/tmp/"
-    scp -q -o BatchMode=yes "$SCRIPT_DIR/ambrosia-wifi-portal.service" "${USER_NAME}@${HOST}:/tmp/"
+    scp -q -o BatchMode=yes "$REPO_ROOT/hardware/preinstalled/portal/ambrosia-wifi-portal" "${USER_NAME}@${HOST}:/tmp/"
+    scp -q -o BatchMode=yes "$REPO_ROOT/hardware/preinstalled/portal/ambrosia-wifi-portal.service" "${USER_NAME}@${HOST}:/tmp/"
     $SSH "sudo apt-get install -y hostapd python3-flask && \
         sudo install -m 0755 /tmp/ambrosia-wifi-portal /usr/local/bin/ambrosia-wifi-portal && \
         sudo install -m 0644 /tmp/ambrosia-wifi-portal.service /etc/systemd/system/ambrosia-wifi-portal.service && \
         sudo systemctl disable --now dnsmasq hostapd 2>/dev/null || true && \
         sudo systemctl daemon-reload && \
         sudo systemctl enable ambrosia-wifi-portal"
+fi
+
+if [[ $SKIP_CADDY -eq 0 ]]; then
+    banner "Installing per-unit TLS trust support"
+    REMOTE_TRUST_DIR=$($SSH 'mktemp -d /tmp/ambrosia-trust.XXXXXXXX')
+    [[ "$REMOTE_TRUST_DIR" =~ ^/tmp/ambrosia-trust\.[a-zA-Z0-9]+$ ]] || exit 1
+    scp -rq -o BatchMode=yes "$REPO_ROOT/hardware/image/common" "${USER_NAME}@${HOST}:${REMOTE_TRUST_DIR}/"
+    $SSH "sudo python3 '${REMOTE_TRUST_DIR}/common/certificates/install-trust.py' --apply"
 fi
 
 if [[ $SKIP_WIFI -eq 0 ]]; then

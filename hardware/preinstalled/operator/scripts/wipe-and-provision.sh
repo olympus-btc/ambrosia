@@ -56,6 +56,11 @@ echo "==> Mounting $PART at $MNT"
 mkdir -p "$MNT"
 mount "$PART" "$MNT"
 
+if [[ -f "$MNT/opt/ambrosia/bin/ambrosia-firstboot" ]]; then
+    echo "Use a clean image flash to factory-reset hardware/image units; this tool is for legacy units." >&2
+    exit 1
+fi
+
 # Auto-detect the current non-system user (UID 1001) unless overridden
 if [[ -n "$OLD_OVERRIDE" ]]; then
     OLD="$OLD_OVERRIDE"
@@ -185,10 +190,12 @@ auto-liquidity=off
 max-mining-fee=5000
 PHX_EOF
 cat > "$MNT/home/${NEW}/.Ambrosia-POS/ambrosia.conf" <<'AMB_EOF'
-http-bind-ip=0.0.0.0
+http-bind-ip=127.0.0.1
 http-bind-port=9154
 AMB_EOF
 chown -R 1001:1001 "$MNT/home/${NEW}/.phoenix" "$MNT/home/${NEW}/.Ambrosia-POS"
+rm -rf "$MNT/var/lib/ambrosia/trust" "$MNT/var/lib/ambrosia/trust-generations"
+rm -f "$MNT/var/lib/ambrosia/trust.next" "$MNT/var/lib/ambrosia/trust.lock"
 # Wipe any Caddy CA + cert storage carried over from the golden so this clone
 # generates its own on first boot (independent per-unit PKI).
 rm -rf "$MNT"/var/lib/caddy/.local/share/caddy/* 2>/dev/null || true

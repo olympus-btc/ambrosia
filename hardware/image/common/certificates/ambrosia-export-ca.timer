@@ -1,0 +1,10 @@
+[Unit]
+Description=Reconcile public CA files after missed events or transient failures
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+Unit=ambrosia-export-ca.service
+
+[Install]
+WantedBy=timers.target

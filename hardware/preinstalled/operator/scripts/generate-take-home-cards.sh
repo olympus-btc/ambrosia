@@ -61,8 +61,8 @@ if [[ "$CARD_LANG" == "es" ]]; then
     T_STEP_2_NOTE="(red abierta, sin contraseña)"
     T_STEP_3="Debe abrirse sola la <b>página de configuración</b>. Si no, abre <code>http://10.42.1.1</code> en Chrome o Safari."
     T_STEP_4="Toca tu Wi-Fi de casa de la lista (o escribe el nombre si está oculta), escribe la contraseña — toca <b>Mostrar</b> para verificar — y toca <b>Conectar</b>."
-    T_STEP_5="Toca <b>Copiar dirección y terminar</b>. La red de configuración se cierra y tu teléfono vuelve solo a tu Wi-Fi de casa."
-    T_STEP_6="Abre Chrome o Safari, <b>pega la dirección</b> en la barra. ¡Listo, ya estás en el POS!"
+    T_STEP_5="Toca <b>Copiar dirección y terminar</b>. La red de configuración se cierra y debes conectar tu teléfono a tu Wi-Fi de casa."
+    T_STEP_6="Pega la dirección en Chrome o Safari, verifica la huella con la tarjeta del operador e instala el certificado. Después abre HTTPS sin advertencias."
     T_AP_LABEL="Wi-Fi de configuración"
     T_POS_TITLE="Ambrosia POS"
     T_POS_HINT="O escanea para abrir directo después."
@@ -89,8 +89,8 @@ else
     T_STEP_2_NOTE="(open network, no password)"
     T_STEP_3="The <b>setup page</b> should open by itself. If it doesn&rsquo;t, open <code>http://10.42.1.1</code> in Chrome or Safari."
     T_STEP_4="Tap your home Wi-Fi from the list (or type the name if it&rsquo;s hidden), enter the password — tap <b>Show</b> to verify — and tap <b>Connect</b>."
-    T_STEP_5="Tap <b>Copy address and finish</b>. The setup network closes and your phone reconnects to your home Wi-Fi."
-    T_STEP_6="Open Chrome or Safari, <b>paste the address</b> into the URL bar. You&rsquo;re at the POS!"
+    T_STEP_5="Tap <b>Copy address and finish</b>. The setup network closes and you should connect your phone to your home Wi-Fi."
+    T_STEP_6="Paste the address in Chrome or Safari, verify the fingerprint against the operator card and install the certificate. Then open HTTPS without warnings."
     T_AP_LABEL="Setup Wi-Fi"
     T_POS_TITLE="Ambrosia POS"
     T_POS_HINT="Or scan to open directly afterward."
@@ -257,7 +257,7 @@ HTML_HEAD
 
 while read -r NAME PASSWORD; do
     [[ -z "$NAME" || "$NAME" =~ ^# ]] && continue
-    URL="https://${NAME}.local/"
+    URL="http://${NAME}.local/trust/"
     AP_NAME="${NAME}-setup"
     NAME_H=$(html_escape "$NAME")
     PW_H=$(html_escape "$PASSWORD")

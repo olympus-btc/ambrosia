@@ -14,6 +14,7 @@ import {
   markCheckoutCompleted,
 } from "@/lib/btcCheckoutStore";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
 
 const ASSET_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const API_CACHE_MAX_AGE_SECONDS = 5 * 60;
@@ -29,12 +30,16 @@ const serwist = new Serwist({
       {
         url: "/offline",
         matcher({ request }) {
-          return request.destination === "document";
+          return request.destination === "document" && !isTrustPath(new URL(request.url).pathname);
         },
       },
     ],
   },
   runtimeCaching: [
+    {
+      matcher: ({ url }) => url.origin === self.location.origin && isTrustPath(url.pathname),
+      handler: fetchTrustRequest,
+    },
     {
       matcher: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff2?)$/,
       handler: new CacheFirst({

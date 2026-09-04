@@ -5,6 +5,10 @@ Wants=ambrosia.service
 
 [Service]
 Type=simple
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+InaccessiblePaths=-/var/lib/caddy -/run/caddy-admin
 User=__RUNTIME_USER__
 Group=__RUNTIME_GROUP__
 WorkingDirectory=/opt/ambrosia/client

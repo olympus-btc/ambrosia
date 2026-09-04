@@ -80,9 +80,9 @@ if [[ "$CARD_LANG" == "es" ]]; then
     <ol>
       <li>Conecta el adaptador USB-C a Ethernet a la OrangePi, y un cable Ethernet del adaptador al router.</li>
       <li>Conecta la corriente y espera unos 60 segundos.</li>
-      <li>Desde cualquier dispositivo en tu red de casa (teléfono, laptop), abre <code>https://TU-UNIDAD.local/</code> en el navegador. Acepta la advertencia del certificado (es el certificado autofirmado de la unidad &mdash; igual que en la kermés). Listo, ya estás en el POS.</li>
+      <li>Desde cualquier dispositivo en tu red de casa (teléfono, laptop), abre <code>http://TU-UNIDAD.local/trust/</code> en el navegador. Verifica la huella con la tarjeta del operador e instala la CA según el asistente. Después abre el POS por HTTPS sin advertencias.</li>
     </ol>
-    <div class="note">Si <code>TU-UNIDAD.local</code> no resuelve, busca la IP de la OrangePi en la página de "dispositivos conectados" de tu router y usa <code>https://192.168.x.y/</code>.</div>
+    <div class="note">Si el nombre .local no resuelve, comprueba que ambos equipos estén en la misma red y consulta al operador. Entrar por IP no sustituye la identidad del certificado.</div>
     <p style="margin-top:0.1in;">Puedes dejar la unidad en Ethernet de forma permanente. Si después prefieres Wi-Fi, desconecta el cable Ethernet y la unidad arrancará con el AP de configuración del Método 1 al volver a encenderla.</p>'
     T_FIND_TITLE="Cómo encontrar el nombre y contraseña de tu Wi-Fi"
     T_FIND_INTRO="Si no sabes el nombre (SSID) o contraseña de tu Wi-Fi de casa, estos son los lugares más comunes donde encontrarlos:"
@@ -107,7 +107,7 @@ if [[ "$CARD_LANG" == "es" ]]; then
       <li><b>Olvidaste la contraseña o te bloqueaste.</b> Escríbenos al chat de soporte de Telegram (QR en tu tarjeta).</li>
       <li><b>Nada resuelve ni funciona.</b> Apaga la unidad, tráela al organizador de la kermés o pide ayuda en Telegram — podemos reimaginar la tarjeta por ti.</li>
     </ul>'
-    T_OUTRO='Cuando estés conectado, abre la app del POS en <code>https://TU-UNIDAD.local/</code> desde cualquier dispositivo en tu Wi-Fi de casa — igual que en la kermés, con la misma advertencia del navegador que hay que aceptar.'
+    T_OUTRO='Cuando estés conectado, abre la app del POS en <code>http://TU-UNIDAD.local/trust/</code> desde cualquier dispositivo en tu Wi-Fi de casa — igual que en la kermés, con la CA de la unidad instalada y sin advertencias.'
 else
     HTML_LANG="en"
     T_TITLE="Taking your Ambrosia unit home"
@@ -122,7 +122,7 @@ else
       <li>On your phone, open Wi-Fi settings and connect to <b><code>YOUR-UNIT-setup</code></b> (open network, no password).</li>
       <li>Your phone should automatically open the setup page. If nothing pops up, open Chrome or Safari and go to <code>http://10.42.1.1</code>.</li>
       <li>The page lists Wi-Fi networks the OrangePi can see. Tap your home Wi-Fi (or type the name if it is hidden), then enter the password &mdash; tap <b>Show</b> to verify what you typed. Tap <b>Connect</b>.</li>
-      <li>On the next page, read the steps and then tap <b>Copy address and finish</b>. This copies the POS address to your clipboard, shuts down the setup network, and your phone reconnects to your home Wi-Fi.</li>
+      <li>On the next page, read the steps and then tap <b>Copy address and finish</b>. This copies the POS address to your clipboard, shuts down the setup network, and you should connect your phone to your home Wi-Fi.</li>
       <li>Open Chrome or Safari, paste the address into the URL bar, and you are at the POS.</li>
     </ol>
     <div class="note">If the captive page does not pop up after you join <code>YOUR-UNIT-setup</code>, give it 5-10 seconds and then open <code>http://10.42.1.1</code> in a browser manually.</div>'
@@ -151,9 +151,9 @@ else
     <ol>
       <li>Plug the USB-C Ethernet adapter into the OrangePi, then an Ethernet cable from the adapter to your router.</li>
       <li>Plug in power and wait about 60 seconds.</li>
-      <li>From any device on your home network (phone, laptop), open <code>https://YOUR-UNIT.local/</code> in a browser. Click through the certificate warning (it is the unit&apos;s self-signed cert &mdash; same as at the kermés). You are at the POS.</li>
+      <li>From any device on your home network (phone, laptop), open <code>http://YOUR-UNIT.local/trust/</code> in a browser. Verify the fingerprint against the operator card and install the CA using the guide. Then open the POS over HTTPS without warnings.</li>
     </ol>
-    <div class="note">If <code>YOUR-UNIT.local</code> does not resolve, find the OrangePi&apos;s IP in your router&apos;s "connected devices" admin page and use <code>https://192.168.x.y/</code> instead.</div>
+    <div class="note">If the .local name does not resolve, check that both devices are on the same network and contact the operator. An IP address does not replace the certificate identity.</div>
     <p style="margin-top:0.1in;">You can leave the unit on Ethernet permanently. If you would later prefer Wi-Fi, unplug the Ethernet cable and the unit will boot into Method 1&apos;s setup AP next time you power-cycle it.</p>'
     T_FIND_TITLE="Finding your Wi-Fi name and password"
     T_FIND_INTRO="If you do not know your home Wi-Fi name (SSID) or password, here are the common places to look:"
@@ -178,7 +178,7 @@ else
       <li><b>Forgot your password or locked yourself out.</b> Reach out in the Telegram support chat (QR on your card).</li>
       <li><b>Nothing resolves and nothing works.</b> Power off, bring the unit to the kermés organizer or ping support on Telegram &mdash; we can reimage it for you.</li>
     </ul>'
-    T_OUTRO='After you are connected, access the POS UI at <code>https://YOUR-UNIT.local/</code> from any device on your home Wi-Fi &mdash; same as at the kermés, same cert warning to click through.'
+    T_OUTRO='After you are connected, access the POS UI at <code>http://YOUR-UNIT.local/trust/</code> from any device on your home Wi-Fi &mdash; same as at the kermés, with the unit CA installed and no certificate warnings.'
 fi
 
 mkdir -p "$(dirname "$OUT")"

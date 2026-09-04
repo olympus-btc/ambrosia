@@ -17,6 +17,7 @@ import { NotificationPreferencesCard } from "./Notifications";
 import { NwcConnectionCard } from "./NwcConnection/NwcConnectionCard";
 import { Printers } from "./Printers";
 import { QRUrl } from "./QRUrl";
+import { SecureConnection } from "./SecureConnection/SecureConnection";
 import { Seed } from "./Seed";
 import { StoreInfo } from "./StoreInfo";
 import { TicketTemplates } from "./TicketTemplates";
@@ -51,6 +52,7 @@ export function Settings() {
 
         <div className="flex flex-col gap-6">
           <QRUrl />
+          <SecureConnection />
           <Printers />
           <TicketTemplates />
           {isAdmin && <NotificationPreferencesCard />}

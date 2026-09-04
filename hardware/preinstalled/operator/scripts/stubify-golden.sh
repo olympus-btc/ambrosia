@@ -74,11 +74,17 @@ max-mining-fee=5000
 PHX_EOF
 
 cat > "$USERHOME/.Ambrosia-POS/ambrosia.conf" <<'AMB_EOF'
-http-bind-ip=0.0.0.0
+http-bind-ip=127.0.0.1
 http-bind-port=9154
 AMB_EOF
 
 chown -R 1001:1001 "$USERHOME/.phoenix" "$USERHOME/.Ambrosia-POS"
+
+# A distributed image must not retain the previous unit's CA or exports.
+rm -rf "$MNT/var/lib/caddy/.local/share/caddy"/*
+rm -f "$MNT/var/lib/caddy/.config/caddy/autosave.json"
+rm -rf "$MNT/var/lib/ambrosia/trust" "$MNT/var/lib/ambrosia/trust-generations"
+rm -f "$MNT/var/lib/ambrosia/trust.next" "$MNT/var/lib/ambrosia/trust.lock"
 
 echo "==> Verifying"
 ls -la "$USERHOME/.phoenix" "$USERHOME/.Ambrosia-POS" | sed 's/^/    /'

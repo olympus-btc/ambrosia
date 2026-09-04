@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-RUNTIME_USER="ambrosia"
-RUNTIME_GROUP="ambrosia"
+OPERATOR_USER="ambrosia"
+RUNTIME_USER="ambrosia-service"
+RUNTIME_GROUP="ambrosia-service"
 RUNTIME_HOME="/home/${RUNTIME_USER}"
 STATE_DIR="/var/lib/ambrosia"
 MARKER_FILE="${STATE_DIR}/firstboot-complete"
@@ -17,7 +18,6 @@ PHOENIX_STUB="${TEMPLATES_DIR}/phoenix.conf.stub"
 TARGET_CADDYFILE="/etc/caddy/Caddyfile"
 TARGET_AMBROSIA_CONF="${RUNTIME_HOME}/.Ambrosia-POS/ambrosia.conf"
 TARGET_PHOENIX_CONF="${RUNTIME_HOME}/.phoenix/phoenix.conf"
-DEFAULT_ADMIN_PASSWORD="Ambrosia2026!"
 
 ambrosia_hostname=""
 ambrosia_admin_password=""
@@ -93,6 +93,7 @@ default_hostname() {
 
 apply_hostname() {
   local hostname_value="$1"
+  [[ "$hostname_value" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || { log "Invalid hostname"; exit 1; }
   printf '%s\n' "$hostname_value" > /etc/hostname
   hostname "$hostname_value" || true
   awk -v host="$hostname_value" '
@@ -121,7 +122,7 @@ ensure_runtime_dirs() {
   install -d -m 0700 -o "$RUNTIME_USER" -g "$RUNTIME_GROUP" \
     "$RUNTIME_HOME/.phoenix" \
     "$RUNTIME_HOME/.Ambrosia-POS"
-  install -d -m 0755 "$STATE_DIR"
+  install -d -m 0755 -o root -g root "$STATE_DIR"
 }
 
 random_secret() {
@@ -152,8 +153,19 @@ render_ambrosia_conf() {
 }
 
 apply_admin_password() {
-  local password_to_apply="${ambrosia_admin_password:-$DEFAULT_ADMIN_PASSWORD}"
-  printf '%s:%s\n' "$RUNTIME_USER" "$password_to_apply" | chpasswd
+  rm -f "$STATE_DIR/operator-password"
+  local password_to_apply="$ambrosia_admin_password"
+  if [[ -z "$password_to_apply" ]]; then
+    password_to_apply=$(openssl rand -hex 12)
+    # The operator credential must not be shared across units or written to
+    # the world-readable firstboot log. Headless operators should preseed it.
+    install -m 0600 -o root -g root /dev/null "$STATE_DIR/operator-password"
+    printf '%s\n' "$password_to_apply" > "$STATE_DIR/operator-password"
+    if [[ -w /dev/console ]]; then
+      printf '\nAmbrosia operator login: %s\nPassword: %s\n' "$OPERATOR_USER" "$password_to_apply" > /dev/console
+    fi
+  fi
+  printf '%s:%s\n' "$OPERATOR_USER" "$password_to_apply" | chpasswd
 }
 
 configure_locale() {
@@ -168,6 +180,8 @@ configure_wifi_country() {
 }
 
 clean_residual_state() {
+  rm -rf "$STATE_DIR/trust" "$STATE_DIR/trust-generations"
+  rm -f "$STATE_DIR/trust.next" "$STATE_DIR/trust.lock"
   rm -f "$RUNTIME_HOME/.phoenix/seed.dat"
   rm -f "$RUNTIME_HOME/.Ambrosia-POS/ambrosia.db"
   rm -f "$RUNTIME_HOME/.Ambrosia-POS/keystore.jks"

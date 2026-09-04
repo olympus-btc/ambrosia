@@ -38,7 +38,8 @@ The image is built from the board's official Debian Bookworm base. On top of it 
 - **Ambrosia server** at `/opt/ambrosia/server/ambrosia.jar`
 - **Ambrosia client** at `/opt/ambrosia/client/` (Next.js standalone build)
 - **systemd services**: `ambrosia.service`, `ambrosia-client.service`, `phoenixd.service`, `caddy.service`, `ambrosia-firstboot.service`, `ambrosia-wifi-portal.service`
-- All services run as the `ambrosia` system user (UID 1001)
+- Ambrosia server, client and Phoenixd run as the locked `ambrosia-service` account (preferred UID 1002). The SSH operator remains `ambrosia`; Caddy uses its own account.
+- Per-unit TLS export services and the `/trust/` installation assistant are included automatically.
 
 ## Base image
 
@@ -237,7 +238,7 @@ Supported keys:
 | Key | Description | Default |
 |---|---|---|
 | `AMBROSIA_HOSTNAME` | Device hostname | `ambrosia-<board-short-name>-<machine-id-prefix>` (auto-generated) |
-| `AMBROSIA_ADMIN_PASSWORD` | SSH password for the `ambrosia` user | `Ambrosia2026!` |
+| `AMBROSIA_ADMIN_PASSWORD` | SSH password for the `ambrosia` user | Unique random password shown on the physical console; preseed for headless setup |
 | `AMBROSIA_WIFI_COUNTRY` | ISO 3166-1 alpha-2 country code for Wi-Fi regulations | `US` |
 | `AMBROSIA_LANG` | System locale | `en_US.UTF-8` |
 
@@ -323,7 +324,7 @@ What happens on first boot:
 - Once connected, the POS interface is reachable at `http://<hostname>.local` (mDNS via Avahi) or directly at the device IP on port 80.
 - SSH is available:
   - **User**: `ambrosia`
-  - **Password**: the value set in `AMBROSIA_ADMIN_PASSWORD` (default: `Ambrosia2026!`)
+  - **Password**: the value set in `AMBROSIA_ADMIN_PASSWORD` (otherwise a unique random password is shown on the physical console; set a preseed password for headless setup)
 
 ## Validate the image before flashing
 
@@ -384,3 +385,7 @@ Install it with `sudo apt install qemu-user-static` (Debian/Ubuntu) or the equiv
 
 **`build-docker.sh` fails with permission errors on the output directory.**
 The wrapper passes your UID/GID into the container. If you see ownership issues, check that `SUDO_UID`/`SUDO_GID` are exported in your shell environment, or run the wrapper with `sudo -E` to preserve them.
+
+## Per-unit TLS trust
+
+New clients enroll at `http://<hostname>.local/trust/`, then use HTTPS. See [installation, migration, identity cards and recovery](common/certificates/README.md). The runtime account is `ambrosia-service`; SSH operator access remains `ambrosia`.

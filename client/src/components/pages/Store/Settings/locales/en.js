@@ -10,6 +10,19 @@ import tutorialsEn from "../Tutorials/locales/en";
 
 const settingsEn = {
   settings: {
+    secureConnection: {
+      title: "Secure connection",
+      subtitle: "Certificate for this Ambrosia unit",
+      unavailable: "Could not load the certificate. Check your connection and reopen Settings.",
+      httpsSession: "HTTPS session",
+      httpSession: "This session uses HTTP",
+      sessionHint: "Check that your browser shows no warnings. This page cannot confirm installation of the CA in your system.",
+      issued: "Valid from",
+      expires: "Expires",
+      qrLabel: "QR to install this unit's certificate",
+      qrHint: "To set up another device, connect it to the same network and scan this QR. Verify the fingerprint against a trusted reference before installing.",
+      instructions: "View installation and removal instructions",
+    },
     title: "Settings",
     subtitle: "Manage your store",
     cardCurrency: {

@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch the Ambrosia CA and hostname for changes
+After=ambrosia-firstboot.service
+
+[Path]
+PathChanged=/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt
+PathChanged=/etc/hostname
+Unit=ambrosia-export-ca.service
+
+[Install]
+WantedBy=multi-user.target
