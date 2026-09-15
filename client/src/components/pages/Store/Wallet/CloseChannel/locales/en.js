@@ -22,6 +22,7 @@ const closeChannelEn = {
     doneButton: "Done",
     successToast: "Channel close initiated successfully.",
     errorToast: "Failed to close channel. Please try again.",
+    secretsLockedError: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to close this channel.",
     validationAddressRequired: "Bitcoin address is required.",
     validationAddressInvalid: "Invalid Bitcoin address format.",
     validationFeerateRequired: "Fee rate is required.",

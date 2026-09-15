@@ -6,7 +6,7 @@ import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useTour } from "@/hooks/tour/useTour";
-import { getSeed } from "@/services/walletService";
+import { getSeed, isSecretsLockedError } from "@/services/walletService";
 
 import { SeedCardLocked } from "./SeedCardLocked";
 import { SeedCardUnlocked } from "./SeedCardUnlocked";
@@ -60,11 +60,15 @@ export function Seed() {
       const seedText = await getSeed();
       setSeed(seedText);
     } catch (error) {
+      let errorDescriptionKey = "cardSeed.errorDescription";
+      if (isSecretsLockedError(error)) {
+        errorDescriptionKey = "cardSeed.secretsLockedError";
+      } else if (error?.code === "unsupported_operation") {
+        errorDescriptionKey = "cardSeed.notAvailableNwc";
+      }
       addToast({
         title: seedTranslations("cardSeed.errorTitle"),
-        description: error?.code === "unsupported_operation"
-          ? seedTranslations("cardSeed.notAvailableNwc")
-          : seedTranslations("cardSeed.errorDescription"),
+        description: seedTranslations(errorDescriptionKey),
         color: "danger",
       });
       setShowAccess(false);

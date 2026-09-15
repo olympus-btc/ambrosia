@@ -1,7 +1,9 @@
 "use client";
 
-import { Button, Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
+import { Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
 import { AlertTriangle } from "lucide-react";
+
+import { SecretsGatedRevealButton } from "@components/shared/SecretsGatedRevealButton";
 
 export function SeedCardLocked({ onReveal, seedCardTranslations }) {
   return (
@@ -27,13 +29,7 @@ export function SeedCardLocked({ onReveal, seedCardTranslations }) {
       </CardBody>
 
       <CardFooter>
-        <Button
-          color="primary"
-          className="bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium"
-          onPress={onReveal}
-        >
-          {seedCardTranslations("cardSeed.revealButton")}
-        </Button>
+        <SecretsGatedRevealButton onReveal={onReveal} revealLabel={seedCardTranslations("cardSeed.revealButton")} />
       </CardFooter>
     </Card>
   );

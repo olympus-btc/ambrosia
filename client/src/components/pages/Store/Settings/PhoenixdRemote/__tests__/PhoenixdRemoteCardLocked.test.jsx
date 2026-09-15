@@ -3,13 +3,16 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { PhoenixdRemoteCardLocked } from "../PhoenixdRemoteCardLocked";
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ onPress, children, ...props }) => (
-    <button type="button" onClick={onPress} {...props}>{children}</button>
-  ),
   Card: ({ children }) => <div>{children}</div>,
   CardHeader: ({ children }) => <div>{children}</div>,
   CardBody: ({ children }) => <div>{children}</div>,
   CardFooter: ({ children }) => <div>{children}</div>,
+}));
+
+jest.mock("@components/shared/SecretsGatedRevealButton", () => ({
+  SecretsGatedRevealButton: ({ onReveal, revealLabel }) => (
+    <button type="button" onClick={onReveal}>{revealLabel}</button>
+  ),
 }));
 
 const translate = (key) => key;
@@ -30,14 +33,14 @@ describe("PhoenixdRemoteCardLocked", () => {
       expect(screen.getByText("phoenixdRemoteCard.description")).toBeInTheDocument();
     });
 
-    it("renders the manage button", () => {
+    it("passes the manage button label to SecretsGatedRevealButton", () => {
       renderLocked();
       expect(screen.getByText("phoenixdRemoteCard.manageButton")).toBeInTheDocument();
     });
   });
 
   describe("Interaction", () => {
-    it("calls onReveal when the manage button is pressed", () => {
+    it("calls onReveal when the reveal button is pressed", () => {
       const onReveal = jest.fn();
       renderLocked({ onReveal });
       fireEvent.click(screen.getByText("phoenixdRemoteCard.manageButton"));

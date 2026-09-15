@@ -6,7 +6,7 @@ import { addToast, Button, Input } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { createInvoice } from "@/services/walletService";
+import { createInvoice, isSecretsLockedError } from "@/services/walletService";
 
 import { AmountUnitInputFields } from "./AmountUnitInputFields";
 import { useWalletAmountInput } from "./hooks/useWalletAmountInput";
@@ -67,9 +67,12 @@ export function ReceiveTab({ invoiceActions, currentRate }) {
       });
     } catch (err) {
       console.error(err);
+      const isSecretsLocked = isSecretsLockedError(err);
       addToast({
         title: walletTranslations("errorTitle"),
-        description: walletTranslations("payments.receive.invoiceCreateError"),
+        description: walletTranslations(
+          isSecretsLocked ? "payments.receive.secretsLockedError" : "payments.receive.invoiceCreateError",
+        ),
         variant: "solid",
         color: "danger",
       });

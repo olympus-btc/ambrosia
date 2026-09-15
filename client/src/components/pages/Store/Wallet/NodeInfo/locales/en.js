@@ -14,6 +14,8 @@ const nodeInfoEn = {
     inboundLiquidity: "Inbound Liquidity:",
     fetchInfoError: "Error fetching wallet information",
     getInfoErrorDescription: "Could not load wallet information",
+    secretsLockedError: "Secrets encryption is locked",
+    secretsLockedErrorDescription: "Enter the unlock password in Settings → Secrets encryption to use your wallet.",
     nodeUnavailable: "Could not connect to your Lightning wallet. Please try again in a moment.",
     noChannels: "No active Lightning channels",
     stateShuttingDown: "Closing — settling pending payments",

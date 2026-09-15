@@ -92,6 +92,14 @@ describe("BitcoinPaymentModal", () => {
       expect(screen.getByText("serviceUnavailable")).toBeInTheDocument();
     });
 
+    it("shows a secrets-locked-specific message when secrets encryption is locked", () => {
+      mockInvoiceState = { ...mockInvoiceState, isSecretsLocked: true };
+      renderModal();
+
+      expect(screen.getByText("secretsLockedError")).toBeInTheDocument();
+      expect(screen.queryByText("serviceUnavailable")).not.toBeInTheDocument();
+    });
+
     it("calls generateInvoice on retry", () => {
       renderModal();
 

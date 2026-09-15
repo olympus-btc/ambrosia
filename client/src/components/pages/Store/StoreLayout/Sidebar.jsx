@@ -9,24 +9,45 @@ import { ADMIN_NOTIFICATIONS_ROUTE } from "@/lib/adminNotifications";
 
 import ambrosia from "../../../../../public/ambrosia.svg";
 
+import { LockedBadge } from "./LockedBadge";
 import { NavIcon } from "./NavIcon";
 import { NotificationBadge } from "./NotificationBadge";
 
-function NavBarButton({ text, icon, href, isActive, id, onClick, badgeCount }) {
+const WALLET_ROUTE = "/store/wallet";
+
+function NavBarButton({ text, icon, href, isActive, id, onClick, badgeCount, isLocked, onLockClick }) {
+  const handleClick = (event) => {
+    if (isLocked) {
+      event.preventDefault();
+      onLockClick?.();
+      return;
+    }
+    onClick?.();
+  };
+
+  const rowStateClassName = isLocked
+    ? "bg-red-800 text-slate-100 hover:bg-red-600/80"
+    : isActive
+      ? "bg-green-300 text-green-800 hover:bg-green-300 hover:text-green-800"
+      : "text-slate-100 hover:bg-green-300 hover:text-green-800";
+
   return (
     <Link
       id={id}
       href={href}
-      onClick={onClick}
-      className={`flex items-center space-x-2 p-2 rounded-md transition-colors hover:bg-green-300 hover:text-green-800 ${
-        isActive ? "bg-green-300 text-green-800" : "text-slate-100"
-      }`}
+      onClick={handleClick}
+      className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${rowStateClassName}`}
     >
       <NavIcon name={icon} className="w-6 h-6 md:w-5 md:h-5 lg:w-6 lg:h-6" />
       <span className="pl-2 text-2xl md:text-lg lg:text-2xl">{text}</span>
       <NotificationBadge
         count={badgeCount}
         className="ml-auto min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-xs font-semibold text-white"
+      />
+      <LockedBadge
+        isLocked={isLocked}
+        onClick={onLockClick}
+        className="ml-auto text-slate-200 p-2 hover:cursor-pointer"
       />
     </Link>
   );
@@ -43,6 +64,8 @@ export function SidebarContent({
   withTourIds,
   onNavClick,
   notificationUnreadCount,
+  secretsLocked,
+  onSecretsLockClick,
 }) {
   return (
     <>
@@ -75,6 +98,8 @@ export function SidebarContent({
                 href={item.path}
                 isActive={pathname === item.path || pathname.startsWith(item.path)}
                 badgeCount={item.path === ADMIN_NOTIFICATIONS_ROUTE ? notificationUnreadCount : 0}
+                isLocked={item.path === WALLET_ROUTE && secretsLocked}
+                onLockClick={onSecretsLockClick}
                 onClick={onNavClick}
               />
             ))}

@@ -14,6 +14,8 @@ const nodeInfoEs = {
     inboundLiquidity: "Liquidez Entrante:",
     fetchInfoError: "Error al obtener la información de la wallet",
     getInfoErrorDescription: "No se pudo cargar la información de la wallet",
+    secretsLockedError: "El cifrado de secretos está bloqueado",
+    secretsLockedErrorDescription: "Ingresa la contraseña de desbloqueo en Configuración → Cifrado de secretos para usar tu wallet.",
     nodeUnavailable: "No se pudo conectar con tu wallet Lightning. Intentá de nuevo en un momento.",
     noChannels: "No hay canales Lightning activos",
     stateShuttingDown: "Cerrando — liquidando pagos pendientes",

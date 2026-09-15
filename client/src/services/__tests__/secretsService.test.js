@@ -9,7 +9,7 @@ jest.mock("@/lib/http/parseJsonResponse", () => ({
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
-import { activateSecretsEncryption, getSecretsStatus, unlockSecrets } from "../secretsService";
+import { activateSecretsEncryption, getSecretsLockStatus, getSecretsStatus, unlockSecrets } from "../secretsService";
 
 function makeResponse(status, ok = true) {
   return { status, ok };
@@ -56,6 +56,47 @@ describe("secretsService", () => {
 
       await expect(getSecretsStatus()).rejects.toMatchObject({
         message: "Could not load the secrets encryption status",
+        status: 500,
+      });
+    });
+  });
+
+  describe("getSecretsLockStatus", () => {
+    it("calls GET /secrets/lock-status", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ encryptionActive: true, locked: true });
+
+      await getSecretsLockStatus();
+
+      expect(httpClient).toHaveBeenCalledWith("/secrets/lock-status", { skipForbiddenRedirect: true });
+    });
+
+    it("returns the parsed lock status", async () => {
+      const secretsLockStatus = { encryptionActive: true, locked: true };
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue(secretsLockStatus);
+
+      const secretsLockStatusResult = await getSecretsLockStatus();
+
+      expect(secretsLockStatusResult).toEqual(secretsLockStatus);
+    });
+
+    it("throws with the server message when the response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(401, false));
+      parseJsonResponse.mockResolvedValue({ message: "Invalid credentials" });
+
+      await expect(getSecretsLockStatus()).rejects.toMatchObject({
+        message: "Invalid credentials",
+        status: 401,
+      });
+    });
+
+    it("throws the fallback message when the server provides none", async () => {
+      httpClient.mockResolvedValue(makeResponse(500, false));
+      parseJsonResponse.mockResolvedValue({});
+
+      await expect(getSecretsLockStatus()).rejects.toMatchObject({
+        message: "Could not load the secrets lock status",
         status: 500,
       });
     });

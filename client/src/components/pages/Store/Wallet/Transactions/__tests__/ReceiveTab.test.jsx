@@ -354,6 +354,34 @@ describe("ReceiveTab Component", () => {
         color: "danger",
       });
     });
+
+    it("shows a secrets-locked-specific message when the wallet backend is locked", async () => {
+      const secretsLockedError = new Error("API Error");
+      secretsLockedError.status = 409;
+      jest.spyOn(walletService, "createInvoice").mockRejectedValue(secretsLockedError);
+      const invoiceActions = {
+        createInvoice: jest.fn(),
+        closeModal: jest.fn(),
+        markAsPaid: jest.fn(),
+      };
+      renderReceiveTab({ invoiceActions });
+
+      fireEvent.change(screen.getByLabelText("payments.receive.invoiceAmountSatLabel"), {
+        target: { value: "1000" },
+      });
+
+      fireEvent.click(screen.getByText("payments.receive.invoiceLightningButton"));
+
+      await waitFor(() => {
+        expect(addToast).toHaveBeenCalledWith({
+          title: "errorTitle",
+          description: "payments.receive.secretsLockedError",
+          variant: "solid",
+          color: "danger",
+        });
+      });
+      expect(invoiceActions.createInvoice).not.toHaveBeenCalled();
+    });
   });
 
   describe("Loading State", () => {

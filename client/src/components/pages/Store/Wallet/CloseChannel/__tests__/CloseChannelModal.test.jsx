@@ -269,6 +269,26 @@ describe("CloseChannelModal", () => {
         });
       });
     });
+
+    it("shows a secrets-locked-specific message when service fails with a 409 status", async () => {
+      const secretsLockedError = new Error("Connection failed");
+      secretsLockedError.status = 409;
+      jest.spyOn(walletService, "closeChannel").mockRejectedValue(secretsLockedError);
+      goToConfirm();
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("closeChannel.confirmButton"));
+      });
+
+      await waitFor(() => {
+        expect(addToast).toHaveBeenCalledWith({
+          title: "closeChannel.errorToast",
+          description: "closeChannel.secretsLockedError",
+          variant: "solid",
+          color: "danger",
+        });
+      });
+    });
   });
 
   describe("Success step", () => {

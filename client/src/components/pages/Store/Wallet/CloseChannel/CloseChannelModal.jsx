@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { addToast, Modal, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { closeChannel } from "@/services/walletService";
+import { closeChannel, isSecretsLockedError } from "@/services/walletService";
 
 import { ModalConfirm } from "./ModalConfirm";
 import { ModalForm } from "./ModalForm";
@@ -74,7 +74,9 @@ export function CloseChannelModal({ isOpen, onClose, channel, onSuccess }) {
     } catch (closeChannelError) {
       addToast({
         title: walletTranslations("closeChannel.errorToast"),
-        description: closeChannelError?.message,
+        description: isSecretsLockedError(closeChannelError)
+          ? walletTranslations("closeChannel.secretsLockedError")
+          : closeChannelError?.message,
         variant: "solid",
         color: "danger",
       });

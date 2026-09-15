@@ -1,6 +1,8 @@
 "use client";
 
-import { Button, Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
+import { Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
+
+import { SecretsGatedRevealButton } from "@components/shared/SecretsGatedRevealButton";
 
 export function PhoenixdRemoteCardLocked({ onReveal, phoenixdRemoteCardTranslations }) {
   return (
@@ -18,13 +20,7 @@ export function PhoenixdRemoteCardLocked({ onReveal, phoenixdRemoteCardTranslati
       </CardBody>
 
       <CardFooter>
-        <Button
-          color="primary"
-          className="bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium"
-          onPress={onReveal}
-        >
-          {phoenixdRemoteCardTranslations("phoenixdRemoteCard.manageButton")}
-        </Button>
+        <SecretsGatedRevealButton onReveal={onReveal} revealLabel={phoenixdRemoteCardTranslations("phoenixdRemoteCard.manageButton")} />
       </CardFooter>
     </Card>
   );

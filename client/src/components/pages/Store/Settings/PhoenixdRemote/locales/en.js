@@ -13,6 +13,7 @@ const phoenixdRemoteCardEn = {
     remoteActivatedDescription: "Ambrosia is now using the remote phoenixd node.",
     remoteActivatedButton: "Got it",
     errorGeneric: "Could not update the phoenixd connection",
+    secretsLockedError: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to update the phoenixd connection.",
     statusLoadError: "Could not load the current phoenixd connection status",
   },
 };

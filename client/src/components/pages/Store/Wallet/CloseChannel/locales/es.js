@@ -22,6 +22,7 @@ const closeChannelEs = {
     doneButton: "Listo",
     successToast: "Cierre de canal iniciado con éxito.",
     errorToast: "Error al cerrar el canal. Por favor, intenta de nuevo.",
+    secretsLockedError: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para cerrar este canal.",
     validationAddressRequired: "La dirección Bitcoin es obligatoria.",
     validationAddressInvalid: "Formato de dirección Bitcoin inválido.",
     validationFeerateRequired: "La tarifa es obligatoria.",

@@ -16,6 +16,7 @@ const nwcConnectionEs = {
       connectionFailed: "No se pudo conectar con la wallet usando esa URI — revisa que sea correcta y que la wallet esté disponible",
       providerSwitchNotSupported: "Cambiar de proveedor de Lightning todavía no está disponible desde acá",
       unknown: "No se pudo actualizar la conexión NWC",
+      secretsLocked: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para actualizar la conexión NWC.",
     },
   },
 };

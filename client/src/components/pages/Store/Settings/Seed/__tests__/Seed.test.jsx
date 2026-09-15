@@ -143,6 +143,23 @@ describe("Seed", () => {
         expect.objectContaining({ color: "danger", description: "cardSeed.notAvailableNwc" }),
       );
     });
+
+    it("shows a secrets-locked-specific message when getSeed fails with a 409 status", async () => {
+      const { addToast } = require("@heroui/react");
+      const secretsLockedError = new Error("Connection failed");
+      secretsLockedError.status = 409;
+      jest.spyOn(walletService, "getSeed").mockRejectedValue(secretsLockedError);
+      render(<Seed />);
+      fireEvent.click(screen.getByText("cardSeed.revealButton"));
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("guard-confirm"));
+      });
+
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "cardSeed.secretsLockedError" }),
+      );
+    });
   });
 
   describe("Hide (return to locked state)", () => {

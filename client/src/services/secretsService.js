@@ -1,6 +1,8 @@
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
+export const SECRETS_UNLOCKED_EVENT = "secrets:unlocked";
+
 function createSecretsServiceError(message, errorDetails = {}) {
   const secretsServiceError = new Error(message);
   secretsServiceError.status = errorDetails.status;
@@ -24,6 +26,15 @@ export async function getSecretsStatus() {
     secretsStatusResponse,
     null,
     "Could not load the secrets encryption status",
+  );
+}
+
+export async function getSecretsLockStatus() {
+  const secretsLockStatusResponse = await httpClient("/secrets/lock-status", { skipForbiddenRedirect: true });
+  return await parseSecretsResponseOrThrow(
+    secretsLockStatusResponse,
+    null,
+    "Could not load the secrets lock status",
   );
 }
 

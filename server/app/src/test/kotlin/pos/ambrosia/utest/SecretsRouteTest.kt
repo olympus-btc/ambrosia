@@ -21,7 +21,11 @@ import pos.ambrosia.api.handler
 import pos.ambrosia.models.SecretsStatusResponse
 import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.installNonAdminAuth
 import pos.ambrosia.utils.installWalletAuth
+import pos.ambrosia.utils.installWalletAuthWithRegularSession
+import pos.ambrosia.utils.withAuthCookies
+import pos.ambrosia.utils.withRegularAuthCookie
 import pos.ambrosia.utils.withWalletAuthCookie
 import java.io.File
 import java.nio.file.Files
@@ -78,6 +82,55 @@ class SecretsRouteTest {
             assertEquals(HttpStatusCode.OK, statusResponse.status)
             assertFalse(status.encryptionActive)
             assertFalse(status.locked)
+        }
+
+    @Test
+    fun `lock-status returns unauthorized without a session`() =
+        testApplication {
+            installNonAdminAuth()
+            application { installTestSecretsRoutes() }
+
+            val lockStatusResponse = client.get("/secrets/lock-status")
+
+            assertEquals(HttpStatusCode.Unauthorized, lockStatusResponse.status)
+        }
+
+    @Test
+    fun `lock-status is reachable with a regular session, no wallet session required`() =
+        testApplication {
+            val authCookies = installNonAdminAuth()
+            application { installTestSecretsRoutes() }
+
+            val lockStatusResponse = client.get("/secrets/lock-status") { withAuthCookies(authCookies) }
+            val lockStatus = Json.decodeFromString<SecretsStatusResponse>(lockStatusResponse.bodyAsText())
+
+            assertEquals(HttpStatusCode.OK, lockStatusResponse.status)
+            assertFalse(lockStatus.encryptionActive)
+            assertFalse(lockStatus.locked)
+        }
+
+    @Test
+    fun `lock-status reflects active and locked encryption after activation`() =
+        testApplication {
+            val (walletAccessToken, regularAccessToken) = installWalletAuthWithRegularSession()
+            application { installTestSecretsRoutes() }
+            configFile.writeText("phoenixd-password=remote-password\n")
+
+            val activateResponse =
+                client.post("/secrets/activate") {
+                    withWalletAuthCookie(walletAccessToken)
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"unlockPassword":"correct-unlock-password"}""")
+                }
+            assertEquals(HttpStatusCode.OK, activateResponse.status)
+            SecretsStore.lockForTesting()
+
+            val lockStatusResponse = client.get("/secrets/lock-status") { withRegularAuthCookie(regularAccessToken) }
+            val lockStatus = Json.decodeFromString<SecretsStatusResponse>(lockStatusResponse.bodyAsText())
+
+            assertEquals(HttpStatusCode.OK, lockStatusResponse.status)
+            assertTrue(lockStatus.encryptionActive)
+            assertTrue(lockStatus.locked)
         }
 
     @Test

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import BitcoinPriceService from "@/services/bitcoinPriceService";
-import { createInvoiceForCart } from "@/services/walletService";
+import { createInvoiceForCart, isSecretsLockedError } from "@/services/walletService";
 
 const priceService = new BitcoinPriceService();
 
@@ -17,16 +17,19 @@ export function useBitcoinInvoice({
   const [invoice, setInvoice] = useState(null);
   const [satsAmount, setSatsAmount] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isSecretsLocked, setIsSecretsLocked] = useState(false);
 
   const reset = useCallback(() => {
     setInvoice(null);
     setSatsAmount(null);
+    setIsSecretsLocked(false);
   }, []);
 
   const generateInvoice = useCallback(async () => {
     if (!amountFiat) return null;
 
     setLoading(true);
+    setIsSecretsLocked(false);
 
     try {
       const btcPrice = await priceService.getBitcoinPrice(currencyAcronym.toLowerCase());
@@ -44,6 +47,7 @@ export function useBitcoinInvoice({
       return createdInvoice;
     } catch (caughtError) {
       console.error("Error generating BTC invoice:", caughtError);
+      setIsSecretsLocked(isSecretsLockedError(caughtError));
       return null;
     } finally {
       setLoading(false);
@@ -63,6 +67,7 @@ export function useBitcoinInvoice({
     invoice,
     satsAmount,
     loading,
+    isSecretsLocked,
     generateInvoice,
     reset,
   };

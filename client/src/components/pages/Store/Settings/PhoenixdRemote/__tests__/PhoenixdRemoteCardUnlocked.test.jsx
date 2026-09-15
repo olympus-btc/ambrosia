@@ -271,5 +271,25 @@ describe("PhoenixdRemoteCardUnlocked", () => {
         expect.objectContaining({ color: "danger", description: "Missing url or password" }),
       );
     });
+
+    it("shows a secrets-locked-specific message when saving fails with a 409 status", async () => {
+      const secretsLockedError = new Error("Connection failed");
+      secretsLockedError.status = 409;
+      walletService.updatePhoenixdRemote.mockRejectedValue(secretsLockedError);
+      walletService.isSecretsLockedError.mockReturnValue(true);
+      const { addToast } = require("@heroui/react");
+      renderUnlocked();
+
+      fireEvent.click(screen.getByText("set-remote-true"));
+      fireEvent.click(screen.getByText("set-url"));
+      fireEvent.click(screen.getByText("set-password"));
+      await act(async () => {
+        fireEvent.click(screen.getByText("phoenixdRemoteCard.submitButton"));
+      });
+
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({ color: "danger", description: "phoenixdRemoteCard.secretsLockedError" }),
+      );
+    });
   });
 });

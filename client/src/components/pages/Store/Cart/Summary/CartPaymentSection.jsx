@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 
 import { Button, Select, SelectItem } from "@heroui/react";
+import { Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useSecretsLockSignal } from "@/hooks/useSecretsLockSignal";
+import { SecretsUnlockModal } from "@components/shared/SecretsUnlockModal";
 
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
@@ -13,14 +17,21 @@ export function CartPaymentSection({
   onPay,
 }) {
   const translateCart = useTranslations("cart");
+  const secretsEncryptionCardTranslations = useTranslations();
   const { paymentMethods } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const { secretsLocked } = useSecretsLockSignal({ enabled: true });
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
   const effectivePaymentMethod = useMemo(() => {
     if (selectedPaymentMethod) return selectedPaymentMethod;
     const bitcoinLightningMethod = paymentMethods.find((method) => method.name === "BTC");
     return bitcoinLightningMethod ? String(bitcoinLightningMethod.id) : "";
   }, [selectedPaymentMethod, paymentMethods]);
+
+  const isBtcLockedAndSelected = secretsLocked && paymentMethods.find(
+    (method) => String(method.id) === effectivePaymentMethod,
+  )?.name === "BTC";
 
   return (
     <div className="space-y-2">
@@ -48,15 +59,19 @@ export function CartPaymentSection({
         ))}
       </Select>
       <Button
-        color="primary"
+        color={isBtcLockedAndSelected ? "danger" : "primary"}
         className="w-full"
         size="lg"
         isLoading={isPaying}
         isDisabled={isDisabled}
-        onPress={() => onPay(effectivePaymentMethod)}
+        startContent={isBtcLockedAndSelected ? <Lock className="w-4 h-4" /> : undefined}
+        onPress={isBtcLockedAndSelected ? () => setUnlockModalOpen(true) : () => onPay(effectivePaymentMethod)}
       >
-        {translateCart("summary.pay")}
+        {isBtcLockedAndSelected
+          ? secretsEncryptionCardTranslations("secretsEncryptionCard.unlockButton")
+          : translateCart("summary.pay")}
       </Button>
+      {unlockModalOpen && <SecretsUnlockModal onClose={() => setUnlockModalOpen(false)} />}
     </div>
   );
 }

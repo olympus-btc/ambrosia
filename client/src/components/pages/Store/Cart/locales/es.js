@@ -100,6 +100,7 @@ const cartEs = {
         generating: "Generando invoice...",
         retry: "Reintentar",
         serviceUnavailable: "El servicio de pago Lightning no está disponible. Por favor, inténtalo de nuevo.",
+        secretsLockedError: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para aceptar pagos con Bitcoin.",
         totalLabel: "Total",
         cancel: "Cancelar",
         confirm: "Confirmar pago",

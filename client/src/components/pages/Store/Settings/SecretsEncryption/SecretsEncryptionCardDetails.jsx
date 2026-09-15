@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 
-import { addToast, Button, Card, CardBody, CardHeader, Input, Spinner } from "@heroui/react";
+import { addToast, Button, Card, CardBody, CardHeader, Spinner } from "@heroui/react";
 
 import { RequirePermission } from "@/hooks/usePermission";
-import { activateSecretsEncryption, getSecretsStatus, unlockSecrets } from "@/services/secretsService";
+import {
+  activateSecretsEncryption,
+  getSecretsStatus,
+  SECRETS_UNLOCKED_EVENT,
+  unlockSecrets,
+} from "@/services/secretsService";
 import WalletGuard from "@components/auth/WalletGuard";
+import { SecretsExistingPasswordField } from "@components/shared/SecretsExistingPasswordField";
 import { SecretsUnlockPasswordField } from "@components/shared/SecretsUnlockPasswordField";
 
 const PASSWORD_ACTION_BUTTON_CLASS_NAME = "bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium";
@@ -16,7 +22,13 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
   const [secretsStatus, setSecretsStatus] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState("");
   const [unlockPasswordConfirmation, setUnlockPasswordConfirmation] = useState("");
+  const [unlockPasswordError, setUnlockPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleUnlockPasswordChange = (enteredPassword) => {
+    setUnlockPassword(enteredPassword);
+    setUnlockPasswordError("");
+  };
 
   const handleAuthorized = async () => {
     try {
@@ -36,6 +48,7 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
       await activateSecretsEncryption(unlockPassword);
       addToast({ color: "success", description: secretsEncryptionCardTranslations("secretsEncryptionCard.activateSuccess") });
       setSecretsStatus({ encryptionActive: true, locked: false });
+      window.dispatchEvent(new Event(SECRETS_UNLOCKED_EVENT));
       setUnlockPassword("");
       setUnlockPasswordConfirmation("");
     } catch (activateSecretsEncryptionError) {
@@ -55,12 +68,10 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
       await unlockSecrets(unlockPassword);
       addToast({ color: "success", description: secretsEncryptionCardTranslations("secretsEncryptionCard.unlockSuccess") });
       setSecretsStatus({ encryptionActive: true, locked: false });
+      window.dispatchEvent(new Event(SECRETS_UNLOCKED_EVENT));
       setUnlockPassword("");
     } catch (unlockSecretsError) {
-      addToast({
-        color: "danger",
-        description: unlockSecretsError.message || secretsEncryptionCardTranslations("secretsEncryptionCard.unlockError"),
-      });
+      setUnlockPasswordError(unlockSecretsError.message || secretsEncryptionCardTranslations("secretsEncryptionCard.unlockError"));
     } finally {
       setSubmitting(false);
     }
@@ -119,11 +130,10 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
           </p>
 
           <RequirePermission allOf={["settings_update"]}>
-            <Input
-              label={secretsEncryptionCardTranslations("secretsEncryptionCard.unlockPasswordLabel")}
-              type="password"
-              value={unlockPassword}
-              onValueChange={setUnlockPassword}
+            <SecretsExistingPasswordField
+              unlockPassword={unlockPassword}
+              onUnlockPasswordChange={handleUnlockPasswordChange}
+              passwordError={unlockPasswordError}
             />
           </RequirePermission>
 

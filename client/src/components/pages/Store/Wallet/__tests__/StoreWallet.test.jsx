@@ -358,6 +358,20 @@ describe("StoreWallet Component", () => {
       expect(screen.queryByText("loadingMessage")).not.toBeInTheDocument();
     });
 
+    it("shows a secrets-locked-specific message when the wallet backend is locked", async () => {
+      const secretsLockedError = new Error("Connection failed");
+      secretsLockedError.status = 409;
+      jest.spyOn(walletService, "getInfo").mockRejectedValue(secretsLockedError);
+
+      await authenticateAndWait();
+
+      await waitFor(() => {
+        expect(screen.getByText("nodeInfo.secretsLockedError")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("nodeInfo.fetchInfoError")).not.toBeInTheDocument();
+    });
+
     it("falls back to the empty transactions state when the transaction fetch fails", async () => {
       jest.spyOn(walletService, "getIncomingTransactions").mockRejectedValue(
         new Error("Failed to fetch"),

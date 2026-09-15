@@ -20,6 +20,17 @@ import pos.ambrosia.utils.InvalidCredentialsException
 fun Application.configureSecrets() {
     routing {
         route("/secrets") {
+            authenticate("auth-jwt") {
+                get("/lock-status") {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        SecretsStatusResponse(
+                            encryptionActive = SecretsStore.isEncryptionActive(),
+                            locked = SecretsStore.isLocked(),
+                        ),
+                    )
+                }
+            }
             authenticate("auth-jwt-wallet") {
                 get("/status") {
                     call.respond(

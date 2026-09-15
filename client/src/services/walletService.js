@@ -10,6 +10,10 @@ function createWalletServiceError(message, errorDetails = {}) {
   return error;
 }
 
+export function isSecretsLockedError(error) {
+  return error?.status === 409;
+}
+
 function isValidPaymentResponse(paymentResponseBody) {
   return (
     paymentResponseBody &&
@@ -296,7 +300,11 @@ export async function closeChannel(channelId, address, feerateSatByte) {
   });
   if (!closeChannelResponse.ok) {
     const closeChannelErrorBody = await parseJsonResponse(closeChannelResponse, {});
-    throw new Error(closeChannelErrorBody?.message ?? "Failed to close channel");
+    throw createWalletServiceError(closeChannelErrorBody?.message ?? "Failed to close channel", {
+      status: closeChannelResponse.status,
+      code: closeChannelErrorBody?.code,
+      source: closeChannelErrorBody?.source,
+    });
   }
   return await parseJsonResponse(closeChannelResponse, null);
 }

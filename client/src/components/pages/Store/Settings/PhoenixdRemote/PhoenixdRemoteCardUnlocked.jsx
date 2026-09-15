@@ -7,6 +7,7 @@ import { addToast, Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { RequirePermission } from "@/hooks/usePermission";
 import {
   getPhoenixdRemoteStatus,
+  isSecretsLockedError,
   testPhoenixdConnection,
   updatePhoenixdRemote,
 } from "@/services/walletService";
@@ -52,7 +53,9 @@ export function PhoenixdRemoteCardUnlocked({ onHide, phoenixdRemoteCardTranslati
     } catch (updatePhoenixdRemoteError) {
       addToast({
         color: "danger",
-        description: updatePhoenixdRemoteError.message || phoenixdRemoteCardTranslations("phoenixdRemoteCard.errorGeneric"),
+        description: isSecretsLockedError(updatePhoenixdRemoteError)
+          ? phoenixdRemoteCardTranslations("phoenixdRemoteCard.secretsLockedError")
+          : updatePhoenixdRemoteError.message || phoenixdRemoteCardTranslations("phoenixdRemoteCard.errorGeneric"),
       });
     } finally {
       setSubmitting(false);

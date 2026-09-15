@@ -23,6 +23,7 @@ const transactionsEn = {
       invoiceSatsToFiatError: "Could not convert to fiat",
       invoiceFiatToSatsError: "Could not convert to satoshis",
       invoiceCreateError: "Error creating the invoice",
+      secretsLockedError: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to receive payments.",
     },
     send: {
       tabTitle: "Send",
@@ -64,6 +65,7 @@ const transactionsEn = {
         amountOverrideNotSupported: "This wallet could not process a payment with a specified amount for this invoice — ask for one that already includes the amount",
         retryGuidance: "You can retry, refresh Lightning, or contact support if it repeats.",
         unknown: "Could not process the payment",
+        secretsLocked: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to send payments.",
       },
       closeButton: "Close",
       confirmModal: {
@@ -99,6 +101,7 @@ const transactionsEn = {
       fee: "Fee:",
       getTransactionsError: "Error loading history",
       getTransactionsErrorDescription: "Could not load transaction history",
+      secretsLockedErrorDescription: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to view your transaction history.",
     },
   },
   invoiceModal: {

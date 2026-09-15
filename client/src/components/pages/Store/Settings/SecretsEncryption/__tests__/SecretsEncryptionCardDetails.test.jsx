@@ -16,10 +16,18 @@ jest.mock("@heroui/react", () => ({
   Card: ({ children }) => <div>{children}</div>,
   CardHeader: ({ children }) => <div>{children}</div>,
   CardBody: ({ children }) => <div>{children}</div>,
-  Input: ({ label, value, onValueChange }) => (
+  Input: ({ label, type, value: passwordValue, onValueChange: onPasswordValueChange, endContent, isInvalid, errorMessage }) => (
     <div>
       <label htmlFor={label}>{label}</label>
-      <input id={label} value={value} onChange={(event) => onValueChange(event.target.value)} />
+      <input
+        id={label}
+        type={type}
+        value={passwordValue}
+        onChange={(event) => onPasswordValueChange(event.target.value)}
+        aria-invalid={isInvalid}
+      />
+      {isInvalid && errorMessage && <span>{errorMessage}</span>}
+      {endContent}
     </div>
   ),
   Spinner: () => <div data-testid="spinner" />,
@@ -192,6 +200,26 @@ describe("SecretsEncryptionCardDetails", () => {
       );
     });
 
+    it("dispatches SECRETS_UNLOCKED_EVENT after activating successfully", async () => {
+      secretsService.activateSecretsEncryption.mockResolvedValue({ message: "Secrets encryption activated" });
+      const dispatchEventSpy = jest.spyOn(window, "dispatchEvent");
+
+      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
+        target: { value: "correct-unlock-password" },
+      });
+      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
+        target: { value: "correct-unlock-password" },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
+      });
+
+      expect(dispatchEventSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: secretsService.SECRETS_UNLOCKED_EVENT }),
+      );
+      dispatchEventSpy.mockRestore();
+    });
+
     it("shows an error toast when activation fails", async () => {
       secretsService.activateSecretsEncryption.mockRejectedValue(new Error("Could not reach the server"));
       const { addToast } = require("@heroui/react");
@@ -241,7 +269,24 @@ describe("SecretsEncryptionCardDetails", () => {
       );
     });
 
-    it("shows an error toast when unlocking fails", async () => {
+    it("dispatches SECRETS_UNLOCKED_EVENT after unlocking successfully", async () => {
+      secretsService.unlockSecrets.mockResolvedValue({ message: "Secrets unlocked" });
+      const dispatchEventSpy = jest.spyOn(window, "dispatchEvent");
+
+      fireEvent.change(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel"), {
+        target: { value: "correct-unlock-password" },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByText("secretsEncryptionCard.unlockButton"));
+      });
+
+      expect(dispatchEventSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: secretsService.SECRETS_UNLOCKED_EVENT }),
+      );
+      dispatchEventSpy.mockRestore();
+    });
+
+    it("shows the error inline on the password field when unlocking fails", async () => {
       secretsService.unlockSecrets.mockRejectedValue(new Error("Invalid credentials"));
       const { addToast } = require("@heroui/react");
 
@@ -252,9 +297,38 @@ describe("SecretsEncryptionCardDetails", () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.unlockButton"));
       });
 
-      expect(addToast).toHaveBeenCalledWith(
-        expect.objectContaining({ color: "danger", description: "Invalid credentials" }),
+      expect(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel")).toBeInvalid();
+      expect(screen.getByText("Invalid credentials")).toBeInTheDocument();
+      expect(addToast).not.toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
+    });
+
+    it("clears the inline error when the password is edited again", async () => {
+      secretsService.unlockSecrets.mockRejectedValue(new Error("Invalid credentials"));
+
+      fireEvent.change(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel"), {
+        target: { value: "wrong-password" },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByText("secretsEncryptionCard.unlockButton"));
+      });
+      expect(screen.getByText("Invalid credentials")).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel"), {
+        target: { value: "wrong-password-retry" },
+      });
+
+      expect(screen.queryByText("Invalid credentials")).not.toBeInTheDocument();
+    });
+
+    it("toggles the password field between hidden and visible", () => {
+      expect(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel")).toHaveAttribute("type", "password");
+
+      const togglePasswordButton = screen.getAllByRole("button").find(
+        (button) => !button.getAttribute("aria-label") && !button.textContent,
       );
+      fireEvent.click(togglePasswordButton);
+
+      expect(screen.getByLabelText("secretsEncryptionCard.unlockPasswordLabel")).toHaveAttribute("type", "text");
     });
   });
 

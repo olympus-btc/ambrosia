@@ -23,6 +23,7 @@ const transactionsEs = {
       invoiceSatsToFiatError: "No se pudo convertir a fiat",
       invoiceFiatToSatsError: "No se pudo convertir a satoshis",
       invoiceCreateError: "Error al crear el invoice",
+      secretsLockedError: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para recibir pagos.",
     },
     send: {
       tabTitle: "Enviar",
@@ -64,6 +65,7 @@ const transactionsEs = {
         amountOverrideNotSupported: "Esta wallet no puede procesar un pago con un monto específico para esta factura — pedí una factura que ya incluya el monto",
         retryGuidance: "Puedes reintentar, refrescar Lightning o contactar soporte si vuelve a pasar.",
         unknown: "No se pudo procesar el pago",
+        secretsLocked: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para enviar pagos.",
       },
       closeButton: "Cerrar",
       confirmModal: {
@@ -99,6 +101,7 @@ const transactionsEs = {
       fee: "Comisión:",
       getTransactionsError: "Error al cargar historial",
       getTransactionsErrorDescription: "No se pudo cargar el historial de transacciones",
+      secretsLockedErrorDescription: "El cifrado de secretos está bloqueado. Desbloquéalo en Configuración → Cifrado de secretos para ver tu historial de transacciones.",
     },
   },
   invoiceModal: {

@@ -17,6 +17,7 @@ import {
   getIncomingTransactions,
   getInfo,
   getOutgoingTransactions,
+  isSecretsLockedError,
 } from "@/services/walletService";
 import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
@@ -50,10 +51,13 @@ export function StoreWallet() {
       setError("");
     } catch (walletInfoError) {
       console.error(walletInfoError);
-      setError(walletTranslations("nodeInfo.fetchInfoError"));
+      const isSecretsLocked = isSecretsLockedError(walletInfoError);
+      setError(walletTranslations(isSecretsLocked ? "nodeInfo.secretsLockedError" : "nodeInfo.fetchInfoError"));
       addToast({
         title: walletTranslations("errorTitle"),
-        description: walletTranslations("nodeInfo.getInfoErrorDescription"),
+        description: walletTranslations(
+          isSecretsLocked ? "nodeInfo.secretsLockedErrorDescription" : "nodeInfo.getInfoErrorDescription",
+        ),
         variant: "solid",
         color: "danger",
       });
@@ -79,10 +83,13 @@ export function StoreWallet() {
           ),
         );
         setTransactions(sortedTransactions);
-      } catch {
+      } catch (transactionsError) {
+        const isSecretsLocked = isSecretsLockedError(transactionsError);
         addToast({
           title: walletTranslations("errorTitle"),
-          description: walletTranslations("payments.history.getTransactionsErrorDescription"),
+          description: walletTranslations(
+            isSecretsLocked ? "payments.history.secretsLockedErrorDescription" : "payments.history.getTransactionsErrorDescription",
+          ),
           variant: "solid",
           color: "danger",
         });

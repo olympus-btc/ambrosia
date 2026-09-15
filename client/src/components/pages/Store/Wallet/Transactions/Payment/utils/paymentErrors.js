@@ -1,3 +1,5 @@
+import { isSecretsLockedError } from "@/services/walletService";
+
 export const PAYMENT_ERROR_TRANSLATIONS = {
   invoice_already_paid: "payments.send.errors.invoiceAlreadyPaid",
   invoice_expired: "payments.send.errors.invoiceExpired",
@@ -49,6 +51,10 @@ function getPaymentErrorCategory(paymentError) {
 }
 
 export function getPaymentErrorDescription(translate, paymentError) {
+  if (isSecretsLockedError(paymentError)) {
+    return translate("payments.send.errors.secretsLocked");
+  }
+
   const paymentErrorCategory = getPaymentErrorCategory(paymentError);
   const translationKey = PAYMENT_ERROR_TRANSLATIONS[paymentError?.code];
 

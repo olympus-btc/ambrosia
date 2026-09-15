@@ -56,6 +56,7 @@ import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.NwcConnectionException
+import pos.ambrosia.utils.SecretsLockedException
 import pos.ambrosia.utils.UnsupportedBackendOperationException
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.getCurrentUser
@@ -169,6 +170,9 @@ fun Route.wallet(
             if (trimmedNwcUri.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, Message("Missing nwcUri"))
                 return@post
+            }
+            if (SecretsStore.isLocked()) {
+                throw SecretsLockedException()
             }
             if (!ActiveLightningBackend.isNwcActive()) {
                 throw UnsupportedBackendOperationException(

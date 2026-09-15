@@ -100,6 +100,7 @@ const cartEn = {
         generating: "Generating invoice...",
         retry: "Retry",
         serviceUnavailable: "Lightning payment service is unavailable. Please try again.",
+        secretsLockedError: "Secrets encryption is locked. Unlock it in Settings → Secrets encryption to accept Bitcoin payments.",
         totalLabel: "Total",
         cancel: "Cancel",
         copyButton: "Copy",
