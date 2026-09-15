@@ -18,6 +18,7 @@ export function useOrdersData(sales) {
       fiatAmountAtPayment,
       discountAmount,
       refunded,
+      transactionId,
     } of sales) {
       if (!byOrder[orderId]) {
         byOrder[orderId] = {
@@ -36,6 +37,7 @@ export function useOrdersData(sales) {
           exchangeRateCurrency: exchangeRateCurrency ?? null,
           fiatAmountAtPayment: fiatAmountAtPayment ?? null,
           refunded: false,
+          transactionId: transactionId ?? null,
         };
       }
       byOrder[orderId].items.push({ productName, quantity, priceAtOrder });

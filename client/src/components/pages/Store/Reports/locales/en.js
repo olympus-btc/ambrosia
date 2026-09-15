@@ -87,6 +87,7 @@ const reportsEn = {
       records: "records",
       export: "Export CSV",
       unknownUser: "Unknown",
+      reference: "Reference #",
     },
     payment: {
       unknown: "Unknown",

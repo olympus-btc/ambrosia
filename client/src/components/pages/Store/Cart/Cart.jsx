@@ -19,6 +19,7 @@ import { PermissionBlockedState } from "./PermissionBlockedState";
 import { SearchProducts } from "./SearchProducts";
 import { MobileSummaryBar, Summary, SummaryModal } from "./Summary";
 import { usePendingRemoval } from "./Summary/hooks/usePendingRemoval";
+import { TransferPaymentModal } from "./TransferPaymentModal";
 import { calculateCartTotals } from "./utils/cartTotals";
 
 function syncCartWithProducts(cart, products) {
@@ -138,6 +139,11 @@ export function Cart() {
       config: cardPaymentConfig,
       onClose: clearCardPaymentConfig,
       onComplete: handleCardComplete,
+    },
+    transferPayment: {
+      config: transferPaymentConfig,
+      onClose: clearTransferPaymentConfig,
+      onComplete: handleTransferComplete,
     },
   } = useCartPayment({
     onResetCart: resetCartState,
@@ -267,6 +273,15 @@ export function Cart() {
         methodLabel={cardPaymentConfig?.methodLabel}
         onClose={clearCardPaymentConfig}
         onComplete={handleCardComplete}
+      />
+
+      <TransferPaymentModal
+        isOpen={!!transferPaymentConfig}
+        amountDue={transferPaymentConfig?.amountDue}
+        displayTotal={transferPaymentConfig?.displayTotal}
+        methodLabel={transferPaymentConfig?.methodLabel}
+        onClose={clearTransferPaymentConfig}
+        onComplete={handleTransferComplete}
       />
     </div>
   );

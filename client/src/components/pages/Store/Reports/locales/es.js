@@ -87,6 +87,7 @@ const reportsEs = {
       records: "registros",
       export: "Exportar CSV",
       unknownUser: "Desconocido",
+      reference: "N.º de referencia",
     },
     payment: {
       unknown: "Desconocido",

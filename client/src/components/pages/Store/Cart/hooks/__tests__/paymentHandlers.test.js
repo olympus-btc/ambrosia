@@ -12,6 +12,7 @@ import {
   buildHandleBtcComplete,
   buildHandleCashComplete,
   buildHandleCardComplete,
+  buildHandleTransferComplete,
 } from "../paymentHandlers";
 
 jest.mock("@/lib/btcCheckoutStore", () => ({
@@ -216,6 +217,59 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
+  it("configures transfer payment when method is bank transfer", async () => {
+    const setTransferPaymentConfig = jest.fn();
+    const notifySuccess = jest.fn();
+    const dispatch = jest.fn();
+
+    const handlePay = buildHandlePay({
+      currency: { id: "cur-1" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { transfer: { id: "transfer", name: "Bank Transfer" } },
+      getPaymentCurrencyById: jest.fn(),
+      setBtcPaymentConfig: jest.fn(),
+      setCashPaymentConfig: jest.fn(),
+      setCardPaymentConfig: jest.fn(),
+      setTransferPaymentConfig,
+      onResetCart: jest.fn(),
+      onPay: jest.fn(),
+      notifyError: jest.fn(),
+      notifySuccess,
+      dispatch,
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        displayTotal: 100,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [{ id: 1 }],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "transfer",
+    });
+
+    expect(setTransferPaymentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountDue: 1,
+        displayTotal: 100,
+        cartItems: [{ id: 1 }],
+        selectedPaymentMethod: "transfer",
+        currencyId: "cur-1",
+        methodLabel: "Bank Transfer",
+      }),
+    );
+    expect(notifySuccess).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({ type: "start" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
+  });
+
   it("configures cash payment when method name is 'efectivo'", async () => {
     const setCashPaymentConfig = jest.fn();
     const dispatch = jest.fn();
@@ -306,7 +360,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       currency: { id: "cur-1" },
       formatAmount: jest.fn(() => 100),
-      paymentMethodMap: { bank: { id: "bank", name: "Bank Transfer" } },
+      paymentMethodMap: { voucher: { id: "voucher", name: "Voucher" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
       setCashPaymentConfig: jest.fn(),
@@ -331,7 +385,7 @@ describe("paymentHandlers", () => {
       items: [{ id: 1 }],
       subtotal: 100,
       total: 100,
-      selectedPaymentMethod: "bank",
+      selectedPaymentMethod: "voucher",
     });
 
     expect(notifyError).toHaveBeenCalledWith("boom");
@@ -350,7 +404,7 @@ describe("paymentHandlers", () => {
     const handlePay = buildHandlePay({
       currency: { id: "cur-1" },
       formatAmount: jest.fn(() => 100),
-      paymentMethodMap: { bank: { id: "bank", name: "Bank Transfer" } },
+      paymentMethodMap: { voucher: { id: "voucher", name: "Voucher" } },
       getPaymentCurrencyById: jest.fn(),
       setBtcPaymentConfig: jest.fn(),
       setCashPaymentConfig: jest.fn(),
@@ -372,7 +426,7 @@ describe("paymentHandlers", () => {
       items: [{ id: 1 }],
       subtotal: 100,
       total: 100,
-      selectedPaymentMethod: "bank",
+      selectedPaymentMethod: "voucher",
     });
 
     expect(notifyError).toHaveBeenCalledWith("errors.checkoutInsufficientStock");
@@ -799,5 +853,96 @@ describe("paymentHandlers", () => {
 
     expect(notifyError).toHaveBeenCalledWith("fail");
     expect(setCardPaymentConfig).toHaveBeenCalledWith(null);
+  });
+
+  it("completes transfer payment flow", async () => {
+    const dispatch = jest.fn();
+    const onPay = jest.fn();
+    const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
+    const setTransferPaymentConfig = jest.fn();
+
+    processCheckout.mockResolvedValueOnce({
+      orderId: "order-1",
+      ticketId: "ticket-1",
+      paymentId: "pay-1",
+    });
+
+    const handler = buildHandleTransferComplete({
+      getConfig: () => ({
+        amountDue: 1,
+        displayTotal: 100,
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
+          amountFiat: 1,
+          displayTotal: 100,
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "transfer",
+        currencyId: "cur-1",
+        methodLabel: "Bank Transfer",
+      }),
+      setConfig: setTransferPaymentConfig,
+      dispatch,
+      onPay,
+      onResetCart,
+      notifyError: jest.fn(),
+      notifySuccess,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { userId: "u1" },
+    });
+
+    await handler({ reference: "REF-123" });
+
+    expect(processCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ transactionId: "REF-123" }),
+    );
+    expect(onPay).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: "order-1", methodLabel: "Bank Transfer", reference: "REF-123" }),
+    );
+    expect(onResetCart).toHaveBeenCalled();
+    expect(setTransferPaymentConfig).toHaveBeenCalledWith(null);
+    expect(notifySuccess).toHaveBeenCalledWith("success.transferPaid");
+  });
+
+  it("notifies error when transfer payment fails", async () => {
+    const notifyError = jest.fn();
+    const setTransferPaymentConfig = jest.fn();
+
+    processCheckout.mockRejectedValueOnce(new Error("fail"));
+
+    const handler = buildHandleTransferComplete({
+      getConfig: () => ({
+        amountDue: 1,
+        displayTotal: 100,
+        cartItems: [{ id: 1 }],
+        paymentAmounts: {
+          amountFiat: 1,
+          displayTotal: 100,
+          subtotal: 100,
+          discount: 0,
+          discountAmount: 0,
+          total: 100,
+        },
+        selectedPaymentMethod: "transfer",
+        currencyId: "cur-1",
+        methodLabel: "Bank Transfer",
+      }),
+      setConfig: setTransferPaymentConfig,
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart: jest.fn(),
+      notifyError,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+      user: { userId: "u1" },
+    });
+
+    await handler({ reference: "REF-123" });
+
+    expect(notifyError).toHaveBeenCalledWith("fail");
+    expect(setTransferPaymentConfig).toHaveBeenCalledWith(null);
   });
 });

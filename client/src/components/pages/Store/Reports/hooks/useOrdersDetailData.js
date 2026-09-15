@@ -41,7 +41,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
       const headers = [
         reportsTranslations("orders.shortId"), reportsTranslations("sales.date"), reportsTranslations("sales.user"),
         reportsTranslations("orders.products"), reportsTranslations("sales.quantity"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"),
-        reportsTranslations("orders.statusLabel"),
+        reportsTranslations("orders.reference"), reportsTranslations("orders.statusLabel"),
       ];
       const rows = orders.map((order) => [
         order.shortId,
@@ -51,6 +51,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
         order.itemCount,
         formatCurrency(order.total),
         order.paymentMethod ?? "",
+        order.transactionId ?? "",
         statusTranslations(`status.${refundedToStatus(order.refunded)}`),
       ]);
 

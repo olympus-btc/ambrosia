@@ -180,6 +180,40 @@ describe("useCartPayment", () => {
     expect(result.current.cardPayment.config).toBeNull();
   });
 
+  it("handles transfer payment config and clearing", async () => {
+    mockPaymentMethods = [
+      { id: "transfer", name: "Bank Transfer" },
+    ];
+    const { result } = renderHook(() => useCartPayment());
+
+    await act(async () => {
+      await result.current.handlePay({
+        items: [{ id: 1, subtotal: 100 }],
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+        selectedPaymentMethod: "transfer",
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.transferPayment.config).toEqual(
+        expect.objectContaining({
+          amountDue: 1,
+          displayTotal: "fmt-100",
+          methodLabel: "Bank Transfer",
+        }),
+      );
+    });
+
+    act(() => {
+      result.current.transferPayment.onClose();
+    });
+
+    expect(result.current.transferPayment.config).toBeNull();
+  });
+
   it("handles missing payment methods without crashing", () => {
     mockPaymentMethods = undefined;
     const { result } = renderHook(() => useCartPayment());

@@ -18,6 +18,7 @@ import {
   buildHandlePay,
   buildHandleCashComplete,
   buildHandleCardComplete,
+  buildHandleTransferComplete,
 } from "./paymentHandlers";
 import { useBtcPayment } from "./useBtcPayment";
 import { useCustomerReceipt } from "./useCustomerReceipt";
@@ -58,6 +59,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const btc = useBtcPayment(handlerContext);
   const cash = usePaymentChannel(buildHandleCashComplete, handlerContext);
   const card = usePaymentChannel(buildHandleCardComplete, handlerContext);
+  const transfer = usePaymentChannel(buildHandleTransferComplete, handlerContext);
 
   const handlePay = useMemo(
     () => buildHandlePay({
@@ -68,6 +70,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setBtcPaymentConfig: btc.setConfig,
       setCashPaymentConfig: cash.setConfig,
       setCardPaymentConfig: card.setConfig,
+      setTransferPaymentConfig: transfer.setConfig,
       onResetCart,
       onPay,
       notifyError,
@@ -95,6 +98,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       btc.setConfig,
       cash.setConfig,
       card.setConfig,
+      transfer.setConfig,
     ],
   );
 
@@ -113,6 +117,11 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     [card.config, card.onComplete, card.onClose],
   );
 
+  const transferPayment = useMemo(
+    () => ({ config: transfer.config, onComplete: transfer.onComplete, onClose: transfer.onClose }),
+    [transfer.config, transfer.onComplete, transfer.onClose],
+  );
+
   return {
     handlePay,
     isPaying,
@@ -122,5 +131,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     btcPayment,
     cashPayment,
     cardPayment,
+    transferPayment,
   };
 }

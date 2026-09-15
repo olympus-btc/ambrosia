@@ -91,6 +91,52 @@ describe("OrderDetailsModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it("shows the reference number when the order has one", () => {
+    const order = {
+      id: "order-1",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "Bank Transfer",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+      transactionId: "REF-123",
+    };
+
+    render(
+      <OrderDetailsModal
+        order={order}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={(value) => `fmt-${value}`}
+      />,
+    );
+
+    expect(screen.getByText("details.reference")).toBeInTheDocument();
+    expect(screen.getByText("REF-123")).toBeInTheDocument();
+  });
+
+  it("does not show a reference field when the order has none", () => {
+    const order = {
+      id: "order-1",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "Cash",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+    };
+
+    render(
+      <OrderDetailsModal
+        order={order}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={(value) => `fmt-${value}`}
+      />,
+    );
+
+    expect(screen.queryByText("details.reference")).not.toBeInTheDocument();
+  });
+
   it("renders AmountDisplay for BTC orders with satoshiAmount", () => {
     const formatAmount = jest.fn((value) => `fmt-${value}`);
     const btcOrder = {

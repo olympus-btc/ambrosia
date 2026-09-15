@@ -26,6 +26,7 @@ function TestComponent() {
       <span data-testid="count">{paymentMethods.length}</span>
       <span data-testid="error">{error ? "yes" : "no"}</span>
       <span data-testid="forbidden">{forbidden ? "yes" : "no"}</span>
+      <span data-testid="order">{paymentMethods.map((method) => method.name).join(",")}</span>
     </div>
   );
 }
@@ -44,6 +45,23 @@ describe("usePaymentMethods", () => {
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
     expect(screen.getByTestId("count")).toHaveTextContent("2");
     expect(screen.getByTestId("error")).toHaveTextContent("no");
+  });
+
+  it("sorts BTC first, then the rest alphabetically", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([
+      { id: 1, name: "Debit Card" },
+      { id: 2, name: "Bank Transfer" },
+      { id: 3, name: "BTC" },
+      { id: 4, name: "Cash" },
+      { id: 5, name: "Credit Card" },
+    ]);
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("order")).toHaveTextContent(
+      "BTC,Bank Transfer,Cash,Credit Card,Debit Card",
+    );
   });
 
   it("sets empty list when response returns non-array", async () => {

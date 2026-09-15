@@ -122,4 +122,16 @@ describe("OrderDetailModal", () => {
     expect(screen.getByText("$5000")).toBeInTheDocument();
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
+
+  it("shows the reference number when the order has one", () => {
+    const order = { ...ORDER_FIXTURE, transactionId: "REF-123" };
+    render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.getByText("orders.reference")).toBeInTheDocument();
+    expect(screen.getByText("REF-123")).toBeInTheDocument();
+  });
+
+  it("does not show a reference row when the order has none", () => {
+    render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.queryByText("orders.reference")).not.toBeInTheDocument();
+  });
 });

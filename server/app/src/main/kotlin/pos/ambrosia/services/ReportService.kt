@@ -62,6 +62,7 @@ class ReportService {
                    MAX(p.exchange_rate_currency) AS exchange_rate_currency,
                    MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment,
                    MAX(p.payment_hash) AS payment_hash,
+                   MAX(NULLIF(p.transaction_id, '')) AS transaction_id,
                    MAX(rf.id) AS refund_id,
                    MAX(rf.refund_invoice) AS refund_invoice,
                    MAX(rf.satoshi_amount) AS refund_satoshi_amount,
@@ -151,6 +152,7 @@ class ReportService {
             exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
             fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
             paymentHash = resultSet.getString("payment_hash"),
+            transactionId = resultSet.getString("transaction_id"),
             items = parseOrderItems(resultSet.getString("items")),
             refund = refund,
         )
@@ -311,6 +313,7 @@ class ReportService {
                             paymentId = row[PaymentsTable.id].value.toString(),
                             discountAmount = row[OrdersTable.discountAmount],
                             refunded = row[OrdersTable.status] == "refunded",
+                            transactionId = row[PaymentsTable.transactionId].takeIf { it.isNotBlank() },
                         )
                     }
 

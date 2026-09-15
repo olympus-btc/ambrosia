@@ -5,7 +5,7 @@ import { useOrdersData } from "../useOrdersData";
 const SALES_FIXTURE = [
   { orderId: "order-aaa-00000001", productName: "Widget A", quantity: 2, priceAtOrder: 1000, userName: "alice", paymentMethod: "Cash", saleDate: "2024-01-02T10:00:00", discountAmount: 250 },
   { orderId: "order-aaa-00000001", productName: "Widget B", quantity: 1, priceAtOrder: 500, userName: "alice", paymentMethod: "Cash", saleDate: "2024-01-02T10:00:00", discountAmount: 250 },
-  { orderId: "order-bbb-00000002", productName: "Widget C", quantity: 3, priceAtOrder: 2000, userName: "bob", paymentMethod: "BTC", saleDate: "2024-01-01T08:00:00", satoshiAmount: 100000, exchangeRateAtPayment: 95000, exchangeRateCurrency: "usd", fiatAmountAtPayment: 1.0 },
+  { orderId: "order-bbb-00000002", productName: "Widget C", quantity: 3, priceAtOrder: 2000, userName: "bob", paymentMethod: "BTC", saleDate: "2024-01-01T08:00:00", satoshiAmount: 100000, exchangeRateAtPayment: 95000, exchangeRateCurrency: "usd", fiatAmountAtPayment: 1.0, transactionId: "ln-invoice-1" },
 ];
 
 describe("useOrdersData", () => {
@@ -89,6 +89,18 @@ describe("useOrdersData", () => {
     expect(cashOrder.exchangeRateAtPayment).toBeNull();
     expect(cashOrder.exchangeRateCurrency).toBeNull();
     expect(cashOrder.fiatAmountAtPayment).toBeNull();
+  });
+
+  it("copies transactionId from the first line item", () => {
+    const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
+    const btcOrder = result.current.find((order) => order.orderId === "order-bbb-00000002");
+    expect(btcOrder.transactionId).toBe("ln-invoice-1");
+  });
+
+  it("sets transactionId to null when the sale has none", () => {
+    const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
+    const cashOrder = result.current.find((order) => order.orderId === "order-aaa-00000001");
+    expect(cashOrder.transactionId).toBeNull();
   });
 
   it("defaults refunded to false when no line item is refunded", () => {

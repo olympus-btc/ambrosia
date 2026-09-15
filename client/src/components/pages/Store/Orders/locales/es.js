@@ -67,6 +67,7 @@ const ordersEs = {
       close: "Cerrar",
       unassigned: "Sin asignar",
       noPayment: "Pago no registrado",
+      reference: "N.º de referencia",
       products: "Productos",
       quantity: "Cant.",
       unitPrice: "Precio Unit.",

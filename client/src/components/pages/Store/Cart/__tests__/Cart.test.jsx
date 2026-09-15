@@ -29,6 +29,10 @@ jest.mock("../CardPaymentModal", () => ({
   CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
 }));
 
+jest.mock("../TransferPaymentModal", () => ({
+  TransferPaymentModal: ({ isOpen }) => (isOpen ? <div>transfer-modal</div> : null),
+}));
+
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
     <div>
@@ -133,6 +137,11 @@ jest.mock("../hooks/useCartPayment", () => ({
       onClose: jest.fn(),
     },
     cardPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    transferPayment: {
       config: null,
       onComplete: jest.fn(),
       onClose: jest.fn(),

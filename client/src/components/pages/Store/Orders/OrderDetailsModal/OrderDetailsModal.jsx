@@ -35,6 +35,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
     exchangeRateCurrency,
     fiatAmountAtPayment,
     paymentHash,
+    transactionId,
     items,
     refund,
   } = order ?? {};
@@ -74,6 +75,12 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                     label={ordersTranslations("details.status")}
                     value={status ? <StatusChip status={status} /> : "—"}
                   />
+                  {transactionId && (
+                    <MetaField
+                      label={ordersTranslations("details.reference")}
+                      value={<span className="font-mono break-all">{transactionId}</span>}
+                    />
+                  )}
                   {paymentHash && (
                     <div className="col-span-2">
                       <HashRow

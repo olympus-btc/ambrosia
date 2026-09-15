@@ -4,6 +4,20 @@ import { useState, useEffect, useCallback } from "react";
 import { usePermission } from "@/hooks/usePermission";
 import { useFetchList } from "@/lib/http/useFetchList";
 
+import { classifyPaymentMethod, PAYMENT_METHODS } from "../utils/paymentMethods";
+
+function sortWithBtcFirst(paymentMethods) {
+  const decorated = paymentMethods.map((method) => ({
+    method,
+    isBtc: classifyPaymentMethod(method?.name) === PAYMENT_METHODS.BTC,
+  }));
+  decorated.sort((entryA, entryB) => {
+    if (entryA.isBtc !== entryB.isBtc) return entryA.isBtc ? -1 : 1;
+    return (entryA.method?.name || "").localeCompare(entryB.method?.name || "", undefined, { sensitivity: "base" });
+  });
+  return decorated.map((entry) => entry.method);
+}
+
 export function usePaymentMethods() {
   const { fetchList } = useFetchList();
   const canRead = usePermission({ allOf: ["payments_read"] });
@@ -19,12 +33,7 @@ export function usePaymentMethods() {
     try {
       const paymentMethodsData = await fetchList("/payments/methods");
       if (Array.isArray(paymentMethodsData)) {
-        const sorted = [...paymentMethodsData].sort((a, b) => {
-          const nameA = a?.name || "";
-          const nameB = b?.name || "";
-          return nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
-        });
-        setPaymentMethods(sorted);
+        setPaymentMethods(sortWithBtcFirst(paymentMethodsData));
       } else {
         setPaymentMethods([]);
       }
