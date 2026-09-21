@@ -108,20 +108,20 @@ ktlint {
 }
 
 // Coverage ratchet. Bounds sit just below the measured baseline
-// (62.5% line / 26.9% branch) so a regression fails `koverVerify`
+// (74.2% line / 37.4% branch) so a regression fails `koverVerify`
 // without normal churn tripping it. Raise them as coverage improves.
 kover {
     reports {
         verify {
             rule {
                 bound {
-                    minValue = 58
+                    minValue = 70
                     coverageUnits = CoverageUnit.LINE
                 }
             }
             rule {
                 bound {
-                    minValue = 23
+                    minValue = 33
                     coverageUnits = CoverageUnit.BRANCH
                 }
             }

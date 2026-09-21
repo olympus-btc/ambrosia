@@ -12,6 +12,7 @@ import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import pos.ambrosia.datadir
@@ -27,42 +28,49 @@ fun Application.configureUploads() {
 
     routing {
         staticFiles("/uploads", uploadRoot.toFile())
-        authenticate("auth-jwt", optional = true) {
-            post("/uploads") {
-                val configExists = configService.getConfig() != null
-                if (configExists && call.principal<JWTPrincipal>() == null) {
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Unauthorized"))
-                    return@post
-                }
+        uploads(uploadService, configService)
+    }
+}
 
-                val multipart = call.receiveMultipart()
-                val uploads = mutableListOf<Map<String, String>>()
-
-                multipart.forEachPart { part ->
-                    when (part) {
-                        is PartData.FileItem -> {
-                            val savedUpload = uploadService.saveFile(part.originalFileName, part.provider)
-                            val absoluteUrl = buildAbsoluteUrl(call, savedUpload.relativePath)
-                            uploads.add(
-                                mapOf(
-                                    "path" to savedUpload.relativePath,
-                                    "url" to absoluteUrl,
-                                ),
-                            )
-                        }
-
-                        else -> {}
-                    }
-                    part.release()
-                }
-
-                if (uploads.isEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to "No files uploaded"))
-                    return@post
-                }
-
-                call.respond(HttpStatusCode.Created, mapOf("uploads" to uploads))
+fun Route.uploads(
+    uploadService: UploadService,
+    configService: ConfigService,
+) {
+    authenticate("auth-jwt", optional = true) {
+        post("/uploads") {
+            val configExists = configService.getConfig() != null
+            if (configExists && call.principal<JWTPrincipal>() == null) {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("message" to "Unauthorized"))
+                return@post
             }
+
+            val multipart = call.receiveMultipart()
+            val uploads = mutableListOf<Map<String, String>>()
+
+            multipart.forEachPart { part ->
+                when (part) {
+                    is PartData.FileItem -> {
+                        val savedUpload = uploadService.saveFile(part.originalFileName, part.provider)
+                        val absoluteUrl = buildAbsoluteUrl(call, savedUpload.relativePath)
+                        uploads.add(
+                            mapOf(
+                                "path" to savedUpload.relativePath,
+                                "url" to absoluteUrl,
+                            ),
+                        )
+                    }
+
+                    else -> {}
+                }
+                part.release()
+            }
+
+            if (uploads.isEmpty()) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "No files uploaded"))
+                return@post
+            }
+
+            call.respond(HttpStatusCode.Created, mapOf("uploads" to uploads))
         }
     }
 }
