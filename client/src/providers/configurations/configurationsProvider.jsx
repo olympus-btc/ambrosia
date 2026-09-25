@@ -23,7 +23,7 @@ export function ConfigurationsProvider({ children }) {
   };
 
   const businessType = useMemo(() => {
-    const isValidBusinessType = (value) => value === "store" || value === "restaurant";
+    const isValidBusinessType = (value) => value === "store" || value === "restaurant" || value === "freelance";
     return isValidBusinessType(config?.businessType)
       ? config.businessType
       : readBusinessTypeFromCookie();

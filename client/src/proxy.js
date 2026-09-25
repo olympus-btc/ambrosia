@@ -64,7 +64,7 @@ export default async function proxy(request) {
     if (configResponse.ok) {
       const configData = await configResponse.json();
       const fetchedBusinessType = configData?.businessType;
-      if (fetchedBusinessType === "store" || fetchedBusinessType === "restaurant") {
+      if (fetchedBusinessType === "store" || fetchedBusinessType === "restaurant" || fetchedBusinessType === "freelance") {
         businessType = fetchedBusinessType;
       } else {
         shouldClearBusinessTypeCookie = true;
@@ -80,6 +80,15 @@ export default async function proxy(request) {
     }
     if (pathname.startsWith("/restaurant") && businessType === "store") {
       return NextResponse.redirect(new URL("/store", request.url));
+    }
+    if (pathname.startsWith("/freelancer") && businessType === "store") {
+      return NextResponse.redirect(new URL("/store", request.url));
+    }
+    if (pathname.startsWith("/freelancer") && businessType === "restaurant") {
+      return NextResponse.redirect(new URL("/restaurant/all-orders", request.url));
+    }
+    if ((pathname.startsWith("/store") || pathname.startsWith("/restaurant")) && businessType === "freelance") {
+      return NextResponse.redirect(new URL("/freelancer", request.url));
     }
   }
 
