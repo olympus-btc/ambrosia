@@ -8,7 +8,7 @@ export function dispatchAuthEvent(name) {
 
 let refreshPromise = null;
 
-async function refreshToken() {
+export async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = httpWrapper("/auth/refresh", { method: "POST" }).finally(() => {
     refreshPromise = null;
@@ -29,9 +29,9 @@ export async function httpClient(endpoint, options = {}) {
   const initialResponse = await httpWrapper(endpoint, httpOptions);
 
   if (shouldRefreshToken(initialResponse.status, endpoint, skipRefresh)) {
-    const refreshResponse = await refreshToken();
+    const refreshResponse = await refreshAccessToken();
 
-    if (refreshResponse.status === 401) {
+    if (!refreshResponse.ok) {
       dispatchAuthEvent("auth:expired");
       return initialResponse;
     }

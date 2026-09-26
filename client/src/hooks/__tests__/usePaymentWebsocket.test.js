@@ -1,6 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 
+import { refreshAccessToken } from "@/lib/http/httpClient";
+
 import { usePaymentWebsocket } from "../usePaymentWebsocket";
+
+jest.mock("@/lib/http/httpClient", () => ({
+  refreshAccessToken: jest.fn().mockResolvedValue({ ok: true }),
+}));
 
 class MockEventSource {
   constructor(url) {
@@ -106,7 +112,7 @@ describe("usePaymentWebsocket", () => {
       expect(MockEventSource.instances).toHaveLength(2);
     });
 
-    it("calls /api/auth/refresh before reconnecting", async () => {
+    it("refreshes the access token before reconnecting", async () => {
       renderHook(() => usePaymentWebsocket());
 
       act(() => {
@@ -117,9 +123,7 @@ describe("usePaymentWebsocket", () => {
         await jest.runAllTimersAsync();
       });
 
-      expect(global.fetch).toHaveBeenCalledWith("/api/auth/refresh", {
-        method: "POST",
-      });
+      expect(refreshAccessToken).toHaveBeenCalledTimes(1);
     });
 
     it("does not reconnect after unmount", async () => {
