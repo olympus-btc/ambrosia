@@ -19,7 +19,7 @@ kover-version = "0.9.9"
 web-push-java-version = "5.1.2"
 bouncycastle-version = "1.84"
 jose4j-version = "0.9.6"
-async-http-client-version = "2.16.0"
+async-http-client-version = "3.0.14"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
