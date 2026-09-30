@@ -55,7 +55,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "24.1.0",
+    "@types/node": "26.6.3",
     "@types/react": "19.1.9",
     "baseline-browser-mapping": "^2.9.11",
     "cross-env": "^7.0.3",
