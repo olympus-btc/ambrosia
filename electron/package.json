@@ -41,7 +41,7 @@
     "electron": "^42.0.1",
     "electron-builder": "^26.6.0",
     "esbuild": "0.28.1",
-    "eslint": "^9.39.2",
+    "eslint": "^10.11.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.23.1",
     "vitest": "5.0.0"
