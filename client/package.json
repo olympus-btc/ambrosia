@@ -34,7 +34,7 @@
     "@serwist/turbopack": "9.5.12",
     "driver.js": "^1.4.0",
     "esbuild": "0.28.1",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^13.4.4",
     "jsonwebtoken": "^9.0.2",
     "jsqr": "1.4.0",
     "lucide-react": "^0.536.0",
