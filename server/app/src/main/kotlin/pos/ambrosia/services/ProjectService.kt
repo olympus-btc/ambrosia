@@ -51,6 +51,14 @@ class ProjectService {
             createdAt = projectEntity.createdAt,
         )
 
+    fun getProjects(): List<FreelanceProject> =
+        transaction {
+            ProjectEntity
+                .find { ProjectsTable.isDeleted eq false }
+                .filter { projectEntity -> clientExists(projectEntity.clientId.value.toString()) }
+                .map { projectEntity -> toProjectModel(projectEntity) }
+        }
+
     fun getProjectsByClientId(clientId: String): List<FreelanceProject>? =
         transaction {
             val clientUuid = parseUuid(clientId) ?: return@transaction null
