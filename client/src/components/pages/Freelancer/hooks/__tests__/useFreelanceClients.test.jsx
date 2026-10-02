@@ -75,7 +75,7 @@ describe("useFreelanceClients", () => {
       currencyId: "currency-1",
       hourlyRateCents: 7500,
       billingCycle: "monthly",
-      paymentMethod: "bank",
+      paymentMethods: ["bank", "lightning"],
     };
 
     httpClient.mockResolvedValue({ ok: true, status: 200 });
@@ -109,7 +109,7 @@ describe("useFreelanceClients", () => {
       currencyId: "currency-1",
       hourlyRateCents: 9000,
       billingCycle: "weekly",
-      paymentMethod: "lightning",
+      paymentMethods: ["lightning"],
     };
 
     httpClient.mockResolvedValue({ ok: true, status: 200 });

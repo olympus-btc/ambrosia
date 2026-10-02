@@ -12,9 +12,9 @@ import pos.ambrosia.db.tables.AdminNotificationReceiptsTable
 import pos.ambrosia.db.tables.AdminNotificationsTable
 import pos.ambrosia.db.tables.BaseCurrencyTable
 import pos.ambrosia.db.tables.CategoriesTable
-import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.CategoryEntity
 import pos.ambrosia.db.tables.ClientEntity
+import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.ClientsTable
 import pos.ambrosia.db.tables.ConfigEntity
 import pos.ambrosia.db.tables.ConfigTable
@@ -627,22 +627,31 @@ object ExposedTestDb {
         hourlyRateCents: Int = 5000,
         billingCycle: String = "monthly",
         paymentMethod: String = "bank",
+        paymentMethods: List<String> = listOf(paymentMethod),
         payoutAccountId: String? = null,
         isDeleted: Boolean = false,
     ): String =
         transaction {
-            ClientEntity
-                .new(UUID.randomUUID()) {
-                    this.name = name
-                    this.currencyId = EntityID(UUID.fromString(currencyId), CurrencyTable)
-                    this.hourlyRateCents = hourlyRateCents
-                    this.billingCycle = billingCycle
-                    this.paymentMethod = paymentMethod
-                    this.payoutAccountId = payoutAccountId?.let { EntityID(UUID.fromString(it), PayoutAccountsTable) }
-                    this.isDeleted = isDeleted
-                    this.createdAt = "2024-01-01T00:00:00"
-                }.id.value
-                .toString()
+            val clientId =
+                ClientEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = name
+                        this.currencyId = EntityID(UUID.fromString(currencyId), CurrencyTable)
+                        this.hourlyRateCents = hourlyRateCents
+                        this.billingCycle = billingCycle
+                        this.paymentMethod = paymentMethod
+                        this.payoutAccountId = payoutAccountId?.let { EntityID(UUID.fromString(it), PayoutAccountsTable) }
+                        this.isDeleted = isDeleted
+                        this.createdAt = "2024-01-01T00:00:00"
+                    }.id.value
+            paymentMethods.forEachIndexed { clientPaymentMethodIndex, clientPaymentMethod ->
+                ClientPaymentMethodsTable.insert { clientPaymentMethodInsert ->
+                    clientPaymentMethodInsert[ClientPaymentMethodsTable.clientId] = EntityID(clientId, ClientsTable)
+                    clientPaymentMethodInsert[ClientPaymentMethodsTable.paymentMethod] = clientPaymentMethod
+                    clientPaymentMethodInsert[ClientPaymentMethodsTable.position] = clientPaymentMethodIndex
+                }
+            }
+            clientId.toString()
         }
 
     fun seedFreelanceProject(

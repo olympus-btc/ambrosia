@@ -14,6 +14,7 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
@@ -67,7 +68,7 @@ class FreelanceRoutesTest {
                             "currencyId":"$currencyId",
                             "hourlyRateCents":7500,
                             "billingCycle":"monthly",
-                            "paymentMethod":"bank"
+                            "paymentMethods":["bank","lightning"]
                         }""",
                     )
                 }
@@ -83,7 +84,7 @@ class FreelanceRoutesTest {
                             "currencyId":"$currencyId",
                             "hourlyRateCents":9000,
                             "billingCycle":"weekly",
-                            "paymentMethod":"lightning"
+                            "paymentMethods":["lightning","bank"]
                         }""",
                     )
                 }
@@ -93,6 +94,14 @@ class FreelanceRoutesTest {
             assertEquals(HttpStatusCode.Created, createClientResponse.status)
             assertEquals(HttpStatusCode.OK, listClientsResponse.status)
             assertEquals(HttpStatusCode.OK, getClientResponse.status)
+            assertEquals(
+                listOf("bank"),
+                Json
+                    .parseToJsonElement(getClientResponse.bodyAsText())
+                    .jsonObject["paymentMethods"]!!
+                    .jsonArray
+                    .map { paymentMethodJsonElement -> paymentMethodJsonElement.jsonPrimitive.content },
+            )
             assertEquals(HttpStatusCode.OK, updateClientResponse.status)
             assertEquals(HttpStatusCode.NoContent, deleteClientResponse.status)
             assertEquals(HttpStatusCode.NotFound, getDeletedClientResponse.status)

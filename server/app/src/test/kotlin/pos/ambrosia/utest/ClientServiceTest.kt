@@ -31,7 +31,6 @@ class ClientServiceTest {
     @Test
     fun `addClient returns id for valid request`() {
         val currencyId = ExposedTestDb.seedCurrency("USD")
-        val payoutAccountId = ExposedTestDb.seedPayoutAccount(currencyId = currencyId)
 
         val clientId =
             service.addClient(
@@ -40,8 +39,7 @@ class ClientServiceTest {
                     currencyId = currencyId,
                     hourlyRateCents = 7500,
                     billingCycle = "monthly",
-                    paymentMethod = "bank",
-                    payoutAccountId = payoutAccountId,
+                    paymentMethods = listOf("bank", "lightning"),
                 ),
             )
 
@@ -49,28 +47,29 @@ class ClientServiceTest {
         val client = service.getClientById(clientId)
         assertNotNull(client)
         assertEquals("Acme", client.name)
-        assertEquals(payoutAccountId, client.payoutAccountId)
+        assertEquals("bank", client.paymentMethod)
+        assertEquals(listOf("bank", "lightning"), client.paymentMethods)
+        assertNull(client.payoutAccountId)
     }
 
     @Test
     fun `addClient rejects invalid request values`() {
         val currencyId = ExposedTestDb.seedCurrency("USD")
-        val deletedPayoutAccountId = ExposedTestDb.seedPayoutAccount(currencyId = currencyId, isDeleted = true)
         val validRequest =
             FreelanceClientUpsert(
                 name = "Acme",
                 currencyId = currencyId,
                 hourlyRateCents = 7500,
                 billingCycle = "monthly",
-                paymentMethod = "bank",
+                paymentMethods = listOf("bank"),
             )
 
         assertNull(service.addClient(validRequest.copy(name = "   ")))
         assertNull(service.addClient(validRequest.copy(hourlyRateCents = -1)))
         assertNull(service.addClient(validRequest.copy(billingCycle = "yearly")))
-        assertNull(service.addClient(validRequest.copy(paymentMethod = "cash")))
+        assertNull(service.addClient(validRequest.copy(paymentMethods = emptyList())))
+        assertNull(service.addClient(validRequest.copy(paymentMethods = listOf("cash"))))
         assertNull(service.addClient(validRequest.copy(currencyId = UUID.randomUUID().toString())))
-        assertNull(service.addClient(validRequest.copy(payoutAccountId = deletedPayoutAccountId)))
     }
 
     @Test
@@ -106,7 +105,7 @@ class ClientServiceTest {
                     currencyId = currencyId,
                     hourlyRateCents = 9000,
                     billingCycle = "weekly",
-                    paymentMethod = "lightning",
+                    paymentMethods = listOf("lightning", "bank"),
                 ),
             )
 
@@ -117,6 +116,7 @@ class ClientServiceTest {
         assertEquals(9000, client.hourlyRateCents)
         assertEquals("weekly", client.billingCycle)
         assertEquals("lightning", client.paymentMethod)
+        assertEquals(listOf("lightning", "bank"), client.paymentMethods)
     }
 
     @Test
@@ -129,7 +129,7 @@ class ClientServiceTest {
                 currencyId = currencyId,
                 hourlyRateCents = 9000,
                 billingCycle = "weekly",
-                paymentMethod = "lightning",
+                paymentMethods = listOf("lightning"),
             )
 
         assertFalse(service.updateClient("not-a-uuid", validRequest))
