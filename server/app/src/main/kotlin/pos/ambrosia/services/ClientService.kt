@@ -1,5 +1,6 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -7,8 +8,8 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.ClientEntity
+import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.ClientsTable
 import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.logger
@@ -47,6 +48,7 @@ class ClientService {
         ClientPaymentMethodsTable
             .selectAll()
             .where { ClientPaymentMethodsTable.clientId eq EntityID(clientId, ClientsTable) }
+            .orderBy(ClientPaymentMethodsTable.position to SortOrder.ASC)
             .map { clientPaymentMethodRow -> clientPaymentMethodRow[ClientPaymentMethodsTable.paymentMethod] }
 
     private fun replaceClientPaymentMethods(
@@ -54,10 +56,11 @@ class ClientService {
         paymentMethods: List<String>,
     ) {
         ClientPaymentMethodsTable.deleteWhere { ClientPaymentMethodsTable.clientId eq EntityID(clientId, ClientsTable) }
-        for (paymentMethod in paymentMethods) {
+        paymentMethods.forEachIndexed { paymentMethodIndex, paymentMethod ->
             ClientPaymentMethodsTable.insertIgnore { clientPaymentMethodInsert ->
                 clientPaymentMethodInsert[ClientPaymentMethodsTable.clientId] = EntityID(clientId, ClientsTable)
                 clientPaymentMethodInsert[ClientPaymentMethodsTable.paymentMethod] = paymentMethod
+                clientPaymentMethodInsert[ClientPaymentMethodsTable.position] = paymentMethodIndex
             }
         }
     }
