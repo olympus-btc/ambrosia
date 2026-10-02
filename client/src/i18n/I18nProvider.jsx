@@ -12,6 +12,8 @@ import componentsEn from "@/components/locales/en";
 import componentsEs from "@/components/locales/es";
 import authEn from "@/components/pages/Auth/locales/en";
 import authEs from "@/components/pages/Auth/locales/es";
+import freelancerEn from "@/components/pages/Freelancer/locales/en";
+import freelancerEs from "@/components/pages/Freelancer/locales/es";
 import notFoundEn from "@/components/pages/NotFound/locales/en";
 import notFoundEs from "@/components/pages/NotFound/locales/es";
 import onboardingEn from "@/components/pages/Onboarding/locales/en";
@@ -28,6 +30,7 @@ const translations = {
   en: {
     auth: authEn,
     components: componentsEn,
+    freelancer: freelancerEn,
     notFound: notFoundEn,
     onboarding: onboardingEn,
     store: storeEn,
@@ -36,6 +39,7 @@ const translations = {
   es: {
     auth: authEs,
     components: componentsEs,
+    freelancer: freelancerEs,
     notFound: notFoundEs,
     onboarding: onboardingEs,
     store: storeEs,
