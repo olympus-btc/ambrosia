@@ -44,7 +44,14 @@ export function ProjectsTable({ clients, projects, canManageProjects, onDeletePr
               <TableCell>{projectTranslations(`statuses.${project.status}`)}</TableCell>
               <TableCell>{projectHourlyRate}</TableCell>
               <TableCell>
-                <Chip size="sm" variant="flat" color={project.isBillable ? "success" : "default"}>
+                <Chip
+                  size="sm"
+                  className={
+                    project.isBillable
+                      ? "bg-green-200 text-xs text-green-800 border border-green-300"
+                      : "bg-gray-200 text-xs text-gray-600 border border-gray-300"
+                  }
+                >
                   {project.isBillable ? projectTranslations("billable") : projectTranslations("notBillable")}
                 </Chip>
               </TableCell>

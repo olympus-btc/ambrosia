@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import {
   Button,
+  Chip,
   Input,
   Modal,
   ModalBody,
@@ -19,18 +20,6 @@ import { useTranslations } from "next-intl";
 const BILLING_CYCLES = ["weekly", "biweekly", "monthly"];
 const PAYMENT_METHODS = ["bank", "lightning"];
 
-function getPayoutAccountLabel(payoutAccount, clientTranslations) {
-  if (payoutAccount.type === "lightning") {
-    return payoutAccount.lightningAddress || clientTranslations("modal.payoutAccountLightningFallback");
-  }
-
-  return [
-    payoutAccount.bankName,
-    payoutAccount.accountHolder,
-    payoutAccount.accountNumber || payoutAccount.clabe || payoutAccount.iban,
-  ].filter(Boolean).join(" - ");
-}
-
 export function ClientFormModal({
   clientForm,
   currencies,
@@ -39,16 +28,19 @@ export function ClientFormModal({
   onChange,
   onClose,
   onSubmit,
-  payoutAccounts,
 }) {
   const clientTranslations = useTranslations("freelanceClients");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const isSubmittingRef = useRef(false);
   const isEditMode = mode === "edit";
+  const availablePaymentMethods = PAYMENT_METHODS.filter(
+    (paymentMethod) => !clientForm.paymentMethods.includes(paymentMethod),
+  );
 
   const handleSubmit = async (submitEvent) => {
     submitEvent.preventDefault();
-    if (isSubmittingRef.current) return;
+    if (isSubmittingRef.current || clientForm.paymentMethods.length === 0) return;
 
     isSubmittingRef.current = true;
     try {
@@ -61,6 +53,18 @@ export function ClientFormModal({
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
+  };
+
+  const handleAddPaymentMethod = () => {
+    if (!selectedPaymentMethod || clientForm.paymentMethods.includes(selectedPaymentMethod)) return;
+    onChange({ paymentMethods: [...clientForm.paymentMethods, selectedPaymentMethod] });
+    setSelectedPaymentMethod("");
+  };
+
+  const handleRemovePaymentMethod = (paymentMethodToRemove) => {
+    onChange({
+      paymentMethods: clientForm.paymentMethods.filter((paymentMethod) => paymentMethod !== paymentMethodToRemove),
+    });
   };
 
   return (
@@ -139,38 +143,51 @@ export function ClientFormModal({
                 ))}
               </Select>
 
-              <Select
-                label={clientTranslations("modal.paymentMethodLabel")}
-                selectedKeys={clientForm.paymentMethod ? [clientForm.paymentMethod] : []}
-                isRequired
-                onSelectionChange={(selectedPaymentMethodKeys) => {
-                  const selectedPaymentMethod = Array.from(selectedPaymentMethodKeys)[0] || "";
-                  onChange({ paymentMethod: selectedPaymentMethod });
-                }}
-              >
-                {PAYMENT_METHODS.map((paymentMethod) => (
-                  <SelectItem key={paymentMethod}>
-                    {clientTranslations(`paymentMethods.${paymentMethod}`)}
-                  </SelectItem>
-                ))}
-              </Select>
+              <div className="space-y-2">
+                <div className="flex items-end gap-2">
+                  <Select
+                    label={clientTranslations("modal.paymentMethodsLabel")}
+                    selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
+                    errorMessage={clientTranslations("modal.paymentMethodsError")}
+                    isInvalid={clientForm.paymentMethods.length === 0}
+                    onSelectionChange={(selectedPaymentMethodKeys) => {
+                      const selectedPaymentMethodKey = Array.from(selectedPaymentMethodKeys)[0] || "";
+                      setSelectedPaymentMethod(selectedPaymentMethodKey);
+                    }}
+                  >
+                    {availablePaymentMethods.map((paymentMethod) => (
+                      <SelectItem key={paymentMethod}>
+                        {clientTranslations(`paymentMethods.${paymentMethod}`)}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="flat"
+                    className="h-14 min-w-20"
+                    onPress={handleAddPaymentMethod}
+                    isDisabled={!selectedPaymentMethod}
+                  >
+                    {clientTranslations("modal.addPaymentMethodButton")}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {clientForm.paymentMethods.map((paymentMethod) => (
+                    <Chip
+                      key={paymentMethod}
+                      variant="flat"
+                      className="bg-green-200 text-xs text-green-800 border border-green-300"
+                      classNames={{
+                        closeButton: "text-red-600 hover:text-red-700",
+                      }}
+                      onClose={() => handleRemovePaymentMethod(paymentMethod)}
+                    >
+                      {clientTranslations(`paymentMethods.${paymentMethod}`)}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
             </div>
-
-            <Select
-              label={clientTranslations("modal.payoutAccountLabel")}
-              selectedKeys={[clientForm.payoutAccountId || "none"]}
-              onSelectionChange={(selectedPayoutAccountKeys) => {
-                const selectedPayoutAccountId = Array.from(selectedPayoutAccountKeys)[0];
-                onChange({ payoutAccountId: selectedPayoutAccountId === "none" ? null : selectedPayoutAccountId });
-              }}
-            >
-              <SelectItem key="none">{clientTranslations("modal.noPayoutAccount")}</SelectItem>
-              {payoutAccounts.map((payoutAccount) => (
-                <SelectItem key={payoutAccount.id}>
-                  {getPayoutAccountLabel(payoutAccount, clientTranslations)}
-                </SelectItem>
-              ))}
-            </Select>
 
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
@@ -186,7 +203,7 @@ export function ClientFormModal({
                 color="primary"
                 className="bg-green-800"
                 type="submit"
-                isDisabled={isSubmitting}
+                isDisabled={isSubmitting || clientForm.paymentMethods.length === 0}
                 isLoading={isSubmitting}
               >
                 {isEditMode ? clientTranslations("modal.editButton") : clientTranslations("modal.submitButton")}

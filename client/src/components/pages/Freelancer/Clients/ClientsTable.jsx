@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Chip,
   Table,
   TableBody,
   TableCell,
@@ -14,7 +15,9 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { RequirePermission } from "@/hooks/usePermission";
 
-import { formatClientHourlyRate, getClientCurrencyAcronym } from "./clientFormatters";
+import { formatClientHourlyRate, getClientCurrencyAcronym, getClientPaymentMethods } from "./clientFormatters";
+
+const PAYMENT_METHOD_PREVIEW_LIMIT = 3;
 
 export function ClientsTable({ clients, currencies, canManageClients, onDeleteClient, onEditClient }) {
   const clientTranslations = useTranslations("freelanceClients");
@@ -33,13 +36,33 @@ export function ClientsTable({ clients, currencies, canManageClients, onDeleteCl
       <TableBody>
         {clients.map((client) => {
           const clientCurrencyAcronym = getClientCurrencyAcronym(client, currencies);
+          const clientPaymentMethods = getClientPaymentMethods(client);
+          const visiblePaymentMethods = clientPaymentMethods.slice(0, PAYMENT_METHOD_PREVIEW_LIMIT);
+          const hiddenPaymentMethodCount = clientPaymentMethods.length - visiblePaymentMethods.length;
 
           return (
             <TableRow key={client.id}>
               <TableCell className="max-w-[220px] truncate">{client.name}</TableCell>
               <TableCell>{formatClientHourlyRate(client, clientCurrencyAcronym)}</TableCell>
               <TableCell>{clientTranslations(`billingCycles.${client.billingCycle}`)}</TableCell>
-              <TableCell>{clientTranslations(`paymentMethods.${client.paymentMethod}`)}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1.5">
+                  {visiblePaymentMethods.map((paymentMethod) => (
+                    <Chip
+                      key={paymentMethod}
+                      size="sm"
+                      className="bg-green-200 text-xs text-green-800 border border-green-300"
+                    >
+                      {clientTranslations(`paymentMethods.${paymentMethod}`)}
+                    </Chip>
+                  ))}
+                  {hiddenPaymentMethodCount > 0 && (
+                    <Chip size="sm" className="bg-gray-200 text-xs text-gray-600 border border-gray-300">
+                      {clientTranslations("morePaymentMethods", { count: hiddenPaymentMethodCount })}
+                    </Chip>
+                  )}
+                </div>
+              </TableCell>
               <TableCell className={canManageClients ? "py-2 px-3" : "hidden"}>
                 <div className="flex justify-end gap-2">
                   <RequirePermission allOf={["clients_update"]}>

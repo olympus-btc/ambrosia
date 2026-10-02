@@ -1,7 +1,7 @@
 const freelanceClientsEs = {
   freelanceClients: {
     title: "Clientes",
-    subtitle: "Administra datos de facturación, tarifas, métodos de pago y cuentas de cobro.",
+    subtitle: "Administra datos de facturación, tarifas y métodos de pago.",
     addClient: "Agregar Cliente",
     emptyState: "Aún no hay clientes.",
     permissionBlocked: {
@@ -12,7 +12,8 @@ const freelanceClientsEs = {
     name: "Nombre",
     hourlyRate: "Tarifa por hora",
     billingCycle: "Ciclo de cobro",
-    paymentMethod: "Método de pago",
+    paymentMethod: "Métodos de pago",
+    morePaymentMethods: "+{count} más",
     actions: "Acciones",
     edit: "Editar",
     delete: "Eliminar",
@@ -38,10 +39,9 @@ const freelanceClientsEs = {
       currencyLabel: "Moneda",
       hourlyRateLabel: "Tarifa por hora",
       billingCycleLabel: "Ciclo de cobro",
-      paymentMethodLabel: "Método de pago",
-      payoutAccountLabel: "Cuenta de cobro",
-      noPayoutAccount: "Sin cuenta de cobro",
-      payoutAccountLightningFallback: "Cuenta de cobro Lightning",
+      paymentMethodsLabel: "Métodos de pago",
+      paymentMethodsError: "Se requiere al menos un método de pago",
+      addPaymentMethodButton: "Agregar",
       submitButton: "Agregar",
       editButton: "Guardar",
       cancelButton: "Cancelar",

@@ -12,7 +12,6 @@ import { RequirePermission } from "@/hooks/usePermission";
 import {
   useCurrencies,
   useFreelanceClients,
-  usePayoutAccounts,
 } from "../hooks";
 
 import { ClientFormModal } from "./ClientFormModal";
@@ -25,8 +24,7 @@ const EMPTY_CLIENT_FORM = {
   currencyId: "",
   hourlyRateCents: 0,
   billingCycle: "monthly",
-  paymentMethod: "bank",
-  payoutAccountId: null,
+  paymentMethods: ["bank"],
 };
 
 function toClientRequest(clientForm) {
@@ -35,8 +33,7 @@ function toClientRequest(clientForm) {
     currencyId: clientForm.currencyId,
     hourlyRateCents: clientForm.hourlyRateCents,
     billingCycle: clientForm.billingCycle,
-    paymentMethod: clientForm.paymentMethod,
-    payoutAccountId: clientForm.payoutAccountId || null,
+    paymentMethods: clientForm.paymentMethods,
   };
 }
 
@@ -57,7 +54,6 @@ export function Clients() {
     deleteFreelanceClient,
   } = useFreelanceClients({ skipForbiddenRedirect: true });
   const { currencies, loading: currenciesLoading } = useCurrencies({ skipForbiddenRedirect: true });
-  const { payoutAccounts, loading: payoutAccountsLoading } = usePayoutAccounts({ skipForbiddenRedirect: true });
 
   const handleClientFormChange = (clientFormUpdates) => {
     setClientForm((previousClientForm) => ({ ...previousClientForm, ...clientFormUpdates }));
@@ -79,8 +75,7 @@ export function Clients() {
       currencyId: client.currencyId ?? "",
       hourlyRateCents: client.hourlyRateCents ?? 0,
       billingCycle: client.billingCycle ?? "monthly",
-      paymentMethod: client.paymentMethod ?? "bank",
-      payoutAccountId: client.payoutAccountId ?? null,
+      paymentMethods: client.paymentMethods?.length ? client.paymentMethods : [client.paymentMethod ?? "bank"],
     });
     setFormMode("edit");
     setIsFormModalOpen(true);
@@ -141,7 +136,7 @@ export function Clients() {
     );
   }
 
-  const isLoading = clientsLoading || currenciesLoading || payoutAccountsLoading;
+  const isLoading = clientsLoading || currenciesLoading;
 
   return (
     <>
@@ -180,7 +175,6 @@ export function Clients() {
         onChange={handleClientFormChange}
         onClose={() => setIsFormModalOpen(false)}
         onSubmit={handleSubmitClient}
-        payoutAccounts={payoutAccounts}
       />
 
       <DeleteClientModal

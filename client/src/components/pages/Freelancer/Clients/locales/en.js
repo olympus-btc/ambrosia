@@ -1,7 +1,7 @@
 const freelanceClientsEn = {
   freelanceClients: {
     title: "Clients",
-    subtitle: "Manage client billing details, rates, payment methods, and payout accounts.",
+    subtitle: "Manage client billing details, rates, and payment methods.",
     addClient: "Add Client",
     emptyState: "No clients yet.",
     permissionBlocked: {
@@ -12,7 +12,8 @@ const freelanceClientsEn = {
     name: "Name",
     hourlyRate: "Hourly rate",
     billingCycle: "Billing cycle",
-    paymentMethod: "Payment method",
+    paymentMethod: "Payment methods",
+    morePaymentMethods: "+{count} more",
     actions: "Actions",
     edit: "Edit",
     delete: "Delete",
@@ -38,10 +39,9 @@ const freelanceClientsEn = {
       currencyLabel: "Currency",
       hourlyRateLabel: "Hourly rate",
       billingCycleLabel: "Billing cycle",
-      paymentMethodLabel: "Payment method",
-      payoutAccountLabel: "Payout account",
-      noPayoutAccount: "No payout account",
-      payoutAccountLightningFallback: "Lightning payout account",
+      paymentMethodsLabel: "Payment methods",
+      paymentMethodsError: "At least one payment method is required",
+      addPaymentMethodButton: "Add",
       submitButton: "Add",
       editButton: "Save",
       cancelButton: "Cancel",

@@ -23,7 +23,14 @@ export function ProjectsCard({ clients, canManageProjects, onDeleteProject, onEd
             <p className="text-xs text-gray-500">{projectClientName}</p>
             <div className="flex flex-wrap gap-2">
               <Chip size="sm" variant="flat">{projectTranslations(`statuses.${project.status}`)}</Chip>
-              <Chip size="sm" variant="flat" color={project.isBillable ? "success" : "default"}>
+              <Chip
+                size="sm"
+                className={
+                  project.isBillable
+                    ? "bg-green-200 text-xs text-green-800 border border-green-300"
+                    : "bg-gray-200 text-xs text-gray-600 border border-gray-300"
+                }
+              >
                 {project.isBillable ? projectTranslations("billable") : projectTranslations("notBillable")}
               </Chip>
             </div>

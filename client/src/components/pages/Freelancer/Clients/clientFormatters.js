@@ -9,3 +9,7 @@ export function formatClientHourlyRate(client, currencyAcronym) {
     maximumFractionDigits: 2,
   })}`;
 }
+
+export function getClientPaymentMethods(client) {
+  return client.paymentMethods?.length ? client.paymentMethods : [client.paymentMethod].filter(Boolean);
+}
