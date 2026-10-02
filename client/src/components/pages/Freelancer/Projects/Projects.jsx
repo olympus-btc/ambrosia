@@ -13,6 +13,7 @@ import {
   useFreelanceClients,
   useFreelanceProjects,
 } from "../hooks";
+
 import { DeleteProjectModal } from "./DeleteProjectModal";
 import { ProjectFormModal } from "./ProjectFormModal";
 import { ProjectsList } from "./ProjectsList";

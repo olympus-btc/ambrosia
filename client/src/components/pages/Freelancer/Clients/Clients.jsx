@@ -14,6 +14,7 @@ import {
   useFreelanceClients,
   usePayoutAccounts,
 } from "../hooks";
+
 import { ClientFormModal } from "./ClientFormModal";
 import { ClientsList } from "./ClientsList";
 import { DeleteClientModal } from "./DeleteClientModal";
