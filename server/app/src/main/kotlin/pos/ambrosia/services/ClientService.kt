@@ -3,12 +3,14 @@ package pos.ambrosia.services
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.ClientEntity
 import pos.ambrosia.db.tables.ClientsTable
 import pos.ambrosia.db.tables.CurrencyTable
-import pos.ambrosia.db.tables.PayoutAccountsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.FreelanceClient
 import pos.ambrosia.models.FreelanceClientUpsert
@@ -34,37 +36,57 @@ class ClientService {
             .empty()
     }
 
-    private fun payoutAccountExists(payoutAccountId: String?): Boolean {
-        if (payoutAccountId.isNullOrBlank()) return true
-        val payoutAccountUuid = parseUuid(payoutAccountId) ?: return false
-        return !PayoutAccountsTable
+    private fun normalizedPaymentMethods(clientRequest: FreelanceClientUpsert): List<String> =
+        clientRequest.paymentMethods
+            .ifEmpty { clientRequest.paymentMethod?.let { paymentMethod -> listOf(paymentMethod) } ?: emptyList() }
+            .map { paymentMethod -> paymentMethod.trim() }
+            .filter { paymentMethod -> paymentMethod.isNotEmpty() }
+            .distinct()
+
+    private fun getClientPaymentMethods(clientId: UUID): List<String> =
+        ClientPaymentMethodsTable
             .selectAll()
-            .where {
-                (PayoutAccountsTable.id eq EntityID(payoutAccountUuid, PayoutAccountsTable)) and
-                    (PayoutAccountsTable.isDeleted eq false)
-            }.empty()
+            .where { ClientPaymentMethodsTable.clientId eq EntityID(clientId, ClientsTable) }
+            .map { clientPaymentMethodRow -> clientPaymentMethodRow[ClientPaymentMethodsTable.paymentMethod] }
+
+    private fun replaceClientPaymentMethods(
+        clientId: UUID,
+        paymentMethods: List<String>,
+    ) {
+        ClientPaymentMethodsTable.deleteWhere { ClientPaymentMethodsTable.clientId eq EntityID(clientId, ClientsTable) }
+        for (paymentMethod in paymentMethods) {
+            ClientPaymentMethodsTable.insertIgnore { clientPaymentMethodInsert ->
+                clientPaymentMethodInsert[ClientPaymentMethodsTable.clientId] = EntityID(clientId, ClientsTable)
+                clientPaymentMethodInsert[ClientPaymentMethodsTable.paymentMethod] = paymentMethod
+            }
+        }
     }
 
     private fun isValidClientRequest(clientRequest: FreelanceClientUpsert): Boolean =
-        clientRequest.name.isNotBlank() &&
-            clientRequest.hourlyRateCents >= 0 &&
-            clientRequest.billingCycle in validBillingCycles &&
-            clientRequest.paymentMethod in validPaymentMethods &&
-            currencyExists(clientRequest.currencyId) &&
-            payoutAccountExists(clientRequest.payoutAccountId)
+        normalizedPaymentMethods(clientRequest).let { paymentMethods ->
+            clientRequest.name.isNotBlank() &&
+                clientRequest.hourlyRateCents >= 0 &&
+                clientRequest.billingCycle in validBillingCycles &&
+                paymentMethods.isNotEmpty() &&
+                paymentMethods.all { paymentMethod -> paymentMethod in validPaymentMethods } &&
+                currencyExists(clientRequest.currencyId)
+        }
 
-    private fun toClientModel(clientEntity: ClientEntity): FreelanceClient =
-        FreelanceClient(
+    private fun toClientModel(clientEntity: ClientEntity): FreelanceClient {
+        val paymentMethods = getClientPaymentMethods(clientEntity.id.value).ifEmpty { listOf(clientEntity.paymentMethod) }
+        return FreelanceClient(
             id = clientEntity.id.value.toString(),
             name = clientEntity.name,
             currencyId = clientEntity.currencyId.value.toString(),
             hourlyRateCents = clientEntity.hourlyRateCents,
             billingCycle = clientEntity.billingCycle,
-            paymentMethod = clientEntity.paymentMethod,
+            paymentMethod = paymentMethods.first(),
+            paymentMethods = paymentMethods,
             payoutAccountId = clientEntity.payoutAccountId?.value?.toString(),
             isDeleted = clientEntity.isDeleted,
             createdAt = clientEntity.createdAt,
         )
+    }
 
     fun getClients(): List<FreelanceClient> =
         transaction {
@@ -84,6 +106,7 @@ class ClientService {
     fun addClient(clientRequest: FreelanceClientUpsert): String? =
         transaction {
             if (!isValidClientRequest(clientRequest)) return@transaction null
+            val paymentMethods = normalizedPaymentMethods(clientRequest)
 
             val clientId =
                 ClientEntity
@@ -92,15 +115,15 @@ class ClientService {
                         currencyId = EntityID(UUID.fromString(clientRequest.currencyId), CurrencyTable)
                         hourlyRateCents = clientRequest.hourlyRateCents
                         billingCycle = clientRequest.billingCycle
-                        paymentMethod = clientRequest.paymentMethod
-                        payoutAccountId =
-                            clientRequest.payoutAccountId?.let { EntityID(UUID.fromString(it), PayoutAccountsTable) }
+                        paymentMethod = paymentMethods.first()
+                        payoutAccountId = null
                         isDeleted = false
                         createdAt = LocalDateTime.now().toString()
                     }.id.value
-                    .toString()
-            logger.info("Freelance client created: $clientId")
-            clientId
+            replaceClientPaymentMethods(clientId, paymentMethods)
+            val clientIdValue = clientId.toString()
+            logger.info("Freelance client created: $clientIdValue")
+            clientIdValue
         }
 
     fun updateClient(
@@ -110,6 +133,7 @@ class ClientService {
         transaction {
             val clientUuid = parseUuid(clientId) ?: return@transaction false
             if (!isValidClientRequest(clientRequest)) return@transaction false
+            val paymentMethods = normalizedPaymentMethods(clientRequest)
 
             val clientEntity = ClientEntity.findById(clientUuid) ?: return@transaction false
             if (clientEntity.isDeleted) return@transaction false
@@ -118,8 +142,9 @@ class ClientService {
             clientEntity.currencyId = EntityID(UUID.fromString(clientRequest.currencyId), CurrencyTable)
             clientEntity.hourlyRateCents = clientRequest.hourlyRateCents
             clientEntity.billingCycle = clientRequest.billingCycle
-            clientEntity.paymentMethod = clientRequest.paymentMethod
-            clientEntity.payoutAccountId = clientRequest.payoutAccountId?.let { EntityID(UUID.fromString(it), PayoutAccountsTable) }
+            clientEntity.paymentMethod = paymentMethods.first()
+            clientEntity.payoutAccountId = null
+            replaceClientPaymentMethods(clientUuid, paymentMethods)
             logger.info("Freelance client updated: $clientId")
             true
         }

@@ -12,6 +12,7 @@ import pos.ambrosia.db.tables.AdminNotificationReceiptsTable
 import pos.ambrosia.db.tables.AdminNotificationsTable
 import pos.ambrosia.db.tables.BaseCurrencyTable
 import pos.ambrosia.db.tables.CategoriesTable
+import pos.ambrosia.db.tables.ClientPaymentMethodsTable
 import pos.ambrosia.db.tables.CategoryEntity
 import pos.ambrosia.db.tables.ClientEntity
 import pos.ambrosia.db.tables.ClientsTable
@@ -136,6 +137,7 @@ object ExposedTestDb {
                 PushSubscriptionsTable,
                 PayoutAccountsTable,
                 ClientsTable,
+                ClientPaymentMethodsTable,
                 ProjectsTable,
                 TasksTable,
                 InvoicesTable,
@@ -156,6 +158,7 @@ object ExposedTestDb {
                 InvoicesTable,
                 TasksTable,
                 ProjectsTable,
+                ClientPaymentMethodsTable,
                 ClientsTable,
                 PayoutAccountsTable,
                 RefundsTable,
@@ -170,6 +173,7 @@ object ExposedTestDb {
                 InvoicesTable,
                 TasksTable,
                 ProjectsTable,
+                ClientPaymentMethodsTable,
                 ClientsTable,
                 PayoutAccountsTable,
                 AdminNotificationPreferencesTable,
