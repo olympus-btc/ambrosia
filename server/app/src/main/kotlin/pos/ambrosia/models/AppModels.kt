@@ -617,6 +617,7 @@ data class FreelanceClient(
     val hourlyRateCents: Int,
     val billingCycle: String,
     val paymentMethod: String,
+    val paymentMethods: List<String> = listOf(paymentMethod),
     val payoutAccountId: String? = null,
     val isDeleted: Boolean = false,
     val createdAt: String,
@@ -628,7 +629,8 @@ data class FreelanceClientUpsert(
     val currencyId: String,
     val hourlyRateCents: Int,
     val billingCycle: String,
-    val paymentMethod: String,
+    val paymentMethod: String? = null,
+    val paymentMethods: List<String> = emptyList(),
     val payoutAccountId: String? = null,
 )
 

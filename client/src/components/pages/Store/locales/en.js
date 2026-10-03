@@ -27,6 +27,10 @@ const storeEn = {
     orders: "Orders",
     reports: "Reports",
     notifications: "Notifications",
+    timesheet: "Timesheet",
+    clients: "Clients",
+    projects: "Projects",
+    invoices: "Invoices",
   },
   dashboard: {
     title: "Dashboard",

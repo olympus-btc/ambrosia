@@ -1,5 +1,6 @@
 package pos.ambrosia.db.tables
 
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
@@ -30,4 +31,12 @@ class ClientEntity(
     var payoutAccountId by ClientsTable.payoutAccountId
     var isDeleted by ClientsTable.isDeleted
     var createdAt by ClientsTable.createdAt
+}
+
+object ClientPaymentMethodsTable : Table("client_payment_methods") {
+    val clientId = reference("client_id", ClientsTable)
+    val paymentMethod = varchar("payment_method", 20)
+    val position = integer("position").default(0)
+
+    override val primaryKey = PrimaryKey(clientId, paymentMethod)
 }

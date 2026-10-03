@@ -96,6 +96,21 @@ class ProjectServiceTest {
     }
 
     @Test
+    fun `getProjects returns active projects for active clients`() {
+        val firstClientId = ExposedTestDb.seedFreelanceClient()
+        val secondClientId = ExposedTestDb.seedFreelanceClient(name = "Second Client")
+        val deletedClientId = ExposedTestDb.seedFreelanceClient(name = "Deleted Client", isDeleted = true)
+        ExposedTestDb.seedFreelanceProject(clientId = firstClientId, name = "Website")
+        ExposedTestDb.seedFreelanceProject(clientId = secondClientId, name = "Branding")
+        ExposedTestDb.seedFreelanceProject(clientId = firstClientId, name = "Deleted Project", isDeleted = true)
+        ExposedTestDb.seedFreelanceProject(clientId = deletedClientId, name = "Archived Client Project")
+
+        val projects = service.getProjects()
+
+        assertEquals(listOf("Branding", "Website"), projects.map { project -> project.name }.sorted())
+    }
+
+    @Test
     fun `getProjectsByClientId returns null for invalid missing or deleted client`() {
         val deletedClientId = ExposedTestDb.seedFreelanceClient(isDeleted = true)
 

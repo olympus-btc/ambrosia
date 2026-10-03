@@ -21,6 +21,15 @@ fun Application.configureProjects() {
 
 fun Route.projects(projectService: ProjectService) {
     authorizePermission("projects_read") {
+        get("") {
+            val projects = projectService.getProjects()
+            if (projects.isEmpty()) {
+                call.respond(HttpStatusCode.OK, "No projects found")
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, projects)
+        }
+
         get("/{id}") {
             val projectId =
                 call.parameters["id"]
