@@ -142,50 +142,51 @@ export function ClientFormModal({
                   </SelectItem>
                 ))}
               </Select>
+            </div>
 
-              <div className="space-y-2">
-                <div className="flex items-end gap-2">
-                  <Select
-                    label={clientTranslations("modal.paymentMethodsLabel")}
-                    selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
-                    errorMessage={clientTranslations("modal.paymentMethodsError")}
-                    isInvalid={clientForm.paymentMethods.length === 0}
-                    onSelectionChange={(selectedPaymentMethodKeys) => {
-                      const selectedPaymentMethodKey = Array.from(selectedPaymentMethodKeys)[0] || "";
-                      setSelectedPaymentMethod(selectedPaymentMethodKey);
-                    }}
-                  >
-                    {availablePaymentMethods.map((paymentMethod) => (
-                      <SelectItem key={paymentMethod}>
-                        {clientTranslations(`paymentMethods.${paymentMethod}`)}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="flat"
-                    className="h-14 min-w-20"
-                    onPress={handleAddPaymentMethod}
-                    isDisabled={!selectedPaymentMethod}
-                  >
-                    {clientTranslations("modal.addPaymentMethodButton")}
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {clientForm.paymentMethods.map((paymentMethod) => (
-                    <Chip
-                      key={paymentMethod}
-                      variant="flat"
-                      className="bg-green-200 text-xs text-green-800 border border-green-300"
-                      classNames={{
-                        closeButton: "text-red-600 hover:text-red-700",
-                      }}
-                      onClose={() => handleRemovePaymentMethod(paymentMethod)}
-                    >
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <Select
+                  label={clientTranslations("modal.paymentMethodsLabel")}
+                  selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
+                  errorMessage={clientTranslations("modal.paymentMethodsError")}
+                  isInvalid={clientForm.paymentMethods.length === 0}
+                  className="sm:flex-1"
+                  onSelectionChange={(selectedPaymentMethodKeys) => {
+                    const selectedPaymentMethodKey = Array.from(selectedPaymentMethodKeys)[0] || "";
+                    setSelectedPaymentMethod(selectedPaymentMethodKey);
+                  }}
+                >
+                  {availablePaymentMethods.map((paymentMethod) => (
+                    <SelectItem key={paymentMethod}>
                       {clientTranslations(`paymentMethods.${paymentMethod}`)}
-                    </Chip>
+                    </SelectItem>
                   ))}
-                </div>
+                </Select>
+                <Button
+                  type="button"
+                  variant="flat"
+                  className="h-14 sm:min-w-24"
+                  onPress={handleAddPaymentMethod}
+                  isDisabled={!selectedPaymentMethod}
+                >
+                  {clientTranslations("modal.addPaymentMethodButton")}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {clientForm.paymentMethods.map((paymentMethod) => (
+                  <Chip
+                    key={paymentMethod}
+                    variant="flat"
+                    className="bg-green-200 text-xs text-green-800 border border-green-300"
+                    classNames={{
+                      closeButton: "text-red-600 hover:text-red-700",
+                    }}
+                    onClose={() => handleRemovePaymentMethod(paymentMethod)}
+                  >
+                    {clientTranslations(`paymentMethods.${paymentMethod}`)}
+                  </Chip>
+                ))}
               </div>
             </div>
 
