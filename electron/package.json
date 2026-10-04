@@ -38,13 +38,13 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "cross-env": "^10.1.0",
-    "electron": "^44.4.5",
+    "electron": "^44.5.1",
     "electron-builder": "^26.6.0",
     "esbuild": "0.28.2",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^18.4.0",
-    "vitest": "5.0.2"
+    "vitest": "5.0.3"
   },
   "dependencies": {
     "cross-spawn": "^7.0.6",
