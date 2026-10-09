@@ -17,6 +17,7 @@ const freelanceInvoicesEn = {
     total: "Total",
     actions: "Actions",
     view: "View",
+    printInvoice: "Print / Save PDF",
     close: "Close",
     detailTitle: "Invoice details",
     lineItem: "Line item",
@@ -31,6 +32,12 @@ const freelanceInvoicesEn = {
     clabe: "CLABE",
     swift: "SWIFT",
     iban: "IBAN",
+    document: {
+      invoiceTitle: "Invoice",
+      businessFallbackName: "Business",
+      lineItems: "Line items",
+      noLineItems: "No line items",
+    },
     generate: {
       title: "Generate invoice",
       clientLabel: "Client",

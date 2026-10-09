@@ -11,6 +11,10 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { printHtmlDocument } from "@/utils/printHtmlDocument";
+import { useConfigurations } from "@providers/configurations/configurationsProvider";
+
+import { buildFreelanceInvoiceHtmlDocument } from "./invoiceDocument";
 import {
   formatInvoiceAmount,
   formatInvoiceDuration,
@@ -63,6 +67,44 @@ function LightningPaymentDetails({ invoice }) {
 
 export function InvoiceDetailModal({ invoice, isLoading, isOpen, onClose }) {
   const invoiceTranslations = useTranslations("freelanceInvoices");
+  const { config: businessConfig } = useConfigurations();
+
+  const handlePrintInvoice = () => {
+    if (!invoice) return;
+
+    const invoiceHtmlDocument = buildFreelanceInvoiceHtmlDocument({
+      invoice,
+      businessConfig,
+      documentTranslations: {
+        invoiceTitle: invoiceTranslations("document.invoiceTitle"),
+        businessFallbackName: invoiceTranslations("document.businessFallbackName"),
+        client: invoiceTranslations("client"),
+        period: invoiceTranslations("period"),
+        status: invoiceTranslations("status"),
+        statusLabel: invoiceTranslations(`statuses.${invoice.status}`),
+        lineItems: invoiceTranslations("document.lineItems"),
+        lineItem: invoiceTranslations("lineItem"),
+        duration: invoiceTranslations("duration"),
+        rate: invoiceTranslations("rate"),
+        amount: invoiceTranslations("amount"),
+        total: invoiceTranslations("total"),
+        noLineItems: invoiceTranslations("document.noLineItems"),
+        bankDetails: invoiceTranslations("bankDetails"),
+        lightningDetails: invoiceTranslations("lightningDetails"),
+        accountHolder: invoiceTranslations("accountHolder"),
+        bankName: invoiceTranslations("bankName"),
+        accountNumber: invoiceTranslations("accountNumber"),
+        clabe: invoiceTranslations("clabe"),
+        swift: invoiceTranslations("swift"),
+        iban: invoiceTranslations("iban"),
+      },
+    });
+
+    printHtmlDocument({
+      htmlContent: invoiceHtmlDocument,
+      title: invoice.invoiceNumber || invoiceTranslations("document.invoiceTitle"),
+    });
+  };
 
   return (
     <Modal
@@ -140,7 +182,15 @@ export function InvoiceDetailModal({ invoice, isLoading, isOpen, onClose }) {
             </>
           )}
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter className="flex justify-between">
+          <Button
+            color="primary"
+            className="bg-green-800"
+            onPress={handlePrintInvoice}
+            isDisabled={isLoading || !invoice}
+          >
+            {invoiceTranslations("printInvoice")}
+          </Button>
           <Button
             variant="bordered"
             type="button"
