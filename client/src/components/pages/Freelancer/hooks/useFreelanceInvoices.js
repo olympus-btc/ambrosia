@@ -56,6 +56,28 @@ export function useFreelanceInvoices({ skipForbiddenRedirect = false } = {}) {
     [],
   );
 
+  const createFreelanceInvoice = useCallback(
+    async (invoiceRequest) => {
+      const createInvoiceResponse = await httpClient("/freelance/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invoiceRequest),
+        skipForbiddenRedirect: true,
+      });
+
+      if (createInvoiceResponse.ok === false) {
+        throw await buildParsedHttpError(createInvoiceResponse, "Error creating freelance invoice");
+      }
+
+      const createdInvoiceData = await parseJsonResponse(createInvoiceResponse, {});
+      await fetchInvoices();
+      return createdInvoiceData;
+    },
+    [fetchInvoices],
+  );
+
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
@@ -69,6 +91,7 @@ export function useFreelanceInvoices({ skipForbiddenRedirect = false } = {}) {
     forbidden,
     refetch: fetchInvoices,
     fetchInvoiceDetail,
+    createFreelanceInvoice,
     clearSelectedInvoice: () => setSelectedInvoice(null),
   };
 }

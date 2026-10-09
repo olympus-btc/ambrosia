@@ -2,20 +2,28 @@
 
 import { useState } from "react";
 
-import { Spinner } from "@heroui/react";
+import { addToast, Button, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PermissionBlockedMessage } from "@/components/shared/PermissionBlockedMessage";
+import { RequirePermission } from "@/hooks/usePermission";
 
-import { useFreelanceInvoices } from "../hooks";
+import {
+  useCurrencies,
+  useFreelanceClients,
+  useFreelanceInvoices,
+  usePayoutAccounts,
+} from "../hooks";
 
+import { GenerateInvoiceModal } from "./GenerateInvoiceModal";
 import { InvoiceDetailModal } from "./InvoiceDetailModal";
 import { InvoicesList } from "./InvoicesList";
 
 export function Invoices() {
   const invoiceTranslations = useTranslations("freelanceInvoices");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const {
     invoices,
     selectedInvoice,
@@ -23,8 +31,12 @@ export function Invoices() {
     loadingInvoiceDetail,
     forbidden,
     fetchInvoiceDetail,
+    createFreelanceInvoice,
     clearSelectedInvoice,
   } = useFreelanceInvoices({ skipForbiddenRedirect: true });
+  const { clients } = useFreelanceClients({ skipForbiddenRedirect: true });
+  const { currencies } = useCurrencies({ skipForbiddenRedirect: true });
+  const { payoutAccounts } = usePayoutAccounts({ skipForbiddenRedirect: true });
 
   const handleViewInvoice = async (invoice) => {
     setIsDetailModalOpen(true);
@@ -34,6 +46,22 @@ export function Invoices() {
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     clearSelectedInvoice();
+  };
+
+  const handleGenerateInvoice = async (invoiceRequest) => {
+    try {
+      const createdInvoice = await createFreelanceInvoice(invoiceRequest);
+      addToast({ description: invoiceTranslations("toasts.createSuccess"), color: "success" });
+      setIsDetailModalOpen(true);
+      await fetchInvoiceDetail(createdInvoice.id);
+    } catch (createInvoiceError) {
+      addToast({
+        title: invoiceTranslations("toasts.createErrorTitle"),
+        description: invoiceTranslations("toasts.createErrorDescription"),
+        color: "danger",
+      });
+      throw createInvoiceError;
+    }
   };
 
   if (forbidden) {
@@ -50,7 +78,22 @@ export function Invoices() {
 
   return (
     <>
-      <PageHeader title={invoiceTranslations("title")} subtitle={invoiceTranslations("subtitle")} />
+      <PageHeader
+        title={invoiceTranslations("title")}
+        subtitle={invoiceTranslations("subtitle")}
+        actions={(
+          <RequirePermission allOf={["invoices_create", "clients_read"]}>
+            <Button
+              color="primary"
+              className="bg-green-800"
+              onPress={() => setIsGenerateModalOpen(true)}
+              isDisabled={clients.length === 0}
+            >
+              {invoiceTranslations("generateInvoice")}
+            </Button>
+          </RequirePermission>
+        )}
+      />
 
       <div className="bg-white rounded-lg shadow-lg p-4 lg:p-8 overflow-x-auto">
         {loading ? (
@@ -67,6 +110,15 @@ export function Invoices() {
         isLoading={loadingInvoiceDetail}
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
+      />
+
+      <GenerateInvoiceModal
+        clients={clients}
+        currencies={currencies}
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        onSubmit={handleGenerateInvoice}
+        payoutAccounts={payoutAccounts}
       />
     </>
   );

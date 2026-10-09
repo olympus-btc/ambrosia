@@ -2,6 +2,7 @@ const freelanceInvoicesEs = {
   freelanceInvoices: {
     title: "Facturas",
     subtitle: "Revisa las facturas generadas desde registros de tiempo facturables.",
+    generateInvoice: "Generar factura",
     emptyState: "Aún no hay facturas.",
     permissionBlocked: {
       title: "No puedes ver facturas",
@@ -30,6 +31,28 @@ const freelanceInvoicesEs = {
     clabe: "CLABE",
     swift: "SWIFT",
     iban: "IBAN",
+    generate: {
+      title: "Generar factura",
+      clientLabel: "Cliente",
+      periodStartLabel: "Inicio del periodo",
+      periodEndLabel: "Fin del periodo",
+      periodError: "La fecha final debe ser posterior a la fecha inicial.",
+      payoutAccountLabel: "Cuenta bancaria de pago",
+      payoutAccountError: "Se requiere una cuenta bancaria de pago.",
+      unnamedPayoutAccount: "Cuenta bancaria de pago",
+      summaryTitle: "Revisar antes de generar",
+      paymentMethodSummary: "Método de pago: {paymentMethod}",
+      loadingBitcoinRate: "Cargando tipo de cambio de Bitcoin...",
+      bitcoinRateSummary: "Tipo de cambio BTC: {currency} {rate}",
+      confirmationNote: "Al confirmar se crea la factura y se bloquean los registros de tiempo incluidos.",
+      cancelButton: "Cancelar",
+      submitButton: "Generar",
+    },
+    toasts: {
+      createSuccess: "Factura generada correctamente",
+      createErrorTitle: "No se pudo generar la factura",
+      createErrorDescription: "Revisa el cliente, el periodo y los datos de pago, e inténtalo de nuevo.",
+    },
     statuses: {
       draft: "Borrador",
       sent: "Enviada",

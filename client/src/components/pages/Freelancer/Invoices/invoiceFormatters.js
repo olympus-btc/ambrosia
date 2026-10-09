@@ -41,3 +41,19 @@ export function parsePayoutSnapshot(payoutSnapshot) {
     return null;
   }
 }
+
+export function getInvoiceClientPaymentMethod(client) {
+  return client?.paymentMethod || client?.paymentMethods?.[0] || "";
+}
+
+export function getCurrencyAcronymForClient(client, currencies) {
+  return currencies.find((currency) => currency.id === client?.currencyId)?.acronym || "";
+}
+
+export function formatPayoutAccountName(payoutAccount) {
+  return [
+    payoutAccount.accountHolder,
+    payoutAccount.bankName,
+    payoutAccount.accountNumber || payoutAccount.clabe,
+  ].filter(Boolean).join(" - ");
+}

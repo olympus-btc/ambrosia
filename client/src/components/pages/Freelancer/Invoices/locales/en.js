@@ -2,6 +2,7 @@ const freelanceInvoicesEn = {
   freelanceInvoices: {
     title: "Invoices",
     subtitle: "Review invoices generated from billable time entries.",
+    generateInvoice: "Generate invoice",
     emptyState: "No invoices yet.",
     permissionBlocked: {
       title: "You can't view invoices",
@@ -30,6 +31,28 @@ const freelanceInvoicesEn = {
     clabe: "CLABE",
     swift: "SWIFT",
     iban: "IBAN",
+    generate: {
+      title: "Generate invoice",
+      clientLabel: "Client",
+      periodStartLabel: "Period start",
+      periodEndLabel: "Period end",
+      periodError: "The end date must be after the start date.",
+      payoutAccountLabel: "Bank payout account",
+      payoutAccountError: "A bank payout account is required.",
+      unnamedPayoutAccount: "Bank payout account",
+      summaryTitle: "Review before generating",
+      paymentMethodSummary: "Payment method: {paymentMethod}",
+      loadingBitcoinRate: "Loading Bitcoin exchange rate...",
+      bitcoinRateSummary: "BTC rate: {currency} {rate}",
+      confirmationNote: "Confirming creates the invoice and locks the included billable time entries.",
+      cancelButton: "Cancel",
+      submitButton: "Generate",
+    },
+    toasts: {
+      createSuccess: "Invoice generated successfully",
+      createErrorTitle: "Could not generate invoice",
+      createErrorDescription: "Check the selected client, period, and payment details, then try again.",
+    },
     statuses: {
       draft: "Draft",
       sent: "Sent",
