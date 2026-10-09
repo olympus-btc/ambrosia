@@ -1,0 +1,47 @@
+const freelanceInvoicesEn = {
+  freelanceInvoices: {
+    title: "Invoices",
+    subtitle: "Review invoices generated from billable time entries.",
+    emptyState: "No invoices yet.",
+    permissionBlocked: {
+      title: "You can't view invoices",
+      subtitle: "Ask an administrator to grant you the View invoices permission.",
+    },
+    tableAriaLabel: "Freelance invoices table",
+    number: "Invoice",
+    client: "Client",
+    period: "Period",
+    status: "Status",
+    paymentMethod: "Payment method",
+    total: "Total",
+    actions: "Actions",
+    view: "View",
+    close: "Close",
+    detailTitle: "Invoice details",
+    lineItem: "Line item",
+    duration: "Duration",
+    rate: "Rate",
+    amount: "Amount",
+    bankDetails: "Bank transfer details",
+    lightningDetails: "Lightning invoice",
+    accountHolder: "Account holder",
+    bankName: "Bank",
+    accountNumber: "Account number",
+    clabe: "CLABE",
+    swift: "SWIFT",
+    iban: "IBAN",
+    statuses: {
+      draft: "Draft",
+      sent: "Sent",
+      paid: "Paid",
+      cancelled: "Cancelled",
+      overdue: "Overdue",
+    },
+    paymentMethods: {
+      bank: "Bank transfer",
+      lightning: "Lightning",
+    },
+  },
+};
+
+export default freelanceInvoicesEn;

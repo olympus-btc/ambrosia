@@ -1,0 +1,47 @@
+const freelanceInvoicesEs = {
+  freelanceInvoices: {
+    title: "Facturas",
+    subtitle: "Revisa las facturas generadas desde registros de tiempo facturables.",
+    emptyState: "Aún no hay facturas.",
+    permissionBlocked: {
+      title: "No puedes ver facturas",
+      subtitle: "Pide a un administrador permiso para ver facturas.",
+    },
+    tableAriaLabel: "Tabla de facturas freelance",
+    number: "Factura",
+    client: "Cliente",
+    period: "Periodo",
+    status: "Estado",
+    paymentMethod: "Método de pago",
+    total: "Total",
+    actions: "Acciones",
+    view: "Ver",
+    close: "Cerrar",
+    detailTitle: "Detalles de factura",
+    lineItem: "Concepto",
+    duration: "Duración",
+    rate: "Tarifa",
+    amount: "Importe",
+    bankDetails: "Datos para transferencia",
+    lightningDetails: "Factura Lightning",
+    accountHolder: "Titular",
+    bankName: "Banco",
+    accountNumber: "Número de cuenta",
+    clabe: "CLABE",
+    swift: "SWIFT",
+    iban: "IBAN",
+    statuses: {
+      draft: "Borrador",
+      sent: "Enviada",
+      paid: "Pagada",
+      cancelled: "Cancelada",
+      overdue: "Vencida",
+    },
+    paymentMethods: {
+      bank: "Transferencia bancaria",
+      lightning: "Lightning",
+    },
+  },
+};
+
+export default freelanceInvoicesEs;
