@@ -20,7 +20,7 @@ export function PaymentSuccessContent({
   onClose,
   result,
 }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const {
     estimatedFiat,
@@ -39,20 +39,20 @@ export function PaymentSuccessContent({
         <div className="flex flex-col items-center justify-center py-8 space-y-4">
           <CheckCircle className="h-16 w-16 text-forest" />
           <p className="text-xl font-semibold text-deep">
-            {t("payments.send.paySuccessTitle")}
+            {walletTranslations("payments.send.paySuccessTitle")}
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("payments.send.amountSent")}</span>
+            <span className="text-gray-500">{walletTranslations("payments.send.amountSent")}</span>
             <span className="font-medium">{formatSats(result?.recipientAmountSat)} sats</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("payments.send.estimatedLabel")}</span>
+            <span className="text-gray-500">{walletTranslations("payments.send.estimatedLabel")}</span>
             <span className="font-medium">
-              {estimatedFiatIsLoading && t("payments.send.confirmModal.fiatLoading")}
-              {estimatedFiatHasError && t("payments.send.confirmModal.fiatError")}
+              {estimatedFiatIsLoading && walletTranslations("payments.send.confirmModal.fiatLoading")}
+              {estimatedFiatHasError && walletTranslations("payments.send.confirmModal.fiatError")}
               {!estimatedFiatIsLoading && !estimatedFiatHasError && estimatedFiat != null && formatFiat({
                 value: estimatedFiat,
                 currencyAcronym: currency.acronym,
@@ -61,7 +61,7 @@ export function PaymentSuccessContent({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("payments.send.routingFee")}</span>
+            <span className="text-gray-500">{walletTranslations("payments.send.routingFee")}</span>
             <span className="font-medium">{formatSats(result?.routingFeeSat)} sats</span>
           </div>
         </div>
@@ -70,10 +70,10 @@ export function PaymentSuccessContent({
 
         <div className="pt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-500">{t("payments.send.paymentPreImage")}</span>
+            <span className="text-sm text-gray-500">{walletTranslations("payments.send.paymentPreImage")}</span>
             <CopyButton
               value={result?.paymentPreimage ?? ""}
-              label={t("payments.send.copyButton")}
+              label={walletTranslations("payments.send.copyButton")}
               size="sm"
             />
           </div>
@@ -84,10 +84,10 @@ export function PaymentSuccessContent({
 
         <div className="pt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-500">{t("payments.send.paymentHash")}</span>
+            <span className="text-sm text-gray-500">{walletTranslations("payments.send.paymentHash")}</span>
             <CopyButton
               value={result?.paymentHash ?? ""}
-              label={t("payments.send.copyButton")}
+              label={walletTranslations("payments.send.copyButton")}
               size="sm"
             />
           </div>
@@ -103,7 +103,7 @@ export function PaymentSuccessContent({
           className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
           onPress={onClose}
         >
-          {t("payments.send.closeButton")}
+          {walletTranslations("payments.send.closeButton")}
         </Button>
       </ModalFooter>
     </>

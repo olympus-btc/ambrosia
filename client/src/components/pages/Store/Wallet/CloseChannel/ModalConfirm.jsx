@@ -12,7 +12,7 @@ function truncateAddress(address) {
 }
 
 export function ModalConfirm({ channel, address, feerate, isLoading, onBack, onConfirm }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
 
   return (
     <>
@@ -21,27 +21,27 @@ export function ModalConfirm({ channel, address, feerate, isLoading, onBack, onC
           <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
           <div>
             <p className="font-bold text-red-800 text-sm mb-1">
-              {t("closeChannel.confirmTitle")}
+              {walletTranslations("closeChannel.confirmTitle")}
             </p>
             <p className="text-red-700 text-sm">
-              {t("closeChannel.confirmDescription")}
+              {walletTranslations("closeChannel.confirmDescription")}
             </p>
           </div>
         </div>
 
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("closeChannel.balanceSummaryLabel")}</span>
+            <span className="text-gray-500">{walletTranslations("closeChannel.balanceSummaryLabel")}</span>
             <span className="font-medium">
-              {formatSats(channel.balanceSat)} {t("closeChannel.satUnit")}
+              {formatSats(channel.balanceSat)} {walletTranslations("closeChannel.satUnit")}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("closeChannel.addressSummaryLabel")}</span>
+            <span className="text-gray-500">{walletTranslations("closeChannel.addressSummaryLabel")}</span>
             <span className="font-medium font-mono">{truncateAddress(address)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{t("closeChannel.feerateSummaryLabel")}</span>
+            <span className="text-gray-500">{walletTranslations("closeChannel.feerateSummaryLabel")}</span>
             <span className="font-medium">{feerate} sat/byte</span>
           </div>
         </div>
@@ -54,10 +54,10 @@ export function ModalConfirm({ channel, address, feerate, isLoading, onBack, onC
           onPress={onBack}
           isDisabled={isLoading}
         >
-          {t("closeChannel.backButton")}
+          {walletTranslations("closeChannel.backButton")}
         </Button>
         <Button color="danger" onPress={onConfirm} isLoading={isLoading}>
-          {t("closeChannel.confirmButton")}
+          {walletTranslations("closeChannel.confirmButton")}
         </Button>
       </ModalFooter>
     </>

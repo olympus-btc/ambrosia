@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { PaymentSuccessContent } from "./Payment";
 
 export function PaymentSentModal({ result, onClose }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
 
   return (
     <Modal
@@ -27,7 +27,7 @@ export function PaymentSentModal({ result, onClose }) {
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("payments.send.paymentDone")}</ModalHeader>
+        <ModalHeader>{walletTranslations("payments.send.paymentDone")}</ModalHeader>
         <PaymentSuccessContent
           isOpen={Boolean(result)}
           onClose={onClose}
