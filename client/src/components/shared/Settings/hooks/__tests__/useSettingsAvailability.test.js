@@ -24,65 +24,45 @@ beforeEach(() => {
   useInstallPrompt.mockReturnValue({ isInstallable: false, promptInstall: jest.fn() });
 });
 
-function tabKeys(settingsAvailabilityHook) {
-  return settingsAvailabilityHook.current.availableTabs.map((tab) => tab.key);
-}
-
 describe("useSettingsAvailability", () => {
-  it("includes only the always-visible tabs for a non-admin role with no device capabilities", () => {
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
-
-    expect(tabKeys(settingsAvailabilityHook)).toEqual(["business", "preferences", "printing"]);
-  });
-
-  it("includes the admin-only tabs for an admin role", () => {
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: true }));
-
-    expect(tabKeys(settingsAvailabilityHook)).toEqual(["business", "preferences", "wallet", "backup", "printing", "system", "help"]);
-  });
-
-  it("excludes the devices tab when neither SecureConnection nor InstallPWA would render anything", () => {
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
+  it("marks the devices tab unavailable when neither SecureConnection nor InstallPWA would render anything", () => {
+    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability());
 
     expect(settingsAvailabilityHook.current.devicesTabAvailable).toBe(false);
-    expect(tabKeys(settingsAvailabilityHook)).not.toContain("devices");
   });
 
-  it("includes the devices tab when InstallPWA is installable", () => {
+  it("marks the devices tab available when InstallPWA is installable", () => {
     useInstallPrompt.mockReturnValue({ isInstallable: true, promptInstall: jest.fn() });
 
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
+    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability());
 
     expect(settingsAvailabilityHook.current.installPWAAvailable).toBe(true);
     expect(settingsAvailabilityHook.current.devicesTabAvailable).toBe(true);
-    expect(tabKeys(settingsAvailabilityHook)).toContain("devices");
   });
 
-  it("includes the devices tab when on iOS even without an install prompt", () => {
+  it("marks InstallPWA available on iOS even without an install prompt", () => {
     useIsIOS.mockReturnValue(true);
 
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
+    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability());
 
     expect(settingsAvailabilityHook.current.installPWAAvailable).toBe(true);
-    expect(tabKeys(settingsAvailabilityHook)).toContain("devices");
   });
 
-  it("excludes the devices tab in Electron even when InstallPWA would otherwise be installable", () => {
+  it("marks the devices tab unavailable in Electron even when InstallPWA would otherwise be installable", () => {
     global.__mockIsElectron = true;
     useInstallPrompt.mockReturnValue({ isInstallable: true, promptInstall: jest.fn() });
 
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
+    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability());
 
     expect(settingsAvailabilityHook.current.installPWAAvailable).toBe(false);
     expect(settingsAvailabilityHook.current.devicesTabAvailable).toBe(false);
-    expect(tabKeys(settingsAvailabilityHook)).not.toContain("devices");
   });
 
   it("excludes InstallPWA availability when already running standalone", () => {
     useIsStandalone.mockReturnValue(true);
     useInstallPrompt.mockReturnValue({ isInstallable: true, promptInstall: jest.fn() });
 
-    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability({ isAdmin: false }));
+    const { result: settingsAvailabilityHook } = renderHook(() => useSettingsAvailability());
 
     expect(settingsAvailabilityHook.current.installPWAAvailable).toBe(false);
   });
