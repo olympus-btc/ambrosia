@@ -7,7 +7,7 @@ import { SearchX } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function NotFound() {
-  const t = useTranslations("notFound");
+  const notFoundTranslations = useTranslations("notFound");
 
   return (
     <div className="min-h-screen gradient-fresh flex items-center justify-center p-4">
@@ -19,13 +19,13 @@ export function NotFound() {
 
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold tracking-widest text-forest/50 uppercase">
-              {t("errorCode")}
+              {notFoundTranslations("errorCode")}
             </p>
             <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-              {t("heading")}
+              {notFoundTranslations("heading")}
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
-              {t("description")}
+              {notFoundTranslations("description")}
             </p>
           </div>
 
@@ -35,7 +35,7 @@ export function NotFound() {
             color="primary"
             className="bg-green-800"
           >
-            {t("goHome")}
+            {notFoundTranslations("goHome")}
           </Button>
         </CardBody>
       </Card>

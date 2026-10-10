@@ -2,15 +2,15 @@ import { Avatar, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 export function EmployeeSelect({ employees, selectedUser, onSelect }) {
-  const t = useTranslations("pinLogin");
+  const pinLoginTranslations = useTranslations("pinLogin");
 
   return (
     <Select
-      label={t("selectLabel")}
+      label={pinLoginTranslations("selectLabel")}
       value={selectedUser}
       onChange={(e) => onSelect(e.target.value)}
-      placeholder={t("selectPlaceholder")}
-      aria-label={t("selectLabel")}
+      placeholder={pinLoginTranslations("selectPlaceholder")}
+      aria-label={pinLoginTranslations("selectLabel")}
       renderValue={(items) => items.map((item) => {
         const employee = employees.find((emp) => emp.id === item.key);
         if (!employee) return null;
@@ -47,8 +47,8 @@ export function EmployeeSelect({ employees, selectedUser, onSelect }) {
           </SelectItem>
         ))
       ) : (
-        <SelectItem key="no-employee" textValue={t("noEmployees")}>
-          {t("noEmployees")}
+        <SelectItem key="no-employee" textValue={pinLoginTranslations("noEmployees")}>
+          {pinLoginTranslations("noEmployees")}
         </SelectItem>
       )}
     </Select>

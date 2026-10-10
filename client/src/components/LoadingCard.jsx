@@ -7,9 +7,9 @@ export default function LoadingCard({
   color = "success",
   fullScreen = true,
 }) {
-  const t = useTranslations("loadingCard");
+  const loadingCardTranslations = useTranslations("loadingCard");
 
-  const message = t("message");
+  const message = loadingCardTranslations("message");
 
   const containerClass = fullScreen
     ? "min-h-screen gradient-fresh flex items-center justify-center p-4"
