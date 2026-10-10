@@ -13,7 +13,7 @@ export function DeleteButton({
   "aria-label": ariaLabel,
   ...props
 }) {
-  const t = useTranslations("actions");
+  const actionTranslations = useTranslations("actions");
   const hasLabel = Boolean(children);
   const buttonClassName = hasLabel
     ? showLabelOnMobile
@@ -27,7 +27,7 @@ export function DeleteButton({
       onPress={onPress}
       size={size}
       variant="outline"
-      aria-label={ariaLabel ?? t("delete")}
+      aria-label={ariaLabel ?? actionTranslations("delete")}
       {...props}
     >
       <Trash className="w-4 h-4" />

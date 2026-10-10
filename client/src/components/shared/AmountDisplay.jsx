@@ -72,7 +72,7 @@ export function AmountDisplay({
   const [showSats, setShowSats] = useState(false);
   const [showCurrentFiat, setShowCurrentFiat] = useState(false);
   const { formatAmount, currency } = useCurrency();
-  const t = useTranslations("amountDisplay");
+  const amountDisplayTranslations = useTranslations("amountDisplay");
 
   if (!satoshis) return null;
 
@@ -83,7 +83,7 @@ export function AmountDisplay({
         onClick={() => setShowSats(false)}
         className="tabular-nums"
       >
-        {satoshis.toLocaleString()} {t("satsLabel")}
+        {satoshis.toLocaleString()} {amountDisplayTranslations("satsLabel")}
       </button>
     );
   }
@@ -119,17 +119,17 @@ export function AmountDisplay({
           <AnimatedClockButton
             showingHistorical={!showCurrentFiat}
             onClick={() => setShowCurrentFiat((prev) => !prev)}
-            ariaLabel={showCurrentFiat ? t("showHistoricalRate") : t("showCurrentRate")}
+            ariaLabel={showCurrentFiat ? amountDisplayTranslations("showHistoricalRate") : amountDisplayTranslations("showCurrentRate")}
           />
         )}
       </span>
       {displayCents != null && (
         <p className="text-xs font-normal text-deep mt-0.5">
           {canToggleRate
-            ? (showCurrentFiat ? t("amountAtCurrentRate") : t("amountAtTimeOfPayment"))
+            ? (showCurrentFiat ? amountDisplayTranslations("amountAtCurrentRate") : amountDisplayTranslations("amountAtTimeOfPayment"))
             : historicalCents != null
-              ? t("amountAtTimeOfPayment")
-              : t("amountAtCurrentRate")}
+              ? amountDisplayTranslations("amountAtTimeOfPayment")
+              : amountDisplayTranslations("amountAtCurrentRate")}
         </p>
       )}
     </div>
