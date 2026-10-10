@@ -41,6 +41,7 @@ const cartEn = {
       tipApply: "Apply",
       tipRemove: "Remove",
       quantity: "Quantity",
+      quantityPlaceholder: "Enter the quantity",
       paymentMethodLabel: "Payment Method",
       paymentMethodSelectPlaceholder: "Choose a payment method",
       errorMsgSelectEmpty: "Please select an item in the list.",

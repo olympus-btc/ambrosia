@@ -12,14 +12,14 @@ describe("LockedBadge", () => {
   it("renders when isLocked is true", () => {
     render(<LockedBadge isLocked onClick={() => {}} className="badge" />);
 
-    expect(screen.getByLabelText("Secrets locked")).toHaveClass("badge");
+    expect(screen.getByLabelText("lockedBadgeLabel")).toHaveClass("badge");
   });
 
   it("calls onClick when pressed", () => {
     const onClick = jest.fn();
     render(<LockedBadge isLocked onClick={onClick} />);
 
-    fireEvent.click(screen.getByLabelText("Secrets locked"));
+    fireEvent.click(screen.getByLabelText("lockedBadgeLabel"));
 
     expect(onClick).toHaveBeenCalled();
   });
@@ -33,7 +33,7 @@ describe("LockedBadge", () => {
       </a>,
     );
 
-    fireEvent.click(screen.getByLabelText("Secrets locked"));
+    fireEvent.click(screen.getByLabelText("lockedBadgeLabel"));
 
     expect(onClick).toHaveBeenCalled();
     expect(onLinkClick).not.toHaveBeenCalled();

@@ -60,27 +60,27 @@ describe("RolesCard", () => {
 
   it("hides action buttons when canManageRoles is false", () => {
     render(<RolesCard role={adminRole} canManageRoles={false} onEdit={jest.fn()} onDelete={jest.fn()} />);
-    expect(screen.queryByLabelText("Edit Role")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Delete Role")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("roles.actions.edit")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("roles.actions.delete")).not.toBeInTheDocument();
   });
 
   it("shows action buttons when canManageRoles is true", () => {
     render(<RolesCard role={adminRole} canManageRoles onEdit={jest.fn()} onDelete={jest.fn()} />);
-    expect(screen.getByLabelText("Edit Role")).toBeInTheDocument();
-    expect(screen.getByLabelText("Delete Role")).toBeInTheDocument();
+    expect(screen.getByLabelText("roles.actions.edit")).toBeInTheDocument();
+    expect(screen.getByLabelText("roles.actions.delete")).toBeInTheDocument();
   });
 
   it("calls onEdit when edit is pressed", () => {
     const onEdit = jest.fn();
     render(<RolesCard role={adminRole} canManageRoles onEdit={onEdit} onDelete={jest.fn()} />);
-    fireEvent.click(screen.getByLabelText("Edit Role"));
+    fireEvent.click(screen.getByLabelText("roles.actions.edit"));
     expect(onEdit).toHaveBeenCalledWith(adminRole);
   });
 
   it("calls onDelete when delete is pressed", () => {
     const onDelete = jest.fn();
     render(<RolesCard role={adminRole} canManageRoles onEdit={jest.fn()} onDelete={onDelete} />);
-    fireEvent.click(screen.getByLabelText("Delete Role"));
+    fireEvent.click(screen.getByLabelText("roles.actions.delete"));
     expect(onDelete).toHaveBeenCalledWith(adminRole);
   });
 });

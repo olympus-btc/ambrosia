@@ -23,6 +23,7 @@ const rolesEs = {
       currentUserPinIncorrectTitle: "PIN incorrecto",
       currentUserPinIncorrectDescription: "Tu PIN es incorrecto. Ingrésalo de nuevo para confirmar esta acción.",
       cancel: "Cancelar",
+      back: "Volver",
       deleteConfirmTitle: "Eliminar rol",
       deleteConfirmBody: "¿Estás seguro de que quieres eliminar el rol {name}? Los usuarios con este rol quedarán sin rol asignado.",
       deleteConfirmCurrentUserPinLabel: "Tu PIN",

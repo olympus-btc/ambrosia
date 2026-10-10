@@ -9,7 +9,7 @@ const nodeInfoEn = {
     subtitle: "Lightning Channels",
     channel: "Channel #",
     sats: "sats",
-    balanceSat: "Sats Balance",
+    balanceSat: "Local Balance",
     capacitySat: "Total Capacity:",
     inboundLiquidity: "Inbound Liquidity:",
     fetchInfoError: "Error fetching wallet information",

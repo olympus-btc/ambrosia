@@ -74,7 +74,7 @@ describe("TurnProvider", () => {
     await waitFor(() => expect(screen.getByText("$160.00")).toBeInTheDocument());
     expect(screen.getByText("+ $130.00")).toBeInTheDocument();
     expect(screen.getByText("+ $60.00")).toBeInTheDocument();
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
   });
 
   it("does not fall back to totalBalance when cashTotal differs from it", async () => {

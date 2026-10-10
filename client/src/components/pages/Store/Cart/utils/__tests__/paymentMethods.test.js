@@ -1,5 +1,6 @@
 import {
   classifyPaymentMethod,
+  getPaymentMethodTranslationKey,
   PAYMENT_METHODS,
 } from "../paymentMethods";
 
@@ -41,5 +42,24 @@ describe("classifyPaymentMethod", () => {
     expect(classifyPaymentMethod("Voucher")).toBeNull();
     expect(classifyPaymentMethod("")).toBeNull();
     expect(classifyPaymentMethod()).toBeNull();
+  });
+});
+
+describe("getPaymentMethodTranslationKey", () => {
+  it("maps the built-in payment method names to their translation keys", () => {
+    expect(getPaymentMethodTranslationKey("Cash")).toBe("cash");
+    expect(getPaymentMethodTranslationKey("Credit Card")).toBe("creditCard");
+    expect(getPaymentMethodTranslationKey("Debit Card")).toBe("debitCard");
+    expect(getPaymentMethodTranslationKey("BTC")).toBe("btc");
+    expect(getPaymentMethodTranslationKey("Bank Transfer")).toBe("bankTransfer");
+  });
+
+  it("ignores casing and surrounding whitespace", () => {
+    expect(getPaymentMethodTranslationKey("  bank transfer ")).toBe("bankTransfer");
+  });
+
+  it("returns null for custom payment methods", () => {
+    expect(getPaymentMethodTranslationKey("Voucher")).toBeNull();
+    expect(getPaymentMethodTranslationKey()).toBeNull();
   });
 });

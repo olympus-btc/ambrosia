@@ -97,28 +97,28 @@ describe("SidebarContent", () => {
     it("shows the locked badge on the wallet item when its path is locked", () => {
       renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"] });
 
-      expect(screen.getByLabelText("Secrets locked")).toBeInTheDocument();
+      expect(screen.getByLabelText("lockedBadgeLabel")).toBeInTheDocument();
     });
 
     it("does not show the locked badge on other items", () => {
       renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"] });
 
       expect(screen.getByText("products").closest("a")).not.toContainElement(
-        screen.queryByLabelText("Secrets locked"),
+        screen.queryByLabelText("lockedBadgeLabel"),
       );
     });
 
     it("does not show the locked badge when no path is locked", () => {
       renderSidebar({ availableNavigation: navWithWallet, lockedPaths: [] });
 
-      expect(screen.queryByLabelText("Secrets locked")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("lockedBadgeLabel")).not.toBeInTheDocument();
     });
 
     it("calls onLockedClick when the locked badge is clicked", () => {
       const onLockedClick = jest.fn();
       renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"], onLockedClick });
 
-      fireEvent.click(screen.getByLabelText("Secrets locked"));
+      fireEvent.click(screen.getByLabelText("lockedBadgeLabel"));
 
       expect(onLockedClick).toHaveBeenCalledTimes(1);
     });

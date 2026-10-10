@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { getShiftBreakdown } from "@/services/shiftsService";
 
 import { differenceTextClass } from "./utils/differenceTone";
@@ -11,6 +12,7 @@ import { differenceTextClass } from "./utils/differenceTone";
 export function ShiftDetailModal({ shift, formatCurrency, onClose }) {
   const reportsTranslations = useTranslations("reports");
   const shiftTranslations = useTranslations("shifts");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const [shiftBreakdown, setShiftBreakdown] = useState(null);
   const [isLoadingShiftBreakdown, setIsLoadingShiftBreakdown] = useState(false);
   const [error, setError] = useState(false);
@@ -113,7 +115,7 @@ export function ShiftDetailModal({ shift, formatCurrency, onClose }) {
                       <p className="text-xs text-gray-400">{shiftTranslations("byPaymentMethod")}</p>
                       {shiftBreakdown.byPaymentMethod.map(({ name, total }) => (
                         <div key={name} className="flex justify-between items-center text-sm">
-                          <span>{name}</span>
+                          <span>{getPaymentMethodLabel(name)}</span>
                           <span className="font-medium">{formatCurrency(total)}</span>
                         </div>
                       ))}

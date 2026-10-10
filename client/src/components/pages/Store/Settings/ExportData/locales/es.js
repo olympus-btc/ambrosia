@@ -1,14 +1,14 @@
 const exportDataEs = {
   cardExportData: {
     title: "Exportar datos",
-    description: "Descarga un respaldo de la data de tu negocio (productos, órdenes, usuarios y configuración) para restaurarla después o migrarla a otro dispositivo.",
-    passwordNotice: "Tu respaldo quedará protegido con tu contraseña de wallet actual — la vas a necesitar para restaurarlo después.",
+    description: "Descarga un respaldo de los datos de tu negocio (productos, órdenes, usuarios y configuración) para restaurarla después o migrarla a otro dispositivo.",
+    passwordNotice: "Tu respaldo quedará protegido con la contraseña actual de tu billetera — la vas a necesitar para restaurarlo después.",
     exportButton: "Exportar datos",
     exporting: "Preparando tu respaldo...",
     phasePreparing: "Preparando tu respaldo...",
     phaseWriting: "Escribiendo tu respaldo...",
     modalTitle: "Confirmar acceso",
-    passwordLabel: "Contraseña de wallet",
+    passwordLabel: "Contraseña de la billetera",
     cancelButton: "Cancelar",
     confirmButton: "Confirmar",
     success: "Respaldo descargado con éxito.",

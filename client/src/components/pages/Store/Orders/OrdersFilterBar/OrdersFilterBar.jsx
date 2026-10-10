@@ -17,7 +17,7 @@ export function OrdersFilterBar({
   onApplyFilters,
   onClearFilters,
 }) {
-  const t = useTranslations("orders");
+  const ordersTranslations = useTranslations("orders");
   const [isOpen, setIsOpen] = useState(false);
 
   const activeFilterCount = useMemo(() => [
@@ -36,25 +36,25 @@ export function OrdersFilterBar({
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
         <Input
           isClearable
-          aria-label={t("filter.searchLabel")}
+          aria-label={ordersTranslations("filter.searchLabel")}
           className="w-full lg:flex-1"
-          label={t("filter.searchLabel")}
-          placeholder={t("filter.searchPlaceholder")}
+          label={ordersTranslations("filter.searchLabel")}
+          placeholder={ordersTranslations("filter.searchPlaceholder")}
           value={search.term}
           onChange={(e) => search.onChange(e.target.value)}
           onClear={() => search.onChange("")}
         />
         <div className="flex flex-col sm:flex-row gap-3 lg:contents">
           <Select
-            aria-label="Rows per page"
-            label={t("filter.rowsPerPage")}
+            aria-label={ordersTranslations("filter.rowsPerPage")}
+            label={ordersTranslations("filter.rowsPerPage")}
             selectedKeys={[pagination.rowsPerPage.toString()]}
             onSelectionChange={(keys) => pagination.onChange(Array.from(keys)[0])}
             className="flex-1 lg:w-48 lg:flex-none"
           >
             {[5, 10, 20, 50].map((count) => (
               <SelectItem key={count.toString()} value={count.toString()}>
-                {t("filter.rowsOption", { count })}
+                {ordersTranslations("filter.rowsOption", { count })}
               </SelectItem>
             ))}
           </Select>
@@ -67,8 +67,8 @@ export function OrdersFilterBar({
             onPress={() => setIsOpen((v) => !v)}
           >
             {activeFilterCount > 0
-              ? t("filter.moreFiltersActive", { count: activeFilterCount })
-              : t("filter.moreFilters")}
+              ? ordersTranslations("filter.moreFiltersActive", { count: activeFilterCount })
+              : ordersTranslations("filter.moreFilters")}
           </Button>
         </div>
       </div>

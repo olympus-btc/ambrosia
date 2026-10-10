@@ -9,6 +9,7 @@ import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import { CopyableValueRow } from "@/components/shared/CopyableValueRow";
 import { OrderProductsTable } from "@/components/shared/OrderProductsTable";
 import { StatusChip } from "@/components/shared/StatusChip";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { usePermission } from "@/hooks/usePermission";
 import formatDate from "@lib/formatDate";
 
@@ -19,6 +20,7 @@ import { RefundInfo } from "./RefundInfo";
 
 export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAmount, currentRate }) {
   const ordersTranslations = useTranslations("orders");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const canRefund = usePermission({ allOf: ["orders_refund"] });
   const [isRefundOpen, setIsRefundOpen] = useState(false);
   const {
@@ -69,7 +71,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                   <MetaField label={ordersTranslations("details.user")} value={userName ?? "—"} />
                   <MetaField
                     label={ordersTranslations("details.paymentMethod")}
-                    value={paymentMethod || ordersTranslations("details.noPayment")}
+                    value={getPaymentMethodLabel(paymentMethod) || ordersTranslations("details.noPayment")}
                   />
                   <MetaField
                     label={ordersTranslations("details.status")}

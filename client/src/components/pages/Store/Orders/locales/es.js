@@ -1,6 +1,6 @@
 const ordersEs = {
   orders: {
-    title: "Ordenes",
+    title: "Órdenes",
     subtitle: "Administra tus ventas",
     permissionBlocked: {
       title: "No puedes ver las órdenes",
@@ -87,6 +87,8 @@ const ordersEs = {
       differenceLabel: "Diferencia",
       refundCardNotice: "Esto solo marcará la orden como reembolsada en Ambrosia. El reembolso real se hace en tu plataforma de pagos de tarjeta.",
       refundCardAcknowledge: "Ya procesé este reembolso en mi plataforma de pagos de tarjeta",
+      refundTransferNotice: "Esto solo marcará la orden como reembolsada en Ambrosia. El reembolso real se envía desde tu banco.",
+      refundTransferAcknowledge: "Ya envié este reembolso desde mi banco",
       sats: "sats",
       refundInvoice: "Invoice de reembolso",
       refundedAt: "Reembolsada el",
@@ -96,8 +98,8 @@ const ordersEs = {
       refundErrors: {
         orderNotPaid: "Solo se pueden reembolsar órdenes pagadas",
         noBitcoinPayment: "Esta orden no tiene un pago en Bitcoin para reembolsar vía Lightning",
-        refundInvoiceMissingAmount: "La factura de reembolso debe especificar un monto",
-        refundInvoiceAmountMismatch: "El monto de la factura de reembolso no coincide con el monto adeudado",
+        refundInvoiceMissingAmount: "El invoice de reembolso debe especificar un monto",
+        refundInvoiceAmountMismatch: "El monto del invoice de reembolso no coincide con el monto adeudado",
         alreadyRefunded: "La orden ya fue reembolsada",
         unknown: "Error al procesar el reembolso",
       },

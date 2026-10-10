@@ -340,7 +340,7 @@ describe("CloseTurnModal", () => {
           ticketData: expect.objectContaining({
             ticketId: "corte-z-2026-03-04",
             total: 100,
-            items: [{ quantity: 1, name: "Cash", price: 100, comments: [] }],
+            items: [{ quantity: 1, name: "cash", price: 100, comments: [] }],
           }),
         }),
       );

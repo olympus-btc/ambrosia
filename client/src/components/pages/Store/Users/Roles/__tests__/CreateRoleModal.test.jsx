@@ -71,7 +71,7 @@ describe("CreateRoleModal", () => {
   it("goes back to template view from advanced", () => {
     renderModal();
     fireEvent.click(screen.getByText("roles.create.advanced"));
-    fireEvent.click(screen.getByRole("button", { name: "Go back" }));
+    fireEvent.click(screen.getByRole("button", { name: "roles.actions.back" }));
     expect(screen.getByText("roles.create.templateLegend")).toBeInTheDocument();
   });
 

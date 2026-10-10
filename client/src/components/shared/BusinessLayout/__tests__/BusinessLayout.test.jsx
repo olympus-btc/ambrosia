@@ -83,6 +83,6 @@ describe("BusinessLayout", () => {
     const sidebar = within(screen.getByTestId("desktop-sidebar"));
 
     expect(sidebar.getByText("t:invoices").closest("a")).toHaveTextContent("4");
-    expect(sidebar.getByText("t:projects").closest("a")).toContainElement(sidebar.getByLabelText("Secrets locked"));
+    expect(sidebar.getByText("t:projects").closest("a")).toContainElement(sidebar.getByLabelText("lockedBadgeLabel"));
   });
 });

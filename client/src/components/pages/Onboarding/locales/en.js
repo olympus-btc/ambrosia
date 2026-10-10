@@ -1,7 +1,7 @@
 const onboardingEn = {
   submitOnboardingToast: {
     title: "Success",
-    description: "The data is saved succesfully",
+    description: "Your data was saved successfully",
     errorTitle: "Setup failed",
     nwcSavedTitle: "NWC backend activated",
     nwcSavedDescription: "NWC backend is now ready to use.",
@@ -38,8 +38,8 @@ const onboardingEn = {
     title: "Admin account",
     subtitle: "These details will be used to access your PoS system",
     fields: {
-      userNameLabel: "User Name",
-      userNamePlaceholder: "Enter your user name",
+      userNameLabel: "Username",
+      userNamePlaceholder: "Enter your username",
       passwordLabel: "Password",
       passwordPlaceholder: "Enter a secure password",
       confirmPasswordLabel: "Confirm Password",
@@ -73,15 +73,15 @@ const onboardingEn = {
       businessrNameLabelFreelance: "Business name",
       businessNamePlaceholder: "Awesome Business",
       businessProfession: "Occupation",
-      businessProfessionPlaceholder: "Eg: Graphic Designer",
+      businessProfessionPlaceholder: "e.g. Graphic Designer",
       businessAddress: "Address (optional)",
-      businessAddressPlaceholder: "Eg: 123 Main St, Apt 4, City",
+      businessAddressPlaceholder: "e.g. 123 Main St, Apt 4, City",
       businessPhone: "Phone (optional)",
-      businessPhonePlaceholder: "Ej: 3312345678",
+      businessPhonePlaceholder: "e.g. 3312345678",
       businessEmail: "Email (optional)",
       businessEmailPlaceholder: "contact@awesomebusiness.com",
       businessRFC: "Tax ID (optional)",
-      businessRFCPlaceholder: "Ej: ABC123456XYZ",
+      businessRFCPlaceholder: "e.g. ABC123456XYZ",
       businessRFCMessage: "13 character format (letters and numbers)",
       businessRFCInvalid: "Invalid RFC format",
       businessCurrency: "Currency",
@@ -92,7 +92,7 @@ const onboardingEn = {
       businessLogoLabelRestaurant: "Restaurant logo",
       businessLogoLabelFreelance: "Business logo (optional)",
       businessLogoUpload: "Upload your logo",
-      businessLogoUploadMessage: "PNG, JPG or GIF (máx. 5MB)",
+      businessLogoUploadMessage: "PNG, JPG or GIF (max. 5MB)",
     },
   },
   stepWallet: {
@@ -145,7 +145,7 @@ const onboardingEn = {
       },
       adminAccount: {
         title: "Admin account",
-        userName: "User Name",
+        userName: "Username",
         password: "Password",
       },
       secretsEncryption: {

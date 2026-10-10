@@ -184,7 +184,7 @@ describe("useAdminNotificationSignals", () => {
       expect.objectContaining({
         systemTitle: "Ambrosia",
         title: "Pago recibido en billetera",
-        body: "Se recibio un pago de 90 sats en la billetera.",
+        body: "Se recibió un pago de 90 sats en la billetera.",
       }),
     );
   });

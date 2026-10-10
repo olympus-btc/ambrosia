@@ -4,6 +4,7 @@ import { Button, Select, SelectItem } from "@heroui/react";
 import { Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { useSecretsLockSignal } from "@/hooks/useSecretsLockSignal";
 import { SecretsUnlockModal } from "@components/shared/SecretsUnlockModal";
 
@@ -19,6 +20,7 @@ export function CartPaymentSection({
   const translateCart = useTranslations("cart");
   const secretsEncryptionCardTranslations = useTranslations();
   const { paymentMethods } = usePaymentMethods();
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const { secretsLocked } = useSecretsLockSignal({ enabled: true });
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
@@ -54,7 +56,7 @@ export function CartPaymentSection({
       >
         {paymentMethods.map((method) => (
           <SelectItem key={method.id} value={method.id}>
-            {method.name === "BTC" ? `${method.name} (Lightning)` : method.name}
+            {getPaymentMethodLabel(method.name)}
           </SelectItem>
         ))}
       </Select>

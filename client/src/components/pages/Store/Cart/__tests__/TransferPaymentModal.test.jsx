@@ -27,7 +27,7 @@ describe("TransferPaymentModal", () => {
     render(<TransferPaymentModal {...baseProps} />);
     expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText("$10.00")).toBeInTheDocument();
-    expect(screen.getByText("Bank Transfer")).toBeInTheDocument();
+    expect(screen.getByText("bankTransfer")).toBeInTheDocument();
   });
 
   it("calls onClose when cancel is pressed", async () => {

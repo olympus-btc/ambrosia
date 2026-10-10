@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 
 import { StatusChip } from "@/components/shared/StatusChip";
 import { ViewButton } from "@/components/shared/ViewButton";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
 
 export function OrdersCard({ order, formatCurrency, onClick }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const { shortId, userName, paymentMethod, date, itemCount, total, refunded } = order;
 
   return (
@@ -29,7 +31,7 @@ export function OrdersCard({ order, formatCurrency, onClick }) {
               <span className="truncate">{userName ?? "—"}</span>
             </div>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-              <span className="text-xs text-gray-500">{paymentMethod}</span>
+              <span className="text-xs text-gray-500">{getPaymentMethodLabel(paymentMethod)}</span>
               <span className="text-xs text-gray-400">{date ? formatDate(date) : "—"}</span>
             </div>
           </div>

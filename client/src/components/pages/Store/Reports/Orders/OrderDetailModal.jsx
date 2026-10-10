@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import { CopyableValueRow } from "@/components/shared/CopyableValueRow";
 import { OrderProductsTable } from "@/components/shared/OrderProductsTable";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const {
     shortId,
     date,
@@ -55,7 +57,7 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">{reportsTranslations("sales.paymentMethod")}</p>
-                  <p className="font-medium">{paymentMethod || reportsTranslations("payment.unknown")}</p>
+                  <p className="font-medium">{getPaymentMethodLabel(paymentMethod) || reportsTranslations("payment.unknown")}</p>
                 </div>
               </div>
 

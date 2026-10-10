@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { usePrinters } from "@/components/pages/Store/hooks/usePrinter";
 import { toNumberInputValue } from "@/components/utils/numberParsers";
 import { useTurn } from "@/hooks/turn/useTurn";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 
 export function CloseTurnModal({
   isOpen,
@@ -32,6 +33,7 @@ export function CloseTurnModal({
   const [printing, setPrinting] = useState(false);
   const reportsTranslations = useTranslations("reports");
   const shiftTranslations = useTranslations("shifts");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   const {
     totalBalance, totalTips, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
@@ -61,7 +63,7 @@ export function CloseTurnModal({
           date: new Date().toISOString(),
           items: byPaymentMethod.map(({ name, total }) => ({
             quantity: 1,
-            name,
+            name: getPaymentMethodLabel(name),
             price: total,
             comments: [],
           })),
@@ -194,7 +196,7 @@ export function CloseTurnModal({
                         <p className="text-xs text-default-500">{shiftTranslations("byPaymentMethod")}</p>
                         {byPaymentMethod.map(({ name, total }) => (
                           <div key={name} className="flex justify-between text-xs">
-                            <span className="text-default-600">{name}</span>
+                            <span className="text-default-600">{getPaymentMethodLabel(name)}</span>
                             <span>{formatCurrency(total)}</span>
                           </div>
                         ))}

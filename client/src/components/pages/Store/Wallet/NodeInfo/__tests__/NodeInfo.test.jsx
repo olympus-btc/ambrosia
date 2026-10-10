@@ -403,14 +403,14 @@ describe("NodeInfo Component", () => {
     it("renders progress bar for each channel", () => {
       const { container } = renderNodeInfo(mockNodeInfo);
 
-      const progressBars = container.querySelectorAll('[aria-label="Balance Channel"]');
+      const progressBars = container.querySelectorAll('[aria-label="closeChannel.balanceSummaryLabel"]');
       expect(progressBars).toHaveLength(2);
     });
 
     it("calculates correct progress percentage", () => {
       const { container } = renderNodeInfo(mockNodeInfo);
 
-      const progressBars = container.querySelectorAll('[aria-label="Balance Channel"]');
+      const progressBars = container.querySelectorAll('[aria-label="closeChannel.balanceSummaryLabel"]');
 
       expect(progressBars[0]).toHaveAttribute("aria-valuenow", "50");
 

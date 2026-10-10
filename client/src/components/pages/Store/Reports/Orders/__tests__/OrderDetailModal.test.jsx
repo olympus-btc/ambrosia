@@ -76,7 +76,7 @@ describe("OrderDetailModal", () => {
 
   it("shows payment method", () => {
     render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
   });
 
   it("shows each item's product name", () => {

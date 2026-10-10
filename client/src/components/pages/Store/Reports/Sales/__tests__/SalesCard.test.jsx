@@ -47,7 +47,7 @@ describe("SalesCard", () => {
 
   it("renders the payment method", () => {
     render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} />);
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
   });
 
   it("shows '-' when saleDate is null", () => {

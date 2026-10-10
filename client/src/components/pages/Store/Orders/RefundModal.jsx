@@ -15,6 +15,7 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { classifyPaymentMethod, PAYMENT_METHODS } from "@/components/pages/Store/Cart/utils/paymentMethods";
 import { buildParsedHttpError } from "@/components/pages/Store/utils/buildHttpError";
 import { httpClient } from "@/lib/http";
 import { getBolt11ValidationErrorCode } from "@/utils/validateBolt11Invoice";
@@ -32,12 +33,17 @@ export function RefundModal({ order, isOpen, onClose, onRefunded, formatAmount }
   const [invoice, setInvoice] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
   const [cashGiven, setCashGiven] = useState(0);
-  const [cardRefundAcknowledged, setCardRefundAcknowledged] = useState(false);
+  const [externalRefundAcknowledged, setExternalRefundAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const isBtcOrder = order?.satoshiAmount != null;
-  const isCashOrder = !isBtcOrder && order?.paymentMethod?.toLowerCase() === "cash";
-  const isCardOrder = !isBtcOrder && !isCashOrder;
+  const orderPaymentMethod = classifyPaymentMethod(order?.paymentMethod);
+  const isCashOrder = !isBtcOrder && orderPaymentMethod === PAYMENT_METHODS.CASH;
+  const isTransferOrder = !isBtcOrder && orderPaymentMethod === PAYMENT_METHODS.TRANSFER;
+  const isCardOrder = !isBtcOrder && !isCashOrder && !isTransferOrder;
+  const externalRefundTranslationKeys = isTransferOrder
+    ? { notice: "details.refundTransferNotice", acknowledge: "details.refundTransferAcknowledge" }
+    : { notice: "details.refundCardNotice", acknowledge: "details.refundCardAcknowledge" };
   const orderTotalCents = Math.round((order?.total ?? 0) * 100);
   const cashGivenCents = Math.round((cashGiven || 0) * 100);
   const cashDifferenceCents = cashGivenCents - orderTotalCents;
@@ -48,8 +54,8 @@ export function RefundModal({ order, isOpen, onClose, onRefunded, formatAmount }
     isConfirmDisabled = !invoice.trim();
   } else if (isCashOrder) {
     isConfirmDisabled = !isCashAmountExact;
-  } else if (isCardOrder) {
-    isConfirmDisabled = !cardRefundAcknowledged;
+  } else if (isCardOrder || isTransferOrder) {
+    isConfirmDisabled = !externalRefundAcknowledged;
   }
 
   function handleInvoiceChange(value) {
@@ -103,7 +109,7 @@ export function RefundModal({ order, isOpen, onClose, onRefunded, formatAmount }
     setInvoice("");
     setInvoiceError("");
     setCashGiven(0);
-    setCardRefundAcknowledged(false);
+    setExternalRefundAcknowledged(false);
     onClose();
   }
 
@@ -151,13 +157,13 @@ export function RefundModal({ order, isOpen, onClose, onRefunded, formatAmount }
               formatAmount={formatAmount}
             />
           )}
-          {isCardOrder && (
+          {(isCardOrder || isTransferOrder) && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
-                {ordersTranslations("details.refundCardNotice")}
+                {ordersTranslations(externalRefundTranslationKeys.notice)}
               </p>
-              <Checkbox isSelected={cardRefundAcknowledged} onValueChange={setCardRefundAcknowledged}>
-                {ordersTranslations("details.refundCardAcknowledge")}
+              <Checkbox isSelected={externalRefundAcknowledged} onValueChange={setExternalRefundAcknowledged}>
+                {ordersTranslations(externalRefundTranslationKeys.acknowledge)}
               </Checkbox>
             </div>
           )}

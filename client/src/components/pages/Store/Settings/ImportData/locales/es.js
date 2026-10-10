@@ -4,7 +4,7 @@ const importDataEs = {
     description: "Restaura los datos de tu negocio desde un archivo de respaldo exportado de otra instalación de Ambrosia. Esto sobrescribe todos los datos actuales.",
     importButton: "Importar datos",
     modalTitle: "Confirmar acceso",
-    passwordLabel: "Contraseña de wallet",
+    passwordLabel: "Contraseña de la billetera",
     cancelButton: "Cancelar",
     confirmButton: "Confirmar",
     missingFields: "Ingresa la contraseña del respaldo y selecciona un archivo para continuar.",

@@ -137,7 +137,7 @@ describe("SalesList", () => {
 
     render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
-    expect(screen.getByText("BTC")).toBeInTheDocument();
+    expect(screen.getByText("btc")).toBeInTheDocument();
   });
 
   it("renders multiple sale items", () => {

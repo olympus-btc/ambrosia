@@ -27,7 +27,7 @@ describe("CardPaymentModal", () => {
     render(<CardPaymentModal {...baseProps} />);
     expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText("$10.00")).toBeInTheDocument();
-    expect(screen.getByText("Credit Card")).toBeInTheDocument();
+    expect(screen.getByText("creditCard")).toBeInTheDocument();
   });
 
   it("calls onClose when cancel is pressed", async () => {

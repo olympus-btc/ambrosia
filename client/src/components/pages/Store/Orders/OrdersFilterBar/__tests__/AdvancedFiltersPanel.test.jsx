@@ -70,8 +70,8 @@ describe("AdvancedFiltersPanel", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Status")).toBeInTheDocument();
-    expect(screen.getByLabelText("Payment method")).toBeInTheDocument();
+    expect(screen.getByLabelText("filter.statusLabel")).toBeInTheDocument();
+    expect(screen.getByLabelText("filter.paymentMethodLabel")).toBeInTheDocument();
     expect(screen.getByTestId("date-range-picker")).toBeInTheDocument();
     expect(screen.getByLabelText("filter.minTotalLabel")).toBeInTheDocument();
     expect(screen.getByLabelText("filter.maxTotalLabel")).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("AdvancedFiltersPanel", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "refunded" } });
+    fireEvent.change(screen.getByLabelText("filter.statusLabel"), { target: { value: "refunded" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ status: "refunded" });
   });
 
@@ -119,7 +119,7 @@ describe("AdvancedFiltersPanel", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "paid" } });
+    fireEvent.change(screen.getByLabelText("filter.statusLabel"), { target: { value: "paid" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ status: "paid" });
   });
 

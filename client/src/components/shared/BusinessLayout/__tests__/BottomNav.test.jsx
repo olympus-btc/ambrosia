@@ -36,14 +36,14 @@ describe("BottomNav", () => {
 
   it("renders hamburger button with More label", () => {
     renderBottomNav();
-    expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
+    expect(screen.getByLabelText("menu")).toBeInTheDocument();
     expect(screen.getByText("menu")).toBeInTheDocument();
   });
 
   it("calls onMenuClick when hamburger is pressed", () => {
     const onMenuClick = jest.fn();
     renderBottomNav({ onMenuClick });
-    fireEvent.click(screen.getByLabelText("Open menu"));
+    fireEvent.click(screen.getByLabelText("menu"));
     expect(onMenuClick).toHaveBeenCalledTimes(1);
   });
 

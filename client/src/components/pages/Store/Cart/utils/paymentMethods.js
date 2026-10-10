@@ -12,6 +12,18 @@ const METHOD_MATCHERS = [
   { method: PAYMENT_METHODS.CARD, nameKeywords: ["credit", "debit", "card"] },
 ];
 
+const TRANSLATION_KEYS_BY_METHOD_NAME = {
+  cash: "cash",
+  "credit card": "creditCard",
+  "debit card": "debitCard",
+  btc: "btc",
+  "bank transfer": "bankTransfer",
+};
+
+export function getPaymentMethodTranslationKey(methodName = "") {
+  return TRANSLATION_KEYS_BY_METHOD_NAME[methodName.trim().toLowerCase()] ?? null;
+}
+
 function nameMatchesKeyword(normalizedName, keyword) {
   return keyword instanceof RegExp ? keyword.test(normalizedName) : normalizedName.includes(keyword);
 }

@@ -1,7 +1,7 @@
 const authEn = {
   pinLogin: {
     title: "Enter PIN to access",
-    selectLabel: "Employee Selection",
+    selectLabel: "Select Employee",
     selectPlaceholder: "Choose your name",
     pinLabel: "Access PIN",
     eraseButton: "Erase",

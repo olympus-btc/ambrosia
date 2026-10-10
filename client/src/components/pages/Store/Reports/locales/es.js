@@ -21,10 +21,6 @@ const reportsEs = {
       paymentMethod: "Método de Pago",
       paymentMethods: {
         all: "Todos los métodos",
-        cash: "Efectivo",
-        btc: "Bitcoin (BTC)",
-        debitCard: "Tarjeta de Débito",
-        creditCard: "Tarjeta de Crédito",
       },
     },
     statuses: {

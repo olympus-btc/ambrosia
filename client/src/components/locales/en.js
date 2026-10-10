@@ -49,6 +49,13 @@ const componentsEn = {
     refresh: "Refresh",
     view: "View",
   },
+  paymentMethods: {
+    cash: "Cash",
+    creditCard: "Credit Card",
+    debitCard: "Debit Card",
+    btc: "Bitcoin (Lightning)",
+    bankTransfer: "Bank Transfer",
+  },
   status: {
     open: "Open",
     closed: "Closed",

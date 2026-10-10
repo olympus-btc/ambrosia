@@ -13,6 +13,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 
 export function CardPaymentModal({
   isOpen,
@@ -35,7 +36,8 @@ export function CardPaymentModal({
   }
 
   const formattedTotal = displayTotal || formatAmount((amountDue || 0) * 100);
-  const resolvedMethodLabel = methodLabel || cardTranslations("defaultMethod");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
+  const resolvedMethodLabel = getPaymentMethodLabel(methodLabel) || cardTranslations("defaultMethod");
 
   const handleConfirm = async () => {
     if (isSubmitting) return;

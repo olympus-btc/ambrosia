@@ -23,7 +23,7 @@ export function BottomNav({
       <button
         onClick={onMenuClick}
         className="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 text-slate-100 hover:bg-green-300 hover:text-green-800 rounded-xl transition-colors"
-        aria-label="Open menu"
+        aria-label={navbarTranslations("menu")}
       >
         <Menu className="w-5 h-5" />
         <span className="text-[10px] leading-none">{navbarTranslations("menu")}</span>

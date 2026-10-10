@@ -2,10 +2,13 @@
 import { useTranslations } from "next-intl";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
+
 import { CHART_COLORS } from "./chartColors";
 
 export function PaymentMethodPieChart({ paymentMethods, formatCurrency, valueKey = "revenue" }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   if (!paymentMethods.length) return null;
 
@@ -31,11 +34,11 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency, valueKey
             ))}
           </Pie>
           <Tooltip
-            formatter={(rawValue, paymentMethodName) => [formatValue(rawValue), paymentMethodName]}
+            formatter={(rawValue, paymentMethodName) => [formatValue(rawValue), getPaymentMethodLabel(paymentMethodName)]}
             contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13 }}
           />
           <Legend
-            formatter={(legendLabel) => <span style={{ fontSize: 12, color: "#374151" }}>{legendLabel}</span>}
+            formatter={(legendLabel) => <span style={{ fontSize: 12, color: "#374151" }}>{getPaymentMethodLabel(legendLabel)}</span>}
           />
         </PieChart>
       </ResponsiveContainer>

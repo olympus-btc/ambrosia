@@ -21,10 +21,6 @@ const reportsEn = {
       paymentMethod: "Payment Method",
       paymentMethods: {
         all: "All methods",
-        cash: "Cash",
-        btc: "Bitcoin (BTC)",
-        debitCard: "Debit Card",
-        creditCard: "Credit Card",
       },
     },
     statuses: {

@@ -1,18 +1,18 @@
 const componentsEs = {
   seedTour: {
-    title: "¡Protege tu SEED Phrase!",
-    description: "Tu SEED Phrase es la <b>clave maestra</b> de tu wallet Bitcoin. Si pierdes acceso a la app, es la única forma de recuperar tus fondos.",
-    clickSettings: "Ve a Configuración para ver y respaldar tu SEED Phrase.",
+    title: "¡Protege tu frase semilla (SEED)!",
+    description: "Tu frase semilla (SEED) es la <b>clave maestra</b> de tu billetera Bitcoin. Si pierdes acceso a la app, es la única forma de recuperar tus fondos.",
+    clickSettings: "Ve a Configuración para ver y respaldar tu frase semilla (SEED).",
     nextButton: "Ir a Configuración",
     mobileGoToSettings: "Ir a Configuración",
-    settingsTitle: "Respalda tu SEED Phrase",
+    settingsTitle: "Respalda tu frase semilla (SEED)",
     settingsDescription: "Escribe las <b>12 palabras en orden</b> en papel y guárdalas en un lugar seguro — sin conexión a internet.",
     settingsButton: "Entendido",
   },
   walletTour: {
     title: "¡Antes de comenzar!",
     description: "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
-    clickWallet: "Haz click en Billetera para comenzar.",
+    clickWallet: "Haz clic en Billetera para comenzar.",
     mobileGoToWallet: "Ir a Billetera",
     nextButton: "Ir a Billetera",
     guardTitle: "Acceso a la Billetera",
@@ -24,7 +24,7 @@ const componentsEs = {
     receiveDescTitle: "Paso 2: Descripción",
     receiveDescDescription: "Escribe <b>open channel</b> como descripción para identificar este pago.",
     receiveButtonTitle: "Paso 3: Crear y escanear",
-    receiveButtonDescription: "Haz click en <b>Crear Invoice Lightning</b>, luego escanea el QR que aparece con tu wallet Lightning para abrir el canal.",
+    receiveButtonDescription: "Haz clic en <b>Crear invoice Lightning</b>, luego escanea el QR que aparece con tu billetera Lightning para abrir el canal.",
     receiveButton: "Entendido",
   },
   loadingCard: {
@@ -45,9 +45,16 @@ const componentsEs = {
   actions: {
     edit: "Editar",
     delete: "Eliminar",
-    markRead: "Marcar leida",
+    markRead: "Marcar leída",
     refresh: "Actualizar",
     view: "Ver",
+  },
+  paymentMethods: {
+    cash: "Efectivo",
+    creditCard: "Tarjeta de crédito",
+    debitCard: "Tarjeta de débito",
+    btc: "Bitcoin (Lightning)",
+    bankTransfer: "Transferencia bancaria",
   },
   status: {
     open: "Abierta",
@@ -112,7 +119,7 @@ const componentsEs = {
   },
   backupPasswordField: {
     passwordLabel: "Contraseña del respaldo",
-    passwordPlaceholder: "Ingresa la contraseña de wallet del negocio que creó este respaldo",
+    passwordPlaceholder: "Ingresa la contraseña de la billetera del negocio que creó este respaldo",
     fileLabel: "Archivo de respaldo",
     fileButton: "Elegir archivo",
     fileHint: "Selecciona el archivo .zip que exportaste desde Configuración.",
@@ -131,7 +138,7 @@ const componentsEs = {
     passwordLabel: "http-password del nodo remoto",
     testButton: "Probar conexión",
     testSuccess: "Conexión exitosa con el nodo remoto",
-    testError: "No se pudo conectar con el nodo remoto — revisa la URL y el password",
+    testError: "No se pudo conectar con el nodo remoto — revisa la URL y la contraseña",
   },
   secretsUnlockPassword: {
     passwordLabel: "Contraseña de desbloqueo",

@@ -6,12 +6,14 @@ import { useTranslations } from "next-intl";
 
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import { StatusChip } from "@/components/shared/StatusChip";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
 
 export function SalesCard({ sale, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const {
     productName,
     userName,
@@ -38,7 +40,7 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
           <span className="truncate">{userName}</span>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-          <span className="text-sm text-gray-700">{paymentMethod}</span>
+          <span className="text-sm text-gray-700">{getPaymentMethodLabel(paymentMethod)}</span>
           <span className="text-xs text-gray-400">
             {saleDate ? formatDate(saleDate) : "-"}
           </span>

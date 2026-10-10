@@ -10,8 +10,8 @@ const tutorialsEs = {
       description: "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
     },
     seedTour: {
-      name: "SEED Phrase",
-      description: "Aprende qué es tu SEED Phrase y cómo protegerla correctamente.",
+      name: "Frase semilla (SEED)",
+      description: "Aprende qué es tu frase semilla (SEED) y cómo protegerla correctamente.",
     },
   },
 };

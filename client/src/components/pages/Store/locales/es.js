@@ -24,7 +24,7 @@ const storeEs = {
     logout: "Cerrar sesión",
     menu: "Menú",
     cart: "Venta",
-    orders: "Ordenes",
+    orders: "Órdenes",
     reports: "Reportes",
     notifications: "Notificaciones",
   },

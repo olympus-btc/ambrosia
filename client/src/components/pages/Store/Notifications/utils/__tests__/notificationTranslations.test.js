@@ -7,7 +7,7 @@ describe("createNotificationsTranslator", () => {
     expect(notificationsTranslator("display.walletPaymentReceivedTitle")).toBe("Pago recibido en billetera");
     expect(notificationsTranslator("display.walletPaymentReceivedDescription", {
       amount: "90 sats",
-    })).toBe("Se recibio un pago de 90 sats en la billetera.");
+    })).toBe("Se recibió un pago de 90 sats en la billetera.");
   });
 
   it("uses English notification messages by default", () => {

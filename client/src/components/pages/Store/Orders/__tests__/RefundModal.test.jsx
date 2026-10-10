@@ -325,6 +325,20 @@ describe("RefundModal", () => {
     expect(screen.getByText("details.refundConfirm")).not.toBeDisabled();
   });
 
+  it("shows the bank transfer refund notice instead of the card notice and disables confirm until acknowledged", () => {
+    const order = { id: "order-transfer", total: 10, paymentMethod: "Bank Transfer" };
+
+    render(<RefundModal order={order} isOpen onClose={jest.fn()} onRefunded={jest.fn()} />);
+
+    expect(screen.getByText("details.refundTransferNotice")).toBeInTheDocument();
+    expect(screen.queryByText("details.refundCardNotice")).not.toBeInTheDocument();
+    expect(screen.getByText("details.refundConfirm")).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText("details.refundTransferAcknowledge"));
+
+    expect(screen.getByText("details.refundConfirm")).not.toBeDisabled();
+  });
+
   it("refunds a card order once the refund is acknowledged", async () => {
     httpClient.mockResolvedValue({ ok: true });
     const onRefunded = jest.fn();

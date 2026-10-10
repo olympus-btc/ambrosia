@@ -1,10 +1,10 @@
 const lightningEs = {
   lightning: {
     title: "Lightning Network",
-    description: "Confirmá el acceso a la wallet para gestionar Auto Liquidez.",
+    description: "Confirma el acceso a la billetera para gestionar la Auto Liquidez.",
     manageButton: "Gestionar Auto Liquidez",
-    modalTitle: "Confirmar acceso a Wallet",
-    passwordLabel: "Contraseña de wallet",
+    modalTitle: "Confirmar acceso a la billetera",
+    passwordLabel: "Contraseña de la billetera",
     confirmButton: "Entrar",
     cancelButton: "Cancelar",
     notAvailableNwc: "Auto Liquidez no está disponible cuando se usa un backend Nostr Wallet Connect (NWC).",

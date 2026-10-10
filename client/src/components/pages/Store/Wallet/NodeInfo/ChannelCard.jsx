@@ -79,7 +79,7 @@ export function ChannelCard({ channel, index, onClose }) {
             </span>
           </div>
           <Progress
-            aria-label="Balance Channel"
+            aria-label={walletTranslations("closeChannel.balanceSummaryLabel")}
             value={(channel.balanceSat / channel.capacitySat) * 100}
             className="max-w-full"
             color="primary"

@@ -83,7 +83,7 @@ describe("OrderDetailsModal", () => {
     expect(screen.getByText("details.title")).toBeInTheDocument();
     expect(screen.getByText("#order-1")).toBeInTheDocument();
     expect(screen.getByText("Luis")).toBeInTheDocument();
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
     expect(screen.getByText("formatted-date")).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(2500);
 

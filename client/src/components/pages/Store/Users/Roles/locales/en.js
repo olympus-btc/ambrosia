@@ -23,6 +23,7 @@ const rolesEn = {
       currentUserPinIncorrectTitle: "Incorrect PIN",
       currentUserPinIncorrectDescription: "Your PIN is incorrect. Enter it again to confirm this action.",
       cancel: "Cancel",
+      back: "Back",
       deleteConfirmTitle: "Delete role",
       deleteConfirmBody: "Are you sure you want to delete the role {name}? Users with this role will have no role assigned.",
       deleteConfirmCurrentUserPinLabel: "Your PIN",
