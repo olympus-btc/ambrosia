@@ -23,13 +23,18 @@ import { SecureConnection } from "@components/shared/Settings/SecureConnection/S
 import { Seed } from "@components/shared/Settings/Seed";
 import { SystemCard } from "@components/shared/Settings/System/SystemCard";
 import { Tutorials } from "@components/shared/Settings/Tutorials";
+import { TUTORIAL_TOUR } from "@components/shared/Settings/Tutorials/tutorialTours";
 import { useNavigation } from "@hooks/useNavigation";
 import { isElectron } from "@lib/isElectron";
+
+import { STORE_HOME_ROUTE } from "../routes";
 
 import { Printers } from "./Printers";
 import { StoreInfo } from "./StoreInfo";
 import { TicketTemplates } from "./TicketTemplates";
 import { Tips } from "./Tips";
+
+const STORE_TUTORIAL_TOURS = [TUTORIAL_TOUR.WALLET, TUTORIAL_TOUR.SEED];
 
 function TabPanel({ children }) {
   return <div className="flex flex-col gap-6">{children}</div>;
@@ -134,7 +139,7 @@ export function Settings() {
 
           {activeTab === "help" && isAdmin && (
             <TabPanel>
-              <Tutorials />
+              <Tutorials homeRoute={STORE_HOME_ROUTE} tours={STORE_TUTORIAL_TOURS} />
             </TabPanel>
           )}
         </div>
