@@ -6,10 +6,10 @@ import { PageHeader } from "@components/shared/PageHeader";
 import StoreOrders from "./StoreOrders";
 
 export function Orders() {
-  const t = useTranslations("orders");
+  const ordersTranslations = useTranslations("orders");
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={ordersTranslations("title")} subtitle={ordersTranslations("subtitle")} />
       <StoreOrders />
     </>
   );

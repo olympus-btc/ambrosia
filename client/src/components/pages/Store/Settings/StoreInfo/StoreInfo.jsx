@@ -12,7 +12,7 @@ import { EditStoreInfoModal } from "./EditStoreInfoModal";
 import { StoreInfoCard } from "./StoreInfoCard";
 
 export function StoreInfo() {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const { config, updateConfig } = useConfigurations();
   const { upload } = useUpload();
   const [data, setData] = useState(null);
@@ -47,12 +47,12 @@ export function StoreInfo() {
       setData(updatedData);
       setShowModal(false);
       addToast({
-        title: t("modal.updateSuccess"),
+        title: settingsTranslations("modal.updateSuccess"),
         color: "success",
       });
     } catch (error) {
       addToast({
-        title: t("modal.errorTitle"),
+        title: settingsTranslations("modal.errorTitle"),
         description: error.message,
         color: "danger",
       });

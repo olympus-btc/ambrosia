@@ -6,14 +6,14 @@ import { RolesCard } from "./RolesCard";
 import { RolesTable } from "./RolesTable";
 
 export function RolesList({ roles, loading, canManageRoles = false, onEdit, onDelete }) {
-  const t = useTranslations();
+  const roleTranslations = useTranslations();
 
   if (loading) {
-    return <p className="text-default-500">{t("roles.state.loading")}</p>;
+    return <p className="text-default-500">{roleTranslations("roles.state.loading")}</p>;
   }
 
   if (roles.length === 0) {
-    return <p className="text-default-500">{t("roles.state.empty")}</p>;
+    return <p className="text-default-500">{roleTranslations("roles.state.empty")}</p>;
   }
 
   return (
