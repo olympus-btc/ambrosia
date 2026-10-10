@@ -1,0 +1,108 @@
+import exportDataEn from "../ExportData/locales/en";
+import importDataEn from "../ImportData/locales/en";
+import lightningEn from "../Lightning/locales/en";
+import nwcConnectionEn from "../NwcConnection/locales/en";
+import phoenixdRemoteCardEn from "../PhoenixdRemote/locales/en";
+import secretsEncryptionCardEn from "../SecretsEncryption/locales/en";
+import seedEn from "../Seed/locales/en";
+import systemEn from "../System/locales/en";
+import tutorialsEn from "../Tutorials/locales/en";
+
+const sharedSettingsEn = {
+  settings: {
+    appVersion: "AmbrosiaPoS v",
+    categories: {
+      business: "Business",
+      preferences: "Preferences",
+      wallet: "Bitcoin & Wallet",
+      backup: "Backup & Data",
+      devices: "Devices & Connection",
+      printing: "Printing",
+      system: "System",
+      help: "Help",
+    },
+    secureConnection: {
+      title: "Secure connection",
+      subtitle: "Certificate for this Ambrosia unit",
+      unavailable: "Could not load the certificate. Check your connection and reopen Settings.",
+      httpsSession: "HTTPS session",
+      httpSession: "This session uses HTTP",
+      sessionHint: "Check that your browser shows no warnings. This page cannot confirm installation of the CA in your system.",
+      issued: "Valid from",
+      expires: "Expires",
+      qrLabel: "QR to install this unit's certificate",
+      qrHint: "To set up another device, connect it to the same network and scan this QR. Verify the fingerprint against a trusted reference before installing.",
+      instructions: "View installation and removal instructions",
+    },
+    title: "Settings",
+    cardCurrency: {
+      title: "Currency",
+      currencyLabel: "Change currency",
+      successTitle: "Currency Updated",
+      successDescription: "The store currency has been changed successfully.",
+      errorTitle: "Currency update failed",
+      errorDescription: "Could not update the store currency.",
+      priceStepLabel: "Price step",
+      priceStepHelp: "How many cents get added or subtracted when adjusting a product's price",
+      priceStepSaveButton: "Save",
+      priceStepSuccessTitle: "Price step updated",
+      priceStepSuccessDescription: "The price step has been changed successfully.",
+      priceStepErrorTitle: "Price step update failed",
+      priceStepErrorDescription: "Could not update the price step.",
+    },
+    cardQRUrl: {
+      title: "Open on another device",
+      subtitle: "Scan this QR code to open Ambrosia.",
+      helper: "Use your phone or another device's camera to scan it.",
+      qrLabel: "QR code to open Ambrosia on another device",
+    },
+    cardLanguage: {
+      title: "Language",
+    },
+    cardDisplay: {
+      title: "Display",
+      subtitle: "Appearance and accessibility options",
+      disableAnimations: "Disable animations",
+      disableAnimationsHint: "Recommended for low-resource devices to improve performance",
+    },
+    cardNotifications: {
+      title: "Notifications",
+      subtitle: "Choose how admins receive important activity alerts.",
+      walletTitle: "Wallet activity",
+      inApp: "In-app",
+      push: "Web Push",
+      testPush: "Test push",
+      error: "Could not load notification preferences.",
+      pushErrorTitle: "Web Push could not be enabled",
+      pushErrors: {
+        denied: "Browser permission is denied. Enable notifications for this site in browser settings.",
+        default: "Browser permission is required before Web Push can be enabled.",
+        failed: "The browser could not create the push subscription. Try again after refreshing the app.",
+        unsupported: "This browser or app shell does not support Web Push.",
+        vapidUnavailable: "The server is missing VAPID configuration or Web Push is disabled.",
+        serviceWorkerUnavailable: "The browser service worker is not active. Run the production client or refresh after the app updates.",
+        timeout: "The browser did not finish the Web Push operation. Refresh the app and try again.",
+      },
+    },
+    cardInstall: {
+      title: "Install App",
+      subtitle: "Install Ambrosia POS on your device for quick access.",
+      button: "Install",
+      iosStep1: "Tap the share icon",
+      iosStep2: "Select \"Add to Home Screen\"",
+      androidStep1: "Tap the menu icon ⋮",
+      androidStep2: "Select \"Add to Home Screen\"",
+    },
+    ...systemEn,
+    ...seedEn,
+    ...exportDataEn,
+    ...importDataEn,
+    ...tutorialsEn,
+  },
+  ...lightningEn,
+  ...nwcConnectionEn,
+  ...phoenixdRemoteCardEn,
+  ...secretsEncryptionCardEn,
+};
+
+export default sharedSettingsEn;

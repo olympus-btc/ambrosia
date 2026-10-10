@@ -22,6 +22,8 @@ import storeEn from "@/components/pages/Store/locales/en";
 import storeEs from "@/components/pages/Store/locales/es";
 import unauthorizedEn from "@/components/pages/Unauthorized/locales/en";
 import unauthorizedEs from "@/components/pages/Unauthorized/locales/es";
+import sharedSettingsEn from "@/components/shared/Settings/locales/en";
+import sharedSettingsEs from "@/components/shared/Settings/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
@@ -33,6 +35,7 @@ const translations = {
     freelancer: freelancerEn,
     notFound: notFoundEn,
     onboarding: onboardingEn,
+    sharedSettings: sharedSettingsEn,
     store: storeEn,
     unauthorized: unauthorizedEn,
   },
@@ -42,6 +45,7 @@ const translations = {
     freelancer: freelancerEs,
     notFound: notFoundEs,
     onboarding: onboardingEs,
+    sharedSettings: sharedSettingsEs,
     store: storeEs,
     unauthorized: unauthorizedEs,
   },
@@ -50,7 +54,12 @@ const translations = {
 function mergeLocales(locale) {
   const groups = translations[locale] || {};
   return Object.values(groups).reduce(
-    (acc, mod) => ({ ...acc, ...mod }),
+    (mergedMessages, groupMessages) => {
+      Object.entries(groupMessages).forEach(([namespace, namespaceMessages]) => {
+        mergedMessages[namespace] = { ...mergedMessages[namespace], ...namespaceMessages };
+      });
+      return mergedMessages;
+    },
     {},
   );
 }

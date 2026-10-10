@@ -6,30 +6,30 @@ import { Tab, Tabs } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Currency } from "@components/shared/Settings/Currency";
+import { Display } from "@components/shared/Settings/Display";
+import { ExportData } from "@components/shared/Settings/ExportData";
+import { useSettingsAvailability } from "@components/shared/Settings/hooks/useSettingsAvailability";
+import { ImportData } from "@components/shared/Settings/ImportData";
+import { InstallPWA } from "@components/shared/Settings/InstallPWA";
+import { Language } from "@components/shared/Settings/Language";
+import { LightningCard } from "@components/shared/Settings/Lightning/LightningCard";
+import { NotificationPreferencesCard } from "@components/shared/Settings/Notifications";
+import { NwcConnectionCard } from "@components/shared/Settings/NwcConnection/NwcConnectionCard";
+import { PhoenixdRemoteCard } from "@components/shared/Settings/PhoenixdRemote/PhoenixdRemoteCard";
+import { QRUrl } from "@components/shared/Settings/QRUrl";
+import { SecretsEncryptionCard } from "@components/shared/Settings/SecretsEncryption/SecretsEncryptionCard";
+import { SecureConnection } from "@components/shared/Settings/SecureConnection/SecureConnection";
+import { Seed } from "@components/shared/Settings/Seed";
+import { SystemCard } from "@components/shared/Settings/System/SystemCard";
+import { Tutorials } from "@components/shared/Settings/Tutorials";
 import { useNavigation } from "@hooks/useNavigation";
 import { isElectron } from "@lib/isElectron";
 
-import { Currency } from "./Currency";
-import { Display } from "./Display";
-import { ExportData } from "./ExportData";
-import { useSettingsAvailability } from "./hooks/useSettingsAvailability";
-import { ImportData } from "./ImportData";
-import { InstallPWA } from "./InstallPWA";
-import { Language } from "./Language";
-import { LightningCard } from "./Lightning/LightningCard";
-import { NotificationPreferencesCard } from "./Notifications";
-import { NwcConnectionCard } from "./NwcConnection/NwcConnectionCard";
-import { PhoenixdRemoteCard } from "./PhoenixdRemote/PhoenixdRemoteCard";
 import { Printers } from "./Printers";
-import { QRUrl } from "./QRUrl";
-import { SecretsEncryptionCard } from "./SecretsEncryption/SecretsEncryptionCard";
-import { SecureConnection } from "./SecureConnection/SecureConnection";
-import { Seed } from "./Seed";
 import { StoreInfo } from "./StoreInfo";
-import { SystemCard } from "./System/SystemCard";
 import { TicketTemplates } from "./TicketTemplates";
 import { Tips } from "./Tips";
-import { Tutorials } from "./Tutorials";
 
 function TabPanel({ children }) {
   return <div className="flex flex-col gap-6">{children}</div>;
