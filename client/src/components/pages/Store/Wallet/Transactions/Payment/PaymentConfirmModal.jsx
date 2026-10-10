@@ -18,7 +18,7 @@ export function PaymentConfirmModal({
   paymentResult,
   isLoading,
 }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const isPaid = paymentResult != null;
   const invoiceSats = decodedInvoice?.amountSat;
   const description = decodedInvoice?.description;
@@ -40,7 +40,7 @@ export function PaymentConfirmModal({
     >
       <ModalContent>
         <ModalHeader className="pb-2">
-          {isPaid ? t("payments.send.paymentDone") : t("payments.send.confirmModal.title")}
+          {isPaid ? walletTranslations("payments.send.paymentDone") : walletTranslations("payments.send.confirmModal.title")}
         </ModalHeader>
         {isPaid ? (
           <PaymentSuccessContent

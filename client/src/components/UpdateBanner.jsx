@@ -39,7 +39,7 @@ export default function UpdateBanner() {
     return () => cleanups.forEach((fn) => fn());
   }, []);
 
-  const t = useTranslations("updateBanner");
+  const updateBannerTranslations = useTranslations("updateBanner");
 
   const handleAction = useCallback(() => {
     if (downloaded && isWindows()) {
@@ -57,8 +57,8 @@ export default function UpdateBanner() {
     <div className="bg-primary-50 border-b border-primary-200 px-4 py-2 flex items-center justify-between gap-4 absolute top-0 w-full z-50">
       <span className="text-sm text-primary-700">
         {downloaded
-          ? t("readyToInstall", { version: updateAvailable.version })
-          : t("newVersionAvailable", { version: updateAvailable.version })}
+          ? updateBannerTranslations("readyToInstall", { version: updateAvailable.version })
+          : updateBannerTranslations("newVersionAvailable", { version: updateAvailable.version })}
       </span>
       <div className="flex items-center gap-2">
         <Button
@@ -68,14 +68,14 @@ export default function UpdateBanner() {
           variant={downloaded ? "solid" : "flat"}
           onPress={handleAction}
         >
-          {downloaded ? t("restartAndUpdate") : t("downloadFromGitHub")}
+          {downloaded ? updateBannerTranslations("restartAndUpdate") : updateBannerTranslations("downloadFromGitHub")}
         </Button>
         <Button
           size="sm"
           variant="light"
           isIconOnly
           onPress={() => setDismissed(true)}
-          aria-label={t("dismiss")}
+          aria-label={updateBannerTranslations("dismiss")}
         >
           ✕
         </Button>

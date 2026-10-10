@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 const PRINTER_TYPES = ["CUSTOMER"];
 
 export function PrinterAddForm({ formState, data, loading, saving }) {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const {
     printerType, printerName, templateName, isDefault, enabled,
     onPrinterTypeChange, onPrinterNameChange, onTemplateNameChange,
@@ -19,33 +19,33 @@ export function PrinterAddForm({ formState, data, loading, saving }) {
       <CardBody className="flex flex-col gap-4 p-4">
         <div>
           <h3 className="text-sm sm:text-base font-semibold text-green-900">
-            {t("cardPrinters.addTitle")}
+            {settingsTranslations("cardPrinters.addTitle")}
           </h3>
           <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-            {t("cardPrinters.addDescription")}
+            {settingsTranslations("cardPrinters.addDescription")}
           </p>
         </div>
 
         <Select
-          label={t("cardPrinters.typeLabel")}
+          label={settingsTranslations("cardPrinters.typeLabel")}
           value={printerType}
           onChange={(e) => onPrinterTypeChange(e.target.value)}
         >
           {PRINTER_TYPES.map((type) => (
             <SelectItem key={type} value={type}>
-              {t(`cardPrinters.types.${type}`)}
+              {settingsTranslations(`cardPrinters.types.${type}`)}
             </SelectItem>
           ))}
         </Select>
 
         <Select
-          label={t("cardPrinters.nameLabel")}
+          label={settingsTranslations("cardPrinters.nameLabel")}
           value={printerName}
           onChange={(e) => onPrinterNameChange(e.target.value)}
         >
           {availablePrinters.length === 0 && (
             <SelectItem key="none" value="">
-              {t("cardPrinters.noAvailable")}
+              {settingsTranslations("cardPrinters.noAvailable")}
             </SelectItem>
           )}
           {availablePrinters.map((printer) => (
@@ -56,13 +56,13 @@ export function PrinterAddForm({ formState, data, loading, saving }) {
         </Select>
 
         <Select
-          label={t("cardPrinters.templateLabel")}
+          label={settingsTranslations("cardPrinters.templateLabel")}
           selectedKeys={templateName ? [templateName] : []}
           onChange={(e) => onTemplateNameChange(e.target.value)}
           isLoading={loadingTemplates}
         >
           <SelectItem key="none" value="">
-            {t("cardPrinters.templateNone")}
+            {settingsTranslations("cardPrinters.templateNone")}
           </SelectItem>
           {Array.isArray(templates) &&
             templates.map((template) => (
@@ -79,7 +79,7 @@ export function PrinterAddForm({ formState, data, loading, saving }) {
               isSelected={isDefault}
               onValueChange={onDefaultChange}
             >
-              <span className="text-xs sm:text-sm">{t("cardPrinters.defaultLabel")}</span>
+              <span className="text-xs sm:text-sm">{settingsTranslations("cardPrinters.defaultLabel")}</span>
             </Switch>
 
             <Switch
@@ -87,7 +87,7 @@ export function PrinterAddForm({ formState, data, loading, saving }) {
               isSelected={enabled}
               onValueChange={onEnabledChange}
             >
-              <span className="text-xs sm:text-sm">{t("cardPrinters.enabledLabel")}</span>
+              <span className="text-xs sm:text-sm">{settingsTranslations("cardPrinters.enabledLabel")}</span>
             </Switch>
           </div>
 
@@ -97,7 +97,7 @@ export function PrinterAddForm({ formState, data, loading, saving }) {
             onPress={onSubmit}
             isDisabled={saving || loadingAvailable || !printerName || !templateName}
           >
-            {t("cardPrinters.addButton")}
+            {settingsTranslations("cardPrinters.addButton")}
           </Button>
         </div>
       </CardBody>

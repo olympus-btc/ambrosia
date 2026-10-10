@@ -9,7 +9,7 @@ import { EditButton } from "@/components/shared/EditButton";
 import { RequirePermission } from "@/hooks/usePermission";
 
 export function UsersCard({ user, canManageUsers, onEditUser, onDeleteUser }) {
-  const t = useTranslations();
+  const userTranslations = useTranslations();
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
@@ -18,10 +18,10 @@ export function UsersCard({ user, canManageUsers, onEditUser, onDeleteUser }) {
           <p className="font-medium text-green-900 truncate">{user.name}</p>
           {user.role ? (
             <Chip size="sm" className="bg-green-200 text-xs text-green-800 border border-green-300 mt-1">
-              {resolveRoleName(user.role, t)}
+              {resolveRoleName(user.role, userTranslations)}
             </Chip>
           ) : (
-            <span className="text-xs text-default-400 italic">{t("users.noRole")}</span>
+            <span className="text-xs text-default-400 italic">{userTranslations("users.noRole")}</span>
           )}
         </div>
         {canManageUsers && (

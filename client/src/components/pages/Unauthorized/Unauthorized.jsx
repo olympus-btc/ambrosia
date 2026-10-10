@@ -11,7 +11,7 @@ import { ErrorMessage } from "./ErrorMessage";
 
 export function Unauthorized() {
   const router = useRouter();
-  const t = useTranslations("unauthorized");
+  const unauthorizedTranslations = useTranslations("unauthorized");
   const { logout } = useAuth();
 
   const handleLogin = async () => {
@@ -32,7 +32,7 @@ export function Unauthorized() {
               variant="bordered"
               className="border border-border text-foreground hover:bg-muted transition-colors"
             >
-              {t("goHome")}
+              {unauthorizedTranslations("goHome")}
             </Button>
 
             <Button
@@ -40,7 +40,7 @@ export function Unauthorized() {
               color="primary"
               className="bg-green-800"
             >
-              {t("login")}
+              {unauthorizedTranslations("login")}
             </Button>
           </div>
         </CardBody>

@@ -2,7 +2,7 @@ import { Image } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 export function BusinessHeader({ businessName, businessLogoUrl }) {
-  const t = useTranslations("pinLogin");
+  const pinLoginTranslations = useTranslations("pinLogin");
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -15,7 +15,7 @@ export function BusinessHeader({ businessName, businessLogoUrl }) {
       </div>
       <div className="flex flex-col items-center gap-1">
         <h1 className="text-2xl font-bold text-foreground">{businessName}</h1>
-        <p className="text-default-500 text-sm text-center">{t("title")}</p>
+        <p className="text-default-500 text-sm text-center">{pinLoginTranslations("title")}</p>
       </div>
     </div>
   );

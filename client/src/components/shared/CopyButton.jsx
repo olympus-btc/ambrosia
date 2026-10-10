@@ -7,13 +7,13 @@ import { useTranslations } from "next-intl";
 import { copyToClipboard } from "@/components/pages/Store/Wallet/utils/copyToClipboard";
 
 export function CopyButton({ value, label, ...props }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
 
   return (
     <Button
       variant="bordered"
       className="border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      onClick={() => copyToClipboard(value, t)}
+      onClick={() => copyToClipboard(value, walletTranslations)}
       {...props}
     >
       <Copy className="w-3 h-3 mr-1" />

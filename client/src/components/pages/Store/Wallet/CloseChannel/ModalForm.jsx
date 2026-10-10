@@ -4,15 +4,15 @@ import { Button, Input, ModalBody, ModalFooter } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 export function ModalForm({ form, isLoading, onCancel, onNext }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const { address, feerate, errors, onAddressChange, onFeerateChange } = form;
 
   return (
     <>
       <ModalBody className="gap-4">
         <Input
-          label={t("closeChannel.addressLabel")}
-          placeholder={t("closeChannel.addressPlaceholder")}
+          label={walletTranslations("closeChannel.addressLabel")}
+          placeholder={walletTranslations("closeChannel.addressPlaceholder")}
           value={address}
           onValueChange={onAddressChange}
           isInvalid={!!errors.address}
@@ -20,8 +20,8 @@ export function ModalForm({ form, isLoading, onCancel, onNext }) {
           isDisabled={isLoading}
         />
         <Input
-          label={t("closeChannel.feerateLabel")}
-          placeholder={t("closeChannel.feeratePlaceholder")}
+          label={walletTranslations("closeChannel.feerateLabel")}
+          placeholder={walletTranslations("closeChannel.feeratePlaceholder")}
           value={feerate}
           onValueChange={onFeerateChange}
           isInvalid={!!errors.feerate}
@@ -38,10 +38,10 @@ export function ModalForm({ form, isLoading, onCancel, onNext }) {
           className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onPress={onCancel}
         >
-          {t("closeChannel.cancelButton")}
+          {walletTranslations("closeChannel.cancelButton")}
         </Button>
         <Button color="primary" onPress={onNext}>
-          {t("closeChannel.nextButton")}
+          {walletTranslations("closeChannel.nextButton")}
         </Button>
       </ModalFooter>
     </>

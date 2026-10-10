@@ -16,7 +16,7 @@ import { QRCode } from "react-qr-code";
 import { CopyButton } from "@/components/shared/CopyButton";
 
 export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const format = useFormatter();
 
   return (
@@ -34,18 +34,18 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("invoiceModal.title")}</ModalHeader>
+        <ModalHeader>{walletTranslations("invoiceModal.title")}</ModalHeader>
         <ModalBody>
           {invoiceState.paid ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <CheckCircle className="h-16 w-16 text-forest" />
               <div className="text-center space-y-1">
                 <p className="text-xl font-semibold text-deep">
-                  {t("invoiceModal.paymentReceived")}
+                  {walletTranslations("invoiceModal.paymentReceived")}
                 </p>
                 {invoiceState.completedAt && (
                   <p className="text-sm text-gray-500">
-                    {t("invoiceModal.paidAt", {
+                    {walletTranslations("invoiceModal.paidAt", {
                       time: format.dateTime(new Date(invoiceState.completedAt), { timeStyle: "short" }),
                     })}
                   </p>
@@ -67,7 +67,7 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
                 {invoiceState.awaitingPayment && (
                   <div className="flex items-center justify-center space-x-2 text-sm text-forest">
                     <Spinner size="sm" color="success" />
-                    <span>{t("invoiceModal.waitingPayment")}</span>
+                    <span>{walletTranslations("invoiceModal.waitingPayment")}</span>
                   </div>
                 )}
 
@@ -75,11 +75,11 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-500">
-                        {t("invoiceModal.invoice")}
+                        {walletTranslations("invoiceModal.invoice")}
                       </span>
                       <CopyButton
                         value={invoiceState.created.serialized}
-                        label={t("invoiceModal.copyButton")}
+                        label={walletTranslations("invoiceModal.copyButton")}
                         size="sm"
                       />
                     </div>
@@ -91,11 +91,11 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-500">
-                        {t("invoiceModal.paymentHash")}
+                        {walletTranslations("invoiceModal.paymentHash")}
                       </span>
                       <CopyButton
                         value={invoiceState.created.paymentHash}
-                        label={t("invoiceModal.copyButton")}
+                        label={walletTranslations("invoiceModal.copyButton")}
                         size="sm"
                       />
                     </div>
@@ -115,11 +115,11 @@ export function InvoiceModal({ invoiceState, onClose, onMarkAsPaid, wsConnected 
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onPress={onClose}
           >
-            {t("invoiceModal.closeButton")}
+            {walletTranslations("invoiceModal.closeButton")}
           </Button>
           {invoiceState.awaitingPayment && !wsConnected && (
             <Button color="primary" className="bg-green-800" onPress={onMarkAsPaid}>
-              {t("invoiceModal.markAsPaidButton")}
+              {walletTranslations("invoiceModal.markAsPaidButton")}
             </Button>
           )}
         </ModalFooter>

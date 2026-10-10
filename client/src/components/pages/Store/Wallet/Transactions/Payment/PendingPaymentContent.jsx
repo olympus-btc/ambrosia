@@ -25,7 +25,7 @@ export function PendingPaymentContent({
   onClose,
   onConfirm,
 }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const invoiceSats = decodedInvoice?.amountSat;
   const description = decodedInvoice?.description;
@@ -49,7 +49,7 @@ export function PendingPaymentContent({
     isPaid: false,
     invoiceSats,
     currencyAcronym: currency.acronym,
-    t,
+    walletTranslations,
   });
 
   const handleConfirm = useCallback(() => {
@@ -84,7 +84,7 @@ export function PendingPaymentContent({
         <div className="flex flex-col items-center justify-center py-8 space-y-4">
           <Send className="h-16 w-16 text-forest" />
           <p className="text-xl font-semibold text-deep">
-            {t("payments.send.confirmModal.summaryTitle")}
+            {walletTranslations("payments.send.confirmModal.summaryTitle")}
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export function PendingPaymentContent({
             <>
               <div className="flex justify-between">
                 <span className="text-gray-500">
-                  {t("payments.send.confirmModal.amountLabel")}
+                  {walletTranslations("payments.send.confirmModal.amountLabel")}
                 </span>
                 <span className="font-medium">
                   {formatSats(invoiceSats)} sats
@@ -106,11 +106,11 @@ export function PendingPaymentContent({
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">
-                  {t("payments.send.confirmModal.estimatedLabel")}
+                  {walletTranslations("payments.send.confirmModal.estimatedLabel")}
                 </span>
                 <span className={`font-medium ${!estimatedFiatIsLoading && !estimatedFiatHasError ? "text-forest" : ""}`}>
-                  {estimatedFiatIsLoading && t("payments.send.confirmModal.fiatLoading")}
-                  {estimatedFiatHasError && t("payments.send.confirmModal.fiatError")}
+                  {estimatedFiatIsLoading && walletTranslations("payments.send.confirmModal.fiatLoading")}
+                  {estimatedFiatHasError && walletTranslations("payments.send.confirmModal.fiatError")}
                   {!estimatedFiatIsLoading && !estimatedFiatHasError && estimatedFiatDisplay}
                 </span>
               </div>
@@ -125,7 +125,7 @@ export function PendingPaymentContent({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-500">
-                    {t("payments.send.confirmModal.descriptionLabel")}
+                    {walletTranslations("payments.send.confirmModal.descriptionLabel")}
                   </span>
                   <span className="font-medium text-right max-w-[60%]">
                     {description}
@@ -144,7 +144,7 @@ export function PendingPaymentContent({
           onPress={onClose}
           isDisabled={isLoading}
         >
-          {t("payments.send.confirmModal.cancelButton")}
+          {walletTranslations("payments.send.confirmModal.cancelButton")}
         </Button>
         <Button
           color="primary"
@@ -152,7 +152,7 @@ export function PendingPaymentContent({
           isLoading={isLoading}
           isDisabled={isConfirmDisabled}
         >
-          {t("payments.send.confirmModal.confirmButton")}
+          {walletTranslations("payments.send.confirmModal.confirmButton")}
         </Button>
       </ModalFooter>
     </>

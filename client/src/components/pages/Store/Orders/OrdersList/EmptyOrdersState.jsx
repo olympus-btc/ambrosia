@@ -4,15 +4,15 @@ import { ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function EmptyOrdersState({ filter, searchTerm }) {
-  const t = useTranslations("orders");
+  const ordersTranslations = useTranslations("orders");
   const isInProgress = filter === "in-progress";
 
-  const title = isInProgress ? t("empty.titleInProgress") : t("empty.titlePaid");
+  const title = isInProgress ? ordersTranslations("empty.titleInProgress") : ordersTranslations("empty.titlePaid");
   const subtitle = searchTerm
-    ? t("empty.subtitleSearch")
+    ? ordersTranslations("empty.subtitleSearch")
     : isInProgress
-      ? t("empty.subtitleInProgress")
-      : t("empty.subtitlePaid");
+      ? ordersTranslations("empty.subtitleInProgress")
+      : ordersTranslations("empty.subtitlePaid");
 
   return (
     <div className="text-center py-12">

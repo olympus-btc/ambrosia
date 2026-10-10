@@ -21,7 +21,7 @@ function InstructionStep({ number, icon: Icon, text }) {
 }
 
 export function InstallPWA() {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const isStandalone = useIsStandalone();
   const isIOS = useIsIOS();
   const isAndroid = useIsAndroid();
@@ -33,9 +33,9 @@ export function InstallPWA() {
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-2">
         <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-          {t("cardInstall.title")}
+          {settingsTranslations("cardInstall.title")}
         </h2>
-        <p className="text-sm text-gray-500 mt-1">{t("cardInstall.subtitle")}</p>
+        <p className="text-sm text-gray-500 mt-1">{settingsTranslations("cardInstall.subtitle")}</p>
       </CardHeader>
       <CardBody className="pt-2">
         {isInstallable ? (
@@ -44,18 +44,18 @@ export function InstallPWA() {
             startContent={<Download className="w-4 h-4" />}
             onPress={promptInstall}
           >
-            {t("cardInstall.button")}
+            {settingsTranslations("cardInstall.button")}
           </Button>
         ) : (
           <div className="flex flex-col gap-3">
             <InstructionStep
               number={1}
               icon={isIOS ? Share : EllipsisVertical}
-              text={isIOS ? t("cardInstall.iosStep1") : t("cardInstall.androidStep1")}
+              text={isIOS ? settingsTranslations("cardInstall.iosStep1") : settingsTranslations("cardInstall.androidStep1")}
             />
             <InstructionStep
               number={2}
-              text={isIOS ? t("cardInstall.iosStep2") : t("cardInstall.androidStep2")}
+              text={isIOS ? settingsTranslations("cardInstall.iosStep2") : settingsTranslations("cardInstall.androidStep2")}
             />
           </div>
         )}

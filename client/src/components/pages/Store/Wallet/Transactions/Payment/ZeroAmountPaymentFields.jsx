@@ -7,7 +7,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { AmountUnitInputFields } from "../AmountUnitInputFields";
 
 export function ZeroAmountPaymentFields({ amountState, isDisabled = false }) {
-  const t = useTranslations("wallet");
+  const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const {
     amountInputMode, customEstimateError, customEstimateValue,
@@ -17,17 +17,17 @@ export function ZeroAmountPaymentFields({ amountState, isDisabled = false }) {
   } = amountState;
 
   const fieldLabels = {
-    title: t("payments.send.confirmModal.zeroAmountTitle"),
-    satLabel: t("payments.send.confirmModal.zeroAmountLabel"),
-    satsOptionLabel: t("payments.send.confirmModal.satsOption"),
-    satPlaceholder: t("payments.send.confirmModal.zeroAmountPlaceholder"),
-    fiatLabel: t("payments.send.confirmModal.zeroAmountFiatLabel", { currency: currency.acronym }),
-    fiatOptionLabel: t("payments.send.confirmModal.fiatOption", { currency: currency.acronym }),
-    fiatPlaceholder: t("payments.send.confirmModal.zeroAmountFiatPlaceholder"),
-    estimatedLabel: t("payments.send.confirmModal.estimatedLabel"),
-    loadingText: t("payments.send.confirmModal.fiatLoading"),
-    estimatedFiatErrorText: t("payments.send.confirmModal.fiatError"),
-    conversionErrorText: t("payments.send.confirmModal.fiatToSatsError"),
+    title: walletTranslations("payments.send.confirmModal.zeroAmountTitle"),
+    satLabel: walletTranslations("payments.send.confirmModal.zeroAmountLabel"),
+    satsOptionLabel: walletTranslations("payments.send.confirmModal.satsOption"),
+    satPlaceholder: walletTranslations("payments.send.confirmModal.zeroAmountPlaceholder"),
+    fiatLabel: walletTranslations("payments.send.confirmModal.zeroAmountFiatLabel", { currency: currency.acronym }),
+    fiatOptionLabel: walletTranslations("payments.send.confirmModal.fiatOption", { currency: currency.acronym }),
+    fiatPlaceholder: walletTranslations("payments.send.confirmModal.zeroAmountFiatPlaceholder"),
+    estimatedLabel: walletTranslations("payments.send.confirmModal.estimatedLabel"),
+    loadingText: walletTranslations("payments.send.confirmModal.fiatLoading"),
+    estimatedFiatErrorText: walletTranslations("payments.send.confirmModal.fiatError"),
+    conversionErrorText: walletTranslations("payments.send.confirmModal.fiatToSatsError"),
   };
 
   return (
