@@ -12,17 +12,20 @@ jest.mock("@heroui/react", () => ({
   Chip: ({ children, className }) => <span className={className}>{children}</span>,
 }));
 
-const t = (key) => key;
+const settingsTranslations = (translationKey) => translationKey;
 
-function renderCard(props = {}) {
+function buildTutorialTour(tourName, translationKey, tutorialTourOverrides = {}) {
+  return { tourName, translationKey, isSeen: false, onReplay: jest.fn(), ...tutorialTourOverrides };
+}
+
+function renderCard({ walletTour = {}, seedTour = {}, tutorialTours } = {}) {
   return render(
     <TutorialsCard
-      walletTourSeen={false}
-      seedTourSeen={false}
-      onReplayWallet={jest.fn()}
-      onReplaySeed={jest.fn()}
-      t={t}
-      {...props}
+      tutorialTours={tutorialTours ?? [
+        buildTutorialTour("wallet", "walletTour", walletTour),
+        buildTutorialTour("seed", "seedTour", seedTour),
+      ]}
+      settingsTranslations={settingsTranslations}
     />,
   );
 }
@@ -32,6 +35,12 @@ describe("TutorialsCard", () => {
     it("renders the card title", () => {
       renderCard();
       expect(screen.getByText("cardTours.title")).toBeInTheDocument();
+    });
+
+    it("renders only the tours it receives", () => {
+      renderCard({ tutorialTours: [buildTutorialTour("seed", "seedTour")] });
+      expect(screen.getByText("cardTours.seedTour.name")).toBeInTheDocument();
+      expect(screen.queryByText("cardTours.walletTour.name")).not.toBeInTheDocument();
     });
 
     it("renders the subtitle", () => {
@@ -51,7 +60,7 @@ describe("TutorialsCard", () => {
       expect(screen.getByText("cardTours.seedTour.description")).toBeInTheDocument();
     });
 
-    it("renders two replay buttons", () => {
+    it("renders one replay button per tour", () => {
       renderCard();
       expect(screen.getAllByText("cardTours.replayButton")).toHaveLength(2);
     });
@@ -59,25 +68,25 @@ describe("TutorialsCard", () => {
 
   describe("Tour status badges", () => {
     it("shows two 'pending' badges when both tours unseen", () => {
-      renderCard({ walletTourSeen: false, seedTourSeen: false });
+      renderCard();
       expect(screen.queryByText("cardTours.seen")).not.toBeInTheDocument();
       expect(screen.getAllByText("cardTours.pending")).toHaveLength(2);
     });
 
-    it("shows 'seen' for wallet when walletTourSeen is true", () => {
-      renderCard({ walletTourSeen: true, seedTourSeen: false });
+    it("shows 'seen' for the wallet tour when it was seen", () => {
+      renderCard({ walletTour: { isSeen: true } });
       expect(screen.getByText("cardTours.seen")).toBeInTheDocument();
       expect(screen.getAllByText("cardTours.pending")).toHaveLength(1);
     });
 
-    it("shows 'seen' for seed when seedTourSeen is true", () => {
-      renderCard({ walletTourSeen: false, seedTourSeen: true });
+    it("shows 'seen' for the seed tour when it was seen", () => {
+      renderCard({ seedTour: { isSeen: true } });
       expect(screen.getByText("cardTours.seen")).toBeInTheDocument();
       expect(screen.getAllByText("cardTours.pending")).toHaveLength(1);
     });
 
     it("renders 'seen' badge with green style", () => {
-      renderCard({ walletTourSeen: true });
+      renderCard({ walletTour: { isSeen: true } });
       expect(screen.getByText("cardTours.seen").className).toContain("bg-green-200");
     });
 
@@ -88,18 +97,18 @@ describe("TutorialsCard", () => {
   });
 
   describe("Interaction", () => {
-    it("calls onReplayWallet when wallet replay button is pressed", () => {
-      const onReplayWallet = jest.fn();
-      renderCard({ onReplayWallet });
+    it("replays the wallet tour when its replay button is pressed", () => {
+      const replayWalletTour = jest.fn();
+      renderCard({ walletTour: { onReplay: replayWalletTour } });
       fireEvent.click(screen.getAllByText("cardTours.replayButton")[0]);
-      expect(onReplayWallet).toHaveBeenCalledTimes(1);
+      expect(replayWalletTour).toHaveBeenCalledTimes(1);
     });
 
-    it("calls onReplaySeed when seed replay button is pressed", () => {
-      const onReplaySeed = jest.fn();
-      renderCard({ onReplaySeed });
+    it("replays the seed tour when its replay button is pressed", () => {
+      const replaySeedTour = jest.fn();
+      renderCard({ seedTour: { onReplay: replaySeedTour } });
       fireEvent.click(screen.getAllByText("cardTours.replayButton")[1]);
-      expect(onReplaySeed).toHaveBeenCalledTimes(1);
+      expect(replaySeedTour).toHaveBeenCalledTimes(1);
     });
   });
 });

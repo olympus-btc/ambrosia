@@ -12,7 +12,7 @@ import * as useNavigationHook from "@hooks/useNavigation";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
-import { Settings } from "../Settings";
+import { StoreSettings } from "../StoreSettings";
 
 jest.mock("@lib/isElectron", () => ({
   get isElectron() { return global.__mockIsElectron ?? false; },
@@ -44,7 +44,7 @@ jest.mock("@heroui/react", () => {
 function renderSettings() {
   return render(
     <I18nProvider>
-      <Settings />
+      <StoreSettings />
     </I18nProvider>,
   );
 }
@@ -206,7 +206,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("Settings page", () => {
+describe("StoreSettings page", () => {
   describe("Rendering", () => {
     it("renders store info, currency, and language cards", async () => {
       const user = userEvent.setup();
@@ -614,6 +614,46 @@ describe("Settings page", () => {
       expect(screen.queryByText("categories.wallet")).not.toBeInTheDocument();
 
       global.__mockIsElectron = false;
+    });
+  });
+
+  describe("Tabs", () => {
+    function renderedTabLabels() {
+      return screen.getAllByRole("tab").map((settingsTab) => settingsTab.textContent);
+    }
+
+    it("offers only the always-visible tabs for a non-admin role", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(renderedTabLabels()).toEqual(["categories.business", "categories.preferences", "categories.printing"]);
+    });
+
+    it("offers the admin-only tabs for an admin role", async () => {
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(renderedTabLabels()).toEqual([
+        "categories.business",
+        "categories.preferences",
+        "categories.wallet",
+        "categories.backup",
+        "categories.printing",
+        "categories.system",
+        "categories.help",
+      ]);
     });
   });
 

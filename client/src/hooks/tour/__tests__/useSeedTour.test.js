@@ -54,17 +54,23 @@ afterEach(() => {
   setItemSpy.mockRestore();
 });
 
+const STORE_SEED_TOUR_ROUTES = { homeRoute: "/store", settingsRoute: "/store/settings" };
+
+function renderSeedTour(seedTourOptions = {}) {
+  return renderHook(() => useSeedTour({ isAuth: true, ...STORE_SEED_TOUR_ROUTES, ...seedTourOptions }));
+}
+
 describe("useSeedTour", () => {
   describe("tour initialization", () => {
     it("does not start tour when not authenticated", () => {
-      renderHook(() => useSeedTour(false));
+      renderSeedTour({ isAuth: false });
       jest.runAllTimers();
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
     it("does not start tour when SEED_TOUR_KEY is already set", () => {
       localStorage.setItem(SEED_TOUR_KEY, "true");
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       jest.runAllTimers();
       expect(mockDrive).not.toHaveBeenCalled();
     });
@@ -72,24 +78,32 @@ describe("useSeedTour", () => {
     it("does not start tour when not on /store", () => {
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store/settings");
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       jest.runAllTimers();
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
     it("starts tour when authenticated, on /store, and SEED_TOUR_KEY is absent", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
+      jest.runAllTimers();
+      expect(mockDrive).toHaveBeenCalledTimes(1);
+    });
+
+    it("starts tour on the given home route", () => {
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/freelancer/timesheet");
+      renderSeedTour({ homeRoute: "/freelancer/timesheet", settingsRoute: "/freelancer/settings" });
       jest.runAllTimers();
       expect(mockDrive).toHaveBeenCalledTimes(1);
     });
 
     it("does not call drive() before timer fires", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
     it("sets SEED_TOUR_KEY to 'true' in localStorage when timer fires", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       jest.runAllTimers();
       expect(localStorage.getItem(SEED_TOUR_KEY)).toBe("true");
     });
@@ -99,7 +113,7 @@ describe("useSeedTour", () => {
     it("resets the pending timer when returning to /store without key", () => {
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store/settings");
-      const { rerender } = renderHook(() => useSeedTour(true));
+      const { rerender } = renderSeedTour();
 
       usePathname.mockReturnValue("/store");
       rerender();
@@ -112,7 +126,7 @@ describe("useSeedTour", () => {
       localStorage.setItem(SEED_TOUR_KEY, "true");
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store/settings");
-      const { rerender } = renderHook(() => useSeedTour(true));
+      const { rerender } = renderSeedTour();
 
       usePathname.mockReturnValue("/store");
       rerender();
@@ -126,7 +140,7 @@ describe("useSeedTour", () => {
     it("destroys the driver when navigating away from /store", () => {
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store");
-      const { rerender } = renderHook(() => useSeedTour(true));
+      const { rerender } = renderSeedTour();
 
       usePathname.mockReturnValue("/store/settings");
       rerender();
@@ -135,7 +149,7 @@ describe("useSeedTour", () => {
     });
 
     it("does not destroy driver when staying on /store", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       jest.runAllTimers();
       expect(mockDestroy).not.toHaveBeenCalled();
     });
@@ -143,28 +157,28 @@ describe("useSeedTour", () => {
 
   describe("desktop tour (>= 768px)", () => {
     it("creates 2 steps on desktop", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps).toHaveLength(2);
     });
 
     it("first step has next button", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[0].popover.showButtons).toEqual(["next"]);
     });
 
     it("second step targets #nav-settings", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[1].element).toBe("#nav-settings");
     });
 
     it("sets SEED_SETTINGS_TOUR_KEY onHighlighted", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       capturedConfig.steps[1].onHighlighted();
       expect(setItemSpy).toHaveBeenCalledWith(SEED_SETTINGS_TOUR_KEY, "true");
     });
 
     it("does not have onDestroyStarted on desktop", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.onDestroyStarted).toBeUndefined();
     });
   });
@@ -173,37 +187,44 @@ describe("useSeedTour", () => {
     beforeEach(() => setMobile());
 
     it("creates 1 step on mobile", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps).toHaveLength(1);
     });
 
     it("single step has close button", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[0].popover.showButtons).toEqual(["close"]);
     });
 
     it("mobile step description includes a link to /store/settings", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[0].popover.description).toContain("/store/settings");
     });
 
+    it("mobile step description links to the given settings route", () => {
+      const { usePathname } = require("next/navigation");
+      usePathname.mockReturnValue("/freelancer/timesheet");
+      renderSeedTour({ homeRoute: "/freelancer/timesheet", settingsRoute: "/freelancer/settings" });
+      expect(capturedConfig.steps[0].popover.description).toContain("/freelancer/settings");
+    });
+
     it("mobile step description includes the button label", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[0].popover.description).toContain("mobileGoToSettings");
     });
 
     it("does not target any element on mobile", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.steps[0].element).toBeUndefined();
     });
 
     it("has onDestroyStarted on mobile to destroy the driver", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       expect(capturedConfig.onDestroyStarted).toBeDefined();
     });
 
     it("sets SEED_SETTINGS_TOUR_KEY when timer fires on mobile", () => {
-      renderHook(() => useSeedTour(true));
+      renderSeedTour();
       jest.runAllTimers();
       expect(setItemSpy).toHaveBeenCalledWith(SEED_SETTINGS_TOUR_KEY, "true");
     });

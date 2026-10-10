@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 function renderTutorials(props = {}) {
-  return render(<Tutorials onNavigate={jest.fn()} {...props} />);
+  return render(<Tutorials homeRoute="/store" tours={["wallet", "seed"]} onNavigate={jest.fn()} {...props} />);
 }
 
 describe("Tutorials", () => {
@@ -136,6 +136,15 @@ describe("Tutorials", () => {
         fireEvent.click(screen.getAllByText("cardTours.replayButton")[1]);
       });
       expect(localStorage.getItem(SEED_SETTINGS_TOUR_KEY)).toBeNull();
+    });
+
+    it("calls onNavigate with the given home route when seed replay is pressed", async () => {
+      const onNavigate = jest.fn();
+      renderTutorials({ onNavigate, homeRoute: "/freelancer/timesheet", tours: ["seed"] });
+      await act(async () => {
+        fireEvent.click(screen.getByText("cardTours.replayButton"));
+      });
+      expect(onNavigate).toHaveBeenCalledWith("/freelancer/timesheet");
     });
 
     it("calls onNavigate with /store when seed replay is pressed", async () => {

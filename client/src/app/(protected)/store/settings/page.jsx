@@ -1,5 +1,5 @@
-import { Settings } from "@/components/pages/Store/Settings";
+import { StoreSettings } from "@/components/pages/Store/Settings";
 
 export default function SettingsPage() {
-  return <Settings />;
+  return <StoreSettings />;
 }
