@@ -19,6 +19,8 @@ import { useTranslations } from "next-intl";
 import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 
 import {
+  formatInvoiceAmount,
+  formatInvoiceDuration,
   formatPayoutAccountName,
   getCurrencyAcronymForClient,
   getInvoiceClientPaymentMethod,
@@ -49,13 +51,17 @@ export function GenerateInvoiceModal({
   currencies,
   isOpen,
   onClose,
+  onPreview,
   onSubmit,
   payoutAccounts,
 }) {
   const invoiceTranslations = useTranslations("freelanceInvoices");
   const [invoiceForm, setInvoiceForm] = useState(EMPTY_INVOICE_FORM);
+  const [invoicePreview, setInvoicePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const isSubmittingRef = useRef(false);
+  const isPreviewingRef = useRef(false);
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === invoiceForm.clientId) || null,
@@ -74,6 +80,7 @@ export function GenerateInvoiceModal({
   useEffect(() => {
     if (!isOpen) {
       setInvoiceForm(EMPTY_INVOICE_FORM);
+      setInvoicePreview(null);
       return;
     }
 
@@ -100,10 +107,7 @@ export function GenerateInvoiceModal({
     (!needsBitcoinRate || currentRate),
   );
 
-  const handleSubmit = async (submitEvent) => {
-    submitEvent.preventDefault();
-    if (isSubmittingRef.current || !canSubmit) return;
-
+  const buildInvoiceRequest = () => {
     const invoiceRequest = {
       clientId: invoiceForm.clientId,
       periodStart: invoiceForm.periodStart,
@@ -119,10 +123,46 @@ export function GenerateInvoiceModal({
       invoiceRequest.exchangeRateCurrency = selectedCurrencyAcronym.toLowerCase();
     }
 
+    return invoiceRequest;
+  };
+
+  const updateInvoiceForm = (invoiceFormUpdates) => {
+    setInvoicePreview(null);
+    setInvoiceForm((previousInvoiceForm) => ({
+      ...previousInvoiceForm,
+      ...invoiceFormUpdates,
+    }));
+  };
+
+  const handlePreview = async () => {
+    if (isPreviewingRef.current || !canSubmit) return;
+
+    isPreviewingRef.current = true;
+    try {
+      setIsPreviewing(true);
+      const previewedInvoice = await onPreview(buildInvoiceRequest());
+      setInvoicePreview(previewedInvoice);
+    } catch {
+      return;
+    } finally {
+      isPreviewingRef.current = false;
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (isSubmittingRef.current || !canSubmit) return;
+
+    if (!invoicePreview) {
+      await handlePreview();
+      return;
+    }
+
     isSubmittingRef.current = true;
     try {
       setIsSubmitting(true);
-      await onSubmit(invoiceRequest);
+      await onSubmit(buildInvoiceRequest());
       onClose();
     } catch {
       return;
@@ -161,6 +201,7 @@ export function GenerateInvoiceModal({
                   ...previousInvoiceForm,
                   clientId: selectedClientId,
                 }));
+                setInvoicePreview(null);
               }}
             >
               {clients.map((client) => (
@@ -174,10 +215,9 @@ export function GenerateInvoiceModal({
                 value={toDateInputValue(invoiceForm.periodStart)}
                 isRequired
                 onChange={(periodStartValue) => {
-                  setInvoiceForm((previousInvoiceForm) => ({
-                    ...previousInvoiceForm,
+                  updateInvoiceForm({
                     periodStart: toDateString(periodStartValue),
-                  }));
+                  });
                 }}
               />
               <DateInput
@@ -187,10 +227,9 @@ export function GenerateInvoiceModal({
                 isInvalid={hasInvalidDateRange}
                 errorMessage={hasInvalidDateRange ? invoiceTranslations("generate.periodError") : ""}
                 onChange={(periodEndValue) => {
-                  setInvoiceForm((previousInvoiceForm) => ({
-                    ...previousInvoiceForm,
+                  updateInvoiceForm({
                     periodEnd: toDateString(periodEndValue),
-                  }));
+                  });
                 }}
               />
             </div>
@@ -204,10 +243,9 @@ export function GenerateInvoiceModal({
                 isInvalid={bankPayoutAccounts.length === 0}
                 onSelectionChange={(selectedPayoutAccountKeys) => {
                   const selectedPayoutAccountId = Array.from(selectedPayoutAccountKeys)[0] || "";
-                  setInvoiceForm((previousInvoiceForm) => ({
-                    ...previousInvoiceForm,
+                  updateInvoiceForm({
                     payoutAccountId: selectedPayoutAccountId,
-                  }));
+                  });
                 }}
               >
                 {bankPayoutAccounts.map((payoutAccount) => (
@@ -240,6 +278,37 @@ export function GenerateInvoiceModal({
               <p className="text-xs text-green-800">{invoiceTranslations("generate.confirmationNote")}</p>
             </div>
 
+            {invoicePreview && (
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-3 py-2">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {invoiceTranslations("generate.previewTitle")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {invoiceTranslations("generate.previewSubtitle")}
+                  </p>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {invoicePreview.lineItems.map((previewLineItem) => (
+                    <div key={`${previewLineItem.projectId}-${previewLineItem.taskId}`} className="grid grid-cols-[1fr_72px_88px] gap-2 px-3 py-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{previewLineItem.projectName}</p>
+                        <p className="truncate text-xs text-gray-500">{previewLineItem.taskName}</p>
+                      </div>
+                      <span>{formatInvoiceDuration(previewLineItem.quantityMinutes)}</span>
+                      <span className="text-right font-medium">
+                        {formatInvoiceAmount(previewLineItem.amountCents, invoicePreview.currencyAcronym)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between bg-gray-50 px-3 py-2 text-sm font-semibold">
+                  <span>{invoiceTranslations("total")}</span>
+                  <span>{formatInvoiceAmount(invoicePreview.totalCents, invoicePreview.currencyAcronym)}</span>
+                </div>
+              </div>
+            )}
+
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
                 variant="bordered"
@@ -254,10 +323,12 @@ export function GenerateInvoiceModal({
                 color="primary"
                 className="bg-green-800"
                 type="submit"
-                isDisabled={isSubmitting || !canSubmit}
-                isLoading={isSubmitting}
+                isDisabled={isSubmitting || isPreviewing || !canSubmit}
+                isLoading={isSubmitting || isPreviewing}
               >
-                {invoiceTranslations("generate.submitButton")}
+                {invoicePreview
+                  ? invoiceTranslations("generate.submitButton")
+                  : invoiceTranslations("generate.previewButton")}
               </Button>
             </ModalFooter>
           </form>

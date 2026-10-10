@@ -22,12 +22,14 @@ function FreelanceInvoicesHookTestComponent() {
     forbidden,
     fetchInvoiceDetail,
     createFreelanceInvoice,
+    previewFreelanceInvoice,
   } = useFreelanceInvoices({ skipForbiddenRedirect: true });
 
   useEffect(() => {
     hookHandlers.fetchInvoiceDetail = fetchInvoiceDetail;
     hookHandlers.createFreelanceInvoice = createFreelanceInvoice;
-  }, [fetchInvoiceDetail, createFreelanceInvoice]);
+    hookHandlers.previewFreelanceInvoice = previewFreelanceInvoice;
+  }, [fetchInvoiceDetail, createFreelanceInvoice, previewFreelanceInvoice]);
 
   return (
     <div>
@@ -121,6 +123,39 @@ describe("useFreelanceInvoices", () => {
       skipForbiddenRedirect: true,
     });
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+  });
+
+  it("previews a freelance invoice without refetching the list", async () => {
+    const invoiceRequest = {
+      clientId: "client-1",
+      periodStart: "2026-10-01",
+      periodEnd: "2026-10-31",
+      payoutAccountId: "payout-1",
+    };
+
+    httpClient.mockResolvedValueOnce({ ok: true, status: 200 });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValueOnce({ ok: true, status: 200 });
+    parseJsonResponse.mockResolvedValueOnce({ totalCents: 10_000, lineItems: [{ projectName: "Website" }] });
+
+    render(<FreelanceInvoicesHookTestComponent />);
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+
+    let invoicePreview;
+    await act(async () => {
+      invoicePreview = await hookHandlers.previewFreelanceInvoice(invoiceRequest);
+    });
+
+    expect(invoicePreview).toEqual({ totalCents: 10_000, lineItems: [{ projectName: "Website" }] });
+    expect(httpClient).toHaveBeenCalledWith("/freelance/invoices/preview", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(invoiceRequest),
+      skipForbiddenRedirect: true,
+    });
+    expect(httpClient).toHaveBeenCalledTimes(2);
   });
 
   it("throws parsed errors when invoice creation fails", async () => {

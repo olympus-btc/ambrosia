@@ -41,6 +41,11 @@ fun Route.freelanceInvoices(freelanceInvoiceService: FreelanceInvoiceService) {
     }
 
     authorizePermission("invoices_create") {
+        post("/preview") {
+            val createFreelanceInvoiceRequest = call.receiveCreateFreelanceInvoiceRequest()
+            call.respond(HttpStatusCode.OK, freelanceInvoiceService.previewDraftInvoice(createFreelanceInvoiceRequest))
+        }
+
         post("") {
             val createFreelanceInvoiceRequest = call.receiveCreateFreelanceInvoiceRequest()
             call.respond(HttpStatusCode.Created, freelanceInvoiceService.createDraftInvoice(createFreelanceInvoiceRequest))

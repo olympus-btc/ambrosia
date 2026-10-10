@@ -37,6 +37,8 @@ import pos.ambrosia.db.tables.TimeEntryEntity
 import pos.ambrosia.models.CreateFreelanceInvoiceRequest
 import pos.ambrosia.models.FreelanceInvoiceLineItemResponse
 import pos.ambrosia.models.FreelanceInvoicePayoutSnapshot
+import pos.ambrosia.models.FreelanceInvoicePreviewLineItemResponse
+import pos.ambrosia.models.FreelanceInvoicePreviewResponse
 import pos.ambrosia.models.FreelanceInvoiceResponse
 import pos.ambrosia.models.PayFreelanceInvoiceRequest
 import pos.ambrosia.models.WalletInvoiceRate
@@ -58,6 +60,11 @@ class FreelanceInvoiceService(
     private val walletRateService: WalletRateService = WalletRateService(),
 ) {
     private val fieldEncryptionKey by lazy { SecretsCipher.deriveFieldEncryptionKey(environment.config.property("secret").getString()) }
+
+    fun previewDraftInvoice(createFreelanceInvoiceRequest: CreateFreelanceInvoiceRequest): FreelanceInvoicePreviewResponse {
+        val preparedFreelanceInvoice = prepareDraftFreelanceInvoice(createFreelanceInvoiceRequest)
+        return toFreelanceInvoicePreviewResponse(preparedFreelanceInvoice)
+    }
 
     suspend fun createDraftInvoice(createFreelanceInvoiceRequest: CreateFreelanceInvoiceRequest): FreelanceInvoiceResponse {
         val preparedFreelanceInvoice = prepareDraftFreelanceInvoice(createFreelanceInvoiceRequest)
@@ -277,6 +284,40 @@ class FreelanceInvoiceService(
             InvoiceEntity
                 .findById(parseUuid(freelanceInvoiceId, "freelanceInvoiceId"))
                 ?.let { freelanceInvoice -> toFreelanceInvoiceResponse(freelanceInvoice) }
+        }
+
+    private fun toFreelanceInvoicePreviewResponse(preparedFreelanceInvoice: PreparedFreelanceInvoice): FreelanceInvoicePreviewResponse =
+        transaction {
+            val client =
+                ClientEntity.findById(preparedFreelanceInvoice.clientId)
+                    ?: throw ResourceNotFoundException("Client not found")
+            val currency =
+                CurrencyEntity.findById(preparedFreelanceInvoice.currencyId)
+                    ?: throw ResourceNotFoundException("Currency not found")
+
+            FreelanceInvoicePreviewResponse(
+                clientId = client.id.value.toString(),
+                clientName = client.name,
+                currencyId = currency.id.value.toString(),
+                currencyAcronym = currency.acronym,
+                periodStart = preparedFreelanceInvoice.periodStart,
+                periodEnd = preparedFreelanceInvoice.periodEnd,
+                totalCents = preparedFreelanceInvoice.totalCents,
+                payoutSnapshot = SecretsCipher.decryptOrNull(preparedFreelanceInvoice.payoutSnapshot, fieldEncryptionKey),
+                paymentMethod = preparedFreelanceInvoice.paymentMethod,
+                lineItems =
+                    preparedFreelanceInvoice.lineItems.map { preparedLineItem ->
+                        FreelanceInvoicePreviewLineItemResponse(
+                            projectId = preparedLineItem.projectId.toString(),
+                            projectName = preparedLineItem.projectName,
+                            taskId = preparedLineItem.taskId.toString(),
+                            taskName = preparedLineItem.taskName,
+                            quantityMinutes = preparedLineItem.quantityMinutes,
+                            rateCents = preparedLineItem.rateCents,
+                            amountCents = preparedLineItem.amountCents,
+                        )
+                    },
+            )
         }
 
     private fun createInvoiceLineItems(

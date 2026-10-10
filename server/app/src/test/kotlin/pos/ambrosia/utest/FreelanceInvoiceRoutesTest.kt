@@ -16,6 +16,7 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.api.configureFreelanceInvoices
 import pos.ambrosia.api.handler
+import pos.ambrosia.models.FreelanceInvoicePreviewResponse
 import pos.ambrosia.models.FreelanceInvoiceResponse
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.grantPermissions
@@ -53,6 +54,41 @@ class FreelanceInvoiceRoutesTest {
                 HttpStatusCode.Forbidden,
                 client.get("/freelance/invoices") { withAuthCookies(authWithoutPermission) }.status,
             )
+        }
+
+    @Test
+    fun `post preview returns line items without creating a draft invoice`() =
+        testApplication {
+            val authWithPermission = installNonAdminAuth("invoice-preview", "invoice-preview-user")
+            grantPermissions("invoice-preview", "invoices_create", "invoices_read")
+            val freelanceInvoiceFixture = createFreelanceInvoiceFixture()
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configureFreelanceInvoices()
+            }
+
+            val previewFreelanceInvoiceResponse =
+                client.post("/freelance/invoices/preview") {
+                    withAuthCookies(authWithPermission)
+                    header(HttpHeaders.ContentType, "application/json")
+                    setBody(
+                        """{
+                            "clientId":"${freelanceInvoiceFixture.clientId}",
+                            "periodStart":"2026-08-17",
+                            "periodEnd":"2026-08-23"
+                        }""",
+                    )
+                }
+            val freelanceInvoicePreview =
+                Json.decodeFromString<FreelanceInvoicePreviewResponse>(previewFreelanceInvoiceResponse.bodyAsText())
+            val listInvoicesResponse = client.get("/freelance/invoices") { withAuthCookies(authWithPermission) }
+            val listedFreelanceInvoices = Json.decodeFromString<List<FreelanceInvoiceResponse>>(listInvoicesResponse.bodyAsText())
+
+            assertEquals(HttpStatusCode.OK, previewFreelanceInvoiceResponse.status)
+            assertEquals(10_000, freelanceInvoicePreview.totalCents)
+            assertEquals(1, freelanceInvoicePreview.lineItems.size)
+            assertEquals(emptyList(), listedFreelanceInvoices)
         }
 
     @Test

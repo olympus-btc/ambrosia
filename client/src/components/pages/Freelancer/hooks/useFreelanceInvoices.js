@@ -78,6 +78,23 @@ export function useFreelanceInvoices({ skipForbiddenRedirect = false } = {}) {
     [fetchInvoices],
   );
 
+  const previewFreelanceInvoice = useCallback(async (invoiceRequest) => {
+    const previewInvoiceResponse = await httpClient("/freelance/invoices/preview", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(invoiceRequest),
+      skipForbiddenRedirect: true,
+    });
+
+    if (previewInvoiceResponse.ok === false) {
+      throw await buildParsedHttpError(previewInvoiceResponse, "Error previewing freelance invoice");
+    }
+
+    return await parseJsonResponse(previewInvoiceResponse, {});
+  }, []);
+
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
@@ -92,6 +109,7 @@ export function useFreelanceInvoices({ skipForbiddenRedirect = false } = {}) {
     refetch: fetchInvoices,
     fetchInvoiceDetail,
     createFreelanceInvoice,
+    previewFreelanceInvoice,
     clearSelectedInvoice: () => setSelectedInvoice(null),
   };
 }

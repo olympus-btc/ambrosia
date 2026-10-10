@@ -715,6 +715,31 @@ data class PayFreelanceInvoiceRequest(
 )
 
 @Serializable
+data class FreelanceInvoicePreviewLineItemResponse(
+    val projectId: String,
+    val projectName: String,
+    val taskId: String,
+    val taskName: String,
+    val quantityMinutes: Int,
+    val rateCents: Int,
+    val amountCents: Int,
+)
+
+@Serializable
+data class FreelanceInvoicePreviewResponse(
+    val clientId: String,
+    val clientName: String,
+    val currencyId: String,
+    val currencyAcronym: String,
+    val periodStart: String,
+    val periodEnd: String,
+    val totalCents: Int,
+    val payoutSnapshot: String? = null,
+    val paymentMethod: String,
+    val lineItems: List<FreelanceInvoicePreviewLineItemResponse> = emptyList(),
+)
+
+@Serializable
 data class FreelanceInvoiceLineItemResponse(
     val id: String,
     val projectId: String,

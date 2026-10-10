@@ -32,6 +32,7 @@ export function Invoices() {
     forbidden,
     fetchInvoiceDetail,
     createFreelanceInvoice,
+    previewFreelanceInvoice,
     clearSelectedInvoice,
   } = useFreelanceInvoices({ skipForbiddenRedirect: true });
   const { clients } = useFreelanceClients({ skipForbiddenRedirect: true });
@@ -61,6 +62,19 @@ export function Invoices() {
         color: "danger",
       });
       throw createInvoiceError;
+    }
+  };
+
+  const handlePreviewInvoice = async (invoiceRequest) => {
+    try {
+      return await previewFreelanceInvoice(invoiceRequest);
+    } catch (previewInvoiceError) {
+      addToast({
+        title: invoiceTranslations("toasts.previewErrorTitle"),
+        description: invoiceTranslations("toasts.previewErrorDescription"),
+        color: "danger",
+      });
+      throw previewInvoiceError;
     }
   };
 
@@ -117,6 +131,7 @@ export function Invoices() {
         currencies={currencies}
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
+        onPreview={handlePreviewInvoice}
         onSubmit={handleGenerateInvoice}
         payoutAccounts={payoutAccounts}
       />

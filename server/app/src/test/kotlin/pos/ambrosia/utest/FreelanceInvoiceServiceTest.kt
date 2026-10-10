@@ -33,6 +33,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -52,6 +53,43 @@ class FreelanceInvoiceServiceTest {
     @After
     fun tearDown() {
         ExposedTestDb.cleanup(databaseFile)
+    }
+
+    @Test
+    fun `previews draft invoice without creating records or locking time entries`() {
+        val freelanceInvoiceFixture = createFreelanceInvoiceFixture()
+        val firstTimeEntryId =
+            ExposedTestDb.seedTimeEntry(
+                freelanceInvoiceFixture.projectId,
+                freelanceInvoiceFixture.developmentTaskId,
+                entryDate = "2026-08-19",
+                durationMinutes = 60,
+            )
+        val secondTimeEntryId =
+            ExposedTestDb.seedTimeEntry(
+                freelanceInvoiceFixture.projectId,
+                freelanceInvoiceFixture.designTaskId,
+                entryDate = "2026-08-20",
+                durationMinutes = 30,
+            )
+
+        val freelanceInvoicePreview =
+            freelanceInvoiceService.previewDraftInvoice(
+                CreateFreelanceInvoiceRequest(
+                    clientId = freelanceInvoiceFixture.clientId,
+                    periodStart = "2026-08-17",
+                    periodEnd = "2026-08-23",
+                ),
+            )
+
+        assertEquals("USD", freelanceInvoicePreview.currencyAcronym)
+        assertEquals(15_000, freelanceInvoicePreview.totalCents)
+        assertEquals("bank", freelanceInvoicePreview.paymentMethod)
+        assertEquals(2, freelanceInvoicePreview.lineItems.size)
+        assertEquals(setOf(10_000, 5_000), freelanceInvoicePreview.lineItems.map { previewLineItem -> previewLineItem.amountCents }.toSet())
+        assertFalse(timeEntryIsLocked(firstTimeEntryId))
+        assertFalse(timeEntryIsLocked(secondTimeEntryId))
+        assertEquals(0, invoiceCount())
     }
 
     @Test
@@ -366,6 +404,21 @@ class FreelanceInvoiceServiceTest {
                         TimeEntriesTable.id eq EntityID(UUID.fromString(timeEntryId), TimeEntriesTable)
                     }.single()
             timeEntry.isLocked && timeEntry.invoiceId?.value?.toString() == invoiceId
+        }
+
+    private fun timeEntryIsLocked(timeEntryId: String): Boolean =
+        transaction {
+            val timeEntry =
+                TimeEntryEntity
+                    .find {
+                        TimeEntriesTable.id eq EntityID(UUID.fromString(timeEntryId), TimeEntriesTable)
+                    }.single()
+            timeEntry.isLocked || timeEntry.invoiceId != null
+        }
+
+    private fun invoiceCount(): Long =
+        transaction {
+            InvoiceEntity.all().count()
         }
 
     private fun paymentMethodNamesForInvoice(invoiceId: String): List<String> =
