@@ -10,28 +10,28 @@ import { useTranslations } from "next-intl";
 const SEED_TOUR_KEY = "ambrosia:tour:seed";
 const SEED_SETTINGS_TOUR_KEY = "ambrosia:tour:seed-settings";
 
-export function useSeedTour(isAuth) {
+export function useSeedTour({ isAuth, homeRoute, settingsRoute }) {
   const pathname = usePathname();
   const tTour = useTranslations("seedTour");
   const driverRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (pathname === "/store" && !localStorage.getItem(SEED_TOUR_KEY)) {
+    if (pathname === homeRoute && !localStorage.getItem(SEED_TOUR_KEY)) {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     }
-  }, [pathname]);
+  }, [pathname, homeRoute]);
 
   useEffect(() => {
-    if (pathname === "/store") return;
+    if (pathname === homeRoute) return;
     if (driverRef.current) {
       driverRef.current.destroy();
       driverRef.current = null;
     }
-  }, [pathname]);
+  }, [pathname, homeRoute]);
 
   const tourTitle = tTour("title");
   const tourDescription = tTour.raw("description");
@@ -42,10 +42,10 @@ export function useSeedTour(isAuth) {
   useEffect(() => {
     if (!isAuth || timerRef.current) return;
     if (localStorage.getItem(SEED_TOUR_KEY)) return;
-    if (pathname !== "/store") return;
+    if (pathname !== homeRoute) return;
 
     const isMobile = window.innerWidth < 768;
-    const settingsLink = `<br/><br/><a href="/store/settings" style="display:inline-block;margin-top:4px;padding:8px 16px;background:#166534;color:#fff;border-radius:8px;text-decoration:none;font-size:14px">${tourMobileGoToSettings}</a>`;
+    const settingsLink = `<br/><br/><a href="${settingsRoute}" style="display:inline-block;margin-top:4px;padding:8px 16px;background:#166534;color:#fff;border-radius:8px;text-decoration:none;font-size:14px">${tourMobileGoToSettings}</a>`;
 
     const driverObj = driver({
       allowClose: true,
@@ -96,7 +96,7 @@ export function useSeedTour(isAuth) {
       if (isMobile) localStorage.setItem(SEED_SETTINGS_TOUR_KEY, "true");
       driverObj.drive();
     }, 800);
-  }, [isAuth, pathname, tourTitle, tourDescription, tourClickSettings, tourNextButton, tourMobileGoToSettings]);
+  }, [isAuth, pathname, homeRoute, settingsRoute, tourTitle, tourDescription, tourClickSettings, tourNextButton, tourMobileGoToSettings]);
 
   useEffect(() => () => {
     if (timerRef.current) {
