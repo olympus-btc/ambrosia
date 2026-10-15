@@ -17,6 +17,13 @@ Each board has its own definition under `hardware/image/boards/<board-id>/`. Add
 
 `board.conf` uses Bash `KEY="value"` assignments and is loaded with `source`. Use the existing definitions as templates; variable expansion is supported, including the Phoenixd archive and URL derived from `PHOENIXD_VERSION`. `BASE_IMAGE_URL` defaults to `AMBROSIA_BASE_IMAGE_URL` when set; `--base-image-url` takes precedence.
 
+Optional Wi-Fi workarounds for boards with unreliable drivers (both default to off; the Orange Pi Zero 2W enables them):
+
+| Variable | Effect |
+|---|---|
+| `WIFI_POWER_SAVE_DISABLED="true"` | Installs `/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf`, which turns off Wi-Fi power saving |
+| `WIFI_STALL_WATCHDOG_ENABLED="true"` | Installs and enables `ambrosia-wifi-watchdog.service`, which reconnects `wlan0` when TCP traffic stalls |
+
 The separate `ambrosia-device.env` file configures first-boot provisioning; it does not select the board.
 
 ## What the build produces
@@ -38,6 +45,7 @@ The image is built from the board's official Debian Bookworm base. On top of it 
 - **Ambrosia server** at `/opt/ambrosia/server/ambrosia.jar`
 - **Ambrosia client** at `/opt/ambrosia/client/` (Next.js standalone build)
 - **systemd services**: `ambrosia.service`, `ambrosia-client.service`, `phoenixd.service`, `caddy.service`, `ambrosia-firstboot.service`, `ambrosia-wifi-portal.service`
+- **Orange Pi Wi-Fi workarounds**: `ambrosia-wifi-watchdog.service` and Wi-Fi power saving disabled in NetworkManager
 - Ambrosia server, client and Phoenixd run as the locked `ambrosia-service` account (preferred UID 1002). The SSH operator remains `ambrosia`; Caddy uses its own account.
 - Per-unit TLS export services and the `/trust/` installation assistant are included automatically.
 
@@ -369,7 +377,7 @@ ssh-keygen -R <device-ip>
 ```
 
 **SSH connects over Ethernet but hangs over Wi-Fi on an Orange Pi Zero 2W.**
-The `unisoc_wifi` driver can remain associated while TCP traffic is stalled. The Wi-Fi portal cycles an associated Orange Pi link once during boot to recover it. If the problem persists, use Ethernet and inspect `journalctl -u ambrosia-wifi-portal` and `nmcli device status`.
+The `unisoc_wifi` driver can remain associated while TCP traffic is stalled: the device answers ping, but SSH and the POS do not respond. The Wi-Fi portal cycles an associated Orange Pi link once during boot, Wi-Fi power saving is disabled, and `ambrosia-wifi-watchdog` probes TCP over `wlan0` every 30 seconds and reconnects the link after three failed checks (at most once every 5 minutes). If the problem persists, use Ethernet and inspect `journalctl -u ambrosia-wifi-watchdog`, `journalctl -u ambrosia-wifi-portal` and `nmcli device status`.
 
 **`assemble-image.sh` fails midway.**
 Rerun with `--keep-workdir` to preserve the mounted work directory and inspect what went wrong. Use `--validate-only` first to confirm all host tools are present.

@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+
+import socket
+import subprocess
+import time
+
+WLAN = "wlan0"
+WIFI_PORTAL_SERVICE = "ambrosia-wifi-portal.service"
+CHECK_INTERVAL_SECONDS = 30
+FAILED_CHECKS_BEFORE_RECONNECT = 3
+RECONNECT_COOLDOWN_SECONDS = 300
+TCP_PROBE_TIMEOUT_SECONDS = 5
+GATEWAY_PROBE_PORTS = (80, 443, 53)
+INTERNET_PROBE_ADDRESSES = (("1.1.1.1", 443), ("9.9.9.9", 443))
+LINUX_SO_BINDTODEVICE = 25
+SOCKET_BIND_TO_DEVICE_OPTION = getattr(socket, "SO_BINDTODEVICE", LINUX_SO_BINDTODEVICE)
+
+
+def run_command(command_arguments, timeout_seconds=None):
+    return subprocess.run(
+        command_arguments,
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+        check=False,
+    )
+
+
+def wifi_portal_is_active():
+    portal_status_process = run_command(
+        ["systemctl", "is-active", "--quiet", WIFI_PORTAL_SERVICE]
+    )
+    return portal_status_process.returncode == 0
+
+
+def wifi_is_connected():
+    device_status_process = run_command(
+        ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    )
+    for device_status_line in device_status_process.stdout.splitlines():
+        device_fields = device_status_line.split(":")
+        if (
+            len(device_fields) >= 3
+            and device_fields[0] == WLAN
+            and device_fields[1] == "wifi"
+            and device_fields[2] == "connected"
+        ):
+            return True
+    return False
+
+
+def find_wifi_gateway():
+    route_process = run_command(["ip", "-4", "route", "show", "default", "dev", WLAN])
+    for route_line in route_process.stdout.splitlines():
+        route_fields = route_line.split()
+        if "via" in route_fields:
+            via_index = route_fields.index("via")
+            if via_index + 1 < len(route_fields):
+                return route_fields[via_index + 1]
+    return None
+
+
+def tcp_answers_over_wifi(probe_address, probe_port):
+    probe_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        probe_socket.setsockopt(
+            socket.SOL_SOCKET, SOCKET_BIND_TO_DEVICE_OPTION, WLAN.encode()
+        )
+        probe_socket.settimeout(TCP_PROBE_TIMEOUT_SECONDS)
+        probe_socket.connect((probe_address, probe_port))
+        return True
+    except ConnectionRefusedError:
+        return True
+    except OSError:
+        return False
+    finally:
+        probe_socket.close()
+
+
+def wifi_tcp_is_healthy(gateway_address):
+    probe_targets = [
+        (gateway_address, gateway_port) for gateway_port in GATEWAY_PROBE_PORTS
+    ]
+    probe_targets.extend(INTERNET_PROBE_ADDRESSES)
+    return any(
+        tcp_answers_over_wifi(probe_address, probe_port)
+        for probe_address, probe_port in probe_targets
+    )
+
+
+def reconnect_wifi():
+    print("Wi-Fi TCP traffic is stalled; reconnecting wlan0.", flush=True)
+    try:
+        run_command(["nmcli", "device", "disconnect", WLAN], timeout_seconds=15)
+        time.sleep(2)
+        reconnect_process = run_command(
+            ["nmcli", "device", "connect", WLAN], timeout_seconds=45
+        )
+        if reconnect_process.returncode != 0:
+            print(
+                f"Wi-Fi reconnect failed: {reconnect_process.stderr.strip()}",
+                flush=True,
+            )
+    except subprocess.TimeoutExpired:
+        print("Wi-Fi reconnect timed out.", flush=True)
+
+
+class WifiWatchdog:
+    def __init__(self):
+        self.consecutive_failed_checks = 0
+        self.last_reconnect_monotonic_time = None
+
+    def reconnect_cooldown_has_passed(self):
+        if self.last_reconnect_monotonic_time is None:
+            return True
+        seconds_since_last_reconnect = (
+            time.monotonic() - self.last_reconnect_monotonic_time
+        )
+        return seconds_since_last_reconnect >= RECONNECT_COOLDOWN_SECONDS
+
+    def check_once(self):
+        if wifi_portal_is_active() or not wifi_is_connected():
+            self.consecutive_failed_checks = 0
+            return
+        gateway_address = find_wifi_gateway()
+        if gateway_address is None:
+            self.consecutive_failed_checks = 0
+            return
+        if wifi_tcp_is_healthy(gateway_address):
+            self.consecutive_failed_checks = 0
+            return
+        self.consecutive_failed_checks += 1
+        print(
+            "Wi-Fi TCP probes failed "
+            f"({self.consecutive_failed_checks}/{FAILED_CHECKS_BEFORE_RECONNECT}).",
+            flush=True,
+        )
+        if (
+            self.consecutive_failed_checks >= FAILED_CHECKS_BEFORE_RECONNECT
+            and self.reconnect_cooldown_has_passed()
+        ):
+            reconnect_wifi()
+            self.last_reconnect_monotonic_time = time.monotonic()
+            self.consecutive_failed_checks = 0
+
+
+def main():
+    wifi_watchdog = WifiWatchdog()
+    while True:
+        wifi_watchdog.check_once()
+        time.sleep(CHECK_INTERVAL_SECONDS)
+
+
+if __name__ == "__main__":
+    main()

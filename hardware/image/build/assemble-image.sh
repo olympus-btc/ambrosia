@@ -586,6 +586,25 @@ EOF
     "$ROOTFS_MNT/etc/systemd/system/phoenixd.service"
 }
 
+board_disables_wifi_power_save() {
+  [[ "${WIFI_POWER_SAVE_DISABLED:-false}" == "true" ]]
+}
+
+board_enables_wifi_stall_watchdog() {
+  [[ "${WIFI_STALL_WATCHDOG_ENABLED:-false}" == "true" ]]
+}
+
+install_board_wifi_workarounds() {
+  if board_disables_wifi_power_save; then
+    install -d -m 0755 "$ROOTFS_MNT/etc/NetworkManager/conf.d"
+    install -m 0644 "$IMAGE_ROOT/common/wifi/ambrosia-wifi-powersave.conf" "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf"
+  fi
+  if board_enables_wifi_stall_watchdog; then
+    install -m 0755 "$IMAGE_ROOT/common/wifi/ambrosia-wifi-watchdog" "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-wifi-watchdog"
+    install -m 0644 "$IMAGE_ROOT/common/wifi/ambrosia-wifi-watchdog.service" "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-watchdog.service"
+  fi
+}
+
 verify_client_runtime_artifacts() {
   require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/client/server.js"
   require_sane_javascript_text_file "$ROOTFS_MNT/opt/ambrosia/client/server.js"
@@ -625,6 +644,9 @@ enable_services() {
     NetworkManager.service \
     avahi-daemon.service \
     ssh.service >/dev/null
+  if board_enables_wifi_stall_watchdog; then
+    systemctl --root="$ROOTFS_MNT" enable ambrosia-wifi-watchdog.service >/dev/null
+  fi
 }
 
 clean_forbidden_state() {
@@ -695,6 +717,14 @@ verify_mounted_image() {
   [[ ! -e "$ROOTFS_MNT/home/${RUNTIME_USER}/.Ambrosia-POS/ambrosia.db" ]] || fail "Forbidden state present: ambrosia.db"
   if compgen -G "$ROOTFS_MNT/etc/ssh/ssh_host_*" >/dev/null; then
     fail "Forbidden state present: SSH host keys"
+  fi
+  if board_disables_wifi_power_save; then
+    grep -Eq '^wifi\.powersave[[:space:]]*=[[:space:]]*2$' "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf" || fail "Wi-Fi power save was not disabled"
+  fi
+  if board_enables_wifi_stall_watchdog; then
+    require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-wifi-watchdog"
+    require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-watchdog.service"
+    systemctl --root="$ROOTFS_MNT" is-enabled ambrosia-wifi-watchdog.service >/dev/null 2>&1 || fail "ambrosia-wifi-watchdog.service was not enabled"
   fi
 }
 
@@ -785,6 +815,8 @@ log "Installing phoenixd"
 install_phoenixd
 log "Installing repo assets"
 install_repo_assets
+log "Installing board Wi-Fi workarounds"
+install_board_wifi_workarounds
 log "Verifying staged client runtime dependencies"
 verify_client_runtime_artifacts
 log "Writing base configuration"
