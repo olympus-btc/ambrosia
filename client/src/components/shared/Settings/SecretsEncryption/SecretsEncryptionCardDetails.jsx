@@ -15,7 +15,7 @@ import { clearUnlockPassword, getStorageBackend, saveUnlockPassword } from "@/se
 import WalletGuard from "@components/auth/WalletGuard";
 import { SecretsExistingPasswordField } from "@components/shared/SecretsExistingPasswordField";
 import { SecretsRememberPasswordCheckbox } from "@components/shared/SecretsRememberPasswordCheckbox";
-import { SecretsUnlockPasswordField } from "@components/shared/SecretsUnlockPasswordField";
+import { WalletPasswordEncryptionWarning } from "@components/shared/WalletPasswordEncryptionWarning";
 
 const PASSWORD_ACTION_BUTTON_CLASS_NAME = "bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium";
 const HIDE_BUTTON_CLASS_NAME = "h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium border border-border text-foreground hover:bg-muted transition-colors";
@@ -23,18 +23,19 @@ const HIDE_BUTTON_CLASS_NAME = "h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w
 export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTranslations }) {
   const [secretsStatus, setSecretsStatus] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState("");
-  const [unlockPasswordConfirmation, setUnlockPasswordConfirmation] = useState("");
   const [unlockPasswordError, setUnlockPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [storageBackend, setStorageBackend] = useState(null);
   const [rememberUnlockPassword, setRememberUnlockPassword] = useState(false);
+  const [walletGuardPassword, setWalletGuardPassword] = useState("");
 
   const handleUnlockPasswordChange = (enteredPassword) => {
     setUnlockPassword(enteredPassword);
     setUnlockPasswordError("");
   };
 
-  const handleAuthorized = async () => {
+  const handleAuthorized = async (walletGuardPassword) => {
+    setWalletGuardPassword(walletGuardPassword);
     try {
       const secretsStatusResponse = await getSecretsStatus();
       setSecretsStatus(secretsStatusResponse);
@@ -55,17 +56,15 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
   const handleActivate = async () => {
     setSubmitting(true);
     try {
-      await activateSecretsEncryption(unlockPassword);
+      await activateSecretsEncryption(walletGuardPassword);
       if (rememberUnlockPassword) {
-        await saveUnlockPassword(unlockPassword).catch(() => {});
+        await saveUnlockPassword(walletGuardPassword).catch(() => {});
       } else {
         await clearUnlockPassword().catch(() => {});
       }
       addToast({ color: "success", description: secretsEncryptionCardTranslations("secretsEncryptionCard.activateSuccess") });
       setSecretsStatus({ encryptionActive: true, locked: false });
       window.dispatchEvent(new Event(SECRETS_UNLOCKED_EVENT));
-      setUnlockPassword("");
-      setUnlockPasswordConfirmation("");
     } catch (activateSecretsEncryptionError) {
       addToast({
         color: "danger",
@@ -108,14 +107,7 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
             {secretsEncryptionCardTranslations("secretsEncryptionCard.inactiveDescription")}
           </p>
 
-          <RequirePermission allOf={["settings_update"]}>
-            <SecretsUnlockPasswordField
-              unlockPassword={unlockPassword}
-              onUnlockPasswordChange={setUnlockPassword}
-              unlockPasswordConfirmation={unlockPasswordConfirmation}
-              onUnlockPasswordConfirmationChange={setUnlockPasswordConfirmation}
-            />
-          </RequirePermission>
+          <WalletPasswordEncryptionWarning message={secretsEncryptionCardTranslations("secretsEncryptionCard.walletPasswordWarning")} />
 
           <SecretsRememberPasswordCheckbox
             storageBackend={storageBackend}
@@ -128,7 +120,7 @@ export function SecretsEncryptionCardDetails({ onHide, secretsEncryptionCardTran
               <Button
                 color="primary"
                 className={PASSWORD_ACTION_BUTTON_CLASS_NAME}
-                isDisabled={!unlockPassword || unlockPassword !== unlockPasswordConfirmation || submitting}
+                isDisabled={!walletGuardPassword || submitting}
                 isLoading={submitting}
                 onPress={handleActivate}
               >

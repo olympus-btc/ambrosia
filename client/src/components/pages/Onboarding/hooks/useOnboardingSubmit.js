@@ -29,8 +29,6 @@ function buildInitialSetupPayload(onboardingData, { businessLogoUrl, isPhoenixdR
     userPasswordConfirmation: undefined,
     walletBackend: undefined,
     activateSecretsEncryption: undefined,
-    secretsUnlockPassword: undefined,
-    secretsUnlockPasswordConfirmation: undefined,
     nwcUri: onboardingData.walletBackend === "nwc" && onboardingData.nwcUri ? onboardingData.nwcUri : undefined,
     phoenixdRemote: isPhoenixdRemoteAttempt ? true : undefined,
     phoenixdUrl: isPhoenixdRemoteAttempt ? onboardingData.phoenixdUrl : undefined,
@@ -42,13 +40,12 @@ async function activateSecretsEncryptionAfterSetup({
   userName,
   userPin,
   userPassword,
-  secretsUnlockPassword,
   onboardingTranslations,
 }) {
   try {
     await authenticateUser({ name: userName, pin: userPin, skipRefresh: true });
     await loginWallet(userPassword);
-    await activateSecretsEncryption(secretsUnlockPassword);
+    await activateSecretsEncryption(userPassword);
   } catch (secretsEncryptionSetupError) {
     addToast({
       color: "danger",
@@ -148,7 +145,6 @@ export function useOnboardingSubmit({ onboardingData, needsBusinessType }) {
           userName: onboardingData.userName,
           userPin: onboardingData.userPin,
           userPassword: onboardingData.userPassword,
-          secretsUnlockPassword: onboardingData.secretsUnlockPassword,
           onboardingTranslations,
         });
       }

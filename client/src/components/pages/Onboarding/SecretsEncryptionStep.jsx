@@ -3,20 +3,10 @@
 import { Checkbox } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { SecretsUnlockPasswordField } from "@components/shared/SecretsUnlockPasswordField";
+import { WalletPasswordEncryptionWarning } from "@components/shared/WalletPasswordEncryptionWarning";
 
 export function SecretsEncryptionStep({ secretsEncryptionData, onChange }) {
   const secretsEncryptionTranslations = useTranslations();
-
-  const handleActivateToggle = (activateSecretsEncryption) => {
-    onChange({
-      activateSecretsEncryption,
-      secretsUnlockPassword: activateSecretsEncryption ? secretsEncryptionData.secretsUnlockPassword : "",
-      secretsUnlockPasswordConfirmation: activateSecretsEncryption
-        ? secretsEncryptionData.secretsUnlockPasswordConfirmation
-        : "",
-    });
-  };
 
   return (
     <div>
@@ -25,20 +15,16 @@ export function SecretsEncryptionStep({ secretsEncryptionData, onChange }) {
       </h2>
       <p className="text-gray-500 mb-4 md:mb-8">{secretsEncryptionTranslations("stepSecretsEncryption.subtitle")}</p>
 
-      <Checkbox isSelected={Boolean(secretsEncryptionData.activateSecretsEncryption)} onValueChange={handleActivateToggle}>
+      <Checkbox
+        isSelected={Boolean(secretsEncryptionData.activateSecretsEncryption)}
+        onValueChange={(activateSecretsEncryption) => onChange({ activateSecretsEncryption })}
+      >
         {secretsEncryptionTranslations("stepSecretsEncryption.activateLabel")}
       </Checkbox>
 
       {secretsEncryptionData.activateSecretsEncryption && (
         <div className="mt-4 space-y-2">
-          <SecretsUnlockPasswordField
-            unlockPassword={secretsEncryptionData.secretsUnlockPassword || ""}
-            onUnlockPasswordChange={(secretsUnlockPassword) => onChange({ secretsUnlockPassword })}
-            unlockPasswordConfirmation={secretsEncryptionData.secretsUnlockPasswordConfirmation || ""}
-            onUnlockPasswordConfirmationChange={(secretsUnlockPasswordConfirmation) => (
-              onChange({ secretsUnlockPasswordConfirmation })
-            )}
-          />
+          <WalletPasswordEncryptionWarning message={secretsEncryptionTranslations("stepSecretsEncryption.walletPasswordWarning")} />
           <p className="text-xs text-gray-400">{secretsEncryptionTranslations("stepSecretsEncryption.laterHint")}</p>
         </div>
       )}

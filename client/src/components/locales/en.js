@@ -140,13 +140,6 @@ const componentsEn = {
     testSuccess: "Successfully connected to the remote node",
     testError: "Could not connect to the remote node — check the URL and password",
   },
-  secretsUnlockPassword: {
-    passwordLabel: "Unlock password",
-    passwordDescription: "This is the password you'll use to unlock your encrypted secrets later. Any password works — it doesn't need to follow a specific format.",
-    confirmPasswordLabel: "Confirm unlock password",
-    passwordsDoNotMatch: "Passwords do not match",
-    passwordWarning: "Write it down or save it somewhere safe — you may need to enter it again if the app restarts. If you forget this password, there's no way to recover it or the secrets it protects.",
-  },
 };
 
 export default componentsEn;

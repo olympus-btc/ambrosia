@@ -50,7 +50,7 @@ const onboardingEn = {
     passwordsDoNotMatch: "Passwords do not match",
     tooltips: {
       userPin: "To access the application.",
-      userPassword: "To access the wallet.",
+      userPassword: "To access the wallet and protect your encrypted secrets.",
     },
     strength: {
       title: "Password Strength",
@@ -110,6 +110,8 @@ const onboardingEn = {
     title: "Extra security for your wallet connection",
     subtitle: "Optionally protect your Lightning connection details with a password",
     activateLabel: "Encrypt phoenixd password, NWC connection, and notification key with a password",
+    walletPasswordWarning:
+      "This will use your wallet password to protect these secrets — if you ever lose that password, there's no way to recover them.",
     laterHint: "You can also set this up later from Settings.",
   },
   restore: {

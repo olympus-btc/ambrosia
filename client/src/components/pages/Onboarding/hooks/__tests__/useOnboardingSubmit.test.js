@@ -52,7 +52,6 @@ const defaultOnboardingData = {
   phoenixdUrl: "",
   phoenixdPassword: "",
   activateSecretsEncryption: false,
-  secretsUnlockPassword: "",
   userName: "testuser",
   userPassword: "Abcd123$",
   userPasswordConfirmation: "Abcd123$",
@@ -119,8 +118,6 @@ describe("useOnboardingSubmit", () => {
           userPasswordConfirmation: undefined,
           walletBackend: undefined,
           activateSecretsEncryption: undefined,
-          secretsUnlockPassword: undefined,
-          secretsUnlockPasswordConfirmation: undefined,
           timezone: "America/Mexico_City",
         }),
       );
@@ -314,7 +311,6 @@ describe("useOnboardingSubmit", () => {
 
       const { result: submitHook } = renderOnboardingSubmit({
         activateSecretsEncryption: true,
-        secretsUnlockPassword: "correct-unlock-password",
       });
 
       await act(async () => {
@@ -323,7 +319,7 @@ describe("useOnboardingSubmit", () => {
 
       expect(authenticateUser).toHaveBeenCalledWith({ name: "testuser", pin: "0000", skipRefresh: true });
       expect(loginWallet).toHaveBeenCalledWith("Abcd123$");
-      expect(activateSecretsEncryption).toHaveBeenCalledWith("correct-unlock-password");
+      expect(activateSecretsEncryption).toHaveBeenCalledWith("Abcd123$");
       expect(logoutSession).toHaveBeenCalledWith({ skipRefresh: true });
       expect(callOrder).toEqual([
         "authenticateUser",
@@ -352,7 +348,6 @@ describe("useOnboardingSubmit", () => {
       authenticateUser.mockRejectedValueOnce(new Error("Invalid credentials"));
       const { result: submitHook } = renderOnboardingSubmit({
         activateSecretsEncryption: true,
-        secretsUnlockPassword: "correct-unlock-password",
       });
 
       await act(async () => {
@@ -372,7 +367,6 @@ describe("useOnboardingSubmit", () => {
       activateSecretsEncryption.mockRejectedValueOnce(new Error("Could not reach the server"));
       const { result: submitHook } = renderOnboardingSubmit({
         activateSecretsEncryption: true,
-        secretsUnlockPassword: "correct-unlock-password",
       });
 
       await act(async () => {
@@ -390,7 +384,6 @@ describe("useOnboardingSubmit", () => {
       activateSecretsEncryption.mockRejectedValueOnce(new Error());
       const { result: submitHook } = renderOnboardingSubmit({
         activateSecretsEncryption: true,
-        secretsUnlockPassword: "correct-unlock-password",
       });
 
       await act(async () => {

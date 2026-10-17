@@ -51,7 +51,7 @@ const onboardingEs = {
     passwordsDoNotMatch: "Las contraseñas no coinciden",
     tooltips: {
       userPin: "Sirve para acceder a la aplicación.",
-      userPassword: "Requerida para acceder a la billetera.",
+      userPassword: "Requerida para acceder a la billetera y proteger tus secretos cifrados.",
     },
     strength: {
       title: "Fortaleza",
@@ -111,6 +111,8 @@ const onboardingEs = {
     title: "Seguridad extra para la conexión de tu billetera",
     subtitle: "Protege de forma opcional los datos de tu conexión Lightning con una contraseña",
     activateLabel: "Cifrar la contraseña de phoenixd, la conexión NWC y la clave de notificaciones con una contraseña",
+    walletPasswordWarning:
+      "Esto va a usar tu contraseña de la billetera para proteger estos secretos — si alguna vez la pierdes, no vas a poder recuperarlos.",
     laterHint: "También puedes configurar esto más adelante desde Configuración.",
   },
   restore: {

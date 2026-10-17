@@ -10,7 +10,9 @@ const secretsEncryptionCardEn = {
     hideButton: "Close",
     lockedBadgeLabel: "Secrets locked",
     statusLoadError: "Could not load the secrets encryption status",
-    inactiveDescription: "Secrets encryption is not active. Choose a password to protect your Lightning connection details.",
+    inactiveDescription: "Secrets encryption is not active. Activate it to protect your Lightning connection details.",
+    walletPasswordWarning:
+      "Activating encryption will use your wallet password — if you ever lose that password, there's no way to recover these secrets.",
     unlockPasswordLabel: "Unlock password",
     activateButton: "Activate encryption",
     activateSuccess: "Secrets encryption is now active",

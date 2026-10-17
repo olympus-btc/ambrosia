@@ -15,29 +15,8 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
-let mockSecretsUnlockPasswordFieldProps = null;
-
-jest.mock("@components/shared/SecretsUnlockPasswordField", () => ({
-  SecretsUnlockPasswordField: (props) => {
-    mockSecretsUnlockPasswordFieldProps = props;
-    const { unlockPassword, onUnlockPasswordChange, unlockPasswordConfirmation, onUnlockPasswordConfirmationChange } = props;
-    return (
-      <div data-testid="secrets-unlock-password-field">
-        <span data-testid="unlock-password-value">{unlockPassword}</span>
-        <span data-testid="confirm-unlock-password-value">{unlockPasswordConfirmation}</span>
-        <button type="button" onClick={() => onUnlockPasswordChange("new-unlock-password")}>set-unlock-password</button>
-        <button type="button" onClick={() => onUnlockPasswordConfirmationChange("new-unlock-password")}>set-confirm-unlock-password</button>
-      </div>
-    );
-  },
-}));
-
 function renderStep(secretsEncryptionData = {}, onChange = jest.fn()) {
-  const defaultSecretsEncryptionData = {
-    activateSecretsEncryption: false,
-    secretsUnlockPassword: "",
-    secretsUnlockPasswordConfirmation: "",
-  };
+  const defaultSecretsEncryptionData = { activateSecretsEncryption: false };
   return {
     onChange,
     ...render(
@@ -52,81 +31,35 @@ function renderStep(secretsEncryptionData = {}, onChange = jest.fn()) {
 describe("SecretsEncryptionStep", () => {
   afterEach(() => {
     jest.clearAllMocks();
-    mockSecretsUnlockPasswordFieldProps = null;
   });
 
-  it("renders unchecked and without the password field by default", () => {
+  it("renders unchecked and without the wallet password warning by default", () => {
     renderStep();
 
     expect(screen.getByRole("checkbox")).not.toBeChecked();
-    expect(screen.queryByTestId("secrets-unlock-password-field")).not.toBeInTheDocument();
+    expect(screen.queryByText("stepSecretsEncryption.walletPasswordWarning")).not.toBeInTheDocument();
   });
 
-  it("shows the shared password field with the current value when already checked", () => {
-    renderStep({ activateSecretsEncryption: true, secretsUnlockPassword: "correct-unlock-password" });
+  it("shows the wallet password warning and later-hint when already checked", () => {
+    renderStep({ activateSecretsEncryption: true });
 
-    expect(screen.getByTestId("unlock-password-value").textContent).toBe("correct-unlock-password");
-  });
-
-  it("shows the later-hint text when already checked", () => {
-    renderStep({ activateSecretsEncryption: true, secretsUnlockPassword: "" });
-
+    expect(screen.getByText("stepSecretsEncryption.walletPasswordWarning")).toBeInTheDocument();
     expect(screen.getByText("stepSecretsEncryption.laterHint")).toBeInTheDocument();
   });
 
-  it("checking the checkbox with no prior password calls onChange with empty passwords", () => {
-    const { onChange } = renderStep({ activateSecretsEncryption: false, secretsUnlockPassword: "" });
+  it("checking the checkbox calls onChange with activateSecretsEncryption true", () => {
+    const { onChange } = renderStep({ activateSecretsEncryption: false });
 
     fireEvent.click(screen.getByRole("checkbox"));
 
-    expect(onChange).toHaveBeenCalledWith({
-      activateSecretsEncryption: true,
-      secretsUnlockPassword: "",
-      secretsUnlockPasswordConfirmation: "",
-    });
+    expect(onChange).toHaveBeenCalledWith({ activateSecretsEncryption: true });
   });
 
-  it("unchecking the checkbox clears both passwords", () => {
-    const { onChange } = renderStep({
-      activateSecretsEncryption: true,
-      secretsUnlockPassword: "correct-unlock-password",
-      secretsUnlockPasswordConfirmation: "correct-unlock-password",
-    });
+  it("unchecking the checkbox calls onChange with activateSecretsEncryption false", () => {
+    const { onChange } = renderStep({ activateSecretsEncryption: true });
 
     fireEvent.click(screen.getByRole("checkbox"));
 
-    expect(onChange).toHaveBeenCalledWith({
-      activateSecretsEncryption: false,
-      secretsUnlockPassword: "",
-      secretsUnlockPasswordConfirmation: "",
-    });
-  });
-
-  it("forwards the shared field's onUnlockPasswordChange as only the password change", () => {
-    const { onChange } = renderStep({ activateSecretsEncryption: true, secretsUnlockPassword: "" });
-
-    fireEvent.click(screen.getByText("set-unlock-password"));
-
-    expect(onChange).toHaveBeenCalledWith({ secretsUnlockPassword: "new-unlock-password" });
-  });
-
-  it("forwards the shared field's onUnlockPasswordConfirmationChange as only the confirmation change", () => {
-    const { onChange } = renderStep({ activateSecretsEncryption: true, secretsUnlockPasswordConfirmation: "" });
-
-    fireEvent.click(screen.getByText("set-confirm-unlock-password"));
-
-    expect(onChange).toHaveBeenCalledWith({ secretsUnlockPasswordConfirmation: "new-unlock-password" });
-  });
-
-  it("passes the current password down to the shared field via unlockPassword", () => {
-    renderStep({ activateSecretsEncryption: true, secretsUnlockPassword: "correct-unlock-password" });
-
-    expect(mockSecretsUnlockPasswordFieldProps.unlockPassword).toBe("correct-unlock-password");
-  });
-
-  it("passes the current confirmation down to the shared field via unlockPasswordConfirmation", () => {
-    renderStep({ activateSecretsEncryption: true, secretsUnlockPasswordConfirmation: "correct-unlock-password" });
-
-    expect(mockSecretsUnlockPasswordFieldProps.unlockPasswordConfirmation).toBe("correct-unlock-password");
+    expect(onChange).toHaveBeenCalledWith({ activateSecretsEncryption: false });
   });
 });

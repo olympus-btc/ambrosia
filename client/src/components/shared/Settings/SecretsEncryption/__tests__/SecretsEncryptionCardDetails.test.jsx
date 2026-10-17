@@ -50,34 +50,14 @@ jest.mock("@heroui/react", () => ({
   Spinner: () => <div data-testid="spinner" />,
 }));
 
-jest.mock("@components/shared/SecretsUnlockPasswordField", () => ({
-  SecretsUnlockPasswordField: ({
-    unlockPassword,
-    onUnlockPasswordChange,
-    unlockPasswordConfirmation,
-    onUnlockPasswordConfirmationChange,
-  }) => (
-    <>
-      <input
-        data-testid="secrets-unlock-password-field"
-        value={unlockPassword}
-        onChange={(event) => onUnlockPasswordChange(event.target.value)}
-      />
-      <input
-        data-testid="secrets-unlock-password-confirm-field"
-        value={unlockPasswordConfirmation}
-        onChange={(event) => onUnlockPasswordConfirmationChange(event.target.value)}
-      />
-    </>
-  ),
-}));
+const AUTHORIZED_WALLET_PASSWORD = "correct-unlock-password";
 
 jest.mock("@components/auth/WalletGuard", () => function MockWalletGuard({ children, onAuthorized, onCancel, title, passwordLabel, confirmText, cancelText }) {
   return (
     <div>
       <span data-testid="guard-title">{title}</span>
       <span data-testid="guard-password-label">{passwordLabel}</span>
-      <button type="button" data-testid="guard-confirm" onClick={onAuthorized}>{confirmText}</button>
+      <button type="button" data-testid="guard-confirm" onClick={() => onAuthorized(AUTHORIZED_WALLET_PASSWORD)}>{confirmText}</button>
       <button type="button" data-testid="guard-cancel" onClick={onCancel}>{cancelText}</button>
       {children}
     </div>
@@ -187,35 +167,19 @@ describe("SecretsEncryptionCardDetails", () => {
       await authorize();
     });
 
-    it("disables the activate button while the password is empty", () => {
-      expect(screen.getByText("secretsEncryptionCard.activateButton")).toBeDisabled();
+    it("shows the wallet password warning instead of a new password field", () => {
+      expect(screen.getByText("secretsEncryptionCard.walletPasswordWarning")).toBeInTheDocument();
+      expect(screen.queryByTestId("secrets-unlock-password-field")).not.toBeInTheDocument();
     });
 
-    it("disables the activate button when the passwords don't match", () => {
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "different-password" },
-      });
-
-      expect(screen.getByText("secretsEncryptionCard.activateButton")).toBeDisabled();
-    });
-
-    it("activates encryption with the entered password and shows the confirmed state", async () => {
+    it("activates encryption with the wallet password from WalletGuard and shows the confirmed state", async () => {
       secretsService.activateSecretsEncryption.mockResolvedValue({ message: "Secrets encryption activated" });
 
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "correct-unlock-password" },
-      });
       await act(async () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
       });
 
-      expect(secretsService.activateSecretsEncryption).toHaveBeenCalledWith("correct-unlock-password");
+      expect(secretsService.activateSecretsEncryption).toHaveBeenCalledWith(AUTHORIZED_WALLET_PASSWORD);
       expect(screen.getByText("secretsEncryptionCard.unlockedDescription")).toBeInTheDocument();
       const { addToast } = require("@heroui/react");
       expect(addToast).toHaveBeenCalledWith(
@@ -227,12 +191,6 @@ describe("SecretsEncryptionCardDetails", () => {
       secretsService.activateSecretsEncryption.mockResolvedValue({ message: "Secrets encryption activated" });
       const dispatchEventSpy = jest.spyOn(window, "dispatchEvent");
 
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "correct-unlock-password" },
-      });
       await act(async () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
       });
@@ -247,12 +205,6 @@ describe("SecretsEncryptionCardDetails", () => {
       secretsService.activateSecretsEncryption.mockRejectedValue(new Error("Could not reach the server"));
       const { addToast } = require("@heroui/react");
 
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "correct-unlock-password" },
-      });
       await act(async () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
       });
@@ -291,17 +243,11 @@ describe("SecretsEncryptionCardDetails", () => {
       await authorize();
 
       fireEvent.click(screen.getByTestId("remember-checkbox"));
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "correct-unlock-password" },
-      });
       await act(async () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
       });
 
-      expect(unlockPasswordStoreService.saveUnlockPassword).toHaveBeenCalledWith("correct-unlock-password");
+      expect(unlockPasswordStoreService.saveUnlockPassword).toHaveBeenCalledWith(AUTHORIZED_WALLET_PASSWORD);
       expect(unlockPasswordStoreService.clearUnlockPassword).not.toHaveBeenCalled();
     });
 
@@ -311,12 +257,6 @@ describe("SecretsEncryptionCardDetails", () => {
       renderDetails();
       await authorize();
 
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-field"), {
-        target: { value: "correct-unlock-password" },
-      });
-      fireEvent.change(screen.getByTestId("secrets-unlock-password-confirm-field"), {
-        target: { value: "correct-unlock-password" },
-      });
       await act(async () => {
         fireEvent.click(screen.getByText("secretsEncryptionCard.activateButton"));
       });
