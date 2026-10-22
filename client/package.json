@@ -48,7 +48,7 @@
     "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-env": "^8.0.7",
     "@babel/preset-react": "^7.27.1",
     "@eslint/eslintrc": "^3.3.7",
     "@tailwindcss/postcss": "^4.3.3",
