@@ -386,4 +386,39 @@ describe("TemplateElementRow", () => {
     expect(screen.getByLabelText("templates.fontSizeLabel")).toBeInTheDocument();
     expect(screen.getByLabelText("templates.boldToggle")).toBeInTheDocument();
   });
+
+  it("offers the shift summary instead of the sale elements for Z report templates", () => {
+    render(
+      <TemplateElementRow
+        templateElement={{ localId: "el-shift", type: "TEXT", value: "", style: {} }}
+        ticketType="SHIFT_CLOSE"
+        isOpen
+        onToggle={jest.fn()}
+        onChange={jest.fn()}
+        onRemove={jest.fn()}
+        businessConfig={null}
+        settingsTranslations={settingsTranslations}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "templates.elementTypes.SHIFT_SUMMARY" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "templates.elementTypes.TABLE_ROW" })).not.toBeInTheDocument();
+  });
+
+  it("offers the sale elements but not the shift summary for receipt templates", () => {
+    render(
+      <TemplateElementRow
+        templateElement={{ localId: "el-receipt", type: "TEXT", value: "", style: {} }}
+        isOpen
+        onToggle={jest.fn()}
+        onChange={jest.fn()}
+        onRemove={jest.fn()}
+        businessConfig={null}
+        settingsTranslations={settingsTranslations}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "templates.elementTypes.TABLE_ROW" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "templates.elementTypes.SHIFT_SUMMARY" })).not.toBeInTheDocument();
+  });
 });

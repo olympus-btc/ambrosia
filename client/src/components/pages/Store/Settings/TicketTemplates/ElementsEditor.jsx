@@ -8,10 +8,10 @@ import { Button } from "@heroui/react";
 
 import { TemplateElementRow } from "./ElementRow";
 
-export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, onRemove, config, printFormats, settingsTranslations }) {
+export function TemplateElementsEditor({ templateElements, ticketType, onChange, onAdd, onReorder, onRemove, config, printFormats, settingsTranslations }) {
   const [openIds, setOpenIds] = useState(() => new Set());
 
-  const sensors = useSensors(
+  const dragSensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor, {
       activationConstraint: {
@@ -25,10 +25,10 @@ export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, o
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = elements.findIndex((element) => element.localId === active.id);
-    const newIndex = elements.findIndex((element) => element.localId === over.id);
-    onReorder(arrayMove(elements, oldIndex, newIndex));
-  }, [elements, onReorder]);
+    const oldIndex = templateElements.findIndex((element) => element.localId === active.id);
+    const newIndex = templateElements.findIndex((element) => element.localId === over.id);
+    onReorder(arrayMove(templateElements, oldIndex, newIndex));
+  }, [templateElements, onReorder]);
 
   const handleAdd = () => {
     const newElement = onAdd();
@@ -60,13 +60,14 @@ export function TemplateElementsEditor({ elements, onChange, onAdd, onReorder, o
         </Button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={elements.map((element) => element.localId)} strategy={verticalListSortingStrategy}>
+      <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={templateElements.map((element) => element.localId)} strategy={verticalListSortingStrategy}>
           <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-2">
-            {elements.map((element) => (
+            {templateElements.map((element) => (
               <TemplateElementRow
                 key={element.localId}
                 templateElement={element}
+                ticketType={ticketType}
                 isOpen={openIds.has(element.localId)}
                 onToggle={() => handleToggle(element.localId)}
                 onChange={onChange}

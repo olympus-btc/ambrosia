@@ -49,6 +49,7 @@ describe("useCustomerReceipt", () => {
     expect(mockPrintTicket).toHaveBeenCalledWith(
       expect.objectContaining({
         printerType: "CUSTOMER",
+        ticketType: "RECEIPT",
         broadcast: false,
         ticketData: expect.objectContaining({
           ticketId: "42",

@@ -9,6 +9,7 @@ import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.shiftReportLabels
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -238,6 +239,46 @@ class ShiftServiceTest {
             assertEquals(1, report.byPaymentMethod.size)
             assertEquals("Efectivo", report.byPaymentMethod[0].name)
             assertEquals(80.0, report.byPaymentMethod[0].total)
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData returns null when shift not found`() {
+        runBlocking {
+            assertNull(service.getShiftReportPrintData(UUID.randomUUID().toString(), shiftReportLabels()))
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData combines the cashier, shift times, breakdown and labels`() {
+        runBlocking {
+            val userId = seedUser()
+            val shiftId =
+                ExposedTestDb.seedShift(
+                    userId,
+                    shiftDate = "2024-01-10",
+                    startTime = "08:00:00",
+                    endTime = "18:00:00",
+                    initialAmount = 100.0,
+                )
+            val printedShiftReportLabels = shiftReportLabels()
+
+            val shiftReport = assertNotNull(service.getShiftReportPrintData(shiftId, printedShiftReportLabels))
+
+            assertEquals("Alice", shiftReport.cashierName)
+            assertEquals("2024-01-10T08:00:00", shiftReport.openedAt)
+            assertEquals("2024-01-10T18:00:00", shiftReport.closedAt)
+            assertEquals(service.getShiftBreakdown(shiftId), shiftReport.breakdown)
+            assertEquals(printedShiftReportLabels, shiftReport.labels)
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData leaves the closing time empty for an open shift`() {
+        runBlocking {
+            val shiftId = ExposedTestDb.seedShift(seedUser(), shiftDate = "2024-01-10", startTime = "08:00:00")
+
+            assertNull(service.getShiftReportPrintData(shiftId, shiftReportLabels())?.closedAt)
         }
     }
 

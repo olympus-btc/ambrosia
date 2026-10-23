@@ -6,10 +6,12 @@ import com.github.anastaciocintra.escpos.image.EscPosImage
 import com.github.anastaciocintra.escpos.image.ImageWrapperInterface
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.atMost
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import pos.ambrosia.models.Config
@@ -17,6 +19,9 @@ import pos.ambrosia.models.ElementStyle
 import pos.ambrosia.models.ElementType
 import pos.ambrosia.models.FontSize
 import pos.ambrosia.models.Justification
+import pos.ambrosia.models.ShiftBreakdown
+import pos.ambrosia.models.ShiftPaymentMethodTotal
+import pos.ambrosia.models.ShiftReportPrintData
 import pos.ambrosia.models.TicketData
 import pos.ambrosia.models.TicketDataItem
 import pos.ambrosia.models.TicketDateFormat
@@ -24,9 +29,11 @@ import pos.ambrosia.models.TicketElement
 import pos.ambrosia.models.TicketLabels
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTimeFormat
+import pos.ambrosia.services.PrintableTicket
 import pos.ambrosia.services.TicketFactory
 import pos.ambrosia.services.TicketLogoLoader
 import pos.ambrosia.utils.formatTicketLine
+import pos.ambrosia.utils.shiftReportLabels
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -935,6 +942,168 @@ class TicketFactoryTest {
 
         verify(mockEscpos).write(any<ImageWrapperInterface<*>>(), imageCaptor.capture())
         return imageCaptor.firstValue.widthOfImageInBits
+    }
+
+    @Test
+    fun `build should print the shift summary with translated payment methods and the cash block`() {
+        val printedLines =
+            printedShiftReportLines(
+                elements = listOf(shiftReportElement(ElementType.SHIFT_SUMMARY)),
+                closedAt = "2026-10-10T18:05:00",
+            )
+
+        assertEquals(
+            listOf(
+                "SHIFT CLOSE",
+                formatTicketLine("Cashier", "alice"),
+                formatTicketLine("Opened", "10/10/2026 09:00"),
+                formatTicketLine("Closed", "10/10/2026 18:05"),
+                formatTicketLine("Tickets", "3"),
+                "-".repeat(TicketFactory.DEFAULT_TICKET_WIDTH),
+                formatTicketLine("Cash payments", "80.0"),
+                formatTicketLine("Card", "40.0"),
+                formatTicketLine("Sales", "120.0"),
+                formatTicketLine("Tips", "6.0"),
+                "-".repeat(TicketFactory.DEFAULT_TICKET_WIDTH),
+                formatTicketLine("Initial cash", "100.0"),
+                formatTicketLine("Cash sales", "80.0"),
+                formatTicketLine("Cash refunds", "-10.0"),
+                formatTicketLine("Expected cash", "170.0"),
+                formatTicketLine("Counted cash", "175.0"),
+                formatTicketLine("Difference", "5.0"),
+            ),
+            printedLines,
+        )
+    }
+
+    @Test
+    fun `build should skip the closing rows of the shift summary while the shift is still open`() {
+        val printedLines =
+            printedShiftReportLines(
+                elements = listOf(shiftReportElement(ElementType.SHIFT_SUMMARY)),
+                closedAt = null,
+                finalAmount = null,
+                difference = null,
+            )
+
+        assertTrue(printedLines.none { printedLine -> printedLine.startsWith("Closed") })
+        assertTrue(printedLines.none { printedLine -> printedLine.startsWith("Counted cash") })
+        assertTrue(printedLines.none { printedLine -> printedLine.startsWith("Difference") })
+    }
+
+    @Test
+    fun `build should skip sale elements when printing a shift report`() {
+        val printedLines =
+            printedShiftReportLines(
+                elements =
+                    listOf(
+                        shiftReportElement(ElementType.TABLE_HEADER, "Products"),
+                        shiftReportElement(ElementType.TOTAL_ROW),
+                        shiftReportElement(ElementType.PAYMENT_METHOD),
+                        shiftReportElement(ElementType.TEXT, "Cashier {{shift.cashier}}"),
+                    ),
+                closedAt = "2026-10-10T18:05:00",
+            )
+
+        assertEquals(listOf("Cashier alice"), printedLines)
+    }
+
+    @Test
+    fun `build should skip the shift summary when printing a sale receipt`() {
+        val mockEscpos: EscPos = mock()
+        val ticketTemplate =
+            TicketTemplate(
+                id = "template-shift-report",
+                name = "Shift Report Template",
+                elements = listOf(shiftReportElement(ElementType.SHIFT_SUMMARY)),
+            )
+        val ticketData =
+            TicketData(
+                ticketId = "sale-001",
+                tableName = "Table 1",
+                roomName = "Main Room",
+                date = "2026-10-10",
+                items = emptyList(),
+                total = 10.0,
+                labels = englishTicketLabels,
+            )
+
+        TicketFactory(ticketTemplate).build(mockEscpos, ticketData, null)
+
+        verify(mockEscpos, never()).writeLF(any<Style>(), any<String>())
+    }
+
+    @Test
+    fun `build should resolve shift variables and print the shift closing time as the print date`() {
+        val printedLines =
+            printedShiftReportLines(
+                elements =
+                    listOf(
+                        shiftReportElement(ElementType.TEXT, "{{shift.expectedCash}} {{shift.countedCash}} {{shift.difference}}"),
+                        shiftReportElement(ElementType.TEXT, "{{print.dateTime}}"),
+                    ),
+                closedAt = "2026-10-10T18:05:00",
+            )
+
+        assertEquals(listOf("170.0 175.0 5.0", "10/10/2026 18:05"), printedLines)
+    }
+
+    private fun shiftReportElement(
+        elementType: ElementType,
+        value: String = "",
+    ): TicketElement =
+        TicketElement(
+            id = "elem-${elementType.name}-$value",
+            templateId = "template-shift-report",
+            order = 0,
+            type = elementType,
+            value = value,
+        )
+
+    private fun printedShiftReportLines(
+        elements: List<TicketElement>,
+        closedAt: String?,
+        finalAmount: Double? = 175.0,
+        difference: Double? = 5.0,
+    ): List<String> {
+        val mockEscpos: EscPos = mock()
+        val printedLineCaptor = argumentCaptor<String>()
+        val ticketTemplate =
+            TicketTemplate(
+                id = "template-shift-report",
+                name = "Shift Report Template",
+                elements = elements,
+            )
+        val shiftReport =
+            ShiftReportPrintData(
+                cashierName = "alice",
+                openedAt = "2026-10-10T09:00:00",
+                closedAt = closedAt,
+                breakdown =
+                    ShiftBreakdown(
+                        shiftId = "shift-alice",
+                        initialAmount = 100.0,
+                        finalAmount = finalAmount,
+                        difference = difference,
+                        totalSales = 120.0,
+                        totalTips = 6.0,
+                        cashSales = 80.0,
+                        cashRefunds = 10.0,
+                        expectedTotal = 170.0,
+                        totalTickets = 3,
+                        byPaymentMethod =
+                            listOf(
+                                ShiftPaymentMethodTotal(name = "Cash", total = 80.0),
+                                ShiftPaymentMethodTotal(name = "Card", total = 40.0),
+                            ),
+                    ),
+                labels = shiftReportLabels(paymentMethods = mapOf("cash" to "Cash payments")),
+            )
+
+        TicketFactory(ticketTemplate).build(mockEscpos, PrintableTicket.ShiftReport(shiftReport), null)
+
+        verify(mockEscpos, atLeast(0)).writeLF(any<Style>(), printedLineCaptor.capture())
+        return printedLineCaptor.allValues
     }
 }
 

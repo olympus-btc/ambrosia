@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from "@heroui/react";
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useShiftReportReprint } from "@/components/pages/Store/Reports/hooks/useShiftReportReprint";
 import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { getShiftBreakdown } from "@/services/shiftsService";
 
@@ -16,6 +17,7 @@ export function ShiftDetailModal({ shift, formatCurrency, onClose }) {
   const [shiftBreakdown, setShiftBreakdown] = useState(null);
   const [isLoadingShiftBreakdown, setIsLoadingShiftBreakdown] = useState(false);
   const [error, setError] = useState(false);
+  const { canReprint, isReprinting, reprintShiftReport } = useShiftReportReprint(shift);
 
   const fetchShiftBreakdown = useCallback(async () => {
     if (!shift?.id) return;
@@ -148,6 +150,18 @@ export function ShiftDetailModal({ shift, formatCurrency, onClose }) {
             </div>
           )}
         </ModalBody>
+        {canReprint && (
+          <ModalFooter>
+            <Button
+              className="bg-green-800"
+              color="primary"
+              isLoading={isReprinting}
+              onPress={reprintShiftReport}
+            >
+              {shiftTranslations("reprintCorteZ")}
+            </Button>
+          </ModalFooter>
+        )}
       </ModalContent>
     </Modal>
   );

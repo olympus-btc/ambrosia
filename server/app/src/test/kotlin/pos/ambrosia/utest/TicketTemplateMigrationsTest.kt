@@ -103,6 +103,85 @@ class TicketTemplateMigrationsTest {
         }
     }
 
+    @Test
+    fun `V58 makes the template of the default customer printer the default receipt and seeds the shift close template`() {
+        withTicketTemplateDatabase { databaseStatement ->
+            applyTicketTemplateMigrationsUntilV56(databaseStatement)
+            applyMigration(databaseStatement, "V13__printer_config.sql")
+            databaseStatement.execute("INSERT INTO ticket_templates (id, name) VALUES (X'01', 'alice')")
+            databaseStatement.execute("INSERT INTO ticket_templates (id, name) VALUES (X'02', 'bob')")
+            databaseStatement.execute(
+                "INSERT INTO printer_configs (id, printer_type, printer_name, template_name, is_default) " +
+                    "VALUES (X'10', 'CUSTOMER', 'eve-printer', 'alice', 0), (X'11', 'CUSTOMER', 'mallory-printer', 'bob', 1)",
+            )
+
+            applyMigration(databaseStatement, "V58__ticket_template_ticket_type.sql")
+
+            assertEquals(
+                listOf("Corte Z|SHIFT_CLOSE|1", "alice|RECEIPT|0", "bob|RECEIPT|1"),
+                storedTemplates(databaseStatement),
+            )
+            assertEquals(
+                listOf("HEADER", "SEPARATOR", "SHIFT_SUMMARY", "SEPARATOR", "TEXT"),
+                storedElementTypes(databaseStatement),
+            )
+        }
+    }
+
+    @Test
+    fun `V58 makes the oldest template the default receipt when no customer printer has a template`() {
+        withTicketTemplateDatabase { databaseStatement ->
+            applyTicketTemplateMigrationsUntilV56(databaseStatement)
+            applyMigration(databaseStatement, "V13__printer_config.sql")
+            databaseStatement.execute("INSERT INTO ticket_templates (id, name) VALUES (X'02', 'bob')")
+            databaseStatement.execute("INSERT INTO ticket_templates (id, name) VALUES (X'01', 'alice')")
+
+            applyMigration(databaseStatement, "V58__ticket_template_ticket_type.sql")
+
+            assertEquals(
+                listOf("Corte Z|SHIFT_CLOSE|1", "alice|RECEIPT|0", "bob|RECEIPT|1"),
+                storedTemplates(databaseStatement),
+            )
+        }
+    }
+
+    @Test
+    fun `V58 allows only one default template per ticket type`() {
+        withTicketTemplateDatabase { databaseStatement ->
+            applyTicketTemplateMigrationsUntilV56(databaseStatement)
+            applyMigration(databaseStatement, "V13__printer_config.sql")
+            applyMigration(databaseStatement, "V58__ticket_template_ticket_type.sql")
+            databaseStatement.execute("INSERT INTO ticket_templates (id, name, is_default) VALUES (X'01', 'alice', 1)")
+
+            assertFailsWith<SQLException> {
+                databaseStatement.execute("INSERT INTO ticket_templates (id, name, is_default) VALUES (X'02', 'bob', 1)")
+            }
+            assertFailsWith<SQLException> {
+                databaseStatement.execute("INSERT INTO ticket_templates (id, name, ticket_type) VALUES (X'03', 'eve', 'UNKNOWN')")
+            }
+        }
+    }
+
+    private fun applyTicketTemplateMigrationsUntilV56(databaseStatement: Statement) {
+        listOf(
+            "V11__ticket_template.sql",
+            "V14__ticket_template_qrcode.sql",
+            "V53__ticket_template_total_row.sql",
+            "V54__ticket_template_date_time_formats.sql",
+            "V55__ticket_template_logo.sql",
+            "V56__ticket_template_payment_method.sql",
+        ).forEach { migrationFileName -> applyMigration(databaseStatement, migrationFileName) }
+    }
+
+    private fun storedTemplates(databaseStatement: Statement): List<String> =
+        databaseStatement.executeQuery("SELECT name, ticket_type, is_default FROM ticket_templates ORDER BY name").use { queryRows ->
+            buildList {
+                while (queryRows.next()) {
+                    add("${queryRows.getString("name")}|${queryRows.getString("ticket_type")}|${queryRows.getInt("is_default")}")
+                }
+            }
+        }
+
     private fun withTicketTemplateDatabase(runAssertions: (Statement) -> Unit) {
         val databasePath = Files.createTempFile("ambrosia-ticket-template-test", ".db")
         try {

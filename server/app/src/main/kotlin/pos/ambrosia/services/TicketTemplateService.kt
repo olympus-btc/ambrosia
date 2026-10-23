@@ -16,6 +16,7 @@ import pos.ambrosia.models.ElementStyle
 import pos.ambrosia.models.ElementType
 import pos.ambrosia.models.FontSize
 import pos.ambrosia.models.Justification
+import pos.ambrosia.models.PrintableTicketType
 import pos.ambrosia.models.TicketDateFormat
 import pos.ambrosia.models.TicketElement
 import pos.ambrosia.models.TicketElementCreateRequest
@@ -24,27 +25,35 @@ import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.models.TicketTimeFormat
 import java.util.UUID
 
+enum class TemplateDeletionStatus {
+    DELETED,
+    NOT_FOUND,
+    IS_DEFAULT,
+}
+
 open class TicketTemplateService {
-    private fun templateNameExists(name: String): Boolean =
-        !TicketTemplatesTable.selectAll().where { TicketTemplatesTable.name eq name }.empty()
+    private fun templateNameExists(templateName: String): Boolean =
+        !TicketTemplatesTable.selectAll().where { TicketTemplatesTable.name eq templateName }.empty()
 
     private fun templateNameExistsExcludingId(
-        name: String,
-        excludeId: UUID,
+        templateName: String,
+        excludedTemplateUuid: UUID,
     ): Boolean =
         !TicketTemplatesTable
             .selectAll()
-            .where { (TicketTemplatesTable.name eq name) and (TicketTemplatesTable.id neq EntityID(excludeId, TicketTemplatesTable)) }
-            .empty()
+            .where {
+                (TicketTemplatesTable.name eq templateName) and
+                    (TicketTemplatesTable.id neq EntityID(excludedTemplateUuid, TicketTemplatesTable))
+            }.empty()
 
     private fun insertElements(
-        templateId: UUID,
-        elements: List<TicketElementCreateRequest>,
+        templateUuid: UUID,
+        elementRequests: List<TicketElementCreateRequest>,
     ) {
-        elements.forEachIndexed { index, elementRequest ->
+        elementRequests.forEachIndexed { elementIndex, elementRequest ->
             TicketTemplateElementEntity.new(UUID.randomUUID()) {
-                this.templateId = EntityID(templateId, TicketTemplatesTable)
-                this.elementOrder = index
+                this.templateId = EntityID(templateUuid, TicketTemplatesTable)
+                this.elementOrder = elementIndex
                 this.type = elementRequest.type.name
                 this.value = elementRequest.value
                 this.styleBold = elementRequest.style?.bold ?: false
@@ -54,144 +63,185 @@ open class TicketTemplateService {
         }
     }
 
-    fun addTemplate(request: TicketTemplateRequest): String? =
+    fun addTemplate(templateRequest: TicketTemplateRequest): String? =
         transaction {
-            if (templateNameExists(request.name)) {
-                logger.error("Template name already exists: ${request.name}")
+            if (templateNameExists(templateRequest.name)) {
+                logger.error("Template name already exists: ${templateRequest.name}")
                 return@transaction null
             }
 
-            val templateId =
+            val templateUuid =
                 TicketTemplateEntity
                     .new(UUID.randomUUID()) {
-                        this.name = request.name
-                        this.dateFormat = request.dateFormat.name
-                        this.timeFormat = request.timeFormat.name
+                        this.name = templateRequest.name
+                        this.dateFormat = templateRequest.dateFormat.name
+                        this.timeFormat = templateRequest.timeFormat.name
+                        this.ticketType = templateRequest.ticketType.name
+                        this.isDefault = !hasDefaultTemplate(templateRequest.ticketType)
                     }.id.value
 
-            insertElements(templateId, request.elements)
+            insertElements(templateUuid, templateRequest.elements)
 
-            logger.info("Template created successfully with ID: $templateId")
-            templateId.toString()
+            logger.info("Template created successfully with ID: $templateUuid")
+            templateUuid.toString()
         }
 
     fun getTemplates(): List<TicketTemplate> =
         transaction {
-            val templates = TicketTemplateEntity.all().map { toModel(it) }
-            logger.info("Retrieved ${templates.size} templates")
-            templates
+            val ticketTemplates = TicketTemplateEntity.all().map { ticketTemplateEntity -> toModel(ticketTemplateEntity) }
+            logger.info("Retrieved ${ticketTemplates.size} templates")
+            ticketTemplates
         }
 
-    fun getTemplateById(id: String): TicketTemplate? =
+    fun getTemplateById(templateId: String): TicketTemplate? =
         transaction {
-            val uuid =
-                try {
-                    UUID.fromString(id)
-                } catch (e: IllegalArgumentException) {
-                    logger.error("Invalid UUID format for template ID: $id")
-                    return@transaction null
-                }
-
-            val entity = TicketTemplateEntity.findById(uuid)
-            if (entity == null) {
-                logger.warn("Template not found with ID: $id")
+            val templateUuid = parseTemplateId(templateId) ?: return@transaction null
+            val ticketTemplateEntity = TicketTemplateEntity.findById(templateUuid)
+            if (ticketTemplateEntity == null) {
+                logger.warn("Template not found with ID: $templateId")
                 null
             } else {
-                toModel(entity)
+                toModel(ticketTemplateEntity)
             }
         }
 
-    open fun getTemplateByName(name: String): TicketTemplate? =
+    open fun getTemplateByName(templateName: String): TicketTemplate? =
         transaction {
-            val entity = TicketTemplateEntity.find { TicketTemplatesTable.name eq name }.firstOrNull()
-            if (entity == null) {
-                logger.warn("Template not found with name: $name")
+            val ticketTemplateEntity = TicketTemplateEntity.find { TicketTemplatesTable.name eq templateName }.firstOrNull()
+            if (ticketTemplateEntity == null) {
+                logger.warn("Template not found with name: $templateName")
                 null
             } else {
-                toModel(entity)
+                toModel(ticketTemplateEntity)
             }
         }
 
-    fun updateTemplate(
-        id: String,
-        request: TicketTemplateRequest,
-    ): Boolean =
+    open fun getDefaultTemplate(ticketType: PrintableTicketType): TicketTemplate? =
         transaction {
-            val templateId =
-                try {
-                    UUID.fromString(id)
-                } catch (e: IllegalArgumentException) {
-                    logger.error("Invalid UUID format for template ID: $id")
-                    return@transaction false
-                }
-
-            if (templateNameExistsExcludingId(request.name, templateId)) {
-                logger.error("Template name already exists: ${request.name}")
-                return@transaction false
+            val defaultTemplateEntity = findDefaultTemplateEntity(ticketType)
+            if (defaultTemplateEntity == null) {
+                logger.warn("No default template configured for ticket type: $ticketType")
+                null
+            } else {
+                toModel(defaultTemplateEntity)
             }
+        }
 
-            val entity = TicketTemplateEntity.findById(templateId) ?: return@transaction false
-            entity.name = request.name
-            entity.dateFormat = request.dateFormat.name
-            entity.timeFormat = request.timeFormat.name
-
-            TicketTemplateElementsTable.deleteWhere { TicketTemplateElementsTable.templateId eq EntityID(templateId, TicketTemplatesTable) }
-            insertElements(templateId, request.elements)
-
-            logger.info("Template updated successfully: $id")
+    fun setDefaultTemplate(templateId: String): Boolean =
+        transaction {
+            val templateUuid = parseTemplateId(templateId) ?: return@transaction false
+            val newDefaultTemplateEntity = TicketTemplateEntity.findById(templateUuid) ?: return@transaction false
+            val ticketType = PrintableTicketType.valueOf(newDefaultTemplateEntity.ticketType)
+            findDefaultTemplateEntity(ticketType)
+                ?.takeIf { currentDefaultTemplateEntity -> currentDefaultTemplateEntity.id != newDefaultTemplateEntity.id }
+                ?.let { currentDefaultTemplateEntity ->
+                    currentDefaultTemplateEntity.isDefault = false
+                    currentDefaultTemplateEntity.flush()
+                }
+            newDefaultTemplateEntity.isDefault = true
+            logger.info("Template $templateId set as default for ticket type: $ticketType")
             true
         }
 
-    fun deleteTemplate(id: String): Boolean =
+    private fun findDefaultTemplateEntity(ticketType: PrintableTicketType): TicketTemplateEntity? =
+        TicketTemplateEntity
+            .find { (TicketTemplatesTable.ticketType eq ticketType.name) and (TicketTemplatesTable.isDefault eq true) }
+            .firstOrNull()
+
+    private fun hasDefaultTemplate(ticketType: PrintableTicketType): Boolean = findDefaultTemplateEntity(ticketType) != null
+
+    private fun parseTemplateId(templateId: String): UUID? =
+        try {
+            UUID.fromString(templateId)
+        } catch (invalidTemplateIdException: IllegalArgumentException) {
+            logger.error("Invalid UUID format for template ID: $templateId")
+            null
+        }
+
+    fun updateTemplate(
+        templateId: String,
+        templateRequest: TicketTemplateRequest,
+    ): Boolean =
         transaction {
-            val templateId =
-                try {
-                    UUID.fromString(id)
-                } catch (e: IllegalArgumentException) {
-                    logger.error("Invalid UUID format for template ID: $id")
-                    return@transaction false
+            val templateUuid = parseTemplateId(templateId) ?: return@transaction false
+
+            if (templateNameExistsExcludingId(templateRequest.name, templateUuid)) {
+                logger.error("Template name already exists: ${templateRequest.name}")
+                return@transaction false
+            }
+
+            val ticketTemplateEntity = TicketTemplateEntity.findById(templateUuid) ?: return@transaction false
+            ticketTemplateEntity.name = templateRequest.name
+            ticketTemplateEntity.dateFormat = templateRequest.dateFormat.name
+            ticketTemplateEntity.timeFormat = templateRequest.timeFormat.name
+
+            TicketTemplateElementsTable.deleteWhere {
+                TicketTemplateElementsTable.templateId eq
+                    EntityID(
+                        templateUuid,
+                        TicketTemplatesTable,
+                    )
+            }
+            insertElements(templateUuid, templateRequest.elements)
+
+            logger.info("Template updated successfully: $templateId")
+            true
+        }
+
+    fun deleteTemplate(templateId: String): TemplateDeletionStatus =
+        transaction {
+            val templateUuid = parseTemplateId(templateId) ?: return@transaction TemplateDeletionStatus.NOT_FOUND
+            val ticketTemplateEntity = TicketTemplateEntity.findById(templateUuid)
+            when {
+                ticketTemplateEntity == null -> {
+                    logger.warn("Failed to delete template, not found with ID: $templateId")
+                    TemplateDeletionStatus.NOT_FOUND
                 }
 
-            val entity = TicketTemplateEntity.findById(templateId)
-            if (entity == null) {
-                logger.warn("Failed to delete template, not found with ID: $id")
-                false
-            } else {
-                TicketTemplateElementsTable.deleteWhere {
-                    TicketTemplateElementsTable.templateId eq
-                        EntityID(templateId, TicketTemplatesTable)
+                ticketTemplateEntity.isDefault -> {
+                    logger.warn("Refusing to delete the default template of ${ticketTemplateEntity.ticketType}: $templateId")
+                    TemplateDeletionStatus.IS_DEFAULT
                 }
-                entity.delete()
-                logger.info("Template deleted successfully: $id")
-                true
+
+                else -> {
+                    TicketTemplateElementsTable.deleteWhere {
+                        TicketTemplateElementsTable.templateId eq
+                            EntityID(templateUuid, TicketTemplatesTable)
+                    }
+                    ticketTemplateEntity.delete()
+                    logger.info("Template deleted successfully: $templateId")
+                    TemplateDeletionStatus.DELETED
+                }
             }
         }
 
-    private fun toModel(entity: TicketTemplateEntity): TicketTemplate =
+    private fun toModel(ticketTemplateEntity: TicketTemplateEntity): TicketTemplate =
         TicketTemplate(
-            id = entity.id.value.toString(),
-            name = entity.name,
+            id = ticketTemplateEntity.id.value.toString(),
+            name = ticketTemplateEntity.name,
             elements =
                 TicketTemplateElementEntity
-                    .find { TicketTemplateElementsTable.templateId eq entity.id }
-                    .sortedBy { it.elementOrder }
-                    .map { toElement(it) },
-            dateFormat = TicketDateFormat.valueOf(entity.dateFormat),
-            timeFormat = TicketTimeFormat.valueOf(entity.timeFormat),
+                    .find { TicketTemplateElementsTable.templateId eq ticketTemplateEntity.id }
+                    .sortedBy { templateElementEntity -> templateElementEntity.elementOrder }
+                    .map { templateElementEntity -> toElement(templateElementEntity) },
+            dateFormat = TicketDateFormat.valueOf(ticketTemplateEntity.dateFormat),
+            timeFormat = TicketTimeFormat.valueOf(ticketTemplateEntity.timeFormat),
+            ticketType = PrintableTicketType.valueOf(ticketTemplateEntity.ticketType),
+            isDefault = ticketTemplateEntity.isDefault,
         )
 
-    private fun toElement(entity: TicketTemplateElementEntity): TicketElement =
+    private fun toElement(templateElementEntity: TicketTemplateElementEntity): TicketElement =
         TicketElement(
-            id = entity.id.value.toString(),
-            templateId = entity.templateId.value.toString(),
-            order = entity.elementOrder,
-            type = ElementType.valueOf(entity.type),
-            value = entity.value ?: "",
+            id = templateElementEntity.id.value.toString(),
+            templateId = templateElementEntity.templateId.value.toString(),
+            order = templateElementEntity.elementOrder,
+            type = ElementType.valueOf(templateElementEntity.type),
+            value = templateElementEntity.value ?: "",
             style =
                 ElementStyle(
-                    bold = entity.styleBold,
-                    justification = Justification.valueOf(entity.styleJustification),
-                    fontSize = FontSize.valueOf(entity.styleFontSize),
+                    bold = templateElementEntity.styleBold,
+                    justification = Justification.valueOf(templateElementEntity.styleJustification),
+                    fontSize = FontSize.valueOf(templateElementEntity.styleFontSize),
                 ),
         )
 }

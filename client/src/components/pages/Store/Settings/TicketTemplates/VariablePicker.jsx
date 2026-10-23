@@ -21,9 +21,31 @@ const VARIABLE_GROUPS = [
       { key: "{{print.dateTime}}", label: "printDateTime" },
     ],
   },
+  {
+    group: "shift",
+    ticketType: "SHIFT_CLOSE",
+    variables: [
+      { key: "{{shift.cashier}}", label: "cashier" },
+      { key: "{{shift.openedAt}}", label: "openedAt" },
+      { key: "{{shift.closedAt}}", label: "closedAt" },
+      { key: "{{shift.totalTickets}}", label: "totalTickets" },
+      { key: "{{shift.totalSales}}", label: "totalSales" },
+      { key: "{{shift.totalTips}}", label: "totalTips" },
+      { key: "{{shift.initialAmount}}", label: "initialAmount" },
+      { key: "{{shift.cashSales}}", label: "cashSales" },
+      { key: "{{shift.cashRefunds}}", label: "cashRefunds" },
+      { key: "{{shift.expectedCash}}", label: "expectedCash" },
+      { key: "{{shift.countedCash}}", label: "countedCash" },
+      { key: "{{shift.difference}}", label: "difference" },
+    ],
+  },
 ];
 
-export function TemplateVariablePicker({ templateText = "", onSelect, onDeselect, settingsTranslations }) {
+export function TemplateVariablePicker({ templateText = "", ticketType, onSelect, onDeselect, settingsTranslations }) {
+  const availableVariableGroups = VARIABLE_GROUPS.filter(
+    (variableGroup) => !variableGroup.ticketType || variableGroup.ticketType === ticketType,
+  );
+
   return (
     <Popover placement="bottom-end">
       <PopoverTrigger>
@@ -38,7 +60,7 @@ export function TemplateVariablePicker({ templateText = "", onSelect, onDeselect
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-3 w-60">
-        {VARIABLE_GROUPS.map(({ group, variables }) => (
+        {availableVariableGroups.map(({ group, variables }) => (
           <div key={group} className="mb-3 w-full last:mb-0">
             <p className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               {settingsTranslations(`templates.variables.groups.${group}`)}

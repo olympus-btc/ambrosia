@@ -20,7 +20,7 @@ jest.mock("@heroui/react", () => ({
       </select>
     </div>
   ),
-  SelectItem: ({ children, value }) => <option value={value}>{children}</option>,
+  SelectItem: ({ children, value, description }) => <option value={value}>{children} {description}</option>,
 }));
 
 const settingsTranslations = (key) => key;
@@ -98,5 +98,25 @@ describe("TemplateList", () => {
 
     expect(screen.getByText("templates.listTitle")).toBeInTheDocument();
     expect(screen.getByText("templates.selectPlaceholder")).toBeInTheDocument();
+  });
+
+  it("shows the ticket type of each template and which one is the default", () => {
+    render(
+      <TemplateList
+        templates={[
+          { id: "tpl-alice", name: "alice", ticketType: "RECEIPT", isDefault: false },
+          { id: "tpl-bob", name: "bob", ticketType: "SHIFT_CLOSE", isDefault: true },
+        ]}
+        selectedId=""
+        loading={false}
+        error={null}
+        onSelect={jest.fn()}
+        onNew={jest.fn()}
+        settingsTranslations={settingsTranslations}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "alice templates.ticketTypes.RECEIPT" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "bob templates.ticketTypes.SHIFT_CLOSE · templates.defaultBadge" })).toBeInTheDocument();
   });
 });

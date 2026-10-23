@@ -5,12 +5,20 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PrintRequest(
     val templateName: String? = null,
-    val ticketData: TicketData,
+    val ticketData: TicketData? = null,
+    val shiftReport: ShiftReportPrintData? = null,
+    val ticketType: PrintableTicketType = PrintableTicketType.RECEIPT,
     val printerType: PrinterType,
     val printerId: String? = null,
     val broadcast: Boolean = false,
     val forceTemplateName: Boolean = false,
 )
+
+@Serializable
+enum class PrintableTicketType {
+    RECEIPT,
+    SHIFT_CLOSE,
+}
 
 @Serializable
 data class TicketTemplate(
@@ -19,6 +27,8 @@ data class TicketTemplate(
     val elements: List<TicketElement>,
     val dateFormat: TicketDateFormat = TicketDateFormat.DAY_MONTH_YEAR,
     val timeFormat: TicketTimeFormat = TicketTimeFormat.HOURS_24,
+    val ticketType: PrintableTicketType = PrintableTicketType.RECEIPT,
+    val isDefault: Boolean = false,
 )
 
 @Serializable
@@ -61,6 +71,7 @@ enum class ElementType {
     FOOTER,
     QRCODE,
     LOGO,
+    SHIFT_SUMMARY,
 }
 
 @Serializable
@@ -85,6 +96,7 @@ data class TicketTemplateRequest(
     val elements: List<TicketElementCreateRequest>,
     val dateFormat: TicketDateFormat = TicketDateFormat.DAY_MONTH_YEAR,
     val timeFormat: TicketTimeFormat = TicketTimeFormat.HOURS_24,
+    val ticketType: PrintableTicketType = PrintableTicketType.RECEIPT,
 )
 
 @Serializable

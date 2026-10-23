@@ -9,6 +9,7 @@ import { Bold, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 
 import { DeleteButton } from "@components/shared/DeleteButton";
 
+import { DEFAULT_TICKET_TYPE, ELEMENT_TYPES_BY_TICKET_TYPE } from "./defaults";
 import { insertVariable } from "./insertVariable";
 import { LogoImageSection, LogoSourceSelect } from "./LogoSource";
 import { removeVariable } from "./removeVariable";
@@ -18,24 +19,10 @@ import { TemplateVariablePicker } from "./VariablePicker";
 
 const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER", "TOTAL_ROW", "PAYMENT_METHOD"];
 
-const ELEMENT_TYPES = [
-  "HEADER",
-  "TEXT",
-  "LINE_BREAK",
-  "SEPARATOR",
-  "TABLE_HEADER",
-  "TABLE_ROW",
-  "TOTAL_ROW",
-  "PAYMENT_METHOD",
-  "FOOTER",
-  "QRCODE",
-  "LOGO",
-];
-
 const JUSTIFICATIONS = ["LEFT", "CENTER", "RIGHT"];
 const FONT_SIZES = ["NORMAL", "LARGE", "EXTRA_LARGE"];
 
-export function TemplateElementRow({ templateElement, isOpen, onToggle, onChange, onRemove, businessConfig, printFormats, settingsTranslations }) {
+export function TemplateElementRow({ templateElement, ticketType = DEFAULT_TICKET_TYPE, isOpen, onToggle, onChange, onRemove, businessConfig, printFormats, settingsTranslations }) {
   const {
     attributes: dragHandleAttributes,
     listeners: dragHandleListeners,
@@ -53,13 +40,13 @@ export function TemplateElementRow({ templateElement, isOpen, onToggle, onChange
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const elementType = templateElement.type;
-  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "TOTAL_ROW", "PAYMENT_METHOD", "QRCODE"].includes(elementType);
-  const showVariablePicker = VARIABLE_PICKER_TYPES.includes(elementType);
-  const showLogoSource = elementType === "LOGO";
-  const showStyle = elementType !== "LINE_BREAK" && elementType !== "SEPARATOR";
-  const showBold = showStyle && elementType !== "QRCODE" && elementType !== "LOGO";
-  const showJustification = showStyle && elementType !== "PAYMENT_METHOD";
+  const templateElementType = templateElement.type;
+  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "TOTAL_ROW", "PAYMENT_METHOD", "QRCODE", "SHIFT_SUMMARY"].includes(templateElementType);
+  const showVariablePicker = VARIABLE_PICKER_TYPES.includes(templateElementType);
+  const showLogoSource = templateElementType === "LOGO";
+  const showStyle = templateElementType !== "LINE_BREAK" && templateElementType !== "SEPARATOR";
+  const showBold = showStyle && templateElementType !== "QRCODE" && templateElementType !== "LOGO";
+  const showJustification = showStyle && templateElementType !== "PAYMENT_METHOD";
   const showFontSize = showStyle;
 
   const handleChange = (elementUpdates) => onChange({ ...templateElement, ...elementUpdates });
@@ -91,7 +78,7 @@ export function TemplateElementRow({ templateElement, isOpen, onToggle, onChange
     handleChange({ value: removeVariable(templateElement.value ?? "", variable) });
   };
 
-  const typeLabel = settingsTranslations(`templates.elementTypes.${elementType}`);
+  const typeLabel = settingsTranslations(`templates.elementTypes.${templateElementType}`);
   const resolvedSummary = resolveTemplateVariables(templateElement.value ?? "", businessConfig, printFormats);
   const valueSummary = resolvedSummary ? `— "${resolvedSummary}"` : "";
 
@@ -143,7 +130,7 @@ export function TemplateElementRow({ templateElement, isOpen, onToggle, onChange
                 handleChange(resolveTypeChange(selectedType));
               }}
             >
-              {ELEMENT_TYPES.map((typeOption) => (
+              {ELEMENT_TYPES_BY_TICKET_TYPE[ticketType].map((typeOption) => (
                 <SelectItem key={typeOption} value={typeOption}>
                   {settingsTranslations(`templates.elementTypes.${typeOption}`)}
                 </SelectItem>
@@ -178,6 +165,7 @@ export function TemplateElementRow({ templateElement, isOpen, onToggle, onChange
                       <div>
                         <TemplateVariablePicker
                           templateText={templateElement.value ?? ""}
+                          ticketType={ticketType}
                           onSelect={selectVariable}
                           onDeselect={deselectVariable}
                           settingsTranslations={settingsTranslations}

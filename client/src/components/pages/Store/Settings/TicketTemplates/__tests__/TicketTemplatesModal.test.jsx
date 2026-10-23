@@ -177,6 +177,7 @@ describe("TicketTemplatesModal", () => {
 
     await waitFor(() => expect(updateTemplate).toHaveBeenCalledWith("tpl-1", {
       name: "Kitchen",
+      ticketType: "RECEIPT",
       dateFormat: "MONTH_DAY_YEAR",
       timeFormat: "HOURS_12",
       elements: expect.any(Array),
@@ -195,7 +196,7 @@ describe("TicketTemplatesModal", () => {
     const printTicket = jest.fn().mockRejectedValue(new Error("fail"));
 
     useTemplates.mockReturnValue({
-      templates: [{ id: "tpl-2", name: "Menu", elements: [] }],
+      templates: [{ id: "tpl-2", name: "Menu", elements: [], ticketType: "RECEIPT", isDefault: true }],
       loading: false,
       error: null,
       createTemplate,
@@ -238,6 +239,7 @@ describe("TicketTemplatesModal", () => {
 
     await waitFor(() => expect(createTemplate).toHaveBeenCalledWith({
       name: "New Template",
+      ticketType: "RECEIPT",
       dateFormat: "DAY_MONTH_YEAR",
       timeFormat: "HOURS_24",
       elements: expect.any(Array),
@@ -451,5 +453,89 @@ describe("TicketTemplatesModal", () => {
 
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("");
     expect(screen.getByText("templates.saveNew")).toBeInTheDocument();
+  });
+
+  it("starts a Z report template with the default layout and prints it with sample shift data", async () => {
+    const printTicket = jest.fn().mockResolvedValue(true);
+    useTemplates.mockReturnValue({
+      templates: [{ id: "tpl-alice", name: "alice", elements: [], ticketType: "SHIFT_CLOSE", isDefault: true }],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate: jest.fn(),
+    });
+    usePrinters.mockReturnValue({ printTicket });
+
+    render(<TicketTemplatesModal isOpen onClose={jest.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("templates.ticketTypeLabel"), { target: { value: "SHIFT_CLOSE" } });
+    fireEvent.change(screen.getByLabelText("templates.nameLabel"), { target: { value: "alice" } });
+
+    expect(screen.getByText("templates.elementTypes.SHIFT_SUMMARY")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("templates.printTest"));
+
+    await waitFor(() => expect(printTicket).toHaveBeenCalledWith(expect.objectContaining({
+      templateName: "alice",
+      ticketType: "SHIFT_CLOSE",
+      shiftReport: expect.objectContaining({ cashierName: "cashier" }),
+      forceTemplateName: true,
+    })));
+    expect(printTicket.mock.calls[0][0]).not.toHaveProperty("ticketData");
+  });
+
+  it("sets an existing template as the default of its ticket type", async () => {
+    const setDefaultTemplate = jest.fn().mockResolvedValue(true);
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate,
+    });
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={{ id: "tpl-bob", name: "bob", elements: [], ticketType: "SHIFT_CLOSE", isDefault: false }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("templates.setDefault"));
+
+    await waitFor(() => expect(setDefaultTemplate).toHaveBeenCalledWith("tpl-bob"));
+    await waitFor(() => expect(screen.getByText("templates.defaultBadge")).toBeInTheDocument());
+    expect(screen.queryByText("templates.setDefault")).not.toBeInTheDocument();
+    expect(addToast).toHaveBeenCalledWith({ color: "success", description: "templates.setDefaultSuccess" });
+  });
+
+  it("does not offer to delete the default template", () => {
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate: jest.fn(),
+    });
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={{ id: "tpl-eve", name: "eve", elements: [], ticketType: "RECEIPT", isDefault: true }}
+      />,
+    );
+
+    expect(screen.getByText("templates.defaultBadge")).toBeInTheDocument();
+    expect(screen.queryByText("templates.deleteTemplate")).not.toBeInTheDocument();
   });
 });

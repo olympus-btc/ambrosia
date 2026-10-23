@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { getShiftBreakdown } from "@/services/shiftsService";
 
@@ -13,7 +13,19 @@ jest.mock("@heroui/react", () => ({
   ModalContent: ({ children }) => <div>{children}</div>,
   ModalHeader: ({ children }) => <div data-testid="modal-header">{children}</div>,
   ModalBody: ({ children }) => <div data-testid="modal-body">{children}</div>,
+  ModalFooter: ({ children }) => <div data-testid="modal-footer">{children}</div>,
+  Button: ({ children, onPress }) => <button type="button" onClick={onPress}>{children}</button>,
   Spinner: () => <div data-testid="spinner" />,
+}));
+
+let mockCanReprint = false;
+const mockReprintShiftReport = jest.fn();
+jest.mock("@/components/pages/Store/Reports/hooks/useShiftReportReprint", () => ({
+  useShiftReportReprint: () => ({
+    canReprint: mockCanReprint,
+    isReprinting: false,
+    reprintShiftReport: mockReprintShiftReport,
+  }),
 }));
 
 const SHIFT = {
@@ -46,6 +58,29 @@ const formatCurrency = (amount) => `$${amount}`;
 describe("ShiftDetailModal", () => {
   beforeEach(() => {
     getShiftBreakdown.mockReset();
+    mockCanReprint = false;
+    mockReprintShiftReport.mockClear();
+  });
+
+  it("hides the reprint button when the Z report cannot be reprinted", async () => {
+    getShiftBreakdown.mockResolvedValue(BREAKDOWN);
+    await act(async () => {
+      render(<ShiftDetailModal shift={SHIFT} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    });
+
+    expect(screen.queryByText("reprintCorteZ")).not.toBeInTheDocument();
+  });
+
+  it("reprints the Z report when the reprint button is pressed", async () => {
+    mockCanReprint = true;
+    getShiftBreakdown.mockResolvedValue(BREAKDOWN);
+    await act(async () => {
+      render(<ShiftDetailModal shift={SHIFT} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    });
+
+    fireEvent.click(screen.getByText("reprintCorteZ"));
+
+    expect(mockReprintShiftReport).toHaveBeenCalled();
   });
 
   it("does not render when shift is null", () => {

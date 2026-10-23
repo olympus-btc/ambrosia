@@ -4,8 +4,7 @@ jest.mock("@/lib/http", () => ({
 }));
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
-
-import { getTurnOpen, openTurn, closeTurn, getShiftsReport, getShiftBreakdown } from "../shiftsService";
+import { getTurnOpen, openTurn, closeTurn, getShiftsReport, getShiftBreakdown, printShiftReport } from "@/services/shiftsService";
 
 function makeResponse(status, ok = true) {
   return { status, ok };
@@ -265,6 +264,30 @@ describe("shiftsService", () => {
       const breakdown = await getShiftBreakdown("7");
 
       expect(breakdown).toEqual(breakdownFixture);
+    });
+  });
+
+  describe("printShiftReport", () => {
+    it("sends POST to /shifts/{id}/print-report with the translated labels", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+
+      await expect(printShiftReport("7", { title: "Z REPORT" })).resolves.toBe(true);
+
+      expect(httpClient).toHaveBeenCalledWith("/shifts/7/print-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ labels: { title: "Z REPORT" } }),
+        skipForbiddenRedirect: true,
+      });
+    });
+
+    it("throws when response is not ok", async () => {
+      httpClient.mockResolvedValue({ status: 500, ok: false });
+
+      await expect(printShiftReport("7", {})).rejects.toMatchObject({
+        message: "Failed to print shift report",
+        status: 500,
+      });
     });
   });
 });

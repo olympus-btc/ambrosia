@@ -1,8 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import * as usePrintersHook from "../../../hooks/usePrinter";
-import * as useTemplatesHook from "../../../hooks/useTemplates";
-import { Printers } from "../Printers";
+import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
+import { Printers } from "@/components/pages/Store/Settings/Printers/Printers";
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -12,15 +11,14 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("../../../Cart/hooks/usePaymentMethod", () => ({
+jest.mock("@/components/pages/Store/Cart/hooks/usePaymentMethod", () => ({
   usePaymentMethods: () => ({ paymentMethods: [{ id: "method-cash", name: "Cash" }] }),
 }));
 
-jest.mock("../../../hooks/usePrinter");
-jest.mock("../../../hooks/useTemplates");
+jest.mock("@/components/pages/Store/hooks/usePrinter");
 
 let capturedProps = null;
-jest.mock("../PrintersCard", () => ({
+jest.mock("@/components/pages/Store/Settings/Printers/PrintersCard", () => ({
   PrintersCard: (props) => {
     capturedProps = props;
     return (
@@ -43,20 +41,12 @@ const defaultPrinters = {
   setDefaultPrinterConfig: jest.fn(),
 };
 
-const defaultTemplates = {
-  templates: [],
-  loading: false,
-  error: null,
-  refetch: jest.fn(),
-};
-
 const { addToast } = require("@heroui/react");
 
 beforeEach(() => {
   capturedProps = null;
   jest.clearAllMocks();
   usePrintersHook.usePrinters.mockReturnValue(defaultPrinters);
-  useTemplatesHook.useTemplates.mockReturnValue(defaultTemplates);
 });
 
 describe("Printers", () => {
@@ -72,15 +62,12 @@ describe("Printers", () => {
       await waitFor(() => expect(capturedProps?.formState?.printerName).toBe("Printer A"));
     });
 
-    it("initializes templateName from first template", async () => {
-      useTemplatesHook.useTemplates.mockReturnValue({
-        ...defaultTemplates,
-        templates: [{ name: "Template A" }],
-      });
-
+    it("does not ask for a template because templates are chosen by ticket type", async () => {
       render(<Printers />);
 
-      await waitFor(() => expect(capturedProps?.formState?.templateName).toBe("Template A"));
+      await waitFor(() => expect(capturedProps).not.toBeNull());
+      expect(capturedProps.formState).not.toHaveProperty("templateName");
+      expect(capturedProps.data).not.toHaveProperty("templates");
     });
 
     it("auto-sets isDefault to true when no configs exist", async () => {
@@ -104,11 +91,6 @@ describe("Printers", () => {
         availablePrinters: ["Printer A"],
         createPrinterConfig,
       });
-      useTemplatesHook.useTemplates.mockReturnValue({
-        ...defaultTemplates,
-        templates: [{ name: "Template A" }],
-      });
-
       render(<Printers />);
 
       await waitFor(() => expect(capturedProps?.formState?.printerName).toBe("Printer A"));
@@ -118,7 +100,6 @@ describe("Printers", () => {
       await waitFor(() => expect(createPrinterConfig).toHaveBeenCalledWith({
         printerType: "CUSTOMER",
         printerName: "Printer A",
-        templateName: "Template A",
         isDefault: true,
         enabled: true,
       }),
@@ -187,7 +168,6 @@ describe("Printers", () => {
 
   it("passes the payment methods to the printers card for the cash drawer settings", () => {
     usePrintersHook.usePrinters.mockReturnValue(defaultPrinters);
-    useTemplatesHook.useTemplates.mockReturnValue(defaultTemplates);
 
     render(<Printers />);
 

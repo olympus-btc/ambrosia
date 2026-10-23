@@ -2,15 +2,18 @@
 
 import { Input, Select, SelectItem } from "@heroui/react";
 
-import { DATE_FORMATS, TIME_FORMATS } from "./defaults";
+import { DATE_FORMATS, TICKET_TYPES, TIME_FORMATS } from "./defaults";
 import { TemplateElementsEditor } from "./ElementsEditor";
 
 export function TicketTemplatesEditor({
-  name,
-  onNameChange,
+  templateName,
+  onTemplateNameChange,
+  ticketType,
+  onTicketTypeChange,
+  isTicketTypeLocked,
   printFormats,
   onPrintFormatsChange,
-  elements,
+  templateElements,
   onElementChange,
   onElementAdd,
   onElementReorder,
@@ -22,16 +25,31 @@ export function TicketTemplatesEditor({
     <div className="flex min-w-0 flex-2 flex-col gap-4">
       <Input
         label={settingsTranslations("templates.nameLabel")}
-        value={name}
-        onChange={onNameChange}
+        value={templateName}
+        onChange={onTemplateNameChange}
       />
+
+      <Select
+        label={settingsTranslations("templates.ticketTypeLabel")}
+        selectedKeys={[ticketType]}
+        isDisabled={isTicketTypeLocked}
+        onChange={(ticketTypeChangeEvent) => {
+          if (ticketTypeChangeEvent.target.value) onTicketTypeChange(ticketTypeChangeEvent.target.value);
+        }}
+      >
+        {TICKET_TYPES.map((ticketTypeOption) => (
+          <SelectItem key={ticketTypeOption} value={ticketTypeOption}>
+            {settingsTranslations(`templates.ticketTypes.${ticketTypeOption}`)}
+          </SelectItem>
+        ))}
+      </Select>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
           label={settingsTranslations("templates.dateFormatLabel")}
           selectedKeys={[printFormats.dateFormat]}
-          onChange={(event) => {
-            if (event.target.value) onPrintFormatsChange({ ...printFormats, dateFormat: event.target.value });
+          onChange={(dateFormatChangeEvent) => {
+            if (dateFormatChangeEvent.target.value) onPrintFormatsChange({ ...printFormats, dateFormat: dateFormatChangeEvent.target.value });
           }}
         >
           {DATE_FORMATS.map((dateFormat) => (
@@ -44,8 +62,8 @@ export function TicketTemplatesEditor({
         <Select
           label={settingsTranslations("templates.timeFormatLabel")}
           selectedKeys={[printFormats.timeFormat]}
-          onChange={(event) => {
-            if (event.target.value) onPrintFormatsChange({ ...printFormats, timeFormat: event.target.value });
+          onChange={(timeFormatChangeEvent) => {
+            if (timeFormatChangeEvent.target.value) onPrintFormatsChange({ ...printFormats, timeFormat: timeFormatChangeEvent.target.value });
           }}
         >
           {TIME_FORMATS.map((timeFormat) => (
@@ -57,7 +75,8 @@ export function TicketTemplatesEditor({
       </div>
 
       <TemplateElementsEditor
-        elements={elements}
+        templateElements={templateElements}
+        ticketType={ticketType}
         onChange={onElementChange}
         onAdd={onElementAdd}
         onReorder={onElementReorder}

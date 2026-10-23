@@ -55,27 +55,22 @@ jest.mock("@heroui/react", () => ({
 
 describe("PrinterConfigRow", () => {
   it("renders badges and handles actions", () => {
-    const onTemplateChange = jest.fn();
     const onSetDefault = jest.fn();
     const onToggleDefault = jest.fn();
     const onToggleEnabled = jest.fn();
     const onRemove = jest.fn();
 
-    const config = {
+    const kitchenPrinterConfig = {
       id: "cfg-1",
       printerName: "Kitchen",
       printerType: "KITCHEN",
-      templateName: "Temp A",
       isDefault: true,
       enabled: false,
     };
 
     render(
       <PrinterConfigRow
-        config={config}
-        templates={[{ name: "Temp A" }, { name: "Temp B" }]}
-        loadingTemplates={false}
-        onTemplateChange={onTemplateChange}
+        printerConfig={kitchenPrinterConfig}
         onSetDefault={onSetDefault}
         onToggleDefault={onToggleDefault}
         onToggleEnabled={onToggleEnabled}
@@ -86,10 +81,7 @@ describe("PrinterConfigRow", () => {
     expect(screen.getByText("cardPrinters.defaultBadge")).toBeInTheDocument();
     expect(screen.getByText("cardPrinters.disabledBadge")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("cardPrinters.templateLabel"), {
-      target: { value: "" },
-    });
-    expect(onTemplateChange).toHaveBeenCalledWith(null);
+    expect(screen.queryByLabelText("cardPrinters.templateLabel")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("cardPrinters.defaultLabel"));
     expect(onToggleDefault).toHaveBeenCalledWith(false);
@@ -107,17 +99,13 @@ describe("PrinterConfigRow", () => {
 
     render(
       <PrinterConfigRow
-        config={{
+        printerConfig={{
           id: "cfg-2",
           printerName: "Bar",
           printerType: "BAR",
-          templateName: null,
           isDefault: false,
           enabled: true,
         }}
-        templates={[]}
-        loadingTemplates={false}
-        onTemplateChange={jest.fn()}
         onSetDefault={onSetDefault}
         onToggleDefault={onToggleDefault}
         onToggleEnabled={jest.fn()}

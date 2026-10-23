@@ -58,4 +58,10 @@ describe("resolveTemplateVariables", () => {
     const printedAt = new Date(2026, 9, 15, 21, 30);
     expect(resolveTemplateVariables("Printed: {{print.dateTime}}", sampleConfig, undefined, printedAt)).toBe("Printed: 15/10/2026 21:30");
   });
+
+  it("replaces shift variables with the sample shift formatted with the template formats", () => {
+    expect(resolveTemplateVariables("{{shift.cashier}} {{shift.expectedCash}} {{shift.difference}}", sampleConfig)).toBe("Ana 390 5");
+    expect(resolveTemplateVariables("{{shift.openedAt}}", sampleConfig, { dateFormat: "YEAR_MONTH_DAY", timeFormat: "HOURS_24" }))
+      .toBe("2024-01-10 08:00");
+  });
 });

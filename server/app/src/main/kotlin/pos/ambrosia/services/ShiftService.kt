@@ -25,6 +25,8 @@ import pos.ambrosia.logger
 import pos.ambrosia.models.Shift
 import pos.ambrosia.models.ShiftBreakdown
 import pos.ambrosia.models.ShiftPaymentMethodTotal
+import pos.ambrosia.models.ShiftReportLabels
+import pos.ambrosia.models.ShiftReportPrintData
 import pos.ambrosia.models.ShiftSummary
 import pos.ambrosia.models.ShiftsReport
 import pos.ambrosia.utils.SqlDateFunctions
@@ -244,6 +246,27 @@ class ShiftService {
         val normalizedName = methodName.lowercase()
         return normalizedName.contains("cash") || normalizedName.contains("efectivo")
     }
+
+    fun getShiftReportPrintData(
+        shiftId: String,
+        labels: ShiftReportLabels,
+    ): ShiftReportPrintData? =
+        transaction {
+            val shiftEntity = ShiftEntity.findById(UUID.fromString(shiftId))
+            if (shiftEntity == null || shiftEntity.isDeleted) {
+                logger.warn("Shift not found for report print: $shiftId")
+                return@transaction null
+            }
+            val shift = toModel(shiftEntity)
+            val breakdown = getShiftBreakdown(shiftId) ?: return@transaction null
+            ShiftReportPrintData(
+                cashierName = UserEntity.findById(shiftEntity.userId.value)?.name.orEmpty(),
+                openedAt = "${shift.shiftDate}T${shift.startTime}",
+                closedAt = shift.endTime?.let { endTime -> "${shift.shiftDate}T$endTime" },
+                breakdown = breakdown,
+                labels = labels,
+            )
+        }
 
     fun getShiftBreakdown(shiftId: String): ShiftBreakdown? =
         transaction {

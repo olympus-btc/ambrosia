@@ -117,4 +117,15 @@ describe("TemplateVariablePicker", () => {
     fireEvent.click(screen.getByText("templates.variables.businessEmail"));
     expect(onSelect).toHaveBeenCalledWith("{{config.businessEmail}}");
   });
+
+  it("offers the shift variables only for Z report templates", () => {
+    const { rerender } = render(
+      <TemplateVariablePicker onSelect={jest.fn()} ticketType="RECEIPT" settingsTranslations={settingsTranslations} />,
+    );
+    expect(screen.queryByText("templates.variables.groups.shift")).not.toBeInTheDocument();
+
+    rerender(<TemplateVariablePicker onSelect={jest.fn()} ticketType="SHIFT_CLOSE" settingsTranslations={settingsTranslations} />);
+    expect(screen.getByText("templates.variables.groups.shift")).toBeInTheDocument();
+    expect(screen.getByText("templates.variables.expectedCash")).toBeInTheDocument();
+  });
 });

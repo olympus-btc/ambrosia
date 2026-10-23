@@ -79,3 +79,16 @@ export async function closeTurn(openTurnId, finalAmount = null, difference = nul
   }
   return await parseJsonResponse(closeShiftResponse, null);
 }
+
+export async function printShiftReport(shiftId, labels) {
+  const printShiftReportResponse = await httpClient(`/shifts/${shiftId}/print-report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ labels }),
+    skipForbiddenRedirect: true,
+  });
+  if (!printShiftReportResponse.ok) {
+    throw await buildParsedHttpError(printShiftReportResponse, "Failed to print shift report");
+  }
+  return true;
+}

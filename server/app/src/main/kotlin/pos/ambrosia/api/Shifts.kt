@@ -14,10 +14,16 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.logger
 import pos.ambrosia.models.CloseShiftRequest
 import pos.ambrosia.models.Message
+import pos.ambrosia.models.PrintShiftReportRequest
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.CashDrawerService
 import pos.ambrosia.services.CashDrawerTrigger
+import pos.ambrosia.services.ConfigService
+import pos.ambrosia.services.PrintService
+import pos.ambrosia.services.PrinterConfigService
 import pos.ambrosia.services.ShiftService
+import pos.ambrosia.services.TicketTemplateService
+import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.authorizeAdminPermission
 import pos.ambrosia.utils.authorizePermission
 import java.time.LocalDate
@@ -37,12 +43,16 @@ private fun parseShiftsReportDateQueryParam(
 fun Application.configureShifts() {
     val shiftService = ShiftService()
     val cashDrawerService = CashDrawerService()
-    routing { route("/shifts") { shifts(shiftService, cashDrawerService) } }
+    val printService = PrintService(TicketTemplateService(), PrinterConfigService())
+    val configService = ConfigService()
+    routing { route("/shifts") { shifts(shiftService, cashDrawerService, printService, configService) } }
 }
 
 fun Route.shifts(
     shiftService: ShiftService,
     cashDrawerService: CashDrawerService,
+    printService: PrintService,
+    configService: ConfigService,
 ) {
     authorizePermission("shifts_read") {
         get("") {
@@ -179,6 +189,28 @@ fun Route.shifts(
             }
             cashDrawerService.openForTrigger(CashDrawerTrigger.SHIFT_CLOSE)
             call.respond(HttpStatusCode.NoContent)
+        }
+
+        post("/{id}/print-report") {
+            val shiftId = call.parameters["id"]
+            if (shiftId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@post
+            }
+
+            val printShiftReportRequest = call.receive<PrintShiftReportRequest>()
+            val shiftReport = shiftService.getShiftReportPrintData(shiftId, printShiftReportRequest.labels)
+            if (shiftReport == null) {
+                call.respond(HttpStatusCode.NotFound, "Shift not found")
+                return@post
+            }
+
+            try {
+                printService.printShiftReport(shiftReport, configService.getConfig())
+            } catch (printError: Exception) {
+                throw PrintTicketException(printError.message ?: "The shift report could not be printed.")
+            }
+            call.respond(HttpStatusCode.OK, Message("Shift report sent to the printer"))
         }
 
         post("/{id}/close") {

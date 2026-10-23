@@ -5,22 +5,21 @@ import {
   Button,
   Card,
   CardBody,
+  Checkbox,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
   NumberInput,
-  addToast,
 } from "@heroui/react";
-import { AlertCircle, Printer } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { usePrinters } from "@/components/pages/Store/hooks/usePrinter";
 import { toNumberInputValue } from "@/components/utils/numberParsers";
 import { useTurn } from "@/hooks/turn/useTurn";
 import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
-import { useTicketLabels } from "@/hooks/useTicketLabels";
 
 export function CloseTurnModal({
   isOpen,
@@ -31,17 +30,16 @@ export function CloseTurnModal({
   confirmLoading = false,
 }) {
   const [finalAmount, setFinalAmount] = useState(0);
-  const [printing, setPrinting] = useState(false);
+  const [shouldPrintShiftReport, setShouldPrintShiftReport] = useState(true);
   const reportsTranslations = useTranslations("reports");
   const shiftTranslations = useTranslations("shifts");
   const { getPaymentMethodLabel } = usePaymentMethodLabel();
-  const ticketLabels = useTicketLabels();
 
   const {
     totalBalance, totalTips, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
   } = useTurn();
 
-  const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
+  const { printerConfigs, loadingConfigs } = usePrinters();
 
   const hasCustomerPrinter = useMemo(() => {
     if (!Array.isArray(printerConfigs)) return false;
@@ -49,40 +47,6 @@ export function CloseTurnModal({
       (config) => config?.printerType === "CUSTOMER" && config?.enabled !== false,
     );
   }, [printerConfigs]);
-
-  const handlePrintCorteZ = async () => {
-    if (printing) return;
-    setPrinting(true);
-    try {
-      const printCorteZResponse = await printTicket({
-        templateName: null,
-        printerType: "CUSTOMER",
-        broadcast: false,
-        ticketData: {
-          ticketId: `corte-z-${shiftData?.shiftDate ?? ""}`,
-          tableName: shiftTranslations("cortezTitle"),
-          roomName: "",
-          date: new Date().toISOString(),
-          items: byPaymentMethod.map(({ name, total }) => ({
-            quantity: 1,
-            name: getPaymentMethodLabel(name),
-            price: total,
-            comments: [],
-          })),
-          total: totalBalance,
-          tipAmount: totalTips,
-          invoice: null,
-          labels: ticketLabels,
-        },
-      });
-      if (!printCorteZResponse?.ok) throw new Error("print failed");
-      addToast({ color: "success", description: shiftTranslations("printCorteZSuccess") });
-    } catch {
-      addToast({ color: "danger", description: shiftTranslations("printCorteZError") });
-    } finally {
-      setPrinting(false);
-    }
-  };
 
   const shiftPeriod = shiftData
     ? `${shiftData.shiftDate} ${shiftData.startTime}`
@@ -208,16 +172,13 @@ export function CloseTurnModal({
                   </>
                 )}
                 {!loadingConfigs && hasCustomerPrinter && (
-                  <Button
-                    className="bg-green-800"
-                    color="primary"
-                    startContent={<Printer className="w-4 h-4" />}
-                    onPress={handlePrintCorteZ}
-                    isLoading={printing}
-                    isDisabled={ticketsLoading || breakdownLoading}
+                  <Checkbox
+                    size="sm"
+                    isSelected={shouldPrintShiftReport}
+                    onValueChange={setShouldPrintShiftReport}
                   >
-                    {shiftTranslations("printCorteZ")}
-                  </Button>
+                    {shiftTranslations("printCorteZOnClose")}
+                  </Checkbox>
                 )}
               </CardBody>
             </Card>
@@ -235,7 +196,7 @@ export function CloseTurnModal({
           <Button
             variant="solid"
             color="danger"
-            onPress={() => onConfirm(finalAmount, difference)}
+            onPress={() => onConfirm(finalAmount, difference, shouldPrintShiftReport && hasCustomerPrinter)}
             isDisabled={confirmLoading}
             isLoading={confirmLoading}
           >

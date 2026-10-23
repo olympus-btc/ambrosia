@@ -33,9 +33,20 @@ jest.mock("@/components/turn/CloseTurnModal", () => ({
   CloseTurnModal: ({ isOpen, onConfirm, onClose }) => (isOpen ? (
     <div data-testid="close-turn-modal">
       <button onClick={() => onConfirm(150, -10)}>confirm-close</button>
+      <button onClick={() => onConfirm(150, -10, true)}>confirm-close-and-print</button>
       <button onClick={onClose}>cancel-close</button>
     </div>
   ) : null),
+}));
+
+const mockPrintShiftReport = jest.fn();
+jest.mock("@/services/shiftsService", () => ({
+  printShiftReport: (...printShiftReportArguments) => mockPrintShiftReport(...printShiftReportArguments),
+}));
+
+const mockShiftReportLabels = { title: "Z" };
+jest.mock("@/hooks/useShiftReportLabels", () => ({
+  useShiftReportLabels: () => mockShiftReportLabels,
 }));
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -101,11 +112,11 @@ describe("ShiftWidget", () => {
 
   describe("expanding the panel", () => {
     async function renderExpanded(overrides = {}) {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       setupMocks(overrides);
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      return user;
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      return cashier;
     }
 
     it("shows shift date and time", async () => {
@@ -130,15 +141,15 @@ describe("ShiftWidget", () => {
     });
 
     it("collapses panel when pill is clicked again", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       setupMocks();
       render(<ShiftWidget />);
       const pill = screen.getByRole("button", { name: /shiftActive/ });
 
-      await user.click(pill);
+      await cashier.click(pill);
       expect(screen.getByText(/shiftOpenedAt/)).toBeInTheDocument();
 
-      await user.click(pill);
+      await cashier.click(pill);
       await waitFor(() => {
         expect(screen.queryByText(/shiftOpenedAt/)).not.toBeInTheDocument();
       });
@@ -147,73 +158,117 @@ describe("ShiftWidget", () => {
 
   describe("closing a shift", () => {
     it("opens CloseTurnModal when close button is pressed", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
       expect(screen.getByTestId("close-turn-modal")).toBeInTheDocument();
     });
 
     it("calls closeShift with finalAmount and difference from modal", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockResolvedValue(true);
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
       expect(mockCloseShift).toHaveBeenCalledWith(150, -10);
     });
 
     it("closes modal after confirming close", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockResolvedValue(true);
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
       await waitFor(() => {
         expect(screen.queryByTestId("close-turn-modal")).not.toBeInTheDocument();
       });
     });
 
     it("collapses panel after confirming close", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockResolvedValue(true);
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
       await waitFor(() => {
         expect(screen.queryByText(/shiftOpenedAt/)).not.toBeInTheDocument();
       });
     });
 
     it("shows a success toast after closing the shift", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockResolvedValue(true);
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
 
       expect(mockAddToast).toHaveBeenCalledWith(
         expect.objectContaining({ color: "success", description: "closeShiftSuccess" }),
       );
     });
 
+    it("prints the Z report of the closed shift when requested", async () => {
+      const cashier = userEvent.setup();
+      mockCloseShift.mockResolvedValue(true);
+      mockPrintShiftReport.mockResolvedValue(true);
+      setupMocks();
+      render(<ShiftWidget />);
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close-and-print"));
+
+      await waitFor(() => expect(mockPrintShiftReport).toHaveBeenCalledWith(1, mockShiftReportLabels));
+      expect(mockAddToast).toHaveBeenCalledWith({ color: "success", description: "printCorteZSuccess" });
+    });
+
+    it("does not print the Z report when it was not requested", async () => {
+      const cashier = userEvent.setup();
+      mockCloseShift.mockResolvedValue(true);
+      setupMocks();
+      render(<ShiftWidget />);
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
+
+      await waitFor(() => expect(mockCloseShift).toHaveBeenCalled());
+      expect(mockPrintShiftReport).not.toHaveBeenCalled();
+    });
+
+    it("warns when the Z report cannot be printed but keeps the shift closed", async () => {
+      jest.spyOn(console, "error").mockImplementation(() => {});
+      const cashier = userEvent.setup();
+      mockCloseShift.mockResolvedValue(true);
+      mockPrintShiftReport.mockRejectedValue(new Error("printer offline"));
+      setupMocks();
+      render(<ShiftWidget />);
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close-and-print"));
+
+      await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith({ color: "warning", description: "printCorteZError" }));
+      expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "success", description: "closeShiftSuccess" }));
+      expect(mockAddToast).not.toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
+      console.error.mockRestore();
+    });
+
     it("shows an error toast when closeShift fails", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockRejectedValue(new Error("Server error"));
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
 
       await waitFor(() => {
         expect(mockAddToast).toHaveBeenCalledWith(
@@ -223,13 +278,13 @@ describe("ShiftWidget", () => {
     });
 
     it("keeps the close modal open when closeShift fails", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       mockCloseShift.mockRejectedValue(new Error("Server error"));
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("confirm-close"));
 
       await waitFor(() => {
         expect(screen.getByTestId("close-turn-modal")).toBeInTheDocument();
@@ -237,16 +292,16 @@ describe("ShiftWidget", () => {
     });
 
     it("does not call closeShift twice while close is pending", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       let resolveCloseShift;
       mockCloseShift.mockReturnValue(new Promise((resolveShiftClose) => { resolveCloseShift = resolveShiftClose; }));
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
 
-      await user.click(screen.getByText("confirm-close"));
-      await user.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByText("confirm-close"));
+      await cashier.click(screen.getByText("confirm-close"));
 
       expect(mockCloseShift).toHaveBeenCalledTimes(1);
 
@@ -257,12 +312,12 @@ describe("ShiftWidget", () => {
     });
 
     it("dismisses modal without closing shift on cancel", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      await user.click(screen.getByText("closeShiftButton"));
-      await user.click(screen.getByText("cancel-close"));
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      await cashier.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("cancel-close"));
       expect(mockCloseShift).not.toHaveBeenCalled();
       expect(screen.queryByTestId("close-turn-modal")).not.toBeInTheDocument();
     });
@@ -270,18 +325,18 @@ describe("ShiftWidget", () => {
 
   describe("cash drawer", () => {
     async function renderExpandedWidget() {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       setupMocks();
       render(<ShiftWidget />);
-      await user.click(screen.getByRole("button", { name: /shiftActive/ }));
-      return user;
+      await cashier.click(screen.getByRole("button", { name: /shiftActive/ }));
+      return cashier;
     }
 
     it("opens the cash drawer and shows a success toast", async () => {
       mockOpenCashDrawer.mockResolvedValue(undefined);
-      const user = await renderExpandedWidget();
+      const cashier = await renderExpandedWidget();
 
-      await user.click(screen.getByText("openCashDrawer"));
+      await cashier.click(screen.getByText("openCashDrawer"));
 
       expect(mockOpenCashDrawer).toHaveBeenCalledTimes(1);
       await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith({ color: "success", description: "openCashDrawerSuccess" }));
@@ -289,9 +344,9 @@ describe("ShiftWidget", () => {
 
     it("shows an error toast when the cash drawer cannot be opened", async () => {
       mockOpenCashDrawer.mockRejectedValue(new Error("cash_drawer_not_opened"));
-      const user = await renderExpandedWidget();
+      const cashier = await renderExpandedWidget();
 
-      await user.click(screen.getByText("openCashDrawer"));
+      await cashier.click(screen.getByText("openCashDrawer"));
 
       await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith({ color: "danger", description: "openCashDrawerError" }));
     });
@@ -304,9 +359,9 @@ describe("ShiftWidget", () => {
     });
 
     it("opens the cash drawer for the shift close when starting to close the shift", async () => {
-      const user = await renderExpandedWidget();
+      const cashier = await renderExpandedWidget();
 
-      await user.click(screen.getByText("closeShiftButton"));
+      await cashier.click(screen.getByText("closeShiftButton"));
 
       expect(mockOpenCashDrawerForShiftClose).toHaveBeenCalledWith(1);
     });

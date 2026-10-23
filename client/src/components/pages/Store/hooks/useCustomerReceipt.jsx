@@ -48,6 +48,7 @@ export function useCustomerReceipt() {
       try {
         await printTicket({
           templateName: null,
+          ticketType: "RECEIPT",
           ticketData,
           printerType: "CUSTOMER",
           broadcast: false,
