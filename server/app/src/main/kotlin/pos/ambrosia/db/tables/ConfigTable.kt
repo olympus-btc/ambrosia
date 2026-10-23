@@ -19,6 +19,7 @@ object ConfigTable : IntIdTable("config") {
     val timezone = varchar("timezone", 50).default("America/Mexico_City")
     val tipsEnabled = bool("tips_enabled").default(true)
     val tipPercentages = varchar("tip_percentages", 50).default("10,15,20")
+    val customTipDefaultType = text("custom_tip_default_type").default("percentage")
     val priceStep = double("price_step").default(0.01)
 }
 
@@ -39,5 +40,6 @@ class ConfigEntity(
     var timezone by ConfigTable.timezone
     var tipsEnabled by ConfigTable.tipsEnabled
     var tipPercentages by ConfigTable.tipPercentages
+    var customTipDefaultType by ConfigTable.customTipDefaultType
     var priceStep by ConfigTable.priceStep
 }

@@ -79,6 +79,7 @@ describe("TipsCard", () => {
       expect(handleSave).toHaveBeenCalledWith({
         tipsEnabled: true,
         tipPercentages: "5,10,15,20",
+        customTipDefaultType: "percentage",
       });
     });
   });
@@ -112,6 +113,7 @@ describe("TipsCard", () => {
     await waitFor(() => expect(handleSave).toHaveBeenCalledWith({
       tipsEnabled: true,
       tipPercentages: "5,10.5,20",
+      customTipDefaultType: "percentage",
     }));
   });
 
@@ -131,6 +133,7 @@ describe("TipsCard", () => {
     await waitFor(() => expect(handleSave).toHaveBeenCalledWith({
       tipsEnabled: true,
       tipPercentages: "10,12.5,15,20",
+      customTipDefaultType: "percentage",
     }));
   });
 
@@ -143,5 +146,26 @@ describe("TipsCard", () => {
     });
 
     expect(screen.getByRole("button", { name: "cardTips.addPercentage" })).toBeDisabled();
+  });
+
+  it("marks the configured custom tip default type as selected", () => {
+    render(<TipsCard tipsEnabled tipPercentages="10,15,20" customTipDefaultType="fixed" />);
+
+    expect(screen.getByRole("button", { name: "$" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "%" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("saves the selected custom tip default type", async () => {
+    const handleSave = jest.fn().mockResolvedValue(true);
+    render(<TipsCard tipsEnabled tipPercentages="10,15,20" onSave={handleSave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "$" }));
+    fireEvent.click(screen.getByText("cardTips.saveButton"));
+
+    await waitFor(() => expect(handleSave).toHaveBeenCalledWith({
+      tipsEnabled: true,
+      tipPercentages: "10,15,20",
+      customTipDefaultType: "fixed",
+    }));
   });
 });

@@ -1,4 +1,5 @@
 export const DEFAULT_TIP_PERCENTAGES = [10, 15, 20];
+export const DEFAULT_CUSTOM_TIP_TYPE = "percentage";
 
 export function isValidTipPercentages(serializedPercentages) {
   if (typeof serializedPercentages !== "string") return false;

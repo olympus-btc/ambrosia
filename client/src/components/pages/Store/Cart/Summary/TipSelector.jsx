@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { toNumberInputValue } from "@/components/utils/numberParsers";
 
-import { DEFAULT_TIP_PERCENTAGES } from "../utils/tipCalculations";
+import { DEFAULT_CUSTOM_TIP_TYPE, DEFAULT_TIP_PERCENTAGES } from "../utils/tipCalculations";
 
 export function TipSelector({
   tip: selectedTipValue = 0,
@@ -15,12 +15,13 @@ export function TipSelector({
   onApply,
   onPreview,
   suggestedPercentages = DEFAULT_TIP_PERCENTAGES,
+  defaultCustomTipType = DEFAULT_CUSTOM_TIP_TYPE,
   formattedTipAmount,
 }) {
   const translateCart = useTranslations("cart");
   const [isCustomEditorOpen, setIsCustomEditorOpen] = useState(false);
   const [customTipValue, setCustomTipValue] = useState(0);
-  const [customTipType, setCustomTipType] = useState("percentage");
+  const [customTipType, setCustomTipType] = useState(defaultCustomTipType);
 
   const availablePercentages = Array.isArray(suggestedPercentages) && suggestedPercentages.length > 0
     ? suggestedPercentages
@@ -35,8 +36,9 @@ export function TipSelector({
 
   function handleOpenCustom() {
     setIsCustomEditorOpen(true);
-    setCustomTipValue(selectedTipValue > 0 ? selectedTipValue : 0);
-    setCustomTipType(selectedTipType || "percentage");
+    const hasAppliedTip = selectedTipValue > 0;
+    setCustomTipValue(hasAppliedTip ? selectedTipValue : 0);
+    setCustomTipType(hasAppliedTip ? selectedTipType : defaultCustomTipType);
   }
 
   function handleCustomTypeToggle(selectedType) {

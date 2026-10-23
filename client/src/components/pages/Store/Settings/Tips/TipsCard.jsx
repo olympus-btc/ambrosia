@@ -9,16 +9,22 @@ import { toNumberInputValue } from "@/components/utils/numberParsers";
 import { usePermission } from "@/hooks/usePermission";
 
 import {
+  DEFAULT_CUSTOM_TIP_TYPE,
   DEFAULT_TIP_PERCENTAGES,
   normalizeTipPercentages,
   parseTipPercentages,
 } from "../../Cart/utils/tipCalculations";
 
 const STANDARD_TIP_PERCENTAGES = [5, 10, 15, 20, 25];
+const CUSTOM_TIP_TYPE_OPTIONS = [
+  { type: "percentage", symbol: "%" },
+  { type: "fixed", symbol: "$" },
+];
 
 export function TipsCard({
   tipsEnabled = true,
   tipPercentages = "10,15,20",
+  customTipDefaultType = DEFAULT_CUSTOM_TIP_TYPE,
   onSave,
   isLoading = false,
 }) {
@@ -27,6 +33,7 @@ export function TipsCard({
 
   const [draftTipsEnabled, setDraftTipsEnabled] = useState(tipsEnabled);
   const [selectedPercentages, setSelectedPercentages] = useState(() => parseTipPercentages(tipPercentages));
+  const [draftCustomTipDefaultType, setDraftCustomTipDefaultType] = useState(customTipDefaultType);
   const [isSaving, setIsSaving] = useState(false);
   const [isCustomEditorOpen, setIsCustomEditorOpen] = useState(false);
   const [customPercentage, setCustomPercentage] = useState(0);
@@ -39,6 +46,10 @@ export function TipsCard({
     setSelectedPercentages(parseTipPercentages(tipPercentages));
   }, [tipPercentages]);
 
+  useEffect(() => {
+    setDraftCustomTipDefaultType(customTipDefaultType);
+  }, [customTipDefaultType]);
+
   const configuredPercentages = normalizeTipPercentages(tipPercentages)
     ?? DEFAULT_TIP_PERCENTAGES.join(",");
   const serializedSelectedPercentages = selectedPercentages.join(",");
@@ -48,7 +59,8 @@ export function TipsCard({
     ...selectedPercentages,
   ])].sort((a, b) => a - b);
   const hasUnsavedChanges = draftTipsEnabled !== tipsEnabled
-    || serializedSelectedPercentages !== configuredPercentages;
+    || serializedSelectedPercentages !== configuredPercentages
+    || draftCustomTipDefaultType !== customTipDefaultType;
   const hasValidPercentageSelection = !draftTipsEnabled || selectedPercentages.length > 0;
   const isCustomPercentageValid = Number.isFinite(customPercentage)
     && customPercentage > 0
@@ -79,6 +91,7 @@ export function TipsCard({
       await onSave({
         tipsEnabled: draftTipsEnabled,
         tipPercentages: serializedSelectedPercentages,
+        customTipDefaultType: draftCustomTipDefaultType,
       });
     } finally {
       setIsSaving(false);
@@ -194,6 +207,39 @@ export function TipsCard({
                 {settingsTranslations("cardTips.percentagesError")}
               </p>
             )}
+          </div>
+        )}
+
+        {draftTipsEnabled && (
+          <div className="space-y-2" role="group" aria-label={settingsTranslations("cardTips.customTipDefaultTypeLabel")}>
+            <div>
+              <p className="text-sm font-medium text-gray-700">
+                {settingsTranslations("cardTips.customTipDefaultTypeLabel")}
+              </p>
+              <p className="text-xs text-gray-500">
+                {settingsTranslations("cardTips.customTipDefaultTypeHelp")}
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              {CUSTOM_TIP_TYPE_OPTIONS.map(({ type, symbol }) => {
+                const isSelected = draftCustomTipDefaultType === type;
+                return (
+                  <Button
+                    key={type}
+                    size="sm"
+                    color={isSelected ? "primary" : "default"}
+                    variant={isSelected ? "solid" : "flat"}
+                    className="min-w-14"
+                    aria-pressed={isSelected}
+                    isDisabled={!canUpdateSettings || isLoading || isSaving}
+                    onPress={() => setDraftCustomTipDefaultType(type)}
+                  >
+                    {symbol}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         )}
 

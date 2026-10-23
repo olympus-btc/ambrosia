@@ -19,6 +19,7 @@ export function SummaryContent({
   tipType = "percentage",
   tipsEnabled = false,
   tipPercentages,
+  customTipDefaultType,
   onApplyTip,
   onRemoveProduct,
   onUpdateQuantity,
@@ -87,6 +88,7 @@ export function SummaryContent({
           tipType={tipType}
           tipsEnabled={tipsEnabled}
           tipPercentages={tipPercentages}
+          customTipDefaultType={customTipDefaultType}
           onApplyTip={onApplyTip}
         />
       )}

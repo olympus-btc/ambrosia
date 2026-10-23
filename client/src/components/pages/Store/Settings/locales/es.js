@@ -26,6 +26,8 @@ const settingsEs = {
       customPercentage: "Personalizado",
       customPercentageLabel: "Porcentaje de propina personalizado",
       addPercentage: "Agregar",
+      customTipDefaultTypeLabel: "Tipo predeterminado de propina personalizada",
+      customTipDefaultTypeHelp: "Define si el botón Personalizado se abre en porcentaje o en monto fijo",
       saveButton: "Guardar",
       successMessage: "Configuración de propinas guardada correctamente",
       errorMessage: "No se pudo guardar la configuración de propinas",

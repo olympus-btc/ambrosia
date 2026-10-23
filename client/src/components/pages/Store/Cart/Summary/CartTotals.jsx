@@ -22,6 +22,7 @@ export function CartTotals({
   onApplyTip,
   tipsEnabled = false,
   tipPercentages,
+  customTipDefaultType,
 }) {
   const translateCart = useTranslations("cart");
   const { formatAmount } = useCurrency();
@@ -97,6 +98,7 @@ export function CartTotals({
             onApply={onApplyTip}
             onPreview={handleTipPreview}
             suggestedPercentages={configuredTipPercentages}
+            defaultCustomTipType={customTipDefaultType}
             formattedTipAmount={displayedTipAmount > 0 ? `+${formatAmount(displayedTipAmount)}` : undefined}
           />
         </>

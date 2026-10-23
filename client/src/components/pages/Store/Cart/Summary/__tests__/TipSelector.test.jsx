@@ -93,4 +93,23 @@ describe("TipSelector", () => {
     fireEvent.click(screen.getByText("summary.tipApply"));
     expect(defaultProps.onApply).toHaveBeenCalledWith(50, "fixed");
   });
+
+  it("opens custom mode with the configured default tip type when no tip is applied", () => {
+    render(<TipSelector {...defaultProps} tipType="percentage" defaultCustomTipType="fixed" />);
+
+    fireEvent.click(screen.getByText("summary.customTip"));
+    fireEvent.change(screen.getByTestId("tip-number-input"), { target: { value: "3" } });
+    fireEvent.click(screen.getByText("summary.tipApply"));
+
+    expect(defaultProps.onApply).toHaveBeenCalledWith(3, "fixed");
+  });
+
+  it("keeps the applied tip type over the configured default when reopening custom mode", () => {
+    render(<TipSelector {...defaultProps} tip={12} tipType="percentage" defaultCustomTipType="fixed" />);
+
+    fireEvent.click(screen.getByText("summary.customTip"));
+    fireEvent.click(screen.getByText("summary.tipApply"));
+
+    expect(defaultProps.onApply).toHaveBeenCalledWith(12, "percentage");
+  });
 });

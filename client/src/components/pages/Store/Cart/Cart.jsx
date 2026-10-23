@@ -203,6 +203,7 @@ export function Cart() {
             tipType={tipType}
             tipsEnabled={tipsEnabled}
             tipPercentages={config?.tipPercentages}
+            customTipDefaultType={config?.customTipDefaultType}
             onApplyTip={handleApplyTip}
             onRemoveProduct={removeProduct}
             onClearCart={handleClearCart}
@@ -234,6 +235,7 @@ export function Cart() {
         tipType={tipType}
         tipsEnabled={tipsEnabled}
         tipPercentages={config?.tipPercentages}
+        customTipDefaultType={config?.customTipDefaultType}
         onApplyTip={handleApplyTip}
         onRemoveProduct={removeProduct}
         onClearCart={handleClearCart}

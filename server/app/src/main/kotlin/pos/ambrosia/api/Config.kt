@@ -26,6 +26,8 @@ private fun areTipPercentagesValid(serializedPercentages: String): Boolean {
         parsedPercentages.distinct().size == parsedPercentages.size
 }
 
+private val customTipTypes = setOf("percentage", "fixed")
+
 private fun isPriceStepValid(priceStep: Double): Boolean = priceStep.isFinite() && priceStep > 0.0 && priceStep <= 1000.0
 
 fun Application.configureConfig() {
@@ -64,6 +66,10 @@ fun Route.config(configService: ConfigService) {
             }
             if (!areTipPercentagesValid(config.tipPercentages)) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid tip percentages")
+                return@put
+            }
+            if (config.customTipDefaultType !in customTipTypes) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid custom tip default type")
                 return@put
             }
             if (!isPriceStepValid(config.priceStep)) {

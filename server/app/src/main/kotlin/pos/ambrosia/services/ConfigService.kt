@@ -21,6 +21,7 @@ class ConfigService {
             timezone = entity.timezone,
             tipsEnabled = entity.tipsEnabled,
             tipPercentages = entity.tipPercentages,
+            customTipDefaultType = entity.customTipDefaultType,
             priceStep = entity.priceStep,
         )
 
@@ -44,6 +45,7 @@ class ConfigService {
             entity.timezone = config.timezone
             entity.tipsEnabled = config.tipsEnabled
             entity.tipPercentages = config.tipPercentages
+            entity.customTipDefaultType = config.customTipDefaultType
             entity.priceStep = config.priceStep
             true
         }

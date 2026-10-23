@@ -26,6 +26,8 @@ const settingsEn = {
       customPercentage: "Custom",
       customPercentageLabel: "Custom tip percentage",
       addPercentage: "Add",
+      customTipDefaultTypeLabel: "Default custom tip type",
+      customTipDefaultTypeHelp: "Whether the Custom tip button opens in percentage or fixed amount",
       saveButton: "Save",
       successMessage: "Tip settings saved successfully",
       errorMessage: "Failed to save tip settings",
