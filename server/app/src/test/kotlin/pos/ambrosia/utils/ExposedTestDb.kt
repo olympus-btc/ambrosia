@@ -869,11 +869,17 @@ object ExposedTestDb {
                 .toString()
         }
 
-    fun seedTicketTemplate(name: String = "Template"): String =
+    fun seedTicketTemplate(
+        name: String = "Template",
+        ticketType: String = "RECEIPT",
+        isDefault: Boolean = false,
+    ): String =
         transaction {
             TicketTemplateEntity
                 .new(UUID.randomUUID()) {
                     this.name = name
+                    this.ticketType = ticketType
+                    this.isDefault = isDefault
                 }.id.value
                 .toString()
         }

@@ -20,6 +20,8 @@ const TRANSLATION_KEYS_BY_METHOD_NAME = {
   "bank transfer": "bankTransfer",
 };
 
+export const TRANSLATABLE_PAYMENT_METHOD_NAMES = Object.keys(TRANSLATION_KEYS_BY_METHOD_NAME);
+
 export function getPaymentMethodTranslationKey(methodName = "") {
   return TRANSLATION_KEYS_BY_METHOD_NAME[methodName.trim().toLowerCase()] ?? null;
 }

@@ -23,7 +23,7 @@ describe("TemplateElementsEditor", () => {
     const onAdd = jest.fn();
     render(
       <TemplateElementsEditor
-        elements={[{ localId: "one" }, { localId: "two" }]}
+        templateElements={[{ localId: "one" }, { localId: "two" }]}
         onChange={jest.fn()}
         onAdd={onAdd}
         onMove={jest.fn()}

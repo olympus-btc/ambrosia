@@ -20,10 +20,10 @@ jest.mock("@heroui/react", () => ({
       </select>
     </div>
   ),
-  SelectItem: ({ children, value }) => <option value={value}>{children}</option>,
+  SelectItem: ({ children, value: templateId, description }) => <option value={templateId}>{children} {description}</option>,
 }));
 
-const settingsTranslations = (key) => key;
+const settingsTranslations = (translationKey) => translationKey;
 
 describe("TemplateList", () => {
   it("shows loading state and error message", () => {
@@ -98,5 +98,25 @@ describe("TemplateList", () => {
 
     expect(screen.getByText("templates.listTitle")).toBeInTheDocument();
     expect(screen.getByText("templates.selectPlaceholder")).toBeInTheDocument();
+  });
+
+  it("shows the ticket type of each template and which one is the default", () => {
+    render(
+      <TemplateList
+        templates={[
+          { id: "tpl-alice", name: "alice", ticketType: "RECEIPT", isDefault: false },
+          { id: "tpl-bob", name: "bob", ticketType: "SHIFT_CLOSE", isDefault: true },
+        ]}
+        selectedId=""
+        loading={false}
+        error={null}
+        onSelect={jest.fn()}
+        onNew={jest.fn()}
+        settingsTranslations={settingsTranslations}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "alice templates.ticketTypes.RECEIPT" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "bob templates.ticketTypes.SHIFT_CLOSE · templates.defaultBadge" })).toBeInTheDocument();
   });
 });

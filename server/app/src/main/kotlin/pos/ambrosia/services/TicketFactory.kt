@@ -18,6 +18,7 @@ import pos.ambrosia.models.ElementType
 import pos.ambrosia.models.FontSize
 import pos.ambrosia.models.ImageSize
 import pos.ambrosia.models.Justification
+import pos.ambrosia.models.ShiftReportPrintData
 import pos.ambrosia.models.TicketData
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.utils.formatTicketLine
@@ -64,6 +65,8 @@ class TicketFactory(
         private const val QR_MIN_DOTS_PER_MODULE = 3
         private const val PRINTABLE_WIDTH_DOTS = 576
         const val JOB_START_PADDING_BYTES = 1024
+        private val SALE_ELEMENT_TYPES =
+            setOf(ElementType.TABLE_HEADER, ElementType.TABLE_ROW, ElementType.TOTAL_ROW, ElementType.PAYMENT_METHOD)
     }
 
     fun build(
@@ -71,58 +74,41 @@ class TicketFactory(
         ticketData: TicketData,
         businessConfig: Config?,
     ) {
+        build(escpos, PrintableTicket.SaleReceipt(ticketData), businessConfig)
+    }
+
+    fun build(
+        escpos: EscPos,
+        printableTicket: PrintableTicket,
+        businessConfig: Config?,
+    ) {
         escpos.write(ByteArray(JOB_START_PADDING_BYTES), 0, JOB_START_PADDING_BYTES)
         escpos.initializePrinter()
+        val templateVariableValues = buildTemplateVariableValues(printableTicket, businessConfig)
         template.elements.forEach { templateElement ->
             val escPosStyle = convertToEscPosStyle(templateElement.style)
-            val resolvedContent = resolveTemplateVariables(templateElement.value, ticketData, businessConfig)
+            val resolvedContent = resolveTemplateVariables(templateElement.value, templateVariableValues)
 
             when (templateElement.type) {
                 ElementType.SEPARATOR -> {
                     writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
                 }
 
-                ElementType.TABLE_HEADER -> {
-                    writePrintableLine(escpos, escPosStyle, resolvedContent)
-                }
-
-                ElementType.TABLE_ROW -> {
-                    ticketData.items.forEach { ticketItem ->
-                        val itemText = "${ticketItem.quantity}x ${ticketItem.name}"
-                        val priceText = ticketItem.price.toString()
-                        val itemRow = formatTicketLine(itemText, priceText)
-                        writePrintableLine(escpos, escPosStyle, itemRow)
-                        ticketItem.comments.forEach { comment ->
-                            writePrintableLine(escpos, escPosStyle, "  - $comment")
-                        }
+                in SALE_ELEMENT_TYPES -> {
+                    if (printableTicket is PrintableTicket.SaleReceipt) {
+                        writeSaleElement(escpos, templateElement.type, escPosStyle, resolvedContent, printableTicket.ticketData)
                     }
                 }
 
-                ElementType.TOTAL_ROW -> {
-                    val totalLabel = resolvedContent.ifEmpty { ticketData.labels.total }
-                    writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
-                    if (ticketData.discountAmount > 0) {
-                        val discountRow = formatTicketLine(ticketData.labels.discount, "-${ticketData.discountAmount}")
-                        writePrintableLine(escpos, escPosStyle, discountRow)
-                    }
-                    if (ticketData.tipAmount > 0) {
-                        val tipRow = formatTicketLine(ticketData.labels.tip, "+${ticketData.tipAmount}")
-                        writePrintableLine(escpos, escPosStyle, tipRow)
-                    }
-                    val totalRow = formatTicketLine(totalLabel, ticketData.total.toString())
-                    writePrintableLine(escpos, escPosStyle, totalRow)
-                }
-
-                ElementType.PAYMENT_METHOD -> {
-                    val paymentMethodName = ticketData.paymentMethod.orEmpty()
-                    if (paymentMethodName.isNotBlank()) {
-                        val paymentMethodLabel = resolvedContent.ifEmpty { ticketData.labels.paymentMethod }
-                        writePrintableLine(escpos, escPosStyle, formatTicketLine(paymentMethodLabel, paymentMethodName))
+                ElementType.SHIFT_SUMMARY -> {
+                    if (printableTicket is PrintableTicket.ShiftReport) {
+                        writeShiftSummary(escpos, escPosStyle, resolvedContent, printableTicket.shiftReport)
                     }
                 }
 
                 ElementType.QRCODE -> {
-                    val qrContent = if (resolvedContent.isNotBlank()) resolvedContent else (ticketData.invoice ?: "")
+                    val saleInvoice = (printableTicket as? PrintableTicket.SaleReceipt)?.ticketData?.invoice.orEmpty()
+                    val qrContent = resolvedContent.ifBlank { saleInvoice }
                     if (qrContent.isNotBlank()) {
                         writeQrCode(escpos, qrContent, templateElement.style)
                     }
@@ -141,6 +127,97 @@ class TicketFactory(
             }
         }
     }
+
+    private fun writeSaleElement(
+        escpos: EscPos,
+        elementType: ElementType,
+        escPosStyle: Style,
+        resolvedContent: String,
+        ticketData: TicketData,
+    ) {
+        when (elementType) {
+            ElementType.TABLE_HEADER -> {
+                writePrintableLine(escpos, escPosStyle, resolvedContent)
+            }
+
+            ElementType.TABLE_ROW -> {
+                ticketData.items.forEach { ticketItem ->
+                    val itemText = "${ticketItem.quantity}x ${ticketItem.name}"
+                    val priceText = ticketItem.price.toString()
+                    val itemRow = formatTicketLine(itemText, priceText)
+                    writePrintableLine(escpos, escPosStyle, itemRow)
+                    ticketItem.comments.forEach { comment ->
+                        writePrintableLine(escpos, escPosStyle, "  - $comment")
+                    }
+                }
+            }
+
+            ElementType.TOTAL_ROW -> {
+                val totalLabel = resolvedContent.ifEmpty { ticketData.labels.total }
+                writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+                if (ticketData.discountAmount > 0) {
+                    val discountRow = formatTicketLine(ticketData.labels.discount, "-${ticketData.discountAmount}")
+                    writePrintableLine(escpos, escPosStyle, discountRow)
+                }
+                if (ticketData.tipAmount > 0) {
+                    val tipRow = formatTicketLine(ticketData.labels.tip, "+${ticketData.tipAmount}")
+                    writePrintableLine(escpos, escPosStyle, tipRow)
+                }
+                val totalRow = formatTicketLine(totalLabel, ticketData.total.toString())
+                writePrintableLine(escpos, escPosStyle, totalRow)
+            }
+
+            ElementType.PAYMENT_METHOD -> {
+                val paymentMethodName = ticketData.paymentMethod.orEmpty()
+                if (paymentMethodName.isNotBlank()) {
+                    val paymentMethodLabel = resolvedContent.ifEmpty { ticketData.labels.paymentMethod }
+                    writePrintableLine(escpos, escPosStyle, formatTicketLine(paymentMethodLabel, paymentMethodName))
+                }
+            }
+
+            else -> {
+                writePrintableLine(escpos, escPosStyle, resolvedContent)
+            }
+        }
+    }
+
+    private fun writeShiftSummary(
+        escpos: EscPos,
+        escPosStyle: Style,
+        resolvedContent: String,
+        shiftReport: ShiftReportPrintData,
+    ) {
+        val labels = shiftReport.labels
+        val breakdown = shiftReport.breakdown
+        val writeRow = { label: String, value: String -> writePrintableLine(escpos, escPosStyle, formatTicketLine(label, value)) }
+
+        writePrintableLine(escpos, escPosStyle, resolvedContent.ifEmpty { labels.title })
+        writeRow(labels.cashier, shiftReport.cashierName)
+        writeRow(labels.openedAt, formatShiftDateTime(shiftReport.openedAt))
+        shiftReport.closedAt?.let { closedAt -> writeRow(labels.closedAt, formatShiftDateTime(closedAt)) }
+        writeRow(labels.tickets, breakdown.totalTickets.toString())
+
+        writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+        breakdown.byPaymentMethod.forEach { paymentMethodTotal ->
+            val paymentMethodLabel = labels.paymentMethods[paymentMethodTotal.name.trim().lowercase()] ?: paymentMethodTotal.name
+            writeRow(paymentMethodLabel, paymentMethodTotal.total.toString())
+        }
+        writeRow(labels.totalSales, breakdown.totalSales.toString())
+        writeRow(labels.tips, breakdown.totalTips.toString())
+
+        writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+        writeRow(labels.initialAmount, breakdown.initialAmount.toString())
+        writeRow(labels.cashSales, breakdown.cashSales.toString())
+        writeRow(labels.cashRefunds, "-${breakdown.cashRefunds}")
+        writeRow(labels.expectedCash, breakdown.expectedTotal.toString())
+        breakdown.finalAmount?.let { countedCash -> writeRow(labels.countedCash, countedCash.toString()) }
+        breakdown.difference?.let { difference -> writeRow(labels.difference, difference.toString()) }
+    }
+
+    private fun formatShiftDateTime(localDateTime: String): String =
+        parseIssuedAt(localDateTime)
+            ?.format(DateTimeFormatter.ofPattern("${template.dateFormat.pattern} ${template.timeFormat.pattern}", Locale.US))
+            ?: localDateTime
 
     private fun writePrintableLine(
         escpos: EscPos,
@@ -228,31 +305,25 @@ class TicketFactory(
 
     private fun resolveTemplateVariables(
         templateText: String,
-        ticketData: TicketData,
-        businessConfig: Config?,
+        templateVariableValues: Map<String, String>,
     ): String {
-        val replacements = buildReplacementMap(ticketData, businessConfig)
         var resolvedText = templateText
-        replacements.forEach { (placeholder, replacement) ->
-            resolvedText = resolvedText.replace(placeholder, replacement)
+        templateVariableValues.forEach { (variablePlaceholder, variableValue) ->
+            resolvedText = resolvedText.replace(variablePlaceholder, variableValue)
         }
         return resolvedText
     }
 
-    private fun buildReplacementMap(
-        ticketData: TicketData,
+    private fun buildTemplateVariableValues(
+        printableTicket: PrintableTicket,
         businessConfig: Config?,
     ): Map<String, String> =
         buildMap {
-            put("{{ticket.id}}", ticketData.ticketId)
-            put("{{ticket.tableName}}", ticketData.tableName)
-            put("{{ticket.roomName}}", ticketData.roomName)
-            put("{{ticket.date}}", ticketData.date)
-            put("{{ticket.total}}", ticketData.total.toString())
-            put("{{ticket.discountAmount}}", ticketData.discountAmount.toString())
-            put("{{ticket.tipAmount}}", ticketData.tipAmount.toString())
-            put("{{ticket.invoice}}", ticketData.invoice ?: "")
-            val printedAt = resolvePrintedAt(ticketData, businessConfig)
+            when (printableTicket) {
+                is PrintableTicket.SaleReceipt -> putAll(buildSaleReplacements(printableTicket.ticketData))
+                is PrintableTicket.ShiftReport -> putAll(buildShiftReplacements(printableTicket.shiftReport))
+            }
+            val printedAt = resolvePrintedAt(printableTicket, businessConfig)
             val printDate = printedAt.format(DateTimeFormatter.ofPattern(template.dateFormat.pattern, Locale.US))
             val printTime = printedAt.format(DateTimeFormatter.ofPattern(template.timeFormat.pattern, Locale.US))
             put("{{print.date}}", printDate)
@@ -266,12 +337,42 @@ class TicketFactory(
             }
         }
 
+    private fun buildSaleReplacements(ticketData: TicketData): Map<String, String> =
+        mapOf(
+            "{{ticket.id}}" to ticketData.ticketId,
+            "{{ticket.tableName}}" to ticketData.tableName,
+            "{{ticket.roomName}}" to ticketData.roomName,
+            "{{ticket.date}}" to ticketData.date,
+            "{{ticket.total}}" to ticketData.total.toString(),
+            "{{ticket.discountAmount}}" to ticketData.discountAmount.toString(),
+            "{{ticket.tipAmount}}" to ticketData.tipAmount.toString(),
+            "{{ticket.invoice}}" to (ticketData.invoice ?: ""),
+        )
+
+    private fun buildShiftReplacements(shiftReport: ShiftReportPrintData): Map<String, String> {
+        val breakdown = shiftReport.breakdown
+        return mapOf(
+            "{{shift.cashier}}" to shiftReport.cashierName,
+            "{{shift.openedAt}}" to formatShiftDateTime(shiftReport.openedAt),
+            "{{shift.closedAt}}" to shiftReport.closedAt?.let(::formatShiftDateTime).orEmpty(),
+            "{{shift.totalTickets}}" to breakdown.totalTickets.toString(),
+            "{{shift.totalSales}}" to breakdown.totalSales.toString(),
+            "{{shift.totalTips}}" to breakdown.totalTips.toString(),
+            "{{shift.initialAmount}}" to breakdown.initialAmount.toString(),
+            "{{shift.cashSales}}" to breakdown.cashSales.toString(),
+            "{{shift.cashRefunds}}" to breakdown.cashRefunds.toString(),
+            "{{shift.expectedCash}}" to breakdown.expectedTotal.toString(),
+            "{{shift.countedCash}}" to breakdown.finalAmount?.toString().orEmpty(),
+            "{{shift.difference}}" to breakdown.difference?.toString().orEmpty(),
+        )
+    }
+
     private fun resolvePrintedAt(
-        ticketData: TicketData,
+        printableTicket: PrintableTicket,
         businessConfig: Config?,
     ): ZonedDateTime {
         val businessZone = businessConfig?.timezone?.let(ZoneId::of) ?: clock.zone
-        return ticketData.issuedAt
+        return printableTicket.issuedAt
             ?.let(::parseIssuedAt)
             ?.atZone(businessZone)
             ?: ZonedDateTime.now(clock).withZoneSameInstant(businessZone)

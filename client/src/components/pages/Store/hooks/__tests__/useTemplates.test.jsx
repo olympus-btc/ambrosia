@@ -30,13 +30,15 @@ function TestComponent() {
     createTemplate,
     updateTemplate,
     deleteTemplate,
+    setDefaultTemplate,
   } = useTemplates();
 
   useEffect(() => {
     handlers.createTemplate = createTemplate;
     handlers.updateTemplate = updateTemplate;
     handlers.deleteTemplate = deleteTemplate;
-  }, [createTemplate, updateTemplate, deleteTemplate]);
+    handlers.setDefaultTemplate = setDefaultTemplate;
+  }, [createTemplate, updateTemplate, deleteTemplate, setDefaultTemplate]);
 
   return (
     <div>
@@ -44,6 +46,7 @@ function TestComponent() {
       <span data-testid="count">{templates.length}</span>
       <span data-testid="first-name">{templates[0]?.name ?? ""}</span>
       <span data-testid="error">{error ? "yes" : "no"}</span>
+      <span data-testid="default-names">{templates.filter((template) => template.isDefault).map((template) => template.name).join(",")}</span>
     </div>
   );
 }
@@ -182,6 +185,29 @@ describe("useTemplates", () => {
       skipForbiddenRedirect: true,
     });
     expect(screen.getByTestId("count")).toHaveTextContent("1");
+  });
+
+  it("sets a template as the default only within its ticket type", async () => {
+    httpClient.mockResolvedValue({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([
+      { id: "t-1", name: "alice", ticketType: "RECEIPT", isDefault: true },
+      { id: "t-2", name: "bob", ticketType: "SHIFT_CLOSE", isDefault: true },
+      { id: "t-3", name: "eve", ticketType: "SHIFT_CLOSE", isDefault: false },
+    ]);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("3"));
+
+    await act(async () => {
+      await handlers.setDefaultTemplate("t-3");
+    });
+
+    expect(httpClient).toHaveBeenCalledWith("/templates/t-3/default", {
+      method: "POST",
+      skipForbiddenRedirect: true,
+    });
+    expect(screen.getByTestId("default-names")).toHaveTextContent("alice,eve");
   });
 
   it("validates template id for update and delete", async () => {

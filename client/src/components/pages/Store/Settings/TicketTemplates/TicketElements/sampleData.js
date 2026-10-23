@@ -12,6 +12,28 @@ export const sampleTicket = {
   paymentMethod: "Cash",
 };
 
+export const sampleShiftReport = {
+  cashierName: "Ana",
+  openedAt: "2024-01-10T08:00:00",
+  closedAt: "2024-01-10T18:05:00",
+  breakdown: {
+    shiftId: "sample-shift",
+    initialAmount: 100,
+    finalAmount: 395,
+    difference: 5,
+    totalSales: 420,
+    totalTips: 25,
+    cashSales: 300,
+    cashRefunds: 10,
+    expectedTotal: 390,
+    totalTickets: 12,
+    byPaymentMethod: [
+      { name: "Cash", total: 300 },
+      { name: "Credit Card", total: 120 },
+    ],
+  },
+};
+
 export const sampleConfig = {
   businessName: "Ambrosia",
   businessAddress: "Calle Principal 123",

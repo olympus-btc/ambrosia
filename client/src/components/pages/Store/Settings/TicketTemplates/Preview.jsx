@@ -2,7 +2,7 @@
 
 import { Button, Select, SelectItem } from "@heroui/react";
 
-import { hasVisibleContent, TicketElementsPreview, useSampleTicket } from "./TicketElements";
+import { hasVisibleContent, TicketElementsPreview, useSampleShiftReport, useSampleTicket } from "./TicketElements";
 
 export function TemplatePreview({
   templateElements,
@@ -17,6 +17,7 @@ export function TemplatePreview({
   settingsTranslations,
 }) {
   const sampleTicket = useSampleTicket();
+  const sampleShiftReport = useSampleShiftReport();
 
   return (
     <div className="w-full lg:flex-1 lg:sticky lg:top-0">
@@ -54,6 +55,7 @@ export function TemplatePreview({
             businessConfig={businessConfig}
             printFormats={printFormats}
             sampleTicket={sampleTicket}
+            sampleShiftReport={sampleShiftReport}
           />
         </div>
         {!hasVisibleContent(templateElements) && (

@@ -10,6 +10,8 @@ object TicketTemplatesTable : SQLiteUUIDTable("ticket_templates") {
     val name = varchar("name", 255).uniqueIndex()
     val dateFormat = varchar("date_format", 20).default("DAY_MONTH_YEAR")
     val timeFormat = varchar("time_format", 10).default("HOURS_24")
+    val ticketType = varchar("ticket_type", 20).default("RECEIPT")
+    val isDefault = bool("is_default").default(false)
 }
 
 class TicketTemplateEntity(
@@ -20,6 +22,8 @@ class TicketTemplateEntity(
     var name by TicketTemplatesTable.name
     var dateFormat by TicketTemplatesTable.dateFormat
     var timeFormat by TicketTemplatesTable.timeFormat
+    var ticketType by TicketTemplatesTable.ticketType
+    var isDefault by TicketTemplatesTable.isDefault
 }
 
 object TicketTemplateElementsTable : SQLiteUUIDTable("ticket_template_elements") {

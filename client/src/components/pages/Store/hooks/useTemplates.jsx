@@ -90,6 +90,25 @@ export function useTemplates() {
     }
   }, []);
 
+  const setDefaultTemplate = useCallback(async (templateId) => {
+    if (!templateId) throw new Error("templateId is required");
+    try {
+      await httpClient(`/templates/${templateId}/default`, { method: "POST", skipForbiddenRedirect: true });
+      setTemplates((currentTemplates) => {
+        if (!Array.isArray(currentTemplates)) return currentTemplates;
+        const defaultTicketType = currentTemplates.find((template) => template.id === templateId)?.ticketType;
+        return currentTemplates.map((template) => (template.ticketType === defaultTicketType
+          ? { ...template, isDefault: template.id === templateId }
+          : template));
+      });
+      return true;
+    } catch (setDefaultTemplateError) {
+      console.error("Error setting default template:", setDefaultTemplateError);
+      setError(setDefaultTemplateError);
+      throw setDefaultTemplateError;
+    }
+  }, []);
+
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
@@ -102,5 +121,6 @@ export function useTemplates() {
     createTemplate,
     updateTemplate,
     deleteTemplate,
+    setDefaultTemplate,
   };
 }

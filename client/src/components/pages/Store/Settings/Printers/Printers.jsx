@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 
 import { usePaymentMethods } from "../../Cart/hooks/usePaymentMethod";
 import { usePrinters } from "../../hooks/usePrinter";
-import { useTemplates } from "../../hooks/useTemplates";
 
 import { PrintersCard } from "./PrintersCard";
 
@@ -24,12 +23,10 @@ export function Printers() {
     deletePrinterConfig,
     setDefaultPrinterConfig,
   } = usePrinters();
-  const { templates, loading: loadingTemplates } = useTemplates();
   const { paymentMethods } = usePaymentMethods();
 
   const [printerType, setPrinterType] = useState("CUSTOMER");
   const [printerName, setPrinterName] = useState("");
-  const [templateName, setTemplateName] = useState("");
   const [isDefault, setIsDefault] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,13 +34,10 @@ export function Printers() {
   const autoDefaultedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) return;
-    const hasAvailable = availablePrinters.length > 0;
-    const hasTemplates = Array.isArray(templates) && templates.length > 0;
-    if (hasAvailable) setPrinterName(availablePrinters[0]);
-    if (hasTemplates) setTemplateName(templates[0].name);
-    if (hasAvailable || hasTemplates) initializedRef.current = true;
-  }, [availablePrinters, templates]);
+    if (initializedRef.current || availablePrinters.length === 0) return;
+    setPrinterName(availablePrinters[0]);
+    initializedRef.current = true;
+  }, [availablePrinters]);
 
   useEffect(() => {
     if (autoDefaultedRef.current || loadingConfigs) return;
@@ -72,13 +66,11 @@ export function Printers() {
       await createPrinterConfig({
         printerType,
         printerName,
-        templateName: templateName || null,
         isDefault,
         enabled,
       });
       setPrinterType("CUSTOMER");
       setPrinterName(availablePrinters[0] ?? "");
-      setTemplateName(templates?.[0]?.name ?? "");
       setIsDefault(false);
       setEnabled(true);
       addToast({ description: settingsTranslations("cardPrinters.saveSuccess"), color: "success" });
@@ -117,15 +109,14 @@ export function Printers() {
   };
 
   const printerFormState = {
-    printerType, printerName, templateName, isDefault, enabled,
+    printerType, printerName, isDefault, enabled,
     onPrinterTypeChange: setPrinterType,
     onPrinterNameChange: setPrinterName,
-    onTemplateNameChange: setTemplateName,
     onDefaultChange: setIsDefault,
     onEnabledChange: setEnabled,
   };
-  const printerData = { availablePrinters, configRows, templates, paymentMethods };
-  const printerLoading = { available: loadingAvailable, configs: loadingConfigs, templates: loadingTemplates };
+  const printerData = { availablePrinters, configRows, paymentMethods };
+  const printerLoading = { available: loadingAvailable, configs: loadingConfigs };
   const printerState = {
     error,
     saving,

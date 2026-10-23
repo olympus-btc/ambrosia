@@ -9,29 +9,34 @@ import { useConfigurations } from "@/providers/configurations/configurationsProv
 import { usePrinters } from "@components/pages/Store/hooks/usePrinter";
 import { useTemplates } from "@components/pages/Store/hooks/useTemplates";
 
-import { createElement, DEFAULT_PRINT_FORMATS, DEFAULT_STYLE } from "./defaults";
+import { createDefaultElements, createElement, DEFAULT_TICKET_TYPE, DEFAULT_PRINT_FORMATS, DEFAULT_STYLE } from "./defaults";
 import { TicketTemplatesEditor } from "./Editor";
 import { TicketTemplatesFooter } from "./Footer";
 import { TemplatePreview } from "./Preview";
-import { useSampleTicket } from "./TicketElements";
+import { useSampleShiftReport, useSampleTicket } from "./TicketElements";
 
 const PRINTER_TYPES = ["CUSTOMER"];
 
 export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }) {
   const settingsTranslations = useTranslations("settings");
   const {
-    templates,
+    templates: existingTemplates,
     createTemplate,
     updateTemplate,
     deleteTemplate,
+    setDefaultTemplate,
   } = useTemplates();
   const { printTicket } = usePrinters();
   const { config } = useConfigurations();
   const sampleTicket = useSampleTicket();
+  const sampleShiftReport = useSampleShiftReport();
 
   const [selectedId, setSelectedId] = useState("");
-  const [name, setName] = useState("");
-  const [elements, setElements] = useState([createElement()]);
+  const [templateName, setTemplateName] = useState("");
+  const [ticketType, setTicketType] = useState(DEFAULT_TICKET_TYPE);
+  const [isDefault, setIsDefault] = useState(false);
+  const [settingDefault, setSettingDefault] = useState(false);
+  const [templateElements, setTemplateElements] = useState([createElement()]);
   const [printFormats, setPrintFormats] = useState(DEFAULT_PRINT_FORMATS);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -41,44 +46,56 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   useEffect(() => {
     if (isOpen && initialTemplate) {
       setSelectedId(initialTemplate.id);
-      setName(initialTemplate.name);
+      setTemplateName(initialTemplate.name);
+      setTicketType(initialTemplate.ticketType || DEFAULT_TICKET_TYPE);
+      setIsDefault(Boolean(initialTemplate.isDefault));
       setPrintFormats({
         dateFormat: initialTemplate.dateFormat || DEFAULT_PRINT_FORMATS.dateFormat,
         timeFormat: initialTemplate.timeFormat || DEFAULT_PRINT_FORMATS.timeFormat,
       });
-      const mappedElements = (initialTemplate.elements || []).map((element) => ({
-        localId: element.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        type: element.type,
-        value: element.value,
-        style: element.style || DEFAULT_STYLE,
+      const editableTemplateElements = (initialTemplate.elements || []).map((savedTemplateElement) => ({
+        localId: savedTemplateElement.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: savedTemplateElement.type,
+        value: savedTemplateElement.value,
+        style: savedTemplateElement.style || DEFAULT_STYLE,
       }));
-      setElements(mappedElements.length ? mappedElements : [createElement()]);
+      setTemplateElements(editableTemplateElements.length ? editableTemplateElements : [createElement()]);
     } else if (isOpen && !initialTemplate) {
       setSelectedId("");
-      setName("");
+      setTemplateName("");
+      setTicketType(DEFAULT_TICKET_TYPE);
+      setIsDefault(false);
       setPrintFormats(DEFAULT_PRINT_FORMATS);
-      setElements([createElement()]);
+      setTemplateElements([createElement()]);
     }
   }, [isOpen, initialTemplate]);
 
   const resetForm = () => {
     setSelectedId("");
-    setName("");
+    setTemplateName("");
+    setTicketType(DEFAULT_TICKET_TYPE);
+    setIsDefault(false);
     setPrintFormats(DEFAULT_PRINT_FORMATS);
-    setElements([createElement()]);
+    setTemplateElements([createElement()]);
+  };
+
+  const handleTicketTypeChange = (selectedTicketType) => {
+    setTicketType(selectedTicketType);
+    setTemplateElements(createDefaultElements(selectedTicketType));
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!templateName.trim()) return;
     setSaving(true);
     const templatePayload = {
-      name: name.trim(),
+      name: templateName.trim(),
+      ticketType,
       dateFormat: printFormats.dateFormat,
       timeFormat: printFormats.timeFormat,
-      elements: elements.map((element) => ({
-        type: element.type,
-        value: element.value ?? "",
-        style: element.style || DEFAULT_STYLE,
+      elements: templateElements.map((editedTemplateElement) => ({
+        type: editedTemplateElement.type,
+        value: editedTemplateElement.value ?? "",
+        style: editedTemplateElement.style || DEFAULT_STYLE,
       })),
     };
     try {
@@ -88,6 +105,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         const createdTemplate = await createTemplate(templatePayload);
         if (createdTemplate?.id) {
           setSelectedId(createdTemplate.id);
+          setIsDefault(!existingTemplates.some((template) => template.ticketType === ticketType && template.isDefault));
         }
       }
       addToast({ color: "success", description: settingsTranslations("templates.saveSuccess") });
@@ -100,12 +118,16 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   };
 
   const handlePrintTest = async () => {
-    if (!name.trim()) return;
+    if (!templateName.trim()) return;
     setPrinting(true);
     try {
+      const samplePrintableTicket = ticketType === "SHIFT_CLOSE"
+        ? { shiftReport: sampleShiftReport }
+        : { ticketData: sampleTicket };
       await printTicket({
-        templateName: name.trim(),
-        ticketData: sampleTicket,
+        templateName: templateName.trim(),
+        ticketType,
+        ...samplePrintableTicket,
         printerType,
         broadcast: false,
         forceTemplateName: true,
@@ -128,9 +150,24 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
   };
 
   const templateExists = useMemo(
-    () => templates.some((template) => template.name === name.trim()),
-    [templates, name],
+    () => existingTemplates.some((template) => template.name === templateName.trim()),
+    [existingTemplates, templateName],
   );
+
+  const handleSetDefault = async () => {
+    if (!selectedId) return;
+    setSettingDefault(true);
+    try {
+      await setDefaultTemplate(selectedId);
+      setIsDefault(true);
+      addToast({ color: "success", description: settingsTranslations("templates.setDefaultSuccess") });
+    } catch (setDefaultError) {
+      console.error("Failed to set default template:", setDefaultError);
+      addToast({ color: "danger", description: settingsTranslations("templates.setDefaultError") });
+    } finally {
+      setSettingDefault(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!selectedId) return;
@@ -166,25 +203,28 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         <ModalBody>
           <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
             <TicketTemplatesEditor
-              name={name}
-              onNameChange={(event) => setName(event.target.value)}
+              templateName={templateName}
+              onTemplateNameChange={(event) => setTemplateName(event.target.value)}
+              ticketType={ticketType}
+              onTicketTypeChange={handleTicketTypeChange}
+              isTicketTypeLocked={Boolean(selectedId)}
               printFormats={printFormats}
               onPrintFormatsChange={setPrintFormats}
-              elements={elements}
-              onElementChange={(updatedElement) => setElements((prev) => prev.map((element) => (element.localId === updatedElement.localId ? updatedElement : element)))}
+              templateElements={templateElements}
+              onElementChange={(updatedTemplateElement) => setTemplateElements((currentTemplateElements) => currentTemplateElements.map((existingTemplateElement) => (existingTemplateElement.localId === updatedTemplateElement.localId ? updatedTemplateElement : existingTemplateElement)))}
               onElementAdd={() => {
-                const newElement = createElement();
-                setElements((prev) => [...prev, newElement]);
-                return newElement;
+                const emptyTextTemplateElement = createElement();
+                setTemplateElements((currentTemplateElements) => [...currentTemplateElements, emptyTextTemplateElement]);
+                return emptyTextTemplateElement;
               }}
-              onElementReorder={(reorderedElements) => setElements(reorderedElements)}
-              onElementRemove={(localId) => setElements((prev) => prev.filter((element) => element.localId !== localId))}
+              onElementReorder={(reorderedTemplateElements) => setTemplateElements(reorderedTemplateElements)}
+              onElementRemove={(localId) => setTemplateElements((currentTemplateElements) => currentTemplateElements.filter((remainingTemplateElement) => remainingTemplateElement.localId !== localId))}
               config={config}
               settingsTranslations={settingsTranslations}
             />
 
             <TemplatePreview
-              templateElements={elements}
+              templateElements={templateElements}
               businessConfig={config}
               printFormats={printFormats}
               printerType={printerType}
@@ -200,12 +240,15 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         <TicketTemplatesFooter
           key={selectedId}
           selectedId={selectedId}
+          isDefault={isDefault}
+          settingDefault={settingDefault}
+          onSetDefault={handleSetDefault}
           deleting={deleting}
           onDelete={handleDelete}
           onClose={onClose}
           onSave={handleSave}
           saving={saving}
-          name={name}
+          templateName={templateName}
           settingsTranslations={settingsTranslations}
         />
       </ModalContent>

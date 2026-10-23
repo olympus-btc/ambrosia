@@ -7,11 +7,12 @@ import { ElementLogo } from "./ElementLogo";
 import { ElementPaymentMethodRow } from "./ElementPaymentMethodRow";
 import { ElementQrCode } from "./ElementQrCode";
 import { ElementSeparator } from "./ElementSeparator";
+import { ElementShiftSummary } from "./ElementShiftSummary";
 import { ElementTableRow } from "./ElementTableRow";
 import { ElementText } from "./ElementText";
 import { ElementTotalRow } from "./ElementTotalRow";
 
-const ALWAYS_VISIBLE_TYPES = ["SEPARATOR", "LINE_BREAK", "TABLE_ROW", "LOGO"];
+const ALWAYS_VISIBLE_TYPES = ["SEPARATOR", "LINE_BREAK", "TABLE_ROW", "LOGO", "SHIFT_SUMMARY"];
 
 export function hasVisibleContent(templateElements) {
   return Array.isArray(templateElements) && templateElements.some(
@@ -31,7 +32,7 @@ function resolveAlignment(justification) {
   return "text-left";
 }
 
-export function TicketElementsPreview({ templateElements, businessConfig, printFormats, sampleTicket }) {
+export function TicketElementsPreview({ templateElements, businessConfig, printFormats, sampleTicket, sampleShiftReport }) {
   if (!Array.isArray(templateElements) || templateElements.length === 0) {
     return null;
   }
@@ -85,6 +86,16 @@ export function TicketElementsPreview({ templateElements, businessConfig, printF
         businessConfig,
         printFormats,
         sampleTicket,
+        className: elementClassName,
+      });
+    }
+    if (templateElement.type === "SHIFT_SUMMARY") {
+      return ElementShiftSummary({
+        localId: templateElement.localId,
+        templateText: templateElement.value,
+        businessConfig,
+        printFormats,
+        sampleShiftReport,
         className: elementClassName,
       });
     }

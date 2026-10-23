@@ -7,10 +7,12 @@ import pos.ambrosia.models.ElementStyle
 import pos.ambrosia.models.ElementType
 import pos.ambrosia.models.FontSize
 import pos.ambrosia.models.Justification
+import pos.ambrosia.models.PrintableTicketType
 import pos.ambrosia.models.TicketDateFormat
 import pos.ambrosia.models.TicketElementCreateRequest
 import pos.ambrosia.models.TicketTemplateRequest
 import pos.ambrosia.models.TicketTimeFormat
+import pos.ambrosia.services.TemplateDeletionStatus
 import pos.ambrosia.services.TicketTemplateService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
@@ -206,30 +208,110 @@ class TicketTemplateServiceTest {
     }
 
     @Test
-    fun `deleteTemplate returns true if deleted`() {
+    fun `deleteTemplate deletes a template that is not the default`() {
         runBlocking {
             val templateId = ExposedTestDb.seedTicketTemplate("My Template")
             ExposedTestDb.seedTicketTemplateElement(templateId)
 
-            val success = service.deleteTemplate(templateId)
-            assertTrue(success)
+            val deletionStatus = service.deleteTemplate(templateId)
+            assertEquals(TemplateDeletionStatus.DELETED, deletionStatus)
             assertNull(service.getTemplateById(templateId))
         }
     }
 
     @Test
-    fun `deleteTemplate returns false for invalid uuid`() {
+    fun `deleteTemplate reports not found for invalid uuid`() {
         runBlocking {
-            val success = service.deleteTemplate("not-a-uuid")
-            assertFalse(success)
+            val deletionStatus = service.deleteTemplate("not-a-uuid")
+            assertEquals(TemplateDeletionStatus.NOT_FOUND, deletionStatus)
         }
     }
 
     @Test
-    fun `deleteTemplate returns false if not found`() {
+    fun `deleteTemplate reports not found if not found`() {
         runBlocking {
-            val success = service.deleteTemplate(UUID.randomUUID().toString())
-            assertFalse(success)
+            val deletionStatus = service.deleteTemplate(UUID.randomUUID().toString())
+            assertEquals(TemplateDeletionStatus.NOT_FOUND, deletionStatus)
+        }
+    }
+
+    @Test
+    fun `deleteTemplate refuses to delete the default template of a ticket type`() {
+        runBlocking {
+            val templateId = ExposedTestDb.seedTicketTemplate("alice", isDefault = true)
+
+            val deletionStatus = service.deleteTemplate(templateId)
+
+            assertEquals(TemplateDeletionStatus.IS_DEFAULT, deletionStatus)
+            assertNotNull(service.getTemplateById(templateId))
+        }
+    }
+
+    @Test
+    fun `addTemplate stores the ticket type and makes the first template of that type the default`() {
+        runBlocking {
+            val receiptTemplateId = service.addTemplate(TicketTemplateRequest(name = "alice", elements = emptyList()))
+            val shiftCloseTemplateId =
+                service.addTemplate(
+                    TicketTemplateRequest(name = "bob", elements = emptyList(), ticketType = PrintableTicketType.SHIFT_CLOSE),
+                )
+            val secondShiftCloseTemplateId =
+                service.addTemplate(
+                    TicketTemplateRequest(name = "eve", elements = emptyList(), ticketType = PrintableTicketType.SHIFT_CLOSE),
+                )
+
+            val receiptTemplate = service.getTemplateById(assertNotNull(receiptTemplateId))
+            val shiftCloseTemplate = service.getTemplateById(assertNotNull(shiftCloseTemplateId))
+            val secondShiftCloseTemplate = service.getTemplateById(assertNotNull(secondShiftCloseTemplateId))
+            assertEquals(PrintableTicketType.RECEIPT, receiptTemplate?.ticketType)
+            assertEquals(true, receiptTemplate?.isDefault)
+            assertEquals(PrintableTicketType.SHIFT_CLOSE, shiftCloseTemplate?.ticketType)
+            assertEquals(true, shiftCloseTemplate?.isDefault)
+            assertEquals(false, secondShiftCloseTemplate?.isDefault)
+        }
+    }
+
+    @Test
+    fun `getDefaultTemplate returns the default template of the requested ticket type`() {
+        runBlocking {
+            ExposedTestDb.seedTicketTemplate("alice", ticketType = "RECEIPT", isDefault = true)
+            ExposedTestDb.seedTicketTemplate("bob", ticketType = "SHIFT_CLOSE", isDefault = true)
+            ExposedTestDb.seedTicketTemplate("eve", ticketType = "SHIFT_CLOSE")
+
+            assertEquals("alice", service.getDefaultTemplate(PrintableTicketType.RECEIPT)?.name)
+            assertEquals("bob", service.getDefaultTemplate(PrintableTicketType.SHIFT_CLOSE)?.name)
+        }
+    }
+
+    @Test
+    fun `getDefaultTemplate returns null when the ticket type has no default template`() {
+        runBlocking {
+            ExposedTestDb.seedTicketTemplate("alice", ticketType = "SHIFT_CLOSE")
+
+            assertNull(service.getDefaultTemplate(PrintableTicketType.SHIFT_CLOSE))
+        }
+    }
+
+    @Test
+    fun `setDefaultTemplate replaces the default only within the same ticket type`() {
+        runBlocking {
+            val receiptDefaultId = ExposedTestDb.seedTicketTemplate("alice", ticketType = "RECEIPT", isDefault = true)
+            val shiftCloseDefaultId = ExposedTestDb.seedTicketTemplate("bob", ticketType = "SHIFT_CLOSE", isDefault = true)
+            val newShiftCloseDefaultId = ExposedTestDb.seedTicketTemplate("eve", ticketType = "SHIFT_CLOSE")
+
+            assertTrue(service.setDefaultTemplate(newShiftCloseDefaultId))
+
+            assertEquals(true, service.getTemplateById(receiptDefaultId)?.isDefault)
+            assertEquals(false, service.getTemplateById(shiftCloseDefaultId)?.isDefault)
+            assertEquals(true, service.getTemplateById(newShiftCloseDefaultId)?.isDefault)
+        }
+    }
+
+    @Test
+    fun `setDefaultTemplate returns false when the template does not exist`() {
+        runBlocking {
+            assertFalse(service.setDefaultTemplate(UUID.randomUUID().toString()))
+            assertFalse(service.setDefaultTemplate("not-a-uuid"))
         }
     }
 

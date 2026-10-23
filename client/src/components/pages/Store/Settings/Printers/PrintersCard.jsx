@@ -63,19 +63,16 @@ export function PrintersCard({ formState, data, loading, state }) {
                 {settingsTranslations("cardPrinters.empty")}
               </p>
             )}
-            {configRows.map((config) => (
+            {configRows.map((printerConfig) => (
               <PrinterConfigRow
-                key={config.id}
-                config={config}
-                templates={data.templates}
-                loadingTemplates={loading.templates}
-                onTemplateChange={(templateName) => onUpdateConfig(config.id, { templateName })}
-                onSetDefault={() => onSetDefaultConfig(config.id)}
-                onToggleDefault={(isDefault) => onUpdateConfig(config.id, { isDefault })}
-                onToggleEnabled={(enabled) => onUpdateConfig(config.id, { enabled })}
-                onRemove={() => onDeleteConfig(config.id)}
+                key={printerConfig.id}
+                printerConfig={printerConfig}
+                onSetDefault={() => onSetDefaultConfig(printerConfig.id)}
+                onToggleDefault={(isDefault) => onUpdateConfig(printerConfig.id, { isDefault })}
+                onToggleEnabled={(enabled) => onUpdateConfig(printerConfig.id, { enabled })}
+                onRemove={() => onDeleteConfig(printerConfig.id)}
                 paymentMethods={data.paymentMethods}
-                onCashDrawerChange={(cashDrawerUpdates) => onUpdateConfig(config.id, cashDrawerUpdates)}
+                onCashDrawerChange={(cashDrawerUpdates) => onUpdateConfig(printerConfig.id, cashDrawerUpdates)}
               />
             ))}
           </div>
