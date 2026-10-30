@@ -25,7 +25,7 @@ const onboardingEs = {
     businessType: {
       store: "Tienda",
       restaurant: "Restaurante (Próximamente)",
-      freelance: "Freelancer (Próximamente)",
+      freelance: "Freelancer",
     },
     descriptions: {
       store:

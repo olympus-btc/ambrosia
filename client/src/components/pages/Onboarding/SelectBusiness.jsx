@@ -65,8 +65,9 @@ export function BusinessTypeStep({ businessType, onChange }) {
         <Card
           aria-label="freelance"
           shadow="none"
-          isDisabled
-          className={`border border-gray-200 rounded-lg hover:bg-gray-200 py-4 ${businessType === "freelance" ? "bg-green-100 border-green-300" : ""}`}
+          isPressable
+          onPress={() => onChange("freelance")}
+          className={`border border-gray-200 rounded-lg hover:bg-green-200 py-4 ${businessType === "freelance" ? "bg-green-100 border-green-300" : ""}`}
         >
           <CardBody className="flex flex-row items-center gap-3 p-3 md:hidden">
             <Briefcase className="w-10 h-10 shrink-0 text-green-800" />
