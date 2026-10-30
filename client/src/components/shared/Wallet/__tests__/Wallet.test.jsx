@@ -16,8 +16,8 @@ jest.mock("@components/auth/WalletGuard", () => function MockWalletGuard({ child
   return <div data-testid="wallet-guard">{children}</div>;
 });
 
-jest.mock("../StoreWallet", () => ({
-  StoreWallet: () => <div data-testid="store-wallet" />,
+jest.mock("../WalletDashboard", () => ({
+  WalletDashboard: () => <div data-testid="wallet-dashboard" />,
 }));
 
 beforeEach(() => {
@@ -43,13 +43,13 @@ describe("Wallet", () => {
     expect(usePermission).toHaveBeenCalledWith({ allOf: ["wallet_read"] });
   });
 
-  it("renders WalletGuard and StoreWallet when wallet_read is granted", () => {
+  it("renders WalletGuard and WalletDashboard when wallet_read is granted", () => {
     usePermission.mockReturnValue(true);
 
     render(<Wallet />);
 
     expect(screen.getByTestId("wallet-guard")).toBeInTheDocument();
-    expect(screen.getByTestId("store-wallet")).toBeInTheDocument();
+    expect(screen.getByTestId("wallet-dashboard")).toBeInTheDocument();
     expect(screen.queryByText("permissionBlocked.title")).not.toBeInTheDocument();
   });
 

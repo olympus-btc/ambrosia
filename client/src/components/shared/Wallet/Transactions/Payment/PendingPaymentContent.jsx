@@ -12,7 +12,7 @@ import { Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { useWalletAmountInput } from "@/components/pages/Store/Wallet/Transactions/hooks/useWalletAmountInput";
+import { useWalletAmountInput } from "@/components/shared/Wallet/Transactions/hooks/useWalletAmountInput";
 
 import { formatFiat, formatSats } from "../../utils/formatters";
 

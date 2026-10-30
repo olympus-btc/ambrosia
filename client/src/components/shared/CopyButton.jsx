@@ -4,7 +4,7 @@ import { Button } from "@heroui/react";
 import { Copy } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { copyToClipboard } from "@/components/pages/Store/Wallet/utils/copyToClipboard";
+import { copyToClipboard } from "@/components/shared/Wallet/utils/copyToClipboard";
 
 export function CopyButton({ value, label, ...props }) {
   const walletTranslations = useTranslations("wallet");

@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import * as clipboard from "@/components/pages/Store/Wallet/utils/copyToClipboard";
+import * as clipboard from "@/components/shared/Wallet/utils/copyToClipboard";
 import { I18nProvider } from "@i18n/I18nProvider";
 
 import { CopyButton } from "../CopyButton";
 
-jest.mock("@/components/pages/Store/Wallet/utils/copyToClipboard", () => ({
+jest.mock("@/components/shared/Wallet/utils/copyToClipboard", () => ({
   copyToClipboard: jest.fn(),
 }));
 

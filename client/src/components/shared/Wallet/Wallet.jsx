@@ -7,7 +7,7 @@ import WalletGuard from "@components/auth/WalletGuard";
 import { PageHeader } from "@components/shared/PageHeader";
 import { PermissionBlockedMessage } from "@components/shared/PermissionBlockedMessage";
 
-import { StoreWallet } from "./StoreWallet";
+import { WalletDashboard } from "./WalletDashboard";
 
 export function Wallet() {
   const walletTranslations = useTranslations("wallet");
@@ -35,7 +35,7 @@ export function Wallet() {
         confirmText={walletTranslations("access.confirmText")}
         cancelText={walletTranslations("access.cancelText")}
       >
-        <StoreWallet />
+        <WalletDashboard />
       </WalletGuard>
     </>
   );

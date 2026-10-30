@@ -10,8 +10,8 @@ import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
-import { useSatsToFiatEstimate } from "@/components/pages/Store/Wallet/Transactions/hooks/useSatsToFiatEstimate";
 import { CopyButton } from "@/components/shared/CopyButton";
+import { useSatsToFiatEstimate } from "@/components/shared/Wallet/Transactions/hooks/useSatsToFiatEstimate";
 
 import { formatFiat, formatSats } from "../../utils/formatters";
 

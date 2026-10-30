@@ -2,7 +2,7 @@ import { act } from "react";
 
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import * as clipboard from "@/components/pages/Store/Wallet/utils/copyToClipboard";
+import * as clipboard from "@/components/shared/Wallet/utils/copyToClipboard";
 
 import { BitcoinPaymentModal } from "../BitcoinPaymentModal";
 
@@ -10,7 +10,7 @@ jest.mock("react-qr-code", () => ({
   QRCode: ({ value }) => <div data-testid="qr-code" data-value={value}>QR</div>,
 }));
 
-jest.mock("@/components/pages/Store/Wallet/utils/copyToClipboard", () => ({
+jest.mock("@/components/shared/Wallet/utils/copyToClipboard", () => ({
   copyToClipboard: jest.fn(),
 }));
 

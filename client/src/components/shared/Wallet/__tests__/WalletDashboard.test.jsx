@@ -50,7 +50,7 @@ const mockOutgoingTransactions = [
   },
 ];
 
-function renderStoreWallet() {
+function renderWalletDashboard() {
   const mockAuthContext = {
     user: { userName: "testuser", userId: 1 },
     isAuth: true,
@@ -68,7 +68,7 @@ function renderStoreWallet() {
 
 async function authenticateAndWait() {
   await act(async () => {
-    renderStoreWallet();
+    renderWalletDashboard();
   });
 
   const passwordInput = screen.getByLabelText("access.passwordLabel");
@@ -210,11 +210,11 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("StoreWallet Component", () => {
+describe("WalletDashboard Component", () => {
   describe("Page Header", () => {
     it("renders wallet title", async () => {
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       expect(screen.getByText("title")).toBeInTheDocument();
@@ -222,7 +222,7 @@ describe("StoreWallet Component", () => {
 
     it("renders wallet subtitle", async () => {
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       expect(screen.getByText("subtitle")).toBeInTheDocument();
@@ -232,7 +232,7 @@ describe("StoreWallet Component", () => {
   describe("WalletGuard Authentication", () => {
     it("shows wallet guard modal on initial load", async () => {
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       expect(screen.getByText("access.title")).toBeInTheDocument();
@@ -241,7 +241,7 @@ describe("StoreWallet Component", () => {
 
     it("allows access with valid password", async () => {
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       const passwordInput = screen.getByLabelText("access.passwordLabel");
@@ -263,7 +263,7 @@ describe("StoreWallet Component", () => {
 
     it("does not restore wallet access automatically after mount", async () => {
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       expect(walletService.getInfo).not.toHaveBeenCalled();
@@ -328,7 +328,7 @@ describe("StoreWallet Component", () => {
       );
 
       await act(async () => {
-        renderStoreWallet();
+        renderWalletDashboard();
       });
 
       const passwordInput = screen.getByLabelText("access.passwordLabel");

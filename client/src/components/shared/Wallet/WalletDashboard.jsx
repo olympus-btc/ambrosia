@@ -26,7 +26,7 @@ import { NodeError, NodeInfo } from "./NodeInfo";
 import { InvoiceModal, Transactions } from "./Transactions";
 import { WalletPasswordCard } from "./WalletPassword";
 
-export function StoreWallet() {
+export function WalletDashboard() {
   const walletTranslations = useTranslations("wallet");
   const { currency } = useCurrency();
   const { currentRate } = useBitcoinPrice({ currencyAcronym: currency.acronym });
