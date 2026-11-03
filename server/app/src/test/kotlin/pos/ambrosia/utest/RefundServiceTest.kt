@@ -55,7 +55,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RefundServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val variantService = ProductVariantService()
 
     private val mockConfig: ApplicationConfig = mock()
@@ -73,7 +73,7 @@ class RefundServiceTest {
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
         val mockUrlValue: ApplicationConfigValue = mock()
         whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
         whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
@@ -84,7 +84,7 @@ class RefundServiceTest {
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     private class FakeNwcLightningBackend : LightningBackend by FakeLightningBackend("nwc") {

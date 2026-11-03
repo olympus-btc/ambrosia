@@ -19,16 +19,62 @@ class AuthServiceTest {
     private val environment = applicationEnvironment { config = testJwtConfig() }
     private val usersService = UsersService(environment)
     private val service = AuthService(environment)
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
+    }
+
+    @Test
+    fun `authenticateUser accepts a legacy four digit pin`() {
+        val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+        ExposedTestDb.seedUserWithPin("legacy-user", "1234", environment, roleId)
+
+        val authenticated = service.authenticateUser("legacy-user", "1234".toCharArray())
+
+        assertNotNull(authenticated)
+        assertEquals("legacy-user", authenticated.name)
+        assertEquals("Cashier", authenticated.role)
+    }
+
+    @Test
+    fun `authenticateUser accepts a six digit pin`() {
+        val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+        ExposedTestDb.seedUserWithPin("current-user", "123456", environment, roleId)
+
+        val authenticated = service.authenticateUser("current-user", "123456".toCharArray())
+
+        assertNotNull(authenticated)
+        assertEquals("current-user", authenticated.name)
+    }
+
+    @Test
+    fun `authenticateUser rejects a wrong pin of the same length`() {
+        val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+        ExposedTestDb.seedUserWithPin("legacy-user", "1234", environment, roleId)
+
+        assertNull(service.authenticateUser("legacy-user", "4321".toCharArray()))
+    }
+
+    @Test
+    fun `authenticateUser rejects a six digit pin for a legacy four digit user`() {
+        val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+        ExposedTestDb.seedUserWithPin("legacy-user", "1234", environment, roleId)
+
+        assertNull(service.authenticateUser("legacy-user", "123456".toCharArray()))
+    }
+
+    @Test
+    fun `authenticateUser rejects an unknown user`() {
+        ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+        assertNull(service.authenticateUser("does-not-exist", "123456".toCharArray()))
     }
 
     @Test
@@ -36,10 +82,10 @@ class AuthServiceTest {
         runBlocking {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
             usersService.addUser(
-                User(name = "cashier-user", pin = "1234", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
+                User(name = "cashier-user", pin = "123456", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
             )
 
-            val authenticatedUser = service.authenticateUser("cashier-user", "1234".toCharArray())
+            val authenticatedUser = service.authenticateUser("cashier-user", "123456".toCharArray())
 
             assertNotNull(authenticatedUser)
             assertEquals("cashier@example.com", authenticatedUser.email)
@@ -51,9 +97,9 @@ class AuthServiceTest {
     fun `authenticateUser returns null email and phone for a user that never set them`() {
         runBlocking {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
-            usersService.addUser(User(name = "cashier-user", pin = "1234", role = roleId))
+            usersService.addUser(User(name = "cashier-user", pin = "123456", role = roleId))
 
-            val authenticatedUser = service.authenticateUser("cashier-user", "1234".toCharArray())
+            val authenticatedUser = service.authenticateUser("cashier-user", "123456".toCharArray())
 
             assertNotNull(authenticatedUser)
             assertNull(authenticatedUser.email)

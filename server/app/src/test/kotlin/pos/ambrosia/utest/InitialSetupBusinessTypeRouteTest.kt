@@ -56,7 +56,7 @@ class InitialSetupBusinessTypeRouteTest {
                             "businessType":"bakery",
                             "userName":"admin",
                             "userPassword":"Password123!",
-                            "userPin":"1234",
+                            "userPin":"123456",
                             "businessName":"Test Bakery",
                             "businessCurrency":"USD",
                             "timezone":"America/Mexico_City"
@@ -86,7 +86,7 @@ class InitialSetupBusinessTypeRouteTest {
                             "businessType":"freelance",
                             "userName":"admin",
                             "userPassword":"Password123!",
-                            "userPin":"1234",
+                            "userPin":"123456",
                             "businessName":"Jane Doe",
                             "businessProfession":"Software Developer",
                             "businessCurrency":"USD",

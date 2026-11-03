@@ -32,17 +32,17 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AdminNotificationServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = AdminNotificationService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

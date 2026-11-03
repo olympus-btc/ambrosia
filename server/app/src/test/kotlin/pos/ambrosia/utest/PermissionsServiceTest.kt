@@ -12,17 +12,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PermissionsServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = PermissionsService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

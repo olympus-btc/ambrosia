@@ -156,7 +156,7 @@ class UserPrivilegeEscalationRouteTest {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
                     setBody(
-                        """{"user":{"name":"new-admin","pin":"1234","role":"$adminRoleId"},"currentUserPin":"$TEST_USER_PIN"}""",
+                        """{"user":{"name":"new-admin","pin":"123456","role":"$adminRoleId"},"currentUserPin":"$TEST_USER_PIN"}""",
                     )
                 }
 

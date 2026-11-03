@@ -20,21 +20,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class UsersServiceTest {
     private val environment = applicationEnvironment { config = testJwtConfig() }
     private val service = UsersService(environment)
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test
@@ -91,6 +92,54 @@ class UsersServiceTest {
     }
 
     @Test
+    fun `addUser rejects a pin shorter than six digits`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "short-pin-user", pin = "12345", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a pin longer than six digits`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "long-pin-user", pin = "1234567", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a legacy four digit pin`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "legacy-pin-user", pin = "1234", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser rejects a non numeric pin`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            assertNull(service.addUser(User(name = "non-numeric-pin-user", pin = "12ab56", role = roleId)))
+        }
+    }
+
+    @Test
+    fun `addUser accepts a six digit pin and stores it hashed`() {
+        runBlocking {
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
+
+            val userId = service.addUser(User(name = "valid-pin-user", pin = "123456", role = roleId))
+
+            assertNotNull(userId)
+            assertNotEquals("123456", ExposedTestDb.readStoredPin(userId))
+        }
+    }
+
+    @Test
     fun `getUserIdentities returns id, name and role`() {
         runBlocking {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
@@ -110,7 +159,7 @@ class UsersServiceTest {
 
             val userId =
                 service.addUser(
-                    User(name = "cashier-user", pin = "1234", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
+                    User(name = "cashier-user", pin = "123456", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
                 )
 
             assertNotNull(userId)
@@ -126,7 +175,7 @@ class UsersServiceTest {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
             val userId =
                 service.addUser(
-                    User(name = "cashier-user", pin = "1234", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
+                    User(name = "cashier-user", pin = "123456", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
                 )
             assertNotNull(userId)
 
@@ -144,7 +193,7 @@ class UsersServiceTest {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
             val userId =
                 service.addUser(
-                    User(name = "cashier-user", pin = "1234", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
+                    User(name = "cashier-user", pin = "123456", role = roleId, email = "cashier@example.com", phone = "+1-555-0100"),
                 )
             assertNotNull(userId)
 
@@ -161,7 +210,7 @@ class UsersServiceTest {
             val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
             val userId =
                 service.addUser(
-                    User(name = "cashier-user", pin = "1234", role = roleId, email = "old@example.com", phone = "+1-555-0100"),
+                    User(name = "cashier-user", pin = "123456", role = roleId, email = "old@example.com", phone = "+1-555-0100"),
                 )
             assertNotNull(userId)
 
@@ -182,7 +231,7 @@ class UsersServiceTest {
             val maximumLengthEmail = "${"a".repeat(242)}@example.com"
             assertEquals(254, maximumLengthEmail.length)
 
-            val userId = service.addUser(User(name = "cashier-user", pin = "1234", role = roleId, email = maximumLengthEmail))
+            val userId = service.addUser(User(name = "cashier-user", pin = "123456", role = roleId, email = maximumLengthEmail))
             assertNotNull(userId)
 
             val user = service.getUserById(userId)

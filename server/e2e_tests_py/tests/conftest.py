@@ -95,7 +95,7 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 "businessType": "store",
                 "userName": "cooluser1",
                 "userPassword": "password123",
-                "userPin": "0000",
+                "userPin": "000000",
                 "businessName": "Test Store",
                 "businessAddress": "123 Test St",
                 "businessPhone": "1234567890",

@@ -25,7 +25,7 @@ function isPasswordStrong(password) {
 }
 
 function isPinValid(pin) {
-  return /^\d{4}$/.test(pin);
+  return /^\d{6}$/.test(pin);
 }
 
 const STEP_VALIDATORS = {
