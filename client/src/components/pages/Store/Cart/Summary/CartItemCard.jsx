@@ -51,7 +51,7 @@ export function CartItemCard({ item: cartItem, onRemove, onUpdateQuantity }) {
             label={translateCart("summary.quantity")}
             minValue={1}
             size="sm"
-            placeholder="Enter the amount"
+            placeholder={translateCart("summary.quantityPlaceholder")}
             value={cartItem.quantity}
             onValueChange={(quantityValue) => onUpdateQuantity(cartItem.id, toNumberInputValue(quantityValue, NaN))}
             onChange={(quantityChange) => onUpdateQuantity(cartItem.id, toNumberInputValue(quantityChange, NaN))}

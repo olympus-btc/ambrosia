@@ -5,12 +5,13 @@ import productsEn from "../Products/locales/en";
 import reportsEn from "../Reports/locales/en";
 import settingsEn from "../Settings/locales/en";
 import usersEn from "../Users/locales/en";
-import walletEn from "../Wallet/locales/en";
 
 const storeEn = {
   errors: {
     connectionErrorTitle: "Connection error",
     connectionErrorDescription: "Could not reach the server. Please check your connection.",
+    requestErrorTitle: "Request failed",
+    requestErrorDescription: "Something went wrong. Please try again.",
   },
   navbar: {
     users: "Users",
@@ -35,11 +36,14 @@ const storeEn = {
       sales: "Sales",
       revenue: "Revenue",
     },
+    permissionBlocked: {
+      title: "You can't view any dashboard stats",
+      subtitle: "Ask an administrator to grant you permission to view users, products, or sales.",
+    },
   },
   ...usersEn,
   ...productsEn,
   ...cartEn,
-  ...walletEn,
   ...ordersEn,
   ...reportsEn,
   ...notificationsEn,

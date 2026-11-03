@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input, Select, SelectItem, Tooltip } from "@heroui/react";
@@ -7,55 +9,81 @@ import { Bold, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 
 import { DeleteButton } from "@components/shared/DeleteButton";
 
-import { resolveValue } from "./TicketElements";
+import { DEFAULT_TICKET_TYPE, ELEMENT_TYPES_BY_TICKET_TYPE } from "./defaults";
+import { insertVariable } from "./insertVariable";
+import { LogoImageSection, LogoSourceSelect } from "./LogoSource";
+import { removeVariable } from "./removeVariable";
+import { resolveTemplateVariables } from "./TicketElements";
+import { useLogoSource } from "./useLogoSource";
 import { TemplateVariablePicker } from "./VariablePicker";
 
-const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER", "TOTAL_ROW"];
-
-const ELEMENT_TYPES = [
-  "HEADER",
-  "TEXT",
-  "LINE_BREAK",
-  "SEPARATOR",
-  "TABLE_HEADER",
-  "TABLE_ROW",
-  "TOTAL_ROW",
-  "FOOTER",
-  "QRCODE",
-];
+const VARIABLE_PICKER_TYPES = ["HEADER", "TEXT", "FOOTER", "TOTAL_ROW", "PAYMENT_METHOD"];
 
 const JUSTIFICATIONS = ["LEFT", "CENTER", "RIGHT"];
 const FONT_SIZES = ["NORMAL", "LARGE", "EXTRA_LARGE"];
 
-export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemove, config, settingsTranslations }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: element.localId,
+export function TemplateElementRow({ templateElement, ticketType = DEFAULT_TICKET_TYPE, isOpen, onToggle, onChange, onRemove, businessConfig, printFormats, settingsTranslations }) {
+  const {
+    attributes: dragHandleAttributes,
+    listeners: dragHandleListeners,
+    setNodeRef: setSortableNodeRef,
+    transform: sortableTransform,
+    transition: sortableTransition,
+    isDragging,
+  } = useSortable({
+    id: templateElement.localId,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const sortableStyle = {
+    transform: CSS.Transform.toString(sortableTransform),
+    transition: sortableTransition,
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const type = element.type;
-  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "TOTAL_ROW", "QRCODE"].includes(type);
-  const showVariablePicker = VARIABLE_PICKER_TYPES.includes(type);
-  const showStyle = type !== "LINE_BREAK" && type !== "SEPARATOR";
-  const showBold = showStyle && type !== "QRCODE";
-  const showJustification = showStyle;
+  const templateElementType = templateElement.type;
+  const showValue = ["HEADER", "TEXT", "FOOTER", "TABLE_HEADER", "TOTAL_ROW", "PAYMENT_METHOD", "QRCODE", "SHIFT_SUMMARY"].includes(templateElementType);
+  const showVariablePicker = VARIABLE_PICKER_TYPES.includes(templateElementType);
+  const showLogoSource = templateElementType === "LOGO";
+  const showStyle = templateElementType !== "LINE_BREAK" && templateElementType !== "SEPARATOR";
+  const showBold = showStyle && templateElementType !== "QRCODE" && templateElementType !== "LOGO";
+  const showJustification = showStyle && templateElementType !== "PAYMENT_METHOD";
   const showFontSize = showStyle;
 
-  const handleChange = (updates) => onChange({ ...element, ...updates });
+  const handleChange = (elementUpdates) => onChange({ ...templateElement, ...elementUpdates });
 
-  const selectVariable = (variable) => handleChange({ value: variable });
+  const logoSourceState = useLogoSource(templateElement.value ?? "", (updatedTemplateText) => handleChange({ value: updatedTemplateText }));
 
-  const typeLabel = settingsTranslations(`templates.elementTypes.${type}`);
-  const resolvedSummary = resolveValue(element.value ?? "", config);
+  const resolveTypeChange = (selectedType) => {
+    if (selectedType === "LOGO") return { type: selectedType, value: "" };
+    if (selectedType === "PAYMENT_METHOD" && !templateElement.value?.trim()) {
+      return { type: selectedType, value: settingsTranslations("templates.paymentMethodDefaultLabel") };
+    }
+    return { type: selectedType };
+  };
+
+  const cursorRangeRef = useRef(null);
+
+  const rememberCursorRange = (event) => {
+    cursorRangeRef.current = { start: event.target.selectionStart, end: event.target.selectionEnd };
+  };
+
+  const selectVariable = (variable) => {
+    const { updatedTemplateText, cursorPosition } = insertVariable(templateElement.value ?? "", variable, cursorRangeRef.current);
+    cursorRangeRef.current = { start: cursorPosition, end: cursorPosition };
+    handleChange({ value: updatedTemplateText });
+  };
+
+  const deselectVariable = (variable) => {
+    cursorRangeRef.current = null;
+    handleChange({ value: removeVariable(templateElement.value ?? "", variable) });
+  };
+
+  const typeLabel = settingsTranslations(`templates.elementTypes.${templateElementType}`);
+  const resolvedSummary = resolveTemplateVariables(templateElement.value ?? "", businessConfig, printFormats);
   const valueSummary = resolvedSummary ? `— "${resolvedSummary}"` : "";
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div ref={setSortableNodeRef} style={sortableStyle} className="rounded-lg border border-gray-200 bg-white shadow-sm">
       <div
         className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none"
         onClick={onToggle}
@@ -63,8 +91,8 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
         <span
           className="cursor-grab text-gray-400 hover:text-gray-600 shrink-0"
           onClick={(event) => event.stopPropagation()}
-          {...attributes}
-          {...listeners}
+          {...dragHandleAttributes}
+          {...dragHandleListeners}
         >
           <GripVertical className="w-4 h-4" />
         </span>
@@ -84,7 +112,7 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
           >
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
-          <DeleteButton onPress={() => onRemove(element.localId)}>
+          <DeleteButton onPress={() => onRemove(templateElement.localId)}>
             <span className="hidden sm:inline">{settingsTranslations("templates.removeElement")}</span>
           </DeleteButton>
         </div>
@@ -95,10 +123,14 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
           <div className="mb-3">
             <Select
               label={settingsTranslations("templates.elementTypeLabel")}
-              selectedKeys={element.type ? [element.type] : []}
-              onChange={(event) => { if (event.target.value) handleChange({ type: event.target.value }); }}
+              selectedKeys={templateElement.type ? [templateElement.type] : []}
+              onChange={(event) => {
+                const selectedType = event.target.value;
+                if (!selectedType) return;
+                handleChange(resolveTypeChange(selectedType));
+              }}
             >
-              {ELEMENT_TYPES.map((typeOption) => (
+              {ELEMENT_TYPES_BY_TICKET_TYPE[ticketType].map((typeOption) => (
                 <SelectItem key={typeOption} value={typeOption}>
                   {settingsTranslations(`templates.elementTypes.${typeOption}`)}
                 </SelectItem>
@@ -108,11 +140,20 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
 
           {(showValue || showStyle) && (
             <div className="grid gap-3 lg:grid-cols-[1.2fr_160px_160px_auto] lg:items-end">
+              {showLogoSource && (
+                <LogoSourceSelect
+                  logoSource={logoSourceState.logoSource}
+                  onLogoSourceChange={logoSourceState.selectLogoSource}
+                  settingsTranslations={settingsTranslations}
+                />
+              )}
+
               {showValue && (
                 <Input
                   label={settingsTranslations("templates.elementValueLabel")}
-                  value={element.value ?? ""}
+                  value={templateElement.value ?? ""}
                   onChange={(event) => handleChange({ value: event.target.value })}
+                  onSelect={rememberCursorRange}
                   endContent={showVariablePicker ? (
                     <Tooltip
                       showArrow
@@ -122,7 +163,13 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
                       classNames={{ base: "before:rounded-none before:shadow-none shadow-none", content: "rounded-md border-none shadow-none" }}
                     >
                       <div>
-                        <TemplateVariablePicker onSelect={selectVariable} settingsTranslations={settingsTranslations} />
+                        <TemplateVariablePicker
+                          templateText={templateElement.value ?? ""}
+                          ticketType={ticketType}
+                          onSelect={selectVariable}
+                          onDeselect={deselectVariable}
+                          settingsTranslations={settingsTranslations}
+                        />
                       </div>
                     </Tooltip>
                   ) : null}
@@ -132,9 +179,9 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
               {showJustification && (
                 <Select
                   label={settingsTranslations("templates.justificationLabel")}
-                  selectedKeys={element.style?.justification ? [element.style.justification] : []}
+                  selectedKeys={templateElement.style?.justification ? [templateElement.style.justification] : []}
                   onChange={(event) => handleChange({
-                    style: { ...element.style, justification: event.target.value },
+                    style: { ...templateElement.style, justification: event.target.value },
                   })}
                 >
                   {JUSTIFICATIONS.map((justification) => (
@@ -148,9 +195,9 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
               {showFontSize && (
                 <Select
                   label={settingsTranslations("templates.fontSizeLabel")}
-                  selectedKeys={element.style?.fontSize ? [element.style.fontSize] : []}
+                  selectedKeys={templateElement.style?.fontSize ? [templateElement.style.fontSize] : []}
                   onChange={(event) => handleChange({
-                    style: { ...element.style, fontSize: event.target.value },
+                    style: { ...templateElement.style, fontSize: event.target.value },
                   })}
                 >
                   {FONT_SIZES.map((fontSize) => (
@@ -165,10 +212,10 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
                 <Button
                   isIconOnly
                   size="sm"
-                  variant={element.style?.bold ? "solid" : "bordered"}
-                  color={element.style?.bold ? "primary" : "default"}
+                  variant={templateElement.style?.bold ? "solid" : "bordered"}
+                  color={templateElement.style?.bold ? "primary" : "default"}
                   onPress={() => handleChange({
-                    style: { ...element.style, bold: !element.style?.bold },
+                    style: { ...templateElement.style, bold: !templateElement.style?.bold },
                   })}
                   aria-label={settingsTranslations("templates.boldToggle")}
                 >
@@ -176,6 +223,19 @@ export function TemplateElementRow({ element, isOpen, onToggle, onChange, onRemo
                 </Button>
               )}
             </div>
+          )}
+
+          {showLogoSource && (
+            <LogoImageSection
+              logoSource={logoSourceState.logoSource}
+              templateText={templateElement.value ?? ""}
+              businessConfig={businessConfig}
+              onLogoImageChange={logoSourceState.changeLogoImage}
+              isUploading={logoSourceState.isUploading}
+              uploadErrorKey={logoSourceState.uploadErrorKey}
+              uploaderResetKey={logoSourceState.uploaderResetKey}
+              settingsTranslations={settingsTranslations}
+            />
           )}
         </div>
       )}

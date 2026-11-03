@@ -2,6 +2,13 @@ import { render, screen } from "@testing-library/react";
 
 import { TicketElementsPreview } from "../TicketElements";
 
+import { previewSampleTicket } from "./utils/previewSampleTicket";
+
+jest.mock("react-qr-code", () => ({
+  __esModule: true,
+  default: ({ value: qrValue }) => <svg data-testid="qr-code" data-value={qrValue} />,
+}));
+
 const sampleConfig = {
   businessName: "Ambrosia",
   businessAddress: "Calle Principal 123",
@@ -9,147 +16,211 @@ const sampleConfig = {
   businessEmail: "contact@ambrosia.mx",
 };
 
-function Preview({ elements, config }) {
-  return <div>{TicketElementsPreview({ elements, config })}</div>;
+function Preview({ templateElements, businessConfig }) {
+  return <div>{TicketElementsPreview({ templateElements, businessConfig, sampleTicket: previewSampleTicket })}</div>;
 }
 
 describe("TicketElementsPreview", () => {
   it("returns null for non-array input", () => {
-    const { container } = render(<Preview elements={null} config={null} />);
-    expect(container.firstChild.children).toHaveLength(0);
+    const { container: previewContainer } = render(<Preview templateElements={null} businessConfig={null} />);
+    expect(previewContainer.firstChild.children).toHaveLength(0);
   });
 
   it("returns null for empty elements", () => {
-    const { container } = render(<Preview elements={[]} config={null} />);
-    expect(container.firstChild.children).toHaveLength(0);
+    const { container: previewContainer } = render(<Preview templateElements={[]} businessConfig={null} />);
+    expect(previewContainer.firstChild.children).toHaveLength(0);
   });
 
   it("renders SEPARATOR as a dashed horizontal line", () => {
-    const { container } = render(
-      <Preview elements={[{ localId: "s-1", type: "SEPARATOR", style: {} }]} config={null} />,
+    const { container: previewContainer } = render(
+      <Preview templateElements={[{ localId: "s-1", type: "SEPARATOR", style: {} }]} businessConfig={null} />,
     );
-    expect(container.querySelector(".border-dashed")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".border-dashed")).toBeInTheDocument();
   });
 
   it("renders LINE_BREAK as a spacer", () => {
-    const { container } = render(
-      <Preview elements={[{ localId: "b-1", type: "LINE_BREAK", style: {} }]} config={null} />,
+    const { container: previewContainer } = render(
+      <Preview templateElements={[{ localId: "b-1", type: "LINE_BREAK", style: {} }]} businessConfig={null} />,
     );
-    expect(container.querySelector(".h-3")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".h-3")).toBeInTheDocument();
   });
 
-  it("renders QRCODE with QR placeholder and invoice fallback", () => {
+  it("renders QRCODE with a QR code and invoice fallback", () => {
     render(
-      <Preview elements={[{ localId: "q-1", type: "QRCODE", value: "", style: {} }]} config={null} />,
+      <Preview templateElements={[{ localId: "q-1", type: "QRCODE", value: "", style: {} }]} businessConfig={null} />,
     );
-    expect(screen.getByText("QR")).toBeInTheDocument();
+    expect(screen.getByTestId("qr-code")).toBeInTheDocument();
     expect(screen.getByText("lnbc10u1p0exampleinvoice")).toBeInTheDocument();
+  });
+
+  it("renders QRCODE with the selected size and alignment", () => {
+    render(
+      <Preview
+        templateElements={[{
+          localId: "q-3",
+          type: "QRCODE",
+          value: "https://instagram.com/bob",
+          style: { fontSize: "EXTRA_LARGE", justification: "RIGHT" },
+        }]}
+        businessConfig={null}
+      />,
+    );
+    const qrPreview = screen.getByTestId("qr-preview");
+    expect(qrPreview).toHaveClass("w-[56%]");
+    expect(qrPreview.parentElement).toHaveClass("items-end");
   });
 
   it("renders QRCODE with resolved value when provided", () => {
     render(
       <Preview
-        elements={[{ localId: "q-2", type: "QRCODE", value: "{{config.businessName}}", style: {} }]}
-        config={sampleConfig}
+        templateElements={[{ localId: "q-2", type: "QRCODE", value: "{{config.businessName}}", style: {} }]}
+        businessConfig={sampleConfig}
       />,
     );
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
   });
 
+  it("renders LOGO with the business logo", () => {
+    render(
+      <Preview
+        templateElements={[{ localId: "l-1", type: "LOGO", value: "", style: { fontSize: "LARGE" } }]}
+        businessConfig={{ businessLogoUrl: "/uploads/2026-10/alice.png" }}
+      />,
+    );
+    const logoPreview = screen.getByTestId("logo-preview");
+    expect(logoPreview).toHaveClass("w-1/2");
+    expect(logoPreview.querySelector("img")).toHaveAttribute("src", "/uploads/2026-10/alice.png");
+  });
+
   it("renders TABLE_ROW with sample ticket items and comments", () => {
     render(
-      <Preview elements={[{ localId: "t-1", type: "TABLE_ROW", style: {} }]} config={null} />,
+      <Preview templateElements={[{ localId: "t-1", type: "TABLE_ROW", style: {} }]} businessConfig={null} />,
     );
-    expect(screen.getByText("2x Burger")).toBeInTheDocument();
-    expect(screen.getByText("1x Lemonade")).toBeInTheDocument();
-    expect(screen.getByText("- no onion")).toBeInTheDocument();
+    expect(screen.getByText("2x Pina colada")).toBeInTheDocument();
+    expect(screen.getByText("1x Limonada")).toBeInTheDocument();
+    expect(screen.getByText("- sin azucar")).toBeInTheDocument();
   });
 
   it("renders TOTAL_ROW with separator, label and total", () => {
-    const { container } = render(
-      <Preview elements={[{ localId: "r-1", type: "TOTAL_ROW", value: "", style: {} }]} config={null} />,
+    const { container: previewContainer } = render(
+      <Preview templateElements={[{ localId: "r-1", type: "TOTAL_ROW", value: "", style: {} }]} businessConfig={null} />,
     );
     expect(screen.getByText("TOTAL")).toBeInTheDocument();
     expect(screen.getByText("215")).toBeInTheDocument();
-    expect(container.querySelector(".border-t")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".border-t")).toBeInTheDocument();
   });
 
   it("renders TOTAL_ROW with resolved label", () => {
     render(
       <Preview
-        elements={[{ localId: "r-2", type: "TOTAL_ROW", value: "{{config.businessName}}", style: {} }]}
-        config={sampleConfig}
+        templateElements={[{ localId: "r-2", type: "TOTAL_ROW", value: "{{config.businessName}}", style: {} }]}
+        businessConfig={sampleConfig}
       />,
     );
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
+  });
+
+  it("renders PAYMENT_METHOD with its label and the sample payment method without accents", () => {
+    render(
+      <Preview templateElements={[{ localId: "pm-1", type: "PAYMENT_METHOD", value: "Método de pago", style: {} }]} businessConfig={null} />,
+    );
+    expect(screen.getByText("Metodo de pago")).toBeInTheDocument();
+    expect(screen.getByText("Tarjeta de debito")).toBeInTheDocument();
+  });
+
+  it("renders PAYMENT_METHOD with the translated default label when it has no label", () => {
+    render(
+      <Preview templateElements={[{ localId: "pm-2", type: "PAYMENT_METHOD", value: "", style: {} }]} businessConfig={null} />,
+    );
+    expect(screen.getByText("METODO DE PAGO")).toBeInTheDocument();
   });
 
   it("renders TEXT with resolved value", () => {
     render(
       <Preview
-        elements={[{ localId: "tx-1", type: "TEXT", value: "{{config.businessName}}", style: {} }]}
-        config={sampleConfig}
+        templateElements={[{ localId: "tx-1", type: "TEXT", value: "{{config.businessName}}", style: {} }]}
+        businessConfig={sampleConfig}
       />,
     );
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
   });
 
-  it("applies bold style", () => {
-    const { container } = render(
+  it("renders TOTAL_ROW with the translated default label", () => {
+    render(
       <Preview
-        elements={[{ localId: "tx-2", type: "TEXT", value: "Bold", style: { bold: true, justification: "LEFT", fontSize: "NORMAL" } }]}
-        config={null}
+        templateElements={[{ localId: "r-3", type: "TOTAL_ROW", value: "", style: {} }]}
+        businessConfig={null}
       />,
     );
-    expect(container.querySelector(".font-semibold")).toBeInTheDocument();
+    expect(screen.getByText(previewSampleTicket.labels.total)).toBeInTheDocument();
+  });
+
+  it("renders TEXT without accents like the printer", () => {
+    render(
+      <Preview
+        templateElements={[{ localId: "tx-3", type: "TEXT", value: "Gracias por tu visita al Salón", style: {} }]}
+        businessConfig={null}
+      />,
+    );
+    expect(screen.getByText("Gracias por tu visita al Salon")).toBeInTheDocument();
+  });
+
+  it("applies bold style", () => {
+    const { container: previewContainer } = render(
+      <Preview
+        templateElements={[{ localId: "tx-2", type: "TEXT", value: "Bold", style: { bold: true, justification: "LEFT", fontSize: "NORMAL" } }]}
+        businessConfig={null}
+      />,
+    );
+    expect(previewContainer.querySelector(".font-semibold")).toBeInTheDocument();
   });
 
   it("applies center alignment", () => {
-    const { container } = render(
+    const { container: previewContainer } = render(
       <Preview
-        elements={[{ localId: "tx-3", type: "TEXT", value: "C", style: { bold: false, justification: "CENTER", fontSize: "NORMAL" } }]}
-        config={null}
+        templateElements={[{ localId: "tx-3", type: "TEXT", value: "C", style: { bold: false, justification: "CENTER", fontSize: "NORMAL" } }]}
+        businessConfig={null}
       />,
     );
-    expect(container.querySelector(".text-center")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".text-center")).toBeInTheDocument();
   });
 
   it("applies right alignment", () => {
-    const { container } = render(
+    const { container: previewContainer } = render(
       <Preview
-        elements={[{ localId: "tx-4", type: "TEXT", value: "R", style: { bold: false, justification: "RIGHT", fontSize: "NORMAL" } }]}
-        config={null}
+        templateElements={[{ localId: "tx-4", type: "TEXT", value: "R", style: { bold: false, justification: "RIGHT", fontSize: "NORMAL" } }]}
+        businessConfig={null}
       />,
     );
-    expect(container.querySelector(".text-right")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".text-right")).toBeInTheDocument();
   });
 
   it("applies LARGE font size", () => {
-    const { container } = render(
+    render(
       <Preview
-        elements={[{ localId: "tx-5", type: "TEXT", value: "L", style: { bold: false, justification: "LEFT", fontSize: "LARGE" } }]}
-        config={null}
+        templateElements={[{ localId: "tx-5", type: "TEXT", value: "L", style: { bold: false, justification: "LEFT", fontSize: "LARGE" } }]}
+        businessConfig={null}
       />,
     );
-    expect(container.querySelector(".text-base")).toBeInTheDocument();
+    expect(screen.getByText("L")).toHaveClass("text-[length:calc(100cqw/14.5)]");
   });
 
   it("applies EXTRA_LARGE font size", () => {
-    const { container } = render(
+    render(
       <Preview
-        elements={[{ localId: "tx-6", type: "TEXT", value: "XL", style: { bold: false, justification: "LEFT", fontSize: "EXTRA_LARGE" } }]}
-        config={null}
+        templateElements={[{ localId: "tx-6", type: "TEXT", value: "XL", style: { bold: false, justification: "LEFT", fontSize: "EXTRA_LARGE" } }]}
+        businessConfig={null}
       />,
     );
-    expect(container.querySelector(".text-lg")).toBeInTheDocument();
+    expect(screen.getByText("XL")).toHaveClass("text-[length:calc(100cqw/9.7)]");
   });
 
   it("falls back to DEFAULT_STYLE when no style is provided", () => {
-    const { container } = render(
-      <Preview elements={[{ localId: "tx-7", type: "TEXT", value: "No style" }]} config={null} />,
+    const { container: previewContainer } = render(
+      <Preview templateElements={[{ localId: "tx-7", type: "TEXT", value: "No style" }]} businessConfig={null} />,
     );
-    expect(container.querySelector(".text-left")).toBeInTheDocument();
-    expect(container.querySelector(".font-normal")).toBeInTheDocument();
-    expect(container.querySelector(".text-sm")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".text-left")).toBeInTheDocument();
+    expect(previewContainer.querySelector(".font-normal")).toBeInTheDocument();
+    expect(screen.getByText("No style")).toHaveClass("text-[length:calc(100cqw/29)]");
   });
 });

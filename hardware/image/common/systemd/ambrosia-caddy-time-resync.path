@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for the first successful system clock synchronization
+After=systemd-timesyncd.service
+
+[Path]
+PathExists=/run/systemd/timesync/synchronized
+Unit=ambrosia-caddy-time-resync.service
+
+[Install]
+WantedBy=multi-user.target

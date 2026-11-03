@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { ViewButton } from "@/components/shared/ViewButton";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 export function OrdersTable({ orders, formatAmount, onViewOrder }) {
   const ordersTranslations = useTranslations("orders");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   const columns = [
     {
@@ -32,7 +34,7 @@ export function OrdersTable({ orders, formatAmount, onViewOrder }) {
       key: "payment",
       label: ordersTranslations("table.paymentMethod"),
       render: (order) => (
-        <span className="text-sm text-gray-700">{order.paymentMethod || ordersTranslations("details.noPayment")}</span>
+        <span className="text-sm text-gray-700">{getPaymentMethodLabel(order.paymentMethod) || ordersTranslations("details.noPayment")}</span>
       ),
     },
     {

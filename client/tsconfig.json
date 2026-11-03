@@ -31,7 +31,8 @@
       "@providers/*": ["./src/providers/*"],
       "@modules/*": ["./src/modules/*"],
       "@i18n/*": ["./src/i18n/*"],
-      "@app/*": ["./src/app/*"]
+      "@app/*": ["./src/app/*"],
+      "@test-utils/*": ["./__tests__/utils/*"]
     }
   },
   "include": [

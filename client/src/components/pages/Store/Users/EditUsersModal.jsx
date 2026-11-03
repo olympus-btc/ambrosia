@@ -11,6 +11,7 @@ import { resolveRoleName } from "@/components/pages/Store/Users/Roles/utils/role
 export function EditUsersModal({ data, setData, roles, onChange, editUsersShowModal, setEditUsersShowModal, updateUser }) {
   const userTranslations = useTranslations();
   const [showPin, setShowPin] = useState(false);
+  const [showCurrentUserPin, setShowCurrentUserPin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
   const handleOnCloseModal = () => {
@@ -21,6 +22,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
       userPhone: "",
       userEmail: "",
       userRole: roles?.[0]?.id || "",
+      currentUserPin: "",
     });
 
     setEditUsersShowModal(false);
@@ -53,6 +55,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
       userPhone: "",
       userEmail: "",
       userRole: "Vendedor",
+      currentUserPin: "",
     });
     setEditUsersShowModal(false);
   };
@@ -145,6 +148,32 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
                 </SelectItem>
               ))}
             </Select>
+            <Input
+              label={userTranslations("users.modal.currentUserPinLabel")}
+              type={showCurrentUserPin ? "text" : "password"}
+              placeholder={userTranslations("users.modal.currentUserPinPlaceholder")}
+              isRequired
+              minLength={4}
+              maxLength={6}
+              errorMessage={userTranslations("users.modal.currentUserPinError")}
+              value={data.currentUserPin ?? ""}
+              onChange={(event) => {
+                const onlyNumbers = event.target.value.replace(/\D/g, "");
+                onChange({ ...data, currentUserPin: onlyNumbers });
+              }}
+              endContent={
+                (
+                  <button
+                    type="button"
+                    aria-label={showCurrentUserPin ? "Hide your PIN" : "Show your PIN"}
+                    onClick={() => setShowCurrentUserPin(!showCurrentUserPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentUserPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                )
+              }
+            />
 
             <ModalFooter className="flex justify-between p-0 my-4">
               <Button
@@ -159,7 +188,7 @@ export function EditUsersModal({ data, setData, roles, onChange, editUsersShowMo
                 color="primary"
                 className="bg-green-800"
                 type="submit"
-                isDisabled={!data.userRole || isSubmitting}
+                isDisabled={!data.userRole || !data.currentUserPin || isSubmitting}
                 isLoading={isSubmitting}
               >
                 {userTranslations("users.modal.editButton")}

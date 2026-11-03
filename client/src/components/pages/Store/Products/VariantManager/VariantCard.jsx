@@ -13,6 +13,7 @@ import { VariantForm } from "./VariantForm";
 export function VariantCard({
   variant,
   currency,
+  priceStep = 0.01,
   options,
   isStockTrackedForProduct = true,
   onSave,
@@ -37,6 +38,7 @@ export function VariantCard({
       <VariantForm
         initial={variant}
         currency={currency}
+        priceStep={priceStep}
         options={options}
         isStockTrackedForProduct={isStockTrackedForProduct}
         onSave={handleSaveEdit}

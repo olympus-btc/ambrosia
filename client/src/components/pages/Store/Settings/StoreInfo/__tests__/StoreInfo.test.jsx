@@ -7,6 +7,8 @@ import * as configurationsProvider from "@providers/configurations/configuration
 
 import { StoreInfo } from "../StoreInfo";
 
+jest.mock("@/hooks/usePermission");
+
 const mockUpdateConfig = jest.fn();
 const mockUpload = jest.fn();
 

@@ -1,53 +1,52 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
-const { getBuildPlatform } = require('./platform-utils');
-const { verifySha256, fetchAdoptiumChecksum } = require('./verify-checksum');
+import { DOWNLOAD } from '../utils/constants.js';
 
-const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'jre');
+import { downloadFile, findSingleExtractedDirectory, moveChildrenUp, flattenSingleNestedDirectory } from './download-utils.js';
+import { getBuildPlatform } from './platform-utils.js';
+import { verifySha256, fetchAdoptiumChecksum } from './verify-checksum.js';
 
-// Adoptium assets API base — returns JSON with checksum and binary metadata
-// https://api.adoptium.net/v3/assets/latest/{version}/{jvm_impl}?architecture=...&image_type=jre&os=...&vendor=eclipse
-const ADOPTIUM_ASSETS = 'https://api.adoptium.net/v3/assets/latest/21/hotspot';
+const RESOURCES_DIRECTORY = path.join(import.meta.dirname, '..', 'resources', 'jre');
 
-// Adoptium Temurin JRE download URLs
+const JRE_VERSION = DOWNLOAD.JRE_VERSION;
+const ADOPTIUM_ASSETS = `https://api.adoptium.net/v3/assets/latest/${JRE_VERSION}/hotspot`;
+
 const ALL_JRE_DOWNLOADS = {
   'macos-x64': {
     platform: 'macos-x64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/mac/x64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/mac/x64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=mac&project=jdk&vendor=eclipse`,
     filename: 'jre-macos-x64.tar.gz',
   },
   'macos-arm64': {
     platform: 'macos-arm64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/mac/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/mac/aarch64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=mac&project=jdk&vendor=eclipse`,
     filename: 'jre-macos-arm64.tar.gz',
   },
   'win-x64': {
     platform: 'win-x64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=windows&project=jdk&vendor=eclipse`,
     filename: 'jre-win-x64.zip',
   },
   'win-arm64': {
     platform: 'win-arm64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/windows/aarch64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=windows&project=jdk&vendor=eclipse`,
     filename: 'jre-win-arm64.zip',
   },
   'linux-x64': {
     platform: 'linux-x64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/linux/x64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=x64&image_type=jre&os=linux&project=jdk&vendor=eclipse`,
     filename: 'jre-linux-x64.tar.gz',
   },
   'linux-arm64': {
     platform: 'linux-arm64',
-    url: 'https://api.adoptium.net/v3/binary/latest/21/ga/linux/aarch64/jre/hotspot/normal/eclipse?project=jdk',
+    downloadUrl: `https://api.adoptium.net/v3/binary/latest/${JRE_VERSION}/ga/linux/aarch64/jre/hotspot/normal/eclipse?project=jdk`,
     checksumApiUrl: `${ADOPTIUM_ASSETS}?architecture=aarch64&image_type=jre&os=linux&project=jdk&vendor=eclipse`,
     filename: 'jre-linux-arm64.tar.gz',
   },
@@ -55,238 +54,113 @@ const ALL_JRE_DOWNLOADS = {
 
 const currentPlatform = getBuildPlatform();
 
-// Special case for Windows ARM64: also download x64 JRE for phoenixd JVM version
-// Linux ARM64 only needs ARM64 JRE (phoenixd has native ARM64 binary)
 let JRE_DOWNLOADS;
 if (currentPlatform === 'win-arm64') {
-  JRE_DOWNLOADS = [
-    ALL_JRE_DOWNLOADS['win-arm64'], // For backend (native)
-    ALL_JRE_DOWNLOADS['win-x64'], // For phoenixd JVM version (emulated)
-  ];
+  const nativeBackendJre = ALL_JRE_DOWNLOADS['win-arm64'];
+  const emulatedPhoenixdJvmJre = ALL_JRE_DOWNLOADS['win-x64'];
+  JRE_DOWNLOADS = [nativeBackendJre, emulatedPhoenixdJvmJre];
 } else {
   JRE_DOWNLOADS = [ALL_JRE_DOWNLOADS[currentPlatform]];
 }
 
-function downloadFile(url, dest, redirectCount = 0) {
-  const MAX_REDIRECTS = 5;
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
-    const protocol = url.startsWith('https') ? https : http;
-
-    console.log(`Downloading: ${url}`);
-    console.log(`To: ${dest}`);
-
-    const request = protocol.get(url, (response) => {
-      // Handle redirects (301, 302, 307, 308)
-      if (response.statusCode === 301 || response.statusCode === 302 ||
-          response.statusCode === 307 || response.statusCode === 308) {
-        const redirectUrl = response.headers.location;
-        file.close();
-        fs.unlinkSync(dest);
-        if (redirectCount >= MAX_REDIRECTS) {
-          reject(new Error(`Too many redirects (max ${MAX_REDIRECTS})`));
-          return;
-        }
-        console.log(`Following redirect (${response.statusCode}) to: ${redirectUrl}`);
-        downloadFile(redirectUrl, dest, redirectCount + 1).then(resolve).catch(reject);
-        return;
-      }
-
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
-        return;
-      }
-
-      const totalSize = parseInt(response.headers['content-length'], 10);
-      let downloadedSize = 0;
-      let lastPercent = 0;
-
-      response.on('data', (chunk) => {
-        downloadedSize += chunk.length;
-        const percent = Math.floor((downloadedSize / totalSize) * 100);
-        if (percent !== lastPercent && percent % 10 === 0) {
-          console.log(`Progress: ${percent}% (${(downloadedSize / 1024 / 1024).toFixed(1)}MB / ${(totalSize / 1024 / 1024).toFixed(1)}MB)`);
-          lastPercent = percent;
-        }
-      });
-
-      response.pipe(file);
-
-      file.on('finish', () => {
-        file.close();
-        console.log('Download complete!\n');
-        resolve();
-      });
-    });
-
-    request.on('error', (err) => {
-      fs.unlink(dest, () => {});
-      reject(err);
-    });
-
-    file.on('error', (err) => {
-      fs.unlink(dest, () => {});
-      reject(err);
-    });
-  });
-}
-
-function extractArchive(archivePath, platform, destDir) {
+function extractArchive(archivePath, platform, destinationDirectory) {
   console.log(`Extracting ${archivePath}...`);
 
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true });
+  if (!fs.existsSync(destinationDirectory)) {
+    fs.mkdirSync(destinationDirectory, { recursive: true });
   }
 
   try {
     if (archivePath.endsWith('.tar.gz')) {
-      // Extract tar.gz
-      execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
+      execSync(`tar -xzf "${archivePath}" -C "${destinationDirectory}"`, { stdio: 'inherit' });
 
-      // Find the extracted directory (usually has version number)
-      const extractedDirs = fs.readdirSync(destDir).filter((f) => {
-        const fullPath = path.join(destDir, f);
-        return fs.statSync(fullPath).isDirectory();
-      });
+      const extractedDirectory = findSingleExtractedDirectory(destinationDirectory);
 
-      if (extractedDirs.length > 0) {
-        const extractedDir = path.join(destDir, extractedDirs[0]);
-
-        // For macOS, the JRE is nested inside Contents/Home/
-        let sourceDir = extractedDir;
+      if (extractedDirectory) {
+        let sourceDirectory = extractedDirectory;
         if (platform.startsWith('macos')) {
-          const contentsHome = path.join(extractedDir, 'Contents', 'Home');
+          const contentsHome = path.join(extractedDirectory, 'Contents', 'Home');
           if (fs.existsSync(contentsHome)) {
-            sourceDir = contentsHome;
+            sourceDirectory = contentsHome;
             console.log('Detected macOS JRE structure (Contents/Home), extracting from nested directory...');
           }
         }
 
-        const files = fs.readdirSync(sourceDir);
-
-        // Move contents up to destDir
-        files.forEach((file) => {
-          const oldPath = path.join(sourceDir, file);
-          const newPath = path.join(destDir, file);
-          if (fs.existsSync(newPath)) {
-            fs.rmSync(newPath, { recursive: true, force: true });
-          }
-          fs.renameSync(oldPath, newPath);
-        });
-
-        // Remove the extracted directory and all its parents
-        fs.rmSync(extractedDir, { recursive: true, force: true });
+        moveChildrenUp(sourceDirectory, destinationDirectory);
+        fs.rmSync(extractedDirectory, { recursive: true, force: true });
       }
     } else if (archivePath.endsWith('.zip')) {
-      // Extract zip (Windows and other platforms)
       if (process.platform === 'win32') {
-        // Use PowerShell Expand-Archive on Windows (available on Windows 10+)
-        const psCommand = `powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`;
-        execSync(psCommand, { stdio: 'inherit' });
+        const powershellCommand = `powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destinationDirectory}' -Force"`;
+        execSync(powershellCommand, { stdio: 'inherit' });
       } else {
-        // Use unzip on Unix systems
-        execSync(`unzip -q "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
+        execSync(`unzip -q "${archivePath}" -d "${destinationDirectory}"`, { stdio: 'inherit' });
       }
 
-      // Find the extracted directory
-      const extractedDirs = fs.readdirSync(destDir).filter((f) => {
-        const fullPath = path.join(destDir, f);
-        return fs.statSync(fullPath).isDirectory();
-      });
-
-      if (extractedDirs.length > 0) {
-        const extractedDir = path.join(destDir, extractedDirs[0]);
-        const files = fs.readdirSync(extractedDir);
-
-        // Move contents up one level
-        files.forEach((file) => {
-          const oldPath = path.join(extractedDir, file);
-          const newPath = path.join(destDir, file);
-          if (fs.existsSync(newPath)) {
-            fs.rmSync(newPath, { recursive: true, force: true });
-          }
-          fs.renameSync(oldPath, newPath);
-        });
-
-        // Remove empty directory
-        fs.rmSync(extractedDir, { recursive: true, force: true });
-      }
+      flattenSingleNestedDirectory(destinationDirectory);
     }
 
-    console.log(`Extracted to: ${destDir}\n`);
-  } catch (error) {
-    console.error(`Error extracting archive: ${error.message}`);
-    throw error;
+    console.log(`Extracted to: ${destinationDirectory}\n`);
+  } catch (extractionError) {
+    console.error(`Error extracting archive: ${extractionError.message}`);
+    throw extractionError;
   }
 }
 
-async function downloadAndExtractJRE(platform, url, checksumApiUrl, filename) {
-  const platformDir = path.join(RESOURCES_DIR, platform);
-  const downloadPath = path.join(RESOURCES_DIR, filename);
+async function downloadAndExtractJRE(platform, downloadUrl, checksumApiUrl, filename) {
+  const platformDirectory = path.join(RESOURCES_DIRECTORY, platform);
+  const downloadPath = path.join(RESOURCES_DIRECTORY, filename);
 
-  // Check if already downloaded
-  if (fs.existsSync(platformDir) && fs.readdirSync(platformDir).length > 0) {
+  if (fs.existsSync(platformDirectory) && fs.readdirSync(platformDirectory).length > 0) {
     console.log(`✓ JRE for ${platform} already exists, skipping download\n`);
     return;
   }
 
   console.log(`\n=== Downloading JRE for ${platform} ===`);
 
-  try {
-    // Create directories
-    if (!fs.existsSync(RESOURCES_DIR)) {
-      fs.mkdirSync(RESOURCES_DIR, { recursive: true });
-    }
-
-    // Download
-    await downloadFile(url, downloadPath);
-
-    // Verify integrity using Adoptium's assets API (returns JSON with checksum field)
-    try {
-      console.log(`Fetching checksum from Adoptium API: ${checksumApiUrl}`);
-      const expectedHash = await fetchAdoptiumChecksum(checksumApiUrl);
-      await verifySha256(downloadPath, expectedHash);
-    } catch (checksumError) {
-      fs.unlinkSync(downloadPath);
-      throw new Error(`Integrity check failed: ${checksumError.message}`);
-    }
-
-    // Extract
-    extractArchive(downloadPath, platform, platformDir);
-
-    // Verify java exists
-    const javaExecutable = platform.startsWith('win') ? 'java.exe' : 'java';
-    const javaPath = path.join(platformDir, 'bin', javaExecutable);
-
-    if (fs.existsSync(javaPath)) {
-      console.log(`✓ Successfully installed JRE for ${platform}`);
-      // Make executable on Unix systems
-      if (!platform.startsWith('win')) {
-        fs.chmodSync(javaPath, 0o755);
-      }
-    } else {
-      throw new Error(`Java executable not found at ${javaPath}`);
-    }
-
-    // Clean up archive
-    fs.unlinkSync(downloadPath);
-  } catch (error) {
-    console.error(`✗ Failed to download JRE for ${platform}: ${error.message}`);
-    throw error;
+  if (!fs.existsSync(RESOURCES_DIRECTORY)) {
+    fs.mkdirSync(RESOURCES_DIRECTORY, { recursive: true });
   }
+
+  await downloadFile(downloadUrl, downloadPath);
+
+  try {
+    console.log(`Fetching checksum from Adoptium API: ${checksumApiUrl}`);
+    const expectedHash = await fetchAdoptiumChecksum(checksumApiUrl);
+    await verifySha256(downloadPath, expectedHash);
+  } catch (checksumError) {
+    fs.unlinkSync(downloadPath);
+    throw new Error(`Integrity check failed: ${checksumError.message}`);
+  }
+
+  extractArchive(downloadPath, platform, platformDirectory);
+
+  const javaExecutable = platform.startsWith('win') ? 'java.exe' : 'java';
+  const javaPath = path.join(platformDirectory, 'bin', javaExecutable);
+
+  if (fs.existsSync(javaPath)) {
+    console.log(`✓ Successfully installed JRE for ${platform}`);
+    if (!platform.startsWith('win')) {
+      fs.chmodSync(javaPath, 0o755);
+    }
+  } else {
+    throw new Error(`Java executable not found at ${javaPath}`);
+  }
+
+  fs.unlinkSync(downloadPath);
 }
 
 async function main() {
   console.log('===========================================');
-  console.log(`  Downloading JRE 21 for ${currentPlatform}`);
+  console.log(`  Downloading JRE ${DOWNLOAD.JRE_VERSION} for ${currentPlatform}`);
   console.log('===========================================\n');
 
   await Promise.all(
-    JRE_DOWNLOADS.map(async (jre) => {
+    JRE_DOWNLOADS.map(async (jreDownload) => {
       try {
-        await downloadAndExtractJRE(jre.platform, jre.url, jre.checksumApiUrl, jre.filename);
-      } catch (error) {
-        console.error(`Failed to download JRE for ${jre.platform}:`, error);
+        await downloadAndExtractJRE(jreDownload.platform, jreDownload.downloadUrl, jreDownload.checksumApiUrl, jreDownload.filename);
+      } catch (jreInstallError) {
+        console.error(`Failed to download JRE for ${jreDownload.platform}:`, jreInstallError);
         process.exit(1);
       }
     }),
@@ -298,7 +172,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
-  console.error('Fatal error:', error);
+main().catch((fatalError) => {
+  console.error('Fatal error:', fatalError);
   process.exit(1);
 });

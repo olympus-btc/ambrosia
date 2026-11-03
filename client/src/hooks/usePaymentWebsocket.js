@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 
+import { refreshAccessToken } from "@/lib/http/httpClient";
+
 export function usePaymentWebsocket() {
   const [connected, setConnected] = useState(false);
   const invoiceHashRef = useRef(null);
@@ -66,7 +68,7 @@ export function usePaymentWebsocket() {
         if (shouldReconnect) {
           setTimeout(async () => {
             try {
-              await fetch("/api/auth/refresh", { method: "POST" });
+              await refreshAccessToken();
             } catch {}
             connect();
           }, 3000);

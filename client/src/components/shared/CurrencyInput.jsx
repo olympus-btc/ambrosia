@@ -16,6 +16,9 @@ export function CurrencyInput({
   size,
   isInvalid,
   errorMessage,
+  isDisabled,
+  isRequired,
+  placeholder,
 }) {
   return (
     <Autocomplete
@@ -27,6 +30,9 @@ export function CurrencyInput({
       onSelectionChange={onSelectionChange}
       isInvalid={isInvalid}
       errorMessage={errorMessage}
+      isDisabled={isDisabled}
+      isRequired={isRequired}
+      placeholder={placeholder}
       isClearable
       allowsCustomValue={false}
       menuTrigger="focus"

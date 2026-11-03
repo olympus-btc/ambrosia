@@ -33,9 +33,7 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (cents) => `$${cents}` }),
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({

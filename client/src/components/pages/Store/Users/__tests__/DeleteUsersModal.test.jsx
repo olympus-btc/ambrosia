@@ -72,7 +72,7 @@ describe("DeleteUsersModal", () => {
     const onConfirm = jest.fn();
     const setDeleteUsersShowModal = jest.fn();
 
-    renderModal({ onConfirm, setDeleteUsersShowModal });
+    renderModal({ onConfirm, setDeleteUsersShowModal, currentUserPin: "1234", setCurrentUserPin: jest.fn() });
 
     fireEvent.click(screen.getByText("modal.deleteButton"));
     expect(onConfirm).toHaveBeenCalled();

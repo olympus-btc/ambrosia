@@ -2,8 +2,11 @@
 import { Input, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
+
 export function SalesFilters({ search, onSearchChange, paymentMethod, onPaymentMethodChange, disabled, sales = [] }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   const paymentMethods = ["all", ...new Set(sales.map(({ paymentMethod }) => paymentMethod).filter(Boolean))];
 
@@ -33,7 +36,7 @@ export function SalesFilters({ search, onSearchChange, paymentMethod, onPaymentM
       >
         {paymentMethods.map((method) => (
           <SelectItem key={method} value={method}>
-            {method === "all" ? reportsTranslations("filters.paymentMethods.all") : method}
+            {method === "all" ? reportsTranslations("filters.paymentMethods.all") : getPaymentMethodLabel(method)}
           </SelectItem>
         ))}
       </Select>

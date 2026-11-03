@@ -1,30 +1,30 @@
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export async function getTickets() {
-  const response = await httpClient("/tickets");
-  const tickets = await parseJsonResponse(response, []);
+  const ticketsResponse = await httpClient("/tickets", { skipForbiddenRedirect: true });
+  const tickets = await parseJsonResponse(ticketsResponse, []);
   return tickets ?? [];
 }
 
 export async function getPayments() {
-  const response = await httpClient("/payments");
-  const payments = await parseJsonResponse(response, []);
+  const paymentsResponse = await httpClient("/payments", { skipForbiddenRedirect: true });
+  const payments = await parseJsonResponse(paymentsResponse, []);
   return payments ?? [];
 }
 
 export async function getPaymentMethods() {
-  const response = await httpClient("/payments/methods");
-  const methods = await parseJsonResponse(response, []);
-  return methods ?? [];
+  const paymentMethodsResponse = await httpClient("/payments/methods", { skipForbiddenRedirect: true });
+  const paymentMethods = await parseJsonResponse(paymentMethodsResponse, []);
+  return paymentMethods ?? [];
 }
 
 export async function getPaymentByTicketId(id) {
-  const response = await httpClient(`/payments/ticket-payments/by-ticket/${id}`);
-  return await parseJsonResponse(response, null);
+  const ticketPaymentsResponse = await httpClient(`/payments/ticket-payments/by-ticket/${id}`, { skipForbiddenRedirect: true });
+  return await parseJsonResponse(ticketPaymentsResponse, null);
 }
 
 export async function getOrdersWithPayments() {
-  const response = await httpClient("/orders/with-payments");
-  const orders = await parseJsonResponse(response, []);
+  const ordersResponse = await httpClient("/orders/with-payments", { skipForbiddenRedirect: true });
+  const orders = await parseJsonResponse(ordersResponse, []);
   return orders ?? [];
 }

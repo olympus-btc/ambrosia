@@ -9,6 +9,7 @@ import {
   ADMIN_NOTIFICATIONS_NEW_EVENT,
   ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT,
 } from "@/lib/adminNotifications";
+import { refreshAccessToken } from "@/lib/http/httpClient";
 
 function getAdminNotificationFromLiveMessage(liveMessage) {
   if (!liveMessage?.notification) return null;
@@ -81,7 +82,7 @@ export function useAdminNotificationsWebsocket({ enabled = true } = {}) {
           reconnectTimeoutId = setTimeout(async () => {
             if (!shouldReconnect) return;
             try {
-              await fetch("/api/auth/refresh", { method: "POST" });
+              await refreshAccessToken();
             } catch {}
             if (!shouldReconnect) return;
             connect();

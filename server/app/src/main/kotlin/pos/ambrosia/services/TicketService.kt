@@ -24,6 +24,7 @@ class TicketService {
             status = entity.status,
             totalAmount = entity.totalAmount,
             notes = entity.notes ?: "",
+            tipAmount = entity.tipAmount,
         )
 
     private fun orderExists(orderId: String): Boolean {
@@ -68,6 +69,7 @@ class TicketService {
                         this.ticketDate = ticketDate
                         this.status = ticket.status
                         this.totalAmount = ticket.totalAmount
+                        this.tipAmount = ticket.tipAmount
                         this.notes = ticket.notes
                     }.id.value
                     .toString()
@@ -136,6 +138,7 @@ class TicketService {
                 entity.ticketDate = ticket.ticketDate
                 entity.status = ticket.status
                 entity.totalAmount = ticket.totalAmount
+                entity.tipAmount = ticket.tipAmount
                 entity.notes = ticket.notes
                 logger.info("Ticket updated successfully: ${ticket.id}")
                 true

@@ -4,9 +4,7 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 
 import { RolesTable } from "../RolesTable";
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => <>{children}</>,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress, children }) => (

@@ -9,7 +9,7 @@ import { useDateRangeFilters } from "../hooks/useFilters";
 
 const PERIODS = ["day", "week", "month", "year"];
 
-export function PeriodFilter({ filters, onFiltersChange, disabled }) {
+export function PeriodFilter({ filters, onFiltersChange, disabled, subtitle }) {
   const reportsTranslations = useTranslations("reports");
   const [isOpen, setIsOpen] = useState(false);
   const { dateRangeValue, handlePeriodChange, handleDateRangeChange } =
@@ -50,10 +50,10 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
         <div className="space-y-4 w-full">
           <div>
             <p className="text-sm font-semibold text-green-900">{reportsTranslations("dates.title")}</p>
-            <p className="text-xs text-default-500">{reportsTranslations("dates.subtitle")}</p>
+            <p className="text-xs text-default-500">{subtitle ?? reportsTranslations("dates.subtitle")}</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {PERIODS.map((period) => (
               <Button
                 key={period}

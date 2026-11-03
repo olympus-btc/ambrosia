@@ -21,10 +21,6 @@ const reportsEs = {
       paymentMethod: "Método de Pago",
       paymentMethods: {
         all: "Todos los métodos",
-        cash: "Efectivo",
-        btc: "Bitcoin (BTC)",
-        debitCard: "Tarjeta de Débito",
-        creditCard: "Tarjeta de Crédito",
       },
     },
     statuses: {
@@ -35,6 +31,7 @@ const reportsEs = {
     tabs: {
       orders: "Órdenes",
       products: "Productos",
+      shifts: "Turnos",
     },
     export: {
       error: "No se pudo exportar el reporte CSV",
@@ -87,6 +84,8 @@ const reportsEs = {
       records: "registros",
       export: "Exportar CSV",
       unknownUser: "Desconocido",
+      reference: "N.º de referencia",
+      copyReference: "Copiar",
     },
     payment: {
       unknown: "Desconocido",
@@ -113,6 +112,29 @@ const reportsEs = {
       ofLabel: "de",
       paginationAria: "Paginación de ventas",
       tableAriaLabel: "Detalle de ventas",
+    },
+    shiftsReport: {
+      title: "Turnos",
+      subtitle: "Historial de cortes de caja del período seleccionado",
+      records: "registros",
+      empty: "No se encontraron turnos en el período seleccionado",
+      export: "Exportar CSV",
+      user: "Usuario",
+      openedAt: "Apertura",
+      closedAt: "Cierre",
+      initialAmount: "Monto Inicial",
+      finalAmount: "Monto Final",
+      difference: "Diferencia",
+      totalExpected: "Total Esperado",
+      totalActual: "Total Real",
+      totalDifference: "Diferencia Acumulada",
+      shiftCount: "Turnos",
+      differenceOverTime: "Diferencia por Día",
+      paginationAria: "Paginación de turnos",
+      tableAriaLabel: "Detalle de turnos",
+      actions: "Acciones",
+      view: "Detalles",
+      detailTitle: "Detalle de Turno",
     },
     close: {
       modalTitle: "Confirmar Cierre de Turno",

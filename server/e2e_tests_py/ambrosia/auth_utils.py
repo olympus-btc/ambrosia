@@ -11,12 +11,20 @@ from ambrosia.http_client import AmbrosiaHttpClient
 
 DEFAULT_TEST_USER = {"name": "cooluser1", "pin": "000000"}
 
+CLIENT_FACTORY_USER_PIN = "123456"
 
-def get_tokens_from_response(response: httpx.Response) -> tuple[str, str]:
+
+def with_current_user_pin(
+    request_fields: dict | None = None, pin: str = DEFAULT_TEST_USER["pin"]
+) -> dict:
+    return {**(request_fields or {}), "currentUserPin": pin}
+
+
+def get_tokens_from_response(auth_response: httpx.Response) -> tuple[str, str]:
     """Extract access and refresh tokens from login/refresh response.
 
     Args:
-        response: HTTP response containing cookies
+        auth_response: HTTP response containing cookies
 
     Returns:
         Tuple of (access_token, refresh_token)
@@ -24,8 +32,8 @@ def get_tokens_from_response(response: httpx.Response) -> tuple[str, str]:
     Raises:
         AssertionError: If tokens are missing
     """
-    access_token = response.cookies.get("accessToken")
-    refresh_token = response.cookies.get("refreshToken")
+    access_token = auth_response.cookies.get("accessToken")
+    refresh_token = auth_response.cookies.get("refreshToken")
     assert access_token, "Should have accessToken after login"
     assert refresh_token, "Should have refreshToken after login"
     return access_token, refresh_token
@@ -46,40 +54,40 @@ def set_cookie_in_jar(client: AmbrosiaHttpClient, name: str, value: str) -> None
     client._client.cookies.set(name, value)
 
 
-def assert_cookies_present(response: httpx.Response, *cookie_names: str) -> None:
+def assert_cookies_present(auth_response: httpx.Response, *cookie_names: str) -> None:
     """Assert that specified cookies are present in the response.
 
     Args:
-        response: HTTP response
+        auth_response: HTTP response
         *cookie_names: Names of cookies that should be present
     """
-    cookies = response.cookies
+    cookies = auth_response.cookies
     for cookie_name in cookie_names:
         assert cookie_name in cookies, f"{cookie_name} cookie should be set"
         assert cookies[cookie_name], f"{cookie_name} should not be empty"
 
 
-def assert_cookies_absent(response: httpx.Response, *cookie_names: str) -> None:
+def assert_cookies_absent(auth_response: httpx.Response, *cookie_names: str) -> None:
     """Assert that specified cookies are absent from the response.
 
     Args:
-        response: HTTP response
+        auth_response: HTTP response
         *cookie_names: Names of cookies that should not be present
     """
-    cookies = response.cookies
+    cookies = auth_response.cookies
     for cookie_name in cookie_names:
         assert cookie_name not in cookies, f"{cookie_name} should not be set"
 
 
-def assert_success_message(response: httpx.Response) -> None:
+def assert_success_message(auth_response: httpx.Response) -> None:
     """Assert that response contains a success message.
 
     Args:
-        response: HTTP response with JSON body
+        auth_response: HTTP response with JSON body
     """
-    response_data = response.json()
-    assert "message" in response_data, "Response should contain 'message' field"
-    assert "success" in response_data["message"].lower(), (
+    response_json = auth_response.json()
+    assert "message" in response_json, "Response should contain 'message' field"
+    assert "success" in response_json["message"].lower(), (
         "Response message should indicate success"
     )
 
@@ -102,10 +110,10 @@ async def login_user(
     if credentials is None:
         credentials = DEFAULT_TEST_USER
 
-    response = await client.post("/auth/login", json=credentials)
+    login_response = await client.post("/auth/login", json=credentials)
     if expected_status is not None:
-        assert_status_code(response, expected_status)
-    return response
+        assert_status_code(login_response, expected_status)
+    return login_response
 
 
 async def create_role(admin_client: AmbrosiaHttpClient, role_name: str) -> str:
@@ -118,10 +126,13 @@ async def create_role(admin_client: AmbrosiaHttpClient, role_name: str) -> str:
     Returns:
         The ID of the newly created role
     """
-    role_data = {"role": role_name}
-    response = await admin_client.post("/roles", json=role_data)
-    assert_status_code(response, 201, f"Failed to create role '{role_name}'")
-    return response.json()["id"]
+    role_creation_response = await admin_client.post(
+        "/roles", json=with_current_user_pin({"role": role_name})
+    )
+    assert_status_code(
+        role_creation_response, 201, f"Failed to create role '{role_name}'"
+    )
+    return role_creation_response.json()["id"]
 
 
 async def grant_permissions(
@@ -134,9 +145,15 @@ async def grant_permissions(
         role_id: The ID of the role
         permissions: List of permission names (e.g., ['users_read', 'orders_create'])
     """
-    payload = {"permissions": permissions}
-    response = await admin_client.put(f"/roles/{role_id}/permissions", json=payload)
-    assert_status_code(response, 200, f"Failed to grant permissions to role {role_id}")
+    permissions_grant_response = await admin_client.put(
+        f"/roles/{role_id}/permissions",
+        json=with_current_user_pin({"permissions": permissions}),
+    )
+    assert_status_code(
+        permissions_grant_response,
+        200,
+        f"Failed to grant permissions to role {role_id}",
+    )
 
 
 async def create_user(
@@ -153,7 +170,11 @@ async def create_user(
     Returns:
         The ID of the newly created user
     """
-    user_data = {"name": name, "pin": pin, "role": role_id}
-    response = await admin_client.post("/users", json=user_data)
-    assert_status_code(response, 201, f"Failed to create user '{name}'")
-    return response.json()["id"]
+    user_creation_response = await admin_client.post(
+        "/users",
+        json=with_current_user_pin(
+            {"user": {"name": name, "pin": pin, "role": role_id}}
+        ),
+    )
+    assert_status_code(user_creation_response, 201, f"Failed to create user '{name}'")
+    return user_creation_response.json()["id"]

@@ -47,6 +47,7 @@ describe("useShiftTicketMetrics", () => {
     it("returns initial state without fetching", () => {
       const { result } = renderHook(() => useShiftTicketMetrics(null));
       expect(result.current.totalBalance).toBe(0);
+      expect(result.current.totalTips).toBe(0);
       expect(result.current.cashTotal).toBe(0);
       expect(result.current.refundedCashTotal).toBe(0);
       expect(result.current.totalTickets).toBe(0);
@@ -342,11 +343,25 @@ describe("useShiftTicketMetrics", () => {
 
       await waitFor(() => {
         expect(result.current.totalBalance).toBe(0);
+        expect(result.current.totalTips).toBe(0);
         expect(result.current.cashTotal).toBe(0);
         expect(result.current.refundedCashTotal).toBe(0);
         expect(result.current.totalTickets).toBe(0);
         expect(result.current.byPaymentMethod).toEqual([]);
       });
+    });
+
+    it("computes totalTips summing only tickets after shift start", async () => {
+      getTickets.mockResolvedValue([
+        { ...ticketAfter1, tipAmount: 2.5 },
+        { ...ticketAfter2, tipAmount: 1.5 },
+        { ...ticketBefore, tipAmount: 5.0 },
+      ]);
+
+      const { result } = renderHook(() => useShiftTicketMetrics(SHIFT_DATA));
+      await waitFor(() => expect(result.current.ticketsLoading).toBe(false));
+
+      expect(result.current.totalTips).toBe(4.0);
     });
   });
 });

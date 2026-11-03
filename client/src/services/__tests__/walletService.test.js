@@ -20,7 +20,13 @@ import {
   getIncomingTransactions,
   getOutgoingTransactions,
   getSeed,
+  updateNwcUri,
+  testPhoenixdConnection,
+  updatePhoenixdRemote,
+  getPhoenixdRemoteStatus,
   closeChannel,
+  isSecretsLockedError,
+  isChannelNotAvailableError,
 } from "../walletService";
 
 function makeResponse(status, ok = true) {
@@ -43,6 +49,7 @@ describe("walletService", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: "secret" }),
+        skipForbiddenRedirect: true,
       });
     });
 
@@ -253,6 +260,7 @@ describe("walletService", () => {
       parseJsonResponse.mockResolvedValue({
         message: "This invoice has already been paid",
         code: "invoice_already_paid",
+        category: "local_validation",
         source: "phoenixd",
       });
 
@@ -260,6 +268,7 @@ describe("walletService", () => {
         message: "This invoice has already been paid",
         status: 409,
         code: "invoice_already_paid",
+        category: "local_validation",
         source: "phoenixd",
       });
     });
@@ -352,7 +361,7 @@ describe("walletService", () => {
 
       await getSeed();
 
-      expect(httpClient).toHaveBeenCalledWith("/wallet/seed");
+      expect(httpClient).toHaveBeenCalledWith("/wallet/seed", { skipForbiddenRedirect: true });
     });
 
     it("throws with the server code when the backend does not support seed export", async () => {
@@ -368,6 +377,144 @@ describe("walletService", () => {
         status: 501,
         code: "unsupported_operation",
       });
+    });
+  });
+
+  describe("updateNwcUri", () => {
+    it("calls /wallet/updatenwcuri with trimmed nwcUri in body", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "NWC backend reconfigured" });
+
+      await updateNwcUri("  nostr+walletconnect://abc  ");
+
+      expect(httpClient).toHaveBeenCalledWith("/wallet/updatenwcuri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nwcUri: "nostr+walletconnect://abc" }),
+        skipForbiddenRedirect: true,
+      });
+    });
+
+    it("returns the parsed response body", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "NWC backend reconfigured" });
+
+      const updateNwcUriResult = await updateNwcUri("nostr+walletconnect://abc");
+
+      expect(updateNwcUriResult).toEqual({ message: "NWC backend reconfigured" });
+    });
+
+    it("throws structured error when response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(400, false));
+      parseJsonResponse.mockResolvedValue({
+        message: "Invalid NWC URI",
+        code: "nwc_connection_failed",
+        source: "ambrosia",
+      });
+
+      await expect(updateNwcUri("nostr+walletconnect://abc")).rejects.toMatchObject({
+        message: "Invalid NWC URI",
+        status: 400,
+        code: "nwc_connection_failed",
+      });
+    });
+  });
+
+  describe("testPhoenixdConnection", () => {
+    it("calls /wallet/test-phoenixd-connection with url and password in body", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ nodeId: "node-1" });
+
+      await testPhoenixdConnection("http://100.1.1.1:9740", "remote-password");
+
+      expect(httpClient).toHaveBeenCalledWith("/wallet/test-phoenixd-connection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoenixdUrl: "http://100.1.1.1:9740", phoenixdPassword: "remote-password" }),
+        skipForbiddenRedirect: true,
+      });
+    });
+
+    it("returns the parsed node info on success", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ nodeId: "node-1" });
+
+      const testConnectionResponse = await testPhoenixdConnection("http://100.1.1.1:9740", "remote-password");
+
+      expect(testConnectionResponse).toEqual({ nodeId: "node-1" });
+    });
+
+    it("throws with the server message when the response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(503, false));
+      parseJsonResponse.mockResolvedValue({ message: "Lightning node is unavailable" });
+
+      await expect(testPhoenixdConnection("http://100.1.1.1:9740", "wrong-password")).rejects.toMatchObject({
+        message: "Lightning node is unavailable",
+        status: 503,
+      });
+    });
+  });
+
+  describe("updatePhoenixdRemote", () => {
+    it("calls /wallet/update-phoenixd-remote with the given fields", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "Remote phoenixd node configured" });
+
+      await updatePhoenixdRemote({
+        phoenixdRemote: true,
+        phoenixdUrl: "http://100.1.1.1:9740",
+        phoenixdPassword: "remote-password",
+      });
+
+      expect(httpClient).toHaveBeenCalledWith("/wallet/update-phoenixd-remote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phoenixdRemote: true,
+          phoenixdUrl: "http://100.1.1.1:9740",
+          phoenixdPassword: "remote-password",
+        }),
+        skipForbiddenRedirect: true,
+      });
+    });
+
+    it("returns the parsed response body", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "Switched to local phoenixd — restart required to apply" });
+
+      const updatePhoenixdRemoteResponse = await updatePhoenixdRemote({ phoenixdRemote: false });
+
+      expect(updatePhoenixdRemoteResponse).toEqual({ message: "Switched to local phoenixd — restart required to apply" });
+    });
+
+    it("throws with the server message when the response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(400, false));
+      parseJsonResponse.mockResolvedValue({ message: "Missing url or password" });
+
+      await expect(updatePhoenixdRemote({ phoenixdRemote: true })).rejects.toMatchObject({
+        message: "Missing url or password",
+        status: 400,
+      });
+    });
+  });
+
+  describe("getPhoenixdRemoteStatus", () => {
+    it("calls GET /wallet/phoenixd-remote-status", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ phoenixdRemote: true });
+
+      await getPhoenixdRemoteStatus();
+
+      expect(httpClient).toHaveBeenCalledWith("/wallet/phoenixd-remote-status");
+    });
+
+    it("returns the parsed phoenixd remote status", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ phoenixdRemote: true });
+
+      const phoenixdRemoteStatusResponse = await getPhoenixdRemoteStatus();
+
+      expect(phoenixdRemoteStatusResponse).toEqual({ phoenixdRemote: true });
     });
   });
 
@@ -392,6 +539,13 @@ describe("walletService", () => {
       await expect(closeChannel("ch-1", "bc1qxyz", 5)).rejects.toThrow("Channel not found");
     });
 
+    it("attaches the response status to the thrown error", async () => {
+      httpClient.mockResolvedValue(makeResponse(409, false));
+      parseJsonResponse.mockResolvedValue({ message: "Secrets are locked" });
+
+      await expect(closeChannel("ch-1", "bc1qxyz", 5)).rejects.toMatchObject({ status: 409 });
+    });
+
     it("throws fallback message when server provides no message", async () => {
       httpClient.mockResolvedValue(makeResponse(500, false));
       parseJsonResponse.mockResolvedValue({});
@@ -407,6 +561,36 @@ describe("walletService", () => {
       const closedChannel = await closeChannel("ch-1", "bc1qxyz", 5);
 
       expect(closedChannel).toEqual(closeChannelResult);
+    });
+  });
+
+  describe("isSecretsLockedError", () => {
+    it("returns true when the error status is 409", () => {
+      expect(isSecretsLockedError({ status: 409 })).toBe(true);
+    });
+
+    it("returns false when the error status is not 409", () => {
+      expect(isSecretsLockedError({ status: 500 })).toBe(false);
+    });
+
+    it("returns false when the error is null or undefined", () => {
+      expect(isSecretsLockedError(null)).toBe(false);
+      expect(isSecretsLockedError(undefined)).toBe(false);
+    });
+  });
+
+  describe("isChannelNotAvailableError", () => {
+    it("returns true when the error code is channel_not_available", () => {
+      expect(isChannelNotAvailableError({ code: "channel_not_available" })).toBe(true);
+    });
+
+    it("returns false when the error code is something else", () => {
+      expect(isChannelNotAvailableError({ code: "unknown" })).toBe(false);
+    });
+
+    it("returns false when the error is null or undefined", () => {
+      expect(isChannelNotAvailableError(null)).toBe(false);
+      expect(isChannelNotAvailableError(undefined)).toBe(false);
     });
   });
 });

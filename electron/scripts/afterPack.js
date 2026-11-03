@@ -1,5 +1,5 @@
-const { execFileSync } = require('child_process');
-const path = require('path');
+import { execFileSync } from 'child_process';
+import path from 'path';
 
 function getCodeSignIdentity() {
   return process.env.MACOS_CODE_SIGN_IDENTITY || process.env.CSC_NAME || '-';
@@ -9,8 +9,8 @@ function getCodeSignLabel(codeSignIdentity) {
   return codeSignIdentity === '-' ? 'ad-hoc' : codeSignIdentity;
 }
 
-function runCommand(command, args) {
-  execFileSync(command, args, { stdio: 'inherit' });
+function runCommand(command, commandArguments) {
+  execFileSync(command, commandArguments, { stdio: 'inherit' });
 }
 
 async function afterPack(context) {
@@ -54,10 +54,10 @@ async function afterPack(context) {
     runCommand('codesign', ['--verify', '--deep', '--strict', appPath]);
 
     console.log(`✅ App bundle re-signed successfully\n`);
-  } catch (error) {
-    console.error(`❌ Failed to re-sign app bundle: ${error.message}`);
-    throw error;
+  } catch (codeSignError) {
+    console.error(`❌ Failed to re-sign app bundle: ${codeSignError.message}`);
+    throw codeSignError;
   }
 }
 
-module.exports = afterPack;
+export default afterPack;

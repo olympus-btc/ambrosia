@@ -24,6 +24,16 @@ jest.mock("@/lib/formatDate", () => ({
 }));
 
 let mockCanRefund = true;
+let mockCanReprint = false;
+const mockReprintReceipt = jest.fn();
+jest.mock("../../hooks/useOrderReceiptReprint", () => ({
+  useOrderReceiptReprint: () => ({
+    canReprint: mockCanReprint,
+    isReprinting: false,
+    reprintReceipt: mockReprintReceipt,
+  }),
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   usePermission: () => mockCanRefund,
 }));
@@ -55,11 +65,13 @@ jest.mock("@heroui/react", () => {
 describe("OrderDetailsModal", () => {
   beforeEach(() => {
     mockCanRefund = true;
+    mockCanReprint = false;
+    mockReprintReceipt.mockClear();
   });
 
   it("renders order details and handles close", () => {
     const onClose = jest.fn();
-    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
     const order = {
       id: "order-1",
       userName: "Luis",
@@ -83,7 +95,7 @@ describe("OrderDetailsModal", () => {
     expect(screen.getByText("details.title")).toBeInTheDocument();
     expect(screen.getByText("#order-1")).toBeInTheDocument();
     expect(screen.getByText("Luis")).toBeInTheDocument();
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
     expect(screen.getByText("formatted-date")).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(2500);
 
@@ -91,8 +103,80 @@ describe("OrderDetailsModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it("shows the reference number when the order has one", () => {
+    const order = {
+      id: "order-1",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "Bank Transfer",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+      transactionId: "REF-123",
+    };
+
+    render(
+      <OrderDetailsModal
+        order={order}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={(amount) => `fmt-${amount}`}
+      />,
+    );
+
+    expect(screen.getByText("details.reference")).toBeInTheDocument();
+    expect(screen.getByText("REF-123")).toBeInTheDocument();
+  });
+
+  it("does not show a reference field when the order has none", () => {
+    const order = {
+      id: "order-1",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "Cash",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+    };
+
+    render(
+      <OrderDetailsModal
+        order={order}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={(amount) => `fmt-${amount}`}
+      />,
+    );
+
+    expect(screen.queryByText("details.reference")).not.toBeInTheDocument();
+  });
+
+  it("shows a truncated reference with a copy button for BTC invoices", () => {
+    const longInvoice = "lntb720n1p42ud4ypp5syxmv3c9y0lx3udvneypkutnt923ynhp5ps076v5a7c4uft";
+    const order = {
+      id: "order-1",
+      userName: "Luis",
+      status: "paid",
+      paymentMethod: "BTC",
+      total: 25,
+      createdAt: "2024-01-01T10:00:00Z",
+      transactionId: longInvoice,
+    };
+
+    render(
+      <OrderDetailsModal
+        order={order}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={(amount) => `fmt-${amount}`}
+      />,
+    );
+
+    expect(screen.getByText("details.reference")).toBeInTheDocument();
+    expect(screen.queryByText(longInvoice)).not.toBeInTheDocument();
+    expect(screen.getByTitle(longInvoice)).toBeInTheDocument();
+  });
+
   it("renders AmountDisplay for BTC orders with satoshiAmount", () => {
-    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
     const btcOrder = {
       id: "order-btc",
       userName: "Ana",
@@ -122,7 +206,7 @@ describe("OrderDetailsModal", () => {
   });
 
   it("uses formatAmount for non-BTC orders", () => {
-    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
     const cashOrder = {
       id: "order-cash",
       userName: "Luis",
@@ -147,6 +231,26 @@ describe("OrderDetailsModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
+  it("renders tip as secondary information aligned with the amount column", () => {
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
+
+    render(
+      <OrderDetailsModal
+        order={{ id: "order-tip", status: "paid", total: 14.4, tipAmount: 2.4 }}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={formatAmount}
+      />,
+    );
+
+    const tipLabel = screen.getByText("details.tip");
+    const tipAmount = screen.getByText("+fmt-240");
+
+    expect(tipLabel.parentElement).toHaveClass("grid", "grid-cols-2", "text-gray-700");
+    expect(tipAmount).toHaveClass("text-right", "text-gray-500");
+    expect(tipAmount).not.toHaveClass("font-medium", "font-semibold", "font-bold");
+  });
+
   it("renders only the title when order is null", () => {
     render(
       <OrderDetailsModal
@@ -163,7 +267,7 @@ describe("OrderDetailsModal", () => {
   });
 
   it("shows the refund button only for paid orders", () => {
-    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
     const { rerender } = render(
       <OrderDetailsModal
         order={{ id: "order-1", status: "paid", total: 10 }}
@@ -197,7 +301,7 @@ describe("OrderDetailsModal", () => {
 
   it("hides the refund button for a paid order when the user lacks orders_refund", () => {
     mockCanRefund = false;
-    const formatAmount = jest.fn((value) => `fmt-${value}`);
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
 
     render(
       <OrderDetailsModal
@@ -221,7 +325,7 @@ describe("OrderDetailsModal", () => {
         isOpen
         onClose={jest.fn()}
         onRefunded={onRefunded}
-        formatAmount={jest.fn((value) => `fmt-${value}`)}
+        formatAmount={jest.fn((amount) => `fmt-${amount}`)}
       />,
     );
 
@@ -232,6 +336,36 @@ describe("OrderDetailsModal", () => {
 
     act(() => capturedRefundModalProps.onRefunded());
     expect(onRefunded).toHaveBeenCalled();
+  });
+
+  it("hides the reprint button when the order cannot be reprinted", () => {
+    render(
+      <OrderDetailsModal
+        order={{ id: "order-1", status: "paid", total: 10 }}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={jest.fn((amount) => `fmt-${amount}`)}
+      />,
+    );
+
+    expect(screen.queryByText("details.reprint")).not.toBeInTheDocument();
+  });
+
+  it("reprints the receipt when the reprint button is pressed", () => {
+    mockCanReprint = true;
+
+    render(
+      <OrderDetailsModal
+        order={{ id: "order-1", status: "paid", total: 10 }}
+        isOpen
+        onClose={jest.fn()}
+        formatAmount={jest.fn((amount) => `fmt-${amount}`)}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("details.reprint"));
+
+    expect(mockReprintReceipt).toHaveBeenCalled();
   });
 
   it("renders refund info when the order has been refunded", () => {
@@ -251,7 +385,7 @@ describe("OrderDetailsModal", () => {
         order={order}
         isOpen
         onClose={jest.fn()}
-        formatAmount={jest.fn((value) => `fmt-${value}`)}
+        formatAmount={jest.fn((amount) => `fmt-${amount}`)}
       />,
     );
 

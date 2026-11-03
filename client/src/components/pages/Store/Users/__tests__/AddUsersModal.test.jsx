@@ -38,6 +38,7 @@ const baseData = {
   userPhone: "1234567890",
   userEmail: "john@test.com",
   userRole: "seller",
+  currentUserPin: "9876",
 };
 
 const localStorageMock = {
@@ -168,6 +169,7 @@ describe("AddUsersModal", () => {
       userPhone: "",
       userEmail: "",
       userRole: "Vendedor",
+      currentUserPin: "",
     });
     expect(setAddUsersShowModal).toHaveBeenCalledWith(false);
   });

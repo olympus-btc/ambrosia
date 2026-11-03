@@ -1,0 +1,15 @@
+[Unit]
+Description=Ambrosia Wi-Fi setup portal (hotspot + captive portal when no known Wi-Fi)
+After=NetworkManager.service
+Wants=NetworkManager.service
+ConditionPathExists=/opt/ambrosia/bin/ambrosia-wifi-portal
+
+[Service]
+Type=simple
+ExecStart=/opt/ambrosia/bin/ambrosia-wifi-portal
+Restart=on-failure
+RestartSec=10
+ExecStopPost=-/usr/bin/systemctl start caddy
+
+[Install]
+WantedBy=multi-user.target

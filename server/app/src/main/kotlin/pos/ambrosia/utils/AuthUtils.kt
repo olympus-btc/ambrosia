@@ -15,6 +15,7 @@ import pos.ambrosia.db.tables.PermissionsTable
 import pos.ambrosia.db.tables.RolePermissionsTable
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.logger
+import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.TokenService
 import java.util.UUID
 
@@ -44,6 +45,14 @@ fun ApplicationCall.getCurrentUser(): UserInfo? {
         role = principal.getClaim("role", String::class) ?: return null,
         isAdmin = principal.getClaim("isAdmin", Boolean::class) ?: false,
     )
+}
+
+suspend fun ApplicationCall.requireCurrentUserPin(currentUserPin: String?) {
+    if (currentUserPin.isNullOrBlank()) throw InvalidCurrentUserPinException("Current PIN is required")
+    val currentUserId = getCurrentUser()?.userId ?: throw InvalidCredentialsException()
+    val authService = AuthService(application.environment)
+    val isValidPin = authService.authenticateUserPin(currentUserId, currentUserPin.toCharArray())
+    if (!isValidPin) throw InvalidCurrentUserPinException("Current PIN is incorrect")
 }
 
 suspend fun ApplicationCall.requireWallet() {
@@ -84,24 +93,26 @@ data class UserInfo(
     val isAdmin: Boolean,
 )
 
-suspend fun ApplicationCall.requirePermission(name: String) {
-    val principal = principal<JWTPrincipal>() ?: throw PermissionDeniedException()
-    val userId = principal.getClaim("userId", String::class) ?: throw PermissionDeniedException()
-    transaction {
+fun ApplicationCall.hasPermission(name: String): Boolean {
+    val jwtPrincipal = principal<JWTPrincipal>() ?: return false
+    val userId = jwtPrincipal.getClaim("userId", String::class) ?: return false
+    return transaction {
         val user =
             UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted }
-                ?: throw PermissionDeniedException()
-        val roleId = user.roleId ?: throw PermissionDeniedException()
-        val hasPermission =
-            (RolePermissionsTable innerJoin PermissionsTable)
-                .selectAll()
-                .where {
-                    (RolePermissionsTable.roleId eq roleId) and
-                        (PermissionsTable.name eq name) and
-                        (PermissionsTable.enabled eq true)
-                }.count() > 0
-        if (!hasPermission) throw PermissionDeniedException()
+                ?: return@transaction false
+        val roleId = user.roleId ?: return@transaction false
+        (RolePermissionsTable innerJoin PermissionsTable)
+            .selectAll()
+            .where {
+                (RolePermissionsTable.roleId eq roleId) and
+                    (PermissionsTable.name eq name) and
+                    (PermissionsTable.enabled eq true)
+            }.count() > 0
     }
+}
+
+fun ApplicationCall.requirePermission(name: String) {
+    if (!hasPermission(name)) throw PermissionDeniedException()
 }
 
 fun Route.authorizePermission(

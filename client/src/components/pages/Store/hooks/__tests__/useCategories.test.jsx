@@ -101,6 +101,16 @@ describe("useCategories", () => {
     expect(screen.getByTestId("error")).toHaveTextContent("yes");
   });
 
+  it("sets error when the categories response is not ok", async () => {
+    httpClient.mockResolvedValueOnce({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValueOnce(null);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("error")).toHaveTextContent("yes");
+  });
+
   it("creates a category, refetches, and returns the new id", async () => {
     httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -120,6 +130,7 @@ describe("useCategories", () => {
       body: JSON.stringify({ name: "Electronics", type: "product" }),
       headers: { "Content-Type": "application/json" },
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
     expect(createdCategoryId).toBe("cat-3");
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
@@ -177,6 +188,7 @@ describe("useCategories", () => {
       method: "PUT",
       body: JSON.stringify({ name: "Hardware Updated", type: "product" }),
       headers: { "Content-Type": "application/json" },
+      skipForbiddenRedirect: true,
     });
     await waitFor(() => expect(screen.getByTestId("first-name")).toHaveTextContent("Hardware Updated"));
   });
@@ -215,6 +227,7 @@ describe("useCategories", () => {
 
     expect(httpClient).toHaveBeenCalledWith("/categories/cat-1?type=product", {
       method: "DELETE",
+      skipForbiddenRedirect: true,
     });
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
   });

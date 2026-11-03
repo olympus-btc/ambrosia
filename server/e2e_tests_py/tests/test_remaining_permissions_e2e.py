@@ -8,25 +8,6 @@ from ambrosia.api_utils import assert_status_code
 
 logger = logging.getLogger(__name__)
 
-DUMMY_ID = "00000000-0000-0000-0000-000000000000"
-
-
-class TestOrdersRemainingPermissions:
-    """Permission enforcement for orders_update and orders_delete.
-
-    orders_read and orders_create are already tested in test_permissions_e2e.py.
-    """
-
-    @pytest.mark.asyncio
-    async def test_orders_update_required_for_put(self, client_factory):
-        """PUT /orders/{id} returns 403 without orders_update permission."""
-        no_perm = await client_factory(permissions=["users_read"])
-        assert_status_code(await no_perm.put(f"/orders/{DUMMY_ID}", json={}), 403)
-
-        with_perm = await client_factory(permissions=["orders_update"])
-        assert (await with_perm.put(f"/orders/{DUMMY_ID}", json={})).status_code != 403
-        logger.info("✓ orders_update correctly gates PUT /orders/{id}")
-
 
 class TestConfigPermissions:
     """Permission enforcement tests for /config."""

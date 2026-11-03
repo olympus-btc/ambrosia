@@ -18,12 +18,14 @@ import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.models.phoenix.PaymentResponse
 import pos.ambrosia.models.phoenix.PhoenixBalance
+import pos.ambrosia.utils.SecretsLockedException
 import java.util.concurrent.atomic.AtomicReference
 
 private const val NWC_CONNECTION_TIMEOUT_MS = 15_000L
 
 object ActiveLightningBackend : LightningBackend, PaymentVerifier {
     private val backendReference = AtomicReference<LightningBackend?>(null)
+    private val paymentEventsClientReference = AtomicReference<PhoenixPaymentEventsClient?>(null)
 
     fun set(backend: LightningBackend) {
         backendReference.set(backend)
@@ -31,7 +33,21 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier {
 
     fun isNwcActive(): Boolean = backendReference.get() is NwcService
 
+    fun isAvailable(): Boolean = backendReference.get() != null
+
+    fun startPhoenixPaymentEventsListener(
+        phoenixdUrl: String,
+        phoenixdPassword: String,
+        onPaymentReceived: suspend (PaymentNotification) -> Unit,
+    ) {
+        val newPaymentEventsClient = PhoenixPaymentEventsClient(phoenixdUrl, phoenixdPassword, onPaymentReceived)
+        newPaymentEventsClient.connect()
+        val previousPaymentEventsClient = paymentEventsClientReference.getAndSet(newPaymentEventsClient)
+        previousPaymentEventsClient?.close()
+    }
+
     fun closeActive() {
+        paymentEventsClientReference.getAndSet(null)?.close()
         backendReference
             .getAndSet(null)
             ?.runCatching { close() }
@@ -50,14 +66,31 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier {
             newBackend.close()
             throw exception
         }
-        val previous = backendReference.getAndSet(newBackend)
-        previous
+        val previousBackend = backendReference.getAndSet(newBackend)
+        previousBackend
             ?.runCatching { close() }
             ?.onFailure { logger.warn("Error closing previous Lightning backend: {}", it.message) }
         logger.info("NWC backend hot-reloaded — no restart required")
     }
 
-    private fun current(): LightningBackend = backendReference.get() ?: error("Lightning backend not initialized")
+    fun reinitializePhoenixBackend(
+        phoenixdUrl: String,
+        phoenixdPassword: String,
+    ) {
+        val newBackend = PhoenixService(phoenixdUrl, phoenixdPassword)
+        val previousBackend = backendReference.getAndSet(newBackend)
+        previousBackend
+            ?.runCatching { close() }
+            ?.onFailure { logger.warn("Error closing previous Lightning backend: {}", it.message) }
+        logger.info("Phoenix backend hot-reloaded — no restart required")
+    }
+
+    private fun current(): LightningBackend =
+        backendReference.get() ?: if (SecretsStore.isLocked()) {
+            throw SecretsLockedException()
+        } else {
+            error("Lightning backend not initialized")
+        }
 
     override suspend fun getNodeInfo(): NodeInfo = current().getNodeInfo()
 

@@ -1,15 +1,18 @@
-const path = require('path');
-const { URL } = require('url');
+import { createRequire } from 'module';
+import path from 'path';
+import { URL } from 'url';
 
+import AutoUpdater from './services/AutoUpdater.js';
+import { configurationBootstrap } from './services/ConfigurationBootstrap.js';
+import ServiceManager from './services/ServiceManager.js';
+import { unlockPasswordStore } from './services/UnlockPasswordStore.js';
+import { STARTUP } from './utils/constants.js';
+import { logger } from './utils/logger.js';
+import { getDataDirectory, getLogsDirectory, getPhoenixDataDirectory } from './utils/resourcePaths.js';
+
+const require = createRequire(import.meta.url);
 const { app, BrowserWindow, Menu, Notification, dialog, shell, ipcMain } = require('electron');
 
-const AutoUpdater = require('./services/AutoUpdater');
-const { readConfig, writeConfig } = require('./services/ConfigurationBootstrap');
-const ServiceManager = require('./services/ServiceManager');
-const logger = require('./utils/logger');
-const { getDataDirectory, getLogsDirectory, getPhoenixDataDirectory } = require('./utils/resourcePaths');
-
-// To prevent multiple instances of the application
 const gotTheLock = app.requestSingleInstanceLock();
 app.setName('Ambrosia');
 
@@ -18,7 +21,6 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
-    // If someone tries to open a second instance, focus the existing window
     logger.log('[Electron] Second instance detected, focusing existing window');
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -27,7 +29,6 @@ if (!gotTheLock) {
   });
 }
 
-// Global state
 let mainWindow = null;
 let splashWindow = null;
 let serviceManager = null;
@@ -53,11 +54,11 @@ function updateMenuItemState({ label, enabled, click }) {
   }
 }
 
-function normalizeNotificationText(value, fallbackText) {
-  if (typeof value !== 'string') return fallbackText;
-  const trimmedValue = value.trim();
-  if (!trimmedValue) return fallbackText;
-  return trimmedValue.slice(0, MAX_NOTIFICATION_TEXT_LENGTH);
+function normalizeNotificationText(candidateText, fallbackText) {
+  if (typeof candidateText !== 'string') return fallbackText;
+  const trimmedText = candidateText.trim();
+  if (!trimmedText) return fallbackText;
+  return trimmedText.slice(0, MAX_NOTIFICATION_TEXT_LENGTH);
 }
 
 function getAdminNotificationsUrl() {
@@ -116,14 +117,13 @@ function showAdminActivityNotification(notificationPayload = {}) {
   nativeNotification.on('show', () => {
     logger.log('[Electron] Admin activity notification shown');
   });
-  nativeNotification.on('failed', (error) => {
-    logger.error('[Electron] Admin activity notification failed:', error);
+  nativeNotification.on('failed', (notificationError) => {
+    logger.error('[Electron] Admin activity notification failed:', notificationError);
   });
   nativeNotification.on('click', openAdminNotificationsFeed);
   nativeNotification.show();
 }
 
-// Splash Screen Creation
 function createSplashScreen() {
   splashWindow = new BrowserWindow({
     width: 500,
@@ -133,13 +133,13 @@ function createSplashScreen() {
     alwaysOnTop: true,
     resizable: false,
     webPreferences: {
-      preload: path.join(__dirname, 'splash-preload.js'),
+      preload: path.join(import.meta.dirname, 'splash-preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.loadFile(path.join(import.meta.dirname, 'splash.html'));
 
   splashWindow.on('closed', () => {
     splashWindow = null;
@@ -148,7 +148,6 @@ function createSplashScreen() {
   return splashWindow;
 }
 
-// Main Window Creation
 function createWindow(url) {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -156,7 +155,7 @@ function createWindow(url) {
     minWidth: 1024,
     minHeight: 650,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(import.meta.dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -168,7 +167,6 @@ function createWindow(url) {
   mainWindow.loadURL(url);
 
   mainWindow.once('ready-to-show', () => {
-    // Close splash and show main window
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.webContents.send('splash:close');
       setTimeout(() => {
@@ -176,7 +174,7 @@ function createWindow(url) {
           splashWindow.close();
         }
         mainWindow.show();
-      }, 800);
+      }, STARTUP.SPLASH_DELAY_MILLISECONDS);
     } else {
       mainWindow.show();
     }
@@ -190,8 +188,7 @@ function createWindow(url) {
     mainWindow = null;
   });
 
-  // Handle loading errors
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
     logger.error('[Electron] Error Loading Page:', errorCode, errorDescription);
 
     dialog.showErrorBox(
@@ -201,16 +198,14 @@ function createWindow(url) {
   });
 }
 
-// Handle global errors
-async function handleStartupError(error) {
-  logger.error('[Electron] Startup Error:', error);
+async function handleStartupError(startupError) {
+  logger.error('[Electron] Startup Error:', startupError);
 
-  // Close splash window if it exists
   if (splashWindow && !splashWindow.isDestroyed()) {
     splashWindow.close();
   }
 
-  const isBackendTimeout = error.message && error.message.includes('Timed out waiting for');
+  const isBackendTimeout = startupError.message && startupError.message.includes('Timed out waiting for');
   const javaHint = process.platform === 'win32' && isBackendTimeout
     ? '\n\nIf you have another Java version installed (Oracle JDK, OpenJDK, etc.), it may be conflicting with the bundled runtime. Try uninstalling other Java versions.'
     : '';
@@ -219,25 +214,26 @@ async function handleStartupError(error) {
     type: 'error',
     title: 'Startup Error',
     message: 'The application Ambrosia could not be started',
-    detail: (error.message || error.toString()) + javaHint,
+    detail: (startupError.message || startupError.toString()) + javaHint,
     buttons: ['Retry', 'Logs', 'Exit'],
     defaultId: 0,
     cancelId: 2,
   });
 
-  if (startupDialogResult.response === 0) {
+  const clickedButtonIndex = startupDialogResult.response;
+
+  if (clickedButtonIndex === 0) {
     app.relaunch();
     app.quit();
-  } else if (startupDialogResult.response === 1) {
-    const logsDir = getLogsDirectory();
-    shell.openPath(logsDir);
+  } else if (clickedButtonIndex === 1) {
+    const logsDirectory = getLogsDirectory();
+    shell.openPath(logsDirectory);
     setTimeout(() => app.quit(), 500);
   } else {
     app.quit();
   }
 }
 
-// Application Menu
 function createAppMenu() {
   const isMac = process.platform === 'darwin';
 
@@ -327,7 +323,6 @@ function createAppMenu() {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
-  // Store reference to update menu item for dynamic updates
   if (isMac) {
     updateMenuItem = menu.items[0].submenu.items[1];
   } else {
@@ -336,32 +331,27 @@ function createAppMenu() {
   }
 }
 
-// Runs on first launch and again if reactivated from the dock after all windows closed.
 async function initializeApp() {
   try {
     logger.log('[Electron] Initializing Ambrosia POS...');
 
-    // Show splash screen and wait for it to finish loading before sending IPC
     createSplashScreen();
     await new Promise((resolve) => splashWindow.webContents.once('did-finish-load', resolve));
 
-    // SPLASH ONLY MODE: For design/testing purposes
     if (process.env.SPLASH_ONLY === 'true') {
       logger.log('[Electron] SPLASH ONLY MODE: Showing splash for design purposes');
       logger.log('[Electron] Edit splash.html and reload the window to see changes');
       logger.log('[Electron] Press Ctrl+R in the splash window to reload');
 
-      // Enable DevTools for splash window in splash-only mode
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.openDevTools();
       }
 
-      return; // Exit here, don't start services
+      return;
     }
 
     serviceManager = new ServiceManager();
 
-    // Helper to update splash progress
     const updateSplash = (service, progress, message) => {
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.send('splash:update', { service, progress, message });
@@ -374,13 +364,11 @@ async function initializeApp() {
       }
     };
 
-    // Track service startup progress
     updateSplash(null, 0, 'Initializing...');
 
     serviceManager.on('service:started', ({ service, port, skipped }) => {
       logger.log(`[Electron] Service started: ${service} on port ${port}`);
 
-      // Update progress based on service
       let progress = 0;
       let message = '';
 
@@ -403,12 +391,12 @@ async function initializeApp() {
       updateSplash(null, progress, message);
     });
 
-    serviceManager.on('service:error', ({ service, error }) => {
-      logger.error(`[Electron] Service error: ${service}`, error);
+    serviceManager.on('service:error', ({ service, serviceError }) => {
+      logger.error(`[Electron] Service error: ${service}`, serviceError);
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.send('splash:error', {
           service,
-          message: error ? error.message || String(error) : `Failed to start ${service || 'service'}`,
+          message: serviceError ? serviceError.message || String(serviceError) : `Failed to start ${service || 'service'}`,
         });
       }
     });
@@ -417,13 +405,12 @@ async function initializeApp() {
       logger.log('[Electron] All services are running');
     });
 
-    // Start with initial message
-    if (serviceManager.isDevMode()) {
+    if (serviceManager.isDevelopmentMode()) {
       updateSplash(null, 33, 'Development mode');
       updateSplash('nextjs', 66, 'Starting Frontend...');
     } else {
       const ambrosiaConfigPath = path.join(getDataDirectory(), 'ambrosia.conf');
-      const nwcUriConfigured = Boolean(readConfig(ambrosiaConfigPath)['nwc-uri']);
+      const nwcUriConfigured = Boolean(configurationBootstrap.readConfig(ambrosiaConfigPath)['nwc-uri']);
       updateSplash(
         'phoenixd',
         10,
@@ -437,7 +424,6 @@ async function initializeApp() {
 
     createAppMenu();
 
-    // Start auto-update checks (production only)
     if (app.isPackaged) {
       autoUpdaterService = new AutoUpdater(mainWindow, {
         onMenuUpdate: updateMenuItemState,
@@ -447,23 +433,21 @@ async function initializeApp() {
     }
 
     logger.log('[Electron] Application initialized successfully');
-  } catch (error) {
-    // Show error state in splash before closing
+  } catch (initializationError) {
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.webContents.send('splash:error', {
         service: null,
-        message: error ? error.message || String(error) : 'Unexpected startup error',
+        message: initializationError ? initializationError.message || String(initializationError) : 'Unexpected startup error',
       });
       await new Promise((resolve) => setTimeout(resolve, 2000));
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.close();
       }
     }
-    await handleStartupError(error);
+    await handleStartupError(initializationError);
   }
 }
 
-// IPC Handlers to communicate with renderer
 ipcMain.handle('services:get-statuses', () => {
   if (!serviceManager) {
     return null;
@@ -471,25 +455,30 @@ ipcMain.handle('services:get-statuses', () => {
   return {
     statuses: serviceManager.getServiceStatuses(),
     ports: serviceManager.getPorts(),
-    devMode: serviceManager.isDevMode(),
+    devMode: serviceManager.isDevelopmentMode(),
   };
 });
 
-ipcMain.handle('services:restart', async (event, serviceName) => {
+ipcMain.handle('services:restart', async (_event, serviceName) => {
   if (!serviceManager) {
     throw new Error('ServiceManager not initialized');
   }
   try {
     await serviceManager.restartService(serviceName);
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
+  } catch (restartError) {
+    return { success: false, error: restartError.message };
   }
 });
 
 ipcMain.handle('services:get-logs', () => {
-  const logsDir = getLogsDirectory();
-  return { logsDir };
+  const logsDirectory = getLogsDirectory();
+  return { logsDir: logsDirectory };
+});
+
+ipcMain.handle('app:relaunch', () => {
+  app.relaunch();
+  app.quit();
 });
 
 ipcMain.on(ADMIN_ACTIVITY_NOTIFICATION_CHANNEL, (_event, notificationPayload) => {
@@ -505,11 +494,11 @@ ipcMain.handle('phoenixd:get-auto-liquidity', () => {
   if (serviceManager?.configs?.ambrosia?.['nwc-uri']) {
     return { nwcConfigured: true };
   }
-  const phoenixConfig = readConfig(phoenixConfigPath);
+  const phoenixConfig = configurationBootstrap.readConfig(phoenixConfigPath);
   return phoenixConfig['auto-liquidity'] ?? 'off';
 });
 
-ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
+ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, autoLiquiditySetting) => {
   if (!serviceManager) {
     throw new Error('ServiceManager not initialized');
   }
@@ -520,17 +509,17 @@ ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
     throw new Error('A restart is already in progress');
   }
 
-  const phoenixConfig = readConfig(phoenixConfigPath);
-  phoenixConfig['auto-liquidity'] = value;
-  writeConfig(phoenixConfigPath, phoenixConfig);
+  const phoenixConfig = configurationBootstrap.readConfig(phoenixConfigPath);
+  phoenixConfig['auto-liquidity'] = autoLiquiditySetting;
+  configurationBootstrap.writeConfig(phoenixConfigPath, phoenixConfig);
 
-  if (!serviceManager.isDevMode()) {
+  if (!serviceManager.isDevelopmentMode()) {
     if (serviceManager.externalServices.phoenixd) {
       return { requiresManualRestart: true };
     }
 
     if (serviceManager.configs?.phoenix) {
-      serviceManager.configs.phoenix['auto-liquidity'] = value;
+      serviceManager.configs.phoenix['auto-liquidity'] = autoLiquiditySetting;
     }
     phoenixdRestartInProgress = true;
     try {
@@ -543,17 +532,33 @@ ipcMain.handle('phoenixd:set-auto-liquidity', async (_event, value) => {
   return true;
 });
 
-// App initialization
+ipcMain.handle('secrets:get-storage-backend', () => unlockPasswordStore.getStorageBackend());
+
+ipcMain.handle('secrets:save-unlock-password', (_event, unlockPassword) => {
+  unlockPasswordStore.save(unlockPassword);
+});
+
+ipcMain.handle('secrets:clear-unlock-password', () => {
+  unlockPasswordStore.clear();
+});
+
+function getLinuxPasswordStoreBackend() {
+  const isKdeSession = Boolean(process.env.KDE_FULL_SESSION) || /kde/i.test(process.env.XDG_CURRENT_DESKTOP || '');
+  return isKdeSession ? 'kwallet6' : 'gnome-libsecret';
+}
+
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('password-store', getLinuxPasswordStoreBackend());
+}
+
 app.whenReady().then(initializeApp);
 
-// Activation handler (macOS)
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0 && !serviceManager) {
     initializeApp();
   }
 });
 
-// Clean shutdown
 app.on('before-quit', async (event) => {
   if (autoUpdaterService) {
     autoUpdaterService.destroy();
@@ -582,10 +587,9 @@ app.on('window-all-closed', async () => {
   }
 });
 
-// Crash handler
-process.on('uncaughtException', (error) => {
-  logger.error('[Electron] Uncaught Exception:', error);
-  dialog.showErrorBox('Unexpected Error', error.message || error.toString());
+process.on('uncaughtException', (uncaughtError) => {
+  logger.error('[Electron] Uncaught Exception:', uncaughtError);
+  dialog.showErrorBox('Unexpected Error', uncaughtError.message || uncaughtError.toString());
 });
 
 process.on('unhandledRejection', (reason, promise) => {

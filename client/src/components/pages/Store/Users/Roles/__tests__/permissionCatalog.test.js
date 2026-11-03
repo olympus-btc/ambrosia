@@ -1,4 +1,6 @@
-import { getVisiblePermissionCatalog } from "../utils/permissionCatalog";
+import rolesEn from "../locales/en";
+import rolesEs from "../locales/es";
+import { getVisiblePermissionCatalog, permissionCatalog } from "../utils/permissionCatalog";
 
 describe("permissionCatalog", () => {
   it("hides admin-only permissions from limited roles", () => {
@@ -31,5 +33,21 @@ describe("permissionCatalog", () => {
     }).map((permission) => permission.key);
 
     expect(visibleKeys).toEqual(["roles_read", "roles_create", "roles_update", "roles_delete", "permissions_read"]);
+  });
+
+  it.each([
+    ["en", rolesEn],
+    ["es", rolesEs],
+  ])("has a translated label and description for every catalog permission in %s", (_localeName, localeMessages) => {
+    const translatedPermissions = localeMessages.roles.permissions.items;
+
+    const untranslatedPermissionKeys = permissionCatalog
+      .map((permission) => permission.key)
+      .filter((permissionKey) => {
+        const translatedPermission = translatedPermissions[permissionKey];
+        return typeof translatedPermission?.label !== "string" || typeof translatedPermission?.description !== "string";
+      });
+
+    expect(untranslatedPermissionKeys).toEqual([]);
   });
 });

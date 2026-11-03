@@ -6,9 +6,7 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@heroui/react", () => ({
   Button: ({ onPress, children, ...props }) => (
@@ -31,32 +29,32 @@ jest.mock("../PrinterAddForm", () => ({
 
 jest.mock("../PrinterConfigRow", () => ({
   PrinterConfigRow: ({
-    config,
-    onTemplateChange,
+    printerConfig,
     onSetDefault,
     onToggleDefault,
     onToggleEnabled,
     onRemove,
+    onCashDrawerChange,
   }) => (
-    <div data-testid={`row-${config.id}`}>
-      {config.printerName}
-      <button type="button" onClick={() => onTemplateChange("Updated")}>template-change</button>
+    <div data-testid={`row-${printerConfig.id}`}>
+      {printerConfig.printerName}
       <button type="button" onClick={onSetDefault}>set-default</button>
       <button type="button" onClick={() => onToggleDefault(false)}>toggle-default</button>
       <button type="button" onClick={() => onToggleEnabled(false)}>toggle-enabled</button>
       <button type="button" onClick={onRemove}>remove</button>
+      <button type="button" onClick={() => onCashDrawerChange({ cashDrawerEnabled: true })}>cash-drawer-change</button>
     </div>
   ),
 }));
 
 const defaultFormState = {
-  printerType: "CUSTOMER", printerName: "", templateName: "",
+  printerType: "CUSTOMER", printerName: "",
   isDefault: false, enabled: true,
   onPrinterTypeChange: jest.fn(), onPrinterNameChange: jest.fn(),
-  onTemplateNameChange: jest.fn(), onDefaultChange: jest.fn(), onEnabledChange: jest.fn(),
+  onDefaultChange: jest.fn(), onEnabledChange: jest.fn(),
 };
-const defaultData = { availablePrinters: [], configRows: [], templates: [] };
-const defaultLoading = { available: false, configs: false, templates: false };
+const defaultData = { availablePrinters: [], configRows: [] };
+const defaultLoading = { available: false, configs: false };
 const defaultState = {
   error: null, saving: false,
   onAdd: jest.fn(), onUpdateConfig: jest.fn(), onDeleteConfig: jest.fn(), onSetDefaultConfig: jest.fn(),
@@ -122,9 +120,6 @@ describe("PrintersCard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("template-change"));
-    expect(onUpdateConfig).toHaveBeenCalledWith("cfg-1", { templateName: "Updated" });
-
     fireEvent.click(screen.getByText("toggle-default"));
     expect(onUpdateConfig).toHaveBeenCalledWith("cfg-1", { isDefault: false });
 
@@ -136,5 +131,21 @@ describe("PrintersCard", () => {
 
     fireEvent.click(screen.getByText("remove"));
     expect(onDeleteConfig).toHaveBeenCalledWith("cfg-1");
+  });
+
+  it("saves the cash drawer changes of a row through onUpdateConfig", () => {
+    const onUpdateConfig = jest.fn();
+    render(
+      <PrintersCard
+        formState={defaultFormState}
+        data={{ ...defaultData, configRows: [{ id: "cfg-1", printerName: "alice-printer", printerType: "CUSTOMER" }] }}
+        loading={defaultLoading}
+        state={{ ...defaultState, onUpdateConfig }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("cash-drawer-change"));
+
+    expect(onUpdateConfig).toHaveBeenCalledWith("cfg-1", { cashDrawerEnabled: true });
   });
 });

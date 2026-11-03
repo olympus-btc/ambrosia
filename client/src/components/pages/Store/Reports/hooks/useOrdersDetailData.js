@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 import { downloadCsv } from "../utils/downloadCsv";
@@ -15,6 +16,7 @@ const DEFAULT_ROWS_PER_PAGE = 10;
 export function useOrdersDetailData(orders, formatCurrency) {
   const reportsTranslations = useTranslations("reports");
   const statusTranslations = useTranslations();
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
   const [prevOrders, setPrevOrders] = useState(orders);
@@ -41,7 +43,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
       const headers = [
         reportsTranslations("orders.shortId"), reportsTranslations("sales.date"), reportsTranslations("sales.user"),
         reportsTranslations("orders.products"), reportsTranslations("sales.quantity"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"),
-        reportsTranslations("orders.statusLabel"),
+        reportsTranslations("orders.reference"), reportsTranslations("orders.statusLabel"),
       ];
       const rows = orders.map((order) => [
         order.shortId,
@@ -50,7 +52,8 @@ export function useOrdersDetailData(orders, formatCurrency) {
         order.items.map((item) => `${item.productName} x${item.quantity}`).join("; "),
         order.itemCount,
         formatCurrency(order.total),
-        order.paymentMethod ?? "",
+        getPaymentMethodLabel(order.paymentMethod) ?? "",
+        order.transactionId ?? "",
         statusTranslations(`status.${refundedToStatus(order.refunded)}`),
       ]);
 
@@ -70,7 +73,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
     } catch {
       addToast({ color: "danger", description: reportsTranslations("export.error") });
     }
-  }, [orders, formatCurrency, reportsTranslations, statusTranslations]);
+  }, [orders, formatCurrency, reportsTranslations, statusTranslations, getPaymentMethodLabel]);
 
   return { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv };
 }

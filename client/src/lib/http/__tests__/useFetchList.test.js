@@ -40,23 +40,51 @@ describe("useFetchList", () => {
     expect(mockAddToast).not.toHaveBeenCalled();
   });
 
-  it("returns null and shows toast when response is not ok", async () => {
-    httpClient.mockResolvedValueOnce({ ok: false });
+  it("throws without showing a toast when the response is 403", async () => {
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    parseJsonResponse.mockResolvedValueOnce(null);
 
     const { result: fetchListHook } = renderHook(() => useFetchList());
 
-    let fetchedList;
     await act(async () => {
-      fetchedList = await fetchListHook.current.fetchList("/items");
+      await expect(fetchListHook.current.fetchList("/items")).rejects.toMatchObject({ status: 403 });
     });
 
-    expect(fetchedList).toBeNull();
+    expect(mockAddToast).not.toHaveBeenCalled();
+  });
+
+  it("throws and shows a toast with the server's message for a non-403 error", async () => {
+    httpClient.mockResolvedValueOnce({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Database unavailable" });
+
+    const { result: fetchListHook } = renderHook(() => useFetchList());
+
+    await act(async () => {
+      await expect(fetchListHook.current.fetchList("/items")).rejects.toMatchObject({ status: 500 });
+    });
+
     expect(mockAddToast).toHaveBeenCalledWith({
-      title: "connectionErrorTitle",
-      description: "connectionErrorDescription",
+      title: "requestErrorTitle",
+      description: "Database unavailable",
       color: "danger",
     });
-    expect(parseJsonResponse).not.toHaveBeenCalled();
+  });
+
+  it("shows the fallback toast description when a non-403 error has no server message", async () => {
+    httpClient.mockResolvedValueOnce({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValueOnce(null);
+
+    const { result: fetchListHook } = renderHook(() => useFetchList());
+
+    await act(async () => {
+      await expect(fetchListHook.current.fetchList("/items")).rejects.toThrow();
+    });
+
+    expect(mockAddToast).toHaveBeenCalledWith({
+      title: "requestErrorTitle",
+      description: "requestErrorDescription",
+      color: "danger",
+    });
   });
 
   it("uses the provided fallback when response is ok but data is empty", async () => {

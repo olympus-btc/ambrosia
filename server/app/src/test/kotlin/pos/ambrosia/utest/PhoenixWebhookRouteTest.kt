@@ -9,21 +9,39 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
-import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.testing.testApplication
+import kotlinx.io.files.Path
+import org.junit.After
+import org.junit.Before
 import pos.ambrosia.api.calculatePhoenixSignature
 import pos.ambrosia.api.configurePhoenixWebhook
+import pos.ambrosia.services.SecretsStore
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PhoenixWebhookRouteTest {
+    private lateinit var configFile: File
+
+    @Before
+    fun setUp() {
+        configFile = Files.createTempFile("phoenixWebhookRouteTestConfig", ".conf").toFile()
+        SecretsStore.resetForTesting()
+        SecretsStore.ambrosiaConfigFile = Path(configFile.absolutePath)
+    }
+
+    @After
+    fun tearDown() {
+        SecretsStore.resetForTesting()
+        configFile.delete()
+    }
+
     @Test
     fun `rejects webhook without signature header`() =
         testApplication {
-            environment {
-                config = MapApplicationConfig("phoenix.webhook-secret" to "supersecret")
-            }
+            configFile.writeText("phoenixd-webhook-secret=supersecret\n")
             application {
                 this@application.install(ContentNegotiation) { json() }
                 configurePhoenixWebhook()
@@ -47,9 +65,7 @@ class PhoenixWebhookRouteTest {
                 {"type":"payment_received","amountSat":15,"paymentHash":"abc123"}
                 """.trimIndent()
 
-            environment {
-                config = MapApplicationConfig("phoenix.webhook-secret" to secret)
-            }
+            configFile.writeText("phoenixd-webhook-secret=$secret\n")
             application {
                 this@application.install(ContentNegotiation) { json() }
                 configurePhoenixWebhook()

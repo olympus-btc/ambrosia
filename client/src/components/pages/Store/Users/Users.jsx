@@ -6,6 +6,7 @@ import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PermissionBlockedMessage } from "@/components/shared/PermissionBlockedMessage";
 import { RequirePermission } from "@/hooks/usePermission";
 
 import { useRoles } from "./../hooks/useRoles";
@@ -22,11 +23,12 @@ export function Users() {
   const [deleteUsersShowModal, setDeleteUsersShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
-  const { users, updateUser, addUser, deleteUser, refetch: refetchUsers } = useUsers();
+  const [deleteCurrentUserPin, setDeleteCurrentUserPin] = useState("");
+  const { users, forbidden: usersForbidden, updateUser, addUser, deleteUser, refetch: refetchUsers } = useUsers({ skipForbiddenRedirect: true });
   const { roles, createRole, deleteRole: deleteRoleBase, loading: loadingRoles, updateRoleWithPermissions, getRolePermissions } = useRoles();
 
-  const deleteRole = useCallback(async (roleId) => {
-    await deleteRoleBase(roleId);
+  const deleteRole = useCallback(async (roleId, currentUserPin) => {
+    await deleteRoleBase(roleId, currentUserPin);
     await refetchUsers();
   }, [deleteRoleBase, refetchUsers]);
 
@@ -37,6 +39,7 @@ export function Users() {
     userPhone: "",
     userEmail: "",
     userRole: "",
+    currentUserPin: "",
   });
 
   const handleEditUser = (user) => {
@@ -49,6 +52,7 @@ export function Users() {
       userPhone: user.phone ?? "",
       userEmail: user.email ?? "",
       userRole: user.roleId ?? "",
+      currentUserPin: "",
     });
 
     setEditUsersShowModal(true);
@@ -56,6 +60,7 @@ export function Users() {
 
   const handleDeleteUser = (user) => {
     setUserToDelete(user);
+    setDeleteCurrentUserPin("");
     setDeleteUsersShowModal(true);
   };
 
@@ -64,6 +69,18 @@ export function Users() {
   };
 
   const userTranslations = useTranslations("users");
+
+  if (usersForbidden) {
+    return (
+      <>
+        <PageHeader title={userTranslations("title")} subtitle={userTranslations("subtitle")} />
+        <PermissionBlockedMessage
+          title={userTranslations("permissionBlocked.title")}
+          subtitle={userTranslations("permissionBlocked.subtitle")}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -83,6 +100,7 @@ export function Users() {
                   userPhone: "",
                   userEmail: "",
                   userRole: roles?.[0]?.id || "",
+                  currentUserPin: "",
                 });
                 setAddUsersShowModal(true);
               }}
@@ -137,13 +155,16 @@ export function Users() {
         user={userToDelete}
         deleteUsersShowModal={deleteUsersShowModal}
         setDeleteUsersShowModal={setDeleteUsersShowModal}
+        currentUserPin={deleteCurrentUserPin}
+        setCurrentUserPin={setDeleteCurrentUserPin}
         onConfirm={async () => {
           try {
             if (userToDelete?.id) {
-              await deleteUser(userToDelete.id);
+              await deleteUser(userToDelete.id, deleteCurrentUserPin);
               addToast({ description: userTranslations("toasts.deleteSuccess"), color: "success" });
             }
             setDeleteUsersShowModal(false);
+            setDeleteCurrentUserPin("");
           } catch {
           }
         }}

@@ -112,7 +112,7 @@ export default function WalletGuard({
       await new Promise((resolveLoginDelay) => setTimeout(resolveLoginDelay, 150));
       setAuthorized(true);
       setIsOpen(false);
-      if (onAuthorized) onAuthorized();
+      if (onAuthorized) onAuthorized(password);
     } catch {
       setPasswordError(walletTourTranslations("guardLoginError"));
     } finally {

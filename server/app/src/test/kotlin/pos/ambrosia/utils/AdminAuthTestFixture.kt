@@ -7,14 +7,18 @@ import io.ktor.server.application.ApplicationEnvironment
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.testing.ApplicationTestBuilder
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.configureAuthentication
+import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.models.AuthResponse
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
+import java.util.UUID
 
-const val TEST_SECRET = "admin-auth-test-fixture-secret"
+const val ADMIN_AUTH_TEST_SECRET = "admin-auth-test-fixture-secret"
 private const val TEST_ISSUER = "admin-auth-test-fixture-issuer"
 private const val TEST_AUDIENCE = "admin-auth-test-fixture-audience"
+const val TEST_USER_PIN = "1234"
 
 data class AuthCookies(
     val accessToken: String,
@@ -43,7 +47,7 @@ private fun ApplicationTestBuilder.installAuth(
 ): AuthCookies {
     val testApplicationConfig =
         MapApplicationConfig(
-            "secret" to TEST_SECRET,
+            "secret" to ADMIN_AUTH_TEST_SECRET,
             "jwt.issuer" to TEST_ISSUER,
             "jwt.audience" to TEST_AUDIENCE,
         )
@@ -58,7 +62,15 @@ private fun ApplicationTestBuilder.installAuth(
     val roleId = ExposedTestDb.seedRole(roleName, isAdmin = isAdmin)
     val userId = ExposedTestDb.seedUser(userName, roleId)
 
-    val tokenService = TokenService(applicationEnvironment { config = testApplicationConfig })
+    val testEnvironment = applicationEnvironment { config = testApplicationConfig }
+    transaction {
+        UserEntity.findById(UUID.fromString(userId))?.pin =
+            SecurePinProcessor.byteArrayToBase64(
+                SecurePinProcessor.hashPinForStorage(TEST_USER_PIN.toCharArray(), userId, testEnvironment),
+            )
+    }
+
+    val tokenService = TokenService(testEnvironment)
     val seededUser =
         AuthResponse(
             id = userId,
@@ -84,8 +96,13 @@ fun HttpRequestBuilder.withAuthCookies(cookies: AuthCookies) {
 fun grantPermission(
     roleName: String,
     permission: String,
+) = grantPermissions(roleName, permission)
+
+fun grantPermissions(
+    roleName: String,
+    vararg permissions: String,
 ) {
     val roleId = ExposedTestDb.seedRole(roleName)
-    ExposedTestDb.seedPermission(permission)
-    PermissionsService().replaceRolePermissions(roleId, listOf(permission))
+    permissions.forEach(ExposedTestDb::seedPermission)
+    PermissionsService().replaceRolePermissions(roleId, permissions.toList())
 }

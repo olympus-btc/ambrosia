@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymentMethod";
+import { PermissionBlockedMessage } from "@/components/shared/PermissionBlockedMessage";
 
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
 import { OrderDetailsModal } from "./OrderDetailsModal";
@@ -30,6 +31,7 @@ export default function StoreOrders() {
   const {
     filteredOrders,
     paginatedOrders,
+    forbidden: ordersForbidden,
     page,
     setPage,
     totalPages,
@@ -60,6 +62,17 @@ export default function StoreOrders() {
     await fetchOrdersFiltered(filters);
     setShowDetails(false);
   };
+
+  if (ordersForbidden) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <PermissionBlockedMessage
+          title={ordersTranslations("permissionBlocked.title")}
+          subtitle={ordersTranslations("permissionBlocked.subtitle")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">

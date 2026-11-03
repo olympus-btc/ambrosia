@@ -9,10 +9,7 @@ jest.mock("@heroui/react", () => {
   return { ...actual, addToast: jest.fn() };
 });
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => <>{children}</>,
-  usePermission: () => true,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,

@@ -12,7 +12,7 @@ export function usePaymentCurrency() {
     async (currencyId) => {
       if (!canRead || !currencyId) return null;
       try {
-        const paymentCurrencyResponse = await httpClient(`/payments/currencies/${currencyId}`);
+        const paymentCurrencyResponse = await httpClient(`/payments/currencies/${currencyId}`, { skipForbiddenRedirect: true });
         return await parseJsonResponse(paymentCurrencyResponse, null);
       } catch (paymentCurrencyError) {
         console.error("Error fetching payment currency:", paymentCurrencyError);

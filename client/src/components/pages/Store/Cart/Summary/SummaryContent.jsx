@@ -15,6 +15,12 @@ export function SummaryContent({
   discount,
   discountType,
   onApplyDiscount,
+  tip = 0,
+  tipType = "percentage",
+  tipsEnabled = false,
+  tipPercentages,
+  customTipDefaultType,
+  onApplyTip,
   onRemoveProduct,
   onUpdateQuantity,
   startRemoval,
@@ -29,7 +35,13 @@ export function SummaryContent({
   const isTouchDevice = useSyncExternalStore(() => () => {}, () => navigator.maxTouchPoints > 0, () => false);
   const visibleItems = cartItems || [];
 
-  const { subtotal, discountAmount, total } = calculateCartTotals(visibleItems, discount, discountType);
+  const { subtotal, discountAmount, tipAmount, total } = calculateCartTotals(
+    visibleItems,
+    discount,
+    discountType,
+    tipsEnabled ? tip : 0,
+    tipType,
+  );
 
   const handleStartRemoval = (item) => {
     const toastKey = addToast({
@@ -72,6 +84,12 @@ export function SummaryContent({
           discount={discount}
           discountType={discountType}
           onApplyDiscount={onApplyDiscount}
+          tip={tip}
+          tipType={tipType}
+          tipsEnabled={tipsEnabled}
+          tipPercentages={tipPercentages}
+          customTipDefaultType={customTipDefaultType}
+          onApplyTip={onApplyTip}
         />
       )}
 
@@ -82,7 +100,17 @@ export function SummaryContent({
         onClearPaymentError={onClearPaymentError}
         onPay={(selectedPaymentMethod) => {
           onClearPaymentError?.();
-          onPay?.({ items: visibleItems, subtotal, discount, discountAmount, total, selectedPaymentMethod });
+          onPay?.({
+            items: visibleItems,
+            subtotal,
+            discount,
+            discountAmount,
+            tip: tipsEnabled ? tip : 0,
+            tipType,
+            tipAmount: tipsEnabled ? tipAmount : 0,
+            total,
+            selectedPaymentMethod,
+          });
         }}
       />
     </div>

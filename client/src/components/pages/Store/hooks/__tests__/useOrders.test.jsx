@@ -116,10 +116,11 @@ describe("useOrders", () => {
     expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments", { skipForbiddenRedirect: false });
   });
 
-  it("shows connection toast and returns null when filtered fetch returns non-ok response", async () => {
+  it("shows an error toast and exposes the error when filtered fetch returns non-ok response", async () => {
     httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: false });
     parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce(null);
 
     render(<TestComponent />);
 
@@ -132,6 +133,6 @@ describe("useOrders", () => {
 
     expect(result).toBeNull();
     expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
-    expect(screen.getByTestId("error")).toHaveTextContent("no");
+    expect(screen.getByTestId("error")).toHaveTextContent("yes");
   });
 });

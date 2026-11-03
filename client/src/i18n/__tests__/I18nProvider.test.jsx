@@ -3,6 +3,14 @@ import userEvent from "@testing-library/user-event";
 
 import { I18nProvider, LanguageSwitcher, useI18n } from "../I18nProvider";
 
+jest.mock("next-intl", () => ({
+  ...jest.requireActual("../../../__tests__/__mocks__/next/next-intl.js"),
+  NextIntlClientProvider: ({ messages: intlMessages, children: translatedContent }) => {
+    global.__renderedIntlMessages = intlMessages;
+    return translatedContent;
+  },
+}));
+
 function LocaleDisplay() {
   const { locale } = useI18n();
   return <span data-testid="locale">{locale}</span>;
@@ -22,6 +30,15 @@ beforeEach(() => {
 });
 
 describe("I18nProvider", () => {
+  it("merges the settings namespace shared by the store and the shared settings cards", () => {
+    renderWithProvider(<LocaleDisplay />);
+
+    const settingsMessages = global.__renderedIntlMessages.settings;
+    expect(settingsMessages.cardTips.title).toBe("Tips");
+    expect(settingsMessages.cardCurrency.title).toBe("Currency");
+    expect(settingsMessages.subtitle).toBe("Manage your store");
+  });
+
   it("defaults to English when no locale is stored", () => {
     renderWithProvider(<LocaleDisplay />);
     expect(screen.getByTestId("locale")).toHaveTextContent("en");

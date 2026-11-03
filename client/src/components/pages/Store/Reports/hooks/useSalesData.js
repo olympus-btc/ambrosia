@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import formatDate from "@lib/formatDate";
 
 import { downloadCsv } from "../utils/downloadCsv";
@@ -15,6 +16,7 @@ const DEFAULT_ROWS_PER_PAGE = 10;
 export function useSalesData(sales, formatCurrency) {
   const reportsTranslations = useTranslations("reports");
   const statusTranslations = useTranslations();
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
   const [prevSales, setPrevSales] = useState(sales);
@@ -49,7 +51,7 @@ export function useSalesData(sales, formatCurrency) {
         sale.quantity,
         formatCurrency(sale.priceAtOrder),
         formatCurrency(sale.priceAtOrder * sale.quantity),
-        sale.paymentMethod ?? "",
+        getPaymentMethodLabel(sale.paymentMethod) ?? "",
         sale.saleDate ? formatDate(sale.saleDate) : "",
         statusTranslations(`status.${refundedToStatus(sale.refunded)}`),
       ]);
@@ -72,7 +74,7 @@ export function useSalesData(sales, formatCurrency) {
     } catch {
       addToast({ color: "danger", description: reportsTranslations("export.error") });
     }
-  }, [sales, formatCurrency, reportsTranslations, statusTranslations]);
+  }, [sales, formatCurrency, reportsTranslations, statusTranslations, getPaymentMethodLabel]);
 
   return { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv };
 }

@@ -47,7 +47,7 @@ describe("OrdersCard", () => {
 
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(screen.getByText("status-paid")).toBeInTheDocument();
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
     expect(screen.getByText("formatted-date")).toBeInTheDocument();
     expect(formatAmount).toHaveBeenCalledWith(1500);
   });

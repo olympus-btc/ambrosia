@@ -73,6 +73,17 @@ describe("PeriodFilter", () => {
     buttons.forEach((button) => expect(button).toBeDisabled());
   });
 
+  it("renders the default reports subtitle", () => {
+    render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
+    expect(screen.getByText("dates.subtitle")).toBeInTheDocument();
+  });
+
+  it("renders a custom subtitle when provided", () => {
+    render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} subtitle="Filter billable time by period" />);
+    expect(screen.getByText("Filter billable time by period")).toBeInTheDocument();
+    expect(screen.queryByText("dates.subtitle")).not.toBeInTheDocument();
+  });
+
   it("renders the day period button", () => {
     render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
     expect(screen.getByText("dates.period.day")).toBeInTheDocument();

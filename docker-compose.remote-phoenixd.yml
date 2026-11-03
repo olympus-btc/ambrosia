@@ -1,0 +1,21 @@
+# Remote phoenixd overlay: use with `docker compose -f docker-compose.yml -f docker-compose.remote-phoenixd.yml up -d`
+# Requires PHOENIXD_URL and PHOENIXD_PASSWORD env vars pointing at a phoenixd node running elsewhere (e.g. via Tailscale)
+services:
+  ambrosia:
+    depends_on: {}
+    environment:
+      PHOENIXD_REMOTE: "true"
+      PHOENIXD_URL: ${PHOENIXD_URL}
+      PHOENIXD_PASSWORD: ${PHOENIXD_PASSWORD}
+    entrypoint:
+      - java
+      - -jar
+      - /app/ambrosia.jar
+      - --http-bind-ip=0.0.0.0
+      - --docker
+    volumes:
+      - ambrosia_datadir:/root/.Ambrosia-POS
+
+  phoenixd:
+    profiles:
+      - phoenixd

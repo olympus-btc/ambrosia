@@ -1,4 +1,4 @@
-"""End-to-end tests for the login rate limiter (LoginRateLimiter in Authorize.kt).
+"""End-to-end tests for the login rate limiter (AttemptLockoutTracker, wired into Authorize.kt).
 
 The rate limiter uses a precomputed Fibonacci sequence for backoff (minutes per IP):
   - Successful login           → counter reset

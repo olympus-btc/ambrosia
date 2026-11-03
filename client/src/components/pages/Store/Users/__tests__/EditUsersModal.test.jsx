@@ -39,6 +39,7 @@ const baseData = {
   userPhone: "0987654321",
   userEmail: "jane@test.com",
   userRole: "admin",
+  currentUserPin: "1234",
 };
 
 const localStorageMock = {
@@ -103,6 +104,7 @@ describe("EditUsersModal", () => {
       userPhone: "",
       userEmail: "",
       userRole: roles[0].id,
+      currentUserPin: "",
     });
     expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
   });
@@ -128,6 +130,7 @@ describe("EditUsersModal", () => {
       userPhone: "",
       userEmail: "",
       userRole: "Vendedor",
+      currentUserPin: "",
     });
     expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
   });
@@ -263,6 +266,7 @@ describe("EditUsersModal", () => {
       userPhone: "",
       userEmail: "",
       userRole: "",
+      currentUserPin: "",
     });
     expect(setEditUsersShowModal).toHaveBeenCalledWith(false);
   });

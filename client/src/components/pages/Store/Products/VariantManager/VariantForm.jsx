@@ -5,6 +5,7 @@ import { Button, Input, NumberInput, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { ImageUploader } from "@/components/shared/ImageUploader";
+import { isPriceStepAligned } from "@/components/utils/numberParsers";
 
 function buildInitialOptionValuesByType(options, initialOptionValueIds = []) {
   return options.reduce((selectedOptionValueIdsByType, optionType) => {
@@ -20,6 +21,7 @@ function buildInitialOptionValuesByType(options, initialOptionValueIds = []) {
 export function VariantForm({
   initial = {},
   currency,
+  priceStep = 0.01,
   options = [],
   isStockTrackedForProduct = true,
   onSave,
@@ -72,6 +74,7 @@ export function VariantForm({
 
   const allOptionsSelected =
     options.length === 0 || options.every((optionType) => form.selectedOptionValues[optionType.id]);
+  const showPriceStepMismatchWarning = !isPriceStepAligned(form.priceCents / 100, priceStep);
 
   return (
     <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 space-y-3">
@@ -107,18 +110,25 @@ export function VariantForm({
       />
 
       <div className={isStockTrackedForProduct ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
-        <NumberInput
-          size="sm"
-          label={productsTranslation("variantPrice")}
-          placeholder={productsTranslation("variantPricePlaceholder")}
-          value={form.priceCents / 100}
-          minValue={0}
-          step={0.01}
-          startContent={
-            <span className="text-default-400 text-small">{currency?.acronym ?? "$"}</span>
-          }
-          onValueChange={(priceValue) => updateForm({ priceCents: Math.round((priceValue ?? 0) * 100) })}
-        />
+        <div className="space-y-1">
+          <NumberInput
+            size="sm"
+            label={productsTranslation("variantPrice")}
+            placeholder={productsTranslation("variantPricePlaceholder")}
+            value={form.priceCents / 100}
+            minValue={0}
+            step={priceStep}
+            startContent={
+              <span className="text-default-400 text-small">{currency?.acronym ?? "$"}</span>
+            }
+            onValueChange={(priceValue) => updateForm({ priceCents: Math.round((priceValue ?? 0) * 100) })}
+          />
+          {showPriceStepMismatchWarning && (
+            <p className="text-xs text-amber-600">
+              {`${productsTranslation("priceStepMismatchWarning")} ${currency?.acronym ?? "$"} ${(form.priceCents / 100).toFixed(2)}`}
+            </p>
+          )}
+        </div>
         {isStockTrackedForProduct && (
           <NumberInput
             size="sm"

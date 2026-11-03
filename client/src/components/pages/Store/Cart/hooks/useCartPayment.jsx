@@ -7,6 +7,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useTurn } from "@/hooks/turn/useTurn";
 
+import { useCustomerReceipt } from "../../hooks/useCustomerReceipt";
 import { usePaymentCurrency } from "../../hooks/usePaymentCurrency";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 import {
@@ -18,9 +19,9 @@ import {
   buildHandlePay,
   buildHandleCashComplete,
   buildHandleCardComplete,
+  buildHandleTransferComplete,
 } from "./paymentHandlers";
 import { useBtcPayment } from "./useBtcPayment";
-import { useCustomerReceipt } from "./useCustomerReceipt";
 import { usePaymentChannel } from "./usePaymentChannel";
 import { usePaymentState } from "./usePaymentState";
 
@@ -58,6 +59,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const btc = useBtcPayment(handlerContext);
   const cash = usePaymentChannel(buildHandleCashComplete, handlerContext);
   const card = usePaymentChannel(buildHandleCardComplete, handlerContext);
+  const bankTransfer = usePaymentChannel(buildHandleTransferComplete, handlerContext);
 
   const handlePay = useMemo(
     () => buildHandlePay({
@@ -68,6 +70,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setBtcPaymentConfig: btc.setConfig,
       setCashPaymentConfig: cash.setConfig,
       setCardPaymentConfig: card.setConfig,
+      setTransferPaymentConfig: bankTransfer.setConfig,
       onResetCart,
       onPay,
       notifyError,
@@ -95,6 +98,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       btc.setConfig,
       cash.setConfig,
       card.setConfig,
+      bankTransfer.setConfig,
     ],
   );
 
@@ -113,6 +117,11 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     [card.config, card.onComplete, card.onClose],
   );
 
+  const transferPayment = useMemo(
+    () => ({ config: bankTransfer.config, onComplete: bankTransfer.onComplete, onClose: bankTransfer.onClose }),
+    [bankTransfer.config, bankTransfer.onComplete, bankTransfer.onClose],
+  );
+
   return {
     handlePay,
     isPaying,
@@ -122,5 +131,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     btcPayment,
     cashPayment,
     cardPayment,
+    transferPayment,
   };
 }

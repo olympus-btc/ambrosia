@@ -55,7 +55,7 @@ describe("DeleteRoleModal", () => {
 
   it("calls onConfirm when delete is pressed", () => {
     const onConfirm = jest.fn();
-    renderModal({ onConfirm });
+    renderModal({ onConfirm, currentUserPin: "1234", setCurrentUserPin: jest.fn() });
     fireEvent.click(screen.getByText("roles.actions.delete"));
     expect(onConfirm).toHaveBeenCalled();
   });

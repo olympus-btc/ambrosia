@@ -18,14 +18,19 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.io.files.Path
+import pos.ambrosia.config.AppConfig
+import pos.ambrosia.config.readConfValues
 import pos.ambrosia.config.replaceConfFileProperty
 import pos.ambrosia.datadir
 import pos.ambrosia.logger
 import pos.ambrosia.models.IncomingPaymentWithRate
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.OutgoingPaymentWithRate
+import pos.ambrosia.models.PhoenixdRemoteStatusResponse
 import pos.ambrosia.models.RolePassword
+import pos.ambrosia.models.TestPhoenixdConnectionRequest
 import pos.ambrosia.models.UpdateNwcUriRequest
+import pos.ambrosia.models.UpdatePhoenixdRemoteRequest
 import pos.ambrosia.models.WalletAuthResponse
 import pos.ambrosia.models.WalletInvoiceRate
 import pos.ambrosia.models.WalletPasswordChangeRequest
@@ -44,30 +49,31 @@ import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.RefundService
 import pos.ambrosia.services.RolesService
+import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.WalletAdminNotificationService
 import pos.ambrosia.services.WalletRateService
+import pos.ambrosia.utils.AttemptLockoutTracker
 import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.NwcConnectionException
+import pos.ambrosia.utils.SecretsLockedException
 import pos.ambrosia.utils.UnsupportedBackendOperationException
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.getCurrentUser
+import pos.ambrosia.utils.recordFailureAndRespondIfLockedOut
+import pos.ambrosia.utils.respondIfLockedOut
+
+private val walletPasswordAttemptLockout = AttemptLockoutTracker()
 
 fun Application.configureWallet() {
-    val phoenixService = PhoenixService(environment)
     val walletAdminNotificationService =
         WalletAdminNotificationService(createConfiguredAdminNotificationService(environment))
-    val nwcUri = environment.config.propertyOrNull("nwc-uri")?.getString()
-    val backend: LightningBackend =
-        if (nwcUri != null) {
-            NwcService.create(nwcUri, this) { paymentNotification ->
-                walletAdminNotificationService.notifyIncomingPaymentReceived(paymentNotification)
-            }
-        } else {
-            phoenixService
-        }
-    ActiveLightningBackend.set(backend)
+    if (SecretsStore.isLocked()) {
+        SecretsStore.onUnlock { initializeLightningBackend(walletAdminNotificationService) }
+    } else {
+        initializeLightningBackend(walletAdminNotificationService)
+    }
     monitor.subscribe(ApplicationStopping) { ActiveLightningBackend.closeActive() }
 
     val authService = AuthService(environment)
@@ -115,8 +121,10 @@ fun Route.wallet(
                     call.request.header("X-Forwarded-Proto") == "https"
             val rolePassword = call.receive<RolePassword>()
             val userInfo = call.getCurrentUser() ?: throw InvalidCredentialsException()
+            if (call.respondIfLockedOut(walletPasswordAttemptLockout, userInfo.userId)) return@post
             val isAuthenticated = authService.authenticateByRole(userInfo.userId, rolePassword.password.toCharArray())
             if (isAuthenticated == true) {
+                walletPasswordAttemptLockout.reset(userInfo.userId)
                 val token = tokenService.generateWalletAccessToken(userInfo.userId)
                 val decoded = JWT.decode(token)
                 val expiresAt = decoded.expiresAt?.time ?: System.currentTimeMillis()
@@ -132,7 +140,9 @@ fun Route.wallet(
                 )
                 call.respond(HttpStatusCode.OK, WalletAuthResponse("Login successful", expiresAt))
             } else {
-                call.respond(HttpStatusCode.Unauthorized)
+                if (!call.recordFailureAndRespondIfLockedOut(walletPasswordAttemptLockout, userInfo.userId)) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                }
             }
         }
         post("/logout") {
@@ -149,12 +159,15 @@ fun Route.wallet(
                 return@post
             }
             val actorUserId = call.walletActorUserId() ?: throw InvalidCredentialsException()
+            if (call.respondIfLockedOut(walletPasswordAttemptLockout, actorUserId)) return@post
             val currentPasswordIsValid =
                 authService.authenticateByRole(actorUserId, passwordChangeRequest.currentPassword.toCharArray())
             if (!currentPasswordIsValid) {
+                walletPasswordAttemptLockout.recordFailure(actorUserId)
                 call.respond(HttpStatusCode.Unauthorized, Message("Current password is incorrect"))
                 return@post
             }
+            walletPasswordAttemptLockout.reset(actorUserId)
             val passwordWasUpdated =
                 rolesService.updateWalletPasswordForUser(actorUserId, passwordChangeRequest.newPassword.toCharArray())
             if (!passwordWasUpdated) {
@@ -170,6 +183,9 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.BadRequest, Message("Missing nwcUri"))
                 return@post
             }
+            if (SecretsStore.isLocked()) {
+                throw SecretsLockedException()
+            }
             if (!ActiveLightningBackend.isNwcActive()) {
                 throw UnsupportedBackendOperationException(
                     message = "Switching Lightning backend providers is not supported yet",
@@ -181,8 +197,48 @@ fun Route.wallet(
             } catch (exception: Exception) {
                 throw NwcConnectionException(code = "nwc_reconfigure_failed")
             }
-            replaceConfFileProperty(Path(datadir, "ambrosia.conf"), "nwc-uri", trimmedNwcUri)
+            SecretsStore.setSecret("nwc-uri", trimmedNwcUri)
             call.respond(HttpStatusCode.OK, Message("NWC backend reconfigured"))
+        }
+        post("/update-phoenixd-remote") {
+            val updatePhoenixdRemoteRequest = call.receive<UpdatePhoenixdRemoteRequest>()
+            val ambrosiaConfigFile = Path(datadir, "ambrosia.conf")
+            if (updatePhoenixdRemoteRequest.phoenixdRemote) {
+                val trimmedPhoenixdUrl = updatePhoenixdRemoteRequest.phoenixdUrl?.trim()
+                val trimmedPhoenixdPassword = updatePhoenixdRemoteRequest.phoenixdPassword?.trim()
+                if (trimmedPhoenixdUrl.isNullOrBlank() || trimmedPhoenixdPassword.isNullOrBlank()) {
+                    call.respond(HttpStatusCode.BadRequest, Message("Missing url or password"))
+                    return@post
+                }
+                replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-remote", "true")
+                replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-url", trimmedPhoenixdUrl)
+                SecretsStore.setSecret("phoenixd-password", trimmedPhoenixdPassword)
+                ActiveLightningBackend.reinitializePhoenixBackend(trimmedPhoenixdUrl, trimmedPhoenixdPassword)
+                ActiveLightningBackend.startPhoenixPaymentEventsListener(
+                    trimmedPhoenixdUrl,
+                    trimmedPhoenixdPassword,
+                    buildPhoenixPaymentReceivedHandler(walletAdminNotificationService),
+                )
+                call.respond(HttpStatusCode.OK, Message("Remote phoenixd node configured"))
+            } else {
+                replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-remote", "false")
+                replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-url", AppConfig.getLocalPhoenixdUrl())
+                SecretsStore.setSecret("phoenixd-password", AppConfig.getLocalPhoenixdPassword())
+                call.respond(HttpStatusCode.OK, Message("Switched to local phoenixd — restart required to apply"))
+            }
+        }
+        get("/phoenixd-remote-status") {
+            val phoenixdRemote = readConfValues(Path(datadir, "ambrosia.conf"))["phoenixd-remote"].toBoolean()
+            call.respond(HttpStatusCode.OK, PhoenixdRemoteStatusResponse(phoenixdRemote))
+        }
+        post("/test-phoenixd-connection") {
+            val testConnectionRequest = call.receive<TestPhoenixdConnectionRequest>()
+            val candidateNodeInfo =
+                PhoenixService.testCandidateNodeConnection(
+                    testConnectionRequest.phoenixdUrl,
+                    testConnectionRequest.phoenixdPassword,
+                )
+            call.respond(HttpStatusCode.OK, candidateNodeInfo)
         }
         post("/createinvoice") {
             val createInvoiceRequest = call.receive<CreateInvoiceRequest>()
@@ -421,5 +477,43 @@ fun Route.wallet(
     }
 }
 
+private fun Application.initializeLightningBackend(walletAdminNotificationService: WalletAdminNotificationService) {
+    val nwcUri = SecretsStore.getSecretOrNull("nwc-uri")
+    val phoenixdRemote =
+        environment.config
+            .propertyOrNull("phoenixd-remote")
+            ?.getString()
+            .toBoolean()
+    val phoenixdUrl = environment.config.propertyOrNull("phoenixd-url")?.getString() ?: ""
+
+    if (nwcUri != null) {
+        ActiveLightningBackend.set(
+            NwcService.create(nwcUri, this) { paymentNotification ->
+                walletAdminNotificationService.notifyIncomingPaymentReceived(paymentNotification)
+            },
+        )
+        return
+    }
+
+    val phoenixdPassword = SecretsStore.getSecretOrNull("phoenixd-password") ?: AppConfig.getLocalPhoenixdPassword()
+    ActiveLightningBackend.set(PhoenixService(phoenixdUrl, phoenixdPassword))
+
+    if (phoenixdRemote) {
+        ActiveLightningBackend.startPhoenixPaymentEventsListener(
+            phoenixdUrl,
+            phoenixdPassword,
+            buildPhoenixPaymentReceivedHandler(walletAdminNotificationService),
+        )
+    }
+}
+
 private fun io.ktor.server.application.ApplicationCall.walletActorUserId(): String? =
     principal<JWTPrincipal>()?.getClaim("userId", String::class)
+
+private fun buildPhoenixPaymentReceivedHandler(
+    walletAdminNotificationService: WalletAdminNotificationService,
+): suspend (PaymentNotification) -> Unit =
+    { paymentNotification ->
+        PaymentNotifier.broadcast(paymentNotification)
+        walletAdminNotificationService.notifyIncomingPaymentReceived(paymentNotification)
+    }

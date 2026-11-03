@@ -49,7 +49,7 @@ describe("usePaymentCurrency", () => {
       paymentCurrency = await handlers.getPaymentCurrencyById("c1");
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/payments/currencies/c1");
+    expect(httpClient).toHaveBeenCalledWith("/payments/currencies/c1", { skipForbiddenRedirect: true });
     expect(paymentCurrency).toEqual({ id: "c1", acronym: "USD" });
   });
 

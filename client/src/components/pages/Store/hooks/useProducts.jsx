@@ -96,6 +96,7 @@ export function useProducts({ skipForbiddenRedirect = false } = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(productForm, uploadedImageUrl)),
         notShowError: false,
+        skipForbiddenRedirect: true,
       });
 
       const createdProduct = await ensureSuccess(createProductResponse);
@@ -116,6 +117,7 @@ export function useProducts({ skipForbiddenRedirect = false } = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(productForm, uploadedImageUrl, { includeId: true })),
         notShowError: false,
+        skipForbiddenRedirect: true,
       });
 
       const updatedProduct = await ensureSuccess(updateProductResponse);
@@ -137,6 +139,7 @@ export function useProducts({ skipForbiddenRedirect = false } = {}) {
       const deleteProductResponse = await httpClient(`/products/${product.id}`, {
         method: "DELETE",
         notShowError: false,
+        skipForbiddenRedirect: true,
       });
       await ensureSuccess(deleteProductResponse);
       await fetchProducts();

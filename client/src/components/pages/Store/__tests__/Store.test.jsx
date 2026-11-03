@@ -26,6 +26,7 @@ jest.mock("lucide-react", () => ({
   ClipboardClock: () => <div>ClipboardClock Icon</div>,
   Box: () => <div>Box Icon</div>,
   Wallet: () => <div>Wallet Icon</div>,
+  ShieldAlert: () => <div>ShieldAlert Icon</div>,
 }));
 
 jest.mock("@/lib/http", () => ({
@@ -401,5 +402,39 @@ describe("Store Dashboard", () => {
     });
 
     expect(screen.getByText("stats.users")).toBeInTheDocument();
+  });
+
+  it("shows the permission blocked message when users, products, and orders are all forbidden", async () => {
+    jest.spyOn(useUsersHook, "useUsers").mockReturnValue({
+      users: [],
+      loading: false,
+      error: null,
+      forbidden: true,
+      refetch: jest.fn(),
+    });
+    jest.spyOn(useProductsHook, "useProducts").mockReturnValue({
+      products: [],
+      loading: false,
+      error: null,
+      forbidden: true,
+      refetch: jest.fn(),
+    });
+    jest.spyOn(useOrdersHook, "useOrders").mockReturnValue({
+      orders: [],
+      loading: false,
+      error: null,
+      forbidden: true,
+      refetch: jest.fn(),
+    });
+
+    await act(async () => {
+      renderStore();
+    });
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.getByText("permissionBlocked.subtitle")).toBeInTheDocument();
+    expect(screen.queryByText("stats.users")).not.toBeInTheDocument();
+    expect(screen.queryByText("stats.products")).not.toBeInTheDocument();
+    expect(screen.queryByText("stats.sales")).not.toBeInTheDocument();
   });
 });

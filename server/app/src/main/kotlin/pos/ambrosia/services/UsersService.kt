@@ -17,6 +17,7 @@ import pos.ambrosia.models.UserIdentity
 import pos.ambrosia.utils.DuplicateUserNameException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
+import pos.ambrosia.utils.SecretsCipher
 import pos.ambrosia.utils.SecurePinProcessor
 import java.util.UUID
 
@@ -24,6 +25,7 @@ class UsersService(
     private val env: ApplicationEnvironment,
 ) {
     private val adminGuard = AdminGuardService()
+    private val fieldEncryptionKey by lazy { SecretsCipher.deriveFieldEncryptionKey(env.config.property("secret").getString()) }
 
     private fun findActiveRole(roleId: String): RoleEntity? =
         try {
@@ -73,8 +75,8 @@ class UsersService(
                     this.pin = SecurePinProcessor.byteArrayToBase64(encryptedPin)
                     this.refreshToken = user.refreshToken
                     this.roleId = role.id
-                    this.email = user.email
-                    this.phone = user.phone
+                    this.email = SecretsCipher.encryptOrNull(user.email, fieldEncryptionKey)
+                    this.phone = SecretsCipher.encryptOrNull(user.phone, fieldEncryptionKey)
                 }
             } catch (e: ExposedSQLException) {
                 if (isDuplicateUserNameViolation(e)) throw DuplicateUserNameException()
@@ -98,8 +100,8 @@ class UsersService(
                         refreshToken = "****",
                         role = row.getOrNull(RolesTable.role),
                         roleId = row[UsersTable.roleId]?.value?.toString(),
-                        email = row[UsersTable.email],
-                        phone = row[UsersTable.phone],
+                        email = SecretsCipher.decryptOrNull(row[UsersTable.email], fieldEncryptionKey),
+                        phone = SecretsCipher.decryptOrNull(row[UsersTable.phone], fieldEncryptionKey),
                     )
                 }
         }
@@ -142,8 +144,8 @@ class UsersService(
                 refreshToken = "****",
                 role = role?.role,
                 isAdmin = role?.isAdmin ?: false,
-                email = user.email,
-                phone = user.phone,
+                email = SecretsCipher.decryptOrNull(user.email, fieldEncryptionKey),
+                phone = SecretsCipher.decryptOrNull(user.phone, fieldEncryptionKey),
             )
         }
 
@@ -195,12 +197,12 @@ class UsersService(
             }
 
             updatedUser.email?.let {
-                entity.email = it
+                entity.email = SecretsCipher.encrypt(it, fieldEncryptionKey)
                 hasUpdates = true
             }
 
             updatedUser.phone?.let {
-                entity.phone = it
+                entity.phone = SecretsCipher.encrypt(it, fieldEncryptionKey)
                 hasUpdates = true
             }
 

@@ -9,12 +9,15 @@ import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.models.AuthResponse
 import pos.ambrosia.utils.MissingRoleException
+import pos.ambrosia.utils.SecretsCipher
 import pos.ambrosia.utils.SecurePinProcessor
 import java.util.UUID
 
 class AuthService(
     private val env: ApplicationEnvironment,
 ) {
+    private val fieldEncryptionKey by lazy { SecretsCipher.deriveFieldEncryptionKey(env.config.property("secret").getString()) }
+
     fun authenticateUser(
         name: String,
         pin: CharArray,
@@ -49,9 +52,33 @@ class AuthService(
                 role = role.role,
                 roleId = role.id.value.toString(),
                 isAdmin = role.isAdmin,
-                email = user.email,
-                phone = user.phone,
+                email = SecretsCipher.decryptOrNull(user.email, fieldEncryptionKey),
+                phone = SecretsCipher.decryptOrNull(user.phone, fieldEncryptionKey),
             )
+        }
+
+    fun authenticateUserPin(
+        userId: String,
+        pin: CharArray,
+    ): Boolean =
+        transaction {
+            val user =
+                UserEntity
+                    .findById(UUID.fromString(userId))
+                    ?.takeIf { !it.isDeleted }
+                    ?: return@transaction false
+
+            val storedHash = SecurePinProcessor.base64ToByteArray(user.pin)
+
+            val isValidPin =
+                SecurePinProcessor.verifyPin(
+                    pin,
+                    userId,
+                    storedHash,
+                    env,
+                )
+            pin.fill('\u0000')
+            isValidPin
         }
 
     fun authenticateByRole(
@@ -75,7 +102,7 @@ class AuthService(
                     role.password ?: return@transaction false,
                 )
 
-            val isValid =
+            val isValidRolePassword =
                 SecurePinProcessor.verifyPin(
                     rolePassword,
                     role.id.value.toString(),
@@ -83,6 +110,6 @@ class AuthService(
                     env,
                 )
             rolePassword.fill('\u0000')
-            isValid
+            isValidRolePassword
         }
 }

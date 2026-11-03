@@ -3,12 +3,14 @@ import { act, renderHook } from "@testing-library/react";
 import { useOrdersFilters } from "../useOrdersFilters";
 
 let mockOrders = [];
+let mockOrdersForbidden = false;
 const mockFetchOrders = jest.fn();
 const mockFetchOrdersFiltered = jest.fn();
 
 jest.mock("../../../hooks/useOrders", () => ({
   useOrders: () => ({
     orders: mockOrders,
+    forbidden: mockOrdersForbidden,
     fetchOrders: mockFetchOrders,
     fetchOrdersFiltered: mockFetchOrdersFiltered,
   }),
@@ -21,6 +23,14 @@ describe("useOrdersFilters", () => {
       { id: "order-1", userName: "Ana", tableId: "T1" },
       { id: "order-2", userName: "Luis", tableId: "T2" },
     ];
+    mockOrdersForbidden = false;
+  });
+
+  it("exposes forbidden from useOrders", () => {
+    mockOrdersForbidden = true;
+    const { result } = renderHook(() => useOrdersFilters());
+
+    expect(result.current.forbidden).toBe(true);
   });
 
   it("filters orders by search term across id, userName and tableId", () => {

@@ -9,6 +9,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useUpload } from "@/components/hooks/useUpload";
 import { isStockTracked } from "@/components/pages/Store/utils/productStockStatus";
 import { resolveImageUrl } from "@/components/pages/Store/utils/resolveImageUrl";
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 
 import { OptionTypeManager } from "./OptionTypeManager";
 import { VariantCard } from "./VariantCard";
@@ -22,6 +23,8 @@ export function VariantManager({
 }) {
   const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
+  const { config: businessConfig } = useConfigurations();
+  const priceStep = businessConfig?.priceStep ?? 0.01;
   const { upload, isUploading } = useUpload();
   const [isAddingNewVariant, setIsAddingNewVariant] = useState(false);
   const [variantIdsInProgress, setVariantIdsInProgress] = useState(new Set());
@@ -48,6 +51,9 @@ export function VariantManager({
       const mutationResult = await variantMutation();
       if (mutationResult !== false && mutationResult !== null) await onRefresh?.();
       return mutationResult;
+    } catch (variantMutationError) {
+      notifyVariantError();
+      throw variantMutationError;
     } finally {
       setVariantMutating(variantId, false);
     }
@@ -57,6 +63,14 @@ export function VariantManager({
     addToast({
       description: productsTranslations(toastDescriptionKey),
       color: "success",
+    });
+  };
+
+  const notifyVariantError = () => {
+    addToast({
+      title: productsTranslations("toasts.genericErrorTitle"),
+      description: productsTranslations("toasts.genericErrorDescription"),
+      color: "danger",
     });
   };
 
@@ -140,6 +154,7 @@ export function VariantManager({
               key={variant.id}
               variant={variant}
               currency={currency}
+              priceStep={priceStep}
               options={options}
               isStockTrackedForProduct={isStockTrackedForProduct}
               onSave={handleUpdateVariant}
@@ -152,6 +167,7 @@ export function VariantManager({
             <VariantForm
               initial={{}}
               currency={currency}
+              priceStep={priceStep}
               options={options}
               isStockTrackedForProduct={isStockTrackedForProduct}
               onSave={handleAddVariant}

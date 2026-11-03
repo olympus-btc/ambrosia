@@ -12,6 +12,7 @@ import io.ktor.server.routing.routing
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.RefundRequest
 import pos.ambrosia.services.ActiveLightningBackend
+import pos.ambrosia.services.CashDrawerService
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.RefundService
 import pos.ambrosia.utils.authorizePermission
@@ -19,12 +20,14 @@ import pos.ambrosia.utils.authorizePermission
 fun Application.configureStoreOrders() {
     val checkoutService = CheckoutService()
     val refundService = RefundService(ActiveLightningBackend)
-    routing { route("/store/orders") { storeOrders(checkoutService, refundService) } }
+    val cashDrawerService = CashDrawerService()
+    routing { route("/store/orders") { storeOrders(checkoutService, refundService, cashDrawerService) } }
 }
 
 fun Route.storeOrders(
     checkoutService: CheckoutService,
     refundService: RefundService,
+    cashDrawerService: CashDrawerService,
 ) {
     authorizePermission("orders_delete") {
         delete("/{id}") {
@@ -48,6 +51,7 @@ fun Route.storeOrders(
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
             val request = call.receive<RefundRequest>()
             val refund = refundService.processRefund(orderId, request)
+            cashDrawerService.openForRefundedOrder(orderId)
             call.respond(HttpStatusCode.OK, refund)
         }
     }

@@ -25,6 +25,10 @@ jest.mock("@/components/shared/AmountDisplay", () => ({
   AmountDisplay: ({ satoshis }) => <span>{`amount-display-${satoshis}`}</span>,
 }));
 
+jest.mock("@/components/shared/CopyButton", () => ({
+  CopyButton: ({ label }) => <button type="button">{label}</button>,
+}));
+
 const ORDER_FIXTURE = {
   shortId: "ABC123",
   date: "2024-01-15",
@@ -72,7 +76,7 @@ describe("OrderDetailModal", () => {
 
   it("shows payment method", () => {
     render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
   });
 
   it("shows each item's product name", () => {
@@ -121,5 +125,26 @@ describe("OrderDetailModal", () => {
     render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} currentRate={95000} onClose={jest.fn()} />);
     expect(screen.getByText("$5000")).toBeInTheDocument();
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
+  });
+
+  it("shows the reference number when the order has one", () => {
+    const order = { ...ORDER_FIXTURE, transactionId: "REF-123" };
+    render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.getByText("orders.reference")).toBeInTheDocument();
+    expect(screen.getByText("REF-123")).toBeInTheDocument();
+  });
+
+  it("does not show a reference row when the order has none", () => {
+    render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.queryByText("orders.reference")).not.toBeInTheDocument();
+  });
+
+  it("shows a truncated reference for BTC invoices instead of the raw string", () => {
+    const longInvoice = "lntb720n1p42ud4ypp5syxmv3c9y0lx3udvneypkutnt923ynhp5ps076v5a7c4uft";
+    const order = { ...ORDER_FIXTURE, paymentMethod: "BTC", transactionId: longInvoice };
+    render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.getByText("orders.reference")).toBeInTheDocument();
+    expect(screen.queryByText(longInvoice)).not.toBeInTheDocument();
+    expect(screen.getByTitle(longInvoice)).toBeInTheDocument();
   });
 });

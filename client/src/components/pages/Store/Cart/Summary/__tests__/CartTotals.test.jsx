@@ -3,12 +3,20 @@ import { act, render, screen } from "@testing-library/react";
 import { CartTotals } from "../CartTotals";
 
 let capturedOnPreview;
+let capturedTipOnPreview;
 let mockCanApplyDiscount = true;
 
 jest.mock("../DiscountInput", () => ({
   DiscountInput: ({ onPreview }) => {
     capturedOnPreview = onPreview;
     return <div data-testid="discount-input" />;
+  },
+}));
+
+jest.mock("../TipSelector", () => ({
+  TipSelector: ({ onPreview }) => {
+    capturedTipOnPreview = onPreview;
+    return <div data-testid="tip-selector" />;
   },
 }));
 
@@ -106,6 +114,34 @@ describe("CartTotals", () => {
       expect(screen.getByText("fmt-500")).toBeInTheDocument();
       act(() => capturedOnPreview(null));
       expect(screen.getByText("fmt-900")).toBeInTheDocument();
+    });
+
+    it("recalculates an applied percentage tip while previewing a discount", () => {
+      render(
+        <CartTotals
+          {...defaultProps}
+          tipsEnabled
+          tip={10}
+          tipType="percentage"
+          tipAmount={90}
+        />,
+      );
+
+      act(() => capturedOnPreview(50, "percentage"));
+      expect(screen.getByText("fmt-550")).toBeInTheDocument();
+    });
+
+    it("does not include or render a persisted tip when tips are disabled", () => {
+      render(<CartTotals {...defaultProps} tip={10} tipAmount={90} tipsEnabled={false} />);
+
+      expect(screen.queryByTestId("tip-selector")).not.toBeInTheDocument();
+      expect(screen.getByText("fmt-900")).toBeInTheDocument();
+    });
+
+    it("previews tips against the discounted subtotal", () => {
+      render(<CartTotals {...defaultProps} tipsEnabled />);
+      act(() => capturedTipOnPreview(20, "percentage"));
+      expect(screen.getByText("fmt-1080")).toBeInTheDocument();
     });
   });
 });

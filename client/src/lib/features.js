@@ -2,6 +2,8 @@ export function buildPermissionSet(permissions = []) {
   return new Set((permissions || []).map((permission) => permission.name));
 }
 
+const FREELANCE_TYPES = ["freelance"];
+
 export const features = {
   auth: {
     enabled: true,
@@ -28,7 +30,7 @@ export const features = {
       { path: "/store/wallet", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["wallet_read"] },
       { path: "/store/reports", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["reports_read"] },
       { path: "/store/notifications", requiresAuth: true, requiresAdmin: true, types: ["store"] },
-      { path: "/store/settings", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["settings_update"] },
+      { path: "/store/settings", requiresAuth: true, requiresAdmin: false, types: ["store"], permissions: ["settings_read"] },
     ],
     navItems: [
       { path: "/store/users", label: "users", icon: "users", showInNavbar: true },
@@ -39,6 +41,29 @@ export const features = {
       { path: "/store/reports", label: "reports", icon: "chart-line", showInNavbar: true },
       { path: "/store/notifications", label: "notifications", icon: "bell", showInNavbar: true, requiresAdmin: true },
       { path: "/store/settings", label: "settings", icon: "settings", showInNavbar: true, tourId: "nav-settings" },
+    ],
+  },
+  freelancer: {
+    enabled: true,
+    name: "Freelancer",
+    routes: [
+      { path: "/freelancer", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, default: true },
+      { path: "/freelancer/timesheet", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["time_entries_read"] },
+      { path: "/freelancer/clients", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["clients_read"] },
+      { path: "/freelancer/projects", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["projects_read"] },
+      { path: "/freelancer/invoices", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["invoices_read"] },
+      { path: "/freelancer/wallet", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["wallet_read"] },
+      { path: "/freelancer/reports", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["freelance_reports_read"] },
+      { path: "/freelancer/settings", requiresAuth: true, requiresAdmin: false, types: FREELANCE_TYPES, permissions: ["settings_read"] },
+    ],
+    navItems: [
+      { path: "/freelancer/timesheet", label: "timesheet", icon: "calendar-clock", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 1 },
+      { path: "/freelancer/clients", label: "clients", icon: "contact", showInNavbar: true },
+      { path: "/freelancer/projects", label: "projects", icon: "folder-kanban", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 2 },
+      { path: "/freelancer/invoices", label: "invoices", icon: "file-text", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 3 },
+      { path: "/freelancer/wallet", label: "wallet", icon: "wallet", showInNavbar: true },
+      { path: "/freelancer/reports", label: "reports", icon: "chart-line", showInNavbar: true },
+      { path: "/freelancer/settings", label: "settings", icon: "settings", showInNavbar: true, tourId: "nav-settings" },
     ],
   },
 };

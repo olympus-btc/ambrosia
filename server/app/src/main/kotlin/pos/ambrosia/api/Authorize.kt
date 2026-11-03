@@ -23,75 +23,12 @@ import pos.ambrosia.models.UserResponse
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
+import pos.ambrosia.utils.AttemptLockoutTracker
 import pos.ambrosia.utils.InvalidTokenException
-import java.util.concurrent.ConcurrentHashMap
+import pos.ambrosia.utils.recordFailureAndRespondIfLockedOut
+import pos.ambrosia.utils.respondIfLockedOut
 
-private object LoginRateLimiter {
-    private data class IpState(
-        val failureCount: Int,
-        val blockUntil: Long,
-    )
-
-    private val state = ConcurrentHashMap<String, IpState>()
-    private const val FREE_ATTEMPTS = 5
-    private const val MINUTE_MS = 60_000L
-
-    // Fibonacci minutes of backoff after FREE_ATTEMPTS failures. Counts beyond the array reuse the last entry (≈ 52 days).
-    private val FIB =
-        longArrayOf(
-            0, // index 0 — unused
-            1,
-            1,
-            2,
-            3,
-            5,
-            8,
-            13,
-            21,
-            34,
-            55,
-            89,
-            144,
-            233,
-            377,
-            610,
-            987,
-            1_597,
-            2_584,
-            4_181,
-            6_765,
-            10_946,
-            17_711,
-            28_657,
-            46_368,
-            75_025,
-        )
-
-    fun isBlocked(ip: String): Boolean {
-        val s = state[ip] ?: return false
-        return System.currentTimeMillis() < s.blockUntil
-    }
-
-    fun getRemainingSeconds(ip: String): Int {
-        val s = state[ip] ?: return 0
-        val remaining = s.blockUntil - System.currentTimeMillis()
-        return if (remaining > 0) ((remaining + 999) / 1000).toInt() else 0
-    }
-
-    fun recordFailure(ip: String) {
-        val now = System.currentTimeMillis()
-        state.compute(ip) { _, existing ->
-            val newCount = (existing?.failureCount ?: 0) + 1
-            val fibIndex = newCount - FREE_ATTEMPTS
-            val blockMs = if (fibIndex > 0) FIB.getOrElse(fibIndex) { FIB.last() } * MINUTE_MS else 0L
-            IpState(newCount, now + blockMs)
-        }
-    }
-
-    fun reset(ip: String) {
-        state.remove(ip)
-    }
-}
+private val loginAttemptLockout = AttemptLockoutTracker()
 
 fun Application.configureAuth() {
     val authService = AuthService(environment)
@@ -107,34 +44,23 @@ fun Route.auth(
 ) {
     post("/login") {
         val ip = call.request.origin.remoteAddress
-        if (LoginRateLimiter.isBlocked(ip)) {
-            val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
-            call.response.headers.append("Retry-After", retryAfter.toString())
-            call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
-            return@post
-        }
+        if (call.respondIfLockedOut(loginAttemptLockout, ip)) return@post
 
         val loginRequest = call.receive<AuthRequest>()
         val userInfo = authService.authenticateUser(loginRequest.name, loginRequest.pin.toCharArray())
 
         if (userInfo == null) {
-            LoginRateLimiter.recordFailure(ip)
-            val retryAfter = LoginRateLimiter.getRemainingSeconds(ip)
-            if (retryAfter > 0) {
-                call.response.headers.append("Retry-After", retryAfter.toString())
-                call.respond(HttpStatusCode.TooManyRequests, mapOf("retryAfter" to retryAfter))
-            } else {
+            if (!call.recordFailureAndRespondIfLockedOut(loginAttemptLockout, ip)) {
                 call.respond(HttpStatusCode.Unauthorized, Message("Invalid credentials"))
             }
             return@post
         }
 
-        logger.info("User authenticated successfully: ${userInfo.id}")
         val isSecureRequest =
             call.request.origin.scheme == "https" ||
                 call.request.header("X-Forwarded-Proto") == "https"
 
-        LoginRateLimiter.reset(ip)
+        loginAttemptLockout.reset(ip)
         val accessTokenResponse = tokenService.generateAccessToken(userInfo)
         val refreshTokenResponse = tokenService.generateRefreshToken(userInfo)
 
@@ -153,6 +79,7 @@ fun Route.auth(
                 httpOnly = true,
                 secure = isSecureRequest,
                 path = "/",
+                extensions = mapOf("SameSite" to "Strict"),
             ),
         )
 
@@ -164,6 +91,7 @@ fun Route.auth(
                 httpOnly = true,
                 secure = isSecureRequest,
                 path = "/",
+                extensions = mapOf("SameSite" to "Strict"),
             ),
         )
 
@@ -200,12 +128,25 @@ fun Route.auth(
         }
 
         val newAccessToken = tokenService.generateAccessToken(userInfo)
+        val newRefreshToken = tokenService.generateRefreshToken(userInfo)
 
         call.response.cookies.append(
             Cookie(
                 name = "accessToken",
                 value = newAccessToken,
                 expires = GMTDate(System.currentTimeMillis() + (60 * 1000L)),
+                httpOnly = true,
+                secure = isSecureRequest,
+                path = "/",
+                extensions = mapOf("SameSite" to "Strict"),
+            ),
+        )
+
+        call.response.cookies.append(
+            Cookie(
+                name = "refreshToken",
+                value = newRefreshToken,
+                maxAge = 30 * 24 * 60 * 60,
                 httpOnly = true,
                 secure = isSecureRequest,
                 path = "/",

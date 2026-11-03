@@ -2,16 +2,22 @@ package pos.ambrosia.utest
 
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.engine.applicationEnvironment
+import kotlinx.io.files.Path
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.junit.After
+import org.junit.Before
 import org.junit.BeforeClass
 import pos.ambrosia.services.JvmWebPushDispatchClient
 import pos.ambrosia.services.JvmWebPushSender
 import pos.ambrosia.services.NoopWebPushDispatchClient
+import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.VapidKeys
 import pos.ambrosia.services.WebPushDispatchClients
 import pos.ambrosia.services.WebPushDispatchPayload
 import pos.ambrosia.services.WebPushDispatchSubscription
+import java.io.File
 import java.math.BigInteger
+import java.nio.file.Files
 import java.security.KeyPairGenerator
 import java.security.Security
 import java.security.interfaces.ECPrivateKey
@@ -24,6 +30,21 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class JvmWebPushDispatchClientTest {
+    private lateinit var configFile: File
+
+    @Before
+    fun setUp() {
+        configFile = Files.createTempFile("jvmWebPushDispatchClientTestConfig", ".conf").toFile()
+        SecretsStore.resetForTesting()
+        SecretsStore.ambrosiaConfigFile = Path(configFile.absolutePath)
+    }
+
+    @After
+    fun tearDown() {
+        SecretsStore.resetForTesting()
+        configFile.delete()
+    }
+
     @Test
     fun `factory uses noop client when push dispatch is not configured`() {
         val environment = applicationEnvironment { config = MapApplicationConfig() }
@@ -68,13 +89,13 @@ class JvmWebPushDispatchClientTest {
     @Test
     fun `factory uses JVM dispatcher when web push is enabled and VAPID is configured`() {
         val vapidKeys = generateVapidKeys()
+        configFile.writeText("web-push-vapid-private-key=${vapidKeys.privateKey}\n")
         val environment =
             applicationEnvironment {
                 config =
                     MapApplicationConfig(
                         "web-push.enabled" to "true",
                         "web-push.vapid-public-key" to vapidKeys.publicKey,
-                        "web-push.vapid-private-key" to vapidKeys.privateKey,
                         "web-push.vapid-subject" to vapidKeys.subject,
                     )
             }

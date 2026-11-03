@@ -265,6 +265,45 @@ systemd_start_if_was_active() {
   fi
 }
 
+# --- Restart-wrapper retrofit (for installs that predate this feature) ---
+
+ensure_phoenixd_restart_wrapper() {
+  if [[ -f "$PHOENIXD_INSTALL_DIR/run-phoenixd.sh" ]]; then
+    return 0
+  fi
+  local wrapper_url="https://raw.githubusercontent.com/${AMBROSIA_REPO}/v${AMBROSIA_TAG}/scripts/run-phoenixd.sh"
+  if ! curl -fsSL -o "$GLOBAL_TEMP_DIR/run-phoenixd.sh" "$wrapper_url" 2>/dev/null; then
+    log_info "Restart wrapper not published at v$AMBROSIA_TAG yet, skipping."
+    return 0
+  fi
+  log_info "Installing the phoenixd restart wrapper..."
+  sudo cp "$GLOBAL_TEMP_DIR/run-phoenixd.sh" "$PHOENIXD_INSTALL_DIR/run-phoenixd.sh"
+  sudo chmod +x "$PHOENIXD_INSTALL_DIR/run-phoenixd.sh"
+}
+
+retrofit_phoenixd_service() {
+  local service_file="/etc/systemd/system/phoenixd.service"
+  [[ -f "$service_file" ]] || return 0
+  [[ -f "$PHOENIXD_INSTALL_DIR/run-phoenixd.sh" ]] || return 0
+  if grep -q "run-phoenixd.sh" "$service_file"; then
+    return 0
+  fi
+  log_info "Updating phoenixd.service to restart through the wrapper..."
+  sudo sed -i "s#^ExecStart=.*#ExecStart=/bin/bash ${PHOENIXD_INSTALL_DIR}/run-phoenixd.sh#" "$service_file"
+  sudo systemctl daemon-reload
+}
+
+retrofit_ambrosia_service() {
+  local service_file="/etc/systemd/system/ambrosia.service"
+  [[ -f "$service_file" ]] || return 0
+  if grep -q "AMBROSIA_SERVICE_MANAGED" "$service_file"; then
+    return 0
+  fi
+  log_info "Flagging ambrosia.service as service-managed..."
+  sudo sed -i "/^ExecStart=/i Environment=AMBROSIA_SERVICE_MANAGED=true" "$service_file"
+  sudo systemctl daemon-reload
+}
+
 # --- phoenixd update ---
 
 phoenixd_update() {
@@ -275,6 +314,9 @@ phoenixd_update() {
     log_info "phoenixd is not installed here, skipping. Run install.sh first."
     return
   fi
+
+  ensure_phoenixd_restart_wrapper
+  retrofit_phoenixd_service
 
   local installed_version
   installed_version=$(get_installed_phoenixd_version)
@@ -325,6 +367,8 @@ server_update() {
     log_info "Ambrosia Server is not installed here (no ambrosia.jar found), skipping. Run install.sh first."
     return
   fi
+
+  retrofit_ambrosia_service
 
   local installed_version
   installed_version=$(get_installed_server_version)
@@ -433,6 +477,7 @@ EOF
 check_dependencies
 print_header
 
+ambrosia_resolve_tag
 phoenixd_resolve_tag
 phoenixd_update
 
@@ -442,7 +487,6 @@ if [[ ! -d "$AMBROSIA_INSTALL_DIR" ]]; then
   exit 1
 fi
 
-ambrosia_resolve_tag
 server_update
 client_update
 

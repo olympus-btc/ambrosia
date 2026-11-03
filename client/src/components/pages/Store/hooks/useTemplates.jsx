@@ -15,8 +15,7 @@ export function useTemplates() {
     setLoading(true);
     setError(null);
     try {
-      const templatesData = await fetchList("/templates");
-      if (templatesData === null) return;
+      const templatesData = await fetchList("/templates", [], { skipForbiddenRedirect: true });
       setTemplates(toArray(templatesData));
     } catch (error) {
       console.error("Error fetching templates:", error);
@@ -34,6 +33,7 @@ export function useTemplates() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(templateBody),
+        skipForbiddenRedirect: true,
       });
 
       const createdDataTemplate = await parseJsonResponse(createTemplate, null);
@@ -61,6 +61,7 @@ export function useTemplates() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(templateBody),
+        skipForbiddenRedirect: true,
       });
       setTemplates((prev) => (Array.isArray(prev)
         ? prev.map((template) => (template.id === templateId ? { ...template, ...templateBody } : template),
@@ -78,7 +79,7 @@ export function useTemplates() {
   const deleteTemplate = useCallback(async (templateId) => {
     if (!templateId) throw new Error("templateId is required");
     try {
-      await httpClient(`/templates/${templateId}`, { method: "DELETE" });
+      await httpClient(`/templates/${templateId}`, { method: "DELETE", skipForbiddenRedirect: true });
       setTemplates((prev) => (Array.isArray(prev) ? prev.filter((template) => template.id !== templateId) : prev),
       );
       return true;
@@ -86,6 +87,25 @@ export function useTemplates() {
       console.error("Error deleting template:", err);
       setError(err);
       throw err;
+    }
+  }, []);
+
+  const setDefaultTemplate = useCallback(async (templateId) => {
+    if (!templateId) throw new Error("templateId is required");
+    try {
+      await httpClient(`/templates/${templateId}/default`, { method: "POST", skipForbiddenRedirect: true });
+      setTemplates((currentTemplates) => {
+        if (!Array.isArray(currentTemplates)) return currentTemplates;
+        const defaultTicketType = currentTemplates.find((template) => template.id === templateId)?.ticketType;
+        return currentTemplates.map((template) => (template.ticketType === defaultTicketType
+          ? { ...template, isDefault: template.id === templateId }
+          : template));
+      });
+      return true;
+    } catch (setDefaultTemplateError) {
+      console.error("Error setting default template:", setDefaultTemplateError);
+      setError(setDefaultTemplateError);
+      throw setDefaultTemplateError;
     }
   }, []);
 
@@ -101,5 +121,6 @@ export function useTemplates() {
     createTemplate,
     updateTemplate,
     deleteTemplate,
+    setDefaultTemplate,
   };
 }

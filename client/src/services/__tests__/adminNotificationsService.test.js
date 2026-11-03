@@ -28,7 +28,7 @@ describe("adminNotificationsService", () => {
   it("loads admin notifications with supported filters", async () => {
     await getAdminNotifications({ category: "wallet", unreadOnly: true, limit: 25, offset: 50 });
 
-    expect(httpClient).toHaveBeenCalledWith("/admin/notifications?limit=25&offset=50&unreadOnly=true&category=wallet");
+    expect(httpClient).toHaveBeenCalledWith("/admin/notifications?limit=25&offset=50&unreadOnly=true&category=wallet", { skipForbiddenRedirect: true });
     expect(parseJsonResponse).toHaveBeenCalledWith({ ok: true }, []);
   });
 
@@ -37,7 +37,10 @@ describe("adminNotificationsService", () => {
 
     await markAdminNotificationRead("notification-1");
 
-    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/notification-1/read", { method: "POST" });
+    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/notification-1/read", {
+      method: "POST",
+      skipForbiddenRedirect: true,
+    });
   });
 
   it("marks all notifications as read by category", async () => {
@@ -45,7 +48,10 @@ describe("adminNotificationsService", () => {
 
     await markAllAdminNotificationsRead("wallet");
 
-    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/read-all?category=wallet", { method: "POST" });
+    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/read-all?category=wallet", {
+      method: "POST",
+      skipForbiddenRedirect: true,
+    });
     expect(parseJsonResponse).toHaveBeenCalledWith({ ok: true }, { updated: 0 });
   });
 
@@ -54,7 +60,10 @@ describe("adminNotificationsService", () => {
 
     await deleteAdminNotification("notification-1");
 
-    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/notification-1", { method: "DELETE" });
+    expect(httpClient).toHaveBeenCalledWith("/admin/notifications/notification-1", {
+      method: "DELETE",
+      skipForbiddenRedirect: true,
+    });
   });
 
   it("deletes all notifications by category for the current admin", async () => {
@@ -62,7 +71,10 @@ describe("adminNotificationsService", () => {
 
     await deleteAllAdminNotifications("wallet");
 
-    expect(httpClient).toHaveBeenCalledWith("/admin/notifications?category=wallet", { method: "DELETE" });
+    expect(httpClient).toHaveBeenCalledWith("/admin/notifications?category=wallet", {
+      method: "DELETE",
+      skipForbiddenRedirect: true,
+    });
     expect(parseJsonResponse).toHaveBeenCalledWith({ ok: true }, { deleted: 0 });
   });
 
@@ -77,11 +89,12 @@ describe("adminNotificationsService", () => {
       updatedAt: "2026-07-16T00:00:00Z",
     });
 
-    expect(httpClient).toHaveBeenNthCalledWith(1, "/admin/notification-preferences");
+    expect(httpClient).toHaveBeenNthCalledWith(1, "/admin/notification-preferences", { skipForbiddenRedirect: true });
     expect(httpClient).toHaveBeenNthCalledWith(2, "/admin/notification-preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ category: "wallet", inAppEnabled: true, pushEnabled: false }),
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -94,7 +107,7 @@ describe("adminNotificationsService", () => {
     });
     await deleteAdminPushSubscription("https://push.example/sub");
 
-    expect(httpClient).toHaveBeenNthCalledWith(1, "/admin/push/vapid-public-key");
+    expect(httpClient).toHaveBeenNthCalledWith(1, "/admin/push/vapid-public-key", { skipForbiddenRedirect: true });
     expect(httpClient).toHaveBeenNthCalledWith(2, "/admin/push/subscriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -103,11 +116,13 @@ describe("adminNotificationsService", () => {
         keys: { p256dh: "key", auth: "auth" },
         userAgent: "agent",
       }),
+      skipForbiddenRedirect: true,
     });
     expect(httpClient).toHaveBeenNthCalledWith(3, "/admin/push/subscriptions?endpoint=https%3A%2F%2Fpush.example%2Fsub", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: "https://push.example/sub" }),
+      skipForbiddenRedirect: true,
     });
   });
 });

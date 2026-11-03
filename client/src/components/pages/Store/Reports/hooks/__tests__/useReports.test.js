@@ -139,7 +139,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ period: "month" });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports?period=month");
+    expect(httpClient).toHaveBeenCalledWith("/reports?period=month", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with period=week sends ?period=week", async () => {
@@ -149,7 +149,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ period: "week" });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports?period=week");
+    expect(httpClient).toHaveBeenCalledWith("/reports?period=week", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with period=year sends ?period=year", async () => {
@@ -159,7 +159,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ period: "year" });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports?period=year");
+    expect(httpClient).toHaveBeenCalledWith("/reports?period=year", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with startDate and endDate includes both in the URL", async () => {
@@ -181,7 +181,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({});
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports");
+    expect(httpClient).toHaveBeenCalledWith("/reports", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with no arguments calls /reports without query string", async () => {
@@ -191,7 +191,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport();
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports");
+    expect(httpClient).toHaveBeenCalledWith("/reports", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with empty productName does not include it in the URL", async () => {
@@ -201,7 +201,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ productName: "   " });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports");
+    expect(httpClient).toHaveBeenCalledWith("/reports", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with empty paymentMethod does not include it in the URL", async () => {
@@ -211,7 +211,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ paymentMethod: "" });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports");
+    expect(httpClient).toHaveBeenCalledWith("/reports", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with multiple filters builds the URL correctly", async () => {
@@ -238,7 +238,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31", utcOffsetMinutes: 360 });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=360");
+    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=360", { skipForbiddenRedirect: true });
   });
 
   it("fetchReport with utcOffsetMinutes=0 still includes it in the URL", async () => {
@@ -248,7 +248,7 @@ describe("useReports — fetch", () => {
       await reportsHook.current.fetchReport({ startDate: "2024-01-01", endDate: "2024-01-31", utcOffsetMinutes: 0 });
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=0");
+    expect(httpClient).toHaveBeenCalledWith("/reports?startDate=2024-01-01&endDate=2024-01-31&utcOffsetMinutes=0", { skipForbiddenRedirect: true });
   });
 
   it("GAP: fetchReport does not send userId even though the server supports it", async () => {

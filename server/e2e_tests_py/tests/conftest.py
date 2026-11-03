@@ -13,10 +13,12 @@ from pathlib import Path
 import pytest
 
 from ambrosia.auth_utils import (
+    CLIENT_FACTORY_USER_PIN,
     create_role,
     create_user,
     grant_permissions,
     login_user,
+    with_current_user_pin,
 )
 from ambrosia.http_client import AmbrosiaHttpClient
 
@@ -111,8 +113,8 @@ def initialize_database(manage_server_lifecycle, server_url: str):
                 logger.info("✓ Database already initialized (409 Conflict)")
             elif setup_response.status_code == 500:
                 try:
-                    error_data = setup_response.json()
-                    error_message = error_data.get("message", "")
+                    error_json = setup_response.json()
+                    error_message = error_json.get("message", "")
                     if "UNIQUE constraint failed: users.name" in error_message:
                         logger.info(
                             "✓ User already exists in database, continuing with tests"
@@ -185,7 +187,7 @@ async def client_factory(server_url: str, admin_client):
         uid = str(uuid.uuid4())[:8]
         role_name = f"role_{uid}"
         user_name = f"user_{uid}"
-        user_pin = "123456"
+        user_pin = CLIENT_FACTORY_USER_PIN
 
         role_id = await create_role(admin_client, role_name)
         roles.append(role_id)
@@ -210,12 +212,12 @@ async def client_factory(server_url: str, admin_client):
 
     for user_id in users:
         try:
-            await admin_client.delete(f"/users/{user_id}")
+            await admin_client.delete(f"/users/{user_id}", json=with_current_user_pin())
         except Exception as e:
             logger.warning(f"Failed to cleanup user {user_id}: {e}")
 
     for role_id in roles:
         try:
-            await admin_client.delete(f"/roles/{role_id}")
+            await admin_client.delete(f"/roles/{role_id}", json=with_current_user_pin())
         except Exception as e:
             logger.warning(f"Failed to cleanup role {role_id}: {e}")

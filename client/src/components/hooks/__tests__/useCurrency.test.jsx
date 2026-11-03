@@ -47,7 +47,7 @@ describe("useCurrency", () => {
       await waitFor(() => {
         expect(screen.getByTestId("acronym")).toHaveTextContent("MXN");
       });
-      expect(httpClient).toHaveBeenCalledWith("/base-currency");
+      expect(httpClient).toHaveBeenCalledWith("/base-currency", { skipForbiddenRedirect: true });
     });
 
     it("falls back to DEFAULT_CURRENCY when API returns null", async () => {
@@ -162,6 +162,7 @@ describe("useCurrency", () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ acronym: "EUR" }),
+        skipForbiddenRedirect: true,
       });
     });
 
@@ -174,6 +175,7 @@ describe("useCurrency", () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ acronym: "MXN" }),
+        skipForbiddenRedirect: true,
       });
     });
 
@@ -184,6 +186,7 @@ describe("useCurrency", () => {
 
       expect(httpClient).toHaveBeenCalledWith("/base-currency", expect.objectContaining({
         body: JSON.stringify({ acronym: "USD" }),
+        skipForbiddenRedirect: true,
       }));
     });
 

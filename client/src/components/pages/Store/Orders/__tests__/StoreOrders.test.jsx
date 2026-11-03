@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import StoreOrders from "../StoreOrders";
 
 let mockOrders = [];
+let mockOrdersForbidden = false;
 const mockPush = jest.fn();
 const mockFetchOrders = jest.fn();
 const mockFetchOrdersFiltered = jest.fn();
@@ -10,6 +11,7 @@ const mockFetchOrdersFiltered = jest.fn();
 jest.mock("../../hooks/useOrders", () => ({
   useOrders: () => ({
     orders: mockOrders,
+    forbidden: mockOrdersForbidden,
     fetchOrders: mockFetchOrders,
     fetchOrdersFiltered: mockFetchOrdersFiltered,
   }),
@@ -116,9 +118,19 @@ describe("StoreOrders", () => {
       { id: "order-1", status: "paid", waiter: "Ana", total: 10, createdAt: "2024-01-01" },
       { id: "order-2", status: "paid", waiter: "Luis", total: 20, createdAt: "2024-01-02" },
     ];
+    mockOrdersForbidden = false;
     mockPush.mockClear();
     mockFetchOrders.mockReset();
     mockFetchOrdersFiltered.mockReset();
+  });
+
+  it("shows the permission-blocked message instead of the list when forbidden", () => {
+    mockOrdersForbidden = true;
+
+    render(<StoreOrders />);
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.queryByText("order-1")).not.toBeInTheDocument();
   });
 
   it("filters by search term and shows empty state", () => {

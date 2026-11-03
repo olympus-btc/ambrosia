@@ -6,9 +6,7 @@ import { useTemplates } from "@components/pages/Store/hooks/useTemplates";
 
 import { TicketTemplatesModal } from "../Modal";
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
@@ -125,6 +123,8 @@ describe("TicketTemplatesModal", () => {
     const initialTemplate = {
       id: "tpl-1",
       name: "Kitchen",
+      dateFormat: "MONTH_DAY_YEAR",
+      timeFormat: "HOURS_12",
       elements: [
         {
           id: "e-1",
@@ -167,14 +167,19 @@ describe("TicketTemplatesModal", () => {
     );
 
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("Kitchen");
+    expect(screen.getByLabelText("templates.dateFormatLabel")).toHaveValue("MONTH_DAY_YEAR");
+    expect(screen.getByLabelText("templates.timeFormatLabel")).toHaveValue("HOURS_12");
     expect(screen.getByText("Ambrosia")).toBeInTheDocument();
-    expect(screen.getByText("2x Burger")).toBeInTheDocument();
+    expect(screen.getByText("2x burger")).toBeInTheDocument();
     expect(screen.getByText("lnbc10u1p0exampleinvoice")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("templates.saveChanges"));
 
     await waitFor(() => expect(updateTemplate).toHaveBeenCalledWith("tpl-1", {
       name: "Kitchen",
+      ticketType: "RECEIPT",
+      dateFormat: "MONTH_DAY_YEAR",
+      timeFormat: "HOURS_12",
       elements: expect.any(Array),
     }),
     );
@@ -191,7 +196,7 @@ describe("TicketTemplatesModal", () => {
     const printTicket = jest.fn().mockRejectedValue(new Error("fail"));
 
     useTemplates.mockReturnValue({
-      templates: [{ id: "tpl-2", name: "Menu", elements: [] }],
+      templates: [{ id: "tpl-2", name: "Menu", elements: [], ticketType: "RECEIPT", isDefault: true }],
       loading: false,
       error: null,
       createTemplate,
@@ -234,6 +239,9 @@ describe("TicketTemplatesModal", () => {
 
     await waitFor(() => expect(createTemplate).toHaveBeenCalledWith({
       name: "New Template",
+      ticketType: "RECEIPT",
+      dateFormat: "DAY_MONTH_YEAR",
+      timeFormat: "HOURS_24",
       elements: expect.any(Array),
     }),
     );
@@ -277,6 +285,13 @@ describe("TicketTemplatesModal", () => {
 
     fireEvent.click(screen.getByText("templates.printTest"));
 
+    await waitFor(() => expect(printTicket).toHaveBeenCalledWith(expect.objectContaining({
+      ticketData: expect.objectContaining({
+        tableName: "tableName",
+        paymentMethod: "cash",
+        labels: { total: "labels.total", discount: "labels.discount", tip: "labels.tip", paymentMethod: "labels.paymentMethod" },
+      }),
+    })));
     await waitFor(() => expect(addToast).toHaveBeenCalledWith({
       title: "templates.printSuccessTitle",
       description: "templates.printSuccessDescription",
@@ -377,6 +392,51 @@ describe("TicketTemplatesModal", () => {
     expect(screen.getByText("cardPrinters.types.CUSTOMER")).toBeInTheDocument();
   });
 
+  it("saves the selected date and time formats and previews them", async () => {
+    jest.useFakeTimers({ now: new Date(2026, 9, 15, 21, 30) });
+    const createTemplate = jest.fn().mockResolvedValue({ id: "tpl-alice" });
+
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate,
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+    });
+
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={{
+          name: "alice",
+          elements: [{ id: "e-alice", type: "TEXT", value: "{{print.date}} {{print.time}}", style: {} }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("15/10/2026 21:30")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("templates.dateFormatLabel"), {
+      target: { value: "YEAR_MONTH_DAY" },
+    });
+    fireEvent.change(screen.getByLabelText("templates.timeFormatLabel"), {
+      target: { value: "HOURS_12" },
+    });
+
+    expect(screen.getByText("2026-10-15 9:30 PM")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("templates.saveNew"));
+    jest.useRealTimers();
+
+    await waitFor(() => expect(createTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({ dateFormat: "YEAR_MONTH_DAY", timeFormat: "HOURS_12" }),
+    ));
+  });
+
   it("opens with empty form when no initialTemplate is provided", () => {
     useTemplates.mockReturnValue({
       templates: [],
@@ -393,5 +453,89 @@ describe("TicketTemplatesModal", () => {
 
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("");
     expect(screen.getByText("templates.saveNew")).toBeInTheDocument();
+  });
+
+  it("starts a Z report template with the default layout and prints it with sample shift data", async () => {
+    const printTicket = jest.fn().mockResolvedValue(true);
+    useTemplates.mockReturnValue({
+      templates: [{ id: "tpl-alice", name: "alice", elements: [], ticketType: "SHIFT_CLOSE", isDefault: true }],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate: jest.fn(),
+    });
+    usePrinters.mockReturnValue({ printTicket });
+
+    render(<TicketTemplatesModal isOpen onClose={jest.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("templates.ticketTypeLabel"), { target: { value: "SHIFT_CLOSE" } });
+    fireEvent.change(screen.getByLabelText("templates.nameLabel"), { target: { value: "alice" } });
+
+    expect(screen.getByText("templates.elementTypes.SHIFT_SUMMARY")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("templates.printTest"));
+
+    await waitFor(() => expect(printTicket).toHaveBeenCalledWith(expect.objectContaining({
+      templateName: "alice",
+      ticketType: "SHIFT_CLOSE",
+      shiftReport: expect.objectContaining({ cashierName: "cashier" }),
+      forceTemplateName: true,
+    })));
+    expect(printTicket.mock.calls[0][0]).not.toHaveProperty("ticketData");
+  });
+
+  it("sets an existing template as the default of its ticket type", async () => {
+    const setDefaultTemplate = jest.fn().mockResolvedValue(true);
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate,
+    });
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={{ id: "tpl-bob", name: "bob", elements: [], ticketType: "SHIFT_CLOSE", isDefault: false }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("templates.setDefault"));
+
+    await waitFor(() => expect(setDefaultTemplate).toHaveBeenCalledWith("tpl-bob"));
+    await waitFor(() => expect(screen.getByText("templates.defaultBadge")).toBeInTheDocument());
+    expect(screen.queryByText("templates.setDefault")).not.toBeInTheDocument();
+    expect(addToast).toHaveBeenCalledWith({ color: "success", description: "templates.setDefaultSuccess" });
+  });
+
+  it("does not offer to delete the default template", () => {
+    useTemplates.mockReturnValue({
+      templates: [],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+      setDefaultTemplate: jest.fn(),
+    });
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={{ id: "tpl-eve", name: "eve", elements: [], ticketType: "RECEIPT", isDefault: true }}
+      />,
+    );
+
+    expect(screen.getByText("templates.defaultBadge")).toBeInTheDocument();
+    expect(screen.queryByText("templates.deleteTemplate")).not.toBeInTheDocument();
   });
 });

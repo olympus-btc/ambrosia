@@ -3,6 +3,7 @@ package pos.ambrosia.nwc
 import app.cash.nostrino.crypto.CipherText
 import app.cash.nostrino.crypto.PubKey
 import app.cash.nostrino.crypto.SecKey
+import app.cash.nostrino.model.encrypt
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

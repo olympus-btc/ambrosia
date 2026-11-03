@@ -1,14 +1,17 @@
 {
   "name": "ambrosia-pos",
-  "version": "0.8.0-beta",
+  "version": "0.10.0-beta",
   "description": "Ambrosia POS Desktop Application",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "dev": "npm run build:preload && electron .",
     "dev:splash": "npm run build:preload && cross-env SPLASH_ONLY=true electron .",
     "dev:inspect": "npm run build:preload && electron --inspect=5858 .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build:preload": "node scripts/build-preload.js",
     "build:prepare": "node scripts/prepare-resources-wrapper.js",
     "build": "npm run build:prepare && electron-builder",
@@ -35,19 +38,20 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "cross-env": "^10.1.0",
-    "electron": "^42.0.1",
+    "electron": "^44.9.2",
     "electron-builder": "^26.6.0",
-    "esbuild": "0.28.1",
+    "esbuild": "0.28.2",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-n": "^17.23.1"
+    "eslint-plugin-n": "^18.4.1",
+    "vitest": "5.0.3"
   },
   "dependencies": {
     "cross-spawn": "^7.0.6",
     "electron-updater": "^6.3.9",
     "find-free-port": "^2.0.0",
     "tree-kill": "^1.2.2",
-    "wait-on": "^8.0.1"
+    "wait-on": "^9.5.1"
   },
   "build": {
     "publish": [
@@ -94,7 +98,7 @@
         "zip"
       ],
       "icon": "build/icon.icns",
-      "minimumSystemVersion": "12.0",
+      "minimumSystemVersion": "13.0",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
@@ -162,6 +166,6 @@
     }
   },
   "overrides": {
-    "brace-expansion": "5.0.9"
+    "brace-expansion": "5.0.12"
   }
 }

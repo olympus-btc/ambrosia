@@ -13,6 +13,9 @@ resources
 *.log
 logs/
 
+# Test artifacts
+.vitest/
+
 # OS files
 .DS_Store
 Thumbs.db

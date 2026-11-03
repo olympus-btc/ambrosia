@@ -1,3 +1,4 @@
+import fs from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -8,6 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = process.env.NODE_ENV === "development";
 
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf-8"));
+
 function getLocalNetworkIPs() {
   return Object.values(os.networkInterfaces())
     .flat()
@@ -17,6 +20,9 @@ function getLocalNetworkIPs() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+  },
   output: "standalone",
   outputFileTracingRoot: __dirname,
   outputFileTracingIncludes: {

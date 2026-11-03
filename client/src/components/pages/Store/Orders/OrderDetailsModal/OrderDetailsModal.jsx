@@ -6,21 +6,25 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from
 import { useTranslations } from "next-intl";
 
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
+import { CopyableValueRow } from "@/components/shared/CopyableValueRow";
 import { OrderProductsTable } from "@/components/shared/OrderProductsTable";
 import { StatusChip } from "@/components/shared/StatusChip";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { usePermission } from "@/hooks/usePermission";
 import formatDate from "@lib/formatDate";
 
+import { useOrderReceiptReprint } from "../hooks/useOrderReceiptReprint";
 import { RefundModal } from "../RefundModal";
 
-import { HashRow } from "./HashRow";
 import { MetaField } from "./MetaField";
 import { RefundInfo } from "./RefundInfo";
 
 export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAmount, currentRate }) {
   const ordersTranslations = useTranslations("orders");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const canRefund = usePermission({ allOf: ["orders_refund"] });
   const [isRefundOpen, setIsRefundOpen] = useState(false);
+  const { canReprint, isReprinting, reprintReceipt } = useOrderReceiptReprint(order);
   const {
     id,
     userName,
@@ -28,12 +32,14 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
     paymentMethod,
     total,
     discountAmount,
+    tipAmount,
     createdAt,
     satoshiAmount,
     exchangeRateAtPayment,
     exchangeRateCurrency,
     fiatAmountAtPayment,
     paymentHash,
+    transactionId,
     items,
     refund,
   } = order ?? {};
@@ -67,17 +73,26 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                   <MetaField label={ordersTranslations("details.user")} value={userName ?? "—"} />
                   <MetaField
                     label={ordersTranslations("details.paymentMethod")}
-                    value={paymentMethod || ordersTranslations("details.noPayment")}
+                    value={getPaymentMethodLabel(paymentMethod) || ordersTranslations("details.noPayment")}
                   />
                   <MetaField
                     label={ordersTranslations("details.status")}
                     value={status ? <StatusChip status={status} /> : "—"}
                   />
+                  {transactionId && (
+                    <div className="col-span-2">
+                      <CopyableValueRow
+                        label={ordersTranslations("details.reference")}
+                        fullValue={transactionId}
+                        copyLabel={ordersTranslations("details.lightning.copy")}
+                      />
+                    </div>
+                  )}
                   {paymentHash && (
                     <div className="col-span-2">
-                      <HashRow
+                      <CopyableValueRow
                         label={ordersTranslations("details.lightning.paymentHash")}
-                        value={paymentHash}
+                        fullValue={paymentHash}
                         copyLabel={ordersTranslations("details.lightning.copy")}
                       />
                     </div>
@@ -99,14 +114,29 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                   </div>
                 )}
 
-                {discountAmount > 0 && (
-                  <div className="flex justify-between items-center text-sm text-red-600">
-                    <span>{ordersTranslations("details.discount")}</span>
-                    <span>-{formatAmount(discountAmount)}</span>
+                {(discountAmount > 0 || tipAmount > 0) && (
+                  <div className="space-y-2 px-1 text-sm">
+                    {discountAmount > 0 && (
+                      <div className="grid grid-cols-2 items-center text-red-600">
+                        <span>{ordersTranslations("details.discount")}</span>
+                        <span className="text-right font-medium">
+                          -{formatAmount(discountAmount)}
+                        </span>
+                      </div>
+                    )}
+
+                    {tipAmount > 0 && (
+                      <div className="grid grid-cols-2 items-center text-gray-700">
+                        <span>{ordersTranslations("details.tip")}</span>
+                        <span className="text-right text-gray-500">
+                          +{formatAmount(tipAmount * 100)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
+                <div className="flex items-center justify-between border-t border-gray-200 px-1 pt-3">
                   <span className="font-semibold text-sm">{ordersTranslations("details.total")}</span>
                   <div className="font-bold text-green-700">
                     {satoshiAmount != null
@@ -142,13 +172,25 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                 {ordersTranslations("details.refund")}
               </Button>
             )}
-            <Button
-              className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              variant="bordered"
-              onPress={onClose}
-            >
-              {ordersTranslations("details.close")}
-            </Button>
+            <div className="ml-auto flex gap-2">
+              <Button
+                className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                variant="bordered"
+                onPress={onClose}
+              >
+                {ordersTranslations("details.close")}
+              </Button>
+              {canReprint && (
+                <Button
+                  className="bg-green-800"
+                  color="primary"
+                  isLoading={isReprinting}
+                  onPress={reprintReceipt}
+                >
+                  {ordersTranslations("details.reprint")}
+                </Button>
+              )}
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -1,25 +1,26 @@
-const { EventEmitter } = require('events');
+import { EventEmitter } from 'events';
 
-const { isPhoenixdRunning, isBackendRunning } = require('../utils/healthCheck');
-const logger = require('../utils/logger');
-const { allocatePorts, DEFAULT_PORTS } = require('../utils/portAllocator');
-const { isDevelopment } = require('../utils/resourcePaths');
+import { HEALTH, STARTUP } from '../utils/constants.js';
+import { healthCheck } from '../utils/healthCheck.js';
+import { logger } from '../utils/logger.js';
+import { portAllocator, DEFAULT_PORTS } from '../utils/portAllocator.js';
+import { isDevelopment } from '../utils/resourcePaths.js';
 
-const BackendService = require('./BackendService');
-const { ensureConfigurations } = require('./ConfigurationBootstrap');
-const NextJsService = require('./NextJsService');
-const PhoenixdService = require('./PhoenixdService');
+import BackendService from './BackendService.js';
+import { configurationBootstrap } from './ConfigurationBootstrap.js';
+import NextJsService from './NextJsService.js';
+import PhoenixdService from './PhoenixdService.js';
 
-class ServiceManager extends EventEmitter {
+export default class ServiceManager extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.devMode = options.devMode || isDevelopment();
+    this.developmentMode = options.developmentMode || isDevelopment();
     this.phoenixdService = new PhoenixdService();
     this.backendService = new BackendService();
     this.nextjsService = new NextJsService();
     this.ports = null;
     this.configs = null;
-    // Track which services are external (not managed by us)
+    this.phoenixdRemoteConfigured = false;
     this.externalServices = {
       phoenixd: false,
       backend: false,
@@ -27,10 +28,8 @@ class ServiceManager extends EventEmitter {
   }
 
   async startAll() {
-    const STARTUP_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
-
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Startup timed out after 2 minutes')), STARTUP_TIMEOUT_MS);
+      setTimeout(() => reject(new Error('Startup timed out after 2 minutes')), STARTUP.TIMEOUT_MILLISECONDS);
     });
 
     return Promise.race([this._startAll(), timeoutPromise]);
@@ -40,42 +39,43 @@ class ServiceManager extends EventEmitter {
     try {
       logger.log('[ServiceManager] Starting all services...');
 
-      this.ports = await allocatePorts();
+      this.ports = await portAllocator.allocatePorts();
       logger.log('[ServiceManager] Allocated ports:', this.ports);
 
       logger.log('[ServiceManager] Ensuring configurations...');
-      this.configs = await ensureConfigurations(this.ports);
+      this.configs = await configurationBootstrap.ensureConfigurations(this.ports);
 
       const phoenixConfig = this.configs.phoenix;
 
-      if (this.devMode) {
+      if (this.developmentMode) {
         logger.log('[ServiceManager] Development mode: skipping phoenixd and backend startup');
         logger.log('[ServiceManager] Assuming external services at:');
         logger.log('  - phoenixd: http://localhost:9740');
         logger.log('  - backend: http://localhost:9154');
 
         logger.log('[ServiceManager] Starting Next.js service...');
-        const result = await this.nextjsService.start(this.ports.nextjs, {
+        const startedServiceInfo = await this.nextjsService.start(this.ports.nextjs, {
           host: 'localhost',
           port: this.ports.backend,
         });
         this.emit('service:started', { service: 'nextjs', port: this.ports.nextjs });
         logger.log('[ServiceManager] All services started successfully');
-        return result.url;
+        return startedServiceInfo.url;
       }
 
       logger.log('[ServiceManager] Production mode: starting all bundled services');
 
       const nwcUriConfigured = Boolean(this.configs.ambrosia['nwc-uri']);
+      this.phoenixdRemoteConfigured = this.configs.ambrosia['phoenixd-remote'] === 'true';
 
-      // Step 1: Start Phoenixd, unless NWC is the configured Lightning backend
-      if (nwcUriConfigured) {
-        logger.log('[ServiceManager] Step 1: NWC is the configured backend, skipping Phoenixd startup');
+      if (nwcUriConfigured || this.phoenixdRemoteConfigured) {
+        const skipReason = nwcUriConfigured ? 'NWC is the configured backend' : 'a remote phoenixd node is configured';
+        logger.log(`[ServiceManager] Step 1: ${skipReason}, skipping Phoenixd startup`);
         this.externalServices.phoenixd = true;
         this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd, skipped: true });
       } else {
         logger.log('[ServiceManager] Step 1: Checking for existing Phoenixd...');
-        const phoenixdAlreadyRunning = await isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
+        const phoenixdAlreadyRunning = await healthCheck.isPhoenixdRunning(DEFAULT_PORTS.phoenixd);
 
         if (phoenixdAlreadyRunning) {
           logger.log(`[ServiceManager] Phoenixd already running on port ${DEFAULT_PORTS.phoenixd}, reusing...`);
@@ -83,14 +83,13 @@ class ServiceManager extends EventEmitter {
           this.externalServices.phoenixd = true;
         } else {
           logger.log('[ServiceManager] Starting Phoenixd...');
-          await this.phoenixdService.start(this.ports.phoenixd, phoenixConfig);
+          await this.phoenixdService.start(this.ports.phoenixd);
         }
         this.emit('service:started', { service: 'phoenixd', port: this.ports.phoenixd });
       }
 
-      // Step 2: Check if backend is already running on default port
       logger.log('[ServiceManager] Step 2: Checking for existing Backend...');
-      const backendAlreadyRunning = await isBackendRunning(DEFAULT_PORTS.backend);
+      const backendAlreadyRunning = await healthCheck.isBackendRunning(DEFAULT_PORTS.backend);
 
       if (backendAlreadyRunning) {
         logger.log(`[ServiceManager] Backend already running on port ${DEFAULT_PORTS.backend}, reusing...`);
@@ -100,15 +99,14 @@ class ServiceManager extends EventEmitter {
         logger.log('[ServiceManager] Starting Backend...');
         await this.backendService.start(this.ports.backend, {
           phoenixdPort: this.ports.phoenixd,
-          phoenixPassword: phoenixConfig['http-password'],
           webhookSecret: phoenixConfig['webhook-secret'],
+          phoenixdRemoteConfigured: this.phoenixdRemoteConfigured,
         });
       }
       this.emit('service:started', { service: 'backend', port: this.ports.backend });
 
-      // Step 3: Start Next.js (always start our own)
       logger.log('[ServiceManager] Step 3: Starting Next.js...');
-      const result = await this.nextjsService.start(this.ports.nextjs, {
+      const startedServiceInfo = await this.nextjsService.start(this.ports.nextjs, {
         host: '127.0.0.1',
         port: this.ports.backend,
       });
@@ -118,28 +116,26 @@ class ServiceManager extends EventEmitter {
       this.startHealthMonitor();
       this.emit('all:started');
 
-      return result.url;
-    } catch (error) {
-      logger.error('[ServiceManager] Failed to start services:', error);
-      this.emit('service:error', { error });
+      return startedServiceInfo.url;
+    } catch (startupError) {
+      logger.error('[ServiceManager] Failed to start services:', startupError);
+      this.emit('service:error', { serviceError: startupError });
       await this.stopAll();
-      throw error;
+      throw startupError;
     }
   }
 
   startHealthMonitor() {
-    const INTERVAL_MS = 30 * 1000; // 30 seconds
-
     this._healthMonitor = setInterval(() => {
       const statuses = this.getServiceStatuses();
       for (const [service, status] of Object.entries(statuses)) {
         if (this.externalServices[service]) continue;
         if (status === 'error' || status === 'stopped') {
           logger.warn(`[ServiceManager] Health monitor: ${service} is ${status}, emitting event`);
-          this.emit('service:error', { service, error: new Error(`${service} is ${status}`) });
+          this.emit('service:error', { service, serviceError: new Error(`${service} is ${status}`) });
         }
       }
-    }, INTERVAL_MS);
+    }, HEALTH.MONITOR_INTERVAL_MILLISECONDS);
   }
 
   stopHealthMonitor() {
@@ -156,30 +152,28 @@ class ServiceManager extends EventEmitter {
     try {
       logger.log('[ServiceManager] Stopping Next.js...');
       await this.nextjsService.stop();
-    } catch (error) {
-      logger.error('[ServiceManager] Error stopping Next.js:', error);
+    } catch (stopNextJsError) {
+      logger.error('[ServiceManager] Error stopping Next.js:', stopNextJsError);
     }
 
-    if (!this.devMode) {
-      // Only stop backend if we started it (not external)
+    if (!this.developmentMode) {
       if (!this.externalServices.backend) {
         try {
           logger.log('[ServiceManager] Stopping Backend...');
           await this.backendService.stop();
-        } catch (error) {
-          logger.error('[ServiceManager] Error stopping Backend:', error);
+        } catch (stopBackendError) {
+          logger.error('[ServiceManager] Error stopping Backend:', stopBackendError);
         }
       } else {
         logger.log('[ServiceManager] Backend is external, not stopping');
       }
 
-      // Only stop phoenixd if we started it (not external)
       if (!this.externalServices.phoenixd) {
         try {
           logger.log('[ServiceManager] Stopping Phoenixd...');
           await this.phoenixdService.stop();
-        } catch (error) {
-          logger.error('[ServiceManager] Error stopping Phoenixd:', error);
+        } catch (stopPhoenixdError) {
+          logger.error('[ServiceManager] Error stopping Phoenixd:', stopPhoenixdError);
         }
       } else {
         logger.log('[ServiceManager] Phoenixd is external, not stopping');
@@ -218,15 +212,15 @@ class ServiceManager extends EventEmitter {
       switch (serviceName) {
         case 'phoenixd':
           await this.phoenixdService.stop();
-          await this.phoenixdService.start(this.ports.phoenixd, this.configs.phoenix);
+          await this.phoenixdService.start(this.ports.phoenixd);
           this.externalServices.phoenixd = false;
           break;
         case 'backend':
           await this.backendService.stop();
           await this.backendService.start(this.ports.backend, {
             phoenixdPort: this.ports.phoenixd,
-            phoenixPassword: this.configs.phoenix['http-password'],
             webhookSecret: this.configs.phoenix['webhook-secret'],
+            phoenixdRemoteConfigured: this.phoenixdRemoteConfigured,
           });
           break;
         case 'nextjs':
@@ -241,16 +235,14 @@ class ServiceManager extends EventEmitter {
       }
       logger.log(`[ServiceManager] ${serviceName} restarted successfully`);
       this.emit('service:restarted', { service: serviceName });
-    } catch (error) {
-      logger.error(`[ServiceManager] Failed to restart ${serviceName}:`, error);
-      this.emit('service:error', { service: serviceName, error });
-      throw error;
+    } catch (restartError) {
+      logger.error(`[ServiceManager] Failed to restart ${serviceName}:`, restartError);
+      this.emit('service:error', { service: serviceName, serviceError: restartError });
+      throw restartError;
     }
   }
 
-  isDevMode() {
-    return this.devMode;
+  isDevelopmentMode() {
+    return this.developmentMode;
   }
 }
-
-module.exports = ServiceManager;

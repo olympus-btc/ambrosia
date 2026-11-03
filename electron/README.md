@@ -26,7 +26,7 @@ npm run dist:linux:arm64 # Linux ARM64
 
 ## Tech stack
 
-- **Electron** (main process: CommonJS/Node.js, renderer: Chromium)
+- **Electron** (main process: ESM/Node.js, renderer: Chromium)
 - **electron-builder** for cross-platform packaging and installers
 - **electron-updater** for auto-updates
 - **cross-spawn** + **tree-kill** for child process management
@@ -102,11 +102,12 @@ Any channel not on the whitelist is silently dropped. Arguments are sanitized by
 
 | Script | What it does |
 | --- | --- |
-| `download-phoenixd.js` | Downloads the platform-specific phoenixd binary |
-| `download-jre.js` | Downloads a JRE for the target platform |
 | `download-node.js` | Downloads Node.js for the Next.js standalone server |
+| `download-jre.js` | Downloads a JRE for the target platform |
+| `download-phoenixd.js` | Downloads the platform-specific phoenixd binary |
 | `build-backend.js` | Builds the Kotlin JAR (detects the version dynamically) |
 | `build-client.js` | Copies the Next.js standalone build from `client/.next/standalone` |
+| `build-preload.js` | Bundles the preload scripts via esbuild |
 
 All resources land in `electron/resources/` and are bundled via electron-builder's `extraResources` key in `package.json`.
 
@@ -131,13 +132,17 @@ electron/
 │   └── constants.js                 # Timeouts, port ranges, version constants
 ├── scripts/
 │   ├── prepare-resources-wrapper.js # Orchestrates the full pre-build pipeline
-│   ├── download-phoenixd.js
-│   ├── download-jre.js
 │   ├── download-node.js
+│   ├── download-jre.js
+│   ├── download-phoenixd.js
 │   ├── build-backend.js
 │   ├── build-client.js
+│   ├── build-preload.js             # Bundles preload scripts via esbuild
+│   ├── download-utils.js            # Shared download + archive-extraction helpers
 │   ├── platform-utils.js            # Shared platform/arch detection helpers
-│   └── clean-build.js
+│   ├── verify-checksum.js           # SHA256 checksum computation and verification
+│   ├── clean-build.js
+│   └── afterPack.js                 # electron-builder hook: re-signs the macOS app bundle
 ├── build/                           # electron-builder assets
 │   ├── icon.icns / icon.ico / icon.png
 │   ├── entitlements.mac.plist

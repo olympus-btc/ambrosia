@@ -13,6 +13,7 @@ object TicketsTable : SQLiteUUIDTable("tickets") {
     val ticketDate = varchar("ticket_date", 50)
     val status = integer("status").default(1)
     val totalAmount = double("total_amount").default(0.0)
+    val tipAmount = double("tip_amount").default(0.0)
     val notes = text("notes").nullable()
 }
 
@@ -26,6 +27,7 @@ class TicketEntity(
     var ticketDate by TicketsTable.ticketDate
     var status by TicketsTable.status
     var totalAmount by TicketsTable.totalAmount
+    var tipAmount by TicketsTable.tipAmount
     var notes by TicketsTable.notes
 }
 

@@ -18,23 +18,21 @@ import java.security.SecureRandom
 object SeedGenerator {
     val NUM_WORDS: Int = 12
     private const val FALLBACK_WORDLIST_URL =
-        """
-            https://raw.githubusercontent.com/olympus-btc/Ambrosia-POS/main/scripts/eff_large_wordlist.txt
-        """
+        "https://raw.githubusercontent.com/olympus-btc/Ambrosia-POS/main/scripts/eff_large_wordlist.txt"
 
     /**
      * Downloads the wordlist from the fallback URL
      */
     private suspend fun downloadWordlist(): List<String> {
-        val client = HttpClient(CIO)
+        val httpClient = HttpClient(CIO)
         return try {
-            val response: HttpResponse = client.get(FALLBACK_WORDLIST_URL)
-            val content = response.bodyAsText()
-            client.close()
-            content.lines().filter { it.isNotBlank() }
-        } catch (e: Exception) {
-            client.close()
-            throw IllegalStateException("Failed to download wordlist from fallback URL: ${e.message}", e)
+            val wordlistResponse: HttpResponse = httpClient.get(FALLBACK_WORDLIST_URL)
+            val wordlistText = wordlistResponse.bodyAsText()
+            httpClient.close()
+            wordlistText.lines().filter { it.isNotBlank() }
+        } catch (error: Exception) {
+            httpClient.close()
+            throw IllegalStateException("Failed to download wordlist from fallback URL: ${error.message}", error)
         }
     }
 
@@ -64,8 +62,8 @@ object SeedGenerator {
      * Generates a dice roll (5 digits, each 1-6) for Diceware
      */
     private fun generateDiceRoll(): String {
-        val random = SecureRandom()
-        return (1..5).map { (random.nextInt(6) + 1).toString() }.joinToString("")
+        val secureRandom = SecureRandom()
+        return (1..5).map { (secureRandom.nextInt(6) + 1).toString() }.joinToString("")
     }
 
     /**

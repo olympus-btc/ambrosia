@@ -3,7 +3,7 @@ const authEs = {
     title: "Ingresa tu PIN para acceder al sistema",
     selectLabel: "Seleccionar Empleado",
     selectPlaceholder: "Elige tu nombre",
-    pinLabel: "Pin de Acceso",
+    pinLabel: "PIN de acceso",
     eraseButton: "Borrar",
     clearButton: "Limpiar",
     loginButton: "Iniciar Sesión",

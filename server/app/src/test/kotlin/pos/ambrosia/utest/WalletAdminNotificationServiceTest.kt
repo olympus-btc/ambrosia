@@ -11,6 +11,7 @@ import pos.ambrosia.models.phoenix.PaymentResponse
 import pos.ambrosia.services.AdminNotificationService
 import pos.ambrosia.services.WalletAdminNotificationService
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.PhoenixServiceException
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -112,5 +113,36 @@ class WalletAdminNotificationServiceTest {
         )
 
         assertTrue(adminNotificationService.getNotifications(adminUserId).isEmpty())
+    }
+
+    @Test
+    fun `notifyPaymentFailed includes payment failure category metadata`() {
+        val adminRoleId = ExposedTestDb.seedRole("admin", isAdmin = true)
+        val cashierRoleId = ExposedTestDb.seedRole("cashier", isAdmin = false)
+        val adminUserId = ExposedTestDb.seedUser("Ada", roleId = adminRoleId)
+        val cashierUserId = ExposedTestDb.seedUser("Beto", roleId = cashierRoleId)
+
+        walletAdminNotificationService.notifyPaymentFailed(
+            actorUserId = cashierUserId,
+            actionType = "lightning_invoice",
+            requestedAmountSats = 1200,
+            paymentFailure =
+                PhoenixServiceException(
+                    message = "Recipient node rejected the payment",
+                    code = "recipient_rejected_payment",
+                    category = "remote_routing",
+                    statusCode = 422,
+                ),
+        )
+
+        val notification = adminNotificationService.getNotifications(adminUserId).single()
+        val metadata = Json.parseToJsonElement(notification.metadataJson.orEmpty()).jsonObject
+
+        assertEquals("wallet.payment.failed", notification.type)
+        assertEquals("failed", notification.status)
+        assertEquals("recipient_rejected_payment", metadata["code"]?.jsonPrimitive?.content)
+        assertEquals("remote_routing", metadata["category"]?.jsonPrimitive?.content)
+        assertEquals("422", metadata["statusCode"]?.jsonPrimitive?.content)
+        assertEquals("phoenixd", metadata["source"]?.jsonPrimitive?.content)
     }
 }

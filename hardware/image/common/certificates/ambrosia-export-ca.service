@@ -1,0 +1,18 @@
+[Unit]
+Description=Publish the public Ambrosia CA certificate
+After=ambrosia-firstboot.service caddy.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/ambrosia/ambrosia-export-ca
+TimeoutStartSec=30
+UMask=0022
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/ambrosia
+InaccessiblePaths=-/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.key -/var/lib/caddy/.local/share/caddy/pki/authorities/local/intermediate.key
+
+[Install]
+WantedBy=multi-user.target

@@ -8,14 +8,7 @@ import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { buildParsedHttpError } from "../utils/buildHttpError";
-
-function isLastAdminConflict(requestError) {
-  return requestError?.status === 409 && requestError?.responseMessage?.includes("last admin");
-}
-
-function isAdminPrivilegesRequired(requestError) {
-  return requestError?.status === 403 && requestError?.responseMessage === "Admin privileges required";
-}
+import { isAdminPrivilegesRequired, isConflict, isCurrentUserPinIncorrect, isLastAdminConflict, resolveMutationErrorToast, translateToast } from "../utils/mutationErrorToast";
 
 export function useUsers({ skipForbiddenRedirect = false } = {}) {
   const usersTranslations = useTranslations("users");
@@ -24,34 +17,32 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
   const [error, setError] = useState(null);
   const [forbidden, setForbidden] = useState(false);
 
-  const showGenericMutationErrorToast = useCallback(() => {
-    addToast({
-      title: usersTranslations("toasts.genericErrorTitle"),
-      description: usersTranslations("toasts.genericErrorDescription"),
-      color: "danger",
-    });
-  }, [usersTranslations]);
+  const genericMutationErrorToast = translateToast(usersTranslations, "toasts.genericErrorTitle", "toasts.genericErrorDescription", "danger");
 
-  const showAdminRequiredToast = useCallback(() => {
-    addToast({
-      title: usersTranslations("toasts.adminRequiredTitle"),
-      description: usersTranslations("toasts.adminRequiredDescription"),
-      color: "warning",
-    });
-  }, [usersTranslations]);
+  const adminPrivilegesRequiredRule = {
+    when: isAdminPrivilegesRequired,
+    toast: translateToast(usersTranslations, "toasts.adminRequiredTitle", "toasts.adminRequiredDescription", "warning"),
+  };
 
-  const showUserConflictToast = useCallback((requestError, fallbackConflictToast) => {
-    if (isLastAdminConflict(requestError)) {
-      addToast({
-        title: usersTranslations("toasts.lastAdminTitle"),
-        description: usersTranslations("toasts.lastAdminDescription"),
-        color: "warning",
-      });
-      return;
-    }
+  const currentUserPinIncorrectRule = {
+    when: isCurrentUserPinIncorrect,
+    toast: translateToast(usersTranslations, "toasts.currentUserPinIncorrectTitle", "toasts.currentUserPinIncorrectDescription", "danger"),
+  };
 
-    addToast(fallbackConflictToast);
-  }, [usersTranslations]);
+  const lastAdminConflictRule = {
+    when: isLastAdminConflict,
+    toast: translateToast(usersTranslations, "toasts.lastAdminTitle", "toasts.lastAdminDescription", "warning"),
+  };
+
+  const createOrUpdateUserErrorRules = [
+    adminPrivilegesRequiredRule,
+    currentUserPinIncorrectRule,
+    lastAdminConflictRule,
+    {
+      when: isConflict,
+      toast: translateToast(usersTranslations, "toasts.duplicateNameTitle", "toasts.duplicateNameDescription", "danger"),
+    },
+  ];
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -77,6 +68,7 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
         roleId: user.userRole,
         email: user.userEmail,
         phone: user.userPhone,
+        currentUserPin: user.currentUserPin,
       };
 
       if (user.userPin && user.userPin.trim().length > 0) {
@@ -89,6 +81,7 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(updateUserPayload),
+        skipForbiddenRedirect: true,
       });
 
       if (updateUserResponse.ok === false) {
@@ -101,20 +94,7 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
 
       return updatedUserData;
     } catch (requestError) {
-      if (isAdminPrivilegesRequired(requestError)) {
-        showAdminRequiredToast();
-        throw requestError;
-      }
-      if (requestError?.status === 409) {
-        showUserConflictToast(requestError, {
-          title: usersTranslations("toasts.duplicateNameTitle"),
-          description: usersTranslations("toasts.duplicateNameDescription"),
-          color: "danger",
-        });
-        throw requestError;
-      }
-
-      showGenericMutationErrorToast();
+      addToast(resolveMutationErrorToast(requestError, createOrUpdateUserErrorRules, genericMutationErrorToast));
       throw requestError;
     }
   };
@@ -127,12 +107,16 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: user.userName,
-          pin: user.userPin,
-          role: user.userRole,
-          email: user.userEmail,
-          phone: user.userPhone,
+          user: {
+            name: user.userName,
+            pin: user.userPin,
+            role: user.userRole,
+            email: user.userEmail,
+            phone: user.userPhone,
+          },
+          currentUserPin: user.currentUserPin,
         }),
+        skipForbiddenRedirect: true,
       });
 
       if (createUserResponse.ok === false) {
@@ -142,28 +126,20 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
       await fetchUsers();
       return createUserResponse;
     } catch (requestError) {
-      if (isAdminPrivilegesRequired(requestError)) {
-        showAdminRequiredToast();
-        throw requestError;
-      }
-      if (requestError?.status === 409) {
-        showUserConflictToast(requestError, {
-          title: usersTranslations("toasts.duplicateNameTitle"),
-          description: usersTranslations("toasts.duplicateNameDescription"),
-          color: "danger",
-        });
-        throw requestError;
-      }
-
-      showGenericMutationErrorToast();
+      addToast(resolveMutationErrorToast(requestError, createOrUpdateUserErrorRules, genericMutationErrorToast));
       throw requestError;
     }
   };
 
-  const deleteUser = async (userId) => {
+  const deleteUser = async (userId, currentUserPin) => {
     try {
       const deleteUserResponse = await httpClient(`/users/${userId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentUserPin }),
+        skipForbiddenRedirect: true,
       });
 
       if (deleteUserResponse.ok === false) {
@@ -173,16 +149,14 @@ export function useUsers({ skipForbiddenRedirect = false } = {}) {
       await fetchUsers();
       return deleteUserResponse;
     } catch (requestError) {
-      if (requestError?.status === 409) {
-        showUserConflictToast(requestError, {
-          title: usersTranslations("toasts.lastUserTitle"),
-          description: usersTranslations("toasts.lastUserDescription"),
-          color: "warning",
-        });
-        throw requestError;
-      }
-
-      showGenericMutationErrorToast();
+      addToast(resolveMutationErrorToast(requestError, [
+        currentUserPinIncorrectRule,
+        lastAdminConflictRule,
+        {
+          when: isConflict,
+          toast: translateToast(usersTranslations, "toasts.lastUserTitle", "toasts.lastUserDescription", "warning"),
+        },
+      ], genericMutationErrorToast));
       throw requestError;
     }
   };

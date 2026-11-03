@@ -4,6 +4,10 @@ class InvalidCredentialsException(
     message: String = "Invalid credentials",
 ) : IllegalArgumentException(message)
 
+class InvalidCurrentUserPinException(
+    message: String = "Invalid current user PIN",
+) : IllegalArgumentException(message)
+
 class AdminOnlyException(
     message: String = "Admin privileges required",
 ) : SecurityException(message)
@@ -24,12 +28,20 @@ class PhoenixBalanceException(
     message: String = "Failed to retrieve balance information from Phoenix",
 ) : RuntimeException(message)
 
+class PhoenixChannelNotAvailableException(
+    message: String = "Channel is not in a closeable state (currently syncing or offline)",
+    val code: String = "channel_not_available",
+    val source: String = "phoenixd",
+) : RuntimeException(message)
+
 class PhoenixServiceException(
     message: String = "Phoenix Lightning node service error",
     val code: String = "unknown",
+    val category: String = "unknown",
     val statusCode: Int? = null,
     val source: String = "phoenixd",
     val upstreamMessage: String? = null,
+    val diagnosticLogged: Boolean = false,
 ) : RuntimeException(message)
 
 class InvalidTokenException(
@@ -80,9 +92,33 @@ class LastAdminRemovalException(
     message: String = "Cannot remove the last admin user",
 ) : IllegalStateException(message)
 
+class PendingImportAlreadyStagedException(
+    message: String = "A previous import is already staged and waiting for a server restart",
+) : IllegalStateException(message)
+
 class ResourceNotFoundException(
     message: String = "Resource not found",
 ) : RuntimeException(message)
+
+class InvalidTimeEntryException(
+    message: String = "Invalid time entry",
+) : IllegalArgumentException(message)
+
+class TimeEntryLockedException(
+    message: String = "Time entry is locked because it belongs to an invoice",
+) : IllegalStateException(message)
+
+class LightningBackendUnavailableException(
+    message: String = "A Lightning address is required when no Lightning backend is active",
+) : IllegalStateException(message)
+
+class SecretsLockedException(
+    message: String = "Secrets are locked — unlock the server before using this feature",
+) : IllegalStateException(message)
+
+class UnsupportedUploadTypeException(
+    message: String = "Uploaded file does not match an allowed image type",
+) : IllegalArgumentException(message)
 
 class InitialSetupException(
     message: String = "Initial setup failed",

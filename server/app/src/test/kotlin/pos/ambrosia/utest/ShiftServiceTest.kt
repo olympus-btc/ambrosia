@@ -1,11 +1,15 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.OrderEntity
+import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.shiftReportLabels
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -15,6 +19,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -144,6 +149,213 @@ class ShiftServiceTest {
             val result = service.getShiftsByDate("2024-01-01")
             assertEquals(1, result.size)
             assertEquals(shiftId, result[0].id)
+        }
+    }
+
+    @Test
+    fun `getShiftsByRange returns shifts within the inclusive date range, excluding shifts outside it`() {
+        runBlocking {
+            val userId = seedUser()
+            val shiftInRangeStart = ExposedTestDb.seedShift(userId, shiftDate = "2024-01-01", endTime = "2pm")
+            val shiftInRangeEnd = ExposedTestDb.seedShift(userId, shiftDate = "2024-01-31", endTime = "2pm")
+            ExposedTestDb.seedShift(userId, shiftDate = "2023-12-31", endTime = "2pm")
+            ExposedTestDb.seedShift(userId, shiftDate = "2024-02-01", endTime = "2pm")
+
+            val shiftsInRange = service.getShiftsByRange("2024-01-01", "2024-01-31")
+
+            assertEquals(2, shiftsInRange.size)
+            assertTrue(shiftsInRange.any { it.id == shiftInRangeStart })
+            assertTrue(shiftsInRange.any { it.id == shiftInRangeEnd })
+        }
+    }
+
+    @Test
+    fun `getShiftsReport throws when neither period nor a full date range is provided`() {
+        runBlocking {
+            assertFailsWith<IllegalArgumentException> {
+                service.getShiftsReport(period = null, startDate = null, endDate = null)
+            }
+        }
+    }
+
+    @Test
+    fun `getShiftsReport aggregates initial, final and difference amounts across shifts in range`() {
+        runBlocking {
+            val userId = seedUser()
+            val closedShiftId = ExposedTestDb.seedShift(userId, shiftDate = "2024-01-10", initialAmount = 100.0)
+            service.closeShift(closedShiftId, finalAmount = 150.0, difference = 20.0)
+
+            val stillOpenShiftId = ExposedTestDb.seedShift(userId, shiftDate = "2024-01-20", initialAmount = 50.0)
+
+            val outOfRangeShiftId = ExposedTestDb.seedShift(userId, shiftDate = "2024-02-01", initialAmount = 30.0)
+            service.closeShift(outOfRangeShiftId, finalAmount = 30.0, difference = 0.0)
+
+            val report = service.getShiftsReport(period = null, startDate = "2024-01-01", endDate = "2024-01-31")
+
+            assertEquals(2, report.shifts.size)
+            assertTrue(report.shifts.none { it.id == outOfRangeShiftId })
+
+            val closedShiftSummary = report.shifts.first { it.id == closedShiftId }
+            assertEquals("Alice", closedShiftSummary.userName)
+            assertEquals(150.0, closedShiftSummary.finalAmount)
+            assertEquals(20.0, closedShiftSummary.difference)
+
+            val stillOpenShiftSummary = report.shifts.first { it.id == stillOpenShiftId }
+            assertNull(stillOpenShiftSummary.finalAmount)
+            assertNull(stillOpenShiftSummary.difference)
+
+            assertEquals(150.0, report.totalInitialAmount)
+            assertEquals(150.0, report.totalFinalAmount)
+            assertEquals(20.0, report.totalDifference)
+            assertEquals(130.0, report.totalExpectedAmount)
+        }
+    }
+
+    @Test
+    fun `getShiftsReport groups payment totals by method for tickets within the date range`() {
+        runBlocking {
+            val userId = seedUser()
+            ExposedTestDb.seedShift(userId, shiftDate = "2024-01-10")
+
+            val orderId = ExposedTestDb.seedOrder(userId, createdAt = "2024-01-10T12:00:00")
+            val cashMethodId = ExposedTestDb.seedPaymentMethod("Efectivo")
+            val cashTicketId = ExposedTestDb.seedTicket(orderId, userId)
+            val cashPaymentId = ExposedTestDb.seedPayment(methodId = cashMethodId, amount = 80.0)
+            ExposedTestDb.seedTicketPayment(cashPaymentId, cashTicketId)
+            transaction { TicketEntity.findById(UUID.fromString(cashTicketId))!!.totalAmount = 80.0 }
+
+            val outOfRangeOrderId = ExposedTestDb.seedOrder(userId, createdAt = "2024-02-01T12:00:00")
+            val outOfRangeTicketId = ExposedTestDb.seedTicket(outOfRangeOrderId, userId)
+            val outOfRangePaymentId = ExposedTestDb.seedPayment(methodId = cashMethodId, amount = 999.0)
+            ExposedTestDb.seedTicketPayment(outOfRangePaymentId, outOfRangeTicketId)
+            transaction {
+                val outOfRangeTicket = TicketEntity.findById(UUID.fromString(outOfRangeTicketId))!!
+                outOfRangeTicket.totalAmount = 999.0
+                outOfRangeTicket.ticketDate = "2024-02-01T12:00:00"
+            }
+
+            val report = service.getShiftsReport(period = null, startDate = "2024-01-01", endDate = "2024-01-31")
+
+            assertEquals(1, report.byPaymentMethod.size)
+            assertEquals("Efectivo", report.byPaymentMethod[0].name)
+            assertEquals(80.0, report.byPaymentMethod[0].total)
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData returns null when shift not found`() {
+        runBlocking {
+            assertNull(service.getShiftReportPrintData(UUID.randomUUID().toString(), shiftReportLabels()))
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData combines the cashier, shift times, breakdown and labels`() {
+        runBlocking {
+            val userId = seedUser()
+            val shiftId =
+                ExposedTestDb.seedShift(
+                    userId,
+                    shiftDate = "2024-01-10",
+                    startTime = "08:00:00",
+                    endTime = "18:00:00",
+                    initialAmount = 100.0,
+                )
+            val printedShiftReportLabels = shiftReportLabels()
+
+            val shiftReport = assertNotNull(service.getShiftReportPrintData(shiftId, printedShiftReportLabels))
+
+            assertEquals("Alice", shiftReport.cashierName)
+            assertEquals("2024-01-10T08:00:00", shiftReport.openedAt)
+            assertEquals("2024-01-10T18:00:00", shiftReport.closedAt)
+            assertEquals(service.getShiftBreakdown(shiftId), shiftReport.breakdown)
+            assertEquals(printedShiftReportLabels, shiftReport.labels)
+        }
+    }
+
+    @Test
+    fun `getShiftReportPrintData leaves the closing time empty for an open shift`() {
+        runBlocking {
+            val shiftId = ExposedTestDb.seedShift(seedUser(), shiftDate = "2024-01-10", startTime = "08:00:00")
+
+            assertNull(service.getShiftReportPrintData(shiftId, shiftReportLabels())?.closedAt)
+        }
+    }
+
+    @Test
+    fun `getShiftBreakdown returns null when shift not found`() {
+        runBlocking {
+            val breakdown = service.getShiftBreakdown(UUID.randomUUID().toString())
+            assertNull(breakdown)
+        }
+    }
+
+    @Test
+    fun `getShiftBreakdown computes sales, tips, cash totals and payment breakdown within the shift window`() {
+        runBlocking {
+            val userId = seedUser()
+            val shiftId =
+                ExposedTestDb.seedShift(
+                    userId,
+                    shiftDate = "2024-01-10",
+                    startTime = "08:00:00",
+                    endTime = "18:00:00",
+                    initialAmount = 100.0,
+                )
+
+            val cashMethodId = ExposedTestDb.seedPaymentMethod("Efectivo")
+            val cardMethodId = ExposedTestDb.seedPaymentMethod("Card")
+
+            val cashOrderId = ExposedTestDb.seedOrder(userId, createdAt = "2024-01-10T10:00:00")
+            val cashTicketId = ExposedTestDb.seedTicket(cashOrderId, userId)
+            val cashPaymentId = ExposedTestDb.seedPayment(methodId = cashMethodId, amount = 80.0)
+            ExposedTestDb.seedTicketPayment(cashPaymentId, cashTicketId)
+            transaction {
+                val cashTicket = TicketEntity.findById(UUID.fromString(cashTicketId))!!
+                cashTicket.totalAmount = 80.0
+                cashTicket.tipAmount = 5.0
+                cashTicket.ticketDate = "2024-01-10T10:00:00"
+            }
+
+            val cardOrderId = ExposedTestDb.seedOrder(userId, createdAt = "2024-01-10T11:00:00")
+            val cardTicketId = ExposedTestDb.seedTicket(cardOrderId, userId)
+            val cardPaymentId = ExposedTestDb.seedPayment(methodId = cardMethodId, amount = 40.0)
+            ExposedTestDb.seedTicketPayment(cardPaymentId, cardTicketId)
+            transaction {
+                val cardTicket = TicketEntity.findById(UUID.fromString(cardTicketId))!!
+                cardTicket.totalAmount = 40.0
+                cardTicket.ticketDate = "2024-01-10T11:00:00"
+            }
+
+            ExposedTestDb.seedRefund(cashOrderId, refundedAt = "2024-01-10T12:00:00")
+            transaction {
+                val order = OrderEntity.findById(UUID.fromString(cashOrderId))!!
+                order.total = 80.0
+            }
+
+            val outsideOrderId = ExposedTestDb.seedOrder(userId, createdAt = "2024-01-10T20:00:00")
+            val outsideTicketId = ExposedTestDb.seedTicket(outsideOrderId, userId)
+            val outsidePaymentId = ExposedTestDb.seedPayment(methodId = cashMethodId, amount = 999.0)
+            ExposedTestDb.seedTicketPayment(outsidePaymentId, outsideTicketId)
+            transaction {
+                val outsideTicket = TicketEntity.findById(UUID.fromString(outsideTicketId))!!
+                outsideTicket.totalAmount = 999.0
+                outsideTicket.ticketDate = "2024-01-10T20:00:00"
+            }
+
+            val breakdown = service.getShiftBreakdown(shiftId)
+
+            assertNotNull(breakdown)
+            assertEquals(100.0, breakdown.initialAmount)
+            assertEquals(2, breakdown.totalTickets)
+            assertEquals(120.0, breakdown.totalSales)
+            assertEquals(5.0, breakdown.totalTips)
+            assertEquals(80.0, breakdown.cashSales)
+            assertEquals(80.0, breakdown.cashRefunds)
+            assertEquals(100.0, breakdown.expectedTotal)
+            assertEquals(2, breakdown.byPaymentMethod.size)
+            assertTrue(breakdown.byPaymentMethod.any { it.name == "Efectivo" && it.total == 80.0 })
+            assertTrue(breakdown.byPaymentMethod.any { it.name == "Card" && it.total == 40.0 })
         }
     }
 

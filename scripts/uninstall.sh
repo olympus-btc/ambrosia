@@ -163,6 +163,11 @@ if [ -f "$PHOENIXD_BIN_DIR/phoenix-cli" ]; then
   echo "✅ phoenix-cli binary removed"
 fi
 
+if [ -f "$PHOENIXD_BIN_DIR/run-phoenixd.sh" ]; then
+  sudo rm -f "$PHOENIXD_BIN_DIR/run-phoenixd.sh"
+  echo "✅ phoenixd restart wrapper removed"
+fi
+
 echo ""
 echo "✅ phoenixd has been uninstalled successfully!"
 echo ""

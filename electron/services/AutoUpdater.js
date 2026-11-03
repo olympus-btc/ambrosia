@@ -1,17 +1,19 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+import fs from 'fs';
+import { createRequire } from 'module';
+import os from 'os';
+import path from 'path';
 
+import { logger } from '../utils/logger.js';
+
+const require = createRequire(import.meta.url);
 const { dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
-
-const logger = require('../utils/logger');
 
 const SUPPORTS_AUTO_UPDATE = process.platform === 'win32';
 const UPDATE_EXPIRY_DAYS = 7;
 const UPDATE_STATE_FILE = path.join(os.homedir(), '.Ambrosia-POS', 'pending-update.json');
 
-class AutoUpdater {
+export default class AutoUpdater {
   constructor(mainWindow, { onMenuUpdate, releaseUrl } = {}) {
     this.mainWindow = mainWindow;
     this.checkInterval = null;
@@ -32,19 +34,19 @@ class AutoUpdater {
 
   _saveUpdateState(version) {
     try {
-      const dir = path.dirname(UPDATE_STATE_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      const updateStateDirectory = path.dirname(UPDATE_STATE_FILE);
+      if (!fs.existsSync(updateStateDirectory)) fs.mkdirSync(updateStateDirectory, { recursive: true });
       fs.writeFileSync(UPDATE_STATE_FILE, JSON.stringify({ version, downloadedAt: Date.now() }));
-    } catch (err) {
-      logger.error('[AutoUpdater] Failed to save update state:', err.message);
+    } catch (saveError) {
+      logger.error('[AutoUpdater] Failed to save update state:', saveError.message);
     }
   }
 
   _clearUpdateState() {
     try {
       if (fs.existsSync(UPDATE_STATE_FILE)) fs.unlinkSync(UPDATE_STATE_FILE);
-    } catch (err) {
-      logger.error('[AutoUpdater] Failed to clear update state:', err.message);
+    } catch (clearError) {
+      logger.error('[AutoUpdater] Failed to clear update state:', clearError.message);
     }
   }
 
@@ -52,54 +54,52 @@ class AutoUpdater {
     if (!SUPPORTS_AUTO_UPDATE) return;
     try {
       if (!fs.existsSync(UPDATE_STATE_FILE)) return;
-      const state = JSON.parse(fs.readFileSync(UPDATE_STATE_FILE, 'utf8'));
-      const ageMs = Date.now() - (state.downloadedAt || 0);
-      const ageDays = ageMs / (1000 * 60 * 60 * 24);
-      if (ageDays >= UPDATE_EXPIRY_DAYS) {
-        logger.log(`[AutoUpdater] Pending update v${state.version} is ${Math.floor(ageDays)} days old — prompting install`);
+      const pendingUpdateState = JSON.parse(fs.readFileSync(UPDATE_STATE_FILE, 'utf8'));
+      const downloadAgeMilliseconds = Date.now() - (pendingUpdateState.downloadedAt || 0);
+      const downloadAgeDays = downloadAgeMilliseconds / (1000 * 60 * 60 * 24);
+      if (downloadAgeDays >= UPDATE_EXPIRY_DAYS) {
+        logger.log(`[AutoUpdater] Pending update v${pendingUpdateState.version} is ${Math.floor(downloadAgeDays)} days old — prompting install`);
         dialog.showMessageBox(this.mainWindow, {
           type: 'warning',
           title: 'Update Ready to Install',
-          message: `Version ${state.version} has been waiting ${Math.floor(ageDays)} days`,
+          message: `Version ${pendingUpdateState.version} has been waiting ${Math.floor(downloadAgeDays)} days`,
           detail: 'Restart Ambrosia POS now to apply the update.',
           buttons: ['Restart Now', 'Later'],
           defaultId: 0,
           cancelId: 1,
-        }).then(({ response }) => {
-          if (response === 0) {
+        }).then(({ response: buttonIndex }) => {
+          if (buttonIndex === 0) {
             this._clearUpdateState();
             autoUpdater.quitAndInstall(false, true);
           }
         });
       }
-    } catch (err) {
-      logger.error('[AutoUpdater] Failed to check pending update state:', err.message);
+    } catch (checkExpiredError) {
+      logger.error('[AutoUpdater] Failed to check pending update state:', checkExpiredError.message);
     }
   }
 
   _setupEvents() {
-    autoUpdater.on('update-available', (info) => {
-      logger.log('[AutoUpdater] Update available:', info.version);
-      this.pendingVersion = info.version;
+    autoUpdater.on('update-available', (updateInfo) => {
+      logger.log('[AutoUpdater] Update available:', updateInfo.version);
+      this.pendingVersion = updateInfo.version;
       this.isManualCheck = false;
 
       if (SUPPORTS_AUTO_UPDATE) {
-        // Windows: download silently
         this.onMenuUpdate({ label: 'Downloading Update...', enabled: false });
         autoUpdater.downloadUpdate();
       } else {
-        // macOS/Linux: notify and let user go to release page
         this.onMenuUpdate({
-          label: `Update Available: ${info.version}`,
+          label: `Update Available: ${updateInfo.version}`,
           enabled: true,
-          click: () => this._showUpdateAvailableDialog(info.version),
+          click: () => this._showUpdateAvailableDialog(updateInfo.version),
         });
-        this._sendToRenderer('update:available', { version: info.version });
+        this._sendToRenderer('update:available', { version: updateInfo.version });
       }
     });
 
-    autoUpdater.on('update-not-available', (info) => {
-      logger.log('[AutoUpdater] Up to date:', info.version);
+    autoUpdater.on('update-not-available', (updateInfo) => {
+      logger.log('[AutoUpdater] Up to date:', updateInfo.version);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
       if (this.isManualCheck) {
         this.isManualCheck = false;
@@ -107,33 +107,32 @@ class AutoUpdater {
           type: 'info',
           title: 'No Updates Available',
           message: 'You\'re up to date!',
-          detail: `Ambrosia POS ${info.version} is the latest version.`,
+          detail: `Ambrosia POS ${updateInfo.version} is the latest version.`,
           buttons: ['OK'],
         });
       }
     });
 
-    autoUpdater.on('download-progress', (progress) => {
-      logger.log('[AutoUpdater] Download progress:', `${progress.percent.toFixed(1)}%`);
+    autoUpdater.on('download-progress', (downloadProgress) => {
+      logger.log('[AutoUpdater] Download progress:', `${downloadProgress.percent.toFixed(1)}%`);
     });
 
-    // Only fires on Windows (only platform that downloads)
-    autoUpdater.on('update-downloaded', (info) => {
-      logger.log('[AutoUpdater] Update downloaded:', info.version);
-      this._saveUpdateState(info.version);
+    autoUpdater.on('update-downloaded', (updateInfo) => {
+      logger.log('[AutoUpdater] Update downloaded:', updateInfo.version);
+      this._saveUpdateState(updateInfo.version);
       this.onMenuUpdate({
-        label: `Restart to Update to ${info.version}`,
+        label: `Restart to Update to ${updateInfo.version}`,
         enabled: true,
         click: () => {
           this._clearUpdateState();
           autoUpdater.quitAndInstall(false, true);
         },
       });
-      this._sendToRenderer('update:downloaded', { version: info.version });
+      this._sendToRenderer('update:downloaded', { version: updateInfo.version });
     });
 
-    autoUpdater.on('error', (error) => {
-      logger.error('[AutoUpdater] Error:', error.message);
+    autoUpdater.on('error', (updaterError) => {
+      logger.error('[AutoUpdater] Error:', updaterError.message);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
       if (this.isManualCheck) {
         this.isManualCheck = false;
@@ -141,7 +140,7 @@ class AutoUpdater {
           type: 'error',
           title: 'Update Error',
           message: 'Could not check for updates',
-          detail: error.message,
+          detail: updaterError.message,
           buttons: ['OK'],
         });
       }
@@ -170,8 +169,8 @@ class AutoUpdater {
       buttons: ['Download', 'Later'],
       defaultId: 0,
       cancelId: 1,
-    }).then(({ response }) => {
-      if (response === 0) {
+    }).then(({ response: buttonIndex }) => {
+      if (buttonIndex === 0) {
         this._openReleasePage(version);
       }
     });
@@ -184,16 +183,16 @@ class AutoUpdater {
     shell.openExternal(url);
   }
 
-  _sendToRenderer(channel, data) {
+  _sendToRenderer(channel, payload) {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(channel, data);
+      this.mainWindow.webContents.send(channel, payload);
     }
   }
 
   checkForUpdates() {
     this.onMenuUpdate({ label: 'Checking for Updates...', enabled: false });
-    autoUpdater.checkForUpdates().catch((err) => {
-      logger.error('[AutoUpdater] Scheduled check failed:', err.message);
+    autoUpdater.checkForUpdates().catch((checkError) => {
+      logger.error('[AutoUpdater] Scheduled check failed:', checkError.message);
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
     });
   }
@@ -201,24 +200,24 @@ class AutoUpdater {
   checkForUpdatesManual() {
     this.isManualCheck = true;
     this.onMenuUpdate({ label: 'Checking for Updates...', enabled: false });
-    autoUpdater.checkForUpdates().catch((err) => {
+    autoUpdater.checkForUpdates().catch((checkError) => {
       this.isManualCheck = false;
       this.onMenuUpdate({ label: 'Check for Updates...', enabled: true });
       dialog.showMessageBox(this.mainWindow, {
         type: 'error',
         title: 'Update Error',
         message: 'Could not check for updates',
-        detail: err.message,
+        detail: checkError.message,
         buttons: ['OK'],
       });
     });
   }
 
-  startPeriodicChecks(intervalMs = 6 * 60 * 60 * 1000) {
+  startPeriodicChecks(intervalMilliseconds = 6 * 60 * 60 * 1000) {
     this.checkForUpdates();
     this.checkInterval = setInterval(() => {
       this.checkForUpdates();
-    }, intervalMs);
+    }, intervalMilliseconds);
   }
 
   stopPeriodicChecks() {
@@ -234,5 +233,3 @@ class AutoUpdater {
     ipcMain.removeHandler('update:open-release');
   }
 }
-
-module.exports = AutoUpdater;

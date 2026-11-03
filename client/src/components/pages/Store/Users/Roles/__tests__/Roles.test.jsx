@@ -14,9 +14,7 @@ jest.mock("next-intl", () => {
   return { useTranslations: () => roleTranslations };
 });
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/hooks/useNavigation", () => ({
   useNavigation: () => ({ isAdmin: mockIsAdmin }),
@@ -163,6 +161,7 @@ describe("Roles", () => {
       name: "cashier",
       isAdmin: false,
       permissions: [],
+      currentUserPin: "",
     }));
     expect(addToast).toHaveBeenCalledWith({
       title: "roles.actions.createSuccess",
@@ -186,6 +185,7 @@ describe("Roles", () => {
       name: "cashier",
       isAdmin: false,
       permissions: ["orders_create", "products_read", "categories_read", "payments_read"],
+      currentUserPin: "",
     }));
   });
 
@@ -205,10 +205,11 @@ describe("Roles", () => {
       name: "cashier",
       isAdmin: false,
       permissions: ["orders_create", "categories_read", "payments_read"],
+      currentUserPin: "",
     }));
   });
 
-  it("shows an error toast and keeps the create modal open when role creation fails", async () => {
+  it("keeps the create modal open when role creation fails", async () => {
     const createRole = jest.fn(() => Promise.reject(new Error("create failed")));
 
     renderRoles({ createRole });
@@ -224,46 +225,13 @@ describe("Roles", () => {
       name: "cashier",
       isAdmin: false,
       permissions: [],
+      currentUserPin: "",
     }));
-    expect(addToast).toHaveBeenCalledWith({
-      title: "roles.actions.createErrorTitle",
-      description: "roles.actions.createErrorDescription",
-      color: "danger",
-    });
     expect(screen.getByText("roles.create.title")).toBeInTheDocument();
   });
 
-  it("shows duplicate role feedback when role creation conflicts", async () => {
-    const createConflictError = new Error("role already exists");
-    createConflictError.status = 409;
-    const createRole = jest.fn(() => Promise.reject(createConflictError));
-
-    renderRoles({ createRole });
-
-    fireEvent.click(screen.getByText("roles.actions.new"));
-    fireEvent.click(screen.getByText("set role name"));
-
-    await waitFor(() => expect(screen.getByTestId("role-name")).toHaveTextContent("cashier"));
-
-    fireEvent.click(screen.getByText("roles.actions.create"));
-
-    await waitFor(() => expect(createRole).toHaveBeenCalledWith({
-      name: "cashier",
-      isAdmin: false,
-      permissions: [],
-    }));
-    expect(addToast).toHaveBeenCalledWith({
-      title: "roles.actions.createConflictTitle",
-      description: "roles.actions.createConflictDescription",
-      color: "warning",
-    });
-    expect(screen.getByText("roles.create.title")).toBeInTheDocument();
-  });
-
-  it("shows admin-required feedback when admin role creation is forbidden", async () => {
-    const adminRequiredError = new Error("admin required");
-    adminRequiredError.status = 403;
-    const createRole = jest.fn(() => Promise.reject(adminRequiredError));
+  it("submits isAdmin true when the admin checkbox is set", async () => {
+    const createRole = jest.fn(() => Promise.resolve("role-id"));
 
     renderRoles({ createRole });
 
@@ -273,17 +241,10 @@ describe("Roles", () => {
     fireEvent.click(screen.getByText("roles.actions.create"));
 
     await waitFor(() => expect(createRole).toHaveBeenCalledWith(expect.objectContaining({ isAdmin: true })));
-    expect(addToast).toHaveBeenCalledWith({
-      title: "roles.actions.adminRequiredTitle",
-      description: "roles.actions.adminRequiredDescription",
-      color: "warning",
-    });
   });
 
-  it("shows admin-required feedback when admin role promotion is forbidden", async () => {
-    const adminRequiredError = new Error("admin required");
-    adminRequiredError.status = 403;
-    const updateRoleWithPermissions = jest.fn(() => Promise.reject(adminRequiredError));
+  it("submits isAdmin true when the admin checkbox is set while editing", async () => {
+    const updateRoleWithPermissions = jest.fn(() => Promise.resolve());
 
     renderRoles({
       roles: [{ id: "role-id", role: "cashier", isAdmin: false }],
@@ -300,11 +261,29 @@ describe("Roles", () => {
       "role-id",
       expect.objectContaining({ isAdmin: true }),
     ));
-    expect(addToast).toHaveBeenCalledWith({
-      title: "roles.actions.adminRequiredTitle",
-      description: "roles.actions.adminRequiredDescription",
-      color: "warning",
+  });
+
+  it("keeps the edit modal open when role update fails", async () => {
+    const updateRoleWithPermissions = jest.fn(() => Promise.reject(new Error("update failed")));
+
+    renderRoles({
+      roles: [{ id: "role-id", role: "cashier", isAdmin: false }],
+      updateRoleWithPermissions,
+      getRolePermissions: jest.fn(() => Promise.resolve([])),
     });
+
+    fireEvent.click(screen.getByText("edit role"));
+    await waitFor(() => expect(screen.getByText("roles.edit.title")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("set edit role name"));
+    fireEvent.click(screen.getByText("roles.actions.save"));
+
+    await waitFor(() => expect(updateRoleWithPermissions).toHaveBeenCalledWith("role-id", {
+      name: "manager",
+      isAdmin: false,
+      permissions: [],
+      currentUserPin: "",
+    }));
+    expect(screen.getByText("roles.edit.title")).toBeInTheDocument();
   });
 
   it("does not create a role twice while creation is pending", async () => {
@@ -382,6 +361,7 @@ describe("Roles", () => {
       name: "manager",
       isAdmin: false,
       permissions: [],
+      currentUserPin: "",
     }));
   });
 
@@ -410,7 +390,7 @@ describe("Roles", () => {
     await waitFor(() => expect(screen.queryByText("roles.actions.deleteConfirmTitle")).not.toBeInTheDocument());
   });
 
-  it("shows delete-specific error feedback when role deletion fails", async () => {
+  it("keeps the delete confirmation open when role deletion fails", async () => {
     const deleteRole = jest.fn(() => Promise.reject(new Error("delete failed")));
 
     renderRoles({
@@ -424,12 +404,7 @@ describe("Roles", () => {
 
     fireEvent.click(screen.getByText("roles.actions.delete"));
 
-    await waitFor(() => expect(deleteRole).toHaveBeenCalledWith("role-id"));
-    expect(addToast).toHaveBeenCalledWith({
-      title: "roles.actions.saveErrorTitle",
-      description: "roles.actions.deleteError",
-      color: "danger",
-    });
+    await waitFor(() => expect(deleteRole).toHaveBeenCalledWith("role-id", ""));
     expect(screen.getByText("roles.actions.deleteConfirmTitle")).toBeInTheDocument();
   });
 });

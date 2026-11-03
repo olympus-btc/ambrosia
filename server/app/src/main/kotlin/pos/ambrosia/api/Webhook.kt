@@ -10,6 +10,7 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.logger
+import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.WalletAdminNotificationService
 import pos.ambrosia.utils.PhoenixServiceException
 import java.security.MessageDigest
@@ -27,7 +28,7 @@ fun Application.configurePhoenixWebhook() {
 
 fun Route.phoenixWebhook(walletAdminNotificationService: WalletAdminNotificationService = WalletAdminNotificationService()) {
     post("/webhook/phoenixd") {
-        val secret = call.application.getPhoenixWebhookSecret()
+        val secret = getPhoenixWebhookSecret()
         if (secret.isNullOrBlank()) {
             logger.error("Phoenix webhook-secret not configured in phoenix.conf or application config")
             throw PhoenixServiceException("Missing phoenix webhook-secret; set webhook-secret in phoenix.conf")
@@ -95,6 +96,6 @@ private fun hexToBytes(hex: String): ByteArray? {
     }
 }
 
-private fun Application.getPhoenixWebhookSecret(): String? =
-    environment.config.propertyOrNull("phoenix.webhook-secret")?.getString()
+private fun getPhoenixWebhookSecret(): String? =
+    SecretsStore.getSecretOrNull("phoenixd-webhook-secret")
         ?: AppConfig.getPhoenixProperty("webhook-secret")

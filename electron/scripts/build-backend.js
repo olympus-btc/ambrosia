@@ -1,9 +1,9 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
-const SERVER_DIR = path.join(__dirname, '..', '..', 'server');
-const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'backend');
+const SERVER_DIRECTORY = path.join(import.meta.dirname, '..', '..', 'server');
+const RESOURCES_DIRECTORY = path.join(import.meta.dirname, '..', 'resources', 'backend');
 
 function main() {
   console.log('===========================================');
@@ -11,20 +11,16 @@ function main() {
   console.log('===========================================\n');
 
   try {
-    // Create resources directory
-    if (!fs.existsSync(RESOURCES_DIR)) {
-      fs.mkdirSync(RESOURCES_DIR, { recursive: true });
-      console.log(`✓ Created directory: ${RESOURCES_DIR}\n`);
+    if (!fs.existsSync(RESOURCES_DIRECTORY)) {
+      fs.mkdirSync(RESOURCES_DIRECTORY, { recursive: true });
+      console.log(`✓ Created directory: ${RESOURCES_DIRECTORY}\n`);
     }
 
-    // Build JAR with Gradle
     console.log('Building JAR with Gradle...');
-    console.log(`Working directory: ${SERVER_DIR}\n`);
+    console.log(`Working directory: ${SERVER_DIRECTORY}\n`);
 
-    // Use appropriate Gradle wrapper for platform
     let gradleCommand;
     if (process.platform === 'win32') {
-      // On Windows, use .\ prefix to execute batch file from current directory
       gradleCommand = '.\\gradlew.bat clean jar';
     } else {
       gradleCommand = './gradlew clean jar';
@@ -32,26 +28,25 @@ function main() {
     console.log(`Running: ${gradleCommand}\n`);
 
     execSync(gradleCommand, {
-      cwd: SERVER_DIR,
+      cwd: SERVER_DIRECTORY,
       stdio: 'inherit',
       shell: true,
     });
 
     console.log('\n✓ JAR build complete\n');
 
-    // Find the JAR file dynamically
-    const libsDir = path.join(SERVER_DIR, 'app', 'build', 'libs');
-    const jarFiles = fs.readdirSync(libsDir).filter((file) => file.startsWith('ambrosia-') && file.endsWith('.jar'));
+    const libsDirectory = path.join(SERVER_DIRECTORY, 'app', 'build', 'libs');
+    const jarFilenames = fs.readdirSync(libsDirectory).filter((jarFilename) => jarFilename.startsWith('ambrosia-') && jarFilename.endsWith('.jar'));
 
-    if (jarFiles.length === 0) {
-      throw new Error(`No JAR file found in: ${libsDir}`);
+    if (jarFilenames.length === 0) {
+      throw new Error(`No JAR file found in: ${libsDirectory}`);
     }
 
-    if (jarFiles.length > 1) {
-      console.log(`⚠ Multiple JAR files found, using the first one: ${jarFiles[0]}`);
+    if (jarFilenames.length > 1) {
+      console.log(`⚠ Multiple JAR files found, using the first one: ${jarFilenames[0]}`);
     }
 
-    const jarSourcePath = path.join(libsDir, jarFiles[0]);
+    const jarSourcePath = path.join(libsDirectory, jarFilenames[0]);
 
     if (!fs.existsSync(jarSourcePath)) {
       throw new Error(`JAR not found at: ${jarSourcePath}`);
@@ -59,24 +54,21 @@ function main() {
 
     console.log(`Found JAR: ${jarSourcePath}`);
 
-    // Get JAR size
-    const stats = fs.statSync(jarSourcePath);
-    const sizeInMB = (stats.size / 1024 / 1024).toFixed(2);
-    console.log(`JAR size: ${sizeInMB} MB\n`);
+    const jarSourceStats = fs.statSync(jarSourcePath);
+    const jarSourceSizeInMB = (jarSourceStats.size / 1024 / 1024).toFixed(2);
+    console.log(`JAR size: ${jarSourceSizeInMB} MB\n`);
 
-    // Copy JAR to resources
-    const jarDestPath = path.join(RESOURCES_DIR, 'ambrosia.jar');
-    console.log(`Copying to: ${jarDestPath}`);
+    const jarDestinationPath = path.join(RESOURCES_DIRECTORY, 'ambrosia.jar');
+    console.log(`Copying to: ${jarDestinationPath}`);
 
-    fs.copyFileSync(jarSourcePath, jarDestPath);
+    fs.copyFileSync(jarSourcePath, jarDestinationPath);
 
     console.log('✓ JAR copied successfully\n');
 
-    // Verify copy
-    if (fs.existsSync(jarDestPath)) {
-      const destStats = fs.statSync(jarDestPath);
-      const destSizeInMB = (destStats.size / 1024 / 1024).toFixed(2);
-      console.log(`✓ Verified: ${jarDestPath} (${destSizeInMB} MB)`);
+    if (fs.existsSync(jarDestinationPath)) {
+      const jarDestinationStats = fs.statSync(jarDestinationPath);
+      const jarDestinationSizeInMB = (jarDestinationStats.size / 1024 / 1024).toFixed(2);
+      console.log(`✓ Verified: ${jarDestinationPath} (${jarDestinationSizeInMB} MB)`);
     } else {
       throw new Error('Failed to verify JAR copy');
     }
@@ -84,8 +76,8 @@ function main() {
     console.log('\n===========================================');
     console.log('  ✓ Backend build complete!');
     console.log('===========================================');
-  } catch (error) {
-    console.error('\n✗ Backend build failed:', error.message);
+  } catch (backendBuildError) {
+    console.error('\n✗ Backend build failed:', backendBuildError.message);
     process.exit(1);
   }
 }

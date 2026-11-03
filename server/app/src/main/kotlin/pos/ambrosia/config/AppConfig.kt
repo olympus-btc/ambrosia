@@ -18,6 +18,7 @@ object AppConfig {
     private val properties = Properties()
     private val phoenixProperties = Properties()
     private const val PHOENIX_SEED_PATH = ".phoenix/seed.dat"
+    private const val LOCAL_PHOENIXD_URL = "http://localhost:9740"
 
     fun loadConfig() {
         val configFile = Path(datadir, "ambrosia.conf").toString()
@@ -64,4 +65,12 @@ object AppConfig {
         key: String,
         defaultValue: String? = null,
     ): String? = phoenixProperties.getProperty(key) ?: defaultValue
+
+    fun getLocalPhoenixdUrl(): String = LOCAL_PHOENIXD_URL
+
+    fun getLocalPhoenixdPassword(): String {
+        loadConfig()
+        return getPhoenixProperty("http-password")
+            ?: throw Exception("phoenixd http-password not found in phoenix.conf")
+    }
 }

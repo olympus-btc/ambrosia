@@ -5,12 +5,16 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
+import pos.ambrosia.db.tables.PaymentMethodsTable
+import pos.ambrosia.db.tables.PrinterConfigCashDrawerPaymentMethodsTable
 import pos.ambrosia.db.tables.PrinterConfigEntity
 import pos.ambrosia.db.tables.PrinterConfigsTable
 import pos.ambrosia.logger
+import pos.ambrosia.models.CashDrawerPin
 import pos.ambrosia.models.PrinterConfig
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
@@ -34,7 +38,36 @@ open class PrinterConfigService {
             isDefault = entity.isDefault,
             enabled = entity.enabled,
             createdAt = entity.createdAt,
+            cashDrawerEnabled = entity.cashDrawerEnabled,
+            cashDrawerPin = CashDrawerPin.valueOf(entity.cashDrawerPin),
+            cashDrawerPaymentMethodIds = findCashDrawerPaymentMethodIds(entity.id),
+            openCashDrawerOnRefund = entity.openCashDrawerOnRefund,
+            openCashDrawerOnShiftOpen = entity.openCashDrawerOnShiftOpen,
+            openCashDrawerOnShiftClose = entity.openCashDrawerOnShiftClose,
         )
+
+    private fun findCashDrawerPaymentMethodIds(printerConfigId: EntityID<UUID>): List<String> =
+        PrinterConfigCashDrawerPaymentMethodsTable
+            .selectAll()
+            .where { PrinterConfigCashDrawerPaymentMethodsTable.printerConfigId eq printerConfigId }
+            .map { cashDrawerPaymentMethodRow ->
+                cashDrawerPaymentMethodRow[PrinterConfigCashDrawerPaymentMethodsTable.paymentMethodId].value.toString()
+            }
+
+    private fun replaceCashDrawerPaymentMethodIds(
+        printerConfigId: EntityID<UUID>,
+        paymentMethodIds: List<String>,
+    ) {
+        PrinterConfigCashDrawerPaymentMethodsTable.deleteWhere {
+            PrinterConfigCashDrawerPaymentMethodsTable.printerConfigId eq printerConfigId
+        }
+        paymentMethodIds.distinct().forEach { paymentMethodId ->
+            PrinterConfigCashDrawerPaymentMethodsTable.insert { cashDrawerPaymentMethodInsert ->
+                cashDrawerPaymentMethodInsert[this.printerConfigId] = printerConfigId
+                cashDrawerPaymentMethodInsert[this.paymentMethodId] = EntityID(UUID.fromString(paymentMethodId), PaymentMethodsTable)
+            }
+        }
+    }
 
     private fun configExists(
         printerType: PrinterType,
@@ -77,7 +110,7 @@ open class PrinterConfigService {
                 clearDefaultForType(request.printerType)
             }
 
-            val configId =
+            val createdConfig =
                 PrinterConfigEntity
                     .new(UUID.randomUUID()) {
                         this.printerType = request.printerType.name
@@ -86,8 +119,14 @@ open class PrinterConfigService {
                         this.isDefault = request.isDefault
                         this.enabled = request.enabled
                         this.createdAt = LocalDateTime.now().toString()
-                    }.id.value
-                    .toString()
+                        this.cashDrawerEnabled = request.cashDrawerEnabled
+                        this.cashDrawerPin = request.cashDrawerPin.name
+                        this.openCashDrawerOnRefund = request.openCashDrawerOnRefund
+                        this.openCashDrawerOnShiftOpen = request.openCashDrawerOnShiftOpen
+                        this.openCashDrawerOnShiftClose = request.openCashDrawerOnShiftClose
+                    }
+            replaceCashDrawerPaymentMethodIds(createdConfig.id, request.cashDrawerPaymentMethodIds)
+            val configId = createdConfig.id.value.toString()
 
             logger.info("Printer config created: ${request.printerType} ${request.printerName}")
             configId
@@ -153,6 +192,13 @@ open class PrinterConfigService {
                 ?.let { toModel(it) }
         }
 
+    open fun getEnabledWithCashDrawer(): List<PrinterConfig> =
+        transaction {
+            PrinterConfigEntity
+                .find { (PrinterConfigsTable.enabled eq true) and (PrinterConfigsTable.cashDrawerEnabled eq true) }
+                .map { printerConfigEntity -> toModel(printerConfigEntity) }
+        }
+
     open fun getEnabledByType(printerType: PrinterType): List<PrinterConfig> =
         transaction {
             PrinterConfigEntity
@@ -196,6 +242,18 @@ open class PrinterConfigService {
             entity.templateName = newTemplateName
             entity.isDefault = newDefault
             entity.enabled = newEnabled
+            request.cashDrawerEnabled?.let { newCashDrawerEnabled -> entity.cashDrawerEnabled = newCashDrawerEnabled }
+            request.cashDrawerPin?.let { newCashDrawerPin -> entity.cashDrawerPin = newCashDrawerPin.name }
+            request.openCashDrawerOnRefund?.let { newOpenCashDrawerOnRefund -> entity.openCashDrawerOnRefund = newOpenCashDrawerOnRefund }
+            request.openCashDrawerOnShiftOpen?.let { newOpenCashDrawerOnShiftOpen ->
+                entity.openCashDrawerOnShiftOpen = newOpenCashDrawerOnShiftOpen
+            }
+            request.openCashDrawerOnShiftClose?.let { newOpenCashDrawerOnShiftClose ->
+                entity.openCashDrawerOnShiftClose = newOpenCashDrawerOnShiftClose
+            }
+            request.cashDrawerPaymentMethodIds?.let { newCashDrawerPaymentMethodIds ->
+                replaceCashDrawerPaymentMethodIds(entity.id, newCashDrawerPaymentMethodIds)
+            }
 
             PrinterConfigUpdateStatus.UPDATED
         }

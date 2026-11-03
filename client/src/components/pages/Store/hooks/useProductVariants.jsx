@@ -34,6 +34,7 @@ export function useProductVariants() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestPayload),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
     const createdResource = await parseJsonResponse(postResponse, null);
     if (!postResponse.ok) {
@@ -51,6 +52,7 @@ export function useProductVariants() {
         body: JSON.stringify(requestPayload),
       } : {}),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
     if (!mutationResponse.ok) {
       notifyError(mutationResponse.status);
@@ -60,7 +62,7 @@ export function useProductVariants() {
   }, [notifyError]);
 
   const fetchProductDetail = useCallback(async (productId) => {
-    const productDetailResponse = await httpClient(`/products/${productId}`);
+    const productDetailResponse = await httpClient(`/products/${productId}`, { skipForbiddenRedirect: true });
     const productDetailData = await parseJsonResponse(productDetailResponse, null);
     if (!productDetailResponse.ok) {
       notifyError(productDetailResponse.status);

@@ -17,7 +17,7 @@ describe("Step 2 User Account", () => {
 
   it("renders username, password, and confirmation fields", async () => {
     await act(async () => {
-      render(<UserAccountStep data={defaultData} onChange={mockChange} />);
+      render(<UserAccountStep userAccountData={defaultData} onChange={mockChange} />);
     });
 
     expect(screen.getByPlaceholderText("step2.fields.userNamePlaceholder")).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("Step 2 User Account", () => {
 
   it("calls onChange when username is typed", async () => {
     await act(async () => {
-      render(<UserAccountStep data={defaultData} onChange={mockChange} />);
+      render(<UserAccountStep userAccountData={defaultData} onChange={mockChange} />);
     });
 
     const userInput = screen.getByPlaceholderText("step2.fields.userNamePlaceholder");
@@ -45,7 +45,7 @@ describe("Step 2 User Account", () => {
 
   it("calls onChange and updates password strength", async () => {
     const { rerender } = render(
-      <UserAccountStep data={defaultData} onChange={mockChange} />,
+      <UserAccountStep userAccountData={defaultData} onChange={mockChange} />,
     );
 
     const passwordInput = screen.getByPlaceholderText("step2.fields.passwordPlaceholder");
@@ -56,7 +56,7 @@ describe("Step 2 User Account", () => {
 
     rerender(
       <UserAccountStep
-        data={{ ...defaultData, userPassword: "abc123!!" }}
+        userAccountData={{ ...defaultData, userPassword: "abc123!!" }}
         onChange={mockChange}
       />,
     );
@@ -75,7 +75,7 @@ describe("Step 2 User Account", () => {
     await act(async () => {
       render(
         <UserAccountStep
-          data={{ ...defaultData, userPassword: "password123", userPasswordConfirmation: "different" }}
+          userAccountData={{ ...defaultData, userPassword: "password123", userPasswordConfirmation: "different" }}
           onChange={mockChange}
         />,
       );
@@ -86,7 +86,7 @@ describe("Step 2 User Account", () => {
 
   it("toggles pin visibility when clicking the eye icon", async () => {
     await act(async () => {
-      render(<UserAccountStep data={{ userName: "", userPassword: "abc123!!" }} onChange={mockChange} />);
+      render(<UserAccountStep userAccountData={{ userName: "", userPassword: "abc123!!" }} onChange={mockChange} />);
     });
 
     const toggleButtons = screen.getAllByRole("button");
@@ -106,7 +106,7 @@ describe("Step 2 User Account", () => {
   });
 
   it("toggles password visibility when clicking the eye icon", async () => {
-    render(<UserAccountStep data={{ userName: "", userPassword: "abc123!!" }} onChange={mockChange} />);
+    render(<UserAccountStep userAccountData={{ userName: "", userPassword: "abc123!!" }} onChange={mockChange} />);
 
     const toggleButtons = screen.getAllByRole("button");
     const input = screen.getByPlaceholderText("step2.fields.passwordPlaceholder");

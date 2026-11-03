@@ -13,8 +13,8 @@ object UsersTable : SQLiteUUIDTable("users") {
     val walletToken = varchar("wallet_token", 1000).nullable()
     val isDeleted = bool("is_deleted").default(false)
     val roleId = optReference("role_id", RolesTable)
-    val email = varchar("email", 255).nullable()
-    val phone = varchar("phone", 50).nullable()
+    val email = text("email").nullable()
+    val phone = text("phone").nullable()
 }
 
 class UserEntity(

@@ -11,8 +11,8 @@ jest.mock("@heroui/react", () => ({
 }));
 
 jest.mock("../ElementRow", () => ({
-  TemplateElementRow: ({ element }) => (
-    <div data-testid={`row-${element.localId}`} />
+  TemplateElementRow: ({ templateElement }) => (
+    <div data-testid={`row-${templateElement.localId}`} />
   ),
 }));
 
@@ -23,7 +23,7 @@ describe("TemplateElementsEditor", () => {
     const onAdd = jest.fn();
     render(
       <TemplateElementsEditor
-        elements={[{ localId: "one" }, { localId: "two" }]}
+        templateElements={[{ localId: "one" }, { localId: "two" }]}
         onChange={jest.fn()}
         onAdd={onAdd}
         onMove={jest.fn()}

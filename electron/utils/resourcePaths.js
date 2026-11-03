@@ -1,31 +1,33 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+import fs from 'fs';
+import { createRequire } from 'module';
+import os from 'os';
+import path from 'path';
 
+const require = createRequire(import.meta.url);
 const { app } = require('electron');
 
-function getPlatform() {
+export function getPlatform() {
   const platform = process.platform;
-  const arch = process.arch;
+  const architecture = process.arch;
 
   if (platform === 'darwin') {
-    return arch === 'arm64' ? 'macos-arm64' : 'macos-x64';
+    return architecture === 'arm64' ? 'macos-arm64' : 'macos-x64';
   } else if (platform === 'win32') {
-    return arch === 'arm64' ? 'win-arm64' : 'win-x64';
+    return architecture === 'arm64' ? 'win-arm64' : 'win-x64';
   } else if (platform === 'linux') {
-    return arch === 'arm64' ? 'linux-arm64' : 'linux-x64';
+    return architecture === 'arm64' ? 'linux-arm64' : 'linux-x64';
   }
 
   throw new Error(`Unsupported platform: ${platform}`);
 }
 
-function isDevelopment() {
+export function isDevelopment() {
   return process.env.NODE_ENV === 'development' || !app.isPackaged;
 }
 
-function getBasePath() {
+export function getBasePath() {
   if (isDevelopment()) {
-    return path.join(__dirname, '..');
+    return path.join(import.meta.dirname, '..');
   }
   return process.resourcesPath;
 }
@@ -37,7 +39,7 @@ function assertExists(filePath, label) {
   return filePath;
 }
 
-function getJavaPath() {
+export function getJavaPath() {
   if (isDevelopment()) {
     return 'java';
   }
@@ -49,23 +51,23 @@ function getJavaPath() {
   return assertExists(jrePath, 'Java runtime');
 }
 
-function getBackendJarPath() {
+export function getBackendJarPath() {
   if (isDevelopment()) {
-    const libsDir = path.join(__dirname, '..', '..', 'server', 'app', 'build', 'libs');
-    const jars = fs.readdirSync(libsDir).filter(
-      (f) => f.startsWith('ambrosia-') && f.endsWith('.jar'),
+    const libsDirectory = path.join(import.meta.dirname, '..', '..', 'server', 'app', 'build', 'libs');
+    const jarFilenames = fs.readdirSync(libsDirectory).filter(
+      (jarFilename) => jarFilename.startsWith('ambrosia-') && jarFilename.endsWith('.jar'),
     );
-    if (jars.length === 0) {
-      throw new Error(`No backend JAR found in ${libsDir}. Run: cd server && ./gradlew jar`);
+    if (jarFilenames.length === 0) {
+      throw new Error(`No backend JAR found in ${libsDirectory}. Run: cd server && ./gradlew jar`);
     }
-    return path.join(libsDir, jars[0]);
+    return path.join(libsDirectory, jarFilenames[0]);
   }
 
   const jarPath = path.join(getBasePath(), 'backend', 'ambrosia.jar');
   return assertExists(jarPath, 'Backend JAR');
 }
 
-function getPhoenixdPath() {
+export function getPhoenixdPath() {
   if (isDevelopment()) {
     return 'phoenixd';
   }
@@ -77,58 +79,38 @@ function getPhoenixdPath() {
   return assertExists(phoenixdPath, 'Phoenixd binary');
 }
 
-function getClientPath() {
+export function getClientPath() {
   if (isDevelopment()) {
-    return path.join(__dirname, '..', '..', 'client');
+    return path.join(import.meta.dirname, '..', '..', 'client');
   }
 
   const clientPath = path.join(getBasePath(), 'client');
   return assertExists(clientPath, 'Next.js client');
 }
 
-function getDataDirectory() {
+export function getDataDirectory() {
   return path.join(os.homedir(), '.Ambrosia-POS');
 }
 
-function getPhoenixDataDirectory() {
+export function getPhoenixDataDirectory() {
   return path.join(os.homedir(), '.phoenix');
 }
 
-function getLogsDirectory() {
+export function getLogsDirectory() {
   return path.join(getDataDirectory(), 'logs');
 }
 
-function getNodePath() {
+export function getNodePath() {
   if (isDevelopment()) {
-    // For development, use the system's node
     return 'node';
   }
 
-  // For production, use the included standalone Node.js binary
   const platform = getPlatform();
   const nodeExecutable = process.platform === 'win32' ? 'node.exe' : 'node';
 
   if (process.platform === 'win32') {
-    // Windows - node.exe is in the root of the node directory
-    const nodePath = path.join(getBasePath(), 'node', platform, nodeExecutable);
-    return nodePath;
-  } else {
-    // MacOS/Linux - node is in bin/
-    const nodePath = path.join(getBasePath(), 'node', platform, 'bin', nodeExecutable);
-    return nodePath;
+    return path.join(getBasePath(), 'node', platform, nodeExecutable);
   }
-}
 
-module.exports = {
-  getPlatform,
-  isDevelopment,
-  getBasePath,
-  getJavaPath,
-  getBackendJarPath,
-  getPhoenixdPath,
-  getClientPath,
-  getDataDirectory,
-  getPhoenixDataDirectory,
-  getLogsDirectory,
-  getNodePath,
-};
+  return path.join(getBasePath(), 'node', platform, 'bin', nodeExecutable);
+}

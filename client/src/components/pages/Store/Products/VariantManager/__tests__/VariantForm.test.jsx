@@ -128,6 +128,25 @@ describe("VariantForm", () => {
     );
   });
 
+  it("uses the custom price step for the price field's chevrons", () => {
+    const { onSave } = renderForm({ options: [], priceStep: 0.5 });
+
+    fireEvent.click(screen.getByLabelText("variantPrice increment"));
+    fireEvent.click(screen.getByText("saveVariant"));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ priceCents: 50 }));
+  });
+
+  it("warns with the actual price when it is not a multiple of the configured price step", () => {
+    renderForm({ options: [], priceStep: 0.1, initial: { priceCents: 25 } });
+    expect(screen.getByText(/priceStepMismatchWarning/)).toHaveTextContent("$ 0.25");
+  });
+
+  it("does not warn when the variant price matches the configured price step", () => {
+    renderForm({ options: [], priceStep: 0.1, initial: { priceCents: 30 } });
+    expect(screen.queryByText(/priceStepMismatchWarning/)).not.toBeInTheDocument();
+  });
+
   it("saves a zero quantity when the product does not track stock", () => {
     const { onSave } = renderForm({
       options: [],

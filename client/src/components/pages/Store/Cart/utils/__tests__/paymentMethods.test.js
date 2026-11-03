@@ -1,5 +1,6 @@
 import {
   classifyPaymentMethod,
+  getPaymentMethodTranslationKey,
   PAYMENT_METHODS,
 } from "../paymentMethods";
 
@@ -20,9 +21,45 @@ describe("classifyPaymentMethod", () => {
     expect(classifyPaymentMethod("Card")).toBe(PAYMENT_METHODS.CARD);
   });
 
+  it("classifies bank transfer methods in english and spanish", () => {
+    expect(classifyPaymentMethod("Bank Transfer")).toBe(PAYMENT_METHODS.TRANSFER);
+    expect(classifyPaymentMethod("Transferencia")).toBe(PAYMENT_METHODS.TRANSFER);
+    expect(classifyPaymentMethod("Wire Transfer")).toBe(PAYMENT_METHODS.TRANSFER);
+    expect(classifyPaymentMethod("ACH")).toBe(PAYMENT_METHODS.TRANSFER);
+  });
+
+  it("classifies transfer methods even when the name also contains a card keyword", () => {
+    expect(classifyPaymentMethod("Credit Transfer")).toBe(PAYMENT_METHODS.TRANSFER);
+    expect(classifyPaymentMethod("Card Wire Transfer")).toBe(PAYMENT_METHODS.TRANSFER);
+  });
+
+  it("only matches ACH as a whole word, not as a substring", () => {
+    expect(classifyPaymentMethod("Mach")).toBeNull();
+    expect(classifyPaymentMethod("Attach")).toBeNull();
+  });
+
   it("returns null for unknown methods", () => {
-    expect(classifyPaymentMethod("Bank Transfer")).toBeNull();
+    expect(classifyPaymentMethod("Voucher")).toBeNull();
     expect(classifyPaymentMethod("")).toBeNull();
     expect(classifyPaymentMethod()).toBeNull();
+  });
+});
+
+describe("getPaymentMethodTranslationKey", () => {
+  it("maps the built-in payment method names to their translation keys", () => {
+    expect(getPaymentMethodTranslationKey("Cash")).toBe("cash");
+    expect(getPaymentMethodTranslationKey("Credit Card")).toBe("creditCard");
+    expect(getPaymentMethodTranslationKey("Debit Card")).toBe("debitCard");
+    expect(getPaymentMethodTranslationKey("BTC")).toBe("btc");
+    expect(getPaymentMethodTranslationKey("Bank Transfer")).toBe("bankTransfer");
+  });
+
+  it("ignores casing and surrounding whitespace", () => {
+    expect(getPaymentMethodTranslationKey("  bank transfer ")).toBe("bankTransfer");
+  });
+
+  it("returns null for custom payment methods", () => {
+    expect(getPaymentMethodTranslationKey("Voucher")).toBeNull();
+    expect(getPaymentMethodTranslationKey()).toBeNull();
   });
 });

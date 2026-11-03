@@ -30,6 +30,7 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
   const [updating, setUpdating] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteCurrentUserPin, setDeleteCurrentUserPin] = useState("");
   const creatingRef = useRef(false);
   const updatingRef = useRef(false);
   const deletingRef = useRef(false);
@@ -37,6 +38,7 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
     name: "",
     isAdmin: false,
     permissions: [],
+    currentUserPin: "",
   });
 
   const filteredCatalog = useMemo(() => getVisiblePermissionCatalog({
@@ -75,21 +77,12 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         name: form.name.trim(),
         isAdmin: form.isAdmin,
         permissions: form.permissions,
+        currentUserPin: form.currentUserPin,
       });
-      setForm({ name: "", isAdmin: false, permissions: [] });
+      setForm({ name: "", isAdmin: false, permissions: [], currentUserPin: "" });
       setShowModal(false);
       addToast({ title: roleTranslations("roles.actions.createSuccess"), color: "success" });
-    } catch (error) {
-      const adminRequired = error?.status === 403 && form.isAdmin;
-      addToast({
-        title: adminRequired
-          ? roleTranslations("roles.actions.adminRequiredTitle")
-          : error?.status === 409 ? roleTranslations("roles.actions.createConflictTitle") : roleTranslations("roles.actions.createErrorTitle"),
-        description: adminRequired
-          ? roleTranslations("roles.actions.adminRequiredDescription")
-          : error?.status === 409 ? roleTranslations("roles.actions.createConflictDescription") : roleTranslations("roles.actions.createErrorDescription"),
-        color: adminRequired || error?.status === 409 ? "warning" : "danger",
-      });
+    } catch {
     } finally {
       creatingRef.current = false;
       setCreating(false);
@@ -105,6 +98,7 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         name: role.role,
         isAdmin: role.isAdmin,
         permissions: rolePerms.map((permission) => permission.name),
+        currentUserPin: "",
       });
       setShowEditModal(true);
     } catch {
@@ -121,22 +115,13 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
         name: form.name.trim(),
         isAdmin: form.isAdmin,
         permissions: form.permissions,
+        currentUserPin: form.currentUserPin,
       });
       setShowEditModal(false);
       setEditingRole(null);
-      setForm({ name: "", isAdmin: false, permissions: [] });
+      setForm({ name: "", isAdmin: false, permissions: [], currentUserPin: "" });
       addToast({ title: roleTranslations("roles.actions.saveSuccess"), color: "success" });
-    } catch (error) {
-      const adminRequired = error?.status === 403 && form.isAdmin;
-      addToast({
-        title: adminRequired
-          ? roleTranslations("roles.actions.adminRequiredTitle")
-          : error?.status === 409 ? roleTranslations("roles.actions.lastAdminErrorTitle") : roleTranslations("roles.actions.saveErrorTitle"),
-        description: adminRequired
-          ? roleTranslations("roles.actions.adminRequiredDescription")
-          : error?.status === 409 ? roleTranslations("roles.actions.lastAdminErrorDescription") : roleTranslations("roles.actions.saveErrorDescription"),
-        color: adminRequired || error?.status === 409 ? "warning" : "danger",
-      });
+    } catch {
     } finally {
       updatingRef.current = false;
       setUpdating(false);
@@ -149,15 +134,11 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
     deletingRef.current = true;
     try {
       setDeleting(true);
-      await deleteRole(roleToDelete.id);
+      await deleteRole(roleToDelete.id, deleteCurrentUserPin);
       setRoleToDelete(null);
+      setDeleteCurrentUserPin("");
       addToast({ title: roleTranslations("roles.actions.deleteSuccess"), color: "success" });
-    } catch (error) {
-      addToast({
-        title: error?.status === 409 ? roleTranslations("roles.actions.lastAdminErrorTitle") : roleTranslations("roles.actions.saveErrorTitle"),
-        description: error?.status === 409 ? roleTranslations("roles.actions.lastAdminErrorDescription") : roleTranslations("roles.actions.deleteError"),
-        color: error?.status === 409 ? "warning" : "danger",
-      });
+    } catch {
     } finally {
       deletingRef.current = false;
       setDeleting(false);
@@ -221,9 +202,14 @@ export function Roles({ roles, createRole, deleteRole, loading: loadingRoles, up
 
       <DeleteRoleModal
         role={roleToDelete}
-        onClose={() => setRoleToDelete(null)}
+        onClose={() => {
+          setRoleToDelete(null);
+          setDeleteCurrentUserPin("");
+        }}
         onConfirm={handleDeleteRole}
         deleting={deleting}
+        currentUserPin={deleteCurrentUserPin}
+        setCurrentUserPin={setDeleteCurrentUserPin}
       />
 
       {editingRole && (

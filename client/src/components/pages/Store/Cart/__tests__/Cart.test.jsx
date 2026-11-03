@@ -9,6 +9,7 @@ import { Cart } from "../Cart";
 
 const mockSetCart = jest.fn();
 const mockSetDiscount = jest.fn();
+const mockSetTip = jest.fn();
 const mockResetCartState = jest.fn();
 const mockHandlePay = jest.fn();
 const mockAddProduct = jest.fn();
@@ -26,6 +27,10 @@ jest.mock("../CashPaymentModal", () => ({
 
 jest.mock("../CardPaymentModal", () => ({
   CardPaymentModal: ({ isOpen }) => (isOpen ? <div>card-modal</div> : null),
+}));
+
+jest.mock("../TransferPaymentModal", () => ({
+  TransferPaymentModal: ({ isOpen }) => (isOpen ? <div>transfer-modal</div> : null),
 }));
 
 jest.mock("../SearchProducts", () => ({
@@ -69,6 +74,7 @@ jest.mock("../hooks/useCartOperations", () => ({
 }));
 
 const mockSetDiscountType = jest.fn();
+const mockSetTipType = jest.fn();
 
 jest.mock("../hooks/usePersistentCart", () => ({
   CART_STORAGE_KEY: "store-cart",
@@ -81,6 +87,10 @@ jest.mock("../hooks/usePersistentCart", () => ({
     setDiscount: mockSetDiscount,
     discountType: "percentage",
     setDiscountType: mockSetDiscountType,
+    tip: 0,
+    setTip: mockSetTip,
+    tipType: "percentage",
+    setTipType: mockSetTipType,
     isCartRestored: true,
     resetCartState: mockResetCartState,
   }),
@@ -127,6 +137,11 @@ jest.mock("../hooks/useCartPayment", () => ({
       onClose: jest.fn(),
     },
     cardPayment: {
+      config: null,
+      onComplete: jest.fn(),
+      onClose: jest.fn(),
+    },
+    transferPayment: {
       config: null,
       onComplete: jest.fn(),
       onClose: jest.fn(),

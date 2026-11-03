@@ -1,14 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import { createRequire } from 'module';
+import path from 'path';
 
+import { STARTUP } from '../utils/constants.js';
+import { healthCheck } from '../utils/healthCheck.js';
+import { logger } from '../utils/logger.js';
+import { getClientPath, getLogsDirectory, isDevelopment, getNodePath } from '../utils/resourcePaths.js';
+
+const require = createRequire(import.meta.url);
 const spawn = require('cross-spawn');
 const treeKill = require('tree-kill');
 
-const { checkNextJs } = require('../utils/healthCheck');
-const logger = require('../utils/logger');
-const { getClientPath, getLogsDirectory, isDevelopment, getNodePath } = require('../utils/resourcePaths');
-
-class NextJsService {
+export default class NextJsService {
   constructor() {
     this.process = null;
     this.status = 'stopped';
@@ -26,43 +29,40 @@ class NextJsService {
 
     try {
       const clientPath = getClientPath();
-      const logsDir = getLogsDirectory();
+      const logsDirectory = getLogsDirectory();
 
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
+      if (!fs.existsSync(logsDirectory)) {
+        fs.mkdirSync(logsDirectory, { recursive: true });
       }
 
-      const logFile = path.join(logsDir, `nextjs-${new Date().toISOString().split('T')[0]}.log`);
+      const logFile = path.join(logsDirectory, `nextjs-${new Date().toISOString().split('T')[0]}.log`);
       this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
-      const isDev = isDevelopment();
-      let command, args, cwd;
+      const isDevelopmentMode = isDevelopment();
+      let command, commandArguments, cwd;
 
-      if (isDev) {
+      if (isDevelopmentMode) {
         command = 'npm';
-        args = ['run', 'dev', '--', '-p', port.toString()];
+        commandArguments = ['run', 'dev', '--', '-p', port.toString()];
         cwd = clientPath;
       } else {
-        // Use standalone Node.js binary to run server.js
         command = getNodePath();
-        args = [path.join(clientPath, 'server.js')];
+        commandArguments = [path.join(clientPath, 'server.js')];
         cwd = clientPath;
       }
 
       logger.log(`[NextJsService] Starting Next.js at port ${port}...`);
-      logger.log(`[NextJsService] Command: ${command} ${args.join(' ')}`);
+      logger.log(`[NextJsService] Command: ${command} ${commandArguments.join(' ')}`);
       logger.log(`[NextJsService] Working directory: ${cwd}`);
       logger.log(`[NextJsService] Environment PORT: ${port}`);
 
-      // Use backend config passed as parameter (with fallback to defaults)
       const backendHost = backendConfig.host || 'localhost';
       const backendPort = backendConfig.port || '9154';
       const apiUrl = `http://${backendHost}:${backendPort}`;
 
       logger.log(`[NextJsService] Backend configuration: ${apiUrl}`);
 
-      // Verify server.js exists (only in production mode)
-      if (!isDev) {
+      if (!isDevelopmentMode) {
         const serverJsPath = path.join(cwd, 'server.js');
         if (!fs.existsSync(serverJsPath)) {
           throw new Error(`server.js not found at: ${serverJsPath}`);
@@ -88,7 +88,7 @@ class NextJsService {
       });
 
       logger.log(`[NextJsService] Spawning process...`);
-      const spawnedProcess = spawn(command, args, {
+      const spawnedProcess = spawn(command, commandArguments, {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
@@ -102,24 +102,24 @@ class NextJsService {
       }
       logger.log(`[NextJsService] Process spawned with PID: ${spawnedProcess.pid}`);
 
-      spawnedProcess.stdout.on('data', (data) => {
-        const message = data.toString();
-        logger.log(`[Next.js] ${message.trim()}`);
+      spawnedProcess.stdout.on('data', (chunk) => {
+        const outputText = chunk.toString();
+        logger.log(`[Next.js] ${outputText.trim()}`);
         if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ${message}`);
+          this.logStream.write(`[${new Date().toISOString()}] ${outputText}`);
         }
       });
 
-      spawnedProcess.stderr.on('data', (data) => {
-        const message = data.toString();
-        logger.error(`[Next.js ERROR] ${message.trim()}`);
+      spawnedProcess.stderr.on('data', (chunk) => {
+        const outputText = chunk.toString();
+        logger.error(`[Next.js ERROR] ${outputText.trim()}`);
         if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${message}`);
+          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${outputText}`);
         }
       });
 
-      spawnedProcess.on('error', (error) => {
-        logger.error('[NextJsService] Failed to start:', error);
+      spawnedProcess.on('error', (spawnError) => {
+        logger.error('[NextJsService] Failed to start:', spawnError);
         if (this.process === spawnedProcess) {
           this.status = 'error';
           this.cleanup();
@@ -135,17 +135,17 @@ class NextJsService {
       });
 
       logger.log('[NextJsService] Waiting for Next.js to be healthy...');
-      await checkNextJs(port);
+      await healthCheck.checkNextJs(port);
 
       this.status = 'running';
       logger.log('[NextJsService] Next.js is running and healthy');
 
       return { port, url: `http://localhost:${port}` };
-    } catch (error) {
-      logger.error('[NextJsService] Startup failed:', error);
+    } catch (startupError) {
+      logger.error('[NextJsService] Startup failed:', startupError);
       this.status = 'error';
       await this.stop();
-      throw error;
+      throw startupError;
     }
   }
 
@@ -160,9 +160,9 @@ class NextJsService {
     return new Promise((resolve) => {
       const pid = this.process.pid;
 
-      treeKill(pid, 'SIGTERM', (err) => {
-        if (err) {
-          logger.error('[NextJsService] Failed to kill process tree:', err);
+      treeKill(pid, 'SIGTERM', (killError) => {
+        if (killError) {
+          logger.error('[NextJsService] Failed to kill process tree:', killError);
           treeKill(pid, 'SIGKILL', () => {
             this.cleanup();
             resolve();
@@ -182,7 +182,7 @@ class NextJsService {
             resolve();
           });
         }
-      }, 5000);
+      }, STARTUP.FORCE_KILL_TIMEOUT_MILLISECONDS);
     });
   }
 
@@ -210,5 +210,3 @@ class NextJsService {
     return this.port ? `http://localhost:${this.port}` : null;
   }
 }
-
-module.exports = NextJsService;

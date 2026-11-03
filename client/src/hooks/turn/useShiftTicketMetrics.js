@@ -16,6 +16,7 @@ export function useShiftTicketMetrics(openShiftData) {
   const shiftTranslations = useTranslations("shifts");
 
   const [totalBalance, setTotalBalance] = useState(0);
+  const [totalTips, setTotalTips] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
   const [refundedCashTotal, setRefundedCashTotal] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
@@ -82,6 +83,7 @@ export function useShiftTicketMetrics(openShiftData) {
       );
 
       setTotalBalance(shiftTickets.reduce((runningTotal, ticket) => runningTotal + ticket.totalAmount, 0));
+      setTotalTips(shiftTickets.reduce((runningTotal, ticket) => runningTotal + (ticket.tipAmount || 0), 0));
       setTotalTickets(shiftTickets.length);
 
       fetchTicketBreakdown(shiftTickets, shiftStartMilliseconds).catch(() => {});
@@ -97,6 +99,7 @@ export function useShiftTicketMetrics(openShiftData) {
 
   const reset = useCallback(() => {
     setTotalBalance(0);
+    setTotalTips(0);
     setCashTotal(0);
     setRefundedCashTotal(0);
     setTotalTickets(0);
@@ -107,6 +110,7 @@ export function useShiftTicketMetrics(openShiftData) {
 
   return {
     totalBalance,
+    totalTips,
     cashTotal,
     refundedCashTotal,
     totalTickets,

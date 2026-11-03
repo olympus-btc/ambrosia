@@ -33,9 +33,7 @@ jest.mock("@/components/shared/VariantsButton", () => ({
   VariantsButton: ({ onPress, children }) => <button data-testid="variants-button" onClick={onPress}>{children}</button>,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({

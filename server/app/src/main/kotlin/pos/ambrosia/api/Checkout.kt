@@ -13,6 +13,7 @@ import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.models.WalletErrorResponse
 import pos.ambrosia.services.ActiveLightningBackend
+import pos.ambrosia.services.CashDrawerService
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.utils.PaymentNotConfirmedException
@@ -21,20 +22,27 @@ import pos.ambrosia.utils.requirePermission
 
 fun Application.configureCheckout() {
     val checkoutService = CheckoutService(ActiveLightningBackend)
-    routing { route("/store/orders") { checkout(checkoutService) } }
+    val cashDrawerService = CashDrawerService()
+    routing { route("/store/orders") { checkout(checkoutService, cashDrawerService) } }
 }
 
-fun Route.checkout(checkoutService: CheckoutService) {
+fun Route.checkout(
+    checkoutService: CheckoutService,
+    cashDrawerService: CashDrawerService,
+) {
     authorizePermission("orders_create") {
         post("/checkout") {
             val checkoutRequest = call.receive<StoreCheckoutRequest>()
             if (checkoutRequest.discountAmount > 0.0) {
                 call.requirePermission("orders_discount")
             }
-            when (val result = checkoutService.checkout(checkoutRequest)) {
+            when (val checkoutResult = checkoutService.checkout(checkoutRequest)) {
                 is CheckoutResult.Success -> {
-                    val status = if (result.alreadyExisted) HttpStatusCode.OK else HttpStatusCode.Created
-                    call.respond(status, result.response)
+                    val checkoutResponseStatus = if (checkoutResult.alreadyExisted) HttpStatusCode.OK else HttpStatusCode.Created
+                    if (!checkoutResult.alreadyExisted) {
+                        cashDrawerService.openForPaymentMethod(checkoutRequest.paymentMethodId)
+                    }
+                    call.respond(checkoutResponseStatus, checkoutResult.response)
                 }
 
                 CheckoutResult.NotPaid -> {
@@ -44,7 +52,7 @@ fun Route.checkout(checkoutService: CheckoutService) {
                 is CheckoutResult.Invalid -> {
                     call.respond(
                         HttpStatusCode.BadRequest,
-                        WalletErrorResponse(result.message, result.code, "ambrosia"),
+                        WalletErrorResponse(checkoutResult.message, checkoutResult.code, "ambrosia"),
                     )
                 }
             }

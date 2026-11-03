@@ -163,6 +163,26 @@ describe("SummaryContent", () => {
     }));
   });
 
+  it("does not charge a persisted tip when tips are disabled", () => {
+    const onPay = jest.fn();
+    render(
+      <SummaryContent
+        {...defaultProps}
+        tip={20}
+        tipType="percentage"
+        tipsEnabled={false}
+        onPay={onPay}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("summary.pay"));
+    expect(onPay).toHaveBeenCalledWith(expect.objectContaining({
+      tip: 0,
+      tipAmount: 0,
+      total: 1800,
+    }));
+  });
+
   it("disables Pay button when cart is empty", () => {
     render(<SummaryContent {...defaultProps} cartItems={[]} />);
 

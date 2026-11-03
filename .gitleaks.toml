@@ -1,0 +1,48 @@
+# gitleaks configuration for Ambrosia.
+# Extends the upstream default ruleset; only adds path allowlists.
+#
+# Rule of thumb for adding an entry here: allowlist a *path* only when the
+# credential-shaped string is a deterministic test vector or a build artifact.
+# Never allowlist a real secret — rotate it and remove it from history instead.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Build output and caches — regenerated, never a source of truth"
+paths = [
+  '''(^|/)\.next/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)build/''',
+  '''(^|/)dist/''',
+  '''(^|/)__pycache__/''',
+  '''(^|/)coverage/''',
+  '''(^|/)\.gradle/''',
+  '''(^|/)electron/resources/''',
+  '''\.map$''',
+]
+
+[[allowlists]]
+description = """
+NWC test vectors. Fixed hex keypairs used to drive a Nostr Wallet Connect
+handshake against a local relay (ws://127.0.0.1) in unit and e2e tests.
+They are not, and must never be, keys with funds behind them.
+"""
+paths = [
+  '''server/app/src/test/kotlin/pos/ambrosia/utest/NwcUriParserTest\.kt''',
+  '''server/app/src/test/kotlin/pos/ambrosia/utest/NwcClientTest\.kt''',
+  '''server/e2e_tests_py/tests/test_nwc_backend_e2e\.py''',
+]
+
+[[allowlists]]
+description = """
+Electron encrypted-store test fixtures. Deterministic alphabet-derived
+placeholders (a1b2c3...) used to drive ServerSecretStore/
+PhoenixdCredentialsStore encryption round-trips in unit tests.
+They are not, and must never be, real server secrets or phoenixd
+credentials.
+"""
+paths = [
+  '''electron/services/__tests__/ServerSecretStore\.test\.js''',
+  '''electron/services/__tests__/PhoenixdCredentialsStore\.test\.js''',
+]

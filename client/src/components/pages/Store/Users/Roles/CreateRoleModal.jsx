@@ -11,7 +11,7 @@ import {
   ModalHeader,
   Checkbox,
 } from "@heroui/react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { PermissionSelector } from "./PermissionSelector";
@@ -31,6 +31,7 @@ export function CreateRoleModal({
   const roleTranslations = useTranslations();
   const [advanced, setAdvanced] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showCurrentUserPin, setShowCurrentUserPin] = useState(false);
 
   const templates = roleTemplates[businessType] ?? [];
 
@@ -76,7 +77,7 @@ export function CreateRoleModal({
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
           {advanced && (
-            <Button isIconOnly variant="light" size="sm" onPress={handleBack} aria-label="Go back">
+            <Button isIconOnly variant="light" size="sm" onPress={handleBack} aria-label={roleTranslations("roles.actions.back")}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
@@ -152,6 +153,32 @@ export function CreateRoleModal({
               </div>
             </>
           )}
+
+          <Input
+            label={roleTranslations("roles.create.currentUserPinLabel")}
+            type={showCurrentUserPin ? "text" : "password"}
+            placeholder={roleTranslations("roles.create.currentUserPinPlaceholder")}
+            isRequired
+            minLength={4}
+            maxLength={6}
+            value={form.currentUserPin ?? ""}
+            onChange={(event) => {
+              const onlyNumbers = event.target.value.replace(/\D/g, "");
+              setForm((previousForm) => ({ ...previousForm, currentUserPin: onlyNumbers }));
+            }}
+            endContent={
+              (
+                <button
+                  type="button"
+                  aria-label={showCurrentUserPin ? "Hide your PIN" : "Show your PIN"}
+                  onClick={() => setShowCurrentUserPin(!showCurrentUserPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showCurrentUserPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              )
+            }
+          />
         </ModalBody>
 
         <ModalFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -177,7 +204,7 @@ export function CreateRoleModal({
               color="primary"
               className="bg-green-800"
               onPress={onSubmit}
-              isDisabled={!form.name.trim() || creating}
+              isDisabled={!form.name.trim() || !form.currentUserPin || creating}
               isLoading={creating}
             >
               {roleTranslations("roles.actions.create")}

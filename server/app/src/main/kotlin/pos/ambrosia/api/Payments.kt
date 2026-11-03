@@ -2,17 +2,12 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.models.Payment
-import pos.ambrosia.models.TicketPayment
 import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.TicketPaymentService
 import pos.ambrosia.utils.authorizePermission
@@ -133,57 +128,6 @@ fun Route.payments(
                 return@get
             }
             call.respond(HttpStatusCode.OK, tickets)
-        }
-    }
-    authorizePermission("payments_create") {
-        post("") {
-            val payment = call.receive<Payment>()
-            val paymentId = paymentService.addPayment(payment)
-            if (paymentId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to create payment")
-                return@post
-            }
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf("id" to paymentId, "message" to "Payment added successfully"),
-            )
-        }
-    }
-    authorizePermission("payments_update") {
-        put("/{id}") {
-            val id = call.parameters["id"]
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-                return@put
-            }
-
-            val updatedPayment = call.receive<Payment>().copy(id = id)
-            val isUpdated = paymentService.updatePayment(updatedPayment)
-            if (!isUpdated) {
-                call.respond(HttpStatusCode.NotFound, "Payment with ID: $id not found")
-                return@put
-            }
-
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Payment updated successfully"),
-            )
-        }
-        post("/ticket-payments") {
-            val ticketPayment = call.receive<TicketPayment>()
-            val isAdded = ticketPaymentService.addTicketPayment(ticketPayment)
-            if (!isAdded) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to create ticket payment relationship")
-                return@post
-            }
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf(
-                    "paymentId" to ticketPayment.paymentId,
-                    "ticketId" to ticketPayment.ticketId,
-                    "message" to "Ticket payment relationship created successfully",
-                ),
-            )
         }
     }
     authorizePermission("payments_delete") {

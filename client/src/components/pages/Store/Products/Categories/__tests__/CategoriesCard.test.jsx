@@ -7,9 +7,7 @@ jest.mock("@heroui/react", () => ({
   CardBody: ({ children, className }) => <div className={className}>{children}</div>,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress }) => <button data-testid="edit-button" onClick={onPress} />,

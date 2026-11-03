@@ -17,13 +17,14 @@ export async function getCurrentSession() {
   };
 }
 
-export async function authenticateUser({ name, pin }) {
+export async function authenticateUser({ name, pin, skipRefresh = false }) {
   const response = await httpClient("/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ name, pin }),
+    skipRefresh,
   });
 
   const data = await parseJsonResponse(response, null);
@@ -44,9 +45,10 @@ export async function authenticateUser({ name, pin }) {
   };
 }
 
-export async function logoutSession() {
+export async function logoutSession({ skipRefresh = false } = {}) {
   const response = await httpClient("/auth/logout", {
     method: "POST",
+    skipRefresh,
   });
 
   const data = await parseJsonResponse(response, null);

@@ -22,10 +22,14 @@ RUN ./gradlew jar --no-daemon
 # Runtime stage - slim image with only JRE
 FROM eclipse-temurin:21-jre-alpine
 
+RUN addgroup -S ambrosia && adduser -S -G ambrosia -h /home/ambrosia ambrosia
+
 WORKDIR /app
 
 # Copy the built JAR from builder stage
-COPY --from=builder /build/app/build/libs/ambrosia-*.jar ./ambrosia.jar
+COPY --from=builder --chown=ambrosia:ambrosia /build/app/build/libs/ambrosia-*.jar ./ambrosia.jar
+
+USER ambrosia
 
 EXPOSE 9154
 

@@ -9,13 +9,14 @@ export async function getAdminNotifications(filters = {}) {
   if (filters.category) queryParams.set("category", filters.category);
 
   const queryString = queryParams.toString();
-  const notificationsResponse = await httpClient(`/admin/notifications${queryString ? `?${queryString}` : ""}`);
+  const notificationsResponse = await httpClient(`/admin/notifications${queryString ? `?${queryString}` : ""}`, { skipForbiddenRedirect: true });
   return await parseJsonResponse(notificationsResponse, []);
 }
 
 export async function markAdminNotificationRead(notificationId) {
   const readNotificationResponse = await httpClient(`/admin/notifications/${notificationId}/read`, {
     method: "POST",
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(readNotificationResponse, null);
 }
@@ -24,6 +25,7 @@ export async function markAllAdminNotificationsRead(category) {
   const queryString = category ? `?category=${encodeURIComponent(category)}` : "";
   const readAllNotificationsResponse = await httpClient(`/admin/notifications/read-all${queryString}`, {
     method: "POST",
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(readAllNotificationsResponse, { updated: 0 });
 }
@@ -31,6 +33,7 @@ export async function markAllAdminNotificationsRead(category) {
 export async function deleteAdminNotification(notificationId) {
   const deleteNotificationResponse = await httpClient(`/admin/notifications/${notificationId}`, {
     method: "DELETE",
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(deleteNotificationResponse, null);
 }
@@ -39,12 +42,13 @@ export async function deleteAllAdminNotifications(category) {
   const queryString = category ? `?category=${encodeURIComponent(category)}` : "";
   const deleteAllNotificationsResponse = await httpClient(`/admin/notifications${queryString}`, {
     method: "DELETE",
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(deleteAllNotificationsResponse, { deleted: 0 });
 }
 
 export async function getAdminNotificationPreferences() {
-  const preferencesResponse = await httpClient("/admin/notification-preferences");
+  const preferencesResponse = await httpClient("/admin/notification-preferences", { skipForbiddenRedirect: true });
   return await parseJsonResponse(preferencesResponse, []);
 }
 
@@ -58,12 +62,13 @@ export async function updateAdminNotificationPreference(preference) {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(preferenceRequest),
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(updatePreferenceResponse, null);
 }
 
 export async function getAdminPushVapidPublicKey() {
-  const vapidPublicKeyResponse = await httpClient("/admin/push/vapid-public-key");
+  const vapidPublicKeyResponse = await httpClient("/admin/push/vapid-public-key", { skipForbiddenRedirect: true });
   if (!vapidPublicKeyResponse?.ok) {
     throw new Error("admin-web-push-unavailable");
   }
@@ -75,6 +80,7 @@ export async function registerAdminPushSubscription(subscription) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription),
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(registerSubscriptionResponse, null);
 }
@@ -85,6 +91,7 @@ export async function deleteAdminPushSubscription(endpoint) {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ endpoint }),
+    skipForbiddenRedirect: true,
   });
   return await parseJsonResponse(deleteSubscriptionResponse, null);
 }

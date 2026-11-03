@@ -15,6 +15,7 @@ const baseForm = {
   name: "cashier",
   isAdmin: false,
   permissions: ["products_read", "orders_read"],
+  currentUserPin: "1234",
 };
 
 const renderModal = (props = {}) => render(

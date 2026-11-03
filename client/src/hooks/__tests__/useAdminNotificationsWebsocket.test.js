@@ -5,8 +5,13 @@ import {
   ADMIN_NOTIFICATIONS_EVENT_SOURCE_ROUTE,
   ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT,
 } from "@/lib/adminNotifications";
+import { refreshAccessToken } from "@/lib/http/httpClient";
 
 import { useAdminNotificationsWebsocket } from "../useAdminNotificationsWebsocket";
+
+jest.mock("@/lib/http/httpClient", () => ({
+  refreshAccessToken: jest.fn().mockResolvedValue({ ok: true }),
+}));
 
 class MockEventSource {
   static CONNECTING = 0;
@@ -168,7 +173,7 @@ describe("useAdminNotificationsWebsocket", () => {
       await Promise.resolve();
     });
 
-    expect(fetch).toHaveBeenCalledWith("/api/auth/refresh", { method: "POST" });
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
     expect(MockEventSource.instances).toHaveLength(2);
   });
 

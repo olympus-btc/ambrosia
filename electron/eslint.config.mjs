@@ -20,15 +20,10 @@ const eslintConfig = [
       sourceType: 'module',
       globals: {
         // Node.js globals
-        __dirname: 'readonly',
-        __filename: 'readonly',
         Buffer: 'readonly',
         console: 'readonly',
-        exports: 'writable',
         global: 'readonly',
-        module: 'readonly',
         process: 'readonly',
-        require: 'readonly',
         // Node.js timers
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
@@ -143,10 +138,40 @@ const eslintConfig = [
       'import/no-duplicates': 'error',
       'import/no-unresolved': 'off', // Node.js handles this
       'import/extensions': ['error', 'ignorePackages', {
-        js: 'never',
-        mjs: 'never',
+        js: 'always',
+        mjs: 'always',
       }],
       'import/prefer-default-export': 'off',
+    },
+  },
+  {
+    files: ['**/*.cjs', '**/__tests__/**/*.test.js', 'test-utils/**/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        exports: 'writable',
+        module: 'readonly',
+        require: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['**/__tests__/**/*.test.js', 'test-utils/**/*.js'],
+    languageOptions: {
+      globals: {
+        // vitest globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      },
     },
   },
 ];

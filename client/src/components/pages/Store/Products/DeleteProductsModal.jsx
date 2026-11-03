@@ -4,7 +4,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from
 import { useTranslations } from "next-intl";
 
 export function DeleteProductsModal({ product, deleteProductsShowModal, setDeleteProductsShowModal, onConfirm }) {
-  const t = useTranslations("products");
+  const productTranslations = useTranslations("products");
   return (
     <Modal
       isOpen={deleteProductsShowModal}
@@ -16,10 +16,10 @@ export function DeleteProductsModal({ product, deleteProductsShowModal, setDelet
       placement="center"
     >
       <ModalContent>
-        <ModalHeader>{t("modal.titleDelete")}</ModalHeader>
+        <ModalHeader>{productTranslations("modal.titleDelete")}</ModalHeader>
         <ModalBody>
-          <p>{t("modal.subtitleDelete")}<b> {product?.name}</b>?</p>
-          <p className="text-red-500 text-sm">{t("modal.warningDelete")}</p>
+          <p>{productTranslations("modal.subtitleDelete")}<b> {product?.name}</b>?</p>
+          <p className="text-red-500 text-sm">{productTranslations("modal.warningDelete")}</p>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -28,10 +28,10 @@ export function DeleteProductsModal({ product, deleteProductsShowModal, setDelet
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onPress={() => setDeleteProductsShowModal(false)}
           >
-            {t("modal.cancelButton")}
+            {productTranslations("modal.cancelButton")}
           </Button>
           <Button color="danger" onPress={onConfirm}>
-            {t("modal.deleteButton")}
+            {productTranslations("modal.deleteButton")}
           </Button>
         </ModalFooter>
       </ModalContent>

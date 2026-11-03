@@ -30,6 +30,7 @@ export async function processCheckout({
       currencyId,
       amount: paymentAmounts.amountFiat,
       discountAmount: paymentAmounts.discountAmount,
+      tipAmount: paymentAmounts.tipAmountFiat ?? (paymentAmounts.tipAmount ? paymentAmounts.tipAmount / 100 : 0),
       transactionId: transactionId || "",
       satoshiAmount,
       exchangeRateAtPayment,

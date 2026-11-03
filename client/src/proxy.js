@@ -21,6 +21,7 @@ export default async function proxy(request) {
 
   let initialized = null;
   let needsBusinessType = false;
+  let initialSetupConfirmed = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
     const initialSetupUrl = new URL("/api/initial-setup", INTERNAL_ORIGIN);
@@ -30,23 +31,26 @@ export default async function proxy(request) {
       const setupData = await setupResponse.json();
       initialized = setupData?.initialized;
       needsBusinessType = setupData?.needsBusinessType === true;
+      initialSetupConfirmed = true;
     }
   } catch (error) {
     console.error(error);
   }
 
-  if (initialized === false && !isOnboardingRoute) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
+  if (initialSetupConfirmed) {
+    if (initialized === false && !isOnboardingRoute) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
 
-  if (needsBusinessType && !isOnboardingRoute) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
+    if (needsBusinessType && !isOnboardingRoute) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
 
-  if ((initialized !== false && !needsBusinessType) && isOnboardingRoute) {
-    return NextResponse.redirect(
-      new URL(refreshToken ? "/" : "/auth", request.url),
-    );
+    if ((initialized !== false && !needsBusinessType) && isOnboardingRoute) {
+      return NextResponse.redirect(
+        new URL(refreshToken ? "/" : "/auth", request.url),
+      );
+    }
   }
 
   if (!isAuthRoute && !isOnboardingRoute) {
@@ -64,7 +68,7 @@ export default async function proxy(request) {
     if (configResponse.ok) {
       const configData = await configResponse.json();
       const fetchedBusinessType = configData?.businessType;
-      if (fetchedBusinessType === "store" || fetchedBusinessType === "restaurant") {
+      if (fetchedBusinessType === "store" || fetchedBusinessType === "restaurant" || fetchedBusinessType === "freelance") {
         businessType = fetchedBusinessType;
       } else {
         shouldClearBusinessTypeCookie = true;
@@ -80,6 +84,15 @@ export default async function proxy(request) {
     }
     if (pathname.startsWith("/restaurant") && businessType === "store") {
       return NextResponse.redirect(new URL("/store", request.url));
+    }
+    if (pathname.startsWith("/freelancer") && businessType === "store") {
+      return NextResponse.redirect(new URL("/store", request.url));
+    }
+    if (pathname.startsWith("/freelancer") && businessType === "restaurant") {
+      return NextResponse.redirect(new URL("/restaurant/all-orders", request.url));
+    }
+    if ((pathname.startsWith("/store") || pathname.startsWith("/restaurant")) && businessType === "freelance") {
+      return NextResponse.redirect(new URL("/freelancer", request.url));
     }
   }
 

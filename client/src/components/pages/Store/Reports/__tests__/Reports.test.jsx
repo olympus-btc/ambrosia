@@ -11,10 +11,32 @@ jest.mock("../hooks/useReports", () => ({
 
 jest.mock("../hooks/useFilters", () => ({
   useFiltersState: () => mockUseFiltersState(),
+  buildReportQuery: (filters) => mockBuildReportQuery(filters),
 }));
 
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => mockUseCurrency(),
+}));
+
+jest.mock("@/hooks/usePermission", () => ({
+  usePermission: () => mockCanViewShiftsReport(),
+}));
+
+jest.mock("../hooks/useShiftsReport", () => ({
+  useShiftsReport: () => mockUseShiftsReport(),
+}));
+
+jest.mock("../Shifts", () => ({
+  ShiftsReportCard: ({ shifts }) => (
+    <div data-testid="shifts-report-card">
+      {shifts.map((shift) => (
+        <span key={shift.id} data-testid="shift-item">{shift.id}</span>
+      ))}
+    </div>
+  ),
+  ShiftsAnalyticsCard: ({ shifts }) => (
+    <div data-testid="shifts-analytics-card" data-length={shifts.length} />
+  ),
 }));
 
 jest.mock("../Filters", () => ({
@@ -118,6 +140,7 @@ jest.mock("lucide-react", () => ({
   Loader2: (props) => <svg {...props} />,
   ShoppingCart: (props) => <svg {...props} />,
   Package: (props) => <svg {...props} />,
+  Clock: (props) => <svg {...props} />,
 }));
 
 const DEFAULT_FILTERS = {
@@ -164,9 +187,22 @@ function makeUseCurrency(overrides = {}) {
   };
 }
 
+const mockFetchShiftsReport = jest.fn();
+
+function makeUseShiftsReport(overrides = {}) {
+  return {
+    fetchShiftsReport: mockFetchShiftsReport,
+    shiftsReportData: null,
+    ...overrides,
+  };
+}
+
 let mockUseReports;
 let mockUseFiltersState;
 let mockUseCurrency;
+let mockCanViewShiftsReport;
+let mockUseShiftsReport;
+let mockBuildReportQuery;
 
 describe("Reports", () => {
   beforeEach(() => {
@@ -175,6 +211,9 @@ describe("Reports", () => {
     mockUseReports = () => makeUseReports();
     mockUseFiltersState = () => makeUseFiltersState();
     mockUseCurrency = () => makeUseCurrency();
+    mockCanViewShiftsReport = () => false;
+    mockUseShiftsReport = () => makeUseShiftsReport();
+    mockBuildReportQuery = () => null;
   });
 
   describe("skeleton", () => {
@@ -394,6 +433,79 @@ describe("Reports", () => {
       expect(screen.queryByTestId("orders-detail-card")).not.toBeInTheDocument();
       expect(screen.queryByTestId("sales-detail-card")).not.toBeInTheDocument();
       expect(screen.queryByTestId("summary-card")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("shifts tab", () => {
+    function switchToShiftsTab() {
+      fireEvent.click(screen.getByRole("tab", { name: "tabs.shifts" }));
+    }
+
+    it("does not render the Shifts tab when the user lacks shifts_report_read", () => {
+      render(<Reports />);
+      expect(screen.queryByRole("tab", { name: "tabs.shifts" })).not.toBeInTheDocument();
+    });
+
+    it("renders the Shifts tab and its report when the user has shifts_report_read", () => {
+      mockCanViewShiftsReport = () => true;
+      mockUseShiftsReport = () => makeUseShiftsReport({
+        shiftsReportData: {
+          shifts: [{ id: "shift-1" }],
+          totalExpectedAmount: 100,
+          totalFinalAmount: 110,
+          totalDifference: 10,
+        },
+      });
+      render(<Reports />);
+      switchToShiftsTab();
+      expect(screen.getByTestId("shifts-report-card")).toBeInTheDocument();
+      expect(screen.getByTestId("shift-item")).toHaveTextContent("shift-1");
+      expect(screen.getByTestId("shifts-analytics-card")).toBeInTheDocument();
+      expect(capturedStats).toHaveLength(4);
+    });
+
+    it("does not render ShiftsAnalyticsCard when there are no shifts in the period", () => {
+      mockCanViewShiftsReport = () => true;
+      mockUseShiftsReport = () => makeUseShiftsReport({
+        shiftsReportData: {
+          shifts: [],
+          totalExpectedAmount: 0,
+          totalFinalAmount: 0,
+          totalDifference: 0,
+        },
+      });
+      render(<Reports />);
+      switchToShiftsTab();
+      expect(screen.queryByTestId("shifts-analytics-card")).not.toBeInTheDocument();
+      expect(screen.getByTestId("shifts-report-card")).toBeInTheDocument();
+    });
+
+    it("converts shift dollar amounts to cents before formatAmount instead of passing them through as-is", () => {
+      mockCanViewShiftsReport = () => true;
+      mockUseShiftsReport = () => makeUseShiftsReport({
+        shiftsReportData: {
+          shifts: [],
+          totalExpectedAmount: 0,
+          totalFinalAmount: 0.02,
+          totalDifference: 0.02,
+        },
+      });
+      render(<Reports />);
+      switchToShiftsTab();
+      expect(capturedStats[1]).toEqual({ label: "shiftsReport.totalActual", value: "$2" });
+      expect(capturedStats[2]).toEqual({ label: "shiftsReport.totalDifference", value: "$2" });
+    });
+
+    it("fetches the shifts report using the current filters when the user has shifts_report_read", () => {
+      mockCanViewShiftsReport = () => true;
+      mockBuildReportQuery = (filters) => ({ period: filters.activePeriod });
+      render(<Reports />);
+      expect(mockFetchShiftsReport).toHaveBeenCalledWith({ period: DEFAULT_FILTERS.activePeriod });
+    });
+
+    it("does not fetch the shifts report when the user lacks shifts_report_read", () => {
+      render(<Reports />);
+      expect(mockFetchShiftsReport).not.toHaveBeenCalled();
     });
   });
 });

@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { toArray } from "@/components/utils/array";
 import { RequirePermission } from "@/hooks/usePermission";
 import { PageHeader } from "@components/shared/PageHeader";
+import { PermissionBlockedMessage } from "@components/shared/PermissionBlockedMessage";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
@@ -50,7 +51,15 @@ export function Products() {
   const [productToDelete, setProductToDelete] = useState(null);
   const [variantsProduct, setVariantsProduct] = useState(null);
 
-  const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
+  const {
+    products,
+    forbidden: productsForbidden,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    isUploading,
+    refetch: refetchProducts,
+  } = useProducts({ skipForbiddenRedirect: true });
   const {
     categories,
     loading: categoriesLoading,
@@ -129,6 +138,18 @@ export function Products() {
     setVariantsProduct(null);
     refetchProducts();
   };
+
+  if (productsForbidden) {
+    return (
+      <>
+        <PageHeader title={productsTranslations("title")} subtitle={productsTranslations("subtitle")} />
+        <PermissionBlockedMessage
+          title={productsTranslations("permissionBlocked.title")}
+          subtitle={productsTranslations("permissionBlocked.subtitle")}
+        />
+      </>
+    );
+  }
 
   return (
     <>

@@ -22,7 +22,6 @@ export function useCategories(type = "product") {
 
     try {
       const categoryList = await fetchList(`/categories?type=${type}`);
-      if (categoryList === null) return;
       setCategories(toArray(categoryList));
     } catch (categoryLoadError) {
       console.error("Error fetching categories:", categoryLoadError);
@@ -41,6 +40,7 @@ export function useCategories(type = "product") {
           "Content-Type": "application/json",
         },
         notShowError: false,
+        skipForbiddenRedirect: true,
       });
       if (createCategoryResponse.ok === false) {
         throw await buildParsedHttpError(createCategoryResponse, "Error creating category");
@@ -61,6 +61,7 @@ export function useCategories(type = "product") {
         headers: {
           "Content-Type": "application/json",
         },
+        skipForbiddenRedirect: true,
       });
       if (updateCategoryResponse.ok === false) {
         throw await buildParsedHttpError(updateCategoryResponse, "Error updating category");
@@ -75,6 +76,7 @@ export function useCategories(type = "product") {
     async (categoryId) => {
       const deleteCategoryResponse = await httpClient(`/categories/${categoryId}?type=${type}`, {
         method: "DELETE",
+        skipForbiddenRedirect: true,
       });
       if (deleteCategoryResponse.ok === false) {
         throw await buildParsedHttpError(deleteCategoryResponse, "Error deleting category");

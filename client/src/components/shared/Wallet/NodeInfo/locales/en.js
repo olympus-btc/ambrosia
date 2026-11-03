@@ -1,0 +1,28 @@
+const nodeInfoEn = {
+  nodeInfo: {
+    title: "Node Information",
+    totalBalance: "Total Balance",
+    network: "Network",
+    channels: "Channels",
+    block: "Block",
+    lightningAddress: "Lightning Address",
+    subtitle: "Lightning Channels",
+    channel: "Channel #",
+    sats: "sats",
+    balanceSat: "Local Balance",
+    capacitySat: "Total Capacity:",
+    inboundLiquidity: "Inbound Liquidity:",
+    fetchInfoError: "Error fetching wallet information",
+    getInfoErrorDescription: "Could not load wallet information",
+    secretsLockedError: "Secrets encryption is locked",
+    secretsLockedErrorDescription: "Enter the unlock password in Settings → Secrets encryption to use your wallet.",
+    nodeUnavailable: "Could not connect to your Lightning wallet. Please try again in a moment.",
+    noChannels: "No active Lightning channels",
+    stateShuttingDown: "Closing — settling pending payments",
+    stateNegotiating: "Closing — finalizing closing transaction",
+    stateClosing: "Closing — waiting for on-chain confirmation",
+    stateClosed: "Closed — will disappear on next restart",
+  },
+};
+
+export default nodeInfoEn;

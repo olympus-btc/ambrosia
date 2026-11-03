@@ -8,6 +8,8 @@ export function usePersistentCart() {
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState("percentage");
+  const [tip, setTip] = useState(0);
+  const [tipType, setTipType] = useState("percentage");
   const [isCartRestored, setIsCartRestored] = useState(false);
 
   useEffect(() => {
@@ -26,6 +28,13 @@ export function usePersistentCart() {
       if (savedCart?.discountType === "fixed" || savedCart?.discountType === "percentage") {
         setDiscountType(savedCart.discountType);
       }
+      const savedTip = Number(savedCart?.tip);
+      if (Number.isFinite(savedTip)) {
+        setTip(savedTip);
+      }
+      if (savedCart?.tipType === "fixed" || savedCart?.tipType === "percentage") {
+        setTipType(savedCart.tipType);
+      }
     } catch (err) {
       console.error("Error loading cart from storage", err);
     } finally {
@@ -38,17 +47,19 @@ export function usePersistentCart() {
     try {
       window.localStorage.setItem(
         CART_STORAGE_KEY,
-        JSON.stringify({ items: cart, discount, discountType }),
+        JSON.stringify({ items: cart, discount, discountType, tip, tipType }),
       );
     } catch (err) {
       console.error("Error saving cart to storage", err);
     }
-  }, [cart, discount, discountType, isCartRestored]);
+  }, [cart, discount, discountType, tip, tipType, isCartRestored]);
 
   const resetCartState = useCallback(() => {
     setCart([]);
     setDiscount(0);
     setDiscountType("percentage");
+    setTip(0);
+    setTipType("percentage");
     try {
       window.localStorage.removeItem(CART_STORAGE_KEY);
     } catch (err) {
@@ -63,6 +74,10 @@ export function usePersistentCart() {
     setDiscount,
     discountType,
     setDiscountType,
+    tip,
+    setTip,
+    tipType,
+    setTipType,
     isCartRestored,
     resetCartState,
   };

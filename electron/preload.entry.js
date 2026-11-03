@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 const SEND_CHANNELS = ['ping', 'restart-server', 'notifications:admin-activity'];
 
@@ -10,6 +10,10 @@ const INVOKE_CHANNELS = [
   'update:open-release',
   'phoenixd:get-auto-liquidity',
   'phoenixd:set-auto-liquidity',
+  'app:relaunch',
+  'secrets:get-storage-backend',
+  'secrets:save-unlock-password',
+  'secrets:clear-unlock-password',
 ];
 
 const RECEIVE_CHANNELS = [
@@ -19,22 +23,23 @@ const RECEIVE_CHANNELS = [
   'update:downloaded',
 ];
 
-function sanitizeArg(arg) {
-  if (arg === null || arg === undefined) return arg;
-  const type = typeof arg;
-  if (type === 'string' || type === 'number' || type === 'boolean') return arg;
-  if (Array.isArray(arg)) return arg.map(sanitizeArg);
+function sanitizeArgument(argument) {
+  if (argument === null || argument === undefined) return argument;
+  const type = typeof argument;
+  if (type === 'string' || type === 'number' || type === 'boolean') return argument;
+  if (Array.isArray(argument)) return argument.map(sanitizeArgument);
   if (type === 'object') {
     return Object.fromEntries(
-      Object.entries(arg).map(([k, v]) => [k, sanitizeArg(v)]),
+      Object.entries(argument).map(([propertyName, propertyValue]) => [
+        propertyName,
+        sanitizeArgument(propertyValue),
+      ]),
     );
   }
-  return null; // drop functions, symbols, circular refs
+  return null;
 }
 
-// Expose APIs securely to the renderer
 contextBridge.exposeInMainWorld('electron', {
-  // System information API
   platform: process.platform,
   versions: {
     node: process.versions.node,
@@ -42,7 +47,6 @@ contextBridge.exposeInMainWorld('electron', {
     electron: process.versions.electron,
   },
 
-  // API for communication with main process
   ipc: {
     send: (channel, ...args) => {
       if (SEND_CHANNELS.includes(channel)) {
@@ -51,7 +55,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     invoke: (channel, ...args) => {
       if (INVOKE_CHANNELS.includes(channel)) {
-        return ipcRenderer.invoke(channel, ...args.map(sanitizeArg));
+        return ipcRenderer.invoke(channel, ...args.map(sanitizeArgument));
       }
       return Promise.reject(new Error(`Invalid channel: ${channel}`));
     },

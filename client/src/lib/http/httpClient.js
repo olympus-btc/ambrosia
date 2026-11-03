@@ -1,6 +1,6 @@
 import { httpWrapper } from "./httpWrapper";
 
-function dispatchAuthEvent(name) {
+export function dispatchAuthEvent(name) {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(name));
   }
@@ -8,7 +8,7 @@ function dispatchAuthEvent(name) {
 
 let refreshPromise = null;
 
-async function refreshToken() {
+export async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = httpWrapper("/auth/refresh", { method: "POST" }).finally(() => {
     refreshPromise = null;
@@ -19,7 +19,7 @@ async function refreshToken() {
 export async function httpClient(endpoint, options = {}) {
   const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
 
-  const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet"];
+  const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet", "/backup"];
 
   const shouldRefreshToken = (status, endpoint, skipRefresh) => {
     if (status !== 401 || skipRefresh) return false;
@@ -29,9 +29,9 @@ export async function httpClient(endpoint, options = {}) {
   const initialResponse = await httpWrapper(endpoint, httpOptions);
 
   if (shouldRefreshToken(initialResponse.status, endpoint, skipRefresh)) {
-    const refreshResponse = await refreshToken();
+    const refreshResponse = await refreshAccessToken();
 
-    if (refreshResponse.status === 401) {
+    if (!refreshResponse.ok) {
       dispatchAuthEvent("auth:expired");
       return initialResponse;
     }
@@ -39,7 +39,7 @@ export async function httpClient(endpoint, options = {}) {
   }
 
   if (initialResponse.status === 401 && !skipRefresh) {
-    const event = endpoint.startsWith("/wallet") ? "wallet:unauthorized" : "auth:expired";
+    const event = endpoint.startsWith("/wallet") || endpoint.startsWith("/backup") ? "wallet:unauthorized" : "auth:expired";
     dispatchAuthEvent(event);
   }
   if (initialResponse.status === 403 && !skipForbiddenRedirect)

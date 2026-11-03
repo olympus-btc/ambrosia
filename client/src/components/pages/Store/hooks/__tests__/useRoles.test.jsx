@@ -1,5 +1,6 @@
 import { act, useEffect } from "react";
 
+import { addToast } from "@heroui/react";
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
@@ -27,7 +28,7 @@ jest.mock("@/hooks/usePermission", () => ({
 const handlers = {};
 
 function TestComponent() {
-  const { roles, loading, error, createRole, updateRoleWithPermissions, deleteRole, getRolePermissions } = useRoles();
+  const { roles, loading, createRole, updateRoleWithPermissions, deleteRole, getRolePermissions } = useRoles();
 
   useEffect(() => {
     handlers.createRole = createRole;
@@ -41,7 +42,6 @@ function TestComponent() {
       <span data-testid="loading">{loading ? "yes" : "no"}</span>
       <span data-testid="count">{roles.length}</span>
       <span data-testid="first-role">{roles[0]?.role ?? ""}</span>
-      <span data-testid="error">{error ? "yes" : "no"}</span>
     </div>
   );
 }
@@ -72,6 +72,18 @@ describe("useRoles", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
 
+  it("keeps roles empty and stops loading when the roles response is not ok", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    httpClient.mockResolvedValueOnce({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValueOnce(null);
+
+    render(<TestComponent />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+    console.error.mockRestore();
+  });
+
   it("creates a role without permissions and refetches", async () => {
     httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -89,6 +101,7 @@ describe("useRoles", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: "seller", isAdmin: false, permissions: [] }),
+      skipForbiddenRedirect: true,
     });
     await waitFor(() => expect(screen.getByTestId("first-role")).toHaveTextContent("seller"));
   });
@@ -114,6 +127,7 @@ describe("useRoles", () => {
         isAdmin: false,
         permissions: ["orders_read"],
       }),
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -141,6 +155,7 @@ describe("useRoles", () => {
         isAdmin: false,
         permissions: ["products_read"],
       }),
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -153,10 +168,15 @@ describe("useRoles", () => {
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
 
     await act(async () => {
-      await handlers.deleteRole("1");
+      await handlers.deleteRole("1", "4321");
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/roles/1", { method: "DELETE" });
+    expect(httpClient).toHaveBeenCalledWith("/roles/1", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentUserPin: "4321" }),
+      skipForbiddenRedirect: true,
+    });
     await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
   });
 
@@ -180,6 +200,70 @@ describe("useRoles", () => {
     expect(thrown?.status).toBe(409);
   });
 
+  it("shows current-PIN-incorrect toast and rejects when creating a role fails PIN check", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Current PIN is incorrect" });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+
+    await expect(handlers.createRole({
+      name: "seller",
+      isAdmin: false,
+      permissions: [],
+      currentUserPin: "0000",
+    })).rejects.toMatchObject({ status: 403 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "actions.currentUserPinIncorrectTitle",
+      description: "actions.currentUserPinIncorrectDescription",
+      color: "danger",
+    });
+  });
+
+  it("shows current-PIN-incorrect toast and rejects when updating a role fails PIN check", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "cashier" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Current PIN is incorrect" });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("first-role")).toHaveTextContent("cashier"));
+
+    await expect(handlers.updateRoleWithPermissions("1", {
+      name: "updated",
+      isAdmin: false,
+      permissions: [],
+      currentUserPin: "0000",
+    })).rejects.toMatchObject({ status: 403 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "actions.currentUserPinIncorrectTitle",
+      description: "actions.currentUserPinIncorrectDescription",
+      color: "danger",
+    });
+  });
+
+  it("shows current-PIN-incorrect toast and rejects when deleting a role fails PIN check", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([{ id: "1", role: "cashier" }]);
+    httpClient.mockResolvedValueOnce({ ok: false, status: 403 });
+    parseJsonResponse.mockResolvedValueOnce({ message: "Current PIN is incorrect" });
+
+    render(<TestComponent />);
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+
+    await expect(handlers.deleteRole("1", "0000")).rejects.toMatchObject({ status: 403 });
+
+    expect(addToast).toHaveBeenCalledWith({
+      title: "actions.currentUserPinIncorrectTitle",
+      description: "actions.currentUserPinIncorrectDescription",
+      color: "danger",
+    });
+  });
+
   it("fetches role permissions by id", async () => {
     httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
@@ -193,7 +277,7 @@ describe("useRoles", () => {
       rolePermissions = await handlers.getRolePermissions("1");
     });
 
-    expect(httpClient).toHaveBeenCalledWith("/roles/1/permissions");
+    expect(httpClient).toHaveBeenCalledWith("/roles/1/permissions", { skipForbiddenRedirect: true });
     expect(rolePermissions).toEqual([{ name: "orders_read" }, { name: "products_read" }]);
   });
 

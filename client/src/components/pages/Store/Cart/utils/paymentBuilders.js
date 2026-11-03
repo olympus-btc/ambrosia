@@ -25,6 +25,7 @@ export function normalizeAmounts({
   subtotal,
   discount,
   discountAmount,
+  tipAmount = 0,
   total,
   formatAmount,
 }) {
@@ -32,8 +33,10 @@ export function normalizeAmounts({
     subtotal,
     discount,
     discountAmount,
+    tipAmount,
     total,
     amountFiat: total / 100,
+    tipAmountFiat: tipAmount / 100,
     displayTotal: formatAmount(total),
   };
 }

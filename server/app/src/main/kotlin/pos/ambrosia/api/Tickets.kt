@@ -2,17 +2,12 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.logger
-import pos.ambrosia.models.Ticket
 import pos.ambrosia.services.TicketService
 import pos.ambrosia.utils.authorizePermission
 
@@ -45,36 +40,6 @@ fun Route.tickets(ticketService: TicketService) {
             }
 
             call.respond(HttpStatusCode.OK, ticket)
-        }
-    }
-    authorizePermission("tickets_create") {
-        post("") {
-            val ticket = call.receive<Ticket>()
-            val generatedId = ticketService.addTicket(ticket)
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf("id" to generatedId, "message" to "Ticket added successfully"),
-            )
-        }
-    }
-    authorizePermission("tickets_update") {
-        put("/{id}") {
-            val id = call.parameters["id"]
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-                return@put
-            }
-
-            val updatedTicket = call.receive<Ticket>()
-            val isUpdated = ticketService.updateTicket(updatedTicket.copy(id = id))
-            logger.info(isUpdated.toString())
-
-            if (!isUpdated) {
-                call.respond(HttpStatusCode.NotFound, "Ticket with ID: $id not found")
-                return@put
-            }
-
-            call.respond(HttpStatusCode.OK, mapOf("id" to id, "message" to "Ticket updated successfully"))
         }
     }
     authorizePermission("tickets_delete") {

@@ -15,9 +15,7 @@ jest.mock("@heroui/react", () => ({
   TableCell: ({ children, className }) => <td className={className}>{children}</td>,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,

@@ -17,6 +17,7 @@ describe("paymentBuilders", () => {
       subtotal: 2000,
       discount: 10,
       discountAmount: 200,
+      tipAmount: 0,
       total: 1800,
       formatAmount,
     });
@@ -25,9 +26,34 @@ describe("paymentBuilders", () => {
       subtotal: 2000,
       discount: 10,
       discountAmount: 200,
+      tipAmount: 0,
+      tipAmountFiat: 0,
       total: 1800,
       amountFiat: 18,
       displayTotal: "fmt-1800",
+    });
+  });
+
+  it("normalizes amounts with tip included", () => {
+    const formatAmount = (value) => `fmt-${value}`;
+    const amounts = normalizeAmounts({
+      subtotal: 2000,
+      discount: 10,
+      discountAmount: 200,
+      tipAmount: 270,
+      total: 2070,
+      formatAmount,
+    });
+
+    expect(amounts).toEqual({
+      subtotal: 2000,
+      discount: 10,
+      discountAmount: 200,
+      tipAmount: 270,
+      tipAmountFiat: 2.7,
+      total: 2070,
+      amountFiat: 20.7,
+      displayTotal: "fmt-2070",
     });
   });
 });

@@ -42,8 +42,8 @@ export function useCurrency() {
 
   const fetchCurrency = useCallback(async ({ isCancelled } = {}) => {
     try {
-      const response = await httpClient("/base-currency");
-      const base = await parseJsonResponse(response, null);
+      const baseCurrencyResponse = await httpClient("/base-currency", { skipForbiddenRedirect: true });
+      const base = await parseJsonResponse(baseCurrencyResponse, null);
       if (!isCancelled?.()) setCurrency(parseCurrencyData(base));
     } catch {
       if (!isCancelled?.()) setCurrency(DEFAULT_CURRENCY);
@@ -95,16 +95,17 @@ export function useCurrency() {
           ? acronymOrObj
           : acronymOrObj?.acronym || DEFAULT_CURRENCY.acronym;
 
-      const updateConfigResponse = await httpClient(`/base-currency`, {
+      const updateCurrencyResponse = await httpClient(`/base-currency`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ acronym }),
+        skipForbiddenRedirect: true,
       });
 
       fetchCurrency();
-      return await parseJsonResponse(updateConfigResponse, null);
+      return await parseJsonResponse(updateCurrencyResponse, null);
     },
     [fetchCurrency],
   );

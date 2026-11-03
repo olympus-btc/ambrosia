@@ -19,6 +19,7 @@ import pos.ambrosia.api.configureRoles
 import pos.ambrosia.api.configureUsers
 import pos.ambrosia.api.handler
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.TEST_USER_PIN
 import pos.ambrosia.utils.grantPermission
 import pos.ambrosia.utils.installAdminAuth
 import pos.ambrosia.utils.installNonAdminAuth
@@ -88,7 +89,7 @@ class UserPrivilegeEscalationRouteTest {
                 client.put("/users/$targetUserId") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"roleId":"$adminRoleId"}""")
+                    setBody("""{"roleId":"$adminRoleId","currentUserPin":"$TEST_USER_PIN"}""")
                 }
 
             assertEquals(HttpStatusCode.Forbidden, response.status)
@@ -154,7 +155,9 @@ class UserPrivilegeEscalationRouteTest {
                 client.post("/users") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"name":"new-admin","pin":"123456","role":"$adminRoleId"}""")
+                    setBody(
+                        """{"user":{"name":"new-admin","pin":"123456","role":"$adminRoleId"},"currentUserPin":"$TEST_USER_PIN"}""",
+                    )
                 }
 
             assertEquals(HttpStatusCode.Forbidden, response.status)
@@ -238,7 +241,9 @@ class UserPrivilegeEscalationRouteTest {
                 client.post("/roles") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"role":"new-standard-role","isAdmin":false,"permissions":["users_read"]}""")
+                    setBody(
+                        """{"role":"new-standard-role","isAdmin":false,"permissions":["users_read"],"currentUserPin":"$TEST_USER_PIN"}""",
+                    )
                 }
 
             assertEquals(HttpStatusCode.Created, response.status)

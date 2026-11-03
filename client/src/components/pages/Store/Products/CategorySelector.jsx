@@ -17,7 +17,7 @@ export function CategorySelector({
   createCategory,
   isRequired = false,
 }) {
-  const t = useTranslations("products");
+  const productsTranslations = useTranslations("products");
   const {
     comboboxInputRef,
     searchValue,
@@ -40,7 +40,7 @@ export function CategorySelector({
     createCategory,
   });
   const createOptionLabel = createOptionKey
-    ? t("modal.createCategoryOption", { name: typedCategoryName })
+    ? productsTranslations("modal.createCategoryOption", { name: typedCategoryName })
     : null;
   const showEmptyCategoriesMessage = categoryOptions.length === 0 && !createOptionKey;
 
@@ -48,13 +48,13 @@ export function CategorySelector({
     <div className="space-y-3">
       <Autocomplete
         ref={comboboxInputRef}
-        label={t("modal.productCategoryLabel")}
-        placeholder={t("modal.categorySelectPlaceholder")}
+        label={productsTranslations("modal.productCategoryLabel")}
+        placeholder={productsTranslations("modal.categorySelectPlaceholder")}
         inputValue={searchValue}
         selectedKey={null}
         isLoading={isSelectorLoading}
         isRequired={isRequired}
-        errorMessage={t("modal.errorMsgSelectEmpty")}
+        errorMessage={productsTranslations("modal.errorMsgSelectEmpty")}
         allowsCustomValue
         allowsEmptyCollection
         isClearable
@@ -81,8 +81,8 @@ export function CategorySelector({
         ))}
 
         {showEmptyCategoriesMessage ? (
-          <AutocompleteItem key="empty-categories" isDisabled textValue={t("modal.noCategoriesAvailable")}>
-            {t("modal.noCategoriesAvailable")}
+          <AutocompleteItem key="empty-categories" isDisabled textValue={productsTranslations("modal.noCategoriesAvailable")}>
+            {productsTranslations("modal.noCategoriesAvailable")}
           </AutocompleteItem>
         ) : null}
 

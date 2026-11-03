@@ -1,4 +1,4 @@
-import { httpClient } from "../httpClient";
+import { httpClient, refreshAccessToken } from "../httpClient";
 import { httpWrapper } from "../httpWrapper";
 
 jest.mock("../httpWrapper", () => ({
@@ -52,5 +52,56 @@ describe("httpClient", () => {
     await httpClient("/products");
 
     expect(forbiddenListener).not.toHaveBeenCalled();
+  });
+
+  describe("token refresh", () => {
+    let expiredListener;
+
+    beforeEach(() => {
+      expiredListener = jest.fn();
+      window.addEventListener("auth:expired", expiredListener);
+    });
+
+    afterEach(() => {
+      window.removeEventListener("auth:expired", expiredListener);
+    });
+
+    it("retries the request after a successful refresh", async () => {
+      httpWrapper
+        .mockResolvedValueOnce(mockResponse(401))
+        .mockResolvedValueOnce(mockResponse(200))
+        .mockResolvedValueOnce(mockResponse(200));
+
+      const retriedProductsResponse = await httpClient("/products");
+
+      expect(httpWrapper).toHaveBeenNthCalledWith(2, "/auth/refresh", { method: "POST" });
+      expect(retriedProductsResponse.status).toBe(200);
+      expect(expiredListener).not.toHaveBeenCalled();
+    });
+
+    it("dispatches auth:expired when the refresh returns 401", async () => {
+      httpWrapper.mockResolvedValueOnce(mockResponse(401)).mockResolvedValueOnce(mockResponse(401));
+
+      await httpClient("/products");
+
+      expect(expiredListener).toHaveBeenCalledTimes(1);
+    });
+
+    it("dispatches auth:expired when the refresh fails with a non-401 error", async () => {
+      httpWrapper.mockResolvedValueOnce(mockResponse(401)).mockResolvedValueOnce(mockResponse(500));
+
+      await httpClient("/products");
+
+      expect(expiredListener).toHaveBeenCalledTimes(1);
+      expect(httpWrapper).toHaveBeenCalledTimes(2);
+    });
+
+    it("shares a single in-flight refresh between concurrent callers", async () => {
+      httpWrapper.mockResolvedValue(mockResponse(200));
+
+      await Promise.all([refreshAccessToken(), refreshAccessToken()]);
+
+      expect(httpWrapper).toHaveBeenCalledTimes(1);
+    });
   });
 });

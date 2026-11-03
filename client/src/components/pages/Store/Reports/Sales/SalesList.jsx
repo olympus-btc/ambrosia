@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusChip } from "@/components/shared/StatusChip";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { formatDateParts } from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
@@ -15,6 +16,7 @@ import { buildSaleItemKey } from "./utils/saleItemKeys";
 
 export function SalesList({ sales, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   if (!sales?.length) {
     return (
@@ -78,7 +80,7 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
     {
       key: "payment",
       label: reportsTranslations("sales.paymentMethod"),
-      render: ({ paymentMethod }) => <span className="text-sm text-gray-700">{paymentMethod || reportsTranslations("payment.unknown")}</span>,
+      render: ({ paymentMethod }) => <span className="text-sm text-gray-700">{getPaymentMethodLabel(paymentMethod) || reportsTranslations("payment.unknown")}</span>,
     },
     {
       key: "date",

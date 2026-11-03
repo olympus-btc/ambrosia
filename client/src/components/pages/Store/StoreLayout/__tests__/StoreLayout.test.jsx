@@ -5,6 +5,7 @@ import {
   getAdminNotificationPreferences,
   getAdminNotifications,
 } from "@/services/adminNotificationsService";
+import { getSecretsLockStatus } from "@/services/secretsService";
 import * as useNavigationHook from "@hooks/useNavigation";
 import { I18nProvider } from "@i18n/I18nProvider";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
@@ -13,6 +14,7 @@ import { StoreLayout } from "../StoreLayout";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/store"),
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
 
 jest.mock("lucide-react", () => ({
@@ -25,6 +27,9 @@ jest.mock("lucide-react", () => ({
   Languages: () => <div>Languages Icon</div>,
   Menu: () => <div>Menu Icon</div>,
   X: () => <div>X Icon</div>,
+  Lock: () => <div>Lock Icon</div>,
+  Eye: () => <div>Eye Icon</div>,
+  EyeOff: () => <div>EyeOff Icon</div>,
 }));
 
 jest.mock("@/lib/http", () => ({
@@ -34,6 +39,11 @@ jest.mock("@/lib/http", () => ({
 jest.mock("@/services/adminNotificationsService", () => ({
   getAdminNotificationPreferences: jest.fn(),
   getAdminNotifications: jest.fn(),
+}));
+
+jest.mock("@/services/secretsService", () => ({
+  ...jest.requireActual("@/services/secretsService"),
+  getSecretsLockStatus: jest.fn(),
 }));
 
 jest.mock("@/hooks/useAdminNotificationsWebsocket", () => ({
@@ -100,6 +110,7 @@ describe("StoreLayout", () => {
     getAdminNotificationPreferences.mockResolvedValue([
       { category: "wallet", inAppEnabled: true, pushEnabled: true },
     ]);
+    getSecretsLockStatus.mockResolvedValue({ encryptionActive: false, locked: false });
     Object.defineProperty(navigator, "serviceWorker", {
       configurable: true,
       value: {
@@ -584,7 +595,7 @@ describe("StoreLayout", () => {
 
     it("renders mobile drawer trigger", () => {
       renderStoreLayout();
-      expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
+      expect(screen.getByLabelText("menu")).toBeInTheDocument();
     });
 
     it("renders main content area", () => {
@@ -628,7 +639,7 @@ describe("StoreLayout", () => {
   describe("Mobile Drawer", () => {
     it("renders hamburger button in bottom nav", () => {
       renderStoreLayout();
-      expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
+      expect(screen.getByLabelText("menu")).toBeInTheDocument();
     });
 
     it("drawer is not visible by default", () => {
@@ -638,14 +649,14 @@ describe("StoreLayout", () => {
 
     it("drawer opens when hamburger is clicked", () => {
       renderStoreLayout();
-      fireEvent.click(screen.getByLabelText("Open menu"));
+      fireEvent.click(screen.getByLabelText("menu"));
 
       expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
 
     it("drawer shows navigation items when open", () => {
       renderStoreLayout();
-      fireEvent.click(screen.getByLabelText("Open menu"));
+      fireEvent.click(screen.getByLabelText("menu"));
 
       const dialog = screen.getByRole("dialog");
       expect(within(dialog).getByText("users")).toBeInTheDocument();
@@ -662,7 +673,7 @@ describe("StoreLayout", () => {
     it("renders hamburger button with More label", () => {
       renderStoreLayout();
       const bottomNav = screen.getByTestId("bottom-nav");
-      expect(within(bottomNav).getByLabelText("Open menu")).toBeInTheDocument();
+      expect(within(bottomNav).getByLabelText("menu")).toBeInTheDocument();
       expect(within(bottomNav).getByText("menu")).toBeInTheDocument();
     });
 
@@ -840,6 +851,74 @@ describe("StoreLayout", () => {
       renderStoreLayout();
       expect(useNavigationHook.useNavigation).toHaveBeenCalled();
       expect(within(getDesktopSidebar()).getByText("users")).toBeInTheDocument();
+    });
+  });
+
+  describe("Secrets lock badge", () => {
+    const navigationWithWallet = [
+      ...defaultNavigation,
+      { path: "/store/wallet", label: "wallet", icon: "shopping-cart", showInNavbar: true },
+    ];
+
+    beforeEach(() => {
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: navigationWithWallet,
+        isAuth: true,
+        isAdmin: false,
+        isLoading: false,
+        user: { userName: "testuser" },
+        logout: mockLogout,
+      });
+    });
+
+    it("shows the locked badge on the wallet nav item when secrets are locked", async () => {
+      getSecretsLockStatus.mockResolvedValue({ encryptionActive: true, locked: true });
+
+      renderStoreLayout();
+
+      await waitFor(() => {
+        const walletLink = within(getDesktopSidebar()).getByText("wallet").closest("a");
+        expect(within(walletLink).getByLabelText("lockedBadgeLabel")).toBeInTheDocument();
+      });
+    });
+
+    it("does not show the locked badge on the settings nav item", async () => {
+      getSecretsLockStatus.mockResolvedValue({ encryptionActive: true, locked: true });
+
+      renderStoreLayout();
+
+      await waitFor(() => {
+        const walletLink = within(getDesktopSidebar()).getByText("wallet").closest("a");
+        expect(within(walletLink).getByLabelText("lockedBadgeLabel")).toBeInTheDocument();
+      });
+
+      const settingsLink = within(getDesktopSidebar()).getByText("settings").closest("a");
+      expect(within(settingsLink).queryByLabelText("lockedBadgeLabel")).not.toBeInTheDocument();
+    });
+
+    it("does not show the locked badge when secrets are unlocked", async () => {
+      getSecretsLockStatus.mockResolvedValue({ encryptionActive: true, locked: false });
+
+      renderStoreLayout();
+      await waitFor(() => expect(getSecretsLockStatus).toHaveBeenCalled());
+
+      expect(screen.queryByLabelText("lockedBadgeLabel")).not.toBeInTheDocument();
+    });
+
+    it("opens the wallet guard prompt when the locked badge is clicked", async () => {
+      getSecretsLockStatus.mockResolvedValue({ encryptionActive: true, locked: true });
+
+      renderStoreLayout();
+      let walletLink;
+      await waitFor(() => {
+        walletLink = within(getDesktopSidebar()).getByText("wallet").closest("a");
+        expect(within(walletLink).getByLabelText("lockedBadgeLabel")).toBeInTheDocument();
+      });
+
+      fireEvent.click(within(walletLink).getByLabelText("lockedBadgeLabel"));
+
+      expect(screen.getByText("secretsEncryptionCard.modalTitle")).toBeInTheDocument();
     });
   });
 });

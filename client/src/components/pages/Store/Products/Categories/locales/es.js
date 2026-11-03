@@ -13,7 +13,7 @@ const categoriesEs = {
       titleAdd: "Agregar Categoría",
       titleEdit: "Editar Categoría",
       titleDelete: "Eliminar Categoría",
-      subtitleDelete: "Estás seguro que deseas eliminar",
+      subtitleDelete: "¿Estás seguro de que deseas eliminar",
       warningDelete: "Esta acción no se puede deshacer.",
       categoryNameLabel: "Nombre de la Categoría",
       categoryNamePlaceholder: "Electrónica",
@@ -23,7 +23,7 @@ const categoriesEs = {
       editButton: "Guardar",
       cancelButton: "Cancelar",
       deleteButton: "Eliminar",
-      errorMsgInputFieldEmpty: "Por favor, complete este campo.",
+      errorMsgInputFieldEmpty: "Por favor, completa este campo.",
     },
     toasts: {
       genericErrorTitle: "Error",

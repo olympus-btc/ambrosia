@@ -1,0 +1,17 @@
+import { getNwcConnectionErrorDescription } from "../nwcConnectionErrors";
+
+const errorsTranslations = (translationKey) => translationKey;
+
+describe("getNwcConnectionErrorDescription", () => {
+  it("returns the secrets-locked message when the error status is 409", () => {
+    expect(getNwcConnectionErrorDescription(errorsTranslations, { status: 409 })).toBe(
+      "nwcConnection.errors.secretsLocked",
+    );
+  });
+
+  it("falls back to the code-specific translation for a non-409 error", () => {
+    expect(getNwcConnectionErrorDescription(errorsTranslations, { code: "nwc_connection_failed" })).toBe(
+      "nwcConnection.errors.connectionFailed",
+    );
+  });
+});

@@ -13,10 +13,12 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import pos.ambrosia.models.OpenCashDrawerRequest
 import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
 import pos.ambrosia.models.SetPrinterRequest
+import pos.ambrosia.services.CashDrawerService
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.services.PrintService
 import pos.ambrosia.services.PrinterConfigService
@@ -30,13 +32,15 @@ fun Application.configurePrinters() {
     val printerConfigService = PrinterConfigService()
     val printService = PrintService(ticketTemplateService, printerConfigService)
     val configService = ConfigService()
-    routing { route("/printers") { printers(printService, configService, printerConfigService) } }
+    val cashDrawerService = CashDrawerService(printerConfigService)
+    routing { route("/printers") { printers(printService, configService, printerConfigService, cashDrawerService) } }
 }
 
 fun Route.printers(
     printService: PrintService,
     configService: ConfigService,
     printerConfigService: PrinterConfigService,
+    cashDrawerService: CashDrawerService,
 ) {
     authenticate("auth-jwt") {
         get("/available") { call.respond(printService.getAvailablePrinters()) }
@@ -50,6 +54,22 @@ fun Route.printers(
                 call.respondText("Print job sent", status = HttpStatusCode.OK)
             } catch (printError: Exception) {
                 throw PrintTicketException(printError.message ?: "An unknown error occurred during printing.")
+            }
+        }
+    }
+    authorizePermission("cash_drawer_open") {
+        post("/cash-drawer/open") {
+            val openCashDrawerRequest =
+                try {
+                    call.receive<OpenCashDrawerRequest>()
+                } catch (_: Exception) {
+                    OpenCashDrawerRequest()
+                }
+            try {
+                val openedCashDrawerCount = cashDrawerService.openManually(openCashDrawerRequest.printerId)
+                call.respond(HttpStatusCode.OK, mapOf("openedCashDrawerCount" to openedCashDrawerCount))
+            } catch (openCashDrawerError: Exception) {
+                throw PrintTicketException(openCashDrawerError.message ?: "The cash drawer could not be opened.")
             }
         }
     }

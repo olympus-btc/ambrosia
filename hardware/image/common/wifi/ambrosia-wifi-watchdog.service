@@ -1,0 +1,14 @@
+[Unit]
+Description=Ambrosia Wi-Fi watchdog (reconnects wlan0 when TCP traffic stalls)
+After=NetworkManager.service
+Wants=NetworkManager.service
+ConditionPathExists=/opt/ambrosia/bin/ambrosia-wifi-watchdog
+
+[Service]
+Type=simple
+ExecStart=/opt/ambrosia/bin/ambrosia-wifi-watchdog
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

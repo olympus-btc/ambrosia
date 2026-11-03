@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 import { ImageUploader } from "@components/shared/ImageUploader";
 
 import { BundleProductSelector } from "./BundleProductSelector";
@@ -38,6 +39,8 @@ export function AddProductsModal({
 }) {
   const productsTranslations = useTranslations("products");
   const { currency } = useCurrency();
+  const { config: businessConfig } = useConfigurations();
+  const priceStep = businessConfig?.priceStep ?? 0.01;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (productFormSubmission) => {
@@ -163,6 +166,7 @@ export function AddProductsModal({
                 productForm={productForm}
                 onChange={onChange}
                 currency={currency}
+                priceStep={priceStep}
                 includeStock={!productForm.isBundle && (productForm.trackStock ?? true)}
               />
             )}

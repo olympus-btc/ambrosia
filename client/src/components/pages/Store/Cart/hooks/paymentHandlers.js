@@ -52,6 +52,7 @@ export function buildHandlePay({
   setBtcPaymentConfig,
   setCashPaymentConfig,
   setCardPaymentConfig,
+  setTransferPaymentConfig,
   onResetCart,
   onPay,
   notifyError,
@@ -68,6 +69,9 @@ export function buildHandlePay({
     subtotal = 0,
     discount = 0,
     discountAmount = 0,
+    tip = 0,
+    tipType = "percentage",
+    tipAmount = 0,
     total = 0,
     selectedPaymentMethod,
   }) {
@@ -87,7 +91,7 @@ export function buildHandlePay({
 
     try {
       const currencyId = currency.id;
-      const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, total, formatAmount });
+      const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, tipAmount, total, formatAmount });
       const paymentMethodData = paymentMethodMap[selectedPaymentMethod] || null;
       const paymentMethod = classifyPaymentMethod(paymentMethodData?.name || "");
 
@@ -108,10 +112,15 @@ export function buildHandlePay({
           subtotal: paymentAmounts.subtotal,
           discount: paymentAmounts.discount,
           discountAmount: paymentAmounts.discountAmount,
+          tip,
+          tipType,
+          tipAmount: paymentAmounts.tipAmount,
+          tipAmountFiat: paymentAmounts.tipAmountFiat,
           total: paymentAmounts.total,
           cartItems,
           invoiceDescription,
           selectedPaymentMethod,
+          paymentMethodName: paymentMethodData?.name || "",
           currencyId,
           userId: user.userId,
         });
@@ -125,6 +134,7 @@ export function buildHandlePay({
           cartItems,
           paymentAmounts,
           selectedPaymentMethod,
+          paymentMethodName: paymentMethodData?.name || "",
           currencyId,
         });
         return;
@@ -132,6 +142,19 @@ export function buildHandlePay({
 
       if (paymentMethod === PAYMENT_METHODS.CARD) {
         setCardPaymentConfig({
+          amountDue: paymentAmounts.amountFiat,
+          displayTotal: paymentAmounts.displayTotal,
+          cartItems,
+          paymentAmounts,
+          selectedPaymentMethod,
+          currencyId,
+          methodLabel: paymentMethodData?.name || "",
+        });
+        return;
+      }
+
+      if (paymentMethod === PAYMENT_METHODS.TRANSFER) {
+        setTransferPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
           cartItems,
@@ -156,7 +179,9 @@ export function buildHandlePay({
         items: cartItems,
         totalCents: paymentAmounts.total,
         discountAmountCents: paymentAmounts.discountAmount,
+        tipAmountCents: paymentAmounts.tipAmount,
         ticketId: storeCheckoutResult.ticketId,
+        paymentMethodName: paymentMethodData?.name || "",
       });
 
       notifySuccess("success.paid");
@@ -190,6 +215,7 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
           currencyId: prevConfig.currencyId,
           amount: prevConfig.amountFiat,
           discountAmount: prevConfig.discountAmount ?? 0,
+          tipAmount: prevConfig.tipAmountFiat ?? (prevConfig.tipAmount ? prevConfig.tipAmount / 100 : 0),
           transactionId: invoiceReadyData.invoice.serialized || "",
           satoshiAmount: invoiceReadyData.satoshis ?? null,
           exchangeRateAtPayment: invoiceReadyData.exchangeRate ?? null,
@@ -225,6 +251,8 @@ async function runDeferredCheckout({
   printCustomerReceipt,
   refreshShiftTickets,
   receiptDiscountAmount,
+  receiptTipAmount,
+  receiptPaymentMethodName,
 }) {
   dispatch({ type: "start" });
   try {
@@ -243,8 +271,10 @@ async function runDeferredCheckout({
       items: receiptItems,
       totalCents: receiptTotal,
       discountAmountCents: receiptDiscountAmount,
+      tipAmountCents: receiptTipAmount,
       ticketId: storeCheckoutResult.ticketId,
       invoice: receiptInvoice,
+      paymentMethodName: receiptPaymentMethodName,
     });
 
     onPay?.(buildOnPayPayload(storeCheckoutResult));
@@ -275,6 +305,8 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
           subtotal: config.subtotal,
           discount: config.discount,
           discountAmount: config.discountAmount,
+          tipAmount: config.tipAmount,
+          tipAmountFiat: config.tipAmountFiat,
           total: config.total,
         },
         selectedPaymentMethod: config.selectedPaymentMethod,
@@ -289,12 +321,15 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
       receiptItems: config.cartItems,
       receiptTotal: config.total,
       receiptDiscountAmount: config.discountAmount,
+      receiptTipAmount: config.tipAmount,
+      receiptPaymentMethodName: config.paymentMethodName,
       receiptInvoice: completionData?.invoice?.serialized || "",
       buildOnPayPayload: (storeCheckoutResult) => ({
         items: config.cartItems,
         subtotal: config.subtotal,
         discount: config.discount,
         discountAmount: config.discountAmount,
+        tipAmount: config.tipAmount,
         total: config.total,
         amount: config.amountFiat,
         paymentMethod: config.selectedPaymentMethod,
@@ -318,24 +353,26 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
 
 export function buildHandleCashComplete({ getConfig, setConfig, ...context }) {
   return async function handleCashComplete(completionData) {
-    const config = getConfig();
-    if (!config) return;
+    const cashPaymentConfig = getConfig();
+    if (!cashPaymentConfig) return;
 
     await runDeferredCheckout({
       ...context,
       checkoutArgs: {
-        cartItems: config.cartItems || [],
-        paymentAmounts: config.paymentAmounts,
-        selectedPaymentMethod: config.selectedPaymentMethod,
-        currencyId: config.currencyId,
+        cartItems: cashPaymentConfig.cartItems || [],
+        paymentAmounts: cashPaymentConfig.paymentAmounts,
+        selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
+        currencyId: cashPaymentConfig.currencyId,
       },
-      receiptItems: config.cartItems,
-      receiptTotal: config.paymentAmounts.total,
-      receiptDiscountAmount: config.paymentAmounts.discountAmount,
+      receiptItems: cashPaymentConfig.cartItems,
+      receiptTotal: cashPaymentConfig.paymentAmounts.total,
+      receiptDiscountAmount: cashPaymentConfig.paymentAmounts.discountAmount,
+      receiptTipAmount: cashPaymentConfig.paymentAmounts.tipAmount,
+      receiptPaymentMethodName: cashPaymentConfig.paymentMethodName,
       buildOnPayPayload: (storeCheckoutResult) => ({
-        items: config.cartItems,
-        ...config.paymentAmounts,
-        paymentMethod: config.selectedPaymentMethod,
+        items: cashPaymentConfig.cartItems,
+        ...cashPaymentConfig.paymentAmounts,
+        paymentMethod: cashPaymentConfig.selectedPaymentMethod,
         ...storeCheckoutResult,
         cashReceived: completionData?.cashReceived,
         change: completionData?.change,
@@ -349,29 +386,65 @@ export function buildHandleCashComplete({ getConfig, setConfig, ...context }) {
 
 export function buildHandleCardComplete({ getConfig, setConfig, ...context }) {
   return async function handleCardComplete() {
-    const config = getConfig();
-    if (!config) return;
+    const cardPaymentConfig = getConfig();
+    if (!cardPaymentConfig) return;
 
     await runDeferredCheckout({
       ...context,
       checkoutArgs: {
-        cartItems: config.cartItems || [],
-        paymentAmounts: config.paymentAmounts,
-        selectedPaymentMethod: config.selectedPaymentMethod,
-        currencyId: config.currencyId,
+        cartItems: cardPaymentConfig.cartItems || [],
+        paymentAmounts: cardPaymentConfig.paymentAmounts,
+        selectedPaymentMethod: cardPaymentConfig.selectedPaymentMethod,
+        currencyId: cardPaymentConfig.currencyId,
       },
-      receiptItems: config.cartItems,
-      receiptTotal: config.paymentAmounts.total,
-      receiptDiscountAmount: config.paymentAmounts.discountAmount,
+      receiptItems: cardPaymentConfig.cartItems,
+      receiptTotal: cardPaymentConfig.paymentAmounts.total,
+      receiptDiscountAmount: cardPaymentConfig.paymentAmounts.discountAmount,
+      receiptTipAmount: cardPaymentConfig.paymentAmounts.tipAmount,
+      receiptPaymentMethodName: cardPaymentConfig.methodLabel,
       buildOnPayPayload: (storeCheckoutResult) => ({
-        items: config.cartItems,
-        ...config.paymentAmounts,
-        paymentMethod: config.selectedPaymentMethod,
+        items: cardPaymentConfig.cartItems,
+        ...cardPaymentConfig.paymentAmounts,
+        paymentMethod: cardPaymentConfig.selectedPaymentMethod,
         ...storeCheckoutResult,
-        methodLabel: config.methodLabel,
+        methodLabel: cardPaymentConfig.methodLabel,
       }),
       successKey: "success.cardPaid",
       errorKey: "errors.cardComplete",
+      finalize: () => setConfig(null),
+    });
+  };
+}
+
+export function buildHandleTransferComplete({ getConfig, setConfig, ...handlerContext }) {
+  return async function handleTransferComplete(completionData) {
+    const transferPaymentConfig = getConfig();
+    if (!transferPaymentConfig) return;
+
+    await runDeferredCheckout({
+      ...handlerContext,
+      checkoutArgs: {
+        cartItems: transferPaymentConfig.cartItems || [],
+        paymentAmounts: transferPaymentConfig.paymentAmounts,
+        selectedPaymentMethod: transferPaymentConfig.selectedPaymentMethod,
+        currencyId: transferPaymentConfig.currencyId,
+        transactionId: completionData?.reference || "",
+      },
+      receiptItems: transferPaymentConfig.cartItems,
+      receiptTotal: transferPaymentConfig.paymentAmounts.total,
+      receiptDiscountAmount: transferPaymentConfig.paymentAmounts.discountAmount,
+      receiptTipAmount: transferPaymentConfig.paymentAmounts.tipAmount,
+      receiptPaymentMethodName: transferPaymentConfig.methodLabel,
+      buildOnPayPayload: (storeCheckoutResult) => ({
+        items: transferPaymentConfig.cartItems,
+        ...transferPaymentConfig.paymentAmounts,
+        paymentMethod: transferPaymentConfig.selectedPaymentMethod,
+        ...storeCheckoutResult,
+        methodLabel: transferPaymentConfig.methodLabel,
+        reference: completionData?.reference,
+      }),
+      successKey: "success.transferPaid",
+      errorKey: "errors.transferComplete",
       finalize: () => setConfig(null),
     });
   };

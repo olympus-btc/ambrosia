@@ -1,28 +1,31 @@
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
-const logger = require('../utils/logger');
-const { getDataDirectory, getPhoenixDataDirectory, getLogsDirectory } = require('../utils/resourcePaths');
+import { logger } from '../utils/logger.js';
+import { getDataDirectory, getPhoenixDataDirectory, getLogsDirectory } from '../utils/resourcePaths.js';
 
-function generateRandomHex(length) {
-  return crypto.randomBytes(length).toString('hex');
+import { phoenixdCredentialsStore } from './PhoenixdCredentialsStore.js';
+import { serverSecretStore } from './ServerSecretStore.js';
+
+function generateRandomHex(byteLength) {
+  return crypto.randomBytes(byteLength).toString('hex');
 }
 
-function ensureDirectoryExists(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    logger.log(`[ConfigurationBootstrap] Created directory: ${dir}`);
+function ensureDirectoryExists(directoryPath) {
+  if (!fs.existsSync(directoryPath)) {
+    fs.mkdirSync(directoryPath, { recursive: true });
+    logger.log(`[ConfigurationBootstrap] Created directory: ${directoryPath}`);
   }
 }
 
 function configExists() {
-  const dataDir = getDataDirectory();
-  const phoenixDir = getPhoenixDataDirectory();
-  const ambrosiaConfig = path.join(dataDir, 'ambrosia.conf');
-  const phoenixConfig = path.join(phoenixDir, 'phoenix.conf');
+  const dataDirectory = getDataDirectory();
+  const phoenixDirectory = getPhoenixDataDirectory();
+  const ambrosiaConfigPath = path.join(dataDirectory, 'ambrosia.conf');
+  const phoenixConfigPath = path.join(phoenixDirectory, 'phoenix.conf');
 
-  return fs.existsSync(ambrosiaConfig) && fs.existsSync(phoenixConfig);
+  return fs.existsSync(ambrosiaConfigPath) && fs.existsSync(phoenixConfigPath);
 }
 
 function readConfig(configPath) {
@@ -30,39 +33,53 @@ function readConfig(configPath) {
     return {};
   }
 
-  const content = fs.readFileSync(configPath, 'utf-8');
-  const config = {};
+  const configFileContent = fs.readFileSync(configPath, 'utf-8');
+  const configEntries = {};
 
-  content.split('\n').forEach((line) => {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
+  configFileContent.split('\n').forEach((line) => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
       if (key && valueParts.length > 0) {
-        config[key.trim()] = valueParts.join('=').trim();
+        configEntries[key.trim()] = valueParts.join('=').trim();
       }
     }
   });
 
-  return config;
+  return configEntries;
 }
 
-function writeConfig(configPath, config) {
-  const lines = Object.entries(config).map(([key, value]) => `${key}=${value}`);
-  fs.writeFileSync(configPath, `${lines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
+function writeConfig(configPath, configEntries) {
+  const configFileLines = Object.entries(configEntries).map(([key, value]) => `${key}=${value}`);
+  fs.writeFileSync(configPath, `${configFileLines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
   logger.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
+function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, label) {
+  if (readSecret()) {
+    return;
+  }
+
+  if (legacyPlaintextSecret) {
+    logger.log(`[ConfigurationBootstrap] Migrating the existing ${label} to encrypted storage...`);
+    saveSecret(legacyPlaintextSecret);
+  } else {
+    logger.log(`[ConfigurationBootstrap] Generating encrypted ${label}...`);
+    saveSecret(generateRandomHex(32));
+  }
+}
+
 async function ensureConfigurations(ports) {
-  const dataDir = getDataDirectory();
-  const phoenixDir = getPhoenixDataDirectory();
-  const logsDir = getLogsDirectory();
+  const dataDirectory = getDataDirectory();
+  const phoenixDirectory = getPhoenixDataDirectory();
+  const logsDirectory = getLogsDirectory();
 
-  ensureDirectoryExists(dataDir);
-  ensureDirectoryExists(phoenixDir);
-  ensureDirectoryExists(logsDir);
+  ensureDirectoryExists(dataDirectory);
+  ensureDirectoryExists(phoenixDirectory);
+  ensureDirectoryExists(logsDirectory);
 
-  const ambrosiaConfigPath = path.join(dataDir, 'ambrosia.conf');
-  const phoenixConfigPath = path.join(phoenixDir, 'phoenix.conf');
+  const ambrosiaConfigPath = path.join(dataDirectory, 'ambrosia.conf');
+  const phoenixConfigPath = path.join(phoenixDirectory, 'phoenix.conf');
 
   let ambrosiaConfig = readConfig(ambrosiaConfigPath);
   let phoenixConfig = readConfig(phoenixConfigPath);
@@ -71,14 +88,10 @@ async function ensureConfigurations(ports) {
 
   if (!fs.existsSync(ambrosiaConfigPath) || Object.keys(ambrosiaConfig).length === 0) {
     logger.log('[ConfigurationBootstrap] Generating Ambrosia configuration...');
-    const secret = generateRandomHex(32);
-    const secretHash = crypto.createHash('sha256').update(secret).digest('hex');
 
     ambrosiaConfig = {
       'http-bind-ip': '127.0.0.1',
       'http-bind-port': ports.backend.toString(),
-      secret,
-      'secret-hash': secretHash,
       'phoenixd-url': `http://localhost:${ports.phoenixd}`,
     };
 
@@ -86,18 +99,26 @@ async function ensureConfigurations(ports) {
     needsUpdate = true;
   } else {
     ambrosiaConfig['http-bind-port'] = ports.backend.toString();
-    ambrosiaConfig['phoenixd-url'] = `http://localhost:${ports.phoenixd}`;
+
+    const phoenixdRemoteConfigured = ambrosiaConfig['phoenixd-remote'] === 'true';
+    if (!phoenixdRemoteConfigured) {
+      ambrosiaConfig['phoenixd-url'] = `http://localhost:${ports.phoenixd}`;
+    }
+  }
+
+  migrateOrGenerateSecret(serverSecretStore.read, serverSecretStore.save, ambrosiaConfig.secret, 'server secret');
+
+  if ('secret' in ambrosiaConfig || 'secret-hash' in ambrosiaConfig) {
+    delete ambrosiaConfig.secret;
+    delete ambrosiaConfig['secret-hash'];
+    needsUpdate = true;
   }
 
   if (!fs.existsSync(phoenixConfigPath) || Object.keys(phoenixConfig).length === 0) {
     logger.log('[ConfigurationBootstrap] Generating Phoenix configuration...');
-    const httpPassword = generateRandomHex(32);
-    const httpPasswordLimited = generateRandomHex(32);
     const webhookSecret = generateRandomHex(32);
 
     phoenixConfig = {
-      'http-password': httpPassword,
-      'http-password-limited-access': httpPasswordLimited,
       'webhook-secret': webhookSecret,
       webhook: `http://127.0.0.1:${ports.backend}/webhook/phoenixd`,
       'auto-liquidity': 'off',
@@ -108,6 +129,26 @@ async function ensureConfigurations(ports) {
     needsUpdate = true;
   } else {
     phoenixConfig.webhook = `http://127.0.0.1:${ports.backend}/webhook/phoenixd`;
+  }
+
+  migrateOrGenerateSecret(
+    phoenixdCredentialsStore.readHttpPassword,
+    phoenixdCredentialsStore.saveHttpPassword,
+    phoenixConfig['http-password'],
+    'phoenixd http-password',
+  );
+
+  migrateOrGenerateSecret(
+    phoenixdCredentialsStore.readHttpPasswordLimitedAccess,
+    phoenixdCredentialsStore.saveHttpPasswordLimitedAccess,
+    phoenixConfig['http-password-limited-access'],
+    'phoenixd http-password-limited-access',
+  );
+
+  if ('http-password' in phoenixConfig || 'http-password-limited-access' in phoenixConfig) {
+    delete phoenixConfig['http-password'];
+    delete phoenixConfig['http-password-limited-access'];
+    needsUpdate = true;
   }
 
   if (needsUpdate || !fs.existsSync(ambrosiaConfigPath) || !fs.existsSync(phoenixConfigPath)) {
@@ -121,7 +162,7 @@ async function ensureConfigurations(ports) {
   };
 }
 
-module.exports = {
+export const configurationBootstrap = {
   configExists,
   ensureConfigurations,
   readConfig,

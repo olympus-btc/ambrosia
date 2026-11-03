@@ -6,10 +6,7 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  usePermission: () => true,
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress }) => <button aria-label="Edit User" onClick={onPress}>edit</button>,

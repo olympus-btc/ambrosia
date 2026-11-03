@@ -12,3 +12,9 @@ export const toNumberInputValue = (changeArgument, fallback = 0) => {
 
   return toFiniteNumber(rawValue, fallback);
 };
+
+export const isPriceStepAligned = (price, priceStep) => {
+  if (!Number.isFinite(price) || !Number.isFinite(priceStep) || priceStep <= 0) return true;
+  const stepCount = price / priceStep;
+  return Math.abs(stepCount - Math.round(stepCount)) < 1e-6;
+};

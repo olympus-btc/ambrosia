@@ -46,4 +46,13 @@ else
     echo "Using embedded logback configuration"
 fi
 
-java $JVM_OPTS -jar "$JAR_PATH" "$@"
+SHOULD_STOP=0
+trap 'SHOULD_STOP=1; [ -n "$CHILD_PID" ] && kill -TERM "$CHILD_PID" 2>/dev/null' TERM INT
+
+while true; do
+    java $JVM_OPTS -jar "$JAR_PATH" "$@" &
+    CHILD_PID=$!
+    wait "$CHILD_PID"
+    [ "$SHOULD_STOP" -eq 1 ] && break
+    sleep 1
+done

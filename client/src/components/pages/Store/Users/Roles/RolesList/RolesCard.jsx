@@ -10,13 +10,13 @@ import { RequirePermission } from "@/hooks/usePermission";
 import { resolveRoleName } from "../utils/roleTemplates";
 
 export function RolesCard({ role, canManageRoles, onEdit, onDelete }) {
-  const t = useTranslations();
+  const roleTranslations = useTranslations();
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-green-900 truncate">{resolveRoleName(role.role, t)}</p>
+          <p className="font-medium text-green-900 truncate">{resolveRoleName(role.role, roleTranslations)}</p>
           <Chip
             size="sm"
             className={role.isAdmin
@@ -25,16 +25,16 @@ export function RolesCard({ role, canManageRoles, onEdit, onDelete }) {
             }
             color={role.isAdmin ? undefined : "default"}
           >
-            {role.isAdmin ? t("roles.labels.adminChip") : t("roles.labels.standardChip")}
+            {role.isAdmin ? roleTranslations("roles.labels.adminChip") : roleTranslations("roles.labels.standardChip")}
           </Chip>
         </div>
         {canManageRoles && (
           <div className="flex gap-2 shrink-0">
             <RequirePermission allOf={["roles_update"]}>
-              <EditButton aria-label="Edit Role" onPress={() => onEdit(role)} />
+              <EditButton aria-label={roleTranslations("roles.actions.edit")} onPress={() => onEdit(role)} />
             </RequirePermission>
             <RequirePermission allOf={["roles_delete"]}>
-              <DeleteButton aria-label="Delete Role" onPress={() => onDelete(role)} />
+              <DeleteButton aria-label={roleTranslations("roles.actions.delete")} onPress={() => onDelete(role)} />
             </RequirePermission>
           </div>
         )}

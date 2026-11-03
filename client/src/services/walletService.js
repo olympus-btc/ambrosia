@@ -5,8 +5,17 @@ function createWalletServiceError(message, errorDetails = {}) {
   const error = new Error(message);
   error.status = errorDetails.status;
   error.code = errorDetails.code ?? "unknown";
+  error.category = errorDetails.category ?? "unknown";
   error.source = errorDetails.source ?? "ambrosia";
   return error;
+}
+
+export function isSecretsLockedError(error) {
+  return error?.status === 409;
+}
+
+export function isChannelNotAvailableError(error) {
+  return error?.code === "channel_not_available";
 }
 
 function isValidPaymentResponse(paymentResponseBody) {
@@ -37,6 +46,7 @@ export const loginWallet = async (password) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ password }),
+    skipForbiddenRedirect: true,
   });
   const walletLoginBody = await parseJsonResponse(walletLoginResponse, null);
   if (!walletLoginResponse.ok) {
@@ -156,6 +166,7 @@ export async function payInvoiceFromService(invoice, amountSat, { exchangeRate =
       {
         status: payInvoiceResponse.status,
         code: paymentResponseBody?.code,
+        category: paymentResponseBody?.category,
         source: paymentResponseBody?.source,
       },
     );
@@ -216,6 +227,7 @@ export async function updateNwcUri(nwcUri) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ nwcUri: nwcUri.trim() }),
+    skipForbiddenRedirect: true,
   });
   const nwcUriUpdateBody = await parseJsonResponse(nwcUriUpdateResponse, null);
   if (!nwcUriUpdateResponse.ok) {
@@ -228,8 +240,49 @@ export async function updateNwcUri(nwcUri) {
   return nwcUriUpdateBody;
 }
 
+export async function testPhoenixdConnection(phoenixdUrl, phoenixdPassword) {
+  const testConnectionResponse = await httpClient("/wallet/test-phoenixd-connection", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phoenixdUrl, phoenixdPassword }),
+    skipForbiddenRedirect: true,
+  });
+  return await parseWalletResponseOrThrow(
+    testConnectionResponse,
+    null,
+    "Could not connect to the phoenixd node",
+  );
+}
+
+export async function updatePhoenixdRemote({ phoenixdRemote, phoenixdUrl, phoenixdPassword }) {
+  const updatePhoenixdRemoteResponse = await httpClient("/wallet/update-phoenixd-remote", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phoenixdRemote, phoenixdUrl, phoenixdPassword }),
+    skipForbiddenRedirect: true,
+  });
+  return await parseWalletResponseOrThrow(
+    updatePhoenixdRemoteResponse,
+    null,
+    "Could not update the phoenixd connection",
+  );
+}
+
+export async function getPhoenixdRemoteStatus() {
+  const phoenixdRemoteStatusResponse = await httpClient("/wallet/phoenixd-remote-status");
+  return await parseWalletResponseOrThrow(
+    phoenixdRemoteStatusResponse,
+    null,
+    "Could not load the phoenixd remote status",
+  );
+}
+
 export async function getSeed() {
-  const seedResponse = await httpClient("/wallet/seed");
+  const seedResponse = await httpClient("/wallet/seed", { skipForbiddenRedirect: true });
   const seedResponseBody = await parseJsonResponse(seedResponse, null);
   if (!seedResponse.ok) {
     throw createWalletServiceError(seedResponseBody?.message || "Seed not available", {
@@ -251,7 +304,11 @@ export async function closeChannel(channelId, address, feerateSatByte) {
   });
   if (!closeChannelResponse.ok) {
     const closeChannelErrorBody = await parseJsonResponse(closeChannelResponse, {});
-    throw new Error(closeChannelErrorBody?.message ?? "Failed to close channel");
+    throw createWalletServiceError(closeChannelErrorBody?.message ?? "Failed to close channel", {
+      status: closeChannelResponse.status,
+      code: closeChannelErrorBody?.code,
+      source: closeChannelErrorBody?.source,
+    });
   }
   return await parseJsonResponse(closeChannelResponse, null);
 }

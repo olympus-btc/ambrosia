@@ -10,10 +10,7 @@ jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (cents) => `$${cents}` }),
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  usePermission: () => true,
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("@/components/shared/EditButton", () => ({
   EditButton: ({ onPress, children }) => <button onClick={onPress}>{children}</button>,

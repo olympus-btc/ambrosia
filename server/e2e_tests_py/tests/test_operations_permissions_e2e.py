@@ -26,28 +26,6 @@ class TestPaymentsPermissions:
         logger.info("✓ payments_read correctly gates GET /payments")
 
     @pytest.mark.asyncio
-    async def test_payments_create_required_for_post(self, client_factory):
-        """POST /payments returns 403 without payments_create permission."""
-        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
-        assert_status_code(await no_perm.post("/payments", json={}), 403)
-
-        with_perm = await client_factory(permissions=["payments_create"])
-        assert (await with_perm.post("/payments", json={})).status_code != 403
-        logger.info("✓ payments_create correctly gates POST /payments")
-
-    @pytest.mark.asyncio
-    async def test_payments_update_required_for_put(self, client_factory):
-        """PUT /payments/{id} returns 403 without payments_update permission."""
-        no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)
-        assert_status_code(await no_perm.put(f"/payments/{DUMMY_ID}", json={}), 403)
-
-        with_perm = await client_factory(permissions=["payments_update"])
-        assert (
-            await with_perm.put(f"/payments/{DUMMY_ID}", json={})
-        ).status_code != 403
-        logger.info("✓ payments_update correctly gates PUT /payments/{id}")
-
-    @pytest.mark.asyncio
     async def test_payments_delete_required_for_delete(self, client_factory):
         """DELETE /payments/{id} returns 403 without payments_delete permission."""
         no_perm = await client_factory(permissions=BASELINE_PERMISSIONS)

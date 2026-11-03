@@ -21,7 +21,7 @@ export function useOrdersFilters() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const { orders, fetchOrders, fetchOrdersFiltered } = useOrders();
+  const { orders, forbidden, fetchOrders, fetchOrdersFiltered } = useOrders({ skipForbiddenRedirect: true });
 
   const filteredOrders = useMemo(
     () => orders.filter((order) => {
@@ -71,6 +71,7 @@ export function useOrdersFilters() {
   return {
     filteredOrders,
     paginatedOrders,
+    forbidden,
     page,
     setPage,
     totalPages,

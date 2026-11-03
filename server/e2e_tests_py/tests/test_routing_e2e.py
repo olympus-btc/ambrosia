@@ -4,95 +4,87 @@ This module contains pytest tests that replicate the behavior of the Kotlin
 RoutingE2ETest class, testing various API endpoints and their responses.
 """
 
-import logging
 import time
 
 import pytest
 
 from ambrosia.api_utils import assert_response_contains, assert_status_code
 
-logger = logging.getLogger(__name__)
-
 
 class TestRoutingE2E:
-    """End-to-end routing tests that replicate RoutingE2ETest.kt functionality."""
-
     @pytest.mark.asyncio
     async def test_root_endpoint(self, public_client):
-        """Test the root endpoint, equivalent to testRootEndpoint() in RoutingE2ETest."""
-        response = await public_client.get("/")
+        root_response = await public_client.get("/")
 
-        # Assert status code matches Kotlin test
-        assert_status_code(response, 200)
+        assert_status_code(root_response, 200)
 
-        # Assert response body matches expected content
         expected_text = "Root path of the API Nothing to see here"
-        assert_response_contains(response, expected_text)
+        assert_response_contains(root_response, expected_text)
 
-        # Check content type header
-        content_type = response.headers.get("content-type", "")
+        content_type = root_response.headers.get("content-type", "")
         assert "text/plain" in content_type or "application/json" in content_type, (
             f"Unexpected content type: {content_type}"
         )
 
     @pytest.mark.asyncio
     async def test_base_currency_endpoint(self, public_client):
-        """Test the base currency endpoint, equivalent to testBaseCurrencyEndpoint() in RoutingE2ETest."""
-        response = await public_client.get("/base-currency")
+        base_currency_response = await public_client.get("/base-currency")
 
-        # This might fail due to database dependency, same as Kotlin test
-        # Accept either OK or InternalServerError
-        assert response.status_code in [200, 500], (
-            f"Unexpected status code: {response.status_code}"
+        assert base_currency_response.status_code in [200, 500], (
+            f"Unexpected status code: {base_currency_response.status_code}"
         )
 
-        if response.status_code == 200:
-            # If successful, check that response contains expected field
-            assert_response_contains(response, "currencyId")
+        if base_currency_response.status_code == 200:
+            assert_response_contains(base_currency_response, "currencyId")
 
     @pytest.mark.asyncio
     async def test_non_existent_endpoint(self, public_client):
-        """Test non-existent endpoint, equivalent to testNonExistentEndpoint() in RoutingE2ETest."""
-        response = await public_client.get("/non-existent")
+        non_existent_response = await public_client.get("/non-existent")
 
-        # Assert 404 status code matches Kotlin test
-        assert_status_code(response, 404)
+        assert_status_code(non_existent_response, 404)
 
     @pytest.mark.asyncio
     async def test_base_currency_performance(self, public_client):
-        """Test base currency endpoint performance, equivalent to testBaseCurrencyPerformance() in RoutingE2ETest."""
         start_time = time.time()
         await public_client.get("/base-currency")
         end_time = time.time()
-        request_time = (end_time - start_time) * 1000  # Convert to milliseconds
+        request_time_ms = (end_time - start_time) * 1000
 
-        # Ensure response time is reasonable (under 1000ms, same as Kotlin test)
-        assert request_time < 1000, f"Request took too long: {request_time:.2f}ms"
+        assert request_time_ms < 1000, f"Request took too long: {request_time_ms:.2f}ms"
 
     @pytest.mark.asyncio
-    async def test_cors_headers(self, public_client):
-        """Test that CORS headers are properly set."""
-        # Make a request with CORS headers
+    async def test_cors_rejects_disallowed_origin(self, public_client):
         headers = {
             "Origin": "http://localhost:3000",
             "Access-Control-Request-Method": "GET",
         }
-        response = await public_client.get("/", headers=headers)
+        cors_response = await public_client.get("/", headers=headers)
 
-        # Check for CORS headers in response (check what's actually available)
-        assert "access-control-allow-origin" in response.headers, (
-            "Missing CORS header: access-control-allow-origin"
-        )
-        assert "access-control-allow-credentials" in response.headers, (
-            "Missing CORS header: access-control-allow-credentials"
+        assert_status_code(cors_response, 403)
+        assert "access-control-allow-origin" not in cors_response.headers, (
+            "Unexpected CORS header on a rejected cross-origin request: access-control-allow-origin"
         )
 
-        # Optional headers that might not be present
-        optional_headers = [
-            "access-control-allow-methods",
-            "access-control-allow-headers",
-        ]
+    @pytest.mark.asyncio
+    async def test_security_headers(self, public_client):
+        security_headers_response = await public_client.get("/")
 
-        for header in optional_headers:
-            if header in response.headers:
-                logger.info(f"Found optional CORS header: {header}")
+        content_type_options = security_headers_response.headers.get(
+            "x-content-type-options"
+        )
+        assert content_type_options == "nosniff", (
+            f"Unexpected X-Content-Type-Options: {content_type_options}"
+        )
+
+        frame_options = security_headers_response.headers.get("x-frame-options")
+        assert frame_options == "DENY", f"Unexpected X-Frame-Options: {frame_options}"
+
+        referrer_policy = security_headers_response.headers.get("referrer-policy")
+        assert referrer_policy == "strict-origin-when-cross-origin", (
+            f"Unexpected Referrer-Policy: {referrer_policy}"
+        )
+
+        permissions_policy = security_headers_response.headers.get("permissions-policy")
+        assert permissions_policy == "camera=(), microphone=(), geolocation=()", (
+            f"Unexpected Permissions-Policy: {permissions_policy}"
+        )

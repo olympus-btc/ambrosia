@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         
       - name: Setup JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -31,4 +31,17 @@ jobs:
       - name: Run tests with Gradle
         working-directory: server
         run: ./gradlew test
+
+      # Coverage bounds live in server/app/build.gradle.kts and fail on regression.
+      - name: Verify coverage thresholds
+        working-directory: server
+        run: ./gradlew :app:koverVerify
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: server-coverage
+          path: server/app/build/reports/kover/
+          retention-days: 7
 

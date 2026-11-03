@@ -3,6 +3,7 @@ package pos.ambrosia.utest
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.models.CashDrawerPin
 import pos.ambrosia.models.PrinterConfigCreateRequest
 import pos.ambrosia.models.PrinterConfigUpdateRequest
 import pos.ambrosia.models.PrinterType
@@ -43,6 +44,52 @@ class PrinterConfigServiceTest {
             assertEquals("Printer 1", created?.printerName)
             assertNotNull(created?.createdAt)
         }
+    }
+
+    @Test
+    fun `createPrinterConfig saves the cash drawer settings`() {
+        val cashPaymentMethodId = ExposedTestDb.seedPaymentMethod("Cash")
+        val createdConfigId =
+            service.createPrinterConfig(
+                PrinterConfigCreateRequest(
+                    printerType = PrinterType.CUSTOMER,
+                    printerName = "alice-printer",
+                    cashDrawerEnabled = true,
+                    cashDrawerPin = CashDrawerPin.PIN_5,
+                    cashDrawerPaymentMethodIds = listOf(cashPaymentMethodId),
+                    openCashDrawerOnShiftClose = false,
+                ),
+            )
+
+        val createdConfig = service.getPrinterConfigById(assertNotNull(createdConfigId))
+        assertEquals(true, createdConfig?.cashDrawerEnabled)
+        assertEquals(CashDrawerPin.PIN_5, createdConfig?.cashDrawerPin)
+        assertEquals(listOf(cashPaymentMethodId), createdConfig?.cashDrawerPaymentMethodIds)
+        assertEquals(true, createdConfig?.openCashDrawerOnShiftOpen)
+        assertEquals(false, createdConfig?.openCashDrawerOnShiftClose)
+    }
+
+    @Test
+    fun `updatePrinterConfig replaces the cash drawer payment methods and keeps the rest`() {
+        val cashPaymentMethodId = ExposedTestDb.seedPaymentMethod("Cash")
+        val cardPaymentMethodId = ExposedTestDb.seedPaymentMethod("Credit Card")
+        val createdConfigId =
+            assertNotNull(
+                service.createPrinterConfig(
+                    PrinterConfigCreateRequest(
+                        printerType = PrinterType.CUSTOMER,
+                        printerName = "bob-printer",
+                        cashDrawerEnabled = true,
+                        cashDrawerPaymentMethodIds = listOf(cashPaymentMethodId),
+                    ),
+                ),
+            )
+
+        service.updatePrinterConfig(createdConfigId, PrinterConfigUpdateRequest(cashDrawerPaymentMethodIds = listOf(cardPaymentMethodId)))
+
+        val updatedConfig = service.getPrinterConfigById(createdConfigId)
+        assertEquals(listOf(cardPaymentMethodId), updatedConfig?.cashDrawerPaymentMethodIds)
+        assertEquals(true, updatedConfig?.cashDrawerEnabled)
     }
 
     @Test

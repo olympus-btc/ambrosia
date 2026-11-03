@@ -1,0 +1,723 @@
+import { render, screen, act, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import * as usePrintersHook from "@/components/pages/Store/hooks/usePrinter";
+import * as useTemplatesHook from "@/components/pages/Store/hooks/useTemplates";
+import * as useAuthHook from "@/hooks/auth/useAuth";
+import * as useAdminWebPushHook from "@/hooks/useAdminWebPush";
+import * as useAutoLiquidityHook from "@/hooks/useAutoLiquidity";
+import * as adminNotificationsService from "@/services/adminNotificationsService";
+import * as useCurrencyHook from "@components/hooks/useCurrency";
+import * as useNavigationHook from "@hooks/useNavigation";
+import { I18nProvider } from "@i18n/I18nProvider";
+import * as configurationsProvider from "@providers/configurations/configurationsProvider";
+
+import { StoreSettings } from "../StoreSettings";
+
+jest.mock("@lib/isElectron", () => ({
+  get isElectron() { return global.__mockIsElectron ?? false; },
+}));
+
+jest.mock("@hooks/usePWA", () => ({
+  useIsStandalone: () => false,
+  useIsIOS: () => false,
+  useIsAndroid: () => false,
+  useInstallPrompt: () => ({ isInstallable: false, promptInstall: jest.fn() }),
+}));
+
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  const Select = ({ label, value, onChange, children }) => (
+    <label>
+      {label}
+      <select aria-label={label} value={value || ""} onChange={onChange}>
+        {children}
+      </select>
+    </label>
+  );
+  const SelectItem = ({ value, children }) => (
+    <option value={value ?? ""}>{children}</option>
+  );
+  return { ...actual, Select, SelectItem, addToast: jest.fn() };
+});
+
+function renderSettings() {
+  return render(
+    <I18nProvider>
+      <StoreSettings />
+    </I18nProvider>,
+  );
+}
+
+const originalWarn = console.warn;
+const originalError = console.error;
+
+const defaultNavigation = [
+  {
+    path: "/store/settings",
+    label: "settings",
+    icon: "settings",
+    showInNavbar: true,
+  },
+];
+
+const mockLogout = jest.fn();
+const mockUpdateConfig = jest.fn();
+const mockUpdateCurrency = jest.fn();
+
+const mockConfig = {
+  businessName: "Mi Tienda Test",
+  businessType: "store",
+  businessTaxId: "RFC123456789",
+  businessAddress: "Calle Principal 123",
+  businessEmail: "tienda@test.com",
+  businessPhone: "+52 555 1234567",
+  businessLogoUrl: "http://localhost:9154/api/assets/logo.png",
+};
+
+const mockCurrency = {
+  id: 1,
+  acronym: "USD",
+  symbol: "$",
+  locale: "en-US",
+  name: "United States Dollar",
+  countryCode: "US",
+  countryName: "United States",
+};
+
+beforeEach(() => {
+  console.warn = (...args) => {
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("aria-label")
+    ) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+
+  console.error = (...args) => {
+    if (
+      typeof args[0] === "string" &&
+      (args[0].includes("onAnimationComplete") ||
+        args[0].includes("Unknown event handler property"))
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+
+  jest.clearAllMocks();
+
+  jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+    availableFeatures: {},
+    availableNavigation: defaultNavigation,
+
+    isAuth: true,
+    isAdmin: false,
+    isLoading: false,
+    user: { userName: "testuser" },
+    logout: mockLogout,
+  });
+
+  jest.spyOn(useAuthHook, "useAuth").mockReturnValue({
+    isAuth: true,
+    isLoading: false,
+    user: { userId: "user-1", name: "Tester" },
+    permissions: [],
+    logout: jest.fn(),
+  });
+
+  jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+    config: mockConfig,
+    isLoading: false,
+    businessType: "store",
+    refreshConfig: jest.fn(),
+    updateConfig: mockUpdateConfig,
+  });
+
+  jest.spyOn(useCurrencyHook, "useCurrency").mockReturnValue({
+    currency: mockCurrency,
+    updateCurrency: mockUpdateCurrency,
+    formatAmount: jest.fn(),
+    refetch: jest.fn(),
+  });
+
+  jest.spyOn(usePrintersHook, "usePrinters").mockReturnValue({
+    availablePrinters: [],
+    printerConfigs: [],
+    loadingAvailable: false,
+    loadingConfigs: false,
+    error: null,
+    createPrinterConfig: jest.fn(),
+    updatePrinterConfig: jest.fn(),
+    deletePrinterConfig: jest.fn(),
+    setDefaultPrinterConfig: jest.fn(),
+  });
+
+  jest.spyOn(useTemplatesHook, "useTemplates").mockReturnValue({
+    templates: [],
+    loading: false,
+    error: null,
+    refetch: jest.fn(),
+    createTemplate: jest.fn(),
+    updateTemplate: jest.fn(),
+    deleteTemplate: jest.fn(),
+  });
+
+  jest.spyOn(useAutoLiquidityHook, "useAutoLiquidity").mockReturnValue({
+    enabled: false,
+    loading: false,
+    restarting: false,
+    error: null,
+    loadAutoLiquidity: jest.fn(),
+    toggleAutoLiquidity: jest.fn(),
+  });
+
+  jest.spyOn(useAdminWebPushHook, "useAdminWebPush").mockReturnValue({
+    isSupported: true,
+    permission: "granted",
+    subscriptionEndpoint: "https://push.example/subscription",
+    subscriptionSummary: {
+      endpointHost: "push.example",
+      endpointHash: "abcdef123456",
+    },
+    loading: false,
+    error: null,
+    subscribe: jest.fn(async () => ({ ok: true })),
+    unsubscribe: jest.fn(async () => ({ ok: true })),
+    showTestNotification: jest.fn(async () => ({ ok: true })),
+    refreshSubscription: jest.fn(),
+  });
+
+  jest.spyOn(adminNotificationsService, "getAdminNotificationPreferences").mockResolvedValue([
+    {
+      category: "wallet",
+      inAppEnabled: true,
+      pushEnabled: true,
+    },
+  ]);
+  jest.spyOn(adminNotificationsService, "updateAdminNotificationPreference").mockImplementation(async (preference) => preference);
+});
+
+afterEach(() => {
+  console.warn = originalWarn;
+  console.error = originalError;
+  jest.restoreAllMocks();
+});
+
+describe("StoreSettings page", () => {
+  describe("Rendering", () => {
+    it("renders store info, currency, and language cards", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+      expect(screen.getByText("cardInfo.title")).toBeInTheDocument();
+      expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
+
+      await user.click(screen.getByText("categories.preferences"));
+      expect(screen.getByText("cardLanguage.title")).toBeInTheDocument();
+    });
+
+    it("renders notification preferences card only for admins", async () => {
+      const user = userEvent.setup();
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await user.click(screen.getByText("categories.system"));
+      await waitFor(() => expect(screen.getByText("cardNotifications.title")).toBeInTheDocument());
+      expect(screen.getByText("cardNotifications.walletTitle")).toBeInTheDocument();
+      expect(screen.getByText("cardNotifications.inApp")).toBeInTheDocument();
+      expect(screen.getByText("cardNotifications.push")).toBeInTheDocument();
+    });
+
+    it("shows a toast when enabling Web Push fails", async () => {
+      const { addToast } = require("@heroui/react");
+      const subscribe = jest.fn(async () => ({ ok: false, reason: "vapidUnavailable" }));
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+      jest.spyOn(useAdminWebPushHook, "useAdminWebPush").mockReturnValue({
+        isSupported: true,
+        permission: "granted",
+        subscriptionEndpoint: null,
+        subscriptionSummary: null,
+        loading: false,
+        error: null,
+        subscribe,
+        unsubscribe: jest.fn(async () => ({ ok: true })),
+        showTestNotification: jest.fn(async () => ({ ok: true })),
+        refreshSubscription: jest.fn(),
+      });
+      jest.spyOn(adminNotificationsService, "getAdminNotificationPreferences").mockResolvedValueOnce([
+        {
+          category: "wallet",
+          inAppEnabled: true,
+          pushEnabled: false,
+        },
+      ]);
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await user.click(screen.getByText("categories.system"));
+      await waitFor(() => expect(screen.getByText("cardNotifications.push")).toBeInTheDocument());
+      await user.click(screen.getByText("cardNotifications.push"));
+
+      await waitFor(() => {
+        expect(subscribe).toHaveBeenCalled();
+        expect(addToast).toHaveBeenCalledWith({
+          color: "danger",
+          title: "cardNotifications.pushErrorTitle",
+          description: "cardNotifications.pushErrors.vapidUnavailable",
+        });
+      });
+      expect(adminNotificationsService.updateAdminNotificationPreference).not.toHaveBeenCalledWith(
+        expect.objectContaining({ pushEnabled: true }),
+      );
+    });
+
+    it("renders business name", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      const businessNames = screen.getAllByText("Mi Tienda Test");
+      expect(businessNames.length).toBeGreaterThan(0);
+    });
+
+    it("renders business tax ID when it exists", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      expect(screen.getByText("RFC123456789")).toBeInTheDocument();
+    });
+
+    it("renders placeholder when business tax ID does not exist", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: { ...mockConfig, businessTaxId: null },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBeGreaterThan(0);
+    });
+
+    it("renders business address when it exists", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      expect(screen.getByText("Calle Principal 123")).toBeInTheDocument();
+    });
+
+    it("renders placeholder when business address does not exist", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: { ...mockConfig, businessAddress: null },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBeGreaterThan(0);
+    });
+
+    it("renders business email when it exists", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      expect(screen.getByText("tienda@test.com")).toBeInTheDocument();
+    });
+
+    it("renders placeholder when business email does not exist", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: { ...mockConfig, businessEmail: null },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBeGreaterThan(0);
+    });
+
+    it("renders business phone when it exists", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      expect(screen.getByText("+52 555 1234567")).toBeInTheDocument();
+    });
+
+    it("renders placeholder when business phone does not exist", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: { ...mockConfig, businessPhone: null },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBeGreaterThan(0);
+    });
+
+    it("renders business logo when it exists", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+      const logo = screen.getByAltText("Logo");
+      expect(logo).toBeInTheDocument();
+    });
+
+    it("renders logo placeholder when business logo does not exist", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: { ...mockConfig, businessLogoUrl: null },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.getByText("cardInfo.noLogo")).toBeInTheDocument();
+    });
+  });
+
+  describe("Permission gating", () => {
+    it("hides the StoreInfo edit button and disables the Currency selector for a role without settings_update", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.queryByText("cardInfo.edit")).not.toBeInTheDocument();
+      expect(screen.getByText("cardCurrency.currencyLabel")).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "cardCurrency.currencyLabel" })).toBeDisabled();
+    });
+
+    it("shows the StoreInfo edit button and enables the Currency selector for a role with settings_update", async () => {
+      jest.spyOn(useAuthHook, "useAuth").mockReturnValue({
+        isAuth: true,
+        isLoading: false,
+        user: { userId: "user-1", name: "Tester" },
+        permissions: [{ name: "settings_update" }],
+        logout: jest.fn(),
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.getByText("cardInfo.edit")).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "cardCurrency.currencyLabel" })).not.toBeDisabled();
+    });
+
+    it("hides Seed, NwcConnection, PhoenixdRemote, Tutorials, ExportData, and ImportData for a non-admin role", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.queryByText("cardSeed.title")).not.toBeInTheDocument();
+      expect(screen.queryByText("nwcConnection.manageButton")).not.toBeInTheDocument();
+      expect(screen.queryByText("phoenixdRemoteCard.manageButton")).not.toBeInTheDocument();
+      expect(screen.queryByText("cardTours.title")).not.toBeInTheDocument();
+      expect(screen.queryByText("cardExportData.title")).not.toBeInTheDocument();
+      expect(screen.queryByText("cardImportData.title")).not.toBeInTheDocument();
+    });
+
+    it("shows Seed, NwcConnection, PhoenixdRemote, Tutorials, ExportData, and ImportData for an admin role", async () => {
+      const user = userEvent.setup();
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await user.click(screen.getByText("categories.wallet"));
+      expect(screen.getByText("cardSeed.title")).toBeInTheDocument();
+      expect(screen.getByText("nwcConnection.manageButton")).toBeInTheDocument();
+      expect(screen.getByText("phoenixdRemoteCard.manageButton")).toBeInTheDocument();
+
+      await user.click(screen.getByText("categories.backup"));
+      expect(screen.getByText("cardExportData.title")).toBeInTheDocument();
+      expect(screen.getByText("cardImportData.title")).toBeInTheDocument();
+
+      await user.click(screen.getByText("categories.help"));
+      expect(screen.getByText("cardTours.title")).toBeInTheDocument();
+    });
+  });
+
+  describe("User Interactions", () => {
+    beforeEach(() => {
+      jest.spyOn(useAuthHook, "useAuth").mockReturnValue({
+        isAuth: true,
+        isLoading: false,
+        user: { userId: "user-1", name: "Tester" },
+        permissions: [{ name: "settings_update" }],
+        logout: jest.fn(),
+      });
+    });
+
+    it("opens edit modal when edit button is clicked", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const editButton = screen.getByText("cardInfo.edit");
+      await user.click(editButton);
+
+      await waitFor(() => {
+        expect(editButton).toBeInTheDocument();
+      });
+    });
+
+    it("updates config and closes modal when form is submitted", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const editButton = screen.getByText("cardInfo.edit");
+      await user.click(editButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("modal.title")).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByText("modal.editButton");
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockUpdateConfig).toHaveBeenCalled();
+      });
+    });
+
+    it("updates data when modal onChange is called", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const editButton = screen.getByText("cardInfo.edit");
+      await user.click(editButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("modal.title")).toBeInTheDocument();
+      });
+
+      const nameInput = screen.getByLabelText("modal.name");
+      await user.clear(nameInput);
+      await user.type(nameInput, "New Store Name");
+
+      await waitFor(() => {
+        expect(nameInput).toHaveValue("New Store Name");
+      });
+    });
+  });
+
+  describe("LightningCard visibility", () => {
+    it("does not render LightningCard when not in Electron context", async () => {
+      global.__mockIsElectron = false;
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.queryByText("manageButton")).not.toBeInTheDocument();
+    });
+
+    it("renders LightningCard for an admin role in Electron context", async () => {
+      const user = userEvent.setup();
+      global.__mockIsElectron = true;
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      await user.click(screen.getByText("categories.wallet"));
+      expect(screen.getByText("manageButton")).toBeInTheDocument();
+
+      global.__mockIsElectron = false;
+    });
+
+    it("does not offer the Bitcoin & Wallet tab for a non-admin role even in Electron context", async () => {
+      global.__mockIsElectron = true;
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.queryByText("categories.wallet")).not.toBeInTheDocument();
+
+      global.__mockIsElectron = false;
+    });
+  });
+
+  describe("Tabs", () => {
+    function renderedTabLabels() {
+      return screen.getAllByRole("tab").map((settingsTab) => settingsTab.textContent);
+    }
+
+    it("offers only the always-visible tabs for a non-admin role", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(renderedTabLabels()).toEqual(["categories.business", "categories.preferences", "categories.printing"]);
+    });
+
+    it("offers the admin-only tabs for an admin role", async () => {
+      jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+        availableFeatures: {},
+        availableNavigation: defaultNavigation,
+        isAuth: true,
+        isAdmin: true,
+        isLoading: false,
+        user: { userName: "admin", isAdmin: true },
+        logout: mockLogout,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(renderedTabLabels()).toEqual([
+        "categories.business",
+        "categories.preferences",
+        "categories.wallet",
+        "categories.backup",
+        "categories.printing",
+        "categories.system",
+        "categories.help",
+      ]);
+    });
+  });
+
+  describe("Devices & Connection tab availability", () => {
+    it("does not offer the Devices & Connection tab when neither SecureConnection nor InstallPWA would render anything", async () => {
+      await act(async () => {
+        renderSettings();
+      });
+
+      expect(screen.queryByText("categories.devices")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("handles config with partial data", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: {
+          businessName: "Tienda Parcial",
+          businessType: "store",
+        },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const businessNames = screen.getAllByText("Tienda Parcial");
+      expect(businessNames.length).toBeGreaterThan(0);
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("renders correctly when all optional fields are null", async () => {
+      jest.spyOn(configurationsProvider, "useConfigurations").mockReturnValue({
+        config: {
+          businessName: "Tienda Minimal",
+          businessType: "store",
+          businessTaxId: null,
+          businessAddress: null,
+          businessEmail: null,
+          businessPhone: null,
+          businessLogoUrl: null,
+        },
+        isLoading: false,
+        businessType: "store",
+        refreshConfig: jest.fn(),
+        updateConfig: mockUpdateConfig,
+      });
+
+      await act(async () => {
+        renderSettings();
+      });
+
+      const businessNames = screen.getAllByText("Tienda Minimal");
+      expect(businessNames.length).toBeGreaterThan(0);
+      expect(screen.getByText("cardInfo.noLogo")).toBeInTheDocument();
+
+      const placeholders = screen.getAllByText("---");
+      expect(placeholders.length).toBe(4);
+    });
+  });
+});

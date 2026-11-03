@@ -2,10 +2,12 @@ import { API_URL } from "@/config/api";
 
 const apiUrl = API_URL;
 
+const HEADERS_EXCLUDED_FROM_PROXY = ["content-length", "origin"];
+
 function buildHeaders(request) {
   const headers = new Headers();
   request.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "content-length") return;
+    if (HEADERS_EXCLUDED_FROM_PROXY.includes(key.toLowerCase())) return;
     headers.set(key, value);
   });
   return headers;

@@ -1,0 +1,8 @@
+[Unit]
+Description=Reissue Caddy certificates after the system clock is synchronized
+After=caddy.service systemd-timesyncd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/systemctl try-restart caddy.service

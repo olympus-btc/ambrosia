@@ -1,8 +1,9 @@
-const http = require('http');
+import http from 'http';
 
-const waitOn = require('wait-on');
+import waitOn from 'wait-on';
 
-const logger = require('./logger');
+import { HEALTH } from './constants.js';
+import { logger } from './logger.js';
 
 async function waitForHealth(url, options = {}) {
   const {
@@ -17,9 +18,9 @@ async function waitForHealth(url, options = {}) {
     timeout,
     interval,
     verbose,
-    validateStatus: (status) => {
-      if (status >= 200 && status < 300) return true;
-      if (acceptUnauthorized && status === 401) return true;
+    validateStatus: (statusCode) => {
+      if (statusCode >= 200 && statusCode < 300) return true;
+      if (acceptUnauthorized && statusCode === 401) return true;
       return false;
     },
   };
@@ -29,110 +30,110 @@ async function waitForHealth(url, options = {}) {
     await waitOn(waitOptions);
     logger.log(`[HealthCheck] ${url} is healthy`);
     return true;
-  } catch (error) {
-    logger.error(`[HealthCheck] ${url} failed health check:`, error.message);
-    throw error;
+  } catch (waitError) {
+    logger.error(`[HealthCheck] ${url} failed health check:`, waitError.message);
+    throw waitError;
   }
 }
 
-async function checkService({ url, name, isHealthy, maxAttempts = 60, intervalMs = 1000 }) {
-  logger.log(`[HealthCheck] Checking ${name} at ${url}...`);
+async function checkService({ url, serviceName, isHealthy, maxAttempts = HEALTH.MAX_ATTEMPTS, intervalMilliseconds = HEALTH.INTERVAL_MILLISECONDS }) {
+  logger.log(`[HealthCheck] Checking ${serviceName} at ${url}...`);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await new Promise((resolve, reject) => {
-        const req = http.get(url, (res) => {
-          res.resume();
-          if (isHealthy(res.statusCode)) {
-            logger.log(`[HealthCheck] ${name} is healthy (status: ${res.statusCode})`);
+        const healthCheckRequest = http.get(url, (healthCheckResponse) => {
+          healthCheckResponse.resume();
+          if (isHealthy(healthCheckResponse.statusCode)) {
+            logger.log(`[HealthCheck] ${serviceName} is healthy (status: ${healthCheckResponse.statusCode})`);
             resolve();
           } else {
-            reject(new Error(`Unexpected status code: ${res.statusCode}`));
+            reject(new Error(`Unexpected status code: ${healthCheckResponse.statusCode}`));
           }
         });
 
-        req.on('error', reject);
-        req.setTimeout(5000, () => {
-          req.destroy();
+        healthCheckRequest.on('error', reject);
+        healthCheckRequest.setTimeout(HEALTH.REQUEST_TIMEOUT_MILLISECONDS, () => {
+          healthCheckRequest.destroy();
           reject(new Error('Request timeout'));
         });
       });
 
       return true;
-    } catch (error) {
+    } catch (attemptError) {
       if (attempt === maxAttempts) {
-        logger.error(`[HealthCheck] ${name} health check failed after ${maxAttempts} attempts:`, error.message);
+        logger.error(`[HealthCheck] ${serviceName} health check failed after ${maxAttempts} attempts:`, attemptError.message);
         throw new Error(`Timed out waiting for: ${url}`);
       }
-      if (attempt % 10 === 0) {
-        logger.log(`[HealthCheck] Still waiting for ${name}... (attempt ${attempt}/${maxAttempts})`);
+      if (attempt % HEALTH.LOG_EVERY_N_ATTEMPTS === 0) {
+        logger.log(`[HealthCheck] Still waiting for ${serviceName}... (attempt ${attempt}/${maxAttempts})`);
       }
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMilliseconds));
     }
   }
 }
 
-async function checkPhoenixd(port, maxAttempts = 60, intervalMs = 1000) {
+async function checkPhoenixd(port, maxAttempts = HEALTH.MAX_ATTEMPTS, intervalMilliseconds = HEALTH.INTERVAL_MILLISECONDS) {
   return checkService({
     url: `http://localhost:${port}/getinfo`,
-    name: 'Phoenixd',
-    isHealthy: (status) => status === 401 || (status >= 200 && status < 300),
+    serviceName: 'Phoenixd',
+    isHealthy: (statusCode) => statusCode === 401 || (statusCode >= 200 && statusCode < 300),
     maxAttempts,
-    intervalMs,
+    intervalMilliseconds,
   });
 }
 
-async function checkBackend(port, maxAttempts = 60, intervalMs = 1000) {
+async function checkBackend(port, maxAttempts = HEALTH.MAX_ATTEMPTS, intervalMilliseconds = HEALTH.INTERVAL_MILLISECONDS) {
   return checkService({
     url: `http://localhost:${port}/api/health`,
-    name: 'Backend',
-    isHealthy: (status) => status >= 200 && status < 300,
+    serviceName: 'Backend',
+    isHealthy: (statusCode) => statusCode >= 200 && statusCode < 300,
     maxAttempts,
-    intervalMs,
+    intervalMilliseconds,
   });
 }
 
-async function checkNextJs(port, maxAttempts = 60, intervalMs = 1000) {
+async function checkNextJs(port, maxAttempts = HEALTH.MAX_ATTEMPTS, intervalMilliseconds = HEALTH.INTERVAL_MILLISECONDS) {
   return checkService({
     url: `http://localhost:${port}/`,
-    name: 'Next.js',
-    isHealthy: (status) => status >= 200 && status < 400,
+    serviceName: 'Next.js',
+    isHealthy: (statusCode) => statusCode >= 200 && statusCode < 400,
     maxAttempts,
-    intervalMs,
+    intervalMilliseconds,
   });
 }
 
 async function makeHttpRequest(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve({ statusCode: res.statusCode, data });
+    http.get(url, (httpResponse) => {
+      let responseBody = '';
+      httpResponse.on('data', (chunk) => { responseBody += chunk; });
+      httpResponse.on('end', () => {
+        if (httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
+          resolve({ statusCode: httpResponse.statusCode, responseBody });
         } else {
-          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+          reject(new Error(`HTTP ${httpResponse.statusCode}: ${responseBody}`));
         }
       });
     }).on('error', reject);
   });
 }
 
-function singleCheck(url, isHealthy, timeoutMs = 2000) {
+function singleCheck(url, isHealthy, timeoutMilliseconds = HEALTH.SINGLE_CHECK_TIMEOUT_MILLISECONDS) {
   return new Promise((resolve) => {
-    const req = http.get(url, (res) => {
-      res.resume(); // M2: consume response body
-      resolve(isHealthy(res.statusCode));
+    const healthCheckRequest = http.get(url, (healthCheckResponse) => {
+      healthCheckResponse.resume();
+      resolve(isHealthy(healthCheckResponse.statusCode));
     });
-    req.on('error', () => resolve(false));
-    req.setTimeout(timeoutMs, () => { req.destroy(); resolve(false); });
+    healthCheckRequest.on('error', () => resolve(false));
+    healthCheckRequest.setTimeout(timeoutMilliseconds, () => { healthCheckRequest.destroy(); resolve(false); });
   });
 }
 
 async function isPhoenixdRunning(port) {
   return singleCheck(
     `http://localhost:${port}/getinfo`,
-    (status) => status === 401 || (status >= 200 && status < 300),
+    (statusCode) => statusCode === 401 || (statusCode >= 200 && statusCode < 300),
   );
 }
 
@@ -143,11 +144,11 @@ async function isBackendRunning(port) {
 async function isNextJsRunning(port) {
   return singleCheck(
     `http://localhost:${port}/`,
-    (status) => status >= 200 && status < 400,
+    (statusCode) => statusCode >= 200 && statusCode < 400,
   );
 }
 
-module.exports = {
+export const healthCheck = {
   waitForHealth,
   checkPhoenixd,
   checkBackend,

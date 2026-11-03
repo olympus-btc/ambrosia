@@ -31,6 +31,7 @@ const SHIFT_DATA = {
 
 function setupMocks({
   totalBalance = 250,
+  totalTips = 0,
   cashTotal = totalBalance,
   refundedCashTotal = 0,
   totalTickets = 5,
@@ -41,7 +42,7 @@ function setupMocks({
   loadingConfigs = false,
 } = {}) {
   useTurn.mockReturnValue({
-    totalBalance, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
+    totalBalance, totalTips, cashTotal, refundedCashTotal, totalTickets, byPaymentMethod, ticketsLoading, breakdownLoading,
   });
   usePrinters.mockReturnValue({ printTicket: jest.fn(), printerConfigs, loadingConfigs });
 }
@@ -183,20 +184,20 @@ describe("CloseTurnModal", () => {
 
   describe("actions", () => {
     it("calls onClose when cancel button is pressed", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       const onClose = jest.fn();
       renderModal({ onClose });
-      await user.click(screen.getByText("close.cancel"));
+      await cashier.click(screen.getByText("close.cancel"));
       expect(onClose).toHaveBeenCalled();
     });
 
     it("calls onConfirm with finalAmount=0 and computed difference", async () => {
-      const user = userEvent.setup();
+      const cashier = userEvent.setup();
       const onConfirm = jest.fn();
       setupMocks({ totalBalance: 250, cashTotal: 180, ticketsLoading: false });
       renderModal({ onConfirm });
-      await user.click(screen.getByText("close.confirm"));
-      expect(onConfirm).toHaveBeenCalledWith(0, -280);
+      await cashier.click(screen.getByText("close.confirm"));
+      expect(onConfirm).toHaveBeenCalledWith(0, -280, false);
     });
 
     it("disables confirm button while confirmLoading=true", () => {
@@ -207,142 +208,54 @@ describe("CloseTurnModal", () => {
   });
 
   describe("printer integration", () => {
-    it("disables print button while breakdown is loading", () => {
-      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      useTurn.mockReturnValue({
-        totalBalance: 250, totalTickets: 5, byPaymentMethod: [], ticketsLoading: false, breakdownLoading: true,
-      });
-      usePrinters.mockReturnValue({
-        printTicket: jest.fn(),
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
-      renderModal();
-      const printBtn = screen.getByText("printCorteZ").closest("button");
-      expect(printBtn).toHaveAttribute("data-disabled", "true");
-    });
-
-    it("does not show print button when no customer printer is configured", () => {
+    it("does not offer to print the Z report when no customer printer is configured", () => {
       setupMocks({ printerConfigs: [], loadingConfigs: false });
       renderModal();
-      expect(screen.queryByText("printCorteZ")).not.toBeInTheDocument();
+      expect(screen.queryByText("printCorteZOnClose")).not.toBeInTheDocument();
     });
 
-    it("does not show print button while printer configs are loading", () => {
-      setupMocks({
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: true,
-      });
+    it("does not offer to print the Z report while printer configs are loading", () => {
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: true });
       renderModal();
-      expect(screen.queryByText("printCorteZ")).not.toBeInTheDocument();
+      expect(screen.queryByText("printCorteZOnClose")).not.toBeInTheDocument();
     });
 
-    it("shows print button when a customer printer is enabled", () => {
-      setupMocks({
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
-      renderModal();
-      expect(screen.getByText("printCorteZ")).toBeInTheDocument();
+    it("asks to print the Z report when closing by default if a customer printer is enabled", async () => {
+      const cashier = userEvent.setup();
+      const onConfirm = jest.fn();
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }] });
+      renderModal({ onConfirm });
+
+      expect(screen.getByRole("checkbox", { name: "printCorteZOnClose" })).toBeChecked();
+      await cashier.click(screen.getByText("close.confirm"));
+
+      expect(onConfirm).toHaveBeenCalledWith(0, -350, true);
     });
 
-    it("shows error toast when printTicket fails", async () => {
-      const user = userEvent.setup();
-      const printTicket = jest.fn().mockRejectedValue(new Error("printer offline"));
-      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      usePrinters.mockReturnValue({
-        printTicket,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
-      renderModal();
-      await user.click(screen.getByText("printCorteZ"));
-      expect(mockAddToast).toHaveBeenCalledWith(
-        expect.objectContaining({ color: "danger", description: "printCorteZError" }),
-      );
+    it("does not ask to print the Z report when the checkbox is unchecked", async () => {
+      const cashier = userEvent.setup();
+      const onConfirm = jest.fn();
+      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }] });
+      renderModal({ onConfirm });
+
+      await cashier.click(screen.getByRole("checkbox", { name: "printCorteZOnClose" }));
+      await cashier.click(screen.getByText("close.confirm"));
+
+      expect(onConfirm).toHaveBeenCalledWith(0, -350, false);
     });
 
-    it("shows error toast when printTicket returns non-ok response", async () => {
-      const user = userEvent.setup();
-      const printTicket = jest.fn().mockResolvedValue({ ok: false, status: 500 });
-      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      usePrinters.mockReturnValue({
-        printTicket,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
+    it("renders totalTips when totalTips is greater than zero", () => {
+      setupMocks({ totalTips: 45 });
       renderModal();
-      await user.click(screen.getByText("printCorteZ"));
-      expect(mockAddToast).toHaveBeenCalledWith(
-        expect.objectContaining({ color: "danger", description: "printCorteZError" }),
-      );
+      expect(screen.getAllByText("totalTips")).toHaveLength(2);
+      expect(screen.getAllByText("$45.00")).toHaveLength(2);
     });
 
-    it("shows success toast when printTicket succeeds", async () => {
-      const user = userEvent.setup();
-      const printTicket = jest.fn().mockResolvedValue({ ok: true });
-      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      usePrinters.mockReturnValue({
-        printTicket,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
+    it("renders totalTips as $0.00 in Z Report when totalTips is zero", () => {
+      setupMocks({ totalTips: 0 });
       renderModal();
-      await user.click(screen.getByText("printCorteZ"));
-      expect(mockAddToast).toHaveBeenCalledWith(
-        expect.objectContaining({ color: "success", description: "printCorteZSuccess" }),
-      );
-    });
-
-    it("does not print twice while printTicket is pending", async () => {
-      const user = userEvent.setup();
-      let resolvePrintTicket;
-      const printTicket = jest.fn().mockReturnValue(new Promise((resolvePrint) => { resolvePrintTicket = resolvePrint; }));
-      setupMocks({ printerConfigs: [{ printerType: "CUSTOMER", enabled: true }], loadingConfigs: false });
-      usePrinters.mockReturnValue({
-        printTicket,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
-      renderModal();
-      await user.click(screen.getByText("printCorteZ"));
-      await user.click(screen.getByText("printCorteZ"));
-
-      expect(printTicket).toHaveBeenCalledTimes(1);
-
-      resolvePrintTicket({ ok: true });
-      await screen.findByText("printCorteZ");
-    });
-
-    it("calls printTicket with corte-z ticket data on print", async () => {
-      const user = userEvent.setup();
-      const printTicket = jest.fn().mockResolvedValue({ ok: true });
-      const byPaymentMethod = [{ name: "Cash", total: 100 }];
-      setupMocks({
-        totalBalance: 100,
-        ticketsLoading: false,
-        byPaymentMethod,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-        printTicket,
-      });
-      usePrinters.mockReturnValue({
-        printTicket,
-        printerConfigs: [{ printerType: "CUSTOMER", enabled: true }],
-        loadingConfigs: false,
-      });
-      renderModal();
-      await user.click(screen.getByText("printCorteZ"));
-      expect(printTicket).toHaveBeenCalledWith(
-        expect.objectContaining({
-          printerType: "CUSTOMER",
-          ticketData: expect.objectContaining({
-            ticketId: "corte-z-2026-03-04",
-            total: 100,
-            items: [{ quantity: 1, name: "Cash", price: 100, comments: [] }],
-          }),
-        }),
-      );
+      expect(screen.getAllByText("totalTips")).toHaveLength(1);
+      expect(screen.getAllByText("$0.00").length).toBeGreaterThanOrEqual(1);
     });
   });
 });

@@ -156,6 +156,7 @@ describe("useProducts", () => {
         bundleComponents: [],
       }),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -219,6 +220,7 @@ describe("useProducts", () => {
         bundleComponents: [],
       }),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -276,6 +278,7 @@ describe("useProducts", () => {
         bundleComponents: [{ componentId: "prod-shirt", variantId: "variant-red", quantity: 2 }],
       }),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -333,6 +336,7 @@ describe("useProducts", () => {
         bundleComponents: [],
       }),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -392,6 +396,7 @@ describe("useProducts", () => {
         bundleComponents: [],
       }),
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 
@@ -413,6 +418,7 @@ describe("useProducts", () => {
     expect(httpClient).toHaveBeenCalledWith("/products/44", {
       method: "DELETE",
       notShowError: false,
+      skipForbiddenRedirect: true,
     });
   });
 

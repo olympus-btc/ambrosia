@@ -12,6 +12,8 @@ import componentsEn from "@/components/locales/en";
 import componentsEs from "@/components/locales/es";
 import authEn from "@/components/pages/Auth/locales/en";
 import authEs from "@/components/pages/Auth/locales/es";
+import freelancerEn from "@/components/pages/Freelancer/locales/en";
+import freelancerEs from "@/components/pages/Freelancer/locales/es";
 import notFoundEn from "@/components/pages/NotFound/locales/en";
 import notFoundEs from "@/components/pages/NotFound/locales/es";
 import onboardingEn from "@/components/pages/Onboarding/locales/en";
@@ -20,6 +22,10 @@ import storeEn from "@/components/pages/Store/locales/en";
 import storeEs from "@/components/pages/Store/locales/es";
 import unauthorizedEn from "@/components/pages/Unauthorized/locales/en";
 import unauthorizedEs from "@/components/pages/Unauthorized/locales/es";
+import sharedSettingsEn from "@/components/shared/Settings/locales/en";
+import sharedSettingsEs from "@/components/shared/Settings/locales/es";
+import sharedWalletEn from "@/components/shared/Wallet/locales/en";
+import sharedWalletEs from "@/components/shared/Wallet/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
@@ -28,16 +34,22 @@ const translations = {
   en: {
     auth: authEn,
     components: componentsEn,
+    freelancer: freelancerEn,
     notFound: notFoundEn,
     onboarding: onboardingEn,
+    sharedSettings: sharedSettingsEn,
+    sharedWallet: sharedWalletEn,
     store: storeEn,
     unauthorized: unauthorizedEn,
   },
   es: {
     auth: authEs,
     components: componentsEs,
+    freelancer: freelancerEs,
     notFound: notFoundEs,
     onboarding: onboardingEs,
+    sharedSettings: sharedSettingsEs,
+    sharedWallet: sharedWalletEs,
     store: storeEs,
     unauthorized: unauthorizedEs,
   },
@@ -46,7 +58,12 @@ const translations = {
 function mergeLocales(locale) {
   const groups = translations[locale] || {};
   return Object.values(groups).reduce(
-    (acc, mod) => ({ ...acc, ...mod }),
+    (mergedMessages, groupMessages) => {
+      Object.entries(groupMessages).forEach(([namespace, namespaceMessages]) => {
+        mergedMessages[namespace] = { ...mergedMessages[namespace], ...namespaceMessages };
+      });
+      return mergedMessages;
+    },
     {},
   );
 }

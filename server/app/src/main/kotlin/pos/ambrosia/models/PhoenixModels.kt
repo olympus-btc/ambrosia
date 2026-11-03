@@ -129,11 +129,11 @@ data class NodeInfo(
 @Serializable
 data class Channel(
     val state: String,
-    val channelId: String,
-    val balanceSat: Long,
-    val inboundLiquiditySat: Long,
-    val capacitySat: Long,
-    val fundingTxId: String,
+    val channelId: String? = null,
+    val balanceSat: Long? = null,
+    val inboundLiquiditySat: Long? = null,
+    val capacitySat: Long? = null,
+    val fundingTxId: String? = null,
 )
 
 @Serializable

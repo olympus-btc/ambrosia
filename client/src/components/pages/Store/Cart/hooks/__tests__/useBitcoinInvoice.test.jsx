@@ -13,6 +13,7 @@ jest.mock("@/services/bitcoinPriceService", () => jest.fn().mockImplementation((
 );
 
 jest.mock("@/services/walletService", () => ({
+  ...jest.requireActual("@/services/walletService"),
   createInvoiceForCart: (...args) => mockCreateInvoice(...args),
 }));
 
@@ -26,9 +27,9 @@ function TestComponent(props) {
   return (
     <div>
       <span data-testid="loading">{state.loading ? "yes" : "no"}</span>
-      <span data-testid="error">{state.error}</span>
       <span data-testid="invoice">{state.invoice ? "yes" : "no"}</span>
       <span data-testid="sats">{state.satsAmount ?? ""}</span>
+      <span data-testid="secrets-locked">{state.isSecretsLocked ? "yes" : "no"}</span>
     </div>
   );
 }
@@ -77,13 +78,41 @@ describe("useBitcoinInvoice", () => {
     );
   });
 
-  it("captures errors when invoice creation fails", async () => {
+  it("stops loading without an invoice when invoice creation fails", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
     mockGetBitcoinPrice.mockResolvedValue(50000);
     mockCreateInvoice.mockRejectedValue(new Error("invoice-error"));
 
     render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);
 
-    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("invoice-error"));
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("invoice")).toHaveTextContent("no");
+    console.error.mockRestore();
+  });
+
+  it("sets isSecretsLocked when invoice creation fails with a 409 status", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    const secretsLockedError = new Error("Connection failed");
+    secretsLockedError.status = 409;
+    mockGetBitcoinPrice.mockResolvedValue(50000);
+    mockCreateInvoice.mockRejectedValue(secretsLockedError);
+
+    render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);
+
+    await waitFor(() => expect(screen.getByTestId("secrets-locked")).toHaveTextContent("yes"));
+    console.error.mockRestore();
+  });
+
+  it("does not set isSecretsLocked when invoice creation fails with a non-409 status", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    mockGetBitcoinPrice.mockResolvedValue(50000);
+    mockCreateInvoice.mockRejectedValue(new Error("invoice-error"));
+
+    render(<TestComponent amountFiat={10} currencyAcronym="mxn" paymentId="pay-1" />);
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
+    expect(screen.getByTestId("secrets-locked")).toHaveTextContent("no");
+    console.error.mockRestore();
   });
 
   it("returns null when amountFiat is missing", async () => {
@@ -121,10 +150,9 @@ describe("useBitcoinInvoice", () => {
     await waitFor(() => expect(screen.getByTestId("invoice")).toHaveTextContent("yes"));
 
     act(() => {
-      latestState.reset();
+      latestState.resetInvoiceState();
     });
 
     expect(screen.getByTestId("invoice")).toHaveTextContent("no");
-    expect(screen.getByTestId("error")).toHaveTextContent("");
   });
 });

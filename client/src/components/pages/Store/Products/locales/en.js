@@ -5,6 +5,10 @@ const productsEn = {
   products: {
     title: "Products",
     subtitle: "Manage your store products",
+    permissionBlocked: {
+      title: "You can't view products",
+      subtitle: "Ask an administrator to grant you the View products permission.",
+    },
     addProduct: "Add Product",
     tableAriaLabel: "Products table",
     edit: "Edit",
@@ -108,6 +112,7 @@ const productsEn = {
     variantRemoveImage: "Remove image",
     variantStockUnit: "in stock",
     hasVariantsHint: "Price and stock are managed per variant after saving.",
+    priceStepMismatchWarning: "Actual price:",
     toasts: {
       createSuccess: "Product created successfully",
       updateSuccess: "Product updated successfully",

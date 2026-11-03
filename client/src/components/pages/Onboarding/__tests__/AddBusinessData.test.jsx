@@ -56,10 +56,10 @@ describe("Step 3 Business Details", () => {
     businessLogo: null,
   };
 
-  function remderBusinessDetails(data = defaultData) {
+  function renderBusinessDetails(businessData = defaultData) {
     return render(
       <I18nProvider>
-        <BusinessDetailsStep data={data} onChange={mockChange} />
+        <BusinessDetailsStep businessData={businessData} onChange={mockChange} />
       </I18nProvider>,
     );
   }
@@ -74,17 +74,36 @@ describe("Step 3 Business Details", () => {
   });
 
   it("renders correct title for store", () => {
-    remderBusinessDetails({ ...defaultData, businessType: "store" });
+    renderBusinessDetails({ ...defaultData, businessType: "store" });
     expect(screen.getByText("step3.titleStore")).toBeInTheDocument();
   });
 
   it("renders correct title for restaurant", () => {
-    remderBusinessDetails({ ...defaultData, businessType: "restaurant" });
+    renderBusinessDetails({ ...defaultData, businessType: "restaurant" });
     expect(screen.getByText("step3.titleRestaurant")).toBeInTheDocument();
   });
 
+  it("renders correct title for freelance", () => {
+    renderBusinessDetails({ ...defaultData, businessType: "freelance" });
+    expect(screen.getByText("step3.titleFreelance")).toBeInTheDocument();
+  });
+
+  it("shows the profession field only for freelance", () => {
+    renderBusinessDetails({ ...defaultData, businessType: "store" });
+    expect(screen.queryByPlaceholderText("step3.fields.businessProfessionPlaceholder")).not.toBeInTheDocument();
+  });
+
+  it("calls onChange when profession changes for freelance", () => {
+    renderBusinessDetails({ ...defaultData, businessType: "freelance", businessProfession: "" });
+    const professionInput = screen.getByPlaceholderText("step3.fields.businessProfessionPlaceholder");
+    fireEvent.change(professionInput, { target: { value: "Graphic Designer" } });
+    expect(mockChange).toHaveBeenCalledWith(
+      expect.objectContaining({ businessProfession: "Graphic Designer" }),
+    );
+  });
+
   it("calls onChange when business name changes", () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     const input = screen.getByPlaceholderText("step3.fields.businessNamePlaceholder");
     fireEvent.change(input, { target: { value: "Mi tienda" } });
     expect(mockChange).toHaveBeenCalledWith(
@@ -93,7 +112,7 @@ describe("Step 3 Business Details", () => {
   });
 
   it("transforms RFC to uppercase", () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     const rfcInput = screen.getByPlaceholderText("step3.fields.businessRFCPlaceholder");
     fireEvent.change(rfcInput, { target: { value: "abc123" } });
     expect(mockChange).toHaveBeenCalledWith(
@@ -102,7 +121,7 @@ describe("Step 3 Business Details", () => {
   });
 
   it("calls onChange when currency changes", async () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     const select = screen.getByLabelText("step3.fields.businessCurrency options");
     fireEvent.change(select, { target: { value: "USD" } });
 
@@ -112,7 +131,7 @@ describe("Step 3 Business Details", () => {
   });
 
   it("filters currencies by currency name", async () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     const searchInput = screen.getByLabelText("step3.fields.businessCurrency");
     fireEvent.change(searchInput, { target: { value: "mex" } });
 
@@ -121,12 +140,12 @@ describe("Step 3 Business Details", () => {
   });
 
   it("renders the timezone selector", () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     expect(screen.getByLabelText("step3.fields.businessTimezone")).toBeInTheDocument();
   });
 
   it("filters timezones by label", async () => {
-    remderBusinessDetails();
+    renderBusinessDetails();
     const searchInput = screen.getByLabelText("step3.fields.businessTimezone");
     fireEvent.change(searchInput, { target: { value: "Madrid" } });
 
@@ -135,7 +154,7 @@ describe("Step 3 Business Details", () => {
   });
 
   it("handles logo upload and preview", async () => {
-    const { container } = remderBusinessDetails();
+    const { container } = renderBusinessDetails();
     const fileInput = container.querySelector('input[type="file"]');
     const mockFile = new File(["(⌐□_□)"], "logo.png", { type: "image/png" });
 
@@ -151,11 +170,11 @@ describe("Step 3 Business Details", () => {
   });
 
   it("handles logo removal", async () => {
-    const { container, rerender } = remderBusinessDetails();
+    const { container, rerender } = renderBusinessDetails();
     rerender(
       <I18nProvider>
         <BusinessDetailsStep
-          data={{ ...defaultData, businessLogo: new File(["x"], "logo.png") }}
+          businessData={{ ...defaultData, businessLogo: new File(["x"], "logo.png") }}
           onChange={mockChange}
         />
       </I18nProvider>,

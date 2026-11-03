@@ -1,16 +1,33 @@
 "use client";
 
-import { resolveValue } from "./resolveValue";
+import QRCode from "react-qr-code";
+
+import { resolveTemplateVariables } from "./resolveTemplateVariables";
 import { sampleTicket } from "./sampleData";
 
-export function ElementQrCode({ value, config, className }) {
-  const qrValue = resolveValue(value || "", config) || sampleTicket.invoice;
+const qrWidthClasses = {
+  NORMAL: "w-[28%]",
+  LARGE: "w-[42%]",
+  EXTRA_LARGE: "w-[56%]",
+};
+
+const qrAlignmentClasses = {
+  LEFT: "items-start",
+  CENTER: "items-center",
+  RIGHT: "items-end",
+};
+
+export function ElementQrCode({ templateText, businessConfig, printFormats, fontSize, justification, className }) {
+  const qrContent = resolveTemplateVariables(templateText || "", businessConfig, printFormats) || sampleTicket.invoice;
+  const widthClass = qrWidthClasses[fontSize] || qrWidthClasses.NORMAL;
+  const alignmentClass = qrAlignmentClasses[justification] || qrAlignmentClasses.LEFT;
+
   return (
-    <div className={`flex flex-col items-center gap-2 ${className}`}>
-      <div className="flex h-28 w-28 items-center justify-center rounded-md border-2 border-dashed border-gray-400 text-xs text-gray-500">
-        QR
+    <div className={`flex flex-col gap-2 ${alignmentClass} ${className}`}>
+      <div className={widthClass} data-testid="qr-preview">
+        <QRCode value={qrContent} size={256} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
       </div>
-      <span className="text-xs text-gray-500">{qrValue}</span>
+      <span className="break-all text-xs text-gray-500">{qrContent}</span>
     </div>
   );
 }

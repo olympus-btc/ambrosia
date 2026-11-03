@@ -131,6 +131,22 @@ describe("useOrdersDetailData", () => {
     expect(capturedCsv).toContain("status.paid");
   });
 
+  it("exportToCsv includes the order's reference number when present", () => {
+    let capturedCsv;
+    global.Blob = jest.fn((parts) => {
+      capturedCsv = parts[0];
+      return {};
+    });
+    const orders = [
+      { shortId: "SH0", date: "2024-01-01", userName: "alice", paymentMethod: "Bank Transfer", total: 1000, itemCount: 1, items: [{ productName: "Widget", quantity: 1 }], transactionId: "REF-123" },
+    ];
+    const { result: ordersDetailDataHook } = renderHook(() => useOrdersDetailData(orders, formatCurrency));
+    act(() => ordersDetailDataHook.current.exportToCsv());
+
+    expect(capturedCsv).toContain("orders.reference");
+    expect(capturedCsv).toContain("REF-123");
+  });
+
   it("exportToCsv appends a summary section with revenue and refund totals", () => {
     let capturedCsv;
     global.Blob = jest.fn((parts) => {

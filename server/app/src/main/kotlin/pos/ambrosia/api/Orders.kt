@@ -2,21 +2,13 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import pos.ambrosia.logger
-import pos.ambrosia.models.AddOrderDishRequest
 import pos.ambrosia.models.CompleteOrder
-import pos.ambrosia.models.Order
-import pos.ambrosia.models.OrderDish
-import pos.ambrosia.models.OrderWithDishesRequest
 import pos.ambrosia.services.OrderService
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.ResourceNotFoundException
@@ -157,148 +149,6 @@ fun Route.orders(orderService: OrderService) {
                 return@get
             }
             call.respond(HttpStatusCode.OK, orders)
-        }
-    }
-
-    authorizePermission("orders_create") {
-        post("") {
-            val order = call.receive<Order>()
-            val orderId = orderService.addOrder(order)
-            if (orderId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to create order")
-                return@post
-            }
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf("id" to orderId, "message" to "Order created successfully"),
-            )
-        }
-
-        // Create order with dishes
-        post("/with-dishes") {
-            val request = call.receive<OrderWithDishesRequest>()
-            val orderId = orderService.addOrder(request.order)
-            if (orderId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to create order")
-                return@post
-            }
-
-            val dishesAdded = orderService.addDishesToOrder(orderId, request.dishes)
-            if (!dishesAdded) {
-                call.respond(HttpStatusCode.BadRequest, "Order created but failed to add some dishes")
-                return@post
-            }
-
-            // Update order total based on dishes
-            orderService.updateOrderTotal(orderId)
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf("message" to "Order with dishes created successfully", "id" to orderId),
-            )
-        }
-        post("/{id}/dishes") {
-            val orderId = call.parameters["id"]
-            if (orderId.isNullOrEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed order ID")
-                return@post
-            }
-
-            val dishRequests = call.receive<List<AddOrderDishRequest>>()
-            if (dishRequests.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "No dishes provided")
-                return@post
-            }
-
-            val dishes =
-                dishRequests.map { request ->
-                    OrderDish(
-                        orderId = orderId,
-                        dishId = request.dishId,
-                        priceAtOrder = request.priceAtOrder,
-                        notes = request.notes,
-                        status = "pending",
-                        shouldPrepare = true,
-                    )
-                }
-
-            val added = orderService.addDishesToOrder(orderId, dishes)
-            if (!added) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to add dishes to order")
-                return@post
-            }
-
-            // Update order total
-            orderService.updateOrderTotal(orderId)
-            call.respond(
-                HttpStatusCode.Created,
-                mapOf("orderId" to orderId, "message" to "Dishes added to order successfully"),
-            )
-        }
-    }
-
-    authorizePermission("orders_update") {
-        put("/{id}") {
-            val id = call.parameters["id"]
-            if (id.isNullOrEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
-                return@put
-            }
-
-            val updatedOrder = call.receive<Order>()
-            val orderWithId = updatedOrder.copy(id = id)
-            val isUpdated = orderService.updateOrder(orderWithId)
-            if (!isUpdated) {
-                throw ResourceNotFoundException("Order $id not found")
-            }
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("id" to id, "message" to "Order updated successfully"),
-            )
-        }
-        put("/{id}/dishes/{dishId}") {
-            val orderId = call.parameters["id"]
-            val dishId = call.parameters["dishId"]
-            if (orderId.isNullOrEmpty() || dishId.isNullOrEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed IDs")
-                return@put
-            }
-
-            val updatedDish = call.receive<OrderDish>()
-            val dishWithId = updatedDish.copy(id = dishId, orderId = orderId)
-            val isUpdated = orderService.updateOrderDish(dishWithId)
-            if (!isUpdated) {
-                throw ResourceNotFoundException("Order dish $dishId not found in order $orderId")
-            }
-
-            // Update order total
-            orderService.updateOrderTotal(orderId)
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "orderId" to orderId,
-                    "dishId" to dishId,
-                    "message" to "Order dish updated successfully",
-                ),
-            )
-        }
-
-        // Calculate and update order total
-        put("/{id}/calculate-total") {
-            val orderId = call.parameters["id"]
-            if (orderId.isNullOrEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "Missing or malformed order ID")
-                return@put
-            }
-
-            val newTotal = orderService.calculateOrderTotal(orderId)
-            val isUpdated = orderService.updateOrderTotal(orderId)
-            if (!isUpdated) {
-                throw ResourceNotFoundException("Order $orderId not found")
-            }
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("message" to "Order total updated successfully", "total" to newTotal),
-            )
         }
     }
 

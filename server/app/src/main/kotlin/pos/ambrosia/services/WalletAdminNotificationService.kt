@@ -134,6 +134,7 @@ class WalletAdminNotificationService(
                         put("paymentKind", actionType)
                         putOptional("requestedAmountSats", requestedAmountSats)
                         put("code", paymentFailure.walletNotificationCode())
+                        put("category", paymentFailure.walletNotificationCategory())
                         putOptional("statusCode", (paymentFailure as? PhoenixServiceException)?.statusCode)
                         put("source", paymentFailure.walletNotificationSource())
                     }.toString(),
@@ -255,6 +256,12 @@ class WalletAdminNotificationService(
             is PhoenixServiceException -> code
             is UnsupportedBackendOperationException -> code
             is NwcServiceException -> "nwc_service_error"
+            else -> "unknown"
+        }
+
+    private fun Throwable.walletNotificationCategory(): String =
+        when (this) {
+            is PhoenixServiceException -> category
             else -> "unknown"
         }
 

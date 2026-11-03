@@ -54,7 +54,7 @@ describe("OrdersCard", () => {
 
   it("shows the payment method", () => {
     render(<OrdersCard order={ORDER} formatCurrency={formatCurrency} onClick={jest.fn()} />);
-    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("cash")).toBeInTheDocument();
   });
 
   it("calls formatCurrency with order.total", () => {

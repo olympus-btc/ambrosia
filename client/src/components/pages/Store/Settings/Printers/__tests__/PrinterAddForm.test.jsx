@@ -50,21 +50,23 @@ describe("PrinterAddForm", () => {
   it("handles field updates and submit", () => {
     const onPrinterTypeChange = jest.fn();
     const onPrinterNameChange = jest.fn();
-    const onTemplateNameChange = jest.fn();
     const onDefaultChange = jest.fn();
     const onEnabledChange = jest.fn();
     const onSubmit = jest.fn();
 
     const formState = {
-      printerType: "CUSTOMER", printerName: "", templateName: "",
+      printerType: "CUSTOMER", printerName: "",
       isDefault: false, enabled: true,
-      onPrinterTypeChange, onPrinterNameChange, onTemplateNameChange,
+      onPrinterTypeChange, onPrinterNameChange,
       onDefaultChange, onEnabledChange, onSubmit,
     };
-    const data = { availablePrinters: ["Printer A"], templates: [{ name: "Template A" }] };
-    const loading = { available: false, templates: false };
+    const printerOptions = { availablePrinters: ["Printer A"] };
+    const printerLoadingState = { available: false };
 
-    render(<PrinterAddForm formState={formState} data={data} loading={loading} saving={false} />);
+    render(<PrinterAddForm formState={formState} data={printerOptions} loading={printerLoadingState} saving={false} />);
+
+    expect(screen.queryByLabelText("cardPrinters.templateLabel")).not.toBeInTheDocument();
+    expect(screen.getByText("cardPrinters.templatesHint")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("cardPrinters.typeLabel"), {
       target: { value: "CUSTOMER" },
@@ -75,11 +77,6 @@ describe("PrinterAddForm", () => {
       target: { value: "Printer A" },
     });
     expect(onPrinterNameChange).toHaveBeenCalledWith("Printer A");
-
-    fireEvent.change(screen.getByLabelText("cardPrinters.templateLabel"), {
-      target: { value: "Template A" },
-    });
-    expect(onTemplateNameChange).toHaveBeenCalledWith("Template A");
 
     fireEvent.click(screen.getByText("cardPrinters.defaultLabel"));
     expect(onDefaultChange).toHaveBeenCalledWith(true);
@@ -95,16 +92,16 @@ describe("PrinterAddForm", () => {
     const onSubmit = jest.fn();
 
     const formState = {
-      printerType: "CUSTOMER", printerName: "Printer A", templateName: "Template A",
+      printerType: "CUSTOMER", printerName: "Printer A",
       isDefault: false, enabled: true,
       onPrinterTypeChange: jest.fn(), onPrinterNameChange: jest.fn(),
-      onTemplateNameChange: jest.fn(), onDefaultChange: jest.fn(),
+      onDefaultChange: jest.fn(),
       onEnabledChange: jest.fn(), onSubmit,
     };
-    const data = { availablePrinters: ["Printer A"], templates: [{ name: "Template A" }] };
-    const loading = { available: false, templates: false };
+    const printerOptions = { availablePrinters: ["Printer A"] };
+    const printerLoadingState = { available: false };
 
-    render(<PrinterAddForm formState={formState} data={data} loading={loading} saving={false} />);
+    render(<PrinterAddForm formState={formState} data={printerOptions} loading={printerLoadingState} saving={false} />);
 
     const addButton = screen.getByText("cardPrinters.addButton");
     expect(addButton).not.toBeDisabled();

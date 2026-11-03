@@ -13,6 +13,7 @@ let mockRoles = [
   { id: "admin", role: "Admin" },
   { id: "seller", role: "Seller" },
 ];
+let mockUsersForbidden = false;
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -37,10 +38,7 @@ jest.mock("../UsersList", () => ({
   ),
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  usePermission: () => true,
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("../AddUsersModal", () => ({
   AddUsersModal: ({ addUsersShowModal, data, onChange, addUser }) => (
@@ -136,6 +134,7 @@ jest.mock("../../hooks/useUsers", () => ({
         roleId: undefined,
       },
     ],
+    forbidden: mockUsersForbidden,
     updateUser: mockUpdateUser,
     addUser: mockAddUser,
     deleteUser: mockDeleteUser,
@@ -185,6 +184,7 @@ beforeEach(() => {
     { id: "admin", role: "Admin" },
     { id: "seller", role: "Seller" },
   ];
+  mockUsersForbidden = false;
 
   jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
     availableFeatures: {},
@@ -220,6 +220,17 @@ describe("Users page", () => {
     expect(screen.getByText("addUser")).toBeInTheDocument();
     expect(screen.getByText("Jordano Anaya")).toBeInTheDocument();
     expect(screen.getByText("Carlos Ruz")).toBeInTheDocument();
+  });
+
+  it("shows the permission-blocked message instead of the table when forbidden", async () => {
+    mockUsersForbidden = true;
+
+    await act(async () => {
+      renderUsers();
+    });
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.queryByText("Jordano Anaya")).not.toBeInTheDocument();
   });
 
   it("opens AddUsersModal when clicking Add User", async () => {
@@ -322,7 +333,7 @@ describe("Users page", () => {
       fireEvent.click(screen.getByText("modal.deleteButton"));
     });
 
-    expect(mockDeleteUser).toHaveBeenCalledWith(1);
+    expect(mockDeleteUser).toHaveBeenCalledWith(1, "");
     expect(addToast).toHaveBeenCalledWith({
       description: "toasts.deleteSuccess",
       color: "success",
@@ -348,7 +359,7 @@ describe("Users page", () => {
       fireEvent.click(screen.getByText("modal.deleteButton"));
     });
 
-    expect(mockDeleteUser).toHaveBeenCalledWith(1);
+    expect(mockDeleteUser).toHaveBeenCalledWith(1, "");
     expect(addToast).not.toHaveBeenCalledWith({
       description: "toasts.deleteSuccess",
       color: "success",

@@ -13,8 +13,9 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.logger
+import pos.ambrosia.models.CreateUserRequest
+import pos.ambrosia.models.CurrentUserPinRequest
 import pos.ambrosia.models.UpdateUserRequest
-import pos.ambrosia.models.User
 import pos.ambrosia.models.UserMeResponse
 import pos.ambrosia.models.UserResponse
 import pos.ambrosia.services.PermissionsService
@@ -22,6 +23,7 @@ import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.UsersService
 import pos.ambrosia.utils.authorizePermission
 import pos.ambrosia.utils.requireAdmin
+import pos.ambrosia.utils.requireCurrentUserPin
 
 fun Application.configureUsers() {
     val userService = UsersService(environment)
@@ -112,7 +114,8 @@ fun Route.users(
     }
     authorizePermission("users_create") {
         post("") {
-            val user = call.receive<User>()
+            val createUserRequest = call.receive<CreateUserRequest>()
+            val user = createUserRequest.user
             if (user.name == "" || user.pin.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user, user name and/or pin cannot be null or blank")
                 return@post
@@ -121,6 +124,7 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be exactly 6 digits")
                 return@post
             }
+            call.requireCurrentUserPin(createUserRequest.currentUserPin)
             if (user.role?.let(userService::isRoleAdmin) == true) {
                 call.requireAdmin()
             }
@@ -165,6 +169,7 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be exactly 6 digits")
                 return@put
             }
+            call.requireCurrentUserPin(updatedUser.currentUserPin)
             if (updatedUser.roleId?.let(userService::isRoleAdmin) == true) {
                 call.requireAdmin()
             }
@@ -187,6 +192,9 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
                 return@delete
             }
+
+            val currentUserPinRequest = call.receive<CurrentUserPinRequest>()
+            call.requireCurrentUserPin(currentUserPinRequest.currentUserPin)
 
             val isDeleted = userService.deleteUser(id)
             if (!isDeleted) {

@@ -305,6 +305,23 @@ class AdminNotificationServiceTest {
     }
 
     @Test
+    fun `revokeAllPushSubscriptions revokes every subscription regardless of owner`() {
+        val adminRoleId = ExposedTestDb.seedRole("admin", isAdmin = true)
+        val firstAdminId = ExposedTestDb.seedUser("Ada", roleId = adminRoleId)
+        val secondAdminId = ExposedTestDb.seedUser("Grace", roleId = adminRoleId)
+        service.registerPushSubscription(firstAdminId, pushSubscriptionRequest(endpoint = "https://push.example/ada"))
+        service.registerPushSubscription(secondAdminId, pushSubscriptionRequest(endpoint = "https://push.example/grace"))
+
+        service.revokeAllPushSubscriptions()
+
+        transaction {
+            val subscriptions = PushSubscriptionsTable.selectAll().toList()
+            assertEquals(2, subscriptions.size)
+            assertTrue(subscriptions.all { it[PushSubscriptionsTable.revokedAt] != null })
+        }
+    }
+
+    @Test
     fun `createNotification dispatches Web Push only to admins with push enabled active subscriptions`() {
         val adminRoleId = ExposedTestDb.seedRole("admin", isAdmin = true)
         val firstAdminId = ExposedTestDb.seedUser("Ada", roleId = adminRoleId)

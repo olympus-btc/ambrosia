@@ -63,6 +63,7 @@ data class WalletErrorResponse(
     val message: String,
     val code: String,
     val source: String,
+    val category: String = "unknown",
 )
 
 @Serializable
@@ -77,6 +78,46 @@ data class UpdateNwcUriRequest(
 )
 
 @Serializable
+data class UpdatePhoenixdRemoteRequest(
+    val phoenixdRemote: Boolean,
+    val phoenixdUrl: String? = null,
+    val phoenixdPassword: String? = null,
+)
+
+@Serializable
+data class TestPhoenixdConnectionRequest(
+    val phoenixdUrl: String,
+    val phoenixdPassword: String,
+)
+
+@Serializable
+data class PhoenixdRemoteStatusResponse(
+    val phoenixdRemote: Boolean,
+)
+
+@Serializable
+data class RestartCapabilitiesResponse(
+    val serverRestartSupported: Boolean,
+    val phoenixdRestartSupported: Boolean,
+)
+
+@Serializable
+data class SecretsStatusResponse(
+    val encryptionActive: Boolean,
+    val locked: Boolean,
+)
+
+@Serializable
+data class UnlockSecretsRequest(
+    val unlockPassword: String,
+)
+
+@Serializable
+data class ActivateSecretsEncryptionRequest(
+    val unlockPassword: String,
+)
+
+@Serializable
 data class User(
     val id: String? = null,
     val name: String,
@@ -87,6 +128,17 @@ data class User(
     val email: String? = null,
     val phone: String? = null,
     val isAdmin: Boolean? = false,
+)
+
+@Serializable
+data class CreateUserRequest(
+    val user: User,
+    val currentUserPin: String,
+)
+
+@Serializable
+data class CurrentUserPinRequest(
+    val currentUserPin: String,
 )
 
 @Serializable
@@ -104,6 +156,7 @@ data class UpdateUserRequest(
     val roleId: String? = null,
     val email: String? = null,
     val phone: String? = null,
+    val currentUserPin: String? = null,
 )
 
 @Serializable
@@ -120,6 +173,7 @@ data class UpsertRoleRequest(
     val password: String? = null,
     val isAdmin: Boolean? = false,
     val permissions: List<String>? = null,
+    val currentUserPin: String? = null,
 )
 
 @Serializable data class Space(
@@ -173,6 +227,7 @@ data class Order(
     val status: String,
     val total: Double,
     val discountAmount: Double = 0.0,
+    val tipAmount: Double = 0.0,
     val createdAt: String,
 )
 
@@ -192,6 +247,7 @@ data class OrderWithPayment(
     val status: String,
     val total: Double,
     val discountAmount: Double = 0.0,
+    val tipAmount: Double = 0.0,
     val createdAt: String,
     val paymentMethod: String? = null,
     val paymentMethodIds: List<String> = emptyList(),
@@ -200,6 +256,7 @@ data class OrderWithPayment(
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
     val paymentHash: String? = null,
+    val transactionId: String? = null,
     val items: List<OrderItem> = emptyList(),
     val refund: StoreRefund? = null,
 )
@@ -267,6 +324,7 @@ data class Ticket(
     val status: Int,
     val totalAmount: Double,
     val notes: String,
+    val tipAmount: Double = 0.0,
 )
 
 @Serializable data class Currency(
@@ -311,6 +369,50 @@ data class Shift(
 data class CloseShiftRequest(
     val finalAmount: Double? = null,
     val difference: Double? = null,
+)
+
+@Serializable
+data class ShiftSummary(
+    val id: String,
+    val userId: String,
+    val userName: String,
+    val shiftDate: String,
+    val startTime: String,
+    val endTime: String?,
+    val initialAmount: Double,
+    val finalAmount: Double?,
+    val difference: Double?,
+)
+
+@Serializable
+data class ShiftPaymentMethodTotal(
+    val name: String,
+    val total: Double,
+)
+
+@Serializable
+data class ShiftsReport(
+    val shifts: List<ShiftSummary>,
+    val totalInitialAmount: Double,
+    val totalFinalAmount: Double,
+    val totalExpectedAmount: Double,
+    val totalDifference: Double,
+    val byPaymentMethod: List<ShiftPaymentMethodTotal>,
+)
+
+@Serializable
+data class ShiftBreakdown(
+    val shiftId: String,
+    val initialAmount: Double,
+    val finalAmount: Double?,
+    val difference: Double?,
+    val totalSales: Double,
+    val totalTips: Double,
+    val cashSales: Double,
+    val cashRefunds: Double,
+    val expectedTotal: Double,
+    val totalTickets: Int,
+    val byPaymentMethod: List<ShiftPaymentMethodTotal>,
 )
 
 @Serializable data class RolePassword(
@@ -441,6 +543,7 @@ data class VapidPublicKeyResponse(
 
 @Serializable data class RolePermissionsUpdateRequest(
     val permissions: List<String>,
+    val currentUserPin: String? = null,
 )
 
 @Serializable data class RolePermissionsUpdateResult(
@@ -455,6 +558,12 @@ enum class PrinterType {
 }
 
 @Serializable
+enum class CashDrawerPin {
+    PIN_2,
+    PIN_5,
+}
+
+@Serializable
 data class PrinterConfig(
     val id: String,
     val printerType: PrinterType,
@@ -463,6 +572,12 @@ data class PrinterConfig(
     val isDefault: Boolean = false,
     val enabled: Boolean = true,
     val createdAt: String? = null,
+    val cashDrawerEnabled: Boolean = false,
+    val cashDrawerPin: CashDrawerPin = CashDrawerPin.PIN_2,
+    val cashDrawerPaymentMethodIds: List<String> = emptyList(),
+    val openCashDrawerOnRefund: Boolean = true,
+    val openCashDrawerOnShiftOpen: Boolean = true,
+    val openCashDrawerOnShiftClose: Boolean = true,
 )
 
 @Serializable
@@ -472,6 +587,12 @@ data class PrinterConfigCreateRequest(
     val templateName: String? = null,
     val isDefault: Boolean = false,
     val enabled: Boolean = true,
+    val cashDrawerEnabled: Boolean = false,
+    val cashDrawerPin: CashDrawerPin = CashDrawerPin.PIN_2,
+    val cashDrawerPaymentMethodIds: List<String> = emptyList(),
+    val openCashDrawerOnRefund: Boolean = true,
+    val openCashDrawerOnShiftOpen: Boolean = true,
+    val openCashDrawerOnShiftClose: Boolean = true,
 )
 
 @Serializable
@@ -481,6 +602,17 @@ data class PrinterConfigUpdateRequest(
     val templateName: String? = null,
     val isDefault: Boolean? = null,
     val enabled: Boolean? = null,
+    val cashDrawerEnabled: Boolean? = null,
+    val cashDrawerPin: CashDrawerPin? = null,
+    val cashDrawerPaymentMethodIds: List<String>? = null,
+    val openCashDrawerOnRefund: Boolean? = null,
+    val openCashDrawerOnShiftOpen: Boolean? = null,
+    val openCashDrawerOnShiftClose: Boolean? = null,
+)
+
+@Serializable
+data class OpenCashDrawerRequest(
+    val printerId: String? = null,
 )
 
 @Serializable data class SetPrinterRequest(
@@ -493,6 +625,7 @@ data class Config(
     val id: Int = 1,
     val businessType: String = "restaurant",
     val businessName: String,
+    val businessProfession: String? = null,
     val businessAddress: String?,
     val businessPhone: String?,
     val businessEmail: String?,
@@ -500,6 +633,195 @@ data class Config(
     val businessLogoUrl: String?,
     val businessTypeConfirmed: Boolean = false,
     val timezone: String = "America/Mexico_City",
+    val tipsEnabled: Boolean = true,
+    val tipPercentages: String = "10,15,20",
+    val customTipDefaultType: String = "percentage",
+    val priceStep: Double = 0.01,
+)
+
+@Serializable
+data class PublicConfig(
+    val businessType: String,
+    val businessName: String,
+    val businessLogoUrl: String?,
+)
+
+@Serializable
+data class FreelanceClient(
+    val id: String,
+    val name: String,
+    val currencyId: String,
+    val hourlyRateCents: Int,
+    val billingCycle: String,
+    val paymentMethod: String,
+    val paymentMethods: List<String> = listOf(paymentMethod),
+    val payoutAccountId: String? = null,
+    val isDeleted: Boolean = false,
+    val createdAt: String,
+)
+
+@Serializable
+data class FreelanceClientUpsert(
+    val name: String,
+    val currencyId: String,
+    val hourlyRateCents: Int,
+    val billingCycle: String,
+    val paymentMethod: String? = null,
+    val paymentMethods: List<String> = emptyList(),
+    val payoutAccountId: String? = null,
+)
+
+@Serializable
+data class FreelanceProject(
+    val id: String,
+    val clientId: String,
+    val name: String,
+    val status: String,
+    val hourlyRateCents: Int? = null,
+    val isBillable: Boolean = true,
+    val isDeleted: Boolean = false,
+    val createdAt: String,
+)
+
+@Serializable
+data class FreelanceProjectUpsert(
+    val name: String,
+    val status: String = "pending",
+    val hourlyRateCents: Int? = null,
+    val isBillable: Boolean = true,
+)
+
+@Serializable
+data class FreelanceTask(
+    val id: String,
+    val name: String,
+    val isBillable: Boolean = true,
+    val isDeleted: Boolean = false,
+    val createdAt: String,
+)
+
+@Serializable
+data class FreelanceTaskUpsert(
+    val name: String,
+    val isBillable: Boolean = true,
+)
+
+@Serializable
+data class PayoutAccount(
+    val id: String,
+    val type: String,
+    val accountHolder: String? = null,
+    val bankName: String? = null,
+    val accountNumber: String? = null,
+    val currencyId: String? = null,
+    val swift: String? = null,
+    val iban: String? = null,
+    val clabe: String? = null,
+    val lightningAddress: String? = null,
+    val isDeleted: Boolean = false,
+    val createdAt: String,
+)
+
+@Serializable
+data class PayoutAccountUpsert(
+    val type: String,
+    val accountHolder: String? = null,
+    val bankName: String? = null,
+    val accountNumber: String? = null,
+    val currencyId: String? = null,
+    val swift: String? = null,
+    val iban: String? = null,
+    val clabe: String? = null,
+    val lightningAddress: String? = null,
+)
+
+@Serializable
+data class CreateFreelanceInvoiceRequest(
+    val clientId: String,
+    val periodStart: String,
+    val periodEnd: String,
+    val payoutAccountId: String? = null,
+    val exchangeRate: Double? = null,
+    val exchangeRateCurrency: String? = null,
+)
+
+@Serializable
+data class PayFreelanceInvoiceRequest(
+    val amountCents: Int? = null,
+    val transactionId: String? = null,
+)
+
+@Serializable
+data class FreelanceInvoicePreviewLineItemResponse(
+    val projectId: String,
+    val projectName: String,
+    val taskId: String,
+    val taskName: String,
+    val quantityMinutes: Int,
+    val rateCents: Int,
+    val amountCents: Int,
+)
+
+@Serializable
+data class FreelanceInvoicePreviewResponse(
+    val clientId: String,
+    val clientName: String,
+    val currencyId: String,
+    val currencyAcronym: String,
+    val periodStart: String,
+    val periodEnd: String,
+    val totalCents: Int,
+    val payoutSnapshot: String? = null,
+    val paymentMethod: String,
+    val lineItems: List<FreelanceInvoicePreviewLineItemResponse> = emptyList(),
+)
+
+@Serializable
+data class FreelanceInvoiceLineItemResponse(
+    val id: String,
+    val projectId: String,
+    val projectName: String,
+    val taskId: String,
+    val taskName: String,
+    val quantityMinutes: Int,
+    val rateCents: Int,
+    val amountCents: Int,
+    val createdAt: String,
+)
+
+@Serializable
+data class FreelanceInvoiceResponse(
+    val id: String,
+    val invoiceYear: Int,
+    val invoiceNumber: String,
+    val clientId: String,
+    val clientName: String,
+    val status: String,
+    val currencyId: String,
+    val currencyAcronym: String,
+    val periodStart: String,
+    val periodEnd: String,
+    val totalCents: Int,
+    val payoutSnapshot: String? = null,
+    val paymentMethod: String,
+    val paymentHash: String? = null,
+    val bolt11: String? = null,
+    val createdAt: String,
+    val lineItems: List<FreelanceInvoiceLineItemResponse> = emptyList(),
+)
+
+@Serializable
+data class FreelanceInvoicePayoutSnapshot(
+    val id: String,
+    val type: String,
+    val accountHolder: String? = null,
+    val bankName: String? = null,
+    val accountNumber: String? = null,
+    val currencyId: String? = null,
+    val swift: String? = null,
+    val iban: String? = null,
+    val clabe: String? = null,
+    val lightningAddress: String? = null,
 )
 
 @Serializable
@@ -624,6 +946,7 @@ data class InitialSetupRequest(
     val userPassword: String? = null,
     val userPin: String? = null,
     val businessName: String? = null,
+    val businessProfession: String? = null,
     val businessAddress: String? = null,
     val businessPhone: String? = null,
     val businessEmail: String? = null,
@@ -634,6 +957,9 @@ data class InitialSetupRequest(
     val businessLogo: String? = null,
     val businessLogoUrl: String? = null,
     val nwcUri: String? = null,
+    val phoenixdRemote: Boolean? = null,
+    val phoenixdUrl: String? = null,
+    val phoenixdPassword: String? = null,
 )
 
 @Serializable
@@ -642,6 +968,7 @@ data class InitialSetupResponse(
     val userId: String,
     val roleId: String,
     val nwcSaved: Boolean = false,
+    val phoenixdRemoteSaved: Boolean = false,
 )
 
 @Serializable
@@ -690,6 +1017,7 @@ data class StoreCheckoutRequest(
     val exchangeRateCurrency: String? = null,
     val fiatAmountAtPayment: Double? = null,
     val discountAmount: Double = 0.0,
+    val tipAmount: Double = 0.0,
 )
 
 @Serializable
@@ -716,6 +1044,7 @@ data class ProductSaleItem(
     val paymentId: String? = null,
     val discountAmount: Double = 0.0,
     val refunded: Boolean = false,
+    val transactionId: String? = null,
 )
 
 @Serializable
@@ -787,3 +1116,108 @@ data class IncomingPaymentWithRate(
     val fiatAmountAtPayment: Double? = null,
     val refunded: Boolean,
 )
+
+@Serializable
+data class CreateTimeEntryRequest(
+    val projectId: String,
+    val taskId: String? = null,
+    val taskName: String? = null,
+    val entryDate: String,
+    val startTime: String? = null,
+    val endTime: String? = null,
+    val description: String? = null,
+    val durationMinutes: Int,
+)
+
+@Serializable
+data class UpdateTimeEntryRequest(
+    val projectId: String,
+    val taskId: String? = null,
+    val taskName: String? = null,
+    val entryDate: String,
+    val startTime: String? = null,
+    val endTime: String? = null,
+    val description: String? = null,
+    val durationMinutes: Int,
+)
+
+@Serializable
+data class TimeEntryResponse(
+    val id: String,
+    val projectId: String,
+    val projectName: String,
+    val taskId: String,
+    val taskName: String,
+    val isBillable: Boolean,
+    val clientId: String,
+    val clientName: String,
+    val currencyId: String,
+    val currencyAcronym: String,
+    val entryDate: String,
+    val startTime: String?,
+    val endTime: String?,
+    val description: String?,
+    val durationMinutes: Int,
+    val invoiceId: String?,
+    val isLocked: Boolean,
+    val createdAt: String,
+)
+
+@Serializable
+data class FreelanceReportTaskGroup(
+    val taskId: String,
+    val taskName: String,
+    val durationMinutes: Int,
+    val amountCents: Int,
+)
+
+@Serializable
+data class FreelanceReportProjectGroup(
+    val projectId: String,
+    val projectName: String,
+    val clientId: String,
+    val clientName: String,
+    val durationMinutes: Int,
+    val amountCents: Int,
+    val tasks: List<FreelanceReportTaskGroup>,
+)
+
+@Serializable
+data class FreelanceReportCurrencyGroup(
+    val currencyId: String,
+    val currencyAcronym: String,
+    val totalDurationMinutes: Int,
+    val totalAmountCents: Int,
+    val projects: List<FreelanceReportProjectGroup>,
+)
+
+@Serializable
+data class FreelanceReportResponse(
+    val from: String,
+    val to: String,
+    val currencies: List<FreelanceReportCurrencyGroup>,
+)
+
+@Serializable
+data class BackupManifest(
+    val appVersion: String,
+    val schemaInstalledRank: Int?,
+    val exportedAt: String = Instant.now().toString(),
+    val businessName: String,
+    val secret: String,
+    val totalUncompressedBytes: Long? = null,
+)
+
+@Serializable
+data class BackupProgressUpdate(
+    val phase: String,
+    val bytesProcessed: Long,
+    val totalBytes: Long? = null,
+)
+
+object BackupProgressPhase {
+    const val PREPARING = "preparing"
+    const val WRITING = "writing"
+    const val UPLOADING = "uploading"
+    const val EXTRACTING = "extracting"
+}

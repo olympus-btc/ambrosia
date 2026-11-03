@@ -14,6 +14,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.models.TicketTemplateRequest
+import pos.ambrosia.services.TemplateDeletionStatus
 import pos.ambrosia.services.TicketTemplateService
 import pos.ambrosia.utils.authorizePermission
 
@@ -30,10 +31,10 @@ fun Route.templatesAPI(ticketTemplateService: TicketTemplateService) {
         }
 
         get("/{id}") {
-            val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val template = ticketTemplateService.getTemplateById(id)
-            if (template != null) {
-                call.respond(template)
+            val templateId = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val ticketTemplate = ticketTemplateService.getTemplateById(templateId)
+            if (ticketTemplate != null) {
+                call.respond(ticketTemplate)
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }
@@ -51,10 +52,10 @@ fun Route.templatesAPI(ticketTemplateService: TicketTemplateService) {
         }
 
         put("/{id}") {
-            val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
+            val templateId = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
             val templateRequest = call.receive<TicketTemplateRequest>()
-            val success = ticketTemplateService.updateTemplate(id, templateRequest)
-            if (success) {
+            val isTemplateUpdated = ticketTemplateService.updateTemplate(templateId, templateRequest)
+            if (isTemplateUpdated) {
                 call.respond(HttpStatusCode.OK)
             } else {
                 // Assuming failure could be due to not found or name conflict
@@ -66,10 +67,31 @@ fun Route.templatesAPI(ticketTemplateService: TicketTemplateService) {
         }
 
         delete("/{id}") {
-            val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
-            val success = ticketTemplateService.deleteTemplate(id)
-            if (success) {
-                call.respond(HttpStatusCode.NoContent)
+            val templateId = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+            when (ticketTemplateService.deleteTemplate(templateId)) {
+                TemplateDeletionStatus.DELETED -> {
+                    call.respond(HttpStatusCode.NoContent)
+                }
+
+                TemplateDeletionStatus.NOT_FOUND -> {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+
+                TemplateDeletionStatus.IS_DEFAULT -> {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf(
+                            "error" to "The default template of a ticket type cannot be deleted. Set another template as default first.",
+                        ),
+                    )
+                }
+            }
+        }
+
+        post("/{id}/default") {
+            val templateId = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (ticketTemplateService.setDefaultTemplate(templateId)) {
+                call.respond(HttpStatusCode.OK)
             } else {
                 call.respond(HttpStatusCode.NotFound)
             }

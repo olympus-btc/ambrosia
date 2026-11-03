@@ -36,7 +36,15 @@ export function TemplateList({
           isLoading={loading}
         >
           {templates.map((template) => (
-            <SelectItem key={template.id} value={template.id}>
+            <SelectItem
+              key={template.id}
+              value={template.id}
+              textValue={template.name}
+              description={[
+                settingsTranslations(`templates.ticketTypes.${template.ticketType || "RECEIPT"}`),
+                template.isDefault ? settingsTranslations("templates.defaultBadge") : null,
+              ].filter(Boolean).join(" · ")}
+            >
               {template.name}
             </SelectItem>
           ))}

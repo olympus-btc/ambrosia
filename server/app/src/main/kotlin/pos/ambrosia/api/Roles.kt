@@ -12,6 +12,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.logger
+import pos.ambrosia.models.CurrentUserPinRequest
 import pos.ambrosia.models.Role
 import pos.ambrosia.models.RolePermissionsUpdateRequest
 import pos.ambrosia.models.RolePermissionsUpdateResult
@@ -20,6 +21,7 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.RolesService
 import pos.ambrosia.utils.authorizeAdminPermission
 import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.requireCurrentUserPin
 
 fun Application.configureRoles() {
     val roleService = RolesService(environment)
@@ -76,13 +78,14 @@ fun Route.roles(
     authorizeAdminPermission("roles_create") {
         post("") {
             val roleCreateRequest = call.receive<UpsertRoleRequest>()
-            val role =
+            call.requireCurrentUserPin(roleCreateRequest.currentUserPin)
+            val createdRole =
                 Role(
                     role = roleCreateRequest.role,
                     password = roleCreateRequest.password,
                     isAdmin = roleCreateRequest.isAdmin,
                 )
-            val id = roleService.addRole(role, roleCreateRequest.permissions.orEmpty().distinct())
+            val id = roleService.addRole(createdRole, roleCreateRequest.permissions.orEmpty().distinct())
             if (id == null) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid role data")
                 return@post
@@ -106,6 +109,7 @@ fun Route.roles(
                 call.respond(HttpStatusCode.BadRequest, "Invalid role data")
                 return@put
             }
+            call.requireCurrentUserPin(roleUpdateRequest.currentUserPin)
             val updatedRole =
                 Role(
                     role = roleUpdateRequest.role,
@@ -134,6 +138,7 @@ fun Route.roles(
             }
 
             val permissionsUpdateRequest = call.receive<RolePermissionsUpdateRequest>()
+            call.requireCurrentUserPin(permissionsUpdateRequest.currentUserPin)
             val count = permissionsService.replaceRolePermissions(id, permissionsUpdateRequest.permissions.distinct())
             call.respond(HttpStatusCode.OK, RolePermissionsUpdateResult(roleId = id, assigned = count))
         }
@@ -145,6 +150,9 @@ fun Route.roles(
                 call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
                 return@delete
             }
+
+            val currentUserPinRequest = call.receive<CurrentUserPinRequest>()
+            call.requireCurrentUserPin(currentUserPinRequest.currentUserPin)
 
             val isDeleted = roleService.deleteRole(id)
             if (!isDeleted) {

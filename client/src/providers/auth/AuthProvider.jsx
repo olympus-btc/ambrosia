@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { CART_STORAGE_KEY } from "@/components/pages/Store/Cart/hooks/usePersistentCart";
 import { useAuthRevalidation } from "@/hooks/auth/useAuthRevalidation";
@@ -15,6 +15,7 @@ export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
   const isMountedRef = useRef(false);
   const isFetchingRef = useRef(false);
@@ -73,7 +74,9 @@ export function AuthProvider({ children }) {
           window.localStorage.removeItem(CART_STORAGE_KEY);
         });
         dispatch({ type: "EXPIRED" });
-        router.push("/auth");
+        if (!pathname.startsWith("/auth") && !pathname.startsWith("/onboarding")) {
+          router.push("/auth");
+        }
       },
       onForbidden: () => {
         dispatch({ type: "FORBIDDEN" });
@@ -82,7 +85,7 @@ export function AuthProvider({ children }) {
     });
 
     return unsubscribe;
-  }, [router]);
+  }, [router, pathname]);
 
   useAuthRevalidation(state.isAuth, refreshSession);
 

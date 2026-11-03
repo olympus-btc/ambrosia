@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { ViewButton } from "@/components/shared/ViewButton";
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
 import { formatDateParts } from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
@@ -24,6 +25,7 @@ const buildProductSummary = (items, overflowLabel) => {
 
 export function ReportsOrdersList({ orders, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   if (!orders?.length) {
@@ -91,7 +93,7 @@ export function ReportsOrdersList({ orders, formatCurrency, currentRate }) {
       key: "payment",
       label: reportsTranslations("sales.paymentMethod"),
       render: ({ paymentMethod }) => (
-        <span className="text-sm text-gray-700">{paymentMethod || reportsTranslations("payment.unknown")}</span>
+        <span className="text-sm text-gray-700">{getPaymentMethodLabel(paymentMethod) || reportsTranslations("payment.unknown")}</span>
       ),
     },
     {

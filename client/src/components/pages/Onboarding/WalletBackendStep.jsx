@@ -7,21 +7,29 @@ import { Zap, Server } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { NWC_URI_REGEX } from "@/lib/nwcUri";
+import { testPhoenixdConnection } from "@/services/initialSetupService";
+import { PhoenixdRemoteFields } from "@components/shared/PhoenixdRemoteFields";
 
-export function WalletBackendStep({ data, onChange }) {
+export function WalletBackendStep({ walletBackendData, onChange }) {
   const walletBackendTranslations = useTranslations();
   const [uriError, setUriError] = useState("");
 
-  const isNwc = !!data.nwcUri || data.walletBackend === "nwc";
+  const isNwc = !!walletBackendData.nwcUri || walletBackendData.walletBackend === "nwc";
 
   const handleSelect = (backend) => {
-    onChange({ walletBackend: backend, nwcUri: backend === "phoenixd" ? "" : data.nwcUri });
+    onChange({
+      walletBackend: backend,
+      nwcUri: backend === "phoenixd" ? "" : walletBackendData.nwcUri,
+      phoenixdRemote: backend === "nwc" ? false : walletBackendData.phoenixdRemote,
+      phoenixdUrl: backend === "nwc" ? "" : walletBackendData.phoenixdUrl,
+      phoenixdPassword: backend === "nwc" ? "" : walletBackendData.phoenixdPassword,
+    });
   };
 
-  const handleUriChange = (val) => {
+  const handleUriChange = (nwcUri) => {
     setUriError("");
-    onChange({ nwcUri: val, walletBackend: "nwc" });
-    if (val && !NWC_URI_REGEX.test(val)) {
+    onChange({ nwcUri, walletBackend: "nwc" });
+    if (nwcUri && !NWC_URI_REGEX.test(nwcUri)) {
       setUriError(walletBackendTranslations("stepWallet.uriInvalid"));
     }
   };
@@ -70,7 +78,7 @@ export function WalletBackendStep({ data, onChange }) {
           <Input
             label={walletBackendTranslations("stepWallet.uriLabel")}
             placeholder="nostr+walletconnect://..."
-            value={data.nwcUri || ""}
+            value={walletBackendData.nwcUri || ""}
             onValueChange={handleUriChange}
             isInvalid={!!uriError}
             errorMessage={uriError}
@@ -79,6 +87,18 @@ export function WalletBackendStep({ data, onChange }) {
           />
           <p className="text-xs text-gray-400">{walletBackendTranslations("stepWallet.uriHint")}</p>
         </div>
+      )}
+
+      {!isNwc && (
+        <PhoenixdRemoteFields
+          phoenixdRemote={Boolean(walletBackendData.phoenixdRemote)}
+          phoenixdUrl={walletBackendData.phoenixdUrl || ""}
+          phoenixdPassword={walletBackendData.phoenixdPassword || ""}
+          onPhoenixdRemoteChange={(phoenixdRemote) => onChange({ phoenixdRemote, walletBackend: "phoenixd" })}
+          onPhoenixdUrlChange={(phoenixdUrl) => onChange({ phoenixdUrl, walletBackend: "phoenixd" })}
+          onPhoenixdPasswordChange={(phoenixdPassword) => onChange({ phoenixdPassword, walletBackend: "phoenixd" })}
+          onTestConnection={testPhoenixdConnection}
+        />
       )}
     </div>
   );

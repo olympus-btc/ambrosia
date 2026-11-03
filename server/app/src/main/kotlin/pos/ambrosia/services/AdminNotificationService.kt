@@ -390,6 +390,16 @@ class AdminNotificationService(
             revokePushSubscriptionByEndpoint(endpoint, adminEntityId)
         }
 
+    fun revokeAllPushSubscriptions() {
+        transaction {
+            val revokedTimestamp = Instant.now().toString()
+            PushSubscriptionsTable.update {
+                it[revokedAt] = revokedTimestamp
+                it[updatedAt] = revokedTimestamp
+            }
+        }
+    }
+
     private fun activeAdminUserIds(): List<EntityID<UUID>> =
         (UsersTable innerJoin RolesTable)
             .selectAll()

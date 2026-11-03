@@ -85,10 +85,10 @@ describe("useCartPayment", () => {
   });
 
   it("handles BTC payment config and clearing", async () => {
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
     await act(async () => {
-      await result.current.handlePay({
+      await cartPayment.current.handlePay({
         items: [{ id: 1, subtotal: 100 }],
         subtotal: 100,
         discount: 0,
@@ -99,7 +99,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.btcPayment.config).toEqual(
+      expect(cartPayment.current.btcPayment.config).toEqual(
         expect.objectContaining({
           amountFiat: 1,
           currencyAcronym: "usd",
@@ -110,17 +110,17 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.btcPayment.onClose();
+      cartPayment.current.btcPayment.onClose();
     });
 
-    expect(result.current.btcPayment.config).toBeNull();
+    expect(cartPayment.current.btcPayment.config).toBeNull();
   });
 
   it("handles cash payment config and clearing", async () => {
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
     await act(async () => {
-      await result.current.handlePay({
+      await cartPayment.current.handlePay({
         items: [{ id: 1, subtotal: 100 }],
         subtotal: 100,
         discount: 0,
@@ -131,7 +131,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.cashPayment.config).toEqual(
+      expect(cartPayment.current.cashPayment.config).toEqual(
         expect.objectContaining({
           amountDue: 1,
           displayTotal: "fmt-100",
@@ -140,20 +140,20 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.cashPayment.onClose();
+      cartPayment.current.cashPayment.onClose();
     });
 
-    expect(result.current.cashPayment.config).toBeNull();
+    expect(cartPayment.current.cashPayment.config).toBeNull();
   });
 
   it("handles card payment config and clearing", async () => {
     mockPaymentMethods = [
       { id: "credit", name: "Credit Card" },
     ];
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
     await act(async () => {
-      await result.current.handlePay({
+      await cartPayment.current.handlePay({
         items: [{ id: 1, subtotal: 100 }],
         subtotal: 100,
         discount: 0,
@@ -164,7 +164,7 @@ describe("useCartPayment", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.cardPayment.config).toEqual(
+      expect(cartPayment.current.cardPayment.config).toEqual(
         expect.objectContaining({
           amountDue: 1,
           displayTotal: "fmt-100",
@@ -174,37 +174,71 @@ describe("useCartPayment", () => {
     });
 
     act(() => {
-      result.current.cardPayment.onClose();
+      cartPayment.current.cardPayment.onClose();
     });
 
-    expect(result.current.cardPayment.config).toBeNull();
+    expect(cartPayment.current.cardPayment.config).toBeNull();
+  });
+
+  it("handles transfer payment config and clearing", async () => {
+    mockPaymentMethods = [
+      { id: "transfer", name: "Bank Transfer" },
+    ];
+    const { result: cartPayment } = renderHook(() => useCartPayment());
+
+    await act(async () => {
+      await cartPayment.current.handlePay({
+        items: [{ id: 1, subtotal: 100 }],
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+        selectedPaymentMethod: "transfer",
+      });
+    });
+
+    await waitFor(() => {
+      expect(cartPayment.current.transferPayment.config).toEqual(
+        expect.objectContaining({
+          amountDue: 1,
+          displayTotal: "fmt-100",
+          methodLabel: "Bank Transfer",
+        }),
+      );
+    });
+
+    act(() => {
+      cartPayment.current.transferPayment.onClose();
+    });
+
+    expect(cartPayment.current.transferPayment.config).toBeNull();
   });
 
   it("handles missing payment methods without crashing", () => {
     mockPaymentMethods = undefined;
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
-    expect(typeof result.current.handlePay).toBe("function");
+    expect(typeof cartPayment.current.handlePay).toBe("function");
   });
 
   it("reports paymentsForbidden when payment methods are forbidden", () => {
     mockPaymentMethodsForbidden = true;
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
-    expect(result.current.paymentsForbidden).toBe(true);
+    expect(cartPayment.current.paymentsForbidden).toBe(true);
   });
 
   it("reports paymentsForbidden when payment currency is forbidden", () => {
     mockPaymentCurrencyForbidden = true;
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
-    expect(result.current.paymentsForbidden).toBe(true);
+    expect(cartPayment.current.paymentsForbidden).toBe(true);
   });
 
   it("reports paymentsForbidden as false when neither is forbidden", () => {
-    const { result } = renderHook(() => useCartPayment());
+    const { result: cartPayment } = renderHook(() => useCartPayment());
 
-    expect(result.current.paymentsForbidden).toBe(false);
+    expect(cartPayment.current.paymentsForbidden).toBe(false);
   });
 
   describe("BTC checkout recovery", () => {
@@ -252,7 +286,7 @@ describe("useCartPayment", () => {
         expect(deleteCheckout).toHaveBeenCalledWith("hash-2");
       });
 
-      expect(httpClient).toHaveBeenCalledWith("store/orders/payment-status/hash-2");
+      expect(httpClient).toHaveBeenCalledWith("/store/orders/payment-status/hash-2", { skipForbiddenRedirect: true });
       expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-2", {
         status: "completed",
         orderId: "order-2",
@@ -281,11 +315,12 @@ describe("useCartPayment", () => {
         expect(deleteCheckout).toHaveBeenCalledWith("hash-3");
       });
 
-      expect(httpClient).toHaveBeenCalledWith("store/orders/payment-status/hash-3");
-      expect(httpClient).toHaveBeenCalledWith("store/orders/checkout", {
+      expect(httpClient).toHaveBeenCalledWith("/store/orders/payment-status/hash-3", { skipForbiddenRedirect: true });
+      expect(httpClient).toHaveBeenCalledWith("/store/orders/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkoutPayload),
+        skipForbiddenRedirect: true,
       });
       expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-3", { orderId: "order-3" });
       expect(addToast).toHaveBeenCalledWith({
@@ -315,7 +350,7 @@ describe("useCartPayment", () => {
     it("silently skips recovery when the checkout store is unavailable", async () => {
       getCompletedCheckouts.mockRejectedValue(new Error("IndexedDB unavailable"));
 
-      const { result } = renderHook(() => useCartPayment());
+      const { result: cartPayment } = renderHook(() => useCartPayment());
 
       await waitFor(() => {
         expect(getCompletedCheckouts).toHaveBeenCalled();
@@ -323,7 +358,7 @@ describe("useCartPayment", () => {
 
       expect(getPendingCheckouts).not.toHaveBeenCalled();
       expect(addToast).not.toHaveBeenCalled();
-      expect(typeof result.current.handlePay).toBe("function");
+      expect(typeof cartPayment.current.handlePay).toBe("function");
     });
   });
 });

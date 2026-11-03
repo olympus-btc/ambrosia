@@ -13,8 +13,8 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.api.configureAuth
 import pos.ambrosia.api.handler
+import pos.ambrosia.utils.ADMIN_AUTH_TEST_SECRET
 import pos.ambrosia.utils.ExposedTestDb
-import pos.ambrosia.utils.TEST_SECRET
 import pos.ambrosia.utils.grantPermission
 import pos.ambrosia.utils.installAdminAuth
 import pos.ambrosia.utils.testEnvironmentWithSecret
@@ -24,7 +24,7 @@ import kotlin.test.assertEquals
 
 class AuthLoginRouteTest {
     private lateinit var databaseFile: File
-    private val testEnv = testEnvironmentWithSecret(TEST_SECRET)
+    private val testEnv = testEnvironmentWithSecret(ADMIN_AUTH_TEST_SECRET)
 
     @Before
     fun setUp() {

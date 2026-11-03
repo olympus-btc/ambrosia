@@ -1,74 +1,55 @@
 "use client";
 
-import { useState } from "react";
-
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { useUpload } from "@components/hooks/useUpload";
-import { useConfigurations } from "@providers/configurations/configurationsProvider";
+import { useBusinessInfoEditor } from "@components/shared/Settings/hooks/useBusinessInfoEditor";
 
 import { EditStoreInfoModal } from "./EditStoreInfoModal";
 import { StoreInfoCard } from "./StoreInfoCard";
 
 export function StoreInfo() {
-  const t = useTranslations("settings");
-  const { config, updateConfig } = useConfigurations();
-  const { upload } = useUpload();
-  const [data, setData] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const settingsTranslations = useTranslations("settings");
+  const {
+    config,
+    draftBusinessInfo,
+    setDraftBusinessInfo,
+    isEditorOpen,
+    openEditor,
+    closeEditor,
+    handleDraftChange,
+    saveBusinessInfo,
+  } = useBusinessInfoEditor();
 
-  if (!config) return null;
-
-  const handleDataChange = (newData) => {
-    setData((prev) => ({ ...prev, ...newData }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
     try {
-      let logoUrl = data.businessLogoUrl;
-
-      if (data.businessLogo instanceof File) {
-        const [uploaded] = await upload([data.businessLogo]);
-        logoUrl = uploaded?.url ?? uploaded?.path;
-      } else if (data.businessLogoRemoved) {
-        logoUrl = null;
-      }
-
-      const updatedData = {
-        ...data,
-        businessLogoUrl: logoUrl,
-        businessLogo: undefined,
-        businessLogoRemoved: undefined,
-      };
-
-      await updateConfig(updatedData);
-      setData(updatedData);
-      setShowModal(false);
+      await saveBusinessInfo();
       addToast({
-        title: t("modal.updateSuccess"),
+        title: settingsTranslations("modal.updateSuccess"),
         color: "success",
       });
-    } catch (error) {
+    } catch (saveStoreInfoError) {
       addToast({
-        title: t("modal.errorTitle"),
-        description: error.message,
+        title: settingsTranslations("modal.errorTitle"),
+        description: saveStoreInfoError.message,
         color: "danger",
       });
     }
   };
 
+  if (!config) return null;
+
   return (
     <>
-      <StoreInfoCard data={config} onEdit={() => { setData(config); setShowModal(true); }} />
+      <StoreInfoCard data={config} onEdit={openEditor} />
       <EditStoreInfoModal
-        data={data}
-        setData={setData}
-        onChange={handleDataChange}
+        data={draftBusinessInfo}
+        setData={setDraftBusinessInfo}
+        onChange={handleDraftChange}
         onSubmit={handleSubmit}
-        isOpen={showModal}
-        setIsOpen={setShowModal}
+        isOpen={isEditorOpen}
+        setIsOpen={closeEditor}
       />
     </>
   );

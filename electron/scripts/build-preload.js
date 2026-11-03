@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const esbuild = require('esbuild');
+import esbuild from 'esbuild';
 
-const ELECTRON_DIR = path.join(__dirname, '..');
+const ELECTRON_DIRECTORY = path.join(import.meta.dirname, '..');
 
 const PRELOAD_TARGETS = [
   { entry: 'preload.entry.js', outfile: 'preload.js' },
@@ -17,8 +17,8 @@ function main() {
 
   try {
     for (const target of PRELOAD_TARGETS) {
-      const entryPath = path.join(ELECTRON_DIR, target.entry);
-      const outfilePath = path.join(ELECTRON_DIR, target.outfile);
+      const entryPath = path.join(ELECTRON_DIRECTORY, target.entry);
+      const outfilePath = path.join(ELECTRON_DIRECTORY, target.outfile);
 
       console.log(`Bundling ${target.entry} -> ${target.outfile}...`);
 
@@ -42,8 +42,8 @@ function main() {
     console.log('===========================================');
     console.log('  ✓ Preload bundling complete!');
     console.log('===========================================');
-  } catch (error) {
-    console.error('\n✗ Preload bundling failed:', error.message);
+  } catch (bundlingError) {
+    console.error('\n✗ Preload bundling failed:', bundlingError.message);
     process.exit(1);
   }
 }

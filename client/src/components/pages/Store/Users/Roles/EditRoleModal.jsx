@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+
 import {
   Button,
   Input,
@@ -9,6 +11,7 @@ import {
   ModalHeader,
   Checkbox,
 } from "@heroui/react";
+import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { PermissionSelector } from "./PermissionSelector";
@@ -26,6 +29,7 @@ export function EditRoleModal({
   businessType = null,
 }) {
   const roleTranslations = useTranslations();
+  const [showCurrentUserPin, setShowCurrentUserPin] = useState(false);
 
   return (
     <Modal
@@ -80,6 +84,32 @@ export function EditRoleModal({
               isAdmin={form.isAdmin}
             />
           </div>
+
+          <Input
+            label={roleTranslations("roles.edit.currentUserPinLabel")}
+            type={showCurrentUserPin ? "text" : "password"}
+            placeholder={roleTranslations("roles.edit.currentUserPinPlaceholder")}
+            isRequired
+            minLength={4}
+            maxLength={6}
+            value={form.currentUserPin ?? ""}
+            onChange={(event) => {
+              const onlyNumbers = event.target.value.replace(/\D/g, "");
+              setForm((previousForm) => ({ ...previousForm, currentUserPin: onlyNumbers }));
+            }}
+            endContent={
+              (
+                <button
+                  type="button"
+                  aria-label={showCurrentUserPin ? "Hide your PIN" : "Show your PIN"}
+                  onClick={() => setShowCurrentUserPin(!showCurrentUserPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showCurrentUserPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              )
+            }
+          />
         </ModalBody>
         <ModalFooter>
           <Button
@@ -94,7 +124,7 @@ export function EditRoleModal({
             color="primary"
             className="bg-green-800"
             onPress={onSubmit}
-            isDisabled={!form.name.trim() || updating}
+            isDisabled={!form.name.trim() || !form.currentUserPin || updating}
             isLoading={updating}
           >
             {roleTranslations("roles.actions.save")}

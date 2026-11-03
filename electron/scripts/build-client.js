@@ -1,30 +1,30 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
-const CLIENT_DIR = path.join(__dirname, '..', '..', 'client');
-const RESOURCES_DIR = path.join(__dirname, '..', 'resources', 'client');
+const CLIENT_DIRECTORY = path.join(import.meta.dirname, '..', '..', 'client');
+const RESOURCES_DIRECTORY = path.join(import.meta.dirname, '..', 'resources', 'client');
 
-function copyDirectory(src, dest) {
-  if (!fs.existsSync(dest)) {
-    fs.mkdirSync(dest, { recursive: true });
+function copyDirectory(source, destination) {
+  if (!fs.existsSync(destination)) {
+    fs.mkdirSync(destination, { recursive: true });
   }
 
-  const entries = fs.readdirSync(src, { withFileTypes: true });
+  const entries = fs.readdirSync(source, { withFileTypes: true });
 
   for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
+    const sourcePath = path.join(source, entry.name);
+    const destinationPath = path.join(destination, entry.name);
 
     if (entry.isDirectory()) {
-      copyDirectory(srcPath, destPath);
+      copyDirectory(sourcePath, destinationPath);
     } else {
-      fs.copyFileSync(srcPath, destPath);
+      fs.copyFileSync(sourcePath, destinationPath);
     }
   }
 }
 
-function getDirectorySize(dirPath) {
+function getDirectorySize(directoryPath) {
   let totalSize = 0;
 
   function calculateSize(currentPath) {
@@ -42,8 +42,8 @@ function getDirectorySize(dirPath) {
     }
   }
 
-  if (fs.existsSync(dirPath)) {
-    calculateSize(dirPath);
+  if (fs.existsSync(directoryPath)) {
+    calculateSize(directoryPath);
   }
 
   return totalSize;
@@ -55,12 +55,11 @@ function main() {
   console.log('===========================================\n');
 
   try {
-    // Build Next.js with electron flag
     console.log('Building Next.js with production optimizations...');
-    console.log(`Working directory: ${CLIENT_DIR}\n`);
+    console.log(`Working directory: ${CLIENT_DIRECTORY}\n`);
 
     execSync('npm run build:electron', {
-      cwd: CLIENT_DIR,
+      cwd: CLIENT_DIRECTORY,
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -70,24 +69,21 @@ function main() {
 
     console.log('\n✓ Next.js build complete\n');
 
-    // Verify .next/standalone exists
-    const standalonePath = path.join(CLIENT_DIR, '.next', 'standalone');
+    const standalonePath = path.join(CLIENT_DIRECTORY, '.next', 'standalone');
     if (!fs.existsSync(standalonePath)) {
       throw new Error(`Standalone build not found at: ${standalonePath}`);
     }
 
     console.log(`Found standalone build: ${standalonePath}\n`);
 
-    // Create resources directory
-    if (fs.existsSync(RESOURCES_DIR)) {
+    if (fs.existsSync(RESOURCES_DIRECTORY)) {
       console.log('Removing old client resources...');
-      fs.rmSync(RESOURCES_DIR, { recursive: true, force: true });
+      fs.rmSync(RESOURCES_DIRECTORY, { recursive: true, force: true });
     }
 
-    fs.mkdirSync(RESOURCES_DIR, { recursive: true });
-    console.log(`✓ Created directory: ${RESOURCES_DIR}\n`);
+    fs.mkdirSync(RESOURCES_DIRECTORY, { recursive: true });
+    console.log(`✓ Created directory: ${RESOURCES_DIRECTORY}\n`);
 
-    // Copy standalone build
     // Next.js 16 nests standalone output inside a subdirectory named after the project
     // (.next/standalone/client/server.js instead of .next/standalone/server.js)
     console.log('Copying standalone build...');
@@ -95,7 +91,7 @@ function main() {
     if (!fs.existsSync(path.join(standaloneRoot, 'server.js'))) {
       const entries = fs.readdirSync(standaloneRoot, { withFileTypes: true });
       const nested = entries.find(
-        (e) => e.isDirectory() && fs.existsSync(path.join(standaloneRoot, e.name, 'server.js')),
+        (entry) => entry.isDirectory() && fs.existsSync(path.join(standaloneRoot, entry.name, 'server.js')),
       );
       if (nested) {
         standaloneRoot = path.join(standaloneRoot, nested.name);
@@ -104,45 +100,41 @@ function main() {
         throw new Error(`server.js not found inside standalone build at: ${standaloneRoot}`);
       }
     }
-    copyDirectory(standaloneRoot, RESOURCES_DIR);
+    copyDirectory(standaloneRoot, RESOURCES_DIRECTORY);
     console.log('✓ Copied standalone build to root\n');
 
-    // Copy static files into standalone/.next/static
     console.log('Copying static files...');
-    const staticPath = path.join(CLIENT_DIR, '.next', 'static');
+    const staticPath = path.join(CLIENT_DIRECTORY, '.next', 'static');
     if (fs.existsSync(staticPath)) {
-      copyDirectory(staticPath, path.join(RESOURCES_DIR, '.next', 'static'));
+      copyDirectory(staticPath, path.join(RESOURCES_DIRECTORY, '.next', 'static'));
       console.log('✓ Copied .next/static\n');
     }
 
-    // Copy public directory into standalone/public
     console.log('Copying public directory...');
-    const publicPath = path.join(CLIENT_DIR, 'public');
+    const publicPath = path.join(CLIENT_DIRECTORY, 'public');
     if (fs.existsSync(publicPath)) {
-      copyDirectory(publicPath, path.join(RESOURCES_DIR, 'public'));
+      copyDirectory(publicPath, path.join(RESOURCES_DIRECTORY, 'public'));
       console.log('✓ Copied public\n');
     }
 
-    // Copy necessary config files
     console.log('Copying configuration files...');
-    const configFiles = [
+    const configFilenames = [
       'package.json',
       'next.config.mjs',
     ];
 
-    for (const file of configFiles) {
-      const srcPath = path.join(CLIENT_DIR, file);
-      const destPath = path.join(RESOURCES_DIR, file);
-      if (fs.existsSync(srcPath)) {
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`✓ Copied ${file}`);
+    for (const configFilename of configFilenames) {
+      const sourcePath = path.join(CLIENT_DIRECTORY, configFilename);
+      const destinationPath = path.join(RESOURCES_DIRECTORY, configFilename);
+      if (fs.existsSync(sourcePath)) {
+        fs.copyFileSync(sourcePath, destinationPath);
+        console.log(`✓ Copied ${configFilename}`);
       }
     }
 
     console.log('');
 
-    // Calculate size
-    const totalSize = getDirectorySize(RESOURCES_DIR);
+    const totalSize = getDirectorySize(RESOURCES_DIRECTORY);
     const sizeInMB = (totalSize / 1024 / 1024).toFixed(2);
 
     console.log(`\n✓ Client resources total size: ${sizeInMB} MB`);
@@ -150,8 +142,8 @@ function main() {
     console.log('\n===========================================');
     console.log('  ✓ Client build complete!');
     console.log('===========================================');
-  } catch (error) {
-    console.error('\n✗ Client build failed:', error.message);
+  } catch (clientBuildError) {
+    console.error('\n✗ Client build failed:', clientBuildError.message);
     process.exit(1);
   }
 }

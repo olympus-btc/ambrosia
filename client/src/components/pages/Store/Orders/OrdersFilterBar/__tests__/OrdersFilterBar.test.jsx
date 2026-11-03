@@ -86,7 +86,7 @@ describe("OrdersFilterBar", () => {
     });
     expect(onSearchChange).toHaveBeenCalledWith("order-1");
 
-    fireEvent.change(screen.getByLabelText("Rows per page"), {
+    fireEvent.change(screen.getByLabelText("filter.rowsPerPage"), {
       target: { value: "5" },
     });
     expect(onRowsPerPageChange).toHaveBeenCalledWith("5");

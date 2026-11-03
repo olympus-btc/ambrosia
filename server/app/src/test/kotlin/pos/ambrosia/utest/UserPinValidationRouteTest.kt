@@ -15,8 +15,9 @@ import org.junit.Before
 import pos.ambrosia.api.configureUsers
 import pos.ambrosia.api.handler
 import pos.ambrosia.services.AuthService
+import pos.ambrosia.utils.ADMIN_AUTH_TEST_SECRET
 import pos.ambrosia.utils.ExposedTestDb
-import pos.ambrosia.utils.TEST_SECRET
+import pos.ambrosia.utils.TEST_USER_PIN
 import pos.ambrosia.utils.grantPermission
 import pos.ambrosia.utils.installAdminAuth
 import pos.ambrosia.utils.testEnvironmentWithSecret
@@ -30,7 +31,7 @@ import kotlin.test.assertNull
 class UserPinValidationRouteTest {
     private lateinit var databaseFile: File
 
-    private val testEnv = testEnvironmentWithSecret(TEST_SECRET)
+    private val testEnv = testEnvironmentWithSecret(ADMIN_AUTH_TEST_SECRET)
 
     @Before
     fun setUp() {
@@ -60,7 +61,9 @@ class UserPinValidationRouteTest {
                     client.post("/users") {
                         withAuthCookies(auth)
                         header(HttpHeaders.ContentType, "application/json")
-                        setBody("""{"name":"invalid-$index","pin":"$invalidPin","role":"$roleId"}""")
+                        setBody(
+                            """{"user":{"name":"invalid-$index","pin":"$invalidPin","role":"$roleId"},"currentUserPin":"$TEST_USER_PIN"}""",
+                        )
                     }
 
                 assertEquals(HttpStatusCode.BadRequest, response.status, "pin '$invalidPin' should be rejected")
@@ -83,7 +86,9 @@ class UserPinValidationRouteTest {
                 client.post("/users") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"name":"valid-user","pin":"123456","role":"$roleId"}""")
+                    setBody(
+                        """{"user":{"name":"valid-user","pin":"123456","role":"$roleId"},"currentUserPin":"$TEST_USER_PIN"}""",
+                    )
                 }
 
             assertEquals(HttpStatusCode.Created, response.status)
@@ -106,7 +111,7 @@ class UserPinValidationRouteTest {
                 client.put("/users/$targetUserId") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"pin":"1234"}""")
+                    setBody("""{"pin":"1234","currentUserPin":"$TEST_USER_PIN"}""")
                 }
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -135,7 +140,7 @@ class UserPinValidationRouteTest {
                 client.put("/users/$legacyUserId") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
-                    setBody("""{"pin":"123456"}""")
+                    setBody("""{"pin":"123456","currentUserPin":"$TEST_USER_PIN"}""")
                 }
 
             assertEquals(HttpStatusCode.OK, response.status)

@@ -1,8 +1,13 @@
 package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.contentLength
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -12,22 +17,42 @@ import io.ktor.server.routing.routing
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.datadir
 import pos.ambrosia.logger
+import pos.ambrosia.models.BackupProgressPhase
 import pos.ambrosia.models.Config
 import pos.ambrosia.models.InitialSetupRequest
 import pos.ambrosia.models.InitialSetupResponse
 import pos.ambrosia.models.InitialSetupStatus
 import pos.ambrosia.models.Role
+import pos.ambrosia.models.TestPhoenixdConnectionRequest
 import pos.ambrosia.models.User
+import pos.ambrosia.scheduleProcessRestart
 import pos.ambrosia.services.ActiveLightningBackend
+import pos.ambrosia.services.BackupService
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.services.CurrencyService
 import pos.ambrosia.services.PermissionsService
+import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.RolesService
+import pos.ambrosia.services.SecretsStore
+import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.UsersService
 import pos.ambrosia.services.WalletAdminNotificationService
 import pos.ambrosia.utils.InitialSetupException
+import pos.ambrosia.utils.canRestartSelf
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.ZoneId
+import java.util.UUID
+
+private const val ONBOARDING_PROGRESS_TOKEN_USER_ID = "onboarding"
+private val VALID_BUSINESS_TYPES = setOf("store", "restaurant", "freelance")
+
+private suspend fun ApplicationCall.respondConflictIfInitialSetupCompleted(configService: ConfigService): Boolean {
+    if (configService.getConfig() == null) return false
+    respond(HttpStatusCode.Conflict, mapOf("message" to "Initial setup already completed"))
+    return true
+}
 
 fun Application.configureInitialSetup() {
     routing {
@@ -54,7 +79,7 @@ private fun Route.initialSetupRoutes() {
         if (existingConfig != null) {
             if (!existingConfig.businessTypeConfirmed) {
                 val businessType = initialSetupRequest.businessType
-                if (businessType != "store" && businessType != "restaurant") {
+                if (businessType == null || businessType !in VALID_BUSINESS_TYPES) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid business type"))
                     return@post
                 }
@@ -83,10 +108,7 @@ private fun Route.initialSetupRoutes() {
         val businessCurrency = initialSetupRequest.businessCurrency
         val timezone = initialSetupRequest.timezone
 
-        if (
-            businessType != "store" &&
-            businessType != "restaurant"
-        ) {
+        if (businessType == null || businessType !in VALID_BUSINESS_TYPES) {
             call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid business type"))
             return@post
         }
@@ -136,6 +158,7 @@ private fun Route.initialSetupRoutes() {
                         Config(
                             businessType = businessType,
                             businessName = businessName,
+                            businessProfession = initialSetupRequest.businessProfession,
                             businessAddress = initialSetupRequest.businessAddress,
                             businessPhone = initialSetupRequest.businessPhone,
                             businessEmail = initialSetupRequest.businessEmail,
@@ -158,7 +181,7 @@ private fun Route.initialSetupRoutes() {
         val nwcSaved =
             initialSetupRequest.nwcUri?.takeIf { it.isNotBlank() }?.let { uri ->
                 try {
-                    File(datadir.toString(), "ambrosia.conf").appendText("\nnwc-uri=$uri\n")
+                    SecretsStore.setSecret("nwc-uri", uri)
                     logger.info("NWC URI saved to ambrosia.conf — hot-reloading backend")
                     val walletAdminNotificationService =
                         WalletAdminNotificationService(createConfiguredAdminNotificationService(call.application.environment))
@@ -172,6 +195,30 @@ private fun Route.initialSetupRoutes() {
                 }
             } ?: false
 
+        val trimmedPhoenixdUrl = initialSetupRequest.phoenixdUrl?.trim()
+        val phoenixdPassword = initialSetupRequest.phoenixdPassword
+        val phoenixdRemoteSaved =
+            if (
+                initialSetupRequest.phoenixdRemote != true ||
+                trimmedPhoenixdUrl.isNullOrBlank() ||
+                phoenixdPassword.isNullOrBlank()
+            ) {
+                false
+            } else {
+                try {
+                    File(datadir.toString(), "ambrosia.conf").appendText(
+                        "\nphoenixd-remote=true\nphoenixd-url=$trimmedPhoenixdUrl\n",
+                    )
+                    SecretsStore.setSecret("phoenixd-password", phoenixdPassword)
+                    logger.info("Remote phoenixd node saved to ambrosia.conf — hot-reloading backend")
+                    ActiveLightningBackend.reinitializePhoenixBackend(trimmedPhoenixdUrl, phoenixdPassword)
+                    true
+                } catch (exception: Exception) {
+                    logger.error("Failed to save or activate remote phoenixd node: ${exception.message}")
+                    false
+                }
+            }
+
         call.respond(
             HttpStatusCode.Created,
             InitialSetupResponse(
@@ -179,7 +226,108 @@ private fun Route.initialSetupRoutes() {
                 userId = userId,
                 roleId = roleId,
                 nwcSaved = nwcSaved,
+                phoenixdRemoteSaved = phoenixdRemoteSaved,
             ),
         )
+    }
+
+    post("/test-phoenixd-connection") {
+        val configService = ConfigService()
+        if (call.respondConflictIfInitialSetupCompleted(configService)) return@post
+
+        val testConnectionRequest = call.receive<TestPhoenixdConnectionRequest>()
+        val candidateNodeInfo =
+            PhoenixService.testCandidateNodeConnection(
+                testConnectionRequest.phoenixdUrl,
+                testConnectionRequest.phoenixdPassword,
+            )
+        call.respond(HttpStatusCode.OK, candidateNodeInfo)
+    }
+
+    post("/restore") {
+        val configService = ConfigService()
+        if (call.respondConflictIfInitialSetupCompleted(configService)) return@post
+
+        var backupPassword: String? = null
+        var operationId: String? = null
+        var temporaryBackupFile: Path? = null
+        var bytesUploaded = 0L
+        try {
+            call.receiveMultipart().forEachPart { part ->
+                when (part) {
+                    is PartData.FormItem -> {
+                        if (part.name == "password") backupPassword = part.value
+                        if (part.name == "operationId") operationId = part.value
+                    }
+
+                    is PartData.FileItem -> {
+                        if (part.name == "backup") {
+                            val onRestoreProgress = backupProgressReporter(operationId)
+                            val totalUploadBytes = call.request.contentLength()
+                            temporaryBackupFile =
+                                receiveChannelToTempFile(part.provider) { bytesReceived ->
+                                    bytesUploaded += bytesReceived
+                                    onRestoreProgress(BackupProgressPhase.UPLOADING, bytesUploaded, totalUploadBytes)
+                                }
+                        }
+                    }
+
+                    else -> {}
+                }
+                part.release()
+            }
+
+            val password = backupPassword
+            val backupFile = temporaryBackupFile
+            if (password.isNullOrEmpty() || backupFile == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Missing password or backup file"))
+                return@post
+            }
+
+            val backupService = BackupService()
+            val importedManifest =
+                Files.newInputStream(backupFile).use { backupInputStream ->
+                    backupService.importBackup(backupInputStream, password.toCharArray(), backupProgressReporter(operationId))
+                }
+
+            call.respond(
+                HttpStatusCode.OK,
+                mapOf("message" to "Backup restored", "businessName" to importedManifest.businessName),
+            )
+        } catch (invalidBackup: IllegalArgumentException) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("message" to (invalidBackup.message ?: "Invalid backup file")),
+            )
+        } catch (unsafeBackup: SecurityException) {
+            logger.warn("Rejected backup restore with an unsafe path: ${unsafeBackup.message}")
+            call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Invalid backup file"))
+        } finally {
+            temporaryBackupFile?.let { Files.deleteIfExists(it) }
+            operationId?.let { BackupProgressNotifier.unregister(it) }
+        }
+    }
+
+    post("/progress-token") {
+        val configService = ConfigService()
+        if (call.respondConflictIfInitialSetupCompleted(configService)) return@post
+
+        val operationId = UUID.randomUUID().toString()
+        val tokenService = TokenService(call.application.environment)
+        val progressToken = tokenService.generateBackupProgressToken(ONBOARDING_PROGRESS_TOKEN_USER_ID, operationId)
+        call.respond(HttpStatusCode.OK, mapOf("operationId" to operationId, "token" to progressToken))
+    }
+
+    post("/confirm-pending-restore") {
+        val configService = ConfigService()
+        if (call.respondConflictIfInitialSetupCompleted(configService)) return@post
+
+        val backupService = BackupService()
+        backupService.stagedOperationId()?.let { operationId ->
+            val tokenService = TokenService(call.application.environment)
+            backupService.writeConfirmationToken(tokenService.generateBackupConfirmationToken(operationId))
+            if (call.canRestartSelf()) scheduleProcessRestart()
+        }
+        call.respond(HttpStatusCode.OK)
     }
 }

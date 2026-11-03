@@ -22,6 +22,7 @@ from ambrosia.auth_utils import (
     get_tokens_from_response,
     login_user,
     set_cookie_in_jar,
+    with_current_user_pin,
 )
 from ambrosia.http_client import AmbrosiaHttpClient
 
@@ -35,13 +36,13 @@ class TestAuthentication:
     async def test_successful_login_sets_both_tokens(self, server_url: str):
         """Test that successful login sets both accessToken and refreshToken cookies."""
         async with AmbrosiaHttpClient(server_url) as client:
-            response = await login_user(client)
+            login_response = await login_user(client)
 
             # Check response message
-            assert_success_message(response)
+            assert_success_message(login_response)
 
             # Verify both cookies are set
-            assert_cookies_present(response, "accessToken", "refreshToken")
+            assert_cookies_present(login_response, "accessToken", "refreshToken")
 
             logger.info("✓ Login successful, both tokens set")
 
@@ -49,29 +50,29 @@ class TestAuthentication:
     async def test_failed_login_does_not_set_tokens(self, server_url: str):
         """Test that failed login does not set authentication cookies."""
         async with AmbrosiaHttpClient(server_url) as client:
-            response = await login_user(
+            failed_login_response = await login_user(
                 client,
                 credentials={"name": "cooluser1", "pin": "wrongpin"},
                 expected_status=None,
             )
 
             # Should return 401 or 400
-            assert response.status_code in [400, 401], (
-                f"Expected 400/401 for invalid credentials, got {response.status_code}"
+            assert failed_login_response.status_code in [400, 401], (
+                f"Expected 400/401 for invalid credentials, got {failed_login_response.status_code}"
             )
 
             # Verify no cookies are set
-            assert_cookies_absent(response, "accessToken", "refreshToken")
+            assert_cookies_absent(failed_login_response, "accessToken", "refreshToken")
 
     @pytest.mark.asyncio
     async def test_refresh_without_token_fails(self, server_url: str):
         """Test that refresh endpoint fails without refreshToken cookie."""
         async with AmbrosiaHttpClient(server_url) as client:
             # Try to refresh without any cookies
-            response = await client.post("/auth/refresh")
+            refresh_response = await client.post("/auth/refresh")
 
-            assert response.status_code in [400, 401, 500], (
-                f"Expected 400/401/500 without refreshToken, got {response.status_code}"
+            assert refresh_response.status_code in [400, 401, 500], (
+                f"Expected 400/401/500 without refreshToken, got {refresh_response.status_code}"
             )
 
     @pytest.mark.asyncio
@@ -87,10 +88,10 @@ class TestAuthentication:
             # Now overwrite it with an invalid token to test server validation
             set_cookie_in_jar(client, "refreshToken", "invalid_token_12345")
 
-            response = await client.post("/auth/refresh")
+            refresh_response = await client.post("/auth/refresh")
 
-            assert response.status_code in [400, 401, 500], (
-                f"Expected 400/401/500 with invalid refreshToken, got {response.status_code}"
+            assert refresh_response.status_code in [400, 401, 500], (
+                f"Expected 400/401/500 with invalid refreshToken, got {refresh_response.status_code}"
             )
 
     @pytest.mark.asyncio
@@ -307,36 +308,40 @@ class TestAuthentication:
             # Should return 400 Bad Request or 422 Unprocessable Entity
 
             # Missing pin
-            response = await client.post("/auth/login", json={"name": "cooluser1"})
-            assert response.status_code in [400, 401, 422, 500], (
-                f"Expected 400/401/422/500 for missing pin, got {response.status_code}"
+            missing_pin_response = await client.post(
+                "/auth/login", json={"name": "cooluser1"}
+            )
+            assert missing_pin_response.status_code in [400, 401, 422, 500], (
+                f"Expected 400/401/422/500 for missing pin, got {missing_pin_response.status_code}"
             )
             # Verify no cookies are set
-            assert_cookies_absent(response, "accessToken", "refreshToken")
+            assert_cookies_absent(missing_pin_response, "accessToken", "refreshToken")
 
             # Missing name
-            response = await client.post("/auth/login", json={"pin": "0000"})
-            assert response.status_code in [400, 401, 422, 500], (
-                f"Expected 400/401/422/500 for missing name, got {response.status_code}"
+            missing_name_response = await client.post(
+                "/auth/login", json={"pin": "0000"}
+            )
+            assert missing_name_response.status_code in [400, 401, 422, 500], (
+                f"Expected 400/401/422/500 for missing name, got {missing_name_response.status_code}"
             )
             # Verify no cookies are set
-            assert "accessToken" not in response.cookies, (
+            assert "accessToken" not in missing_name_response.cookies, (
                 "accessToken should not be set when name is missing"
             )
-            assert "refreshToken" not in response.cookies, (
+            assert "refreshToken" not in missing_name_response.cookies, (
                 "refreshToken should not be set when name is missing"
             )
 
             # Empty body
-            response = await client.post("/auth/login", json={})
-            assert response.status_code in [400, 401, 422, 500], (
-                f"Expected 400/401/422/500 for empty body, got {response.status_code}"
+            empty_body_response = await client.post("/auth/login", json={})
+            assert empty_body_response.status_code in [400, 401, 422, 500], (
+                f"Expected 400/401/422/500 for empty body, got {empty_body_response.status_code}"
             )
             # Verify no cookies are set
-            assert "accessToken" not in response.cookies, (
+            assert "accessToken" not in empty_body_response.cookies, (
                 "accessToken should not be set for empty body"
             )
-            assert "refreshToken" not in response.cookies, (
+            assert "refreshToken" not in empty_body_response.cookies, (
                 "refreshToken should not be set for empty body"
             )
 
@@ -356,7 +361,9 @@ class TestAuthentication:
             user_pin = "123456"
             await create_user(admin_client, user_name, user_pin, role_id)
 
-            delete_response = await admin_client.delete(f"/roles/{role_id}")
+            delete_response = await admin_client.delete(
+                f"/roles/{role_id}", json=with_current_user_pin()
+            )
             assert delete_response.status_code == 204
 
             async with AmbrosiaHttpClient(server_url) as user_client:

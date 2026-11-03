@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -12,12 +12,7 @@ import { useConfigurations } from "@/providers/configurations/configurationsProv
 export function Home() {
   const router = useRouter();
   const { user, isLoading, isAuth } = useAuth();
-  const {
-    businessType,
-    isLoading: isConfigLoading,
-    refreshConfig,
-  } = useConfigurations();
-  const hasRequestedConfigRef = useRef(false);
+  const { businessType, isLoading: isConfigLoading } = useConfigurations();
 
   useEffect(() => {
     if (isLoading) return;
@@ -29,15 +24,9 @@ export function Home() {
 
     if (isConfigLoading) return;
 
-    if (isAuth && !businessType && !hasRequestedConfigRef.current) {
-      hasRequestedConfigRef.current = true;
-      refreshConfig?.();
-      return;
-    }
-
     const homeRoute = getHomeRoute(user, businessType);
     router.replace(homeRoute);
-  }, [user, isAuth, isLoading, isConfigLoading, router, businessType, refreshConfig]);
+  }, [user, isAuth, isLoading, isConfigLoading, router, businessType]);
 
   return <LoadingCard />;
 }

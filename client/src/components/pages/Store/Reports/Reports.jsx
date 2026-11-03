@@ -1,23 +1,26 @@
 "use client";
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import { Card, CardBody, Tab, Tabs } from "@heroui/react";
-import { AlertCircle, Loader2, Package, ShoppingCart } from "lucide-react";
+import { AlertCircle, Clock, Loader2, Package, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { usePermission } from "@/hooks/usePermission";
 import { PageHeader } from "@components/shared/PageHeader";
 
 import { AnalyticsCard, OrdersAnalyticsCard } from "./Charts";
 import { PeriodFilter } from "./Filters";
-import { useFiltersState } from "./hooks/useFilters";
+import { buildReportQuery, useFiltersState } from "./hooks/useFilters";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersSummaryData } from "./hooks/useOrdersSummaryData";
 import { useReports } from "./hooks/useReports";
+import { useShiftsReport } from "./hooks/useShiftsReport";
 import { useSummaryData } from "./hooks/useSummaryData";
 import { OrdersDetailCard } from "./Orders";
 import { SalesDetailCard } from "./Sales";
+import { ShiftsAnalyticsCard, ShiftsReportCard } from "./Shifts";
 import { ReportSkeleton, SummaryCard } from "./Summary";
 
 export default function Reports() {
@@ -26,9 +29,21 @@ export default function Reports() {
   const { filters, handleFilters } = useFiltersState(fetchReport);
   const { formatAmount, loading: currencyLoading, currency } = useCurrency();
   const { currentRate } = useBitcoinPrice({ currencyAcronym: currency?.acronym });
+  const canViewShiftsReport = usePermission({ allOf: ["shifts_report_read"] });
+  const { fetchShiftsReport, shiftsReportData } = useShiftsReport();
+  const formatShiftAmount = useCallback(
+    (amount) => formatAmount(Math.round(amount * 100)),
+    [formatAmount],
+  );
   const [activeTab, setActiveTab] = useState("orders");
   const [pendingTab, setPendingTab] = useState(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!canViewShiftsReport) return;
+    const shiftsReportQuery = buildReportQuery(filters);
+    if (shiftsReportQuery) fetchShiftsReport(shiftsReportQuery);
+  }, [filters, canViewShiftsReport, fetchShiftsReport]);
 
   const sales = useMemo(() => reportData?.sales ?? [], [reportData]);
   const orders = useOrdersData(sales);
@@ -111,6 +126,17 @@ export default function Reports() {
     totalRefundedSatoshis,
   ]);
 
+  const shiftStats = useMemo(() => {
+    if (!shiftsReportData) return [];
+    const { totalExpectedAmount, totalFinalAmount, totalDifference, shifts: reportedShifts } = shiftsReportData;
+    return [
+      { label: reportsTranslations("shiftsReport.totalExpected"), value: formatShiftAmount(totalExpectedAmount) },
+      { label: reportsTranslations("shiftsReport.totalActual"), value: formatShiftAmount(totalFinalAmount) },
+      { label: reportsTranslations("shiftsReport.totalDifference"), value: formatShiftAmount(totalDifference) },
+      { label: reportsTranslations("shiftsReport.shiftCount"), value: reportedShifts.length },
+    ];
+  }, [reportsTranslations, shiftsReportData, formatShiftAmount]);
+
   if ((reportsLoading || currencyLoading) && !reportData) return <ReportSkeleton />;
 
   return (
@@ -142,6 +168,9 @@ export default function Reports() {
                 {[
                   { key: "orders", label: reportsTranslations("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
                   { key: "products", label: reportsTranslations("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
+                  ...(canViewShiftsReport
+                    ? [{ key: "shifts", label: reportsTranslations("tabs.shifts"), icon: <Clock aria-hidden="true" className="w-4 h-4" /> }]
+                    : []),
                 ].map(({ key, label, icon }) => (
                   <Tab
                     key={key}
@@ -207,6 +236,20 @@ export default function Reports() {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "shifts" && canViewShiftsReport && shiftsReportData && (
+        <div role="tabpanel" className="space-y-6">
+          <SummaryCard stats={shiftStats} />
+          {shiftsReportData.shifts.length > 0 && (
+            <ShiftsAnalyticsCard
+              shifts={shiftsReportData.shifts}
+              byPaymentMethod={shiftsReportData.byPaymentMethod}
+              formatCurrency={formatShiftAmount}
+            />
+          )}
+          <ShiftsReportCard shifts={shiftsReportData.shifts} formatCurrency={formatShiftAmount} />
         </div>
       )}
 

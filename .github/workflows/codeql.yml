@@ -1,0 +1,77 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+  push:
+    branches:
+      - main
+      - development
+
+  schedule:
+    # Weekly full scan — catches newly published queries against unchanged code.
+    - cron: '17 4 * * 1'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Setup JDK
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - name: Build server
+        if: matrix.language == 'java-kotlin'
+        working-directory: server
+        # The Kotlin compile daemon OOMs under the CodeQL tracer on a stock
+        # runner. Compiling in-process keeps it in the Gradle JVM, where the
+        # heap below applies and the extractor reliably sees the compilation.
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx5g
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:jar --no-daemon \
+            -Dkotlin.compiler.execution.strategy=in-process
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          category: /language:${{ matrix.language }}

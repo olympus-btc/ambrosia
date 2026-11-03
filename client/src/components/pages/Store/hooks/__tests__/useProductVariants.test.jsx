@@ -33,7 +33,7 @@ describe("useProductVariants", () => {
       const { fetchProductDetail } = setup();
       const fetchedProductDetail = await act(async () => fetchProductDetail("p1"));
 
-      expect(httpClient).toHaveBeenCalledWith("/products/p1");
+      expect(httpClient).toHaveBeenCalledWith("/products/p1", { skipForbiddenRedirect: true });
       expect(fetchedProductDetail).toEqual(productDetail);
     });
 

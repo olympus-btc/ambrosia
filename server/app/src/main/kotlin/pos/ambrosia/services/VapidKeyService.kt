@@ -1,6 +1,7 @@
 package pos.ambrosia.services
 
 import io.ktor.server.application.ApplicationEnvironment
+import pos.ambrosia.utils.SecretsLockedException
 import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.interfaces.ECPrivateKey
@@ -26,7 +27,12 @@ class VapidKeyService(
 
     fun getConfiguredKeysOrNull(): VapidKeys? {
         val configuredPublicKey = environment.configValue("web-push.vapid-public-key")
-        val configuredPrivateKey = environment.configValue("web-push.vapid-private-key")
+        val configuredPrivateKey =
+            try {
+                SecretsStore.getSecretOrNull("web-push-vapid-private-key")
+            } catch (secretsLockedException: SecretsLockedException) {
+                null
+            }
         val configuredSubject = environment.configValue("web-push.vapid-subject")
 
         if (configuredPublicKey == null || configuredPrivateKey == null || configuredSubject == null) {

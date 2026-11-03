@@ -8,12 +8,15 @@ import { RequirePermission } from "@/hooks/usePermission";
 
 export function TicketTemplatesFooter({
   selectedId,
+  isDefault,
+  settingDefault,
+  onSetDefault,
   deleting,
   onDelete,
   onClose,
   onSave,
   saving,
-  name,
+  templateName,
   settingsTranslations,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -21,8 +24,16 @@ export function TicketTemplatesFooter({
   return (
     <ModalFooter className="flex justify-between">
       <div className="flex items-center gap-2">
-        {selectedId && (
+        {selectedId && isDefault && (
+          <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700">
+            {settingsTranslations("templates.defaultBadge")}
+          </span>
+        )}
+        {selectedId && !isDefault && (
           <RequirePermission allOf={["printer_update"]}>
+            <Button variant="bordered" className="border border-green-800 text-green-800" onPress={onSetDefault} isLoading={settingDefault}>
+              {settingsTranslations("templates.setDefault")}
+            </Button>
             {confirmDelete ? (
               <>
                 <Button size="sm" color="danger" onPress={onDelete} isDisabled={deleting}>
@@ -53,7 +64,7 @@ export function TicketTemplatesFooter({
             color="primary"
             className="bg-green-800"
             onPress={onSave}
-            isDisabled={saving || !name.trim()}
+            isDisabled={saving || !templateName.trim()}
           >
             {selectedId ? settingsTranslations("templates.saveChanges") : settingsTranslations("templates.saveNew")}
           </Button>

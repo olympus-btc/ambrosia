@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ambrosia · Comprobación HTTPS</title>
+  <style>
+    :root{color-scheme:light;--ink:#16372a;--muted:#567065;--line:#d6e2d9;--brand:#17643d;--soft:#e8f7ed}*{box-sizing:border-box}body{margin:0;padding:24px;background:#f3f7f3;color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:680px;margin:40px auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;box-shadow:0 8px 28px rgba(22,55,42,.05)}h1{margin:8px 0;font-size:clamp(1.8rem,6vw,2.5rem);line-height:1.15}.status{margin:22px 0;padding:18px;border-left:5px solid var(--brand);border-radius:10px;background:var(--soft)}.button{display:inline-block;margin:5px 8px 5px 0;padding:11px 16px;border-radius:10px;background:var(--brand);color:#fff;font-weight:750;text-decoration:none}.secondary{background:#fff;color:var(--brand);border:1px solid var(--brand)}code{overflow-wrap:anywhere;font-size:.82em}.languages{display:flex;gap:8px;margin-bottom:20px}.languages a{padding:5px 11px;border:1px solid var(--line);border-radius:999px;color:var(--ink)}.muted{color:var(--muted)}#es{display:none}#es:target{display:block}#es:target~#en{display:none}@media(max-width:480px){body{padding:12px}main{margin:12px auto;padding:21px}.button{display:block;text-align:center;margin:10px 0}}
+  </style>
+</head>
+<body><main>
+  <nav class="languages" aria-label="Idioma / Language"><a href="#es">Español</a><a href="#en">English</a></nav>
+  <p><strong>AMBROSIA · __HOSTNAME__</strong></p>
+  <section id="es" lang="es"><h1>Comprobación HTTPS</h1><div class="status"><strong>Esta página llegó mediante HTTPS.</strong><br>Ahora confirma que la dirección comience con <code>https://</code> y que el navegador no muestre advertencias del certificado.</div><p>La comprobación solo es válida si no aceptaste una excepción temporal. Esta página no puede consultar directamente el almacén de confianza del sistema.</p><p><a class="button" href="https://__HOSTNAME__/">Abrir Ambrosia</a><a class="button secondary" href="https://__HOSTNAME__/trust/">Guía de instalación</a></p></section>
+  <section id="en" lang="en"><h1>HTTPS check</h1><div class="status"><strong>This page arrived through HTTPS.</strong><br>Now confirm that the address begins with <code>https://</code> and the browser shows no certificate warning.</div><p>This check is valid only if you did not accept a temporary exception. The browser does not expose the operating system’s trust store to this page.</p><p><a class="button" href="https://__HOSTNAME__/">Open Ambrosia</a><a class="button secondary" href="https://__HOSTNAME__/trust/">Installation guide</a></p></section>
+  <p class="muted">SHA-256<br><code>__FINGERPRINT__</code></p>
+</main></body>
+</html>

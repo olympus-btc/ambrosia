@@ -8,7 +8,9 @@ import logging
 import os
 import signal
 import subprocess
+import threading
 import time
+from collections import deque
 from pathlib import Path
 
 import httpx
@@ -33,12 +35,16 @@ class AmbrosiaTestServer:
     DEFAULT_EXTRA_ARGS = (
         "--phoenixd-url=http://localhost:9740 "
         "--phoenixd-password=test-password "
-        "--phoenixd-webhook-secret=test-webhook-secret"
+        "--phoenixd-webhook-secret=test-webhook-secret "
+        "--rate-limit-requests-per-minute=100000"
     )
 
     # Timeout settings
-    STARTUP_TIMEOUT = 30  # seconds
+    STARTUP_TIMEOUT = 120  # seconds
     HEALTH_CHECK_INTERVAL = 1  # seconds
+
+    # Number of trailing output lines kept in memory for startup-failure diagnostics
+    MAX_BUFFERED_OUTPUT_LINES = 2000
 
     def __init__(
         self,
@@ -53,6 +59,9 @@ class AmbrosiaTestServer:
         self.server_url = f"http://{self.SERVER_HOST}:{self.port}"
         self.health_check_url = f"{self.server_url}/"
         self._gradle_dir = Path(__file__).parent.parent.parent
+        self._stdout_lines: deque[str] = deque(maxlen=self.MAX_BUFFERED_OUTPUT_LINES)
+        self._stderr_lines: deque[str] = deque(maxlen=self.MAX_BUFFERED_OUTPUT_LINES)
+        self._output_reader_threads: list[threading.Thread] = []
 
     def start_server(self) -> None:
         """Start the server using Gradle, equivalent to runGradleApp() in TestServer.kt."""
@@ -84,10 +93,16 @@ class AmbrosiaTestServer:
                 cwd=self._gradle_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                encoding="utf-8",
+                errors="replace",
                 preexec_fn=os.setsid if os.name != "nt" else None,
                 env=env,
             )
             logger.info(f"Server process started with PID: {self.server_process.pid}")
+
+            self._start_output_readers()
 
             # Wait for server to be ready
             self._wait_for_server()
@@ -96,6 +111,31 @@ class AmbrosiaTestServer:
             logger.error(f"Failed to start server: {e}")
             self._cleanup_server()
             raise
+
+    def _start_output_readers(self) -> None:
+        """Continuously drain stdout/stderr so the child never blocks on a full pipe buffer while readiness polling runs."""
+        if self.server_process is None:
+            return
+
+        def drain(pipe, buffer: deque[str]) -> None:
+            for line in iter(pipe.readline, ""):
+                buffer.append(line.rstrip("\n"))
+            pipe.close()
+
+        self._output_reader_threads = [
+            threading.Thread(
+                target=drain,
+                args=(self.server_process.stdout, self._stdout_lines),
+                daemon=True,
+            ),
+            threading.Thread(
+                target=drain,
+                args=(self.server_process.stderr, self._stderr_lines),
+                daemon=True,
+            ),
+        ]
+        for reader_thread in self._output_reader_threads:
+            reader_thread.start()
 
     def stop_server(self) -> None:
         """Stop the server process, equivalent to stopServer() in TestServer.kt."""
@@ -148,9 +188,9 @@ class AmbrosiaTestServer:
 
             # Check if process is still running
             if self.server_process and self.server_process.poll() is not None:
-                stdout, stderr = self.server_process.communicate()
                 logger.error(
-                    f"Server process died unexpectedly. stdout: {stdout}, stderr: {stderr}"
+                    f"Server process died unexpectedly. stdout: {self._buffered_output(self._stdout_lines)}, "
+                    f"stderr: {self._buffered_output(self._stderr_lines)}"
                 )
                 raise RuntimeError("Server process died during startup")
 
@@ -205,19 +245,20 @@ class AmbrosiaTestServer:
         if self.server_process:
             self.server_process = None
 
+    def _buffered_output(self, buffer: deque[str]) -> str:
+        """Return the buffered output collected so far by the background reader threads."""
+        return "\n".join(buffer)
+
     def _log_server_output(self) -> None:
-        """Log server output for debugging."""
-        if self.server_process:
-            try:
-                stdout, stderr = self.server_process.communicate(timeout=1)
-                if stdout:
-                    logger.error(f"Server stdout: {stdout.decode()}")
-                if stderr:
-                    logger.error(f"Server stderr: {stderr.decode()}")
-            except subprocess.TimeoutExpired:
-                logger.error("Could not read server output (timeout)")
-            except Exception as e:
-                logger.error(f"Error reading server output: {e}")
+        """Log server output for debugging, from the continuously-drained buffers."""
+        logger.error(
+            f"Server stdout (last {self.MAX_BUFFERED_OUTPUT_LINES} lines): "
+            f"{self._buffered_output(self._stdout_lines)}"
+        )
+        logger.error(
+            f"Server stderr (last {self.MAX_BUFFERED_OUTPUT_LINES} lines): "
+            f"{self._buffered_output(self._stderr_lines)}"
+        )
 
 
 # Pytest fixtures for easy integration

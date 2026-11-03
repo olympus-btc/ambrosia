@@ -58,10 +58,10 @@ class AmbrosiaHttpClient:
         full_url = self._build_url(url)
 
         logger.debug(f"GET {full_url}")
-        response = await self._client.get(full_url, **kwargs)
-        logger.debug(f"Response: {response.status_code}")
+        get_response = await self._client.get(full_url, **kwargs)
+        logger.debug(f"Response: {get_response.status_code}")
 
-        return response
+        return get_response
 
     async def post(self, url: str, **kwargs) -> httpx.Response:
         """Make a POST request.
@@ -76,10 +76,10 @@ class AmbrosiaHttpClient:
         full_url = self._build_url(url)
 
         logger.debug(f"POST {full_url}")
-        response = await self._client.post(full_url, **kwargs)
-        logger.debug(f"Response: {response.status_code}")
+        post_response = await self._client.post(full_url, **kwargs)
+        logger.debug(f"Response: {post_response.status_code}")
 
-        return response
+        return post_response
 
     async def put(self, url: str, **kwargs) -> httpx.Response:
         """Make a PUT request.
@@ -94,10 +94,10 @@ class AmbrosiaHttpClient:
         full_url = self._build_url(url)
 
         logger.debug(f"PUT {full_url}")
-        response = await self._client.put(full_url, **kwargs)
-        logger.debug(f"Response: {response.status_code}")
+        put_response = await self._client.put(full_url, **kwargs)
+        logger.debug(f"Response: {put_response.status_code}")
 
-        return response
+        return put_response
 
     async def delete(self, url: str, **kwargs) -> httpx.Response:
         """Make a DELETE request.
@@ -112,10 +112,10 @@ class AmbrosiaHttpClient:
         full_url = self._build_url(url)
 
         logger.debug(f"DELETE {full_url}")
-        response = await self._client.delete(full_url, **kwargs)
-        logger.debug(f"Response: {response.status_code}")
+        delete_response = await self._client.request("DELETE", full_url, **kwargs)
+        logger.debug(f"Response: {delete_response.status_code}")
 
-        return response
+        return delete_response
 
     def _build_url(self, url: str) -> str:
         """Build full URL from relative URL."""

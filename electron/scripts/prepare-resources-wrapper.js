@@ -1,33 +1,30 @@
-const { execSync } = require('child_process');
-const path = require('path');
+import { execSync } from 'child_process';
+import path from 'path';
 
-const scriptDir = __dirname;
+const scriptDirectory = import.meta.dirname;
 
-// Determine which script to run based on platform
 const isWindows = process.platform === 'win32';
 const scriptName = isWindows ? 'prepare-resources.bat' : 'prepare-resources.sh';
-const scriptPath = path.join(scriptDir, scriptName);
+const scriptPath = path.join(scriptDirectory, scriptName);
 
 console.log(`Running ${scriptName} for platform: ${process.platform}`);
 
 try {
   if (isWindows) {
-    // On Windows, run the .bat file
     execSync(`"${scriptPath}"`, {
       stdio: 'inherit',
-      cwd: path.join(scriptDir, '..'),
+      cwd: path.join(scriptDirectory, '..'),
     });
   } else {
-    // On Unix systems, run the .sh file with bash
     execSync(`bash "${scriptPath}"`, {
       stdio: 'inherit',
-      cwd: path.join(scriptDir, '..'),
+      cwd: path.join(scriptDirectory, '..'),
     });
   }
 
   console.log('\nResource preparation completed successfully!');
   process.exit(0);
-} catch (error) {
-  console.error('\nResource preparation failed:', error.message);
+} catch (preparationError) {
+  console.error('\nResource preparation failed:', preparationError.message);
   process.exit(1);
 }

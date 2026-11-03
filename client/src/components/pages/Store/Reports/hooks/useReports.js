@@ -25,7 +25,7 @@ export function useReports() {
     setError(null);
     try {
       const endpoint = buildReportsQueryString(params);
-      const reportsResponse = await httpClient(endpoint);
+      const reportsResponse = await httpClient(endpoint, { skipForbiddenRedirect: true });
       const reportResult = await parseJsonResponse(reportsResponse, null);
       setReportData(reportResult);
       return reportResult;

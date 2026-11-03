@@ -10,6 +10,7 @@ const mockDeleteProduct = jest.fn(() => Promise.resolve(true));
 const mockRefetchProducts = jest.fn(() => Promise.resolve());
 const mockRefetchCategories = jest.fn(() => Promise.resolve());
 const mockCreateCategory = jest.fn(() => Promise.resolve("cat-3"));
+let mockProductsForbidden = false;
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -21,10 +22,7 @@ jest.mock("@/components/utils/storedAssetUrl", () => ({
   storedAssetUrl: (url) => url,
 }));
 
-jest.mock("@/hooks/usePermission", () => ({
-  usePermission: () => true,
-  RequirePermission: ({ children }) => children,
-}));
+jest.mock("@/hooks/usePermission");
 
 jest.mock("../AddProductsModal", () => ({
   AddProductsModal: ({ addProductsShowModal, productForm, onChange, onProductCreated, addProduct, onClose }) => (
@@ -74,6 +72,7 @@ jest.mock("../../hooks/useProducts", () => ({
       { id: 1, name: "Jade Wallet", description: "Hardware Wallet", categoryId: "cat-1", SKU: "jade-wallet", priceCents: 1600, quantity: 10, imageUrl: "/images/jade.png" },
       { id: 2, name: "Jade Plus", description: "Hardware Wallet Plus", categoryId: "cat-1", SKU: "jade-plus", priceCents: 4000, quantity: 5, imageUrl: "/images/jade-plus.png" },
     ],
+    forbidden: mockProductsForbidden,
     addProduct: mockAddProduct,
     updateProduct: mockUpdateProduct,
     deleteProduct: mockDeleteProduct,
@@ -135,6 +134,7 @@ beforeEach(() => {
   };
 
   jest.clearAllMocks();
+  mockProductsForbidden = false;
 
   jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
     availableFeatures: {},
@@ -176,6 +176,17 @@ describe("Products page", () => {
 
     expect(screen.getByDisplayValue("Updated Name")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Hardware Wallet")).toBeInTheDocument();
+  });
+
+  it("shows the permission-blocked message instead of the list when forbidden", async () => {
+    mockProductsForbidden = true;
+
+    await act(async () => {
+      renderProducts();
+    });
+
+    expect(screen.getByText("permissionBlocked.title")).toBeInTheDocument();
+    expect(screen.queryByText("Jade Wallet")).not.toBeInTheDocument();
   });
 
   it("renders the table and header", async () => {

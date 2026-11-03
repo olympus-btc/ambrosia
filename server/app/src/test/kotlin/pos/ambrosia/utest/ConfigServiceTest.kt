@@ -106,6 +106,44 @@ class ConfigServiceTest {
         }
 
     @Test
+    fun `updateConfig persists a non-default price step`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    priceStep = 0.5,
+                ),
+            )
+
+            assertEquals(0.5, service.getConfig()?.priceStep)
+        }
+
+    @Test
+    fun `updateConfig persists a fixed custom tip default type`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    customTipDefaultType = "fixed",
+                ),
+            )
+
+            assertEquals("fixed", service.getConfig()?.customTipDefaultType)
+        }
+
+    @Test
     fun `getConfiguredZoneId returns the configured timezone`() =
         runBlocking {
             service.updateConfig(

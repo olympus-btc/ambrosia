@@ -42,8 +42,9 @@ export function BitcoinPaymentModal({
     invoice,
     satsAmount,
     loading,
+    isSecretsLocked,
     generateInvoice,
-    reset,
+    resetInvoiceState,
   } = useBitcoinInvoice({
     amountFiat: isOpen ? amountFiat : null,
     currencyAcronym,
@@ -85,7 +86,7 @@ export function BitcoinPaymentModal({
   }, [currentHash, invoice, satsAmount, paymentId, onComplete, onPayment, setInvoiceHash]);
 
   const handleClose = () => {
-    reset();
+    resetInvoiceState();
     onClose?.();
   };
 
@@ -124,7 +125,9 @@ export function BitcoinPaymentModal({
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="text-sm">{bitcoinTranslations("serviceUnavailable")}</p>
+                <p className="text-sm">
+                  {bitcoinTranslations(isSecretsLocked ? "secretsLockedError" : "serviceUnavailable")}
+                </p>
               </div>
             </div>
           )}

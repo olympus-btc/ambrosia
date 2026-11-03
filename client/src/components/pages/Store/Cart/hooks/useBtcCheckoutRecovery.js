@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { BTC_CHECKOUT_ENDPOINT, buildBtcCheckoutPaymentStatusEndpoint } from "@/lib/btcCheckoutEndpoints";
 import {
   deleteCheckout,
   getCompletedCheckouts,
@@ -27,7 +28,8 @@ export function useBtcCheckoutRecovery(onResetCart) {
 
     async function recoverPendingCheckout(pendingCheckout) {
       const paymentStatusResponse = await httpClient(
-        `store/orders/payment-status/${pendingCheckout.paymentHash}`,
+        buildBtcCheckoutPaymentStatusEndpoint(pendingCheckout.paymentHash),
+        { skipForbiddenRedirect: true },
       );
       if (!paymentStatusResponse.ok) return;
       const paymentStatus = await parseJsonResponse(paymentStatusResponse);
@@ -38,10 +40,11 @@ export function useBtcCheckoutRecovery(onResetCart) {
       }
 
       if (paymentStatus?.status === "paid") {
-        const checkoutResponse = await httpClient("store/orders/checkout", {
+        const checkoutResponse = await httpClient(BTC_CHECKOUT_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(pendingCheckout.checkoutPayload),
+          skipForbiddenRedirect: true,
         });
         if (!checkoutResponse.ok) return;
         const checkoutResult = await parseJsonResponse(checkoutResponse);

@@ -34,6 +34,7 @@ import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.models.ProductSaleItem
 import pos.ambrosia.models.ProductSalesReport
 import pos.ambrosia.models.StoreRefund
+import pos.ambrosia.utils.SqlDateFunctions
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -53,6 +54,7 @@ class ReportService {
                    o.status,
                    o.total,
                    o.discount_amount,
+                   o.tip_amount,
                    o.created_at,
                    GROUP_CONCAT(DISTINCT pm.name) AS payment_method,
                    GROUP_CONCAT(DISTINCT p.id) AS payment_method_ids,
@@ -61,6 +63,7 @@ class ReportService {
                    MAX(p.exchange_rate_currency) AS exchange_rate_currency,
                    MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment,
                    MAX(p.payment_hash) AS payment_hash,
+                   MAX(NULLIF(p.transaction_id, '')) AS transaction_id,
                    MAX(rf.id) AS refund_id,
                    MAX(rf.refund_invoice) AS refund_invoice,
                    MAX(rf.satoshi_amount) AS refund_satoshi_amount,
@@ -90,9 +93,6 @@ class ReportService {
     private val validSortOrders = setOf("asc", "desc")
 
     private fun currentConnection(): Connection = (TransactionManager.current().connection as JdbcConnectionImpl).connection
-
-    private fun dateFunc(column: org.jetbrains.exposed.v1.core.Expression<String>) =
-        CustomFunction<String>("date", VarCharColumnType(), column)
 
     private fun lowerFunc(column: org.jetbrains.exposed.v1.core.Expression<String>) =
         CustomFunction<String>("lower", VarCharColumnType(), column)
@@ -141,6 +141,7 @@ class ReportService {
             status = resultSet.getString("status"),
             total = resultSet.getDouble("total"),
             discountAmount = resultSet.getDouble("discount_amount"),
+            tipAmount = resultSet.getDouble("tip_amount"),
             createdAt = resultSet.getString("created_at").replace(" ", "T"),
             paymentMethod = paymentNames,
             paymentMethodIds = paymentIds,
@@ -149,6 +150,7 @@ class ReportService {
             exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
             fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
             paymentHash = resultSet.getString("payment_hash"),
+            transactionId = resultSet.getString("transaction_id"),
             items = parseOrderItems(resultSet.getString("items")),
             refund = refund,
         )
@@ -264,39 +266,39 @@ class ReportService {
                     .join(PaymentsTable, JoinType.INNER, PaymentsTable.id, TicketPaymentsTable.paymentId)
                     .join(PaymentMethodsTable, JoinType.INNER, PaymentMethodsTable.id, PaymentsTable.methodId)
 
-            var query =
+            var productSalesQuery =
                 join
                     .selectAll()
                     .where { (OrdersTable.status inList listOf("paid", "refunded")) and (OrdersTable.isDeleted eq false) }
 
             if (preciseDateRange != null) {
                 val (start, end) = preciseDateRange
-                query = query.andWhere { OrdersTable.createdAt greaterEq start }
-                query = query.andWhere { OrdersTable.createdAt less end }
+                productSalesQuery = productSalesQuery.andWhere { OrdersTable.createdAt greaterEq start }
+                productSalesQuery = productSalesQuery.andWhere { OrdersTable.createdAt less end }
             } else {
                 dateRange?.let { (start, end) ->
-                    query = query.andWhere { dateFunc(OrdersTable.createdAt) greaterEq start }
-                    query = query.andWhere { dateFunc(OrdersTable.createdAt) lessEq end }
+                    productSalesQuery = productSalesQuery.andWhere { SqlDateFunctions.dateOnly(OrdersTable.createdAt) greaterEq start }
+                    productSalesQuery = productSalesQuery.andWhere { SqlDateFunctions.dateOnly(OrdersTable.createdAt) lessEq end }
                 }
             }
             productName?.let { name ->
-                query = query.andWhere { ProductsTable.name like "%$name%" }
+                productSalesQuery = productSalesQuery.andWhere { ProductsTable.name like "%$name%" }
             }
             userId?.let { uid ->
-                query = query.andWhere { OrdersTable.userId eq EntityID(UUID.fromString(uid), UsersTable) }
+                productSalesQuery = productSalesQuery.andWhere { OrdersTable.userId eq EntityID(UUID.fromString(uid), UsersTable) }
             }
             paymentMethod?.let { method ->
-                query = query.andWhere { lowerFunc(PaymentMethodsTable.name) eq method.lowercase() }
+                productSalesQuery = productSalesQuery.andWhere { lowerFunc(PaymentMethodsTable.name) eq method.lowercase() }
             }
 
-            val sales =
-                query
+            val productSaleItems =
+                productSalesQuery
                     .orderBy(OrdersTable.createdAt, SortOrder.DESC)
                     .map { row: ResultRow ->
                         ProductSaleItem(
                             orderId = row[OrdersTable.id].value.toString(),
                             productName = row[ProductsTable.name],
-                            variantId = row[OrderProductsTable.variantId]?.toString(),
+                            variantId = row[OrderProductsTable.variantId],
                             quantity = row[OrderProductsTable.quantity],
                             priceAtOrder = row[OrderProductsTable.priceAtOrder],
                             userName = row[UsersTable.name],
@@ -309,13 +311,14 @@ class ReportService {
                             paymentId = row[PaymentsTable.id].value.toString(),
                             discountAmount = row[OrdersTable.discountAmount],
                             refunded = row[OrdersTable.status] == "refunded",
+                            transactionId = row[PaymentsTable.transactionId].takeIf { it.isNotBlank() },
                         )
                     }
 
-            logger.info("Product sales report: ${sales.size} line items")
+            logger.info("Product sales report: ${productSaleItems.size} line items")
 
             val totalBtcSatoshis =
-                sales
+                productSaleItems
                     .filter { it.satoshiAmount != null && it.paymentId != null }
                     .distinctBy { it.paymentId }
                     .sumOf { it.satoshiAmount!! }
@@ -324,9 +327,9 @@ class ReportService {
                 getRefundTotals(dateRange, preciseDateRange, productName, userId, paymentMethod)
 
             ProductSalesReport(
-                totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
-                totalItemsSold = sales.sumOf { it.quantity },
-                sales = sales,
+                totalRevenueCents = productSaleItems.sumOf { it.priceAtOrder.toLong() * it.quantity },
+                totalItemsSold = productSaleItems.sumOf { it.quantity },
+                sales = productSaleItems,
                 totalBtcSatoshis = totalBtcSatoshis,
                 totalRefundedCents = totalRefundedCents,
                 totalRefundedSatoshis = totalRefundedSatoshis,
@@ -357,23 +360,23 @@ class ReportService {
                 .join(PaymentsTable, JoinType.INNER, PaymentsTable.id, TicketPaymentsTable.paymentId)
                 .join(PaymentMethodsTable, JoinType.INNER, PaymentMethodsTable.id, PaymentsTable.methodId)
 
-        var query = join.selectAll()
+        var refundsQuery = join.selectAll()
         if (preciseDateRange != null) {
             val (start, end) = preciseDateRange
-            query = query.andWhere { RefundsTable.refundedAt greaterEq start }
-            query = query.andWhere { RefundsTable.refundedAt less end }
+            refundsQuery = refundsQuery.andWhere { RefundsTable.refundedAt greaterEq start }
+            refundsQuery = refundsQuery.andWhere { RefundsTable.refundedAt less end }
         } else {
             dateRange?.let { (start, end) ->
-                query = query.andWhere { dateFunc(RefundsTable.refundedAt) greaterEq start }
-                query = query.andWhere { dateFunc(RefundsTable.refundedAt) lessEq end }
+                refundsQuery = refundsQuery.andWhere { SqlDateFunctions.dateOnly(RefundsTable.refundedAt) greaterEq start }
+                refundsQuery = refundsQuery.andWhere { SqlDateFunctions.dateOnly(RefundsTable.refundedAt) lessEq end }
             }
         }
-        productName?.let { name -> query = query.andWhere { ProductsTable.name like "%$name%" } }
-        userId?.let { uid -> query = query.andWhere { OrdersTable.userId eq EntityID(UUID.fromString(uid), UsersTable) } }
-        paymentMethod?.let { method -> query = query.andWhere { lowerFunc(PaymentMethodsTable.name) eq method.lowercase() } }
+        productName?.let { name -> refundsQuery = refundsQuery.andWhere { ProductsTable.name like "%$name%" } }
+        userId?.let { uid -> refundsQuery = refundsQuery.andWhere { OrdersTable.userId eq EntityID(UUID.fromString(uid), UsersTable) } }
+        paymentMethod?.let { method -> refundsQuery = refundsQuery.andWhere { lowerFunc(PaymentMethodsTable.name) eq method.lowercase() } }
 
         val refundTotals =
-            query
+            refundsQuery
                 .map { row ->
                     RefundTotal(
                         refundId = row[RefundsTable.id].value.toString(),
@@ -446,7 +449,7 @@ class ReportService {
             val orderByColumn = validSortByColumns[filters.sortBy ?: "date"] ?: validSortByColumns.getValue("date")
             val orderDirection = (filters.sortOrder ?: "desc").lowercase()
 
-            val query =
+            val ordersWithPaymentsSql =
                 buildString {
                     append(GET_ORDERS_WITH_PAYMENTS_BASE)
                     if (whereClauses.isNotEmpty()) {
@@ -461,7 +464,7 @@ class ReportService {
                 }
 
             val orders = mutableListOf<OrderWithPayment>()
-            currentConnection().prepareStatement(query).use { statement ->
+            currentConnection().prepareStatement(ordersWithPaymentsSql).use { statement ->
                 bindQueryParameters(statement, parameters)
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
@@ -479,7 +482,7 @@ class ReportService {
                 OrdersTable
                     .selectAll()
                     .where {
-                        (dateFunc(OrdersTable.createdAt) eq date) and
+                        (SqlDateFunctions.dateOnly(OrdersTable.createdAt) eq date) and
                             (OrdersTable.status eq "paid") and
                             (OrdersTable.isDeleted eq false)
                     }.sumOf { it[OrdersTable.total] }
