@@ -596,6 +596,7 @@ object ExposedTestDb {
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
+        lightningFeeSat: Long? = null,
     ): String =
         transaction {
             PaymentEntity
@@ -610,6 +611,7 @@ object ExposedTestDb {
                     this.exchangeRateAtPayment = exchangeRateAtPayment
                     this.exchangeRateCurrency = exchangeRateCurrency
                     this.fiatAmountAtPayment = fiatAmountAtPayment
+                    this.lightningFeeSat = lightningFeeSat
                 }.id.value
                 .toString()
         }
