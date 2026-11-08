@@ -49,6 +49,7 @@ class ReportServiceTest {
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
+        lightningFeeSat: Long? = null,
         transactionId: String? = null,
     ): Sale {
         val userId = userId ?: ExposedTestDb.seedUser(userName)
@@ -65,6 +66,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = exchangeRateAtPayment,
                 exchangeRateCurrency = exchangeRateCurrency,
                 fiatAmountAtPayment = fiatAmountAtPayment,
+                lightningFeeSat = lightningFeeSat,
             )
         val ticketId = ExposedTestDb.seedTicket(orderId, userId)
         ExposedTestDb.seedTicketPayment(paymentId, ticketId)
@@ -586,6 +588,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = 95_000.0,
                 exchangeRateCurrency = "usd",
                 fiatAmountAtPayment = 1.0,
+                lightningFeeSat = 50L,
             )
         addOrderProduct(sale.orderId)
 
@@ -603,6 +606,7 @@ class ReportServiceTest {
         assertEquals(95_000.0, report.sales[0].exchangeRateAtPayment)
         assertEquals("usd", report.sales[0].exchangeRateCurrency)
         assertEquals(1.0, report.sales[0].fiatAmountAtPayment)
+        assertEquals(50L, report.sales[0].lightningFeeSat)
         assertEquals(sale.paymentId, report.sales[0].paymentId)
     }
 
@@ -959,6 +963,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = 95_000.0,
                 exchangeRateCurrency = "usd",
                 fiatAmountAtPayment = 1.0,
+                lightningFeeSat = 50L,
             )
 
             val filteredOrders = service.getOrdersWithPaymentsFiltered()
@@ -967,6 +972,7 @@ class ReportServiceTest {
             assertEquals(95_000.0, filteredOrders[0].exchangeRateAtPayment)
             assertEquals("usd", filteredOrders[0].exchangeRateCurrency)
             assertEquals(1.0, filteredOrders[0].fiatAmountAtPayment)
+            assertEquals(50L, filteredOrders[0].lightningFeeSat)
         }
 
     @Test
@@ -980,6 +986,7 @@ class ReportServiceTest {
             assertNull(filteredOrders[0].exchangeRateAtPayment)
             assertNull(filteredOrders[0].exchangeRateCurrency)
             assertNull(filteredOrders[0].fiatAmountAtPayment)
+            assertNull(filteredOrders[0].lightningFeeSat)
         }
 
     @Test
