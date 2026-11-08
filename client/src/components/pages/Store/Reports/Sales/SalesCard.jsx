@@ -11,6 +11,8 @@ import formatDate from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
 
+import { LightningFeeNote } from "./LightningFeeNote";
+
 export function SalesCard({ sale, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const { getPaymentMethodLabel } = usePaymentMethodLabel();
@@ -25,6 +27,7 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
     exchangeRateAtPayment,
     exchangeRateCurrency,
     fiatAmountAtPayment,
+    lightningFeeSat,
     refunded,
   } = sale;
 
@@ -60,6 +63,7 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
                 )
               : formatCurrency(priceAtOrder * quantity)}
           </div>
+          <LightningFeeNote label={reportsTranslations("sales.lightningFee")} feeSat={lightningFeeSat} />
         </div>
       </CardBody>
     </Card>

@@ -208,6 +208,28 @@ describe("SalesList", () => {
     expect(mockFormatCurrency).not.toHaveBeenCalledWith(1000);
   });
 
+  it("renders the lightning fee note in the total column when lightningFeeSat is present", () => {
+    const sales = [
+      {
+        productName: "Sticker",
+        quantity: 2,
+        priceAtOrder: 500,
+        userName: "ivan",
+        paymentMethod: "BTC",
+        saleDate: "2024-01-01 00:00:00",
+        satoshiAmount: 100000,
+        exchangeRateAtPayment: 95000,
+        exchangeRateCurrency: "usd",
+        fiatAmountAtPayment: 1.0,
+        lightningFeeSat: 50,
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
+
+    expect(screen.getByText("sales.lightningFee: 50 sats")).toBeInTheDocument();
+  });
+
   it("uses formatCurrency in total column for non-BTC sale", () => {
     const sales = [
       {
