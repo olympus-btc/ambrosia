@@ -127,6 +127,18 @@ describe("OrderDetailModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
+  it("shows the lightning fee row when lightningFeeSat is present", () => {
+    const order = { ...ORDER_FIXTURE, lightningFeeSat: 50 };
+    render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.getByText("orders.lightningFee")).toBeInTheDocument();
+    expect(screen.getByText("50 sats")).toBeInTheDocument();
+  });
+
+  it("does not show the lightning fee row when lightningFeeSat is absent", () => {
+    render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
+    expect(screen.queryByText("orders.lightningFee")).not.toBeInTheDocument();
+  });
+
   it("shows the reference number when the order has one", () => {
     const order = { ...ORDER_FIXTURE, transactionId: "REF-123" };
     render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
