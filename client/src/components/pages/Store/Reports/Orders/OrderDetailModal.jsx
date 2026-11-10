@@ -110,7 +110,12 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
               {lightningFeeSat > 0 && (
                 <div className="flex justify-between items-center text-sm text-gray-500">
                   <span>{reportsTranslations("orders.lightningFee")}</span>
-                  <span>{lightningFeeSat} sats</span>
+                  <AmountDisplay
+                    satoshis={lightningFeeSat}
+                    exchangeRateAtSale={exchangeRateAtPayment}
+                    exchangeRateCurrency={exchangeRateCurrency}
+                    currentRate={currentRate}
+                  />
                 </div>
               )}
             </div>

@@ -131,7 +131,7 @@ describe("OrderDetailModal", () => {
     const order = { ...ORDER_FIXTURE, lightningFeeSat: 50 };
     render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
     expect(screen.getByText("orders.lightningFee")).toBeInTheDocument();
-    expect(screen.getByText("50 sats")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
   });
 
   it("does not show the lightning fee row when lightningFeeSat is absent", () => {
