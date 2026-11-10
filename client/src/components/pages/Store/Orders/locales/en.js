@@ -63,6 +63,7 @@ const ordersEn = {
       total: "Total",
       discount: "Discount",
       tip: "Tip",
+      lightningFee: "Lightning network fee",
       createdAt: "Created at",
       close: "Close",
       unassigned: "Unassigned",

@@ -63,6 +63,7 @@ const ordersEs = {
       total: "Total",
       discount: "Descuento",
       tip: "Propina",
+      lightningFee: "Comisión de Lightning Network",
       createdAt: "Creada el",
       close: "Cerrar",
       unassigned: "Sin asignar",

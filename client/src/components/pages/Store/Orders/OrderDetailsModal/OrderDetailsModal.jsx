@@ -38,6 +38,7 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
     exchangeRateAtPayment,
     exchangeRateCurrency,
     fiatAmountAtPayment,
+    lightningFeeSat,
     paymentHash,
     transactionId,
     items,
@@ -152,6 +153,18 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                       : formatAmount(total * 100 ?? 0)}
                   </div>
                 </div>
+
+                {lightningFeeSat > 0 && (
+                  <div className="flex items-center justify-between px-1 text-sm text-gray-500">
+                    <span>{ordersTranslations("details.lightningFee")}</span>
+                    <AmountDisplay
+                      satoshis={lightningFeeSat}
+                      exchangeRateAtSale={exchangeRateAtPayment}
+                      exchangeRateCurrency={exchangeRateCurrency}
+                      currentRate={currentRate}
+                    />
+                  </div>
+                )}
 
                 {refund && (
                   <RefundInfo
