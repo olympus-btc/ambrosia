@@ -26,3 +26,8 @@ data class OrdersSyncFindingsResponse(
     val paymentsWithoutOrder: List<PaymentWithoutOrder>,
     val misdatedOrders: List<MisdatedOrder>,
 )
+
+@Serializable
+data class MisdatedOrderCorrectionRequest(
+    val paymentId: String,
+)

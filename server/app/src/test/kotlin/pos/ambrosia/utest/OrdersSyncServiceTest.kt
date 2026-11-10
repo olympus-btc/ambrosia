@@ -1,8 +1,14 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.OrderEntity
+import pos.ambrosia.db.tables.PaymentEntity
+import pos.ambrosia.db.tables.TicketEntity
+import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.models.phoenix.IncomingPayment
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.IncomingPaymentHistory
@@ -11,8 +17,10 @@ import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.ParsedPurchasedItem
 import java.io.File
 import java.time.Instant
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private class FakeIncomingPaymentHistory : IncomingPaymentHistory {
@@ -192,6 +200,78 @@ class OrdersSyncServiceTest {
             val misdatedOrders = ordersSyncService.findMisdatedOrders("2024-01-01", "2024-01-31")
 
             assertTrue(misdatedOrders.isEmpty())
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder updates the order, ticket, and payment dates to the real payment time`() {
+        runBlocking {
+            val (paymentId, orderId) = seedExistingOrder(paymentHash = "hash-to-correct", date = "2024-01-15T18:52:00")
+            incomingPaymentHistory.incomingPaymentsByHash["hash-to-correct"] =
+                incomingPayment(
+                    paymentHash = "hash-to-correct",
+                    isPaid = true,
+                    completedAt = Instant.parse("2024-01-15T15:23:00Z").toEpochMilli(),
+                )
+
+            val misdatedOrderWasCorrected = ordersSyncService.correctMisdatedOrder(paymentId)
+
+            assertTrue(misdatedOrderWasCorrected)
+            val (correctedPaymentDate, correctedTicketDate, correctedOrderCreatedAt) =
+                transaction {
+                    val payment = PaymentEntity.findById(UUID.fromString(paymentId))!!
+                    val order = OrderEntity.findById(UUID.fromString(orderId))!!
+                    val ticket = TicketEntity.find { TicketsTable.orderId eq order.id }.first()
+                    Triple(payment.date, ticket.ticketDate, order.createdAt)
+                }
+            assertEquals("2024-01-15T15:23", correctedPaymentDate)
+            assertEquals("2024-01-15T15:23", correctedTicketDate)
+            assertEquals("2024-01-15T15:23", correctedOrderCreatedAt)
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder returns false when the payment id is not a valid UUID`() {
+        runBlocking {
+            assertFalse(ordersSyncService.correctMisdatedOrder("not-a-uuid"))
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder returns false when the payment does not exist`() {
+        runBlocking {
+            assertFalse(ordersSyncService.correctMisdatedOrder(UUID.randomUUID().toString()))
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder returns false when the payment has no ticket associated`() {
+        runBlocking {
+            val paymentId = ExposedTestDb.seedPayment(paymentHash = "hash-without-ticket")
+            incomingPaymentHistory.incomingPaymentsByHash["hash-without-ticket"] =
+                incomingPayment(paymentHash = "hash-without-ticket", isPaid = true)
+
+            assertFalse(ordersSyncService.correctMisdatedOrder(paymentId))
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder returns false when the incoming payment lookup fails`() {
+        runBlocking {
+            val (paymentId, _) = seedExistingOrder(paymentHash = "hash-lookup-fails")
+
+            assertFalse(ordersSyncService.correctMisdatedOrder(paymentId))
+        }
+    }
+
+    @Test
+    fun `correctMisdatedOrder returns false when the incoming payment has no completedAt`() {
+        runBlocking {
+            val (paymentId, _) = seedExistingOrder(paymentHash = "hash-no-completed-at")
+            incomingPaymentHistory.incomingPaymentsByHash["hash-no-completed-at"] =
+                incomingPayment(paymentHash = "hash-no-completed-at", isPaid = true, completedAt = null)
+
+            assertFalse(ordersSyncService.correctMisdatedOrder(paymentId))
         }
     }
 }
