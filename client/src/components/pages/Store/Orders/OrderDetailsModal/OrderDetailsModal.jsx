@@ -100,6 +100,23 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                   )}
                 </div>
 
+                {lightningFeeSat > 0 && (
+                  <MetaField
+                    label={ordersTranslations("details.lightningFee")}
+                    value={(
+                      <div className="space-y-1">
+                        <AmountDisplay
+                          satoshis={lightningFeeSat}
+                          exchangeRateAtSale={exchangeRateAtPayment}
+                          exchangeRateCurrency={exchangeRateCurrency}
+                          currentRate={currentRate}
+                        />
+                        <p className="text-xs font-normal text-gray-500">{ordersTranslations("details.lightningFeeInfo")}</p>
+                      </div>
+                    )}
+                  />
+                )}
+
                 {items?.length > 0 && (
                   <div className="border-t border-gray-100 pt-3">
                     <OrderProductsTable
@@ -153,18 +170,6 @@ export function OrderDetailsModal({ order, isOpen, onClose, onRefunded, formatAm
                       : formatAmount(total * 100 ?? 0)}
                   </div>
                 </div>
-
-                {lightningFeeSat > 0 && (
-                  <div className="flex items-center justify-between px-1 text-sm text-gray-500">
-                    <span>{ordersTranslations("details.lightningFee")}</span>
-                    <AmountDisplay
-                      satoshis={lightningFeeSat}
-                      exchangeRateAtSale={exchangeRateAtPayment}
-                      exchangeRateCurrency={exchangeRateCurrency}
-                      currentRate={currentRate}
-                    />
-                  </div>
-                )}
 
                 {refund && (
                   <RefundInfo

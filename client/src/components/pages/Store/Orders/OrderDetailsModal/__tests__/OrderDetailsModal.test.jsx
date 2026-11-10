@@ -231,7 +231,7 @@ describe("OrderDetailsModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
-  it("renders the lightning fee row with AmountDisplay when lightningFeeSat is present", () => {
+  it("renders the lightning fee section with AmountDisplay when lightningFeeSat is present", () => {
     const formatAmount = jest.fn((amount) => `fmt-${amount}`);
     const btcOrder = {
       id: "order-btc",
@@ -260,9 +260,10 @@ describe("OrderDetailsModal", () => {
 
     expect(screen.getByText("details.lightningFee")).toBeInTheDocument();
     expect(screen.getByText("amount-display-50")).toBeInTheDocument();
+    expect(screen.getByText("details.lightningFeeInfo")).toBeInTheDocument();
   });
 
-  it("does not render the lightning fee row when lightningFeeSat is absent", () => {
+  it("does not render the lightning fee section when lightningFeeSat is absent", () => {
     const btcOrder = {
       id: "order-btc",
       userName: "Ana",

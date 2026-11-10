@@ -64,6 +64,7 @@ const ordersEn = {
       discount: "Discount",
       tip: "Tip",
       lightningFee: "Lightning network fee",
+      lightningFeeInfo: "Phoenix automatically withheld this fee to expand your Lightning channel's capacity to receive this payment. It doesn't affect what the customer paid.",
       createdAt: "Created at",
       close: "Close",
       unassigned: "Unassigned",
