@@ -71,6 +71,9 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
               <LightningFeeNote
                 label={reportsTranslations("sales.lightningFee")}
                 feeSat={lightningFeeSat}
+                exchangeRateAtSale={exchangeRateAtPayment}
+                exchangeRateCurrency={exchangeRateCurrency}
+                currentRate={currentRate}
                 className="text-xs font-normal text-gray-400"
               />
             </div>

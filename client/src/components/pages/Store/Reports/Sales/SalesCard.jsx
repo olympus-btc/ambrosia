@@ -63,7 +63,13 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
                 )
               : formatCurrency(priceAtOrder * quantity)}
           </div>
-          <LightningFeeNote label={reportsTranslations("sales.lightningFee")} feeSat={lightningFeeSat} />
+          <LightningFeeNote
+            label={reportsTranslations("sales.lightningFee")}
+            feeSat={lightningFeeSat}
+            exchangeRateAtSale={exchangeRateAtPayment}
+            exchangeRateCurrency={exchangeRateCurrency}
+            currentRate={currentRate}
+          />
         </div>
       </CardBody>
     </Card>

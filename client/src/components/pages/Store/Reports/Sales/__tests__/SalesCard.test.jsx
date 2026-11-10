@@ -77,7 +77,8 @@ describe("SalesCard", () => {
 
   it("renders the lightning fee note when lightningFeeSat is present", () => {
     render(<SalesCard sale={{ ...baseSale, lightningFeeSat: 50 }} formatCurrency={formatCurrency} />);
-    expect(screen.getByText("sales.lightningFee: 50 sats")).toBeInTheDocument();
+    expect(screen.getByText("sales.lightningFee:")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
   });
 
   it("does not render the lightning fee note when lightningFeeSat is absent", () => {

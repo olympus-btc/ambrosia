@@ -227,7 +227,8 @@ describe("SalesList", () => {
 
     render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
 
-    expect(screen.getByText("sales.lightningFee: 50 sats")).toBeInTheDocument();
+    expect(screen.getByText("sales.lightningFee:")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
   });
 
   it("uses formatCurrency in total column for non-BTC sale", () => {
