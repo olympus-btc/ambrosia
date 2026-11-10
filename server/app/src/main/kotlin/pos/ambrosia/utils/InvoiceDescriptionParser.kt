@@ -1,5 +1,8 @@
 package pos.ambrosia.utils
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ParsedPurchasedItem(
     val name: String,
     val variantName: String?,
