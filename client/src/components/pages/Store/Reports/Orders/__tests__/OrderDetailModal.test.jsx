@@ -127,14 +127,15 @@ describe("OrderDetailModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
-  it("shows the lightning fee row when lightningFeeSat is present", () => {
+  it("shows the lightning fee section when lightningFeeSat is present", () => {
     const order = { ...ORDER_FIXTURE, lightningFeeSat: 50 };
     render(<OrderDetailModal order={order} formatCurrency={formatCurrency} onClose={jest.fn()} />);
     expect(screen.getByText("orders.lightningFee")).toBeInTheDocument();
     expect(screen.getByText("amount-display-50")).toBeInTheDocument();
+    expect(screen.getByText("orders.lightningFeeInfo")).toBeInTheDocument();
   });
 
-  it("does not show the lightning fee row when lightningFeeSat is absent", () => {
+  it("does not show the lightning fee section when lightningFeeSat is absent", () => {
     render(<OrderDetailModal order={ORDER_FIXTURE} formatCurrency={formatCurrency} onClose={jest.fn()} />);
     expect(screen.queryByText("orders.lightningFee")).not.toBeInTheDocument();
   });
