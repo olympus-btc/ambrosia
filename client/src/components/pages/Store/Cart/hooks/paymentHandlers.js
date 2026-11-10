@@ -37,7 +37,8 @@ function buildInvoiceDescription(items = []) {
       const name = typeof item?.name === "string" ? item.name.trim() : "";
       if (!name) return null;
       const quantity = Number(item?.quantity) || 1;
-      return `${quantity}x ${name}`;
+      const variantName = typeof item?.variantName === "string" ? item.variantName.trim() : "";
+      return variantName ? `${quantity}x ${name} (${variantName})` : `${quantity}x ${name}`;
     })
     .filter(Boolean);
 
