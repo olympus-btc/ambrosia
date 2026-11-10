@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val NWC_CONNECTION_TIMEOUT_MS = 15_000L
 
-object ActiveLightningBackend : LightningBackend, PaymentVerifier {
+object ActiveLightningBackend : LightningBackend, PaymentVerifier, IncomingPaymentHistory {
     private val backendReference = AtomicReference<LightningBackend?>(null)
     private val paymentEventsClientReference = AtomicReference<PhoenixPaymentEventsClient?>(null)
 
@@ -85,30 +85,33 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier {
         logger.info("Phoenix backend hot-reloaded — no restart required")
     }
 
-    private fun current(): LightningBackend =
+    private fun requireLightningBackend(): LightningBackend =
         backendReference.get() ?: if (SecretsStore.isLocked()) {
             throw SecretsLockedException()
         } else {
             error("Lightning backend not initialized")
         }
 
-    override suspend fun getNodeInfo(): NodeInfo = current().getNodeInfo()
+    override suspend fun getNodeInfo(): NodeInfo = requireLightningBackend().getNodeInfo()
 
-    override suspend fun getBalance(): PhoenixBalance = current().getBalance()
+    override suspend fun getBalance(): PhoenixBalance = requireLightningBackend().getBalance()
 
-    override suspend fun getSeed(): String = current().getSeed()
+    override suspend fun getSeed(): String = requireLightningBackend().getSeed()
 
-    override suspend fun createInvoice(request: CreateInvoiceRequest): CreateInvoiceResponse = current().createInvoice(request)
+    override suspend fun createInvoice(createInvoiceRequest: CreateInvoiceRequest): CreateInvoiceResponse =
+        requireLightningBackend().createInvoice(createInvoiceRequest)
 
-    override suspend fun createOffer(request: CreateOffer): String = current().createOffer(request)
+    override suspend fun createOffer(createOfferRequest: CreateOffer): String = requireLightningBackend().createOffer(createOfferRequest)
 
-    override suspend fun payInvoice(request: PayInvoiceRequest): PaymentResponse = current().payInvoice(request)
+    override suspend fun payInvoice(payInvoiceRequest: PayInvoiceRequest): PaymentResponse =
+        requireLightningBackend().payInvoice(payInvoiceRequest)
 
-    override suspend fun payOffer(request: PayOfferRequest): PaymentResponse = current().payOffer(request)
+    override suspend fun payOffer(payOfferRequest: PayOfferRequest): PaymentResponse = requireLightningBackend().payOffer(payOfferRequest)
 
-    override suspend fun payOnchain(request: PayOnchainRequest): PaymentResponse = current().payOnchain(request)
+    override suspend fun payOnchain(payOnchainRequest: PayOnchainRequest): PaymentResponse =
+        requireLightningBackend().payOnchain(payOnchainRequest)
 
-    override suspend fun bumpOnchainFees(feerateSatByte: Int): String = current().bumpOnchainFees(feerateSatByte)
+    override suspend fun bumpOnchainFees(feerateSatByte: Int): String = requireLightningBackend().bumpOnchainFees(feerateSatByte)
 
     override suspend fun listIncomingPayments(
         from: Long,
@@ -117,9 +120,10 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier {
         offset: Int,
         all: Boolean,
         externalId: String?,
-    ): List<IncomingPayment> = current().listIncomingPayments(from, to, limit, offset, all, externalId)
+    ): List<IncomingPayment> = requireLightningBackend().listIncomingPayments(from, to, limit, offset, all, externalId)
 
-    override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment = current().getIncomingPayment(paymentHash)
+    override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment =
+        requireLightningBackend().getIncomingPayment(paymentHash)
 
     override suspend fun listOutgoingPayments(
         from: Long,
@@ -127,13 +131,15 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier {
         limit: Int,
         offset: Int,
         all: Boolean,
-    ): List<OutgoingPayment> = current().listOutgoingPayments(from, to, limit, offset, all)
+    ): List<OutgoingPayment> = requireLightningBackend().listOutgoingPayments(from, to, limit, offset, all)
 
-    override suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment = current().getOutgoingPayment(paymentId)
+    override suspend fun getOutgoingPayment(paymentId: String): OutgoingPayment = requireLightningBackend().getOutgoingPayment(paymentId)
 
-    override suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment = current().getOutgoingPaymentByHash(paymentHash)
+    override suspend fun getOutgoingPaymentByHash(paymentHash: String): OutgoingPayment =
+        requireLightningBackend().getOutgoingPaymentByHash(paymentHash)
 
-    override suspend fun csvExport(request: CsvExport): String = current().csvExport(request)
+    override suspend fun csvExport(csvExportRequest: CsvExport): String = requireLightningBackend().csvExport(csvExportRequest)
 
-    override suspend fun closeChannel(request: CloseChannelRequest): CloseChannelResponse = current().closeChannel(request)
+    override suspend fun closeChannel(closeChannelRequest: CloseChannelRequest): CloseChannelResponse =
+        requireLightningBackend().closeChannel(closeChannelRequest)
 }
