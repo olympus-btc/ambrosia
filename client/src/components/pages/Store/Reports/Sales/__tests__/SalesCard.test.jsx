@@ -75,6 +75,16 @@ describe("SalesCard", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
+  it("renders the lightning fee note when lightningFeeSat is present", () => {
+    render(<SalesCard sale={{ ...baseSale, lightningFeeSat: 50 }} formatCurrency={formatCurrency} />);
+    expect(screen.getByText("sales.lightningFee: 50 sats")).toBeInTheDocument();
+  });
+
+  it("does not render the lightning fee note when lightningFeeSat is absent", () => {
+    render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} />);
+    expect(screen.queryByText(/sales\.lightningFee/)).not.toBeInTheDocument();
+  });
+
   it("shows the refunded status chip when the sale is refunded", () => {
     render(<SalesCard sale={{ ...baseSale, refunded: true }} formatCurrency={formatCurrency} />);
     expect(screen.getByText("refunded")).toBeInTheDocument();

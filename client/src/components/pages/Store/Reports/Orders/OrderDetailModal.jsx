@@ -23,6 +23,7 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
     exchangeRateAtPayment,
     exchangeRateCurrency,
     fiatAmountAtPayment,
+    lightningFeeSat,
     transactionId,
   } = order ?? {};
 
@@ -105,6 +106,13 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
                     : formatCurrency(total)}
                 </div>
               </div>
+
+              {lightningFeeSat > 0 && (
+                <div className="flex justify-between items-center text-sm text-gray-500">
+                  <span>{reportsTranslations("orders.lightningFee")}</span>
+                  <span>{lightningFeeSat} sats</span>
+                </div>
+              )}
             </div>
           )}
         </ModalBody>

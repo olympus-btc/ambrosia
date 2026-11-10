@@ -16,6 +16,7 @@ export function useOrdersData(sales) {
       exchangeRateAtPayment,
       exchangeRateCurrency,
       fiatAmountAtPayment,
+      lightningFeeSat,
       discountAmount,
       refunded,
       transactionId,
@@ -36,6 +37,7 @@ export function useOrdersData(sales) {
           exchangeRateAtPayment: exchangeRateAtPayment ?? null,
           exchangeRateCurrency: exchangeRateCurrency ?? null,
           fiatAmountAtPayment: fiatAmountAtPayment ?? null,
+          lightningFeeSat: lightningFeeSat ?? null,
           refunded: false,
           transactionId: transactionId ?? null,
         };

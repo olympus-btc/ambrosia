@@ -50,6 +50,7 @@ object PaymentsTable : SQLiteUUIDTable("payments") {
     val paymentHash = text("payment_hash").nullable().uniqueIndex()
     val exchangeRateCurrency = varchar("exchange_rate_currency", 10).nullable()
     val fiatAmountAtPayment = double("fiat_amount_at_payment").nullable()
+    val lightningFeeSat = long("lightning_fee_sat").nullable()
 }
 
 class PaymentEntity(
@@ -67,6 +68,7 @@ class PaymentEntity(
     var paymentHash by PaymentsTable.paymentHash
     var exchangeRateCurrency by PaymentsTable.exchangeRateCurrency
     var fiatAmountAtPayment by PaymentsTable.fiatAmountAtPayment
+    var lightningFeeSat by PaymentsTable.lightningFeeSat
 }
 
 object BaseCurrencyTable : Table("base_currency") {
