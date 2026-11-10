@@ -11,7 +11,7 @@ import { formatDateParts } from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
 
-import { LightningFeeNote } from "./LightningFeeNote";
+import { LightningFeeInfoPopover } from "./LightningFeeInfoPopover";
 import { SalesCard } from "./SalesCard";
 import { buildSaleItemKey } from "./utils/saleItemKeys";
 
@@ -60,7 +60,7 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
       render: ({ satoshiAmount, exchangeRateAtPayment, exchangeRateCurrency, fiatAmountAtPayment, lightningFeeSat, priceAtOrder, quantity }) => {
         if (satoshiAmount != null) {
           return (
-            <div className="font-bold text-green-700">
+            <div className="flex items-center gap-1 font-bold text-green-700">
               <AmountDisplay
                 satoshis={satoshiAmount}
                 exchangeRateAtSale={exchangeRateAtPayment}
@@ -68,13 +68,13 @@ export function SalesList({ sales, formatCurrency, currentRate }) {
                 fiatAmountAtPayment={fiatAmountAtPayment}
                 currentRate={currentRate}
               />
-              <LightningFeeNote
+              <LightningFeeInfoPopover
                 label={reportsTranslations("sales.lightningFee")}
                 feeSat={lightningFeeSat}
+                infoText={reportsTranslations("sales.lightningFeeInfo")}
                 exchangeRateAtSale={exchangeRateAtPayment}
                 exchangeRateCurrency={exchangeRateCurrency}
                 currentRate={currentRate}
-                className="text-xs font-normal text-gray-400"
               />
             </div>
           );

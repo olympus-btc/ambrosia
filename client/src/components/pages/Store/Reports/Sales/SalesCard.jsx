@@ -11,7 +11,7 @@ import formatDate from "@lib/formatDate";
 
 import { refundedToStatus } from "../utils/refundedToStatus";
 
-import { LightningFeeNote } from "./LightningFeeNote";
+import { LightningFeeInfoPopover } from "./LightningFeeInfoPopover";
 
 export function SalesCard({ sale, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
@@ -50,7 +50,7 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
         </div>
         <div className="mt-1">
           <p className="text-xs text-gray-500">{reportsTranslations("sales.quantity")} ×{quantity}</p>
-          <div className="text-sm font-bold text-green-700 mt-1">
+          <div className="flex items-center gap-1 text-sm font-bold text-green-700 mt-1">
             {satoshiAmount != null
               ? (
                 <AmountDisplay
@@ -62,14 +62,15 @@ export function SalesCard({ sale, formatCurrency, currentRate }) {
                 />
                 )
               : formatCurrency(priceAtOrder * quantity)}
+            <LightningFeeInfoPopover
+              label={reportsTranslations("sales.lightningFee")}
+              feeSat={lightningFeeSat}
+              infoText={reportsTranslations("sales.lightningFeeInfo")}
+              exchangeRateAtSale={exchangeRateAtPayment}
+              exchangeRateCurrency={exchangeRateCurrency}
+              currentRate={currentRate}
+            />
           </div>
-          <LightningFeeNote
-            label={reportsTranslations("sales.lightningFee")}
-            feeSat={lightningFeeSat}
-            exchangeRateAtSale={exchangeRateAtPayment}
-            exchangeRateCurrency={exchangeRateCurrency}
-            currentRate={currentRate}
-          />
         </div>
       </CardBody>
     </Card>
