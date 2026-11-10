@@ -70,6 +70,21 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
                 />
               )}
 
+              {lightningFeeSat > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400">{reportsTranslations("orders.lightningFee")}</p>
+                  <div className="space-y-1">
+                    <AmountDisplay
+                      satoshis={lightningFeeSat}
+                      exchangeRateAtSale={exchangeRateAtPayment}
+                      exchangeRateCurrency={exchangeRateCurrency}
+                      currentRate={currentRate}
+                    />
+                    <p className="text-xs font-normal text-gray-500">{reportsTranslations("orders.lightningFeeInfo")}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t border-gray-100 pt-3">
                 <OrderProductsTable
                   items={items ?? []}
@@ -106,13 +121,6 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
                     : formatCurrency(total)}
                 </div>
               </div>
-
-              {lightningFeeSat > 0 && (
-                <div className="flex justify-between items-center text-sm text-gray-500">
-                  <span>{reportsTranslations("orders.lightningFee")}</span>
-                  <span>{lightningFeeSat} sats</span>
-                </div>
-              )}
             </div>
           )}
         </ModalBody>
