@@ -125,7 +125,7 @@ export function ReceiveTab({ invoiceActions, currentRate }) {
             color="primary"
             size="lg"
             isLoading={isLoading}
-            className="w-full font-medium"
+            className="w-full font-medium bg-green-800"
             radius="lg"
           >
             {isLoading ? walletTranslations("payments.receive.invoiceLightningLoading") : walletTranslations("payments.receive.invoiceLightningButton")}
