@@ -23,6 +23,20 @@ const ordersSyncEn = {
       title: "Orders with an incorrect date",
       empty: "No orders with an incorrect date were found in this range.",
     },
+    paymentWithoutOrderEditor: {
+      title: "Confirm payment without an order",
+      autoResolving: "Matching purchased items to your catalog…",
+      unresolvedTitle: "Items that still need a product",
+      discardButton: "Discard",
+      assignButton: "Assign product",
+      addProductButton: "Add product",
+      catalogTotalLabel: "Current catalog total",
+      historicalTotalLabel: "Total to record (historical price)",
+      confirmError: "Could not confirm this order. Please try again.",
+      cancelButton: "Cancel",
+      confirmButton: "Confirm order",
+      searchTitle: "Find a product",
+    },
   },
 };
 

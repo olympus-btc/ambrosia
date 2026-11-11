@@ -1,20 +1,38 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useCurrency } from "@/components/hooks/useCurrency";
+import { usePaymentMethods } from "@/components/pages/Store/Cart/hooks/usePaymentMethod";
+import { classifyPaymentMethod, PAYMENT_METHODS } from "@/components/pages/Store/Cart/utils/paymentMethods";
+import { useCategories } from "@/components/pages/Store/hooks/useCategories";
+import { useProducts } from "@/components/pages/Store/hooks/useProducts";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { getOrdersSyncFindings } from "@/services/ordersSyncService";
 
 import { useOrdersSyncDateRange } from "./hooks/useOrdersSyncDateRange";
 import { OrdersSyncPeriodFilter } from "./OrdersSyncPeriodFilter";
+import { PaymentWithoutOrderEditor } from "./PaymentWithoutOrderEditor/PaymentWithoutOrderEditor";
 
 export function OrdersSyncCard() {
   const walletTranslations = useTranslations("wallet");
+  const { user } = useAuth();
+  const { currency } = useCurrency();
+  const { products } = useProducts({ skipForbiddenRedirect: true });
+  const { categories } = useCategories();
+  const { paymentMethods } = usePaymentMethods();
   const { activePeriod, dateRangeValue, handlePeriodChange, handleDateRangeChange } = useOrdersSyncDateRange();
   const [findings, setFindings] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
+  const [editingPayment, setEditingPayment] = useState(null);
+
+  const bitcoinPaymentMethodId = useMemo(
+    () => paymentMethods.find((paymentMethod) => classifyPaymentMethod(paymentMethod.name) === PAYMENT_METHODS.BTC)?.id ?? null,
+    [paymentMethods],
+  );
 
   const handleSync = useCallback(async () => {
     if (!dateRangeValue?.start || !dateRangeValue?.end) return;
@@ -33,6 +51,11 @@ export function OrdersSyncCard() {
       setIsSyncing(false);
     }
   }, [dateRangeValue]);
+
+  const handlePaymentConfirmed = useCallback(() => {
+    setEditingPayment(null);
+    handleSync();
+  }, [handleSync]);
 
   return (
     <Card shadow="none" className="rounded-lg p-6 shadow-lg mt-6">
@@ -79,8 +102,14 @@ export function OrdersSyncCard() {
               ) : (
                 <ul className="mt-1 space-y-1">
                   {findings.paymentsWithoutOrder.map((paymentWithoutOrder) => (
-                    <li key={paymentWithoutOrder.paymentHash} className="text-xs text-gray-700">
-                      {paymentWithoutOrder.receivedSat} sats — {paymentWithoutOrder.paymentHash}
+                    <li key={paymentWithoutOrder.paymentHash}>
+                      <button
+                        type="button"
+                        className="text-xs text-gray-700 underline hover:text-green-900"
+                        onClick={() => setEditingPayment(paymentWithoutOrder)}
+                      >
+                        {paymentWithoutOrder.receivedSat} sats — {paymentWithoutOrder.paymentHash}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -106,6 +135,27 @@ export function OrdersSyncCard() {
           </div>
         )}
       </CardBody>
+
+      <Modal isOpen={Boolean(editingPayment)} onClose={() => setEditingPayment(null)} size="3xl" scrollBehavior="inside">
+        <ModalContent>
+          <ModalHeader>{walletTranslations("ordersSync.paymentWithoutOrderEditor.title")}</ModalHeader>
+          <ModalBody className="pb-6">
+            {editingPayment && (
+              <PaymentWithoutOrderEditor
+                payment={editingPayment}
+                products={products}
+                categories={categories}
+                currencyAcronym={currency.acronym.toLowerCase()}
+                currencyId={currency.id}
+                paymentMethodId={bitcoinPaymentMethodId}
+                userId={user.userId}
+                onConfirmed={handlePaymentConfirmed}
+                onCancel={() => setEditingPayment(null)}
+              />
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Card>
   );
 }

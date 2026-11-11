@@ -1,3 +1,34 @@
+jest.mock("@/hooks/auth/useAuth", () => ({
+  useAuth: () => ({ user: { id: "user-1", userId: "user-1" } }),
+}));
+
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({
+    currency: { id: "currency-1", acronym: "USD", locale: "en-US" },
+    formatAmount: (cents) => `$${(cents / 100).toFixed(2)}`,
+  }),
+}));
+
+jest.mock("@/components/pages/Store/hooks/useProducts", () => ({
+  useProducts: () => ({ products: [] }),
+}));
+
+jest.mock("@/components/pages/Store/hooks/useCategories", () => ({
+  useCategories: () => ({ categories: [] }),
+}));
+
+jest.mock("@/components/pages/Store/Cart/hooks/usePaymentMethod", () => ({
+  usePaymentMethods: () => ({ paymentMethods: [] }),
+}));
+
+let capturedEditorProps;
+jest.mock("../PaymentWithoutOrderEditor/PaymentWithoutOrderEditor", () => ({
+  PaymentWithoutOrderEditor: (props) => {
+    capturedEditorProps = props;
+    return <div data-testid="payment-without-order-editor" />;
+  },
+}));
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -16,6 +47,7 @@ function renderOrdersSyncCard() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  capturedEditorProps = undefined;
 });
 
 describe("OrdersSyncCard", () => {
@@ -111,5 +143,39 @@ describe("OrdersSyncCard", () => {
     });
 
     console.error.mockRestore();
+  });
+
+  it("opens the payment-without-order editor when a payment row is pressed", async () => {
+    jest.spyOn(ordersSyncService, "getOrdersSyncFindings").mockResolvedValue({
+      paymentsWithoutOrder: [{ paymentHash: "hash-1", receivedSat: 21000 }],
+      misdatedOrders: [],
+    });
+
+    renderOrdersSyncCard();
+    await userEvent.click(screen.getByText("ordersSync.syncButton"));
+    await userEvent.click(await screen.findByText("21000 sats — hash-1"));
+
+    expect(screen.getByTestId("payment-without-order-editor")).toBeInTheDocument();
+    expect(capturedEditorProps.payment).toEqual({ paymentHash: "hash-1", receivedSat: 21000 });
+    expect(capturedEditorProps.currencyAcronym).toBe("usd");
+    expect(capturedEditorProps.userId).toBe("user-1");
+  });
+
+  it("closes the editor and refreshes the findings when a payment is confirmed", async () => {
+    jest.spyOn(ordersSyncService, "getOrdersSyncFindings").mockResolvedValue({
+      paymentsWithoutOrder: [{ paymentHash: "hash-1", receivedSat: 21000 }],
+      misdatedOrders: [],
+    });
+
+    renderOrdersSyncCard();
+    await userEvent.click(screen.getByText("ordersSync.syncButton"));
+    await userEvent.click(await screen.findByText("21000 sats — hash-1"));
+
+    capturedEditorProps.onConfirmed({ orderId: "order-1" });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("payment-without-order-editor")).not.toBeInTheDocument();
+    });
+    expect(ordersSyncService.getOrdersSyncFindings).toHaveBeenCalledTimes(2);
   });
 });
