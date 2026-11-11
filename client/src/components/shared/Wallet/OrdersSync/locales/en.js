@@ -37,6 +37,12 @@ const ordersSyncEn = {
       confirmButton: "Confirm order",
       searchTitle: "Find a product",
     },
+    misdatedOrderRow: {
+      recordedDateLabel: "Recorded date",
+      actualDateLabel: "Actual payment date",
+      correctionError: "Could not correct this order's date. Please try again.",
+      confirmButton: "Confirm correction",
+    },
   },
 };
 
