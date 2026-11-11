@@ -53,7 +53,7 @@ export function ModalChannelNotAvailable({ channel, isLoading, onRetry, onClose 
         <Button variant="bordered" onPress={onClose} isDisabled={isLoading}>
           {walletTranslations("closeChannel.stuckCloseButton")}
         </Button>
-        <Button color="primary" onPress={onRetry} isLoading={isLoading}>
+        <Button color="primary" className="bg-green-800" onPress={onRetry} isLoading={isLoading}>
           {walletTranslations("closeChannel.stuckRetryButton")}
         </Button>
       </ModalFooter>

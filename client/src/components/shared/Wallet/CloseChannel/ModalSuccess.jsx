@@ -24,7 +24,7 @@ export function ModalSuccess({ txId, onClose }) {
           value={txId}
           label={walletTranslations("closeChannel.copyTxIdButton")}
         />
-        <Button color="primary" onPress={onClose}>
+        <Button color="primary" className="bg-green-800" onPress={onClose}>
           {walletTranslations("closeChannel.doneButton")}
         </Button>
       </ModalFooter>
