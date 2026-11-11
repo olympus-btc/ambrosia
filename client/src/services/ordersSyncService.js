@@ -10,3 +10,15 @@ export async function getOrdersSyncFindings(startDate, endDate) {
   }
   return await parseJsonResponse(findingsResponse, null);
 }
+
+export async function confirmPaymentWithoutOrder(storeCheckoutRequest) {
+  const checkoutResponse = await httpClient("/wallet/orders-sync/payments-without-order/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(storeCheckoutRequest),
+  });
+  if (!checkoutResponse.ok) {
+    throw await buildParsedHttpError(checkoutResponse, "Could not confirm the payment without an order");
+  }
+  return await parseJsonResponse(checkoutResponse, null);
+}
