@@ -1,5 +1,6 @@
 import closeChannelEs from "../CloseChannel/locales/es";
 import nodeInfoEs from "../NodeInfo/locales/es";
+import ordersSyncEs from "../OrdersSync/locales/es";
 import transactionsEs from "../Transactions/locales/es";
 
 const walletEs = {
@@ -43,6 +44,7 @@ const walletEs = {
     ...nodeInfoEs,
     ...transactionsEs,
     ...closeChannelEs,
+    ...ordersSyncEs,
   },
 };
 
