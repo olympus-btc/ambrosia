@@ -49,13 +49,13 @@ class AuthLoginRouteTest {
                 configureAuth()
             }
 
-            val response =
+            val legacyPinLoginResponse =
                 client.post("/auth/login") {
                     header(HttpHeaders.ContentType, "application/json")
                     setBody("""{"name":"legacy-user","pin":"1234"}""")
                 }
 
-            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(HttpStatusCode.OK, legacyPinLoginResponse.status)
         }
 
     @Test
@@ -71,12 +71,12 @@ class AuthLoginRouteTest {
                 configureAuth()
             }
 
-            val response =
+            val sixDigitPinLoginResponse =
                 client.post("/auth/login") {
                     header(HttpHeaders.ContentType, "application/json")
                     setBody("""{"name":"current-user","pin":"123456"}""")
                 }
 
-            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(HttpStatusCode.OK, sixDigitPinLoginResponse.status)
         }
 }

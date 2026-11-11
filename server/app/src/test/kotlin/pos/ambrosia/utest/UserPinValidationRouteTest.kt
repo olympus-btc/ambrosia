@@ -57,7 +57,7 @@ class UserPinValidationRouteTest {
 
             val invalidPins = listOf("1234", "12345", "1234567", "12ab56", "")
             invalidPins.forEachIndexed { index, invalidPin ->
-                val response =
+                val invalidPinCreateUserResponse =
                     client.post("/users") {
                         withAuthCookies(auth)
                         header(HttpHeaders.ContentType, "application/json")
@@ -66,7 +66,11 @@ class UserPinValidationRouteTest {
                         )
                     }
 
-                assertEquals(HttpStatusCode.BadRequest, response.status, "pin '$invalidPin' should be rejected")
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    invalidPinCreateUserResponse.status,
+                    "pin '$invalidPin' should be rejected",
+                )
             }
         }
 
@@ -82,7 +86,7 @@ class UserPinValidationRouteTest {
                 configureUsers()
             }
 
-            val response =
+            val createUserResponse =
                 client.post("/users") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
@@ -91,7 +95,7 @@ class UserPinValidationRouteTest {
                     )
                 }
 
-            assertEquals(HttpStatusCode.Created, response.status)
+            assertEquals(HttpStatusCode.Created, createUserResponse.status)
         }
 
     @Test
@@ -107,14 +111,14 @@ class UserPinValidationRouteTest {
                 configureUsers()
             }
 
-            val response =
+            val fourDigitPinUpdateResponse =
                 client.put("/users/$targetUserId") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
                     setBody("""{"pin":"1234","currentUserPin":"$TEST_USER_PIN"}""")
                 }
 
-            assertEquals(HttpStatusCode.BadRequest, response.status)
+            assertEquals(HttpStatusCode.BadRequest, fourDigitPinUpdateResponse.status)
         }
 
     @Test
@@ -136,14 +140,14 @@ class UserPinValidationRouteTest {
                 "a legacy four digit pin must still authenticate",
             )
 
-            val response =
+            val legacyUserPinUpdateResponse =
                 client.put("/users/$legacyUserId") {
                     withAuthCookies(auth)
                     header(HttpHeaders.ContentType, "application/json")
                     setBody("""{"pin":"123456","currentUserPin":"$TEST_USER_PIN"}""")
                 }
 
-            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(HttpStatusCode.OK, legacyUserPinUpdateResponse.status)
             assertNotNull(authService.authenticateUser("legacy-user", "123456".toCharArray()))
             assertNull(authService.authenticateUser("legacy-user", "1234".toCharArray()))
         }
