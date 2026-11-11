@@ -14,7 +14,7 @@ import { buildParsedHttpError } from "@/components/pages/Store/utils/buildHttpEr
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
-import { confirmPaymentWithoutOrder, getOrdersSyncFindings } from "../ordersSyncService";
+import { confirmPaymentWithoutOrder, correctMisdatedOrder, getOrdersSyncFindings } from "../ordersSyncService";
 
 function makeResponse(status, ok = true) {
   return { status, ok };
@@ -112,6 +112,46 @@ describe("ordersSyncService", () => {
       expect(buildParsedHttpError).toHaveBeenCalledWith(
         expect.objectContaining({ status: 400, ok: false }),
         "Could not confirm the payment without an order",
+      );
+    });
+  });
+
+  describe("correctMisdatedOrder", () => {
+    it("posts the paymentId to the misdated-orders confirm endpoint", async () => {
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue({ message: "Order date corrected" });
+
+      await correctMisdatedOrder("payment-1");
+
+      expect(httpClient).toHaveBeenCalledWith(
+        "/wallet/orders-sync/misdated-orders/confirm",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId: "payment-1" }),
+        },
+      );
+    });
+
+    it("returns the parsed misdated order result on success", async () => {
+      const misdatedOrderResult = { message: "Order date corrected" };
+      httpClient.mockResolvedValue(makeResponse(200));
+      parseJsonResponse.mockResolvedValue(misdatedOrderResult);
+
+      const returnedMisdatedOrderResult = await correctMisdatedOrder("payment-1");
+
+      expect(returnedMisdatedOrderResult).toEqual(misdatedOrderResult);
+    });
+
+    it("throws a parsed HTTP error when the response is not ok", async () => {
+      httpClient.mockResolvedValue(makeResponse(400, false));
+      const httpError = new Error("Could not correct the misdated order");
+      buildParsedHttpError.mockResolvedValue(httpError);
+
+      await expect(correctMisdatedOrder("payment-1")).rejects.toBe(httpError);
+      expect(buildParsedHttpError).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 400, ok: false }),
+        "Could not correct the misdated order",
       );
     });
   });

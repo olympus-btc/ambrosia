@@ -22,3 +22,15 @@ export async function confirmPaymentWithoutOrder(storeCheckoutRequest) {
   }
   return await parseJsonResponse(checkoutResponse, null);
 }
+
+export async function correctMisdatedOrder(paymentId) {
+  const misdatedOrderResponse = await httpClient("/wallet/orders-sync/misdated-orders/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentId }),
+  });
+  if (!misdatedOrderResponse.ok) {
+    throw await buildParsedHttpError(misdatedOrderResponse, "Could not correct the misdated order");
+  }
+  return await parseJsonResponse(misdatedOrderResponse, null);
+}
