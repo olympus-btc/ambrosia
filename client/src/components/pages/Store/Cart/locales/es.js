@@ -71,7 +71,7 @@ const cartEs = {
         cashComplete: "Error al completar el pago en efectivo",
         cardComplete: "Error al completar el pago con tarjeta",
         transferComplete: "Error al completar el pago por transferencia bancaria",
-        printCustomer: "No se pudo imprimir el ticket. Revisa la impresora.",
+        printCustomer: "No se pudo imprimir el ticket. Revisa el papel y la conexión de la impresora; puedes reimprimirlo desde Órdenes.",
       },
       success: {
         paid: "Pago registrado correctamente",
