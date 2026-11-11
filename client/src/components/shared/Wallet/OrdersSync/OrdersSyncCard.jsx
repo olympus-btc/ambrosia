@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { getOrdersSyncFindings } from "@/services/ordersSyncService";
 
 import { useOrdersSyncDateRange } from "./hooks/useOrdersSyncDateRange";
+import { MisdatedOrderRow } from "./MisdatedOrderRow";
 import { OrdersSyncPeriodFilter } from "./OrdersSyncPeriodFilter";
 import { PaymentWithoutOrderEditor } from "./PaymentWithoutOrderEditor/PaymentWithoutOrderEditor";
 
@@ -125,9 +126,11 @@ export function OrdersSyncCard() {
               ) : (
                 <ul className="mt-1 space-y-1">
                   {findings.misdatedOrders.map((misdatedOrder) => (
-                    <li key={misdatedOrder.paymentId} className="text-xs text-gray-700">
-                      {misdatedOrder.recordedDate}
-                    </li>
+                    <MisdatedOrderRow
+                      key={misdatedOrder.paymentId}
+                      misdatedOrder={misdatedOrder}
+                      onCorrected={handleSync}
+                    />
                   ))}
                 </ul>
               )}

@@ -29,6 +29,14 @@ jest.mock("../PaymentWithoutOrderEditor/PaymentWithoutOrderEditor", () => ({
   },
 }));
 
+let capturedMisdatedOrderRowProps;
+jest.mock("../MisdatedOrderRow", () => ({
+  MisdatedOrderRow: (props) => {
+    capturedMisdatedOrderRowProps = props;
+    return <li data-testid={`misdated-order-row-${props.misdatedOrder.paymentId}`} />;
+  },
+}));
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -48,6 +56,7 @@ function renderOrdersSyncCard() {
 beforeEach(() => {
   jest.clearAllMocks();
   capturedEditorProps = undefined;
+  capturedMisdatedOrderRowProps = undefined;
 });
 
 describe("OrdersSyncCard", () => {
@@ -113,7 +122,7 @@ describe("OrdersSyncCard", () => {
     await userEvent.click(screen.getByText("ordersSync.syncButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("2024-01-15T18:52:00")).toBeInTheDocument();
+      expect(screen.getByTestId("misdated-order-row-payment-1")).toBeInTheDocument();
     });
   });
 
@@ -177,5 +186,22 @@ describe("OrdersSyncCard", () => {
       expect(screen.queryByTestId("payment-without-order-editor")).not.toBeInTheDocument();
     });
     expect(ordersSyncService.getOrdersSyncFindings).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes the findings when a misdated order's date is corrected", async () => {
+    jest.spyOn(ordersSyncService, "getOrdersSyncFindings").mockResolvedValue({
+      paymentsWithoutOrder: [],
+      misdatedOrders: [{ paymentId: "payment-1", recordedDate: "2024-01-15T18:52:00" }],
+    });
+
+    renderOrdersSyncCard();
+    await userEvent.click(screen.getByText("ordersSync.syncButton"));
+    await waitFor(() => expect(screen.getByTestId("misdated-order-row-payment-1")).toBeInTheDocument());
+
+    capturedMisdatedOrderRowProps.onCorrected();
+
+    await waitFor(() => {
+      expect(ordersSyncService.getOrdersSyncFindings).toHaveBeenCalledTimes(2);
+    });
   });
 });
