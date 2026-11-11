@@ -680,6 +680,79 @@ describe("paymentHandlers", () => {
     expect(setBtcPaymentConfig).toHaveBeenCalled();
   });
 
+  it("starts printing the receipt before the shift tickets refresh and without waiting for the printer", async () => {
+    const callOrder = [];
+    const printCustomerReceipt = jest.fn(() => {
+      callOrder.push("print");
+      return new Promise(() => {});
+    });
+    const refreshShiftTickets = jest.fn(async () => {
+      callOrder.push("refresh");
+    });
+    const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
+
+    processCheckout.mockResolvedValueOnce({ orderId: "order-2", ticketId: "ticket-2", paymentId: "pay-2" });
+
+    const handler = buildHandleCashComplete({
+      getConfig: () => ({
+        cartItems: [{ id: 1 }],
+        paymentAmounts: { amountFiat: 1, total: 100, discountAmount: 0, tipAmount: 0 },
+        selectedPaymentMethod: "cash",
+        paymentMethodName: "Cash",
+        currencyId: "cur-1",
+      }),
+      setConfig: jest.fn(),
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart,
+      notifyError: jest.fn(),
+      notifySuccess,
+      printCustomerReceipt,
+      refreshShiftTickets,
+      user: { userId: "u1" },
+    });
+
+    await handler({ cashReceived: 10, change: 2 });
+
+    expect(callOrder).toEqual(["print", "refresh"]);
+    expect(onResetCart).toHaveBeenCalled();
+    expect(notifySuccess).toHaveBeenCalledWith("success.cashPaid");
+  });
+
+  it("logs a rejected receipt print without failing the payment", async () => {
+    const printCustomerReceipt = jest.fn(() => Promise.reject(new Error("printer offline")));
+    const notifyError = jest.fn();
+    const notifySuccess = jest.fn();
+
+    processCheckout.mockResolvedValueOnce({ orderId: "order-3", ticketId: "ticket-3", paymentId: "pay-3" });
+
+    const handler = buildHandleCashComplete({
+      getConfig: () => ({
+        cartItems: [{ id: 1 }],
+        paymentAmounts: { amountFiat: 1, total: 100, discountAmount: 0, tipAmount: 0 },
+        selectedPaymentMethod: "cash",
+        paymentMethodName: "Cash",
+        currencyId: "cur-1",
+      }),
+      setConfig: jest.fn(),
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart: jest.fn(),
+      notifyError,
+      notifySuccess,
+      printCustomerReceipt,
+      user: { userId: "u1" },
+    });
+
+    await handler({ cashReceived: 10, change: 2 });
+    await Promise.resolve();
+
+    expect(notifyError).not.toHaveBeenCalled();
+    expect(notifySuccess).toHaveBeenCalledWith("success.cashPaid");
+    expect(console.error).toHaveBeenCalledWith("Error printing customer receipt:", expect.any(Error));
+  });
+
   it("completes cash payment flow", async () => {
     const printCustomerReceipt = jest.fn(() => Promise.resolve());
     const dispatch = jest.fn();
