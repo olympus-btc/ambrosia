@@ -9,10 +9,12 @@ import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.db.tables.TicketsTable
+import pos.ambrosia.models.WalletInvoiceRate
 import pos.ambrosia.models.phoenix.IncomingPayment
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.IncomingPaymentHistory
 import pos.ambrosia.services.OrdersSyncService
+import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.ParsedPurchasedItem
 import java.io.File
@@ -45,7 +47,8 @@ class OrdersSyncServiceTest {
     private lateinit var databaseFile: File
     private val incomingPaymentHistory = FakeIncomingPaymentHistory()
     private val checkoutService = CheckoutService()
-    private val ordersSyncService = OrdersSyncService(incomingPaymentHistory, checkoutService)
+    private val walletRateService = WalletRateService()
+    private val ordersSyncService = OrdersSyncService(incomingPaymentHistory, checkoutService, walletRateService)
 
     @Before
     fun setUp() {
@@ -131,6 +134,27 @@ class OrdersSyncServiceTest {
         runBlocking {
             incomingPaymentHistory.stubbedIncomingPayments =
                 listOf(incomingPayment(paymentHash = "hash-pending", isPaid = false))
+
+            val paymentsWithoutOrder = ordersSyncService.findPaymentsWithoutOrder("2024-01-01", "2024-01-31")
+
+            assertTrue(paymentsWithoutOrder.isEmpty())
+        }
+    }
+
+    @Test
+    fun `findPaymentsWithoutOrder excludes a payment that has a recorded wallet invoice rate`() {
+        runBlocking {
+            incomingPaymentHistory.stubbedIncomingPayments =
+                listOf(incomingPayment(paymentHash = "hash-wallet-receive", isPaid = true))
+            walletRateService.saveInvoiceRate(
+                WalletInvoiceRate(
+                    paymentHash = "hash-wallet-receive",
+                    satoshiAmount = 1000,
+                    exchangeRate = 95000.0,
+                    exchangeRateCurrency = "usd",
+                    fiatAmount = 0.95,
+                ),
+            )
 
             val paymentsWithoutOrder = ordersSyncService.findPaymentsWithoutOrder("2024-01-01", "2024-01-31")
 

@@ -19,12 +19,13 @@ import pos.ambrosia.services.ActiveLightningBackend
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.OrdersSyncService
+import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.PaymentNotConfirmedException
 import pos.ambrosia.utils.requirePermission
 
 fun Application.configureOrdersSync() {
     val checkoutService = CheckoutService(ActiveLightningBackend)
-    val ordersSyncService = OrdersSyncService(ActiveLightningBackend, checkoutService)
+    val ordersSyncService = OrdersSyncService(ActiveLightningBackend, checkoutService, WalletRateService())
     routing { route("/wallet/orders-sync") { ordersSync(ordersSyncService, checkoutService) } }
 }
 

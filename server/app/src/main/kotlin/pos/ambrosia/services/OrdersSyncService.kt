@@ -24,6 +24,7 @@ import java.util.UUID
 class OrdersSyncService(
     private val incomingPaymentHistory: IncomingPaymentHistory,
     private val checkoutService: CheckoutService,
+    private val walletRateService: WalletRateService,
 ) {
     companion object {
         private const val MISDATED_ORDER_DRIFT_THRESHOLD_MILLIS = 5 * 60 * 1000L
@@ -56,9 +57,16 @@ class OrdersSyncService(
                 externalId = null,
             )
 
-        return incomingPayments
-            .filter { it.isPaid }
-            .filter { checkoutService.findCheckoutByPaymentHash(it.paymentHash) == null }
+        val incomingPaymentsWithoutOrder =
+            incomingPayments
+                .filter { it.isPaid }
+                .filter { checkoutService.findCheckoutByPaymentHash(it.paymentHash) == null }
+
+        val walletInvoiceHashes =
+            walletRateService.getRatesByPaymentHashes(incomingPaymentsWithoutOrder.map { it.paymentHash }).keys
+
+        return incomingPaymentsWithoutOrder
+            .filter { it.paymentHash !in walletInvoiceHashes }
             .mapNotNull { incomingPaymentWithoutOrder ->
                 val completedAt = incomingPaymentWithoutOrder.completedAt ?: return@mapNotNull null
                 PaymentWithoutOrder(
