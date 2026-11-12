@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { SearchProducts } from "@/components/pages/Store/Cart/SearchProducts";
 import { CartItemCard } from "@/components/pages/Store/Cart/Summary/CartItemCard";
+import { CopyableValueRow } from "@/components/shared/CopyableValueRow";
 
 import { usePaymentWithoutOrderEditor } from "./hooks/usePaymentWithoutOrderEditor";
 
@@ -58,7 +59,11 @@ export function PaymentWithoutOrderEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-500">{payment.paymentHash}</p>
+        <CopyableValueRow
+          label={walletTranslations("ordersSync.paymentWithoutOrderEditor.paymentHashLabel")}
+          fullValue={payment.paymentHash}
+          copyLabel={walletTranslations("ordersSync.paymentWithoutOrderEditor.copy")}
+        />
         <p className="text-sm font-medium text-green-900">{payment.receivedSat} sats</p>
       </div>
 
@@ -115,7 +120,7 @@ export function PaymentWithoutOrderEditor({
         </div>
       )}
 
-      <Button variant="bordered" onPress={() => setSearchTarget({ type: "add" })}>
+      <Button color="primary" className="bg-green-800" onPress={() => setSearchTarget({ type: "add" })}>
         {walletTranslations("ordersSync.paymentWithoutOrderEditor.addProductButton")}
       </Button>
 
@@ -143,7 +148,13 @@ export function PaymentWithoutOrderEditor({
       )}
 
       <div className="flex justify-end gap-2">
-        <Button variant="bordered" onPress={onCancel}>
+        <Button
+          variant="bordered"
+          type="button"
+          className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          isDisabled={isConfirming}
+          onPress={onCancel}
+        >
           {walletTranslations("ordersSync.paymentWithoutOrderEditor.cancelButton")}
         </Button>
         <Button

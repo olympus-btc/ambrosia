@@ -151,6 +151,12 @@ describe("PaymentWithoutOrderEditor", () => {
     expect(screen.getByText("ordersSync.paymentWithoutOrderEditor.confirmButton").closest("button")).toBeDisabled();
   });
 
+  it("disables the cancel button while the order is confirming", () => {
+    renderEditor({ isConfirming: true });
+
+    expect(screen.getByText("ordersSync.paymentWithoutOrderEditor.cancelButton").closest("button")).toBeDisabled();
+  });
+
   it("confirms and reports the result through onConfirmed", async () => {
     const checkoutResult = { orderId: "order-1" };
     const { onConfirmed } = renderEditor({ canConfirm: true, confirm: jest.fn().mockResolvedValue(checkoutResult) });
