@@ -25,6 +25,8 @@ const ordersSyncEn = {
     },
     paymentWithoutOrderEditor: {
       title: "Confirm payment without an order",
+      paymentHashLabel: "Payment hash",
+      copy: "Copy",
       autoResolving: "Matching purchased items to your catalog…",
       unresolvedTitle: "Items that still need a product",
       discardButton: "Discard",
@@ -42,6 +44,13 @@ const ordersSyncEn = {
       actualDateLabel: "Actual payment date",
       correctionError: "Could not correct this order's date. Please try again.",
       confirmButton: "Confirm correction",
+    },
+    paymentWithoutOrderRow: {
+      amountLabel: "Amount received",
+      dateLabel: "Payment date",
+      paymentHashLabel: "Payment hash",
+      copy: "Copy",
+      reviewButton: "Review",
     },
   },
 };

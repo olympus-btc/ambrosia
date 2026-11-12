@@ -16,6 +16,7 @@ import { useOrdersSyncDateRange } from "./hooks/useOrdersSyncDateRange";
 import { MisdatedOrderRow } from "./MisdatedOrderRow";
 import { OrdersSyncPeriodFilter } from "./OrdersSyncPeriodFilter";
 import { PaymentWithoutOrderEditor } from "./PaymentWithoutOrderEditor/PaymentWithoutOrderEditor";
+import { PaymentWithoutOrderRow } from "./PaymentWithoutOrderRow";
 
 export function OrdersSyncCard() {
   const walletTranslations = useTranslations("wallet");
@@ -101,19 +102,15 @@ export function OrdersSyncCard() {
               {findings.paymentsWithoutOrder.length === 0 ? (
                 <p className="text-xs text-gray-400 mt-1">{walletTranslations("ordersSync.paymentsWithoutOrder.empty")}</p>
               ) : (
-                <ul className="mt-1 space-y-1">
+                <div className="mt-1 space-y-3">
                   {findings.paymentsWithoutOrder.map((paymentWithoutOrder) => (
-                    <li key={paymentWithoutOrder.paymentHash}>
-                      <button
-                        type="button"
-                        className="text-xs text-gray-700 underline hover:text-green-900"
-                        onClick={() => setEditingPayment(paymentWithoutOrder)}
-                      >
-                        {paymentWithoutOrder.receivedSat} sats — {paymentWithoutOrder.paymentHash}
-                      </button>
-                    </li>
+                    <PaymentWithoutOrderRow
+                      key={paymentWithoutOrder.paymentHash}
+                      paymentWithoutOrder={paymentWithoutOrder}
+                      onReview={setEditingPayment}
+                    />
                   ))}
-                </ul>
+                </div>
               )}
             </div>
 
@@ -124,7 +121,7 @@ export function OrdersSyncCard() {
               {findings.misdatedOrders.length === 0 ? (
                 <p className="text-xs text-gray-400 mt-1">{walletTranslations("ordersSync.misdatedOrders.empty")}</p>
               ) : (
-                <ul className="mt-1 space-y-1">
+                <div className="mt-1 space-y-3">
                   {findings.misdatedOrders.map((misdatedOrder) => (
                     <MisdatedOrderRow
                       key={misdatedOrder.paymentId}
@@ -132,7 +129,7 @@ export function OrdersSyncCard() {
                       onCorrected={handleSync}
                     />
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>

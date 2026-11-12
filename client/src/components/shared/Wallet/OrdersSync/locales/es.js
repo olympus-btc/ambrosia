@@ -25,6 +25,8 @@ const ordersSyncEs = {
     },
     paymentWithoutOrderEditor: {
       title: "Confirmar pago sin orden",
+      paymentHashLabel: "Hash del pago",
+      copy: "Copiar",
       autoResolving: "Buscando coincidencias en tu catálogo…",
       unresolvedTitle: "Ítems que aún necesitan un producto",
       discardButton: "Descartar",
@@ -42,6 +44,13 @@ const ordersSyncEs = {
       actualDateLabel: "Fecha real del pago",
       correctionError: "No se pudo corregir la fecha de esta orden. Intenta de nuevo.",
       confirmButton: "Confirmar corrección",
+    },
+    paymentWithoutOrderRow: {
+      amountLabel: "Monto recibido",
+      dateLabel: "Fecha del pago",
+      paymentHashLabel: "Hash del pago",
+      copy: "Copiar",
+      reviewButton: "Revisar",
     },
   },
 };

@@ -33,7 +33,15 @@ let capturedMisdatedOrderRowProps;
 jest.mock("../MisdatedOrderRow", () => ({
   MisdatedOrderRow: (props) => {
     capturedMisdatedOrderRowProps = props;
-    return <li data-testid={`misdated-order-row-${props.misdatedOrder.paymentId}`} />;
+    return <div data-testid={`misdated-order-row-${props.misdatedOrder.paymentId}`} />;
+  },
+}));
+
+let capturedPaymentWithoutOrderRowProps;
+jest.mock("../PaymentWithoutOrderRow", () => ({
+  PaymentWithoutOrderRow: (props) => {
+    capturedPaymentWithoutOrderRowProps = props;
+    return <div data-testid={`payment-without-order-row-${props.paymentWithoutOrder.paymentHash}`} />;
   },
 }));
 
@@ -57,6 +65,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   capturedEditorProps = undefined;
   capturedMisdatedOrderRowProps = undefined;
+  capturedPaymentWithoutOrderRowProps = undefined;
 });
 
 describe("OrdersSyncCard", () => {
@@ -94,7 +103,7 @@ describe("OrdersSyncCard", () => {
     await userEvent.click(screen.getByText("ordersSync.syncButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("21000 sats — hash-1")).toBeInTheDocument();
+      expect(screen.getByTestId("payment-without-order-row-hash-1")).toBeInTheDocument();
     });
   });
 
@@ -154,31 +163,36 @@ describe("OrdersSyncCard", () => {
     console.error.mockRestore();
   });
 
-  it("opens the payment-without-order editor when a payment row is pressed", async () => {
+  it("opens the payment-without-order editor when a payment row requests review", async () => {
+    const paymentWithoutOrder = { paymentHash: "hash-1", receivedSat: 21000 };
     jest.spyOn(ordersSyncService, "getOrdersSyncFindings").mockResolvedValue({
-      paymentsWithoutOrder: [{ paymentHash: "hash-1", receivedSat: 21000 }],
+      paymentsWithoutOrder: [paymentWithoutOrder],
       misdatedOrders: [],
     });
 
     renderOrdersSyncCard();
     await userEvent.click(screen.getByText("ordersSync.syncButton"));
-    await userEvent.click(await screen.findByText("21000 sats — hash-1"));
+    await waitFor(() => expect(screen.getByTestId("payment-without-order-row-hash-1")).toBeInTheDocument());
+
+    capturedPaymentWithoutOrderRowProps.onReview(paymentWithoutOrder);
 
     expect(screen.getByTestId("payment-without-order-editor")).toBeInTheDocument();
-    expect(capturedEditorProps.payment).toEqual({ paymentHash: "hash-1", receivedSat: 21000 });
+    expect(capturedEditorProps.payment).toEqual(paymentWithoutOrder);
     expect(capturedEditorProps.currencyAcronym).toBe("usd");
     expect(capturedEditorProps.userId).toBe("user-1");
   });
 
   it("closes the editor and refreshes the findings when a payment is confirmed", async () => {
+    const paymentWithoutOrder = { paymentHash: "hash-1", receivedSat: 21000 };
     jest.spyOn(ordersSyncService, "getOrdersSyncFindings").mockResolvedValue({
-      paymentsWithoutOrder: [{ paymentHash: "hash-1", receivedSat: 21000 }],
+      paymentsWithoutOrder: [paymentWithoutOrder],
       misdatedOrders: [],
     });
 
     renderOrdersSyncCard();
     await userEvent.click(screen.getByText("ordersSync.syncButton"));
-    await userEvent.click(await screen.findByText("21000 sats — hash-1"));
+    await waitFor(() => expect(screen.getByTestId("payment-without-order-row-hash-1")).toBeInTheDocument());
+    capturedPaymentWithoutOrderRowProps.onReview(paymentWithoutOrder);
 
     capturedEditorProps.onConfirmed({ orderId: "order-1" });
 
