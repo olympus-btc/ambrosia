@@ -117,6 +117,48 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
+  it("builds the BTC invoice description with the variant name in parentheses", async () => {
+    const setBtcPaymentConfig = jest.fn();
+
+    const handlePay = buildHandlePay({
+      currency: { id: "cur-1", acronym: "MXN" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { btc: { id: "btc", name: "BTC" } },
+      getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
+      setBtcPaymentConfig,
+      setCashPaymentConfig: jest.fn(),
+      setCardPaymentConfig: jest.fn(),
+      onResetCart: jest.fn(),
+      onPay: jest.fn(),
+      notifyError: jest.fn(),
+      dispatch: jest.fn(),
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        displayTotal: 100,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [
+        { name: "Café", quantity: 1, variantName: "Grande" },
+        { name: "Bagel", quantity: 2 },
+      ],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "btc",
+    });
+
+    expect(setBtcPaymentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ invoiceDescription: "1x Café (Grande), 2x Bagel" }),
+    );
+  });
+
   it("configures cash payment when method is cash", async () => {
     const setCashPaymentConfig = jest.fn();
     const dispatch = jest.fn();

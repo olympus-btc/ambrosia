@@ -37,7 +37,7 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
           variant={filter === "incoming" ? "solid" : "bordered"}
           color="primary"
           size="sm"
-          className={filter !== "incoming" ? "border border-border text-foreground hover:bg-muted" : ""}
+          className={filter === "incoming" ? "bg-green-800" : "border border-border text-foreground hover:bg-muted"}
           onPress={() => setFilter("incoming")}
         >
           {walletTranslations("payments.history.received")}

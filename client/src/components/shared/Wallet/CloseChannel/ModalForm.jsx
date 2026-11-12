@@ -40,7 +40,7 @@ export function ModalForm({ form, isLoading, onCancel, onNext }) {
         >
           {walletTranslations("closeChannel.cancelButton")}
         </Button>
-        <Button color="primary" onPress={onNext}>
+        <Button color="primary" className="bg-green-800" onPress={onNext}>
           {walletTranslations("closeChannel.nextButton")}
         </Button>
       </ModalFooter>

@@ -41,6 +41,7 @@ import pos.ambrosia.api.configureHealth
 import pos.ambrosia.api.configureIngredients
 import pos.ambrosia.api.configureInitialSetup
 import pos.ambrosia.api.configureOrders
+import pos.ambrosia.api.configureOrdersSync
 import pos.ambrosia.api.configurePaymentWebsocket
 import pos.ambrosia.api.configurePayments
 import pos.ambrosia.api.configurePayoutAccounts
@@ -128,6 +129,7 @@ class Api {
         configureReports()
         configureShifts()
         configureWallet()
+        configureOrdersSync()
         configureSecrets()
         configureBackup()
         configureBackupProgressWebsocket()
