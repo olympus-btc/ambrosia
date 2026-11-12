@@ -176,7 +176,7 @@ describe("OrdersSyncCard", () => {
 
     capturedPaymentWithoutOrderRowProps.onReview(paymentWithoutOrder);
 
-    expect(screen.getByTestId("payment-without-order-editor")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("payment-without-order-editor")).toBeInTheDocument());
     expect(capturedEditorProps.payment).toEqual(paymentWithoutOrder);
     expect(capturedEditorProps.currencyAcronym).toBe("usd");
     expect(capturedEditorProps.userId).toBe("user-1");
@@ -193,6 +193,7 @@ describe("OrdersSyncCard", () => {
     await userEvent.click(screen.getByText("ordersSync.syncButton"));
     await waitFor(() => expect(screen.getByTestId("payment-without-order-row-hash-1")).toBeInTheDocument());
     capturedPaymentWithoutOrderRowProps.onReview(paymentWithoutOrder);
+    await waitFor(() => expect(screen.getByTestId("payment-without-order-editor")).toBeInTheDocument());
 
     capturedEditorProps.onConfirmed({ orderId: "order-1" });
 
