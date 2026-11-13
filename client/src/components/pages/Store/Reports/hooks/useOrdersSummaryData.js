@@ -14,6 +14,16 @@ export function useOrdersSummaryData(reportData, orders) {
     }
     const totalRefunded = reportData?.totalRefundedCents ?? 0;
     const refundCount = reportData?.refundCount ?? 0;
-    return { totalRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts, totalRefunded, refundCount };
+    const totalLightningFeeSat = reportData?.totalLightningFeeSat ?? 0;
+    return {
+      totalRevenue,
+      orderCount,
+      averageTicket,
+      avgItemsPerOrder,
+      totalDiscounts,
+      totalRefunded,
+      refundCount,
+      totalLightningFeeSat,
+    };
   }, [reportData, orders]);
 }
