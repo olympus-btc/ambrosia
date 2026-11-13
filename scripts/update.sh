@@ -247,7 +247,7 @@ systemd_stop_if_active() {
   local service_file="/etc/systemd/system/${service}.service"
   if command -v systemctl >/dev/null 2>&1 && [[ -f "$service_file" ]]; then
     if systemctl is-active --quiet "$service" 2>/dev/null; then
-      log_info "Stopping $service service..."
+      log_info "Stopping $service service..." >&2
       sudo systemctl stop "$service"
       echo "true"
       return
