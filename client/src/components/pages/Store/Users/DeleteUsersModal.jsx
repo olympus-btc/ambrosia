@@ -49,7 +49,7 @@ export function DeleteUsersModal({ user, deleteUsersShowModal, setDeleteUsersSho
             placeholder={userTranslations("modal.currentUserPinPlaceholder")}
             isRequired
             minLength={4}
-            maxLength={4}
+            maxLength={6}
             errorMessage={userTranslations("modal.currentUserPinError")}
             value={currentUserPin ?? ""}
             onChange={(event) => {

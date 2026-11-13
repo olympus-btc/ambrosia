@@ -16,17 +16,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TicketServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = TicketService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     private fun seedOrderAndUser(): Pair<String, String> {

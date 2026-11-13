@@ -52,7 +52,7 @@ class CurrentUserPinStepUpRouteTest {
                     withAuthCookies(authCookies)
                     header(HttpHeaders.ContentType, "application/json")
                     setBody(
-                        """{"user":{"name":"new-user","pin":"1234","role":"$targetRoleId"},"currentUserPin":"9999"}""",
+                        """{"user":{"name":"new-user","pin":"123456","role":"$targetRoleId"},"currentUserPin":"9999"}""",
                     )
                 }
 
@@ -76,7 +76,7 @@ class CurrentUserPinStepUpRouteTest {
                     withAuthCookies(authCookies)
                     header(HttpHeaders.ContentType, "application/json")
                     setBody(
-                        """{"user":{"name":"new-user","pin":"1234","role":"$targetRoleId"},"currentUserPin":""}""",
+                        """{"user":{"name":"new-user","pin":"123456","role":"$targetRoleId"},"currentUserPin":""}""",
                     )
                 }
 

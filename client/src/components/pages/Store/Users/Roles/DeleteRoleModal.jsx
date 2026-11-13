@@ -30,7 +30,7 @@ export function DeleteRoleModal({ role, onClose, onConfirm, deleting, currentUse
             placeholder={roleTranslations("roles.actions.deleteConfirmCurrentUserPinPlaceholder")}
             isRequired
             minLength={4}
-            maxLength={4}
+            maxLength={6}
             value={currentUserPin ?? ""}
             onChange={(event) => {
               const onlyNumbers = event.target.value.replace(/\D/g, "");
