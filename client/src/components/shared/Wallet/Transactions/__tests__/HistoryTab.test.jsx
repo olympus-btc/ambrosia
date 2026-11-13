@@ -101,7 +101,7 @@ describe("HistoryTab Component", () => {
       renderHistoryTab({ filter: "incoming" });
 
       const receivedButton = screen.getByText("payments.history.received").closest("button");
-      expect(receivedButton).toHaveClass("bg-primary");
+      expect(receivedButton).toHaveClass("bg-green-800");
     });
 
     it("shows 'sent' filter as active when selected", () => {

@@ -135,7 +135,7 @@ export function PaymentForm({
         size="lg"
         isLoading={isLoading}
         isDisabled={isScanning}
-        className="w-full bg-forest text-white"
+        className="w-full bg-green-800 text-white"
       >
         {isLoading ? walletTranslations("payments.send.payLightningLoading") : walletTranslations("payments.send.payLightningButton")}
       </Button>

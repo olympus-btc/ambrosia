@@ -591,6 +591,7 @@ object ExposedTestDb {
         currencyId: String = seedCurrency("USD"),
         transactionId: String = "txn-1",
         amount: Double = 10.0,
+        date: String = "2024-01-01T00:00:00",
         paymentHash: String? = null,
         satoshiAmount: Long? = null,
         exchangeRateAtPayment: Double? = null,
@@ -605,7 +606,7 @@ object ExposedTestDb {
                     this.currencyId = EntityID(UUID.fromString(currencyId), CurrencyTable)
                     this.transactionId = transactionId
                     this.amount = amount
-                    this.date = "2024-01-01T00:00:00"
+                    this.date = date
                     this.paymentHash = paymentHash
                     this.satoshiAmount = satoshiAmount
                     this.exchangeRateAtPayment = exchangeRateAtPayment
@@ -704,13 +705,14 @@ object ExposedTestDb {
     fun seedTicket(
         orderId: String,
         userId: String,
+        ticketDate: String = "2024-01-01T00:00:00",
     ): String =
         transaction {
             TicketEntity
                 .new(UUID.randomUUID()) {
                     this.orderId = EntityID(UUID.fromString(orderId), OrdersTable)
                     this.userId = EntityID(UUID.fromString(userId), UsersTable)
-                    this.ticketDate = "2024-01-01T00:00:00"
+                    this.ticketDate = ticketDate
                 }.id.value
                 .toString()
         }

@@ -68,7 +68,7 @@ export function AmountUnitInputFields({
             onPress={() => onAmountModeChange("sat")}
             isDisabled={isDisabled}
             size="sm"
-            className={`min-w-24 rounded-xl font-medium ${amountInputMode !== "sat" ? "border border-border bg-white text-foreground hover:bg-muted" : ""}`}
+            className={`min-w-24 rounded-xl font-medium ${amountInputMode === "sat" ? "bg-green-800" : "border border-border bg-white text-foreground hover:bg-muted"}`}
           >
             {satsOptionLabel}
           </Button>
@@ -78,7 +78,7 @@ export function AmountUnitInputFields({
             onPress={() => onAmountModeChange("fiat")}
             isDisabled={isDisabled}
             size="sm"
-            className={`min-w-24 rounded-xl font-medium ${amountInputMode !== "fiat" ? "border border-border bg-white text-foreground hover:bg-muted" : ""}`}
+            className={`min-w-24 rounded-xl font-medium ${amountInputMode === "fiat" ? "bg-green-800" : "border border-border bg-white text-foreground hover:bg-muted"}`}
           >
             {fiatOptionLabel}
           </Button>

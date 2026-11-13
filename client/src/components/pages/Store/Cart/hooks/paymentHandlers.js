@@ -36,15 +36,16 @@ function startCustomerReceiptPrint(printCustomerReceipt, customerReceipt) {
   });
 }
 
-function buildInvoiceDescription(items = []) {
-  if (!Array.isArray(items) || items.length === 0) return "";
+function buildInvoiceDescription(cartItems = []) {
+  if (!Array.isArray(cartItems) || cartItems.length === 0) return "";
 
-  const lines = items
-    .map((item) => {
-      const name = typeof item?.name === "string" ? item.name.trim() : "";
-      if (!name) return null;
-      const quantity = Number(item?.quantity) || 1;
-      return `${quantity}x ${name}`;
+  const lines = cartItems
+    .map((cartItem) => {
+      const cartItemName = typeof cartItem?.name === "string" ? cartItem.name.trim() : "";
+      if (!cartItemName) return null;
+      const cartItemQuantity = Number(cartItem?.quantity) || 1;
+      const variantName = typeof cartItem?.variantName === "string" ? cartItem.variantName.trim() : "";
+      return variantName ? `${cartItemQuantity}x ${cartItemName} (${variantName})` : `${cartItemQuantity}x ${cartItemName}`;
     })
     .filter(Boolean);
 

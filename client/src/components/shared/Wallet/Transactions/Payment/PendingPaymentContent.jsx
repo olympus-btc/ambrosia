@@ -148,6 +148,7 @@ export function PendingPaymentContent({
         </Button>
         <Button
           color="primary"
+          className="bg-green-800"
           onPress={handleConfirm}
           isLoading={isLoading}
           isDisabled={isConfirmDisabled}

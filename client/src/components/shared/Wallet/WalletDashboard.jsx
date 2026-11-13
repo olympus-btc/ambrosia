@@ -23,6 +23,7 @@ import { usePaymentWebsocket } from "@hooks/usePaymentWebsocket";
 
 import { useInvoiceState } from "./hooks/useInvoiceState";
 import { NodeError, NodeInfo } from "./NodeInfo";
+import { OrdersSyncCard } from "./OrdersSync/OrdersSyncCard";
 import { InvoiceModal, Transactions } from "./Transactions";
 import { WalletPasswordCard } from "./WalletPassword";
 
@@ -175,6 +176,8 @@ export function WalletDashboard() {
           </div>
 
           <WalletPasswordCard />
+
+          <OrdersSyncCard />
 
           <InvoiceModal
             invoiceState={invoiceState}
