@@ -41,14 +41,14 @@ class EscPosCashDrawerPulseSender(
         cashDrawerPin: CashDrawerPin,
     ) {
         val pulseByteStream = ByteArrayOutputStream()
-        val escpos = EscPos(pulseByteStream)
+        val cashDrawerCommandWriter = EscPos(pulseByteStream)
         val pinConnector =
             when (cashDrawerPin) {
                 CashDrawerPin.PIN_2 -> EscPos.PinConnector.Pin_2
                 CashDrawerPin.PIN_5 -> EscPos.PinConnector.Pin_5
             }
-        escpos.pulsePin(pinConnector, PULSE_ON_TIME, PULSE_OFF_TIME)
-        escpos.close()
+        cashDrawerCommandWriter.pulsePin(pinConnector, PULSE_ON_TIME, PULSE_OFF_TIME)
+        cashDrawerCommandWriter.close()
         printerJobSender.sendRawJob(printerName, "Ambrosia cash drawer", pulseByteStream.toByteArray())
     }
 }
