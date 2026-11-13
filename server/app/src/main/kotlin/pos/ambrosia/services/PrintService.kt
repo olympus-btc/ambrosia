@@ -118,11 +118,11 @@ class PrintService(
         businessConfig: Config?,
     ): ByteArray {
         val ticketByteStream = ByteArrayOutputStream()
-        val escpos = EscPos(ticketByteStream)
-        escpos.setCharsetName(TicketFactory.DEFAULT_CHARSET)
-        TicketFactory(ticketTemplate, logoLoader = logoLoader).build(escpos, printableTicket, businessConfig)
-        escpos.feed(TicketFactory.DEFAULT_FEED_LINES).cut(EscPos.CutMode.FULL)
-        escpos.close()
+        val ticketCommandWriter = EscPos(ticketByteStream)
+        ticketCommandWriter.setCharsetName(TicketFactory.DEFAULT_CHARSET)
+        TicketFactory(ticketTemplate, logoLoader = logoLoader).build(ticketCommandWriter, printableTicket, businessConfig)
+        ticketCommandWriter.feed(TicketFactory.DEFAULT_FEED_LINES).cut(EscPos.CutMode.FULL)
+        ticketCommandWriter.close()
         return ticketByteStream.toByteArray()
     }
 
