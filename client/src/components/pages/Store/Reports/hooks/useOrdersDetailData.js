@@ -42,7 +42,8 @@ export function useOrdersDetailData(orders, formatCurrency) {
     try {
       const headers = [
         reportsTranslations("orders.shortId"), reportsTranslations("sales.date"), reportsTranslations("sales.user"),
-        reportsTranslations("orders.products"), reportsTranslations("sales.quantity"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"),
+        reportsTranslations("orders.products"), reportsTranslations("sales.quantity"), reportsTranslations("sales.total"),
+        reportsTranslations("orders.lightningFee"), reportsTranslations("sales.paymentMethod"),
         reportsTranslations("orders.reference"), reportsTranslations("orders.statusLabel"),
       ];
       const rows = orders.map((order) => [
@@ -52,6 +53,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
         order.items.map((item) => `${item.productName} x${item.quantity}`).join("; "),
         order.itemCount,
         formatCurrency(order.total),
+        order.lightningFeeSat > 0 ? `${order.lightningFeeSat.toLocaleString()} sats` : "",
         getPaymentMethodLabel(order.paymentMethod) ?? "",
         order.transactionId ?? "",
         statusTranslations(`status.${refundedToStatus(order.refunded)}`),
