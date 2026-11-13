@@ -53,7 +53,7 @@ cleanup() {
 trap cleanup EXIT
 
 check_dependencies() {
-  local dependencies=("curl" "unzip" "tar" "sha256sum" "gpg")
+  local dependencies=("curl" "unzip" "tar" "sha256sum" "gpg" "node")
   for command_name in "${dependencies[@]}"; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
       log_error "Missing required dependency: $command_name"
@@ -461,27 +461,33 @@ client_install() {
     local client_dist_url="https://github.com/${AMBROSIA_REPO}/releases/download/v${AMBROSIA_TAG}/${client_dist_file}"
     download_file "$client_dist_url" "$GLOBAL_TEMP_DIRECTORY/$client_dist_file"
     tar -xzf "$GLOBAL_TEMP_DIRECTORY/$client_dist_file" -C "$CLIENT_INSTALL_DIRECTORY" --strip-components=1
+    echo "$AMBROSIA_TAG" > "$CLIENT_INSTALL_DIRECTORY/.ambrosia-version"
   fi
 
-  echo "   Installing Node.js dependencies..."
-  pushd "$CLIENT_INSTALL_DIRECTORY" > /dev/null
-  npm install --production --silent
-  popd > /dev/null
+  if [[ ! -f "$CLIENT_INSTALL_DIRECTORY/server.js" ]]; then
+    log_error "The client build has no standalone server.js. Ambrosia v0.9.0-beta or newer is required."
+    exit 1
+  fi
 
   echo "✅ Client installed."
 
-  # Create wrapper for easier execution
-  cat <<EOF > "$AMBROSIA_INSTALL_DIRECTORY/run-client.sh"
-#!/bin/bash
-cd "$CLIENT_INSTALL_DIRECTORY" && npm start
-EOF
-  chmod +x "$AMBROSIA_INSTALL_DIRECTORY/run-client.sh"
+  client_write_launcher
   ln -sf "$AMBROSIA_INSTALL_DIRECTORY/run-client.sh" "$AMBROSIA_BIN_DIRECTORY/ambrosia-client"
   echo "   Symlink created: $AMBROSIA_BIN_DIRECTORY/ambrosia-client -> $AMBROSIA_INSTALL_DIRECTORY/run-client.sh"
 
   if [[ "$INSTALL_SYSTEMD" == "true" ]] && command -v systemctl >/dev/null; then
       client_setup_systemd
   fi
+}
+
+client_write_launcher() {
+  cat <<EOF > "$AMBROSIA_INSTALL_DIRECTORY/run-client.sh"
+#!/bin/bash
+cd "$CLIENT_INSTALL_DIRECTORY" || exit 1
+export HOSTNAME=0.0.0.0
+exec node server.js
+EOF
+  chmod +x "$AMBROSIA_INSTALL_DIRECTORY/run-client.sh"
 }
 
 client_setup_systemd() {
@@ -494,14 +500,8 @@ client_setup_systemd() {
 
     if [[ ! $reply =~ ^[Yy]$ ]]; then return 0; fi
 
-    local npm_path node_path
-    npm_path=$(which npm)
-    node_path=$(which node)
-
-    if [ -z "$npm_path" ]; then
-        log_error "Could not find npm executable."
-        return 1
-    fi
+    local node_path
+    node_path=$(command -v node)
 
     sudo tee "/etc/systemd/system/ambrosia-client.service" > /dev/null << EOF
 [Unit]
@@ -512,9 +512,9 @@ Wants=ambrosia.service
 [Service]
 User=$USER
 WorkingDirectory=$CLIENT_INSTALL_DIRECTORY
-Environment=PATH=$(dirname "$npm_path"):$(dirname "$node_path"):/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=NODE_ENV=production
-ExecStart=$npm_path start
+Environment=PATH=$(dirname "$node_path"):/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=$AMBROSIA_INSTALL_DIRECTORY/run-client.sh
+SuccessExitStatus=143
 Restart=always
 RestartSec=10
 StandardOutput=journal
