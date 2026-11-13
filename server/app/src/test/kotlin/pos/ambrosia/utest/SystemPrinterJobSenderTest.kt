@@ -8,11 +8,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import pos.ambrosia.services.PrinterNotAcceptingJobsException
-import pos.ambrosia.services.PrinterNotFoundException
-import pos.ambrosia.services.PrinterNotRespondingException
 import pos.ambrosia.services.PrinterQueueCanceller
 import pos.ambrosia.services.SystemPrinterJobSender
+import pos.ambrosia.utils.PrinterNotAcceptingJobsException
+import pos.ambrosia.utils.PrinterNotFoundException
+import pos.ambrosia.utils.PrinterNotRespondingException
 import javax.print.DocPrintJob
 import javax.print.PrintService
 import javax.print.attribute.HashPrintServiceAttributeSet
