@@ -170,8 +170,10 @@ install-client-from-source:
 	rm -rf "$(CLIENT_INSTALL_DIR)"; \
 	mkdir -p "$(CLIENT_INSTALL_DIR)"; \
 	cp -r "$(CLIENT_DIST_DIR)/." "$(CLIENT_INSTALL_DIR)/"; \
-	cd "$(CLIENT_INSTALL_DIR)" && npm ci --omit=dev --silent; \
-	{ echo '#!/bin/bash'; echo "cd \"$(CLIENT_INSTALL_DIR)\" && npm start"; } \
+	{ echo '#!/bin/bash'; \
+	  echo 'cd "$(CLIENT_INSTALL_DIR)" || exit 1'; \
+	  echo 'export HOSTNAME=0.0.0.0'; \
+	  echo 'exec node server.js'; } \
 	  > "$(AMBROSIA_INSTALL_DIR)/run-client.sh"; \
 	chmod +x "$(AMBROSIA_INSTALL_DIR)/run-client.sh"; \
 	ln -sf "$(AMBROSIA_INSTALL_DIR)/run-client.sh" "$(AMBROSIA_BIN_DIR)/ambrosia-client"; \
