@@ -11,6 +11,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrintableTicketType
+import pos.ambrosia.models.PrinterConfig
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.models.ShiftBreakdown
 import pos.ambrosia.models.ShiftReportPrintData
@@ -19,9 +20,11 @@ import pos.ambrosia.models.TicketLabels
 import pos.ambrosia.models.TicketTemplate
 import pos.ambrosia.services.PrintService
 import pos.ambrosia.services.PrinterConfigService
+import pos.ambrosia.services.PrinterJobSender
 import pos.ambrosia.services.TicketTemplateService
 import pos.ambrosia.utils.shiftReportLabels
 import java.io.IOException
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -130,7 +133,62 @@ class PrintServiceTest {
         verify(ticketTemplateService).getDefaultTemplate(PrintableTicketType.SHIFT_CLOSE)
         verify(printerConfigService).getDefaultByType(PrinterType.CUSTOMER)
     }
+
+    @Test
+    fun `printTicket sends the rendered receipt to the default customer printer`() {
+        val sentJobs = mutableListOf<Pair<String, ByteArray>>()
+        val recordingPrintService =
+            buildPrintServiceWithSender { printerName, _, rawJobBytes -> sentJobs += printerName to rawJobBytes }
+        doReturn(receiptTemplate).whenever(ticketTemplateService).getDefaultTemplate(PrintableTicketType.RECEIPT)
+        doReturn(customerPrinterConfig("alice-printer")).whenever(printerConfigService).getDefaultByType(PrinterType.CUSTOMER)
+
+        recordingPrintService.printTicket(PrintRequest(ticketData = aliceTicketData, printerType = PrinterType.CUSTOMER), null)
+
+        assertEquals(listOf("alice-printer"), sentJobs.map { sentJob -> sentJob.first })
+        assertTrue(sentJobs.single().second.isNotEmpty())
+    }
+
+    @Test
+    fun `printTicket fails when the default printer could not print the receipt`() {
+        val failingPrintService = buildPrintServiceWithSender { printerName, _, _ -> throw IOException("$printerName out of paper") }
+        doReturn(receiptTemplate).whenever(ticketTemplateService).getDefaultTemplate(PrintableTicketType.RECEIPT)
+        doReturn(customerPrinterConfig("alice-printer")).whenever(printerConfigService).getDefaultByType(PrinterType.CUSTOMER)
+
+        val printFailure =
+            assertFailsWith<IOException> {
+                failingPrintService.printTicket(PrintRequest(ticketData = aliceTicketData, printerType = PrinterType.CUSTOMER), null)
+            }
+
+        assertEquals("alice-printer out of paper", printFailure.message)
+    }
+
+    @Test
+    fun `printTicket keeps broadcasting to the other printers when one of them fails`() {
+        val printedPrinterNames = mutableListOf<String>()
+        val partiallyFailingPrintService =
+            buildPrintServiceWithSender { printerName, _, _ ->
+                if (printerName == "bob-printer") throw IOException("bob-printer out of paper")
+                printedPrinterNames += printerName
+            }
+        doReturn(receiptTemplate).whenever(ticketTemplateService).getDefaultTemplate(PrintableTicketType.RECEIPT)
+        doReturn(listOf(customerPrinterConfig("bob-printer"), customerPrinterConfig("alice-printer")))
+            .whenever(printerConfigService)
+            .getEnabledByType(PrinterType.KITCHEN)
+
+        partiallyFailingPrintService.printTicket(
+            PrintRequest(ticketData = aliceTicketData, printerType = PrinterType.KITCHEN, broadcast = true),
+            null,
+        )
+
+        assertEquals(listOf("alice-printer"), printedPrinterNames)
+    }
+
+    private fun buildPrintServiceWithSender(printerJobSender: PrinterJobSender) =
+        PrintService(ticketTemplateService, printerConfigService, printerJobSender = printerJobSender)
 }
+
+private fun customerPrinterConfig(printerName: String) =
+    PrinterConfig(id = "config-$printerName", printerType = PrinterType.CUSTOMER, printerName = printerName)
 
 private val receiptTemplate = TicketTemplate(id = "template-alice", name = "alice", elements = emptyList())
 

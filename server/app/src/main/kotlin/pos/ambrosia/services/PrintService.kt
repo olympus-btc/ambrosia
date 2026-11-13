@@ -10,6 +10,7 @@ import pos.ambrosia.models.PrintableTicketType
 import pos.ambrosia.models.PrinterType
 import pos.ambrosia.models.ShiftReportPrintData
 import pos.ambrosia.models.TicketTemplate
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.file.Paths
 
@@ -17,6 +18,7 @@ class PrintService(
     private val ticketTemplateService: TicketTemplateService,
     private val printerConfigService: PrinterConfigService,
     private val logoLoader: TicketLogoLoader = TicketLogoLoader(Paths.get(datadir.toString(), "uploads")),
+    private val printerJobSender: PrinterJobSender = SystemPrinterJobSender(),
 ) {
     fun getAvailablePrinters(): Array<String> {
         val printerNames = PrinterOutputStream.getListPrintServicesNames()
@@ -74,35 +76,15 @@ class PrintService(
             throw IOException("No printers configured for type ${printRequest.printerType}.")
         }
 
-        val resolvedConfigs =
-            printerConfigs.mapNotNull { printerConfig ->
-                val printerService = PrinterOutputStream.getPrintServiceByName(printerConfig.printerName)
-                if (printerService == null) {
-                    logger.error("Printer '${printerConfig.printerName}' not found on this system.")
-                    null
-                } else {
-                    printerConfig to printerService
-                }
-            }
-
-        if (resolvedConfigs.isEmpty()) {
-            throw IOException("No configured printers found on this system for type ${printRequest.printerType}.")
-        }
-
+        val ticketBytes = renderTicketBytes(ticketTemplate, printableTicket, businessConfig)
         var successCount = 0
 
-        resolvedConfigs.forEach { (_, printerService) ->
+        printerConfigs.forEach { printerConfig ->
             try {
-                val printerOutputStream = PrinterOutputStream(printerService)
-                val escpos = EscPos(printerOutputStream)
-                escpos.setCharsetName(TicketFactory.DEFAULT_CHARSET)
-                val ticketFactory = TicketFactory(ticketTemplate, logoLoader = logoLoader)
-                ticketFactory.build(escpos, printableTicket, businessConfig)
-                escpos.feed(TicketFactory.DEFAULT_FEED_LINES).cut(EscPos.CutMode.FULL)
-                escpos.close()
+                printerJobSender.sendRawJob(printerConfig.printerName, "Ambrosia ${printRequest.ticketType}", ticketBytes)
                 successCount += 1
             } catch (printException: Exception) {
-                logger.error("Failed to print ticket to ${printerService.name}: ${printException.message}", printException)
+                logger.error("Failed to print ticket to ${printerConfig.printerName}: ${printException.message}", printException)
                 if (printRequest.printerId != null || !printRequest.broadcast) {
                     throw printException
                 }
@@ -113,7 +95,7 @@ class PrintService(
             throw IOException("Failed to print ticket to any configured printer.")
         }
 
-        logger.info("Successfully sent print job to ${printRequest.printerType} printer(s).")
+        logger.info("Printed ${printRequest.ticketType} on $successCount ${printRequest.printerType} printer(s).")
     }
 
     fun printShiftReport(
@@ -128,6 +110,20 @@ class PrintService(
             ),
             businessConfig,
         )
+    }
+
+    private fun renderTicketBytes(
+        ticketTemplate: TicketTemplate,
+        printableTicket: PrintableTicket,
+        businessConfig: Config?,
+    ): ByteArray {
+        val ticketByteStream = ByteArrayOutputStream()
+        val ticketCommandWriter = EscPos(ticketByteStream)
+        ticketCommandWriter.setCharsetName(TicketFactory.DEFAULT_CHARSET)
+        TicketFactory(ticketTemplate, logoLoader = logoLoader).build(ticketCommandWriter, printableTicket, businessConfig)
+        ticketCommandWriter.feed(TicketFactory.DEFAULT_FEED_LINES).cut(EscPos.CutMode.FULL)
+        ticketCommandWriter.close()
+        return ticketByteStream.toByteArray()
     }
 
     private fun resolveTemplate(printRequest: PrintRequest): TicketTemplate? {

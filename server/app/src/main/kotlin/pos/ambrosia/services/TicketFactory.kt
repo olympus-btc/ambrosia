@@ -70,20 +70,20 @@ class TicketFactory(
     }
 
     fun build(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         ticketData: TicketData,
         businessConfig: Config?,
     ) {
-        build(escpos, PrintableTicket.SaleReceipt(ticketData), businessConfig)
+        build(ticketCommandWriter, PrintableTicket.SaleReceipt(ticketData), businessConfig)
     }
 
     fun build(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         printableTicket: PrintableTicket,
         businessConfig: Config?,
     ) {
-        escpos.write(ByteArray(JOB_START_PADDING_BYTES), 0, JOB_START_PADDING_BYTES)
-        escpos.initializePrinter()
+        ticketCommandWriter.write(ByteArray(JOB_START_PADDING_BYTES), 0, JOB_START_PADDING_BYTES)
+        ticketCommandWriter.initializePrinter()
         val templateVariableValues = buildTemplateVariableValues(printableTicket, businessConfig)
         template.elements.forEach { templateElement ->
             val escPosStyle = convertToEscPosStyle(templateElement.style)
@@ -91,18 +91,24 @@ class TicketFactory(
 
             when (templateElement.type) {
                 ElementType.SEPARATOR -> {
-                    writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+                    writePrintableLine(ticketCommandWriter, escPosStyle, SEPARATOR_LINE)
                 }
 
                 in SALE_ELEMENT_TYPES -> {
                     if (printableTicket is PrintableTicket.SaleReceipt) {
-                        writeSaleElement(escpos, templateElement.type, escPosStyle, resolvedContent, printableTicket.ticketData)
+                        writeSaleElement(
+                            ticketCommandWriter,
+                            templateElement.type,
+                            escPosStyle,
+                            resolvedContent,
+                            printableTicket.ticketData,
+                        )
                     }
                 }
 
                 ElementType.SHIFT_SUMMARY -> {
                     if (printableTicket is PrintableTicket.ShiftReport) {
-                        writeShiftSummary(escpos, escPosStyle, resolvedContent, printableTicket.shiftReport)
+                        writeShiftSummary(ticketCommandWriter, escPosStyle, resolvedContent, printableTicket.shiftReport)
                     }
                 }
 
@@ -110,26 +116,26 @@ class TicketFactory(
                     val saleInvoice = (printableTicket as? PrintableTicket.SaleReceipt)?.ticketData?.invoice.orEmpty()
                     val qrContent = resolvedContent.ifBlank { saleInvoice }
                     if (qrContent.isNotBlank()) {
-                        writeQrCode(escpos, qrContent, templateElement.style)
+                        writeQrCode(ticketCommandWriter, qrContent, templateElement.style)
                     }
                 }
 
                 ElementType.LOGO -> {
                     val storedLogoUrl = templateElement.value.ifBlank { businessConfig?.businessLogoUrl.orEmpty() }
                     if (storedLogoUrl.isNotBlank()) {
-                        writeLogo(escpos, storedLogoUrl, templateElement.style)
+                        writeLogo(ticketCommandWriter, storedLogoUrl, templateElement.style)
                     }
                 }
 
                 else -> {
-                    writePrintableLine(escpos, escPosStyle, resolvedContent)
+                    writePrintableLine(ticketCommandWriter, escPosStyle, resolvedContent)
                 }
             }
         }
     }
 
     private fun writeSaleElement(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         elementType: ElementType,
         escPosStyle: Style,
         resolvedContent: String,
@@ -137,7 +143,7 @@ class TicketFactory(
     ) {
         when (elementType) {
             ElementType.TABLE_HEADER -> {
-                writePrintableLine(escpos, escPosStyle, resolvedContent)
+                writePrintableLine(ticketCommandWriter, escPosStyle, resolvedContent)
             }
 
             ElementType.TABLE_ROW -> {
@@ -145,59 +151,64 @@ class TicketFactory(
                     val itemText = "${ticketItem.quantity}x ${ticketItem.name}"
                     val priceText = ticketItem.price.toString()
                     val itemRow = formatTicketLine(itemText, priceText)
-                    writePrintableLine(escpos, escPosStyle, itemRow)
+                    writePrintableLine(ticketCommandWriter, escPosStyle, itemRow)
                     ticketItem.comments.forEach { comment ->
-                        writePrintableLine(escpos, escPosStyle, "  - $comment")
+                        writePrintableLine(ticketCommandWriter, escPosStyle, "  - $comment")
                     }
                 }
             }
 
             ElementType.TOTAL_ROW -> {
                 val totalLabel = resolvedContent.ifEmpty { ticketData.labels.total }
-                writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+                writePrintableLine(ticketCommandWriter, escPosStyle, SEPARATOR_LINE)
                 if (ticketData.discountAmount > 0) {
                     val discountRow = formatTicketLine(ticketData.labels.discount, "-${ticketData.discountAmount}")
-                    writePrintableLine(escpos, escPosStyle, discountRow)
+                    writePrintableLine(ticketCommandWriter, escPosStyle, discountRow)
                 }
                 if (ticketData.tipAmount > 0) {
                     val tipRow = formatTicketLine(ticketData.labels.tip, "+${ticketData.tipAmount}")
-                    writePrintableLine(escpos, escPosStyle, tipRow)
+                    writePrintableLine(ticketCommandWriter, escPosStyle, tipRow)
                 }
                 val totalRow = formatTicketLine(totalLabel, ticketData.total.toString())
-                writePrintableLine(escpos, escPosStyle, totalRow)
+                writePrintableLine(ticketCommandWriter, escPosStyle, totalRow)
             }
 
             ElementType.PAYMENT_METHOD -> {
                 val paymentMethodName = ticketData.paymentMethod.orEmpty()
                 if (paymentMethodName.isNotBlank()) {
                     val paymentMethodLabel = resolvedContent.ifEmpty { ticketData.labels.paymentMethod }
-                    writePrintableLine(escpos, escPosStyle, formatTicketLine(paymentMethodLabel, paymentMethodName))
+                    writePrintableLine(ticketCommandWriter, escPosStyle, formatTicketLine(paymentMethodLabel, paymentMethodName))
                 }
             }
 
             else -> {
-                writePrintableLine(escpos, escPosStyle, resolvedContent)
+                writePrintableLine(ticketCommandWriter, escPosStyle, resolvedContent)
             }
         }
     }
 
     private fun writeShiftSummary(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         escPosStyle: Style,
         resolvedContent: String,
         shiftReport: ShiftReportPrintData,
     ) {
         val labels = shiftReport.labels
         val breakdown = shiftReport.breakdown
-        val writeRow = { label: String, value: String -> writePrintableLine(escpos, escPosStyle, formatTicketLine(label, value)) }
+        val writeRow = {
+            label: String,
+            value: String,
+            ->
+            writePrintableLine(ticketCommandWriter, escPosStyle, formatTicketLine(label, value))
+        }
 
-        writePrintableLine(escpos, escPosStyle, resolvedContent.ifEmpty { labels.title })
+        writePrintableLine(ticketCommandWriter, escPosStyle, resolvedContent.ifEmpty { labels.title })
         writeRow(labels.cashier, shiftReport.cashierName)
         writeRow(labels.openedAt, formatShiftDateTime(shiftReport.openedAt))
         shiftReport.closedAt?.let { closedAt -> writeRow(labels.closedAt, formatShiftDateTime(closedAt)) }
         writeRow(labels.tickets, breakdown.totalTickets.toString())
 
-        writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+        writePrintableLine(ticketCommandWriter, escPosStyle, SEPARATOR_LINE)
         breakdown.byPaymentMethod.forEach { paymentMethodTotal ->
             val paymentMethodLabel = labels.paymentMethods[paymentMethodTotal.name.trim().lowercase()] ?: paymentMethodTotal.name
             writeRow(paymentMethodLabel, paymentMethodTotal.total.toString())
@@ -205,7 +216,7 @@ class TicketFactory(
         writeRow(labels.totalSales, breakdown.totalSales.toString())
         writeRow(labels.tips, breakdown.totalTips.toString())
 
-        writePrintableLine(escpos, escPosStyle, SEPARATOR_LINE)
+        writePrintableLine(ticketCommandWriter, escPosStyle, SEPARATOR_LINE)
         writeRow(labels.initialAmount, breakdown.initialAmount.toString())
         writeRow(labels.cashSales, breakdown.cashSales.toString())
         writeRow(labels.cashRefunds, "-${breakdown.cashRefunds}")
@@ -220,15 +231,15 @@ class TicketFactory(
             ?: localDateTime
 
     private fun writePrintableLine(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         escPosStyle: Style,
         lineText: String,
     ) {
-        escpos.writeLF(escPosStyle, removeAccents(lineText))
+        ticketCommandWriter.writeLF(escPosStyle, removeAccents(lineText))
     }
 
     private fun writeQrCode(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         qrContent: String,
         elementStyle: ElementStyle?,
     ) {
@@ -252,16 +263,16 @@ class TicketFactory(
                     qrImage.setRGB(pixelX, pixelY, if (isDarkModule) 0x000000 else 0xFFFFFF)
                 }
             }
-            writeRasterImage(escpos, qrImage, elementStyle?.justification ?: Justification.LEFT)
+            writeRasterImage(ticketCommandWriter, qrImage, elementStyle?.justification ?: Justification.LEFT)
         } catch (qrException: Exception) {
             logger.error("Failed to print QR image: ${qrException.message}", qrException)
             val fallbackStyle = convertToEscPosStyle(elementStyle)
-            writePrintableLine(escpos, fallbackStyle, qrContent)
+            writePrintableLine(ticketCommandWriter, fallbackStyle, qrContent)
         }
     }
 
     private fun writeLogo(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         storedLogoUrl: String,
         elementStyle: ElementStyle?,
     ) {
@@ -273,11 +284,11 @@ class TicketFactory(
                 logger.error("Failed to load logo image: ${logoException.message}", logoException)
                 null
             } ?: return
-        writeRasterImage(escpos, logoImage, elementStyle?.justification ?: Justification.LEFT)
+        writeRasterImage(ticketCommandWriter, logoImage, elementStyle?.justification ?: Justification.LEFT)
     }
 
     private fun writeRasterImage(
-        escpos: EscPos,
+        ticketCommandWriter: EscPos,
         rasterImage: BufferedImage,
         justification: Justification,
     ) {
@@ -290,8 +301,8 @@ class TicketFactory(
                 Justification.RIGHT -> EscPosConst.Justification.Right
             },
         )
-        escpos.write(rasterImageWrapper, escPosImage)
-        escpos.feed(1)
+        ticketCommandWriter.write(rasterImageWrapper, escPosImage)
+        ticketCommandWriter.feed(1)
     }
 
     private fun resolveQrDotsPerModule(

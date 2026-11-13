@@ -29,6 +29,13 @@ function logPaymentError(context, paymentError) {
   console.error(context, paymentError);
 }
 
+function startCustomerReceiptPrint(printCustomerReceipt, customerReceipt) {
+  if (!printCustomerReceipt) return;
+  Promise.resolve(printCustomerReceipt(customerReceipt)).catch((customerReceiptPrintError) => {
+    console.error("Error printing customer receipt:", customerReceiptPrintError);
+  });
+}
+
 function buildInvoiceDescription(cartItems = []) {
   if (!Array.isArray(cartItems) || cartItems.length === 0) return "";
 
@@ -175,8 +182,7 @@ export function buildHandlePay({
         user,
       });
 
-      await refreshShiftTickets?.();
-      await printCustomerReceipt?.({
+      startCustomerReceiptPrint(printCustomerReceipt, {
         items: cartItems,
         totalCents: paymentAmounts.total,
         discountAmountCents: paymentAmounts.discountAmount,
@@ -184,6 +190,7 @@ export function buildHandlePay({
         ticketId: storeCheckoutResult.ticketId,
         paymentMethodName: paymentMethodData?.name || "",
       });
+      await refreshShiftTickets?.();
 
       notifySuccess("success.paid");
       onResetCart?.();
@@ -267,8 +274,7 @@ async function runDeferredCheckout({
 
     await onCheckoutSuccess?.(storeCheckoutResult);
 
-    await refreshShiftTickets?.();
-    await printCustomerReceipt?.({
+    startCustomerReceiptPrint(printCustomerReceipt, {
       items: receiptItems,
       totalCents: receiptTotal,
       discountAmountCents: receiptDiscountAmount,
@@ -277,6 +283,7 @@ async function runDeferredCheckout({
       invoice: receiptInvoice,
       paymentMethodName: receiptPaymentMethodName,
     });
+    await refreshShiftTickets?.();
 
     onPay?.(buildOnPayPayload(storeCheckoutResult));
     onResetCart?.();

@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -9,6 +10,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.models.WalletErrorResponse
@@ -40,7 +43,9 @@ fun Route.checkout(
                 is CheckoutResult.Success -> {
                     val checkoutResponseStatus = if (checkoutResult.alreadyExisted) HttpStatusCode.OK else HttpStatusCode.Created
                     if (!checkoutResult.alreadyExisted) {
-                        cashDrawerService.openForPaymentMethod(checkoutRequest.paymentMethodId)
+                        call.application.launch(Dispatchers.IO) {
+                            cashDrawerService.openForPaymentMethod(checkoutRequest.paymentMethodId)
+                        }
                     }
                     call.respond(checkoutResponseStatus, checkoutResult.response)
                 }

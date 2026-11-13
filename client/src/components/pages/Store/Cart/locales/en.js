@@ -71,7 +71,7 @@ const cartEn = {
         cashComplete: "Error completing the cash payment",
         cardComplete: "Error completing the card payment",
         transferComplete: "Error completing the bank transfer payment",
-        printCustomer: "Could not print the receipt. Check printer settings.",
+        printCustomer: "Could not print the receipt. Check the printer paper and connection; you can reprint it from Orders.",
       },
       success: {
         paid: "Payment registered successfully",
