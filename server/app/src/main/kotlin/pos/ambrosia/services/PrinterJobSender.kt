@@ -2,6 +2,9 @@ package pos.ambrosia.services
 
 import com.github.anastaciocintra.output.PrinterOutputStream
 import pos.ambrosia.logger
+import pos.ambrosia.utils.PrinterNotAcceptingJobsException
+import pos.ambrosia.utils.PrinterNotFoundException
+import pos.ambrosia.utils.PrinterNotRespondingException
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -23,22 +26,6 @@ fun interface PrinterJobSender {
         rawJobBytes: ByteArray,
     )
 }
-
-class PrinterNotFoundException(
-    printerName: String,
-) : IOException("Printer '$printerName' not found on this system.")
-
-class PrinterNotAcceptingJobsException(
-    printerName: String,
-) : IOException("Printer '$printerName' is not accepting print jobs.")
-
-class PrinterNotRespondingException(
-    printerName: String,
-    completionTimeoutMilliseconds: Long,
-) : IOException(
-        "Printer '$printerName' did not finish the job within ${completionTimeoutMilliseconds / 1000} seconds " +
-            "(check paper, cover and connection). The job was cancelled so it will not print later.",
-    )
 
 class SystemPrinterJobSender(
     private val printerQueueCanceller: PrinterQueueCanceller = PrinterQueueCanceller.forCurrentOperatingSystem(),
