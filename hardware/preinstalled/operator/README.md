@@ -22,5 +22,5 @@ This is the imperative ancestor of a future reproducible-build flow. Eventually 
 
 ### Known TODOs
 
-- **`bootstrap-ambrosia.sh` pins `AMBROSIA_TAG`** and downloads a tagged release at runtime. The reproducible-build replacement should instead build from the current code in this repo so the resulting image's hash is deterministic and traceable. Treating this as the next concrete step toward real reproducibility.
+- **`bootstrap-ambrosia.sh` downloads a tagged release at runtime** (the latest release unless `--ambrosia-tag` is passed). The reproducible-build replacement should instead build from the current code in this repo so the resulting image's hash is deterministic and traceable. Treating this as the next concrete step toward real reproducibility.
 - **OPi-flavoured naming throughout** (`/mnt/opi-wipe-and-provision`, default `ambrosia-opi-N` hostnames). The scripts work for any aarch64 board today but the names imply OPi. RPi-side operators will want to either parameterise these or fork the scripts; out of scope for this introductory PR.
