@@ -59,7 +59,8 @@ class PhoenixService(
     private val phoenixdUrl: String,
     private val httpClient: HttpClient,
 ) : PaymentVerifier,
-    LightningBackend {
+    LightningBackend,
+    IncomingPaymentHistory {
     private data class PhoenixPaymentErrorDetails(
         val displayMessage: String,
         val phoenixReason: String?,

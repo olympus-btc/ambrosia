@@ -23,6 +23,7 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
     exchangeRateAtPayment,
     exchangeRateCurrency,
     fiatAmountAtPayment,
+    lightningFeeSat,
     transactionId,
   } = order ?? {};
 
@@ -67,6 +68,21 @@ export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }
                   fullValue={transactionId}
                   copyLabel={reportsTranslations("orders.copyReference")}
                 />
+              )}
+
+              {lightningFeeSat > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400">{reportsTranslations("orders.lightningFee")}</p>
+                  <div className="space-y-1">
+                    <AmountDisplay
+                      satoshis={lightningFeeSat}
+                      exchangeRateAtSale={exchangeRateAtPayment}
+                      exchangeRateCurrency={exchangeRateCurrency}
+                      currentRate={currentRate}
+                    />
+                    <p className="text-xs font-normal text-gray-500">{reportsTranslations("orders.lightningFeeInfo")}</p>
+                  </div>
+                </div>
               )}
 
               <div className="border-t border-gray-100 pt-3">

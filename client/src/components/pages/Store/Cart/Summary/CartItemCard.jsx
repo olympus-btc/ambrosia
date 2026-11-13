@@ -13,7 +13,7 @@ export function CartItemCard({ item: cartItem, onRemove, onUpdateQuantity }) {
   const imageUrl = storedAssetUrl(cartItem.imageUrl);
 
   return (
-    <Card className="shadow-none border-1 border-green-600">
+    <Card className="shadow-none border-1 border-green-800">
       <CardHeader>
         <div className="flex w-full items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">

@@ -1,5 +1,6 @@
 import closeChannelEn from "../CloseChannel/locales/en";
 import nodeInfoEn from "../NodeInfo/locales/en";
+import ordersSyncEn from "../OrdersSync/locales/en";
 import transactionsEn from "../Transactions/locales/en";
 
 const walletEn = {
@@ -43,6 +44,7 @@ const walletEn = {
     ...nodeInfoEn,
     ...transactionsEn,
     ...closeChannelEn,
+    ...ordersSyncEn,
   },
 };
 

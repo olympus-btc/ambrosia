@@ -615,11 +615,13 @@ object ExposedTestDb {
         currencyId: String = seedCurrency("USD"),
         transactionId: String = "txn-1",
         amount: Double = 10.0,
+        date: String = "2024-01-01T00:00:00",
         paymentHash: String? = null,
         satoshiAmount: Long? = null,
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
+        lightningFeeSat: Long? = null,
     ): String =
         transaction {
             PaymentEntity
@@ -628,12 +630,13 @@ object ExposedTestDb {
                     this.currencyId = EntityID(UUID.fromString(currencyId), CurrencyTable)
                     this.transactionId = transactionId
                     this.amount = amount
-                    this.date = "2024-01-01T00:00:00"
+                    this.date = date
                     this.paymentHash = paymentHash
                     this.satoshiAmount = satoshiAmount
                     this.exchangeRateAtPayment = exchangeRateAtPayment
                     this.exchangeRateCurrency = exchangeRateCurrency
                     this.fiatAmountAtPayment = fiatAmountAtPayment
+                    this.lightningFeeSat = lightningFeeSat
                 }.id.value
                 .toString()
         }
@@ -726,13 +729,14 @@ object ExposedTestDb {
     fun seedTicket(
         orderId: String,
         userId: String,
+        ticketDate: String = "2024-01-01T00:00:00",
     ): String =
         transaction {
             TicketEntity
                 .new(UUID.randomUUID()) {
                     this.orderId = EntityID(UUID.fromString(orderId), OrdersTable)
                     this.userId = EntityID(UUID.fromString(userId), UsersTable)
-                    this.ticketDate = "2024-01-01T00:00:00"
+                    this.ticketDate = ticketDate
                 }.id.value
                 .toString()
         }

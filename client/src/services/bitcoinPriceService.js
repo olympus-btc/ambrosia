@@ -9,17 +9,17 @@ class BitcoinPriceService {
 
   async getBitcoinPrice(currency = "usd") {
     const cacheKey = currency.toLowerCase();
-    const now = Date.now();
+    const bitcoinPriceRequestedAt = Date.now();
 
     if (this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey);
-      if (now - cached.timestamp < this.CACHE_DURATION) {
-        return cached.price;
+      const cachedPriceEntry = this.cache.get(cacheKey);
+      if (bitcoinPriceRequestedAt - cachedPriceEntry.timestamp < this.CACHE_DURATION) {
+        return cachedPriceEntry.price;
       }
     }
 
     try {
-      const response = await fetch(
+      const bitcoinPriceResponse = await fetch(
         `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${currency}`,
         {
           method: "GET",
@@ -30,26 +30,68 @@ class BitcoinPriceService {
         },
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!bitcoinPriceResponse.ok) {
+        throw new Error(`HTTP error! status: ${bitcoinPriceResponse.status}`);
       }
 
-      const data = await response.json();
-      const price = data.bitcoin[currency.toLowerCase()];
+      const bitcoinPriceData = await bitcoinPriceResponse.json();
+      const currentBitcoinPrice = bitcoinPriceData.bitcoin[currency.toLowerCase()];
 
-      if (!price) {
+      if (!currentBitcoinPrice) {
         throw new Error(`Price not found for currency: ${currency}`);
       }
 
       this.cache.set(cacheKey, {
-        price,
-        timestamp: now,
+        price: currentBitcoinPrice,
+        timestamp: bitcoinPriceRequestedAt,
       });
 
-      return price;
-    } catch (error) {
-      console.warn(`Error fetching BTC price for ${currency}:`, error.message);
+      return currentBitcoinPrice;
+    } catch (bitcoinPriceError) {
+      console.warn(`Error fetching BTC price for ${currency}:`, bitcoinPriceError.message);
       throw new Error(`Unable to get BTC price for ${currency}`);
+    }
+  }
+
+  async getHistoricalBitcoinPrice(dateDDMMYYYY, currency = "usd") {
+    const cacheKey = `${dateDDMMYYYY}:${currency.toLowerCase()}`;
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey).price;
+    }
+
+    try {
+      const historicalPriceResponse = await fetch(
+        `https://api.coingecko.com/api/v3/coins/bitcoin/history?date=${dateDDMMYYYY}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          timeout: 10000,
+        },
+      );
+
+      if (!historicalPriceResponse.ok) {
+        throw new Error(`HTTP error! status: ${historicalPriceResponse.status}`);
+      }
+
+      const historicalPriceData = await historicalPriceResponse.json();
+      const historicalPrice = historicalPriceData.market_data?.current_price?.[currency.toLowerCase()];
+
+      if (!historicalPrice) {
+        throw new Error(`Historical price not found for ${dateDDMMYYYY} in currency: ${currency}`);
+      }
+
+      this.cache.set(cacheKey, {
+        price: historicalPrice,
+        timestamp: Date.now(),
+      });
+
+      return historicalPrice;
+    } catch (historicalPriceError) {
+      console.warn(`Error fetching historical BTC price for ${dateDDMMYYYY} ${currency}:`, historicalPriceError.message);
+      throw new Error(`Unable to get historical BTC price for ${dateDDMMYYYY} ${currency}`);
     }
   }
 
@@ -97,15 +139,15 @@ class BitcoinPriceService {
   }
 
   getCacheInfo() {
-    const info = {};
-    for (const [currency, data] of this.cache.entries()) {
-      info[currency] = {
-        price: data.price,
-        age: Date.now() - data.timestamp,
-        expired: Date.now() - data.timestamp > this.CACHE_DURATION,
+    const cacheInfoByKey = {};
+    for (const [cacheKey, cacheEntry] of this.cache.entries()) {
+      cacheInfoByKey[cacheKey] = {
+        price: cacheEntry.price,
+        age: Date.now() - cacheEntry.timestamp,
+        expired: Date.now() - cacheEntry.timestamp > this.CACHE_DURATION,
       };
     }
-    return info;
+    return cacheInfoByKey;
   }
 }
 
