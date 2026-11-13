@@ -76,4 +76,19 @@ describe("useSummaryData", () => {
     expect(summaryDataHook.current.totalRefundedSatoshis).toBe(895);
     expect(summaryDataHook.current.refundCount).toBe(2);
   });
+
+  it("totalLightningFeeSat is 0 when reportData is null", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.totalLightningFeeSat).toBe(0);
+  });
+
+  it("totalLightningFeeSat derives from reportData.totalLightningFeeSat", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({
+      totalRevenueCents: 0,
+      totalItemsSold: 0,
+      sales: [],
+      totalLightningFeeSat: 230,
+    }));
+    expect(summaryDataHook.current.totalLightningFeeSat).toBe(230);
+  });
 });

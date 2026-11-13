@@ -440,6 +440,22 @@ describe("Reports", () => {
       switchToProductsTab();
       expectSummaryCardStatCount(7);
     });
+
+    it("adds a Lightning liquidity fee stat in products tab when totalLightningFeeSat is present", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 230 } });
+      render(<Reports />);
+      switchToProductsTab();
+      expectSummaryCardStatCount(5);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(true);
+    });
+
+    it("does not add a Lightning liquidity fee stat in products tab when totalLightningFeeSat is 0", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 0 } });
+      render(<Reports />);
+      switchToProductsTab();
+      expectSummaryCardStatCount(4);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(false);
+    });
   });
 
   describe("no data state", () => {

@@ -64,6 +64,7 @@ export default function Reports() {
     uniqueProducts,
     totalRefunded: productsRefunded,
     totalRefundedSatoshis,
+    totalLightningFeeSat: productsLightningFeeSat,
   } = useSummaryData(reportData);
 
   const orderStats = useMemo(() => {
@@ -116,6 +117,12 @@ export default function Reports() {
         value: `${totalBtcSatoshis.toLocaleString()} sats`,
       });
     }
+    if (productsLightningFeeSat > 0) {
+      stats.push({
+        label: reportsTranslations("summary.liquidityLightningFee"),
+        value: `${productsLightningFeeSat.toLocaleString()} sats`,
+      });
+    }
     if (productsRefunded > 0) {
       stats.push({ label: reportsTranslations("summary.totalRefunded"), value: formatAmount(productsRefunded) });
     }
@@ -139,6 +146,7 @@ export default function Reports() {
     uniqueProducts,
     formatAmount,
     totalBtcSatoshis,
+    productsLightningFeeSat,
     productsRefunded,
     totalRefundedSatoshis,
   ]);
