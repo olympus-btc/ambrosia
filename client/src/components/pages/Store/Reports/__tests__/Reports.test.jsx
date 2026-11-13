@@ -197,6 +197,12 @@ function makeUseShiftsReport(overrides = {}) {
   };
 }
 
+function expectSummaryCardStatCount(expectedCount) {
+  const summaryCards = screen.getAllByTestId("summary-card");
+  expect(summaryCards[0]).toHaveTextContent(String(expectedCount));
+  return summaryCards;
+}
+
 let mockUseReports;
 let mockUseFiltersState;
 let mockUseCurrency;
@@ -339,16 +345,14 @@ describe("Reports", () => {
     it("renders SummaryCard with 4 stats in orders tab", () => {
       mockUseReports = () => makeUseReports({ reportData: REPORT_FIXTURE });
       render(<Reports />);
-      const summaryCards = screen.getAllByTestId("summary-card");
+      const summaryCards = expectSummaryCardStatCount(4);
       expect(summaryCards.length).toBeGreaterThan(0);
-      expect(summaryCards[0]).toHaveTextContent("4");
     });
 
     it("adds Net Revenue and Total Refunded stats in orders tab when there are refunds", () => {
       mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
       render(<Reports />);
-      const summaryCards = screen.getAllByTestId("summary-card");
-      expect(summaryCards[0]).toHaveTextContent("6");
+      expectSummaryCardStatCount(6);
     });
 
     it("keeps Net Revenue, Total Revenue and Total Refunded adjacent, ahead of the count stats", () => {
@@ -367,9 +371,22 @@ describe("Reports", () => {
     it("does not add a refund stat in orders tab when totalRefundedCents is 0", () => {
       mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 0 } });
       render(<Reports />);
-      const summaryCards = screen.getAllByTestId("summary-card");
-      expect(summaryCards[0]).toHaveTextContent("4");
+      expectSummaryCardStatCount(4);
       expect(capturedStats.some((stat) => stat.label === "summary.netRevenue")).toBe(false);
+    });
+
+    it("adds a Lightning liquidity fee stat in orders tab when totalLightningFeeSat is present", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 230 } });
+      render(<Reports />);
+      expectSummaryCardStatCount(5);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(true);
+    });
+
+    it("does not add a Lightning liquidity fee stat in orders tab when totalLightningFeeSat is 0", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 0 } });
+      render(<Reports />);
+      expectSummaryCardStatCount(4);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(false);
     });
   });
 
@@ -411,8 +428,7 @@ describe("Reports", () => {
       mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalRefundedCents: 1500, refundCount: 1 } });
       render(<Reports />);
       switchToProductsTab();
-      const summaryCards = screen.getAllByTestId("summary-card");
-      expect(summaryCards[0]).toHaveTextContent("6");
+      expectSummaryCardStatCount(6);
       expect(capturedStats[0]).toEqual({ label: "summary.netRevenue", value: "$3500" });
     });
 
@@ -422,8 +438,23 @@ describe("Reports", () => {
       });
       render(<Reports />);
       switchToProductsTab();
-      const summaryCards = screen.getAllByTestId("summary-card");
-      expect(summaryCards[0]).toHaveTextContent("7");
+      expectSummaryCardStatCount(7);
+    });
+
+    it("adds a Lightning liquidity fee stat in products tab when totalLightningFeeSat is present", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 230 } });
+      render(<Reports />);
+      switchToProductsTab();
+      expectSummaryCardStatCount(5);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(true);
+    });
+
+    it("does not add a Lightning liquidity fee stat in products tab when totalLightningFeeSat is 0", () => {
+      mockUseReports = () => makeUseReports({ reportData: { ...REPORT_FIXTURE, totalLightningFeeSat: 0 } });
+      render(<Reports />);
+      switchToProductsTab();
+      expectSummaryCardStatCount(4);
+      expect(capturedStats.some((stat) => stat.label === "summary.liquidityLightningFee")).toBe(false);
     });
   });
 

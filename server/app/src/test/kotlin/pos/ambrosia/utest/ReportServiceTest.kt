@@ -631,6 +631,26 @@ class ReportServiceTest {
     }
 
     @Test
+    fun `totalLightningFeeSat deduplicates by paymentId to avoid double counting`() {
+        val sale = seedSale(paymentMethodName = "BTC", satoshiAmount = 100_000L, lightningFeeSat = 50L)
+        addOrderProduct(sale.orderId, productName = "Widget A", quantity = 1, priceAtOrder = 500)
+        addOrderProduct(sale.orderId, productName = "Widget B", quantity = 1, priceAtOrder = 500)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(2, report.sales.size)
+        assertEquals(50L, report.totalLightningFeeSat, "Should count the fee once, not twice")
+    }
+
+    @Test
     fun `refunded orders still appear as sales and are flagged as refunded`() {
         val sale = seedSale(orderStatus = "refunded", createdAt = "2024-06-15T12:00:00")
         addOrderProduct(sale.orderId, productName = "Widget", quantity = 2, priceAtOrder = 1000)
