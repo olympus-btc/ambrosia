@@ -30,9 +30,10 @@ jest.mock("@heroui/react", () => ({
   ModalHeader: ({ children }) => <div>{children}</div>,
   ModalBody: ({ children }) => <div>{children}</div>,
   ModalFooter: ({ children }) => <div>{children}</div>,
-  Button: ({ onPress, children, ...props }) => (
-    <button type="button" onClick={onPress} {...props}>{children}</button>
+  Button: ({ onPress, isDisabled, children, ...props }) => (
+    <button type="button" onClick={onPress} disabled={isDisabled} {...props}>{children}</button>
   ),
+  Spinner: () => <div data-testid="spinner" />,
 }));
 
 describe("RestartRequiredModal", () => {
@@ -98,8 +99,8 @@ describe("RestartRequiredModal", () => {
       expect(screen.getByText("4")).toBeInTheDocument();
     });
 
-    it("calls onRestart automatically once the countdown reaches zero", () => {
-      const onRestart = jest.fn();
+    it("calls onRestart automatically once the countdown reaches zero", async () => {
+      const onRestart = jest.fn().mockResolvedValue();
       render(<RestartRequiredModal isOpen onRestart={onRestart} />);
       for (let tick = 0; tick < 5; tick += 1) {
         act(() => {
@@ -107,13 +108,57 @@ describe("RestartRequiredModal", () => {
         });
       }
       expect(onRestart).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await Promise.resolve();
+      });
     });
 
-    it("calls onRestart when the restart-now button is pressed before the countdown finishes", () => {
-      const onRestart = jest.fn();
+    it("calls onRestart when the restart-now button is pressed before the countdown finishes", async () => {
+      const onRestart = jest.fn().mockResolvedValue();
       render(<RestartRequiredModal isOpen onRestart={onRestart} />);
       fireEvent.click(screen.getByText("restartNowButton"));
       expect(onRestart).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await Promise.resolve();
+      });
+    });
+
+    it("shows a disabled restarting indicator while onRestart is in flight", async () => {
+      let resolveRestart;
+      const onRestart = jest.fn(() => new Promise((resolve) => { resolveRestart = resolve; }));
+      render(<RestartRequiredModal isOpen onRestart={onRestart} />);
+
+      for (let tick = 0; tick < 5; tick += 1) {
+        act(() => {
+          jest.advanceTimersByTime(1000);
+        });
+      }
+
+      expect(screen.getByText("restartingButton")).toBeDisabled();
+      expect(screen.getByTestId("spinner")).toBeInTheDocument();
+      expect(screen.queryByText("5")).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveRestart();
+        await Promise.resolve();
+      });
+    });
+
+    it("shows an enabled reload button once onRestart resolves", async () => {
+      const onRestart = jest.fn().mockResolvedValue();
+      render(<RestartRequiredModal isOpen onRestart={onRestart} />);
+
+      for (let tick = 0; tick < 5; tick += 1) {
+        await act(async () => {
+          jest.advanceTimersByTime(1000);
+        });
+      }
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText("readyDescription")).toBeInTheDocument();
+      expect(screen.getByText("reloadButton")).not.toBeDisabled();
     });
   });
 });

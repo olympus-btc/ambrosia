@@ -171,6 +171,10 @@ const componentsEn = {
     acknowledgeButton: "Got it",
     countdownDescription: "Ambrosia will restart its services in the background in:",
     restartNowButton: "Restart now",
+    restartingDescription: "Restarting Ambrosia's services, this may take a minute...",
+    restartingButton: "Restarting...",
+    readyDescription: "Services have restarted. Reload the page to see your updated data.",
+    reloadButton: "Reload",
   },
   phoenixdRemote: {
     remoteToggleLabel: "Remote phoenixd node",

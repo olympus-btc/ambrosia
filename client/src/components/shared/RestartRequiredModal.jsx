@@ -2,33 +2,61 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { isElectron } from "@lib/isElectron";
 
 const RESTART_COUNTDOWN_SECONDS = 5;
 
+const RESTART_PHASE_CONTENT = {
+  counting: { descriptionKey: "countdownDescription", buttonLabelKey: "restartNowButton" },
+  restarting: { descriptionKey: "restartingDescription", buttonLabelKey: "restartingButton" },
+  ready: { descriptionKey: "readyDescription", buttonLabelKey: "reloadButton" },
+};
+
+function getRestartPhase(hasRestarted, secondsRemaining) {
+  if (hasRestarted) return "ready";
+  if (secondsRemaining > 0) return "counting";
+  return "restarting";
+}
+
 export function RestartRequiredModal({ isOpen, onManualClose, onRestart, includesPhoenixdData = false }) {
   const restartModalTranslations = useTranslations("restartRequiredModal");
-  const acknowledge = isElectron ? onRestart : onManualClose;
-  const countdownSeconds = isElectron ? RESTART_COUNTDOWN_SECONDS : undefined;
-  const isCountingDown = countdownSeconds != null;
-  const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds);
-  const descriptionKey = isCountingDown ? "countdownDescription" : "description";
-  const showPhoenixdSteps = !isCountingDown && includesPhoenixdData;
+  const [secondsRemaining, setSecondsRemaining] = useState(RESTART_COUNTDOWN_SECONDS);
+  const [hasRestarted, setHasRestarted] = useState(false);
+  const restartPhase = isElectron ? getRestartPhase(hasRestarted, secondsRemaining) : null;
+  const showPhoenixdSteps = !isElectron && includesPhoenixdData;
   const phoenixdSteps = showPhoenixdSteps ? restartModalTranslations.raw("phoenixdSteps") : [];
   const phoenixdHighlights = showPhoenixdSteps ? restartModalTranslations.raw("phoenixdHighlights") : [];
 
   useEffect(() => {
-    if (!isCountingDown || !isOpen) return undefined;
-    if (secondsRemaining <= 0) {
-      acknowledge();
-      return undefined;
-    }
+    if (!isElectron || !isOpen || hasRestarted || secondsRemaining > 0) return undefined;
+    onRestart().then(() => setHasRestarted(true));
+    return undefined;
+  }, [isOpen, hasRestarted, secondsRemaining, onRestart]);
+
+  useEffect(() => {
+    if (!isElectron || !isOpen || hasRestarted || secondsRemaining <= 0) return undefined;
     const countdownTimer = setTimeout(() => setSecondsRemaining((current) => current - 1), 1000);
     return () => clearTimeout(countdownTimer);
-  }, [isCountingDown, isOpen, secondsRemaining, acknowledge]);
+  }, [isOpen, hasRestarted, secondsRemaining]);
+
+  function handleButtonPress() {
+    if (!isElectron) {
+      onManualClose();
+      return;
+    }
+    if (hasRestarted) {
+      window.location.reload();
+      return;
+    }
+    setSecondsRemaining(0);
+  }
+
+  const { descriptionKey, buttonLabelKey } = isElectron
+    ? RESTART_PHASE_CONTENT[restartPhase]
+    : { descriptionKey: "description", buttonLabelKey: "acknowledgeButton" };
 
   return (
     <Modal
@@ -56,13 +84,23 @@ export function RestartRequiredModal({ isOpen, onManualClose, onRestart, include
           ) : (
             <p>{restartModalTranslations(descriptionKey)}</p>
           )}
-          {isCountingDown && (
+          {isElectron && restartPhase === "counting" && (
             <p className="text-3xl font-bold text-center text-green-900">{secondsRemaining}</p>
+          )}
+          {isElectron && restartPhase === "restarting" && (
+            <div className="flex justify-center">
+              <Spinner size="lg" color="success" />
+            </div>
           )}
         </ModalBody>
         <ModalFooter>
-          <Button color="primary" className="bg-green-800" onPress={acknowledge}>
-            {restartModalTranslations(isCountingDown ? "restartNowButton" : "acknowledgeButton")}
+          <Button
+            color="primary"
+            className="bg-green-800"
+            isDisabled={isElectron && restartPhase === "restarting"}
+            onPress={handleButtonPress}
+          >
+            {restartModalTranslations(buttonLabelKey)}
           </Button>
         </ModalFooter>
       </ModalContent>
