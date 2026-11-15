@@ -69,6 +69,58 @@ function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, 
   }
 }
 
+function syncRestoredServerSecret() {
+  const ambrosiaConfigPath = path.join(getDataDirectory(), 'ambrosia.conf');
+  const ambrosiaConfig = readConfig(ambrosiaConfigPath);
+
+  if (!ambrosiaConfig.secret || ambrosiaConfig.secret === serverSecretStore.read()) {
+    return false;
+  }
+
+  logger.log('[ConfigurationBootstrap] Syncing a restored server secret into encrypted storage...');
+  serverSecretStore.save(ambrosiaConfig.secret);
+  delete ambrosiaConfig.secret;
+  delete ambrosiaConfig['secret-hash'];
+  writeConfig(ambrosiaConfigPath, ambrosiaConfig);
+
+  const keyStorePath = path.join(getDataDirectory(), 'keystore.jks');
+  if (fs.existsSync(keyStorePath)) {
+    logger.log('[ConfigurationBootstrap] Deleting the keystore so it regenerates with the synced secret...');
+    fs.rmSync(keyStorePath, { force: true });
+  }
+
+  return true;
+}
+
+function syncRestoredPhoenixdCredentials() {
+  const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
+  const phoenixConfig = readConfig(phoenixConfigPath);
+
+  const httpPasswordDiffers = phoenixConfig['http-password']
+    && phoenixConfig['http-password'] !== phoenixdCredentialsStore.readHttpPassword();
+  const httpPasswordLimitedAccessDiffers = phoenixConfig['http-password-limited-access']
+    && phoenixConfig['http-password-limited-access'] !== phoenixdCredentialsStore.readHttpPasswordLimitedAccess();
+
+  if (!httpPasswordDiffers && !httpPasswordLimitedAccessDiffers) {
+    return false;
+  }
+
+  logger.log('[ConfigurationBootstrap] Syncing restored phoenixd credentials into encrypted storage...');
+
+  if (httpPasswordDiffers) {
+    phoenixdCredentialsStore.saveHttpPassword(phoenixConfig['http-password']);
+  }
+  if (httpPasswordLimitedAccessDiffers) {
+    phoenixdCredentialsStore.saveHttpPasswordLimitedAccess(phoenixConfig['http-password-limited-access']);
+  }
+
+  delete phoenixConfig['http-password'];
+  delete phoenixConfig['http-password-limited-access'];
+  writeConfig(phoenixConfigPath, phoenixConfig);
+
+  return true;
+}
+
 async function ensureConfigurations(ports) {
   const dataDirectory = getDataDirectory();
   const phoenixDirectory = getPhoenixDataDirectory();
@@ -107,6 +159,7 @@ async function ensureConfigurations(ports) {
   }
 
   migrateOrGenerateSecret(serverSecretStore.read, serverSecretStore.save, ambrosiaConfig.secret, 'server secret');
+  syncRestoredServerSecret();
 
   if ('secret' in ambrosiaConfig || 'secret-hash' in ambrosiaConfig) {
     delete ambrosiaConfig.secret;
@@ -145,6 +198,8 @@ async function ensureConfigurations(ports) {
     'phoenixd http-password-limited-access',
   );
 
+  syncRestoredPhoenixdCredentials();
+
   if ('http-password' in phoenixConfig || 'http-password-limited-access' in phoenixConfig) {
     delete phoenixConfig['http-password'];
     delete phoenixConfig['http-password-limited-access'];
@@ -168,4 +223,6 @@ export const configurationBootstrap = {
   readConfig,
   writeConfig,
   generateRandomHex,
+  syncRestoredServerSecret,
+  syncRestoredPhoenixdCredentials,
 };
