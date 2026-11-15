@@ -3,6 +3,7 @@ package pos.ambrosia.services
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.config.AppConfig
+import pos.ambrosia.config.EnvVars
 import pos.ambrosia.config.readConfValues
 import pos.ambrosia.config.replaceConfFileProperty
 import pos.ambrosia.config.writeConfValues
@@ -49,6 +50,7 @@ class BackupService(
     private val keyStoreFilePath: Path = Paths.get(datadir.toString(), "keystore.jks"),
     private val phoenixDataDirectory: Path = Paths.get(phoenixDatadir.toString()),
     private val phoenixConfigFilePath: String = Paths.get(phoenixDatadir.toString(), "phoenix.conf").toString(),
+    private val environmentSecret: String? = System.getenv(EnvVars.AMBROSIA_SECRET),
 ) {
     companion object {
         // PBKDF2 turns the plain-text password into an actual AES key.
@@ -594,6 +596,7 @@ class BackupService(
     private fun readAppVersion(): String = BackupService::class.java.`package`?.implementationVersion ?: "dev"
 
     private fun readSecret(): String =
-        readConfValues(KotlinIoPath(configFilePath))["secret"]
-            ?: throw IllegalStateException("secret not found in ambrosia.conf")
+        environmentSecret
+            ?: readConfValues(KotlinIoPath(configFilePath))["secret"]
+            ?: throw IllegalStateException("secret not found in ${EnvVars.AMBROSIA_SECRET} env var or ambrosia.conf")
 }

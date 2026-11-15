@@ -116,7 +116,8 @@ class BackupServiceTest {
 
     @Test
     fun `prepareExportSnapshot creates a readable database snapshot file`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
 
         val databaseSnapshot = backupService.prepareExportSnapshot()
 
@@ -127,7 +128,8 @@ class BackupServiceTest {
 
     @Test
     fun `calculateExportTotalBytes sums the database snapshot size and every file under uploads`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         Files.write(uploadsRoot.resolve("product-1.jpg"), ByteArray(100))
         val nestedDirectory = Files.createDirectory(uploadsRoot.resolve("nested"))
         Files.write(nestedDirectory.resolve("product-2.jpg"), ByteArray(50))
@@ -141,7 +143,8 @@ class BackupServiceTest {
 
     @Test
     fun `calculateExportTotalBytes counts only the database snapshot when uploads is empty`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
 
         val databaseSnapshot = backupService.prepareExportSnapshot()
         val totalExportBytes = backupService.calculateExportTotalBytes(databaseSnapshot)
@@ -152,7 +155,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup produces a zip decryptable with the same password, containing manifest and db snapshot`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -171,7 +175,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup manifest contains the business name`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -189,7 +194,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup manifest contains the secret from ambrosia conf`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -206,9 +212,34 @@ class BackupServiceTest {
     }
 
     @Test
+    fun `exportBackup manifest uses the AMBROSIA_SECRET environment variable over ambrosia conf when both are present`() {
+        val backupService =
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                environmentSecret = "environment-secret-value",
+            )
+        val backupOutputStream = ByteArrayOutputStream()
+
+        backupService.exportBackup(
+            "My Test Store",
+            "correct-password".toCharArray(),
+            backupService.prepareExportSnapshot(),
+            backupOutputStream,
+        )
+
+        val decryptedZip = decryptBackup(backupOutputStream.toByteArray(), "correct-password".toCharArray())
+        val manifestJson = readZipEntry(decryptedZip, "manifest.json")
+
+        assertTrue(manifestJson.contains("\"secret\":\"environment-secret-value\""))
+    }
+
+    @Test
     fun `exportBackup throws when ambrosia conf has no secret`() {
         configFile.writeText("nwc-uri=nostr+walletconnect://example\n")
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         assertFailsWith<IllegalStateException> {
@@ -225,7 +256,8 @@ class BackupServiceTest {
     fun `exportBackup includes files from the uploads directory`() {
         val dateDir = Files.createDirectory(uploadsRoot.resolve("2026-08-24"))
         Files.write(dateDir.resolve("logo.png"), "fake-image-bytes".toByteArray())
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -244,7 +276,12 @@ class BackupServiceTest {
     @Test
     fun `exportBackup produces no uploads entries when the uploads directory does not exist`() {
         val backupService =
-            BackupService(uploadsRoot.resolve("does-not-exist"), databaseFile.absolutePath, configFile.absolutePath)
+            BackupService(
+                uploadsRoot.resolve("does-not-exist"),
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                environmentSecret = null,
+            )
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -262,7 +299,8 @@ class BackupServiceTest {
 
     @Test
     fun `decrypting the backup with the wrong password fails`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -279,7 +317,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup clears the password array after use`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
         val password = "correct-password".toCharArray()
 
@@ -290,7 +329,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup produces a different salt and initialization vector on each call`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val firstOutput = ByteArrayOutputStream()
         val secondOutput = ByteArrayOutputStream()
 
@@ -309,7 +349,8 @@ class BackupServiceTest {
     @Test
     fun `exportBackup reports WRITING progress that ends at the total export bytes`() {
         Files.write(uploadsRoot.resolve("product-1.jpg"), ByteArray(100))
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val databaseSnapshot = backupService.prepareExportSnapshot()
         val totalExportBytes = backupService.calculateExportTotalBytes(databaseSnapshot)
         val backupOutputStream = ByteArrayOutputStream()
@@ -331,7 +372,8 @@ class BackupServiceTest {
     @Test
     fun `exportBackup reports multiple WRITING chunks for a file larger than the copy buffer`() {
         Files.write(uploadsRoot.resolve("large-file.bin"), ByteArray(20000))
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val databaseSnapshot = backupService.prepareExportSnapshot()
         val totalExportBytes = backupService.calculateExportTotalBytes(databaseSnapshot)
         val backupOutputStream = ByteArrayOutputStream()
@@ -386,6 +428,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -403,7 +446,8 @@ class BackupServiceTest {
 
     @Test
     fun `exportBackup includes the seed entry exactly when the real phoenix seed file is available`() {
-        val backupService = BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath)
+        val backupService =
+            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, environmentSecret = null)
         val backupOutputStream = ByteArrayOutputStream()
 
         backupService.exportBackup(
@@ -433,6 +477,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixConfigFilePath = phoenixConfigFile.toString(),
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -461,6 +506,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixConfigFilePath = phoenixConfigFile.toString(),
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -489,6 +535,7 @@ class BackupServiceTest {
                         .createTempDirectory("backupServiceTestPhoenixConfigParent")
                         .resolve("does-not-exist.conf")
                         .toString(),
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -513,6 +560,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -543,6 +591,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -580,6 +629,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -607,6 +657,7 @@ class BackupServiceTest {
                 databasePath = databaseFile.absolutePath,
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
+                environmentSecret = null,
             )
         val backupOutputStream = ByteArrayOutputStream()
 
@@ -637,6 +688,7 @@ class BackupServiceTest {
                 configFilePath = configFile.absolutePath,
                 phoenixDataDirectory = phoenixDataDirectory,
                 phoenixConfigFilePath = phoenixConfigFile.toString(),
+                environmentSecret = null,
             )
         val databaseSnapshot = backupService.prepareExportSnapshot()
         val totalExportBytes = backupService.calculateExportTotalBytes(databaseSnapshot)
@@ -708,7 +760,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup returns includesPhoenixdData true after an export with isLocalPhoenixd`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup(
             "My Test Store",
@@ -730,7 +788,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup returns includesPhoenixdData false after an export without isLocalPhoenixd`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup(
             "My Test Store",
@@ -751,7 +815,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup returns the manifest from a real exportBackup output`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -770,7 +840,13 @@ class BackupServiceTest {
         val dateDir = Files.createDirectory(uploadsRoot.resolve("2026-08-24"))
         Files.write(dateDir.resolve("logo.png"), ByteArray(200))
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val databaseSnapshot = backupService.prepareExportSnapshot()
         val totalExportBytes = backupService.calculateExportTotalBytes(databaseSnapshot)
         val exportedBackup = ByteArrayOutputStream()
@@ -791,7 +867,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup reports null total bytes when the manifest has no totalUncompressedBytes`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val oldBackupWithoutTotalBytes =
             buildEncryptedBackup(
@@ -817,7 +899,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup stages the database snapshot`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -834,7 +922,13 @@ class BackupServiceTest {
         val dateDir = Files.createDirectory(uploadsRoot.resolve("2026-08-24"))
         Files.write(dateDir.resolve("logo.png"), "fake-image-bytes".toByteArray())
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -849,7 +943,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup stages the secret from the manifest`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -865,7 +965,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup stages an operation id`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -880,7 +986,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup throws when the password is wrong`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
 
@@ -895,7 +1007,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup throws when the file does not start with the Ambrosia backup magic header`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val notABackup = "this is not an ambrosia backup file".toByteArray(Charsets.UTF_8)
 
         assertFailsWith<IllegalArgumentException> {
@@ -906,7 +1024,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup throws when the encrypted stream is truncated`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
         val truncatedBackup = exportedBackup.toByteArray().copyOfRange(0, 10)
@@ -919,7 +1043,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup throws when the backup is missing manifest json`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val backupWithoutManifest =
             buildEncryptedBackup(password, mapOf("ambrosia.db" to "fake-database-bytes".toByteArray()))
@@ -933,7 +1063,13 @@ class BackupServiceTest {
     fun `importBackup throws when the backup schema is newer than this installation supports`() {
         seedFlywaySchemaHistory(installedRank = 5)
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val newerSchemaManifest = sampleImportedManifest(schemaInstalledRank = 10)
         val backupWithNewerSchema =
@@ -948,7 +1084,13 @@ class BackupServiceTest {
     fun `importBackup succeeds when the backup schema is not newer than this installation`() {
         seedFlywaySchemaHistory(installedRank = 5)
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val sameSchemaManifest = sampleImportedManifest(schemaInstalledRank = 5)
         val backupWithSameSchema =
@@ -963,7 +1105,13 @@ class BackupServiceTest {
     fun `importBackup does not leave a partial staging directory when rejected for an incompatible schema`() {
         seedFlywaySchemaHistory(installedRank = 5)
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val newerSchemaManifest = sampleImportedManifest(schemaInstalledRank = 10)
         val backupWithNewerSchema =
@@ -979,7 +1127,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup rejects a zip entry that tries to escape the staging directory`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val password = "correct-password".toCharArray()
         val maliciousEntryName = "../../../etc/escaped-file"
         val backupWithZipSlipEntry =
@@ -999,7 +1153,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup replaces an abandoned staging directory from a previous import`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val firstExport = ByteArrayOutputStream()
         backupService.exportBackup("First Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), firstExport)
         backupService.importBackup(
@@ -1027,7 +1187,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup throws when a fresh pending import already exists`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val firstExport = ByteArrayOutputStream()
         backupService.exportBackup("First Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), firstExport)
         backupService.importBackup(
@@ -1046,7 +1212,13 @@ class BackupServiceTest {
     @Test
     fun `importBackup clears the password array after use`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         backupService.exportBackup("My Test Store", "correct-password".toCharArray(), backupService.prepareExportSnapshot(), exportedBackup)
         val password = "correct-password".toCharArray()
@@ -1100,7 +1272,13 @@ class BackupServiceTest {
         confirm: Boolean = true,
     ): BackupService {
         val exportingService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
         val exportedBackup = ByteArrayOutputStream()
         exportingService.exportBackup(
             "My Test Store",
@@ -1116,6 +1294,7 @@ class BackupServiceTest {
                 destinationConfigFile.absolutePath,
                 importStagingRoot,
                 destinationKeyStoreFile,
+                environmentSecret = null,
             )
         val destinationSecret = destinationConfigFile.readText().trim().removePrefix("secret=")
         importAndConfirmPendingImport(destinationService, exportedBackup.toByteArray(), destinationSecret, confirm)
@@ -1144,6 +1323,7 @@ class BackupServiceTest {
                 destinationKeyStoreFile,
                 destinationPhoenixDataDirectory,
                 destinationPhoenixConfigFile.absolutePath,
+                environmentSecret = null,
             )
 
         val backupWithPhoenixEntries =
@@ -1273,7 +1453,13 @@ class BackupServiceTest {
     @Test
     fun `applyPendingImport returns false when nothing is staged`() {
         val backupService =
-            BackupService(uploadsRoot, databaseFile.absolutePath, configFile.absolutePath, importStagingRoot)
+            BackupService(
+                uploadsRoot,
+                databaseFile.absolutePath,
+                configFile.absolutePath,
+                importStagingRoot,
+                environmentSecret = null,
+            )
 
         assertFalse(backupService.applyPendingImport())
     }
