@@ -56,7 +56,7 @@ jest.mock("../ImportBackupConfirmModal", () => ({
   ),
 }));
 
-const importDataTranslations = (key) => key;
+const importDataTranslations = (translationKey) => translationKey;
 
 function renderUnlocked(props = {}) {
   return render(

@@ -22,6 +22,13 @@ const importDataEs = {
       cancelButton: "Cancelar",
       confirmButton: "Sobrescribir e importar",
     },
+    lightningWalletWarningModal: {
+      title: "¿Sobrescribir tu billetera Lightning?",
+      description: "Este respaldo también incluye la billetera Lightning de ese dispositivo (frase semilla, configuración e historial de pagos). Restaurarla va a reemplazar la billetera Lightning de este dispositivo.",
+      warning: "Si este dispositivo ya tenía su propia billetera con fondos, vas a perder acceso a ellos desde aquí — son recuperables, pero solo con la frase semilla ORIGINAL de este dispositivo, no con la del respaldo.",
+      cancelButton: "Cancelar",
+      confirmButton: "Sobrescribir billetera",
+    },
   },
 };
 

@@ -979,6 +979,13 @@ data class InitialSetupStatus(
 )
 
 @Serializable
+data class BackupUploadResponse(
+    val message: String,
+    val businessName: String,
+    val includesPhoenixdData: Boolean,
+)
+
+@Serializable
 data class SetBaseCurrencyRequest(
     val acronym: String,
 )
@@ -1209,6 +1216,7 @@ data class BackupManifest(
     val businessName: String,
     val secret: String,
     val totalUncompressedBytes: Long? = null,
+    val includesPhoenixdData: Boolean = false,
 )
 
 @Serializable

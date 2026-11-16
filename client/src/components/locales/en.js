@@ -163,9 +163,18 @@ const componentsEn = {
   restartRequiredModal: {
     title: "Restart required",
     description: "Please restart the Ambrosia server to finish loading your data.",
+    phoenixdSteps: [
+      ["Restart the ", " and wait for it to fully start."],
+      ["Restart ", ". This is required for your Lightning wallet to finish loading the restored data."],
+    ],
+    phoenixdHighlights: ["Ambrosia server", "phoenixd"],
     acknowledgeButton: "Got it",
-    countdownDescription: "The application will restart automatically in:",
+    countdownDescription: "Ambrosia will restart its services in the background in:",
     restartNowButton: "Restart now",
+    restartingDescription: "Restarting Ambrosia's services, this may take a minute...",
+    restartingButton: "Restarting...",
+    readyDescription: "Services have restarted. Reload the page to see your updated data.",
+    reloadButton: "Reload",
   },
   phoenixdRemote: {
     remoteToggleLabel: "Remote phoenixd node",

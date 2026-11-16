@@ -163,9 +163,18 @@ const componentsEs = {
   restartRequiredModal: {
     title: "Reinicio requerido",
     description: "Por favor reinicia el servidor de Ambrosia para terminar de cargar tus datos.",
+    phoenixdSteps: [
+      ["Reinicia el ", " y espera a que arranque por completo."],
+      ["Reinicia ", ". Es necesario para que tu billetera Lightning termine de cargar los datos restaurados."],
+    ],
+    phoenixdHighlights: ["servidor de Ambrosia", "phoenixd"],
     acknowledgeButton: "Entendido",
-    countdownDescription: "La aplicación se reiniciará automáticamente en:",
+    countdownDescription: "Ambrosia va a reiniciar sus servicios en segundo plano en:",
     restartNowButton: "Reiniciar ahora",
+    restartingDescription: "Reiniciando los servicios de Ambrosia, esto puede tardar un minuto...",
+    restartingButton: "Reiniciando...",
+    readyDescription: "Los servicios se reiniciaron. Recarga la página para ver tus datos actualizados.",
+    reloadButton: "Recargar",
   },
   phoenixdRemote: {
     remoteToggleLabel: "Nodo phoenixd remoto",

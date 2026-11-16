@@ -14,9 +14,9 @@ jest.mock("@services/initialSetupService", () => ({
 jest.mock("@/utils/restartAppAfterImport");
 
 jest.mock("@components/shared/RestartRequiredModal", () => ({
-  RestartRequiredModal: ({ isOpen, onManualClose, onRestart }) => (
+  RestartRequiredModal: ({ isOpen, onManualClose, onRestart, includesPhoenixdData }) => (
     isOpen ? (
-      <div data-testid="restart-modal">
+      <div data-testid="restart-modal" data-includes-phoenixd-data={includesPhoenixdData}>
         <button type="button" data-testid="restart-modal-manual-close" onClick={onManualClose}>manual-close</button>
         <button type="button" data-testid="restart-modal-restart" onClick={onRestart}>restart</button>
       </div>
@@ -191,8 +191,8 @@ describe("RestoreFromBackupStep", () => {
     expect(callOrder).toEqual(["confirm", "modal"]);
   });
 
-  it("passes restartAppAfterImport as onRestart to the restart modal", async () => {
-    restoreFromBackup.mockResolvedValue({ ok: true });
+  it("calls restartAppAfterImport with includesPhoenixdData false when the restore had no phoenixd data", async () => {
+    restoreFromBackup.mockResolvedValue({ ok: true, includesPhoenixdData: false });
 
     await act(async () => {
       renderStep();
@@ -206,7 +206,42 @@ describe("RestoreFromBackupStep", () => {
     });
     fireEvent.click(screen.getByTestId("restart-modal-restart"));
 
-    expect(restartAppAfterImport).toHaveBeenCalledTimes(1);
+    expect(restartAppAfterImport).toHaveBeenCalledWith(false);
+  });
+
+  it("calls restartAppAfterImport with includesPhoenixdData true when the restore included phoenixd data", async () => {
+    restoreFromBackup.mockResolvedValue({ ok: true, includesPhoenixdData: true });
+
+    await act(async () => {
+      renderStep();
+    });
+
+    fireEvent.change(screen.getByLabelText("hide-show-backup-password"), { target: { value: "secret" } });
+    selectBackupFile();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("restore.submitButton"));
+    });
+    fireEvent.click(screen.getByTestId("restart-modal-restart"));
+
+    expect(restartAppAfterImport).toHaveBeenCalledWith(true);
+  });
+
+  it("passes includesPhoenixdData from the restore response to the restart modal", async () => {
+    restoreFromBackup.mockResolvedValue({ ok: true, includesPhoenixdData: true });
+
+    await act(async () => {
+      renderStep();
+    });
+
+    fireEvent.change(screen.getByLabelText("hide-show-backup-password"), { target: { value: "secret" } });
+    selectBackupFile();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("restore.submitButton"));
+    });
+
+    expect(screen.getByTestId("restart-modal")).toHaveAttribute("data-includes-phoenixd-data", "true");
   });
 
   it("closes the restart modal without a relaunch when manually closed", async () => {

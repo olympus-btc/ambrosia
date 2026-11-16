@@ -112,11 +112,18 @@ describe("initialSetupService", () => {
       expect(uploadRequest.sentBody.get("backup")).toBe(backupFile);
     });
 
-    it("resolves with ok:true for a successful response", async () => {
+    it("resolves with ok:true and includesPhoenixdData:false for a successful response without phoenixd data", async () => {
       const restoreFromBackupPromise = restoreFromBackup("backup-password", new File(["zip"], "backup.zip"));
       await resolveUpload({ status: 200 });
 
-      await expect(restoreFromBackupPromise).resolves.toEqual({ ok: true });
+      await expect(restoreFromBackupPromise).resolves.toEqual({ ok: true, includesPhoenixdData: false });
+    });
+
+    it("resolves with includesPhoenixdData:true when the restored backup included phoenixd data", async () => {
+      const restoreFromBackupPromise = restoreFromBackup("backup-password", new File(["zip"], "backup.zip"));
+      await resolveUpload({ status: 200, body: { includesPhoenixdData: true } });
+
+      await expect(restoreFromBackupPromise).resolves.toEqual({ ok: true, includesPhoenixdData: true });
     });
 
     it("resolves with ok:false and the status for a failed response", async () => {

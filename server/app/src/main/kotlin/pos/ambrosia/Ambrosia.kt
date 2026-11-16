@@ -134,7 +134,7 @@ class Ambrosia : CliktCommand() {
                 value
             }
         val secret by
-            option("--secret", help = "Secret key for the server", envvar = "AMBROSIA_SECRET").defaultLazy {
+            option("--secret", help = "Secret key for the server", envvar = EnvVars.AMBROSIA_SECRET).defaultLazy {
                 val seed = SeedGenerator.generateSeed() // Generate a new seed
                 SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
                     it.writeString("\nsecret=$seed")

@@ -22,6 +22,13 @@ const importDataEn = {
       cancelButton: "Cancel",
       confirmButton: "Overwrite and import",
     },
+    lightningWalletWarningModal: {
+      title: "Overwrite your Lightning wallet?",
+      description: "This backup also includes that device's Lightning wallet (seed phrase, configuration, and payment history). Restoring it will replace this device's Lightning wallet.",
+      warning: "If this device already had its own wallet with funds, you'll lose access to them from here — they're still recoverable, but only with this device's ORIGINAL seed phrase, not the one from the backup.",
+      cancelButton: "Cancel",
+      confirmButton: "Overwrite wallet",
+    },
   },
 };
 

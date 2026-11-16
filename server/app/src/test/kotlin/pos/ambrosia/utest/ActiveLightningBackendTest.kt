@@ -82,7 +82,11 @@ class ActiveLightningBackendTest {
         val previousBackend = FakeLightningBackend("phoenixd-old")
         ActiveLightningBackend.set(previousBackend)
 
-        ActiveLightningBackend.reinitializePhoenixBackend("http://127.0.0.1:1", "irrelevant-password")
+        ActiveLightningBackend.reinitializePhoenixBackend(
+            "http://127.0.0.1:1",
+            "irrelevant-password",
+            isRemote = false,
+        )
 
         assertTrue(previousBackend.closed)
         assertFalse(ActiveLightningBackend.isNwcActive())

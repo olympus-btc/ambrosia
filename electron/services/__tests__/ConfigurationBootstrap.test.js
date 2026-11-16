@@ -24,6 +24,7 @@ beforeAll(() => {
 const FAKE_HOME_DIRECTORY = '/fake/home';
 const AMBROSIA_CONFIG_PATH = path.join(FAKE_HOME_DIRECTORY, '.Ambrosia-POS', 'ambrosia.conf');
 const PHOENIX_CONFIG_PATH = path.join(FAKE_HOME_DIRECTORY, '.phoenix', 'phoenix.conf');
+const KEYSTORE_PATH = path.join(FAKE_HOME_DIRECTORY, '.Ambrosia-POS', 'keystore.jks');
 
 let fakeFiles;
 
@@ -35,6 +36,9 @@ function installFakeFileSystem() {
     fakeFiles.set(filePath, fileContent);
   });
   vi.spyOn(fs, 'readFileSync').mockImplementation((filePath) => fakeFiles.get(filePath));
+  vi.spyOn(fs, 'rmSync').mockImplementation((filePath) => {
+    fakeFiles.delete(filePath);
+  });
 }
 
 beforeEach(() => {
@@ -180,18 +184,28 @@ describe('ensureConfigurations', () => {
     expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).not.toContain('secret-hash=');
   });
 
-  it('strips a stale plaintext secret from ambrosia.conf even when the encrypted secret already exists', async () => {
+  it('syncs a restored secret from ambrosia.conf into encrypted storage even when a different encrypted secret already exists', async () => {
     serverSecretStore.read.mockReturnValue('existing-server-secret');
-    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=stale-plaintext-secret\nsecret-hash=stale-hash\nhttp-bind-port=1111\n');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=restored-secret\nsecret-hash=stale-hash\nhttp-bind-port=1111\n');
     fakeFiles.set(PHOENIX_CONFIG_PATH, 'auto-liquidity=off\n');
 
     const { ambrosia } = await configurationBootstrap.ensureConfigurations(allocatedPorts);
 
-    expect(serverSecretStore.save).not.toHaveBeenCalled();
+    expect(serverSecretStore.save).toHaveBeenCalledWith('restored-secret');
     expect(ambrosia.secret).toBeUndefined();
     expect(ambrosia['secret-hash']).toBeUndefined();
     expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).not.toContain('secret=');
     expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).not.toContain('secret-hash=');
+  });
+
+  it('does not resave the server secret when ambrosia.conf already matches encrypted storage', async () => {
+    serverSecretStore.read.mockReturnValue('existing-server-secret');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=existing-server-secret\nhttp-bind-port=1111\n');
+    fakeFiles.set(PHOENIX_CONFIG_PATH, 'auto-liquidity=off\n');
+
+    await configurationBootstrap.ensureConfigurations(allocatedPorts);
+
+    expect(serverSecretStore.save).not.toHaveBeenCalled();
   });
 
   it('generates a new phoenix config without http-password fields', async () => {
@@ -232,13 +246,13 @@ describe('ensureConfigurations', () => {
     expect(fakeFiles.get(PHOENIX_CONFIG_PATH)).not.toContain('http-password=');
   });
 
-  it('strips a stale plaintext http-password from phoenix.conf even when the encrypted password already exists', async () => {
+  it('syncs a restored http-password from phoenix.conf into encrypted storage even when a different encrypted password already exists', async () => {
     phoenixdCredentialsStore.readHttpPassword.mockReturnValue('existing-encrypted-password');
-    fakeFiles.set(PHOENIX_CONFIG_PATH, 'http-password=stale-plaintext-password\nauto-liquidity=off\n');
+    fakeFiles.set(PHOENIX_CONFIG_PATH, 'http-password=restored-password\nauto-liquidity=off\n');
 
     const { phoenix } = await configurationBootstrap.ensureConfigurations(allocatedPorts);
 
-    expect(phoenixdCredentialsStore.saveHttpPassword).not.toHaveBeenCalled();
+    expect(phoenixdCredentialsStore.saveHttpPassword).toHaveBeenCalledWith('restored-password');
     expect(phoenix['http-password']).toBeUndefined();
     expect(fakeFiles.get(PHOENIX_CONFIG_PATH)).not.toContain('http-password=');
   });
@@ -289,5 +303,116 @@ describe('ensureConfigurations', () => {
 
     expect(fakeFiles.has(AMBROSIA_CONFIG_PATH)).toBe(true);
     expect(fakeFiles.has(PHOENIX_CONFIG_PATH)).toBe(true);
+  });
+});
+
+describe('syncRestoredServerSecret', () => {
+  it('saves the secret from ambrosia.conf to encrypted storage, strips it from the file, and deletes the mismatched keystore', () => {
+    serverSecretStore.read.mockReturnValue('existing-server-secret');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=restored-secret\nsecret-hash=stale-hash\nhttp-bind-port=1111\n');
+    fakeFiles.set(KEYSTORE_PATH, 'keystore-encrypted-with-the-old-secret');
+
+    const wasSynced = configurationBootstrap.syncRestoredServerSecret();
+
+    expect(wasSynced).toBe(true);
+    expect(serverSecretStore.save).toHaveBeenCalledWith('restored-secret');
+    expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).not.toContain('secret=');
+    expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).not.toContain('secret-hash=');
+    expect(fakeFiles.get(AMBROSIA_CONFIG_PATH)).toContain('http-bind-port=1111');
+    expect(fakeFiles.has(KEYSTORE_PATH)).toBe(false);
+  });
+
+  it('syncs the secret without failing when there is no keystore to delete yet', () => {
+    serverSecretStore.read.mockReturnValue('existing-server-secret');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=restored-secret\nhttp-bind-port=1111\n');
+
+    const wasSynced = configurationBootstrap.syncRestoredServerSecret();
+
+    expect(wasSynced).toBe(true);
+    expect(fs.rmSync).not.toHaveBeenCalled();
+  });
+
+  it('does nothing and returns false when ambrosia.conf has no secret', () => {
+    serverSecretStore.read.mockReturnValue('existing-server-secret');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'http-bind-port=1111\n');
+    fakeFiles.set(KEYSTORE_PATH, 'keystore-encrypted-with-the-current-secret');
+
+    const wasSynced = configurationBootstrap.syncRestoredServerSecret();
+
+    expect(wasSynced).toBe(false);
+    expect(serverSecretStore.save).not.toHaveBeenCalled();
+    expect(fakeFiles.has(KEYSTORE_PATH)).toBe(true);
+  });
+
+  it('does nothing and returns false when the ambrosia.conf secret already matches encrypted storage', () => {
+    serverSecretStore.read.mockReturnValue('existing-server-secret');
+    fakeFiles.set(AMBROSIA_CONFIG_PATH, 'secret=existing-server-secret\nhttp-bind-port=1111\n');
+    fakeFiles.set(KEYSTORE_PATH, 'keystore-encrypted-with-the-current-secret');
+
+    const wasSynced = configurationBootstrap.syncRestoredServerSecret();
+
+    expect(wasSynced).toBe(false);
+    expect(serverSecretStore.save).not.toHaveBeenCalled();
+    expect(fakeFiles.has(KEYSTORE_PATH)).toBe(true);
+  });
+});
+
+describe('syncRestoredPhoenixdCredentials', () => {
+  it('saves both restored http-passwords from phoenix.conf to encrypted storage and strips them from the file', () => {
+    phoenixdCredentialsStore.readHttpPassword.mockReturnValue('existing-encrypted-password');
+    phoenixdCredentialsStore.readHttpPasswordLimitedAccess.mockReturnValue('existing-encrypted-password-limited-access');
+    fakeFiles.set(
+      PHOENIX_CONFIG_PATH,
+      'http-password=restored-password\nhttp-password-limited-access=restored-password-limited-access\nauto-liquidity=off\n',
+    );
+
+    const wasSynced = configurationBootstrap.syncRestoredPhoenixdCredentials();
+
+    expect(wasSynced).toBe(true);
+    expect(phoenixdCredentialsStore.saveHttpPassword).toHaveBeenCalledWith('restored-password');
+    expect(phoenixdCredentialsStore.saveHttpPasswordLimitedAccess).toHaveBeenCalledWith('restored-password-limited-access');
+    expect(fakeFiles.get(PHOENIX_CONFIG_PATH)).not.toContain('http-password=');
+    expect(fakeFiles.get(PHOENIX_CONFIG_PATH)).not.toContain('http-password-limited-access=');
+    expect(fakeFiles.get(PHOENIX_CONFIG_PATH)).toContain('auto-liquidity=off');
+  });
+
+  it('syncs only the http-password that actually differs from encrypted storage', () => {
+    phoenixdCredentialsStore.readHttpPassword.mockReturnValue('existing-encrypted-password');
+    phoenixdCredentialsStore.readHttpPasswordLimitedAccess.mockReturnValue('matching-password-limited-access');
+    fakeFiles.set(
+      PHOENIX_CONFIG_PATH,
+      'http-password=restored-password\nhttp-password-limited-access=matching-password-limited-access\n',
+    );
+
+    const wasSynced = configurationBootstrap.syncRestoredPhoenixdCredentials();
+
+    expect(wasSynced).toBe(true);
+    expect(phoenixdCredentialsStore.saveHttpPassword).toHaveBeenCalledWith('restored-password');
+    expect(phoenixdCredentialsStore.saveHttpPasswordLimitedAccess).not.toHaveBeenCalled();
+  });
+
+  it('does nothing and returns false when phoenix.conf has neither password', () => {
+    fakeFiles.set(PHOENIX_CONFIG_PATH, 'auto-liquidity=off\n');
+
+    const wasSynced = configurationBootstrap.syncRestoredPhoenixdCredentials();
+
+    expect(wasSynced).toBe(false);
+    expect(phoenixdCredentialsStore.saveHttpPassword).not.toHaveBeenCalled();
+    expect(phoenixdCredentialsStore.saveHttpPasswordLimitedAccess).not.toHaveBeenCalled();
+  });
+
+  it('does nothing and returns false when both phoenix.conf passwords already match encrypted storage', () => {
+    phoenixdCredentialsStore.readHttpPassword.mockReturnValue('existing-encrypted-password');
+    phoenixdCredentialsStore.readHttpPasswordLimitedAccess.mockReturnValue('existing-encrypted-password-limited-access');
+    fakeFiles.set(
+      PHOENIX_CONFIG_PATH,
+      'http-password=existing-encrypted-password\nhttp-password-limited-access=existing-encrypted-password-limited-access\n',
+    );
+
+    const wasSynced = configurationBootstrap.syncRestoredPhoenixdCredentials();
+
+    expect(wasSynced).toBe(false);
+    expect(phoenixdCredentialsStore.saveHttpPassword).not.toHaveBeenCalled();
+    expect(phoenixdCredentialsStore.saveHttpPasswordLimitedAccess).not.toHaveBeenCalled();
   });
 });

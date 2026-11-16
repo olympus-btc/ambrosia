@@ -191,6 +191,7 @@ internal fun requestBodyLimitFor(path: String): Long =
     when (path) {
         "/uploads" -> UPLOAD_MAX_REQUEST_BODY_BYTES
         "/backup/import" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
+        "/initial-setup/restore" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
         else -> DEFAULT_MAX_REQUEST_BODY_BYTES
     }
 
