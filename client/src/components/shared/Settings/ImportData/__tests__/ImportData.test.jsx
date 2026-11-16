@@ -40,7 +40,7 @@ jest.mock("@components/shared/BackupPasswordAndFileFields", () => ({
 }));
 
 jest.mock("next-intl", () => ({
-  useTranslations: () => (key) => key,
+  useTranslations: () => (translationKey) => translationKey,
 }));
 
 jest.mock("@components/auth/WalletGuard", () => function MockWalletGuard({ children, onAuthorized, onCancel }) {

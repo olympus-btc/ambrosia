@@ -12,7 +12,7 @@ jest.mock("@heroui/react", () => ({
   CardFooter: ({ children }) => <div>{children}</div>,
 }));
 
-const importDataTranslations = (key) => key;
+const importDataTranslations = (translationKey) => translationKey;
 
 function renderLocked(props = {}) {
   return render(<ImportDataCardLocked importDataTranslations={importDataTranslations} onReveal={jest.fn()} {...props} />);
