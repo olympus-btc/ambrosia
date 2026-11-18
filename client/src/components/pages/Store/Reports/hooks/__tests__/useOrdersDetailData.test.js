@@ -147,6 +147,37 @@ describe("useOrdersDetailData", () => {
     expect(capturedCsv).toContain("REF-123");
   });
 
+  it("exportToCsv includes the lightning fee column when lightningFeeSat is present", () => {
+    let capturedCsv;
+    global.Blob = jest.fn((parts) => {
+      capturedCsv = parts[0];
+      return {};
+    });
+    const orders = [
+      { shortId: "SH0", date: "2024-01-01", userName: "alice", paymentMethod: "BTC", total: 1000, itemCount: 1, items: [{ productName: "Widget", quantity: 1 }], lightningFeeSat: 230 },
+    ];
+    const { result: ordersDetailDataHook } = renderHook(() => useOrdersDetailData(orders, formatCurrency));
+    act(() => ordersDetailDataHook.current.exportToCsv());
+
+    expect(capturedCsv).toContain("orders.lightningFee");
+    expect(capturedCsv).toContain("230 sats");
+  });
+
+  it("exportToCsv leaves the lightning fee column blank when lightningFeeSat is absent", () => {
+    let capturedCsv;
+    global.Blob = jest.fn((parts) => {
+      capturedCsv = parts[0];
+      return {};
+    });
+    const orders = [
+      { shortId: "SH0", date: "2024-01-01", userName: "alice", paymentMethod: "Cash", total: 1000, itemCount: 1, items: [{ productName: "Widget", quantity: 1 }] },
+    ];
+    const { result: ordersDetailDataHook } = renderHook(() => useOrdersDetailData(orders, formatCurrency));
+    act(() => ordersDetailDataHook.current.exportToCsv());
+
+    expect(capturedCsv).not.toContain("sats");
+  });
+
   it("exportToCsv appends a summary section with revenue and refund totals", () => {
     let capturedCsv;
     global.Blob = jest.fn((parts) => {

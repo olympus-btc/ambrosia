@@ -13,7 +13,7 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
-const importDataTranslations = (key) => key;
+const importDataTranslations = (translationKey) => translationKey;
 
 function renderModal(props = {}) {
   return render(

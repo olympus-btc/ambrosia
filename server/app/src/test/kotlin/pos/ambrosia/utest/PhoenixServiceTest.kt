@@ -18,12 +18,14 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import pos.ambrosia.config.AppConfig
 import pos.ambrosia.models.phoenix.CloseChannelResponse
 import pos.ambrosia.models.phoenix.NodeInfo
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.services.OutgoingPaymentFailureCategories
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.utils.PhoenixServiceException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -2013,6 +2015,26 @@ class PhoenixServiceTest {
         assertFailsWith<pos.ambrosia.utils.PhoenixChannelNotAvailableException> {
             runBlocking { phoenixService.closeChannel(request) }
         }
+    }
+
+    @Test
+    fun `getSeed throws UnsupportedBackendOperationException when the node is remote`() {
+        val remotePhoenixService =
+            PhoenixService(phoenixdUrl = "http://example.com", phoenixdPassword = "unused", isRemote = true)
+
+        assertFailsWith<UnsupportedBackendOperationException> {
+            runBlocking { remotePhoenixService.getSeed() }
+        }
+    }
+
+    @Test
+    fun `getSeed delegates to AppConfig's loadPhoenixSeed when the node is not remote`() {
+        val localPhoenixService =
+            PhoenixService(phoenixdUrl = "http://example.com", phoenixdPassword = "unused", isRemote = false)
+
+        val seed = runBlocking { localPhoenixService.getSeed() }
+
+        assertEquals(AppConfig.loadPhoenixSeed(), seed)
     }
     //endregion
 

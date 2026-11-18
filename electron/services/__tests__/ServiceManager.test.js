@@ -46,6 +46,8 @@ beforeAll(async () => {
   healthCheck.isPhoenixdRunning = vi.fn();
   healthCheck.isBackendRunning = vi.fn();
   configurationBootstrap.ensureConfigurations = vi.fn();
+  configurationBootstrap.syncRestoredServerSecret = vi.fn();
+  configurationBootstrap.syncRestoredPhoenixdCredentials = vi.fn();
   portAllocator.allocatePorts = vi.fn();
   ({ default: ServiceManager } = await import('../ServiceManager.js'));
 });
@@ -63,6 +65,8 @@ beforeEach(() => {
   setIsPackaged(true);
   portAllocator.allocatePorts.mockReset().mockResolvedValue({ ...allocatedPorts });
   configurationBootstrap.ensureConfigurations.mockReset().mockResolvedValue(buildConfigs());
+  configurationBootstrap.syncRestoredServerSecret.mockReset().mockReturnValue(false);
+  configurationBootstrap.syncRestoredPhoenixdCredentials.mockReset();
   healthCheck.isPhoenixdRunning.mockReset().mockResolvedValue(false);
   healthCheck.isBackendRunning.mockReset().mockResolvedValue(false);
   PhoenixdServiceMock.mockClear();
@@ -302,16 +306,38 @@ describe('restartService', () => {
     expect(PhoenixdServiceMock.createdInstances[0].start).toHaveBeenCalledTimes(2);
   });
 
+  it('syncs restored phoenixd credentials before restarting phoenixd', async () => {
+    const serviceManager = new ServiceManager();
+    await serviceManager.startAll();
+
+    await serviceManager.restartService('phoenixd');
+
+    const syncCallOrder = configurationBootstrap.syncRestoredPhoenixdCredentials.mock.invocationCallOrder[0];
+    const stopCallOrder = PhoenixdServiceMock.createdInstances[0].stop.mock.invocationCallOrder[0];
+    expect(syncCallOrder).toBeLessThan(stopCallOrder);
+  });
+
   it('stops and starts the backend with the current phoenixd config', async () => {
     const serviceManager = new ServiceManager();
     await serviceManager.startAll();
 
     await serviceManager.restartService('backend');
 
-    expect(BackendServiceMock.createdInstances[0].stop).toHaveBeenCalled();
+    expect(BackendServiceMock.createdInstances[0].stop).toHaveBeenCalledTimes(1);
     expect(BackendServiceMock.createdInstances[0].start).toHaveBeenLastCalledWith(9154, expect.objectContaining({
       webhookSecret: 'webhook-secret',
     }));
+  });
+
+  it('restarts the backend a second time when the server secret was synced from a restored backup', async () => {
+    const serviceManager = new ServiceManager();
+    await serviceManager.startAll();
+    configurationBootstrap.syncRestoredServerSecret.mockReturnValue(true);
+
+    await serviceManager.restartService('backend');
+
+    expect(BackendServiceMock.createdInstances[0].stop).toHaveBeenCalledTimes(2);
+    expect(BackendServiceMock.createdInstances[0].start).toHaveBeenCalledTimes(3);
   });
 
   it('stops and starts nextjs', async () => {

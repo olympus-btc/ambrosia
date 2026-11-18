@@ -13,6 +13,8 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import pos.ambrosia.models.OpenCashDrawerRequest
 import pos.ambrosia.models.PrintRequest
 import pos.ambrosia.models.PrinterConfigCreateRequest
@@ -50,7 +52,7 @@ fun Route.printers(
 
             try {
                 val appConfig = configService.getConfig()
-                printService.printTicket(printRequest, appConfig)
+                withContext(Dispatchers.IO) { printService.printTicket(printRequest, appConfig) }
                 call.respondText("Print job sent", status = HttpStatusCode.OK)
             } catch (printError: Exception) {
                 throw PrintTicketException(printError.message ?: "An unknown error occurred during printing.")
@@ -66,7 +68,8 @@ fun Route.printers(
                     OpenCashDrawerRequest()
                 }
             try {
-                val openedCashDrawerCount = cashDrawerService.openManually(openCashDrawerRequest.printerId)
+                val openedCashDrawerCount =
+                    withContext(Dispatchers.IO) { cashDrawerService.openManually(openCashDrawerRequest.printerId) }
                 call.respond(HttpStatusCode.OK, mapOf("openedCashDrawerCount" to openedCashDrawerCount))
             } catch (openCashDrawerError: Exception) {
                 throw PrintTicketException(openCashDrawerError.message ?: "The cash drawer could not be opened.")

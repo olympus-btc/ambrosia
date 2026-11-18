@@ -6,6 +6,7 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -14,21 +15,43 @@ class TicketLogoLoader(
 ) {
     companion object {
         private const val UPLOADS_PATH_PREFIX = "/uploads/"
+        private const val MAXIMUM_CACHED_LOGO_COUNT = 8
     }
 
+    private data class ScaledLogoCacheKey(
+        val logoFile: Path,
+        val lastModifiedMilliseconds: Long,
+        val fileSizeBytes: Long,
+        val targetWidthDots: Int,
+    )
+
     private val normalizedUploadRoot: Path = uploadRoot.toAbsolutePath().normalize()
+    private val scaledLogosByCacheKey = ConcurrentHashMap<ScaledLogoCacheKey, BufferedImage>()
 
     fun loadScaledLogo(
         storedLogoUrl: String,
         targetWidthDots: Int,
     ): BufferedImage? {
         val logoFile = resolveLogoFile(storedLogoUrl) ?: return null
+        val scaledLogoCacheKey =
+            ScaledLogoCacheKey(
+                logoFile = logoFile,
+                lastModifiedMilliseconds = Files.getLastModifiedTime(logoFile).toMillis(),
+                fileSizeBytes = Files.size(logoFile),
+                targetWidthDots = targetWidthDots,
+            )
+        scaledLogosByCacheKey[scaledLogoCacheKey]?.let { cachedScaledLogo -> return cachedScaledLogo }
         val sourceImage =
             ImageIO.read(logoFile.toFile()) ?: run {
                 logger.warn("Unsupported logo image format: $storedLogoUrl")
                 return null
             }
-        return scaleOntoWhiteBackground(sourceImage, targetWidthDots)
+        val scaledLogo = scaleOntoWhiteBackground(sourceImage, targetWidthDots)
+        if (scaledLogosByCacheKey.size >= MAXIMUM_CACHED_LOGO_COUNT) {
+            scaledLogosByCacheKey.clear()
+        }
+        scaledLogosByCacheKey[scaledLogoCacheKey] = scaledLogo
+        return scaledLogo
     }
 
     private fun resolveLogoFile(storedLogoUrl: String): Path? {

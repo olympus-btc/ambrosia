@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.datadir
 import pos.ambrosia.logger
 import pos.ambrosia.models.BackupProgressPhase
+import pos.ambrosia.models.BackupUploadResponse
 import pos.ambrosia.models.Config
 import pos.ambrosia.models.InitialSetupRequest
 import pos.ambrosia.models.InitialSetupResponse
@@ -55,12 +56,13 @@ private suspend fun ApplicationCall.respondConflictIfInitialSetupCompleted(confi
 }
 
 fun Application.configureInitialSetup() {
+    val backupService = BackupService()
     routing {
-        route("/initial-setup") { initialSetupRoutes() }
+        route("/initial-setup") { initialSetupRoutes(backupService) }
     }
 }
 
-private fun Route.initialSetupRoutes() {
+fun Route.initialSetupRoutes(backupService: BackupService) {
     get("") {
         val configService = ConfigService()
         val config = configService.getConfig()
@@ -211,7 +213,11 @@ private fun Route.initialSetupRoutes() {
                     )
                     SecretsStore.setSecret("phoenixd-password", phoenixdPassword)
                     logger.info("Remote phoenixd node saved to ambrosia.conf — hot-reloading backend")
-                    ActiveLightningBackend.reinitializePhoenixBackend(trimmedPhoenixdUrl, phoenixdPassword)
+                    ActiveLightningBackend.reinitializePhoenixBackend(
+                        trimmedPhoenixdUrl,
+                        phoenixdPassword,
+                        isRemote = true,
+                    )
                     true
                 } catch (exception: Exception) {
                     logger.error("Failed to save or activate remote phoenixd node: ${exception.message}")
@@ -284,7 +290,6 @@ private fun Route.initialSetupRoutes() {
                 return@post
             }
 
-            val backupService = BackupService()
             val importedManifest =
                 Files.newInputStream(backupFile).use { backupInputStream ->
                     backupService.importBackup(backupInputStream, password.toCharArray(), backupProgressReporter(operationId))
@@ -292,7 +297,11 @@ private fun Route.initialSetupRoutes() {
 
             call.respond(
                 HttpStatusCode.OK,
-                mapOf("message" to "Backup restored", "businessName" to importedManifest.businessName),
+                BackupUploadResponse(
+                    message = "Backup restored",
+                    businessName = importedManifest.businessName,
+                    includesPhoenixdData = importedManifest.includesPhoenixdData,
+                ),
             )
         } catch (invalidBackup: IllegalArgumentException) {
             call.respond(
@@ -322,7 +331,6 @@ private fun Route.initialSetupRoutes() {
         val configService = ConfigService()
         if (call.respondConflictIfInitialSetupCompleted(configService)) return@post
 
-        val backupService = BackupService()
         backupService.stagedOperationId()?.let { operationId ->
             val tokenService = TokenService(call.application.environment)
             backupService.writeConfirmationToken(tokenService.generateBackupConfirmationToken(operationId))

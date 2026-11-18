@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -9,6 +10,8 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.RefundRequest
 import pos.ambrosia.services.ActiveLightningBackend
@@ -51,7 +54,7 @@ fun Route.storeOrders(
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Missing order ID"))
             val request = call.receive<RefundRequest>()
             val refund = refundService.processRefund(orderId, request)
-            cashDrawerService.openForRefundedOrder(orderId)
+            call.application.launch(Dispatchers.IO) { cashDrawerService.openForRefundedOrder(orderId) }
             call.respond(HttpStatusCode.OK, refund)
         }
     }

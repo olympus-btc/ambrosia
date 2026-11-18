@@ -24,6 +24,7 @@ export function RestoreFromBackupStep({ onBack }) {
   const [restoreProgress, setRestoreProgress] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [showRestartModal, setShowRestartModal] = useState(false);
+  const [restoredIncludesPhoenixdData, setRestoredIncludesPhoenixdData] = useState(false);
 
   const handleSubmit = async () => {
     if (!backupPassword || !backupFile) {
@@ -52,6 +53,7 @@ export function RestoreFromBackupStep({ onBack }) {
       });
 
       await confirmPendingRestore();
+      setRestoredIncludesPhoenixdData(restoreResponse.includesPhoenixdData);
       setShowRestartModal(true);
     } catch {
       setErrorMessage(restoreTranslations("restore.genericError"));
@@ -126,7 +128,8 @@ export function RestoreFromBackupStep({ onBack }) {
       <RestartRequiredModal
         isOpen={showRestartModal}
         onManualClose={() => setShowRestartModal(false)}
-        onRestart={restartAppAfterImport}
+        onRestart={() => restartAppAfterImport(restoredIncludesPhoenixdData)}
+        includesPhoenixdData={restoredIncludesPhoenixdData}
       />
     </div>
   );

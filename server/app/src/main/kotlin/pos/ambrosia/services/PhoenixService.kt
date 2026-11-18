@@ -49,6 +49,7 @@ import pos.ambrosia.utils.PhoenixChannelNotAvailableException
 import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 import java.time.Instant
 
 interface PaymentVerifier {
@@ -58,6 +59,7 @@ interface PaymentVerifier {
 class PhoenixService(
     private val phoenixdUrl: String,
     private val httpClient: HttpClient,
+    private val isRemote: Boolean = false,
 ) : PaymentVerifier,
     LightningBackend,
     IncomingPaymentHistory {
@@ -108,9 +110,17 @@ class PhoenixService(
     constructor(app: ApplicationEnvironment, httpClient: HttpClient) : this(
         app.config.property("phoenixd-url").getString(),
         httpClient,
+        app.config
+            .propertyOrNull("phoenixd-remote")
+            ?.getString()
+            .toBoolean(),
     )
 
-    constructor(phoenixdUrl: String, phoenixdPassword: String) : this(phoenixdUrl, buildHttpClient(phoenixdPassword))
+    constructor(
+        phoenixdUrl: String,
+        phoenixdPassword: String,
+        isRemote: Boolean = false,
+    ) : this(phoenixdUrl, buildHttpClient(phoenixdPassword), isRemote)
 
     override fun close() {
         httpClient.close()
@@ -760,6 +770,10 @@ class PhoenixService(
         }
     }
 
-    /** Get seed from Phoenix */
-    override suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()
+    override suspend fun getSeed(): String {
+        if (isRemote) {
+            throw UnsupportedBackendOperationException("Seed export is not available for a remote phoenixd node")
+        }
+        return AppConfig.loadPhoenixSeed()
+    }
 }

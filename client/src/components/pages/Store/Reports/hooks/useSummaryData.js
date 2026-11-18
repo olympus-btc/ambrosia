@@ -12,6 +12,7 @@ export function useSummaryData(reportData) {
       totalRefunded: reportData?.totalRefundedCents ?? 0,
       totalRefundedSatoshis: reportData?.totalRefundedSatoshis ?? 0,
       refundCount: reportData?.refundCount ?? 0,
+      totalLightningFeeSat: reportData?.totalLightningFeeSat ?? 0,
     };
   }, [reportData]);
 }

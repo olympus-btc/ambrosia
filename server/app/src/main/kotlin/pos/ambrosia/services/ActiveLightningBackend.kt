@@ -59,14 +59,14 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier, IncomingPayme
         application: Application,
         onIncomingPaymentReceived: (PaymentNotification) -> Unit = {},
     ) {
-        val newBackend = NwcService.create(nwcUri, application, onIncomingPaymentReceived)
+        val newNwcService = NwcService.create(nwcUri, application, onIncomingPaymentReceived)
         try {
-            withTimeout(NWC_CONNECTION_TIMEOUT_MS) { newBackend.awaitReady() }
+            withTimeout(NWC_CONNECTION_TIMEOUT_MS) { newNwcService.awaitReady() }
         } catch (exception: Exception) {
-            newBackend.close()
+            newNwcService.close()
             throw exception
         }
-        val previousBackend = backendReference.getAndSet(newBackend)
+        val previousBackend = backendReference.getAndSet(newNwcService)
         previousBackend
             ?.runCatching { close() }
             ?.onFailure { logger.warn("Error closing previous Lightning backend: {}", it.message) }
@@ -76,9 +76,10 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier, IncomingPayme
     fun reinitializePhoenixBackend(
         phoenixdUrl: String,
         phoenixdPassword: String,
+        isRemote: Boolean,
     ) {
-        val newBackend = PhoenixService(phoenixdUrl, phoenixdPassword)
-        val previousBackend = backendReference.getAndSet(newBackend)
+        val newPhoenixService = PhoenixService(phoenixdUrl, phoenixdPassword, isRemote)
+        val previousBackend = backendReference.getAndSet(newPhoenixService)
         previousBackend
             ?.runCatching { close() }
             ?.onFailure { logger.warn("Error closing previous Lightning backend: {}", it.message) }

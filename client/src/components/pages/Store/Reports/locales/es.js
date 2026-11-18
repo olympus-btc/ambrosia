@@ -50,6 +50,7 @@ const reportsEs = {
       orderCount: "Órdenes",
       avgItemsPerOrder: "Items Promedio / Orden",
       totalDiscounts: "Total de Descuentos",
+      liquidityLightningFee: "Total de Comisiones de Liquidez Lightning",
       totalRefunded: "Total Reembolsado",
       totalRefundedSatoshis: "Total Reembolsado (Bitcoin)",
     },

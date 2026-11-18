@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { Button, Card, CardBody, addToast } from "@heroui/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Banknote, Clock, X } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -129,7 +129,7 @@ export function ShiftWidget() {
                 <RequirePermission allOf={["cash_drawer_open"]}>
                   <Button
                     variant="bordered"
-                    startContent={<Banknote className="w-4 h-4" />}
+                    className="border border-border text-foreground hover:bg-muted transition-colors"
                     onPress={handleOpenCashDrawer}
                     isLoading={openingCashDrawer}
                   >

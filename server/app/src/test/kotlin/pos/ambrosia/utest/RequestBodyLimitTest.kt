@@ -20,6 +20,11 @@ class RequestBodyLimitTest {
     }
 
     @Test
+    fun `initial setup restore route gets the backup-specific limit`() {
+        assertEquals(BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES, requestBodyLimitFor("/initial-setup/restore"))
+    }
+
+    @Test
     fun `every other route gets the default limit`() {
         assertEquals(DEFAULT_MAX_REQUEST_BODY_BYTES, requestBodyLimitFor("/orders"))
         assertEquals(DEFAULT_MAX_REQUEST_BODY_BYTES, requestBodyLimitFor("/"))

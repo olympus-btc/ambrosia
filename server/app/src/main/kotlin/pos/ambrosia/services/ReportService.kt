@@ -326,6 +326,12 @@ class ReportService {
                     .distinctBy { it.paymentId }
                     .sumOf { it.satoshiAmount!! }
 
+            val totalLightningFeeSat =
+                productSaleItems
+                    .filter { it.lightningFeeSat != null && it.paymentId != null }
+                    .distinctBy { it.paymentId }
+                    .sumOf { it.lightningFeeSat!! }
+
             val (totalRefundedCents, totalRefundedSatoshis, refundCount) =
                 getRefundTotals(dateRange, preciseDateRange, productName, userId, paymentMethod)
 
@@ -334,6 +340,7 @@ class ReportService {
                 totalItemsSold = productSaleItems.sumOf { it.quantity },
                 sales = productSaleItems,
                 totalBtcSatoshis = totalBtcSatoshis,
+                totalLightningFeeSat = totalLightningFeeSat,
                 totalRefundedCents = totalRefundedCents,
                 totalRefundedSatoshis = totalRefundedSatoshis,
                 refundCount = refundCount,
