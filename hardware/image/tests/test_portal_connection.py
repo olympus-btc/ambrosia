@@ -115,6 +115,44 @@ class PortalConnectionTests(unittest.TestCase):
         exit_process.assert_called_once_with(0)
         start_hotspot.assert_not_called()
 
+    def test_success_on_orange_pi_cycles_wlan0_before_exiting(self):
+        self.portal.connection_lock.acquire()
+        with (
+            patch.object(self.portal.time, "sleep"),
+            patch.object(self.portal, "stop_ap"),
+            patch.object(self.portal, "is_orange_pi", return_value=True),
+            patch.object(
+                self.portal, "cycle_wlan0_for_unisoc_stall"
+            ) as cycle_wlan0_for_unisoc_stall,
+            patch.object(self.portal, "run_command", return_value=Mock(returncode=0)),
+            patch.object(
+                self.portal.os, "_exit", side_effect=SystemExit
+            ) as exit_process,
+            self.assertRaises(SystemExit),
+        ):
+            self.portal._connect_to_wifi("Cafe", "secret")
+        cycle_wlan0_for_unisoc_stall.assert_called_once()
+        exit_process.assert_called_once_with(0)
+
+    def test_success_on_other_boards_does_not_cycle_wlan0(self):
+        self.portal.connection_lock.acquire()
+        with (
+            patch.object(self.portal.time, "sleep"),
+            patch.object(self.portal, "stop_ap"),
+            patch.object(self.portal, "is_orange_pi", return_value=False),
+            patch.object(
+                self.portal, "cycle_wlan0_for_unisoc_stall"
+            ) as cycle_wlan0_for_unisoc_stall,
+            patch.object(self.portal, "run_command", return_value=Mock(returncode=0)),
+            patch.object(
+                self.portal.os, "_exit", side_effect=SystemExit
+            ) as exit_process,
+            self.assertRaises(SystemExit),
+        ):
+            self.portal._connect_to_wifi("Cafe", "secret")
+        cycle_wlan0_for_unisoc_stall.assert_not_called()
+        exit_process.assert_called_once_with(0)
+
     def test_monitor_does_not_touch_radio_during_connection(self):
         self.portal.connection_lock.acquire()
         with (
