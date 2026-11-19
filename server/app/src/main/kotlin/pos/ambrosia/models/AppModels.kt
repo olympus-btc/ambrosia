@@ -638,6 +638,7 @@ data class Config(
     val tipPercentages: String = "10,15,20",
     val customTipDefaultType: String = "percentage",
     val priceStep: Double = 0.01,
+    val dailySessionResetHour: Int = 6,
 )
 
 @Serializable

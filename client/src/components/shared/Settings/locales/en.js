@@ -1,3 +1,4 @@
+import dailySessionResetEn from "../DailySessionReset/locales/en";
 import exportDataEn from "../ExportData/locales/en";
 import importDataEn from "../ImportData/locales/en";
 import lightningEn from "../Lightning/locales/en";
@@ -87,6 +88,7 @@ const sharedSettingsEn = {
       androidStep2: "Select \"Add to Home Screen\"",
     },
     ...systemEn,
+    ...dailySessionResetEn,
     ...seedEn,
     ...exportDataEn,
     ...importDataEn,

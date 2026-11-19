@@ -84,21 +84,13 @@ def is_orange_pi():
         return False
 
 
-def recover_orange_pi_wifi_once():
-    """Bounce an associated OPi link once per boot.
+def cycle_wlan0_for_unisoc_stall():
+    """Disconnect and reconnect wlan0 to clear an associated-but-stalled link.
 
     The unisoc_wifi driver can report an associated link with a DHCP address
     while TCP traffic remains stuck. Reconnecting through NetworkManager is
-    the reliable recovery and is deliberately limited to one attempt per boot.
+    the reliable recovery. Callers decide when and how often this runs.
     """
-    if not is_orange_pi() or WIFI_RECOVERY_MARKER.exists() or not wifi_is_real():
-        return
-
-    WIFI_RECOVERY_MARKER.touch()
-    print(
-        "Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.",
-        flush=True,
-    )
     try:
         run_command(["nmcli", "device", "disconnect", WLAN], timeout_seconds=15)
         time.sleep(2)
@@ -112,7 +104,24 @@ def recover_orange_pi_wifi_once():
             )
         time.sleep(3)
     except subprocess.TimeoutExpired:
-        print("Wi-Fi recovery timed out; continuing to the setup portal.", flush=True)
+        print("Wi-Fi recovery timed out.", flush=True)
+
+
+def recover_orange_pi_wifi_once():
+    """Bounce an associated OPi link once per boot.
+
+    Deliberately limited to one attempt per boot via WIFI_RECOVERY_MARKER;
+    see cycle_wlan0_for_unisoc_stall for the recovery itself.
+    """
+    if not is_orange_pi() or WIFI_RECOVERY_MARKER.exists() or not wifi_is_real():
+        return
+
+    WIFI_RECOVERY_MARKER.touch()
+    print(
+        "Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.",
+        flush=True,
+    )
+    cycle_wlan0_for_unisoc_stall()
 
 
 def uplink_is_real():
@@ -532,6 +541,12 @@ def _connect_to_wifi(network_name, wifi_password):
                 timeout_seconds=60,
             )
             if connection_process.returncode == 0:
+                if is_orange_pi():
+                    print(
+                        "Connected via portal; cycling wlan0 once more to clear a possible unisoc_wifi TCP stall.",
+                        flush=True,
+                    )
+                    cycle_wlan0_for_unisoc_stall()
                 os._exit(0)
             print("Wi-Fi connection failed; restoring setup portal.", flush=True)
         except (OSError, subprocess.SubprocessError) as error:

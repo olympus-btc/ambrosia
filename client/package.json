@@ -32,6 +32,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@heroui/react": "^2.8.5",
+    "@internationalized/date": "^3.10.0",
     "@serwist/turbopack": "9.5.13",
     "driver.js": "^1.9.0",
     "esbuild": "0.28.2",
