@@ -39,8 +39,8 @@ private class FakePaymentVerifier : PaymentVerifier {
 class CheckoutServiceTest {
     private lateinit var databaseFile: File
     private val variantService = ProductVariantService()
-    private val fakePaymentVerifier = FakePaymentVerifier()
-    private val service = CheckoutService(fakePaymentVerifier)
+    private val stubbedPaymentVerifier = FakePaymentVerifier()
+    private val service = CheckoutService(stubbedPaymentVerifier)
 
     @Before
     fun setUp() {
@@ -185,7 +185,7 @@ class CheckoutServiceTest {
             assertTrue(checkoutResponse.ticketId.isNotBlank())
             assertTrue(checkoutResponse.paymentId.isNotBlank())
             assertEquals(3, setOf(checkoutResponse.orderId, checkoutResponse.ticketId, checkoutResponse.paymentId).size)
-            assertEquals(0, fakePaymentVerifier.callCount)
+            assertEquals(0, stubbedPaymentVerifier.callCount)
         }
     }
 
@@ -351,7 +351,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment = incomingPayment(paymentHash = "hash-pending", isPaid = false)
+            stubbedPaymentVerifier.stubbedIncomingPayment = incomingPayment(paymentHash = "hash-pending", isPaid = false)
 
             val checkoutResult =
                 service.checkout(
@@ -370,7 +370,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedError = RuntimeException("phoenix unreachable")
+            stubbedPaymentVerifier.stubbedError = RuntimeException("phoenix unreachable")
 
             val checkoutResult =
                 service.checkout(
@@ -388,7 +388,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            verifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-underpaid", isPaid = true, requestedSat = 1, receivedSat = 1)
 
             val checkoutResult =
@@ -414,7 +414,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            verifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(
                     paymentHash = "hash-liquidity-fee",
                     isPaid = true,
@@ -448,7 +448,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-no-amount", isPaid = true, receivedSat = 1000)
 
             val checkoutResult =
@@ -472,7 +472,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-overpaid", isPaid = true, receivedSat = 1500)
 
             val checkoutResult =
@@ -495,7 +495,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-paid", isPaid = true, receivedSat = 1000)
 
             val checkoutResult =
@@ -520,7 +520,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-recovered", isPaid = true, receivedSat = 1000)
             val checkoutRequest =
                 validStoreRequest(
@@ -585,7 +585,7 @@ class CheckoutServiceTest {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val checkoutItems = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
-            fakePaymentVerifier.stubbedIncomingPayment =
+            stubbedPaymentVerifier.stubbedIncomingPayment =
                 incomingPayment(paymentHash = "hash-123", isPaid = true, receivedSat = 1000)
             val checkoutResult =
                 service.checkout(
