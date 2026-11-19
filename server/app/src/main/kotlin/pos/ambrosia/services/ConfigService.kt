@@ -23,6 +23,7 @@ class ConfigService {
             tipPercentages = entity.tipPercentages,
             customTipDefaultType = entity.customTipDefaultType,
             priceStep = entity.priceStep,
+            dailySessionResetHour = entity.dailySessionResetHour,
         )
 
     fun getConfig(): Config? =
@@ -47,6 +48,7 @@ class ConfigService {
             entity.tipPercentages = config.tipPercentages
             entity.customTipDefaultType = config.customTipDefaultType
             entity.priceStep = config.priceStep
+            entity.dailySessionResetHour = config.dailySessionResetHour
             true
         }
 
