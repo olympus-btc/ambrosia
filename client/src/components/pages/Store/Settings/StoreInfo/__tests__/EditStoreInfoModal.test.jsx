@@ -95,6 +95,8 @@ describe("EditStoreInfoModal", () => {
       expect(screen.getByLabelText("modal.rfc")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.address")).toBeInTheDocument();
       expect(screen.getByRole("combobox", { name: "modal.timezone" })).toBeInTheDocument();
+      expect(screen.getByText("modal.dailySessionResetHour")).toBeInTheDocument();
+      expect(screen.getByText("modal.dailySessionResetHourDescription")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.email")).toBeInTheDocument();
       expect(screen.getByLabelText("modal.phone")).toBeInTheDocument();
     });
