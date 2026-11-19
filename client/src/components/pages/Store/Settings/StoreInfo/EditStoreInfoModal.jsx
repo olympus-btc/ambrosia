@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 
-import { Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
+import { Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, TimeInput } from "@heroui/react";
+import { Time } from "@internationalized/date";
 import { useTranslations } from "next-intl";
 
 import { ImageUploader } from "@components/shared/ImageUploader";
 import { TimezoneInput } from "@components/shared/TimezoneInput";
 import { TIMEZONES } from "@components/utils/timezones";
+
+export const DEFAULT_DAILY_SESSION_RESET_HOUR = 6;
 
 export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, setIsOpen }) {
   const settingsTranslations = useTranslations("settings");
@@ -88,6 +91,14 @@ export function EditStoreInfoModal({ data, setData, onChange, onSubmit, isOpen, 
               onSelectionChange={(zoneId) => {
                 if (zoneId) onChange({ ...data, timezone: zoneId });
               }}
+            />
+            <TimeInput
+              label={settingsTranslations("modal.dailySessionResetHour")}
+              description={settingsTranslations("modal.dailySessionResetHourDescription")}
+              granularity="hour"
+              hourCycle={24}
+              value={new Time(data.dailySessionResetHour ?? DEFAULT_DAILY_SESSION_RESET_HOUR)}
+              onChange={(selectedTime) => onChange({ ...data, dailySessionResetHour: selectedTime?.hour ?? DEFAULT_DAILY_SESSION_RESET_HOUR })}
             />
             <Input
               label={settingsTranslations("modal.email")}
