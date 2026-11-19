@@ -150,7 +150,7 @@ class TestUsersPermissions:
         """POST /users returns 403 without users_create permission."""
         no_permission = await client_factory(permissions=BASELINE_PERMISSIONS)
         no_permission_response = await no_permission.post(
-            "/users", json={"name": "x", "pin": "0000", "role": DUMMY_ID}
+            "/users", json={"name": "x", "pin": "000000", "role": DUMMY_ID}
         )
         assert_status_code(
             no_permission_response, 403, "POST /users should require users_create"
@@ -160,7 +160,7 @@ class TestUsersPermissions:
         with_permission_response = await with_permission.post(
             "/users",
             json=with_current_user_pin(
-                {"user": {"name": "x", "pin": "0000", "role": DUMMY_ID}},
+                {"user": {"name": "x", "pin": "000000", "role": DUMMY_ID}},
                 pin=CLIENT_FACTORY_USER_PIN,
             ),
         )
@@ -174,7 +174,7 @@ class TestUsersPermissions:
         """PUT /users/{id} returns 403 without users_update permission."""
         no_permission = await client_factory(permissions=BASELINE_PERMISSIONS)
         no_permission_response = await no_permission.put(
-            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "0000"}
+            f"/users/{DUMMY_ID}", json={"name": "x", "pin": "000000"}
         )
         assert_status_code(
             no_permission_response, 403, "PUT /users/{id} should require users_update"
@@ -184,7 +184,7 @@ class TestUsersPermissions:
         with_permission_response = await with_permission.put(
             f"/users/{DUMMY_ID}",
             json=with_current_user_pin(
-                {"name": "x", "pin": "0000"}, pin=CLIENT_FACTORY_USER_PIN
+                {"name": "x", "pin": "000000"}, pin=CLIENT_FACTORY_USER_PIN
             ),
         )
         assert with_permission_response.status_code != 403, (

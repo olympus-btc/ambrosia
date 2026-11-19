@@ -3,6 +3,7 @@ package pos.ambrosia.utils
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
+import io.ktor.server.application.ApplicationEnvironment
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.testing.ApplicationTestBuilder
@@ -14,7 +15,7 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import java.util.UUID
 
-private const val TEST_SECRET = "admin-auth-test-fixture-secret"
+const val ADMIN_AUTH_TEST_SECRET = "admin-auth-test-fixture-secret"
 private const val TEST_ISSUER = "admin-auth-test-fixture-issuer"
 private const val TEST_AUDIENCE = "admin-auth-test-fixture-audience"
 const val TEST_USER_PIN = "1234"
@@ -23,6 +24,11 @@ data class AuthCookies(
     val accessToken: String,
     val refreshToken: String,
 )
+
+fun testEnvironmentWithSecret(secret: String): ApplicationEnvironment =
+    applicationEnvironment {
+        config = MapApplicationConfig("secret" to secret)
+    }
 
 fun ApplicationTestBuilder.installAdminAuth(
     roleName: String = "admin-test-role",
@@ -41,7 +47,7 @@ private fun ApplicationTestBuilder.installAuth(
 ): AuthCookies {
     val testApplicationConfig =
         MapApplicationConfig(
-            "secret" to TEST_SECRET,
+            "secret" to ADMIN_AUTH_TEST_SECRET,
             "jwt.issuer" to TEST_ISSUER,
             "jwt.audience" to TEST_AUDIENCE,
         )

@@ -175,7 +175,7 @@ class OrdersSyncServiceTest {
     }
 
     @Test
-    fun `findMisdatedOrders returns a misdated order when the recorded date drifts more than 5 minutes from the real payment time`() {
+    fun `findMisdatedOrders returns an order whose date drifts over 5 minutes from payment time`() {
         runBlocking {
             val (paymentId, orderId) = seedExistingOrder(paymentHash = "hash-misdated", date = "2024-01-15T18:52:00")
             incomingPaymentHistory.incomingPaymentsByHash["hash-misdated"] =
