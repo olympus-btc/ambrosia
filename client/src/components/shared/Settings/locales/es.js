@@ -1,3 +1,4 @@
+import dailySessionResetEs from "../DailySessionReset/locales/es";
 import exportDataEs from "../ExportData/locales/es";
 import importDataEs from "../ImportData/locales/es";
 import lightningEs from "../Lightning/locales/es";
@@ -87,6 +88,7 @@ const sharedSettingsEs = {
       androidStep2: "Selecciona \"Agregar a pantalla de inicio\"",
     },
     ...systemEs,
+    ...dailySessionResetEs,
     ...seedEs,
     ...exportDataEs,
     ...importDataEs,
