@@ -18,6 +18,7 @@ function mockSettingsCard(componentName) {
 
 jest.mock("@components/shared/Settings/QRUrl", () => mockSettingsCard("QRUrl"));
 jest.mock("@components/shared/Settings/Currency", () => mockSettingsCard("Currency"));
+jest.mock("@components/shared/Settings/DailySessionReset", () => mockSettingsCard("DailySessionResetCard"));
 jest.mock("@components/shared/Settings/Display", () => mockSettingsCard("Display"));
 jest.mock("@components/shared/Settings/ExportData", () => mockSettingsCard("ExportData"));
 jest.mock("@components/shared/Settings/ImportData", () => mockSettingsCard("ImportData"));
