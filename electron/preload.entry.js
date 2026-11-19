@@ -23,16 +23,19 @@ const RECEIVE_CHANNELS = [
   'update:downloaded',
 ];
 
-function sanitizeArgument(argument) {
+const MAX_SANITIZE_DEPTH = 10;
+
+function sanitizeArgument(argument, depth = 0) {
   if (argument === null || argument === undefined) return argument;
   const type = typeof argument;
   if (type === 'string' || type === 'number' || type === 'boolean') return argument;
-  if (Array.isArray(argument)) return argument.map(sanitizeArgument);
+  if (depth >= MAX_SANITIZE_DEPTH) return null;
+  if (Array.isArray(argument)) return argument.map((nestedArgument) => sanitizeArgument(nestedArgument, depth + 1));
   if (type === 'object') {
     return Object.fromEntries(
       Object.entries(argument).map(([propertyName, propertyValue]) => [
         propertyName,
-        sanitizeArgument(propertyValue),
+        sanitizeArgument(propertyValue, depth + 1),
       ]),
     );
   }

@@ -108,6 +108,22 @@ describe('ipc.invoke', () => {
     expect(ipcRendererMock.invoke).toHaveBeenCalledWith('services:restart', ['backend', null]);
   });
 
+  it('truncates an object nested beyond the maximum sanitize depth to null instead of recursing further', () => {
+    ipcRendererMock.invoke.mockResolvedValue(undefined);
+
+    function buildNestedChildChain(wrapperCount, innermostValue) {
+      let nestedValue = innermostValue;
+      for (let wrapIndex = 0; wrapIndex < wrapperCount; wrapIndex += 1) {
+        nestedValue = { child: nestedValue };
+      }
+      return nestedValue;
+    }
+
+    exposedElectronApi.ipc.invoke('services:restart', buildNestedChildChain(12, 'unreachable-leaf'));
+
+    expect(ipcRendererMock.invoke).toHaveBeenCalledWith('services:restart', buildNestedChildChain(10, null));
+  });
+
   it('passes through null and undefined unchanged', () => {
     ipcRendererMock.invoke.mockResolvedValue(undefined);
 
