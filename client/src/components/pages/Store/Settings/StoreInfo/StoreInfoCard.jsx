@@ -8,8 +8,6 @@ import { useTranslations } from "next-intl";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
-import { DEFAULT_DAILY_SESSION_RESET_HOUR } from "./EditStoreInfoModal";
-
 export function StoreInfoCard({ data, onEdit }) {
   const settingsTranslations = useTranslations("settings");
   const logoSrc = storedAssetUrl(data?.businessLogoUrl);
@@ -50,15 +48,9 @@ export function StoreInfoCard({ data, onEdit }) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
-            <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.timezone")}</div>
-              <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800">{data.timezone}</div>
-            </div>
-            <div className="sm:w-1/2">
-              <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.dailySessionResetHour")}</div>
-              <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800">{String(data.dailySessionResetHour ?? DEFAULT_DAILY_SESSION_RESET_HOUR).padStart(2, "0")}:00</div>
-            </div>
+          <div>
+            <div className="text-xs sm:text-sm xl:text-base font-semibold text-gray-600">{settingsTranslations("cardInfo.timezone")}</div>
+            <div className="text-sm sm:text-base xl:text-lg font-medium text-green-800">{data.timezone}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">

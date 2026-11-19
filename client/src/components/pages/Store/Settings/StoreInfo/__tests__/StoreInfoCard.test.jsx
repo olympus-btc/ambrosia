@@ -13,7 +13,6 @@ const mockData = {
   businessTaxId: "RFC123456789",
   businessAddress: "Calle Principal 123",
   timezone: "America/Mexico_City",
-  dailySessionResetHour: 6,
   businessEmail: "tienda@test.com",
   businessPhone: "5551234567",
   businessLogoUrl: "http://localhost:9154/api/assets/logo.png",
@@ -64,7 +63,6 @@ describe("StoreInfoCard", () => {
       expect(screen.getByText("cardInfo.rfc")).toBeInTheDocument();
       expect(screen.getByText("cardInfo.address")).toBeInTheDocument();
       expect(screen.getByText("cardInfo.timezone")).toBeInTheDocument();
-      expect(screen.getByText("cardInfo.dailySessionResetHour")).toBeInTheDocument();
       expect(screen.getByText("cardInfo.email")).toBeInTheDocument();
       expect(screen.getByText("cardInfo.phone")).toBeInTheDocument();
       expect(screen.getByText("cardInfo.logo")).toBeInTheDocument();
@@ -76,7 +74,6 @@ describe("StoreInfoCard", () => {
       expect(screen.getByText("RFC123456789")).toBeInTheDocument();
       expect(screen.getByText("Calle Principal 123")).toBeInTheDocument();
       expect(screen.getByText("America/Mexico_City")).toBeInTheDocument();
-      expect(screen.getByText("06:00")).toBeInTheDocument();
       expect(screen.getByText("tienda@test.com")).toBeInTheDocument();
       expect(screen.getByText("5551234567")).toBeInTheDocument();
     });
