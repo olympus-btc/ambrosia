@@ -75,10 +75,9 @@ object ActiveLightningBackend : LightningBackend, PaymentVerifier, IncomingPayme
 
     fun reinitializePhoenixBackend(
         phoenixdUrl: String,
-        phoenixdPassword: String,
         isRemote: Boolean,
     ) {
-        val newPhoenixService = PhoenixService(phoenixdUrl, phoenixdPassword, isRemote)
+        val newPhoenixService = PhoenixService(phoenixdUrl, isRemote)
         val previousBackend = backendReference.getAndSet(newPhoenixService)
         previousBackend
             ?.runCatching { close() }

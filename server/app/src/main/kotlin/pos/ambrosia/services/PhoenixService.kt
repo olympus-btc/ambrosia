@@ -77,12 +77,12 @@ class PhoenixService(
                 prettyPrint = true
             }
 
-        private fun buildHttpClient(phoenixdPassword: String): HttpClient =
+        private fun buildHttpClient(phoenixdPasswordProvider: () -> String): HttpClient =
             HttpClient(CIO) {
                 install(Auth) {
                     basic {
                         credentials {
-                            BasicAuthCredentials(username = "", password = phoenixdPassword)
+                            BasicAuthCredentials(username = "", password = phoenixdPasswordProvider())
                         }
                     }
                 }
@@ -90,6 +90,9 @@ class PhoenixService(
                     json(phoenixJson)
                 }
             }
+
+        internal fun readCurrentPhoenixdPassword(): String =
+            SecretsStore.getSecretOrNull("phoenixd-password") ?: AppConfig.getLocalPhoenixdPassword()
 
         suspend fun testCandidateNodeConnection(
             candidateUrl: String,
@@ -120,7 +123,12 @@ class PhoenixService(
         phoenixdUrl: String,
         phoenixdPassword: String,
         isRemote: Boolean = false,
-    ) : this(phoenixdUrl, buildHttpClient(phoenixdPassword), isRemote)
+    ) : this(phoenixdUrl, buildHttpClient({ phoenixdPassword }), isRemote)
+
+    constructor(
+        phoenixdUrl: String,
+        isRemote: Boolean = false,
+    ) : this(phoenixdUrl, buildHttpClient(::readCurrentPhoenixdPassword), isRemote)
 
     override fun close() {
         httpClient.close()
