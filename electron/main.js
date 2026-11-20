@@ -234,7 +234,7 @@ async function handleStartupError(startupError) {
   }
 }
 
-function createAppMenu() {
+export function createAppMenu() {
   const isMac = process.platform === 'darwin';
 
   const updateItem = {
@@ -279,7 +279,7 @@ function createAppMenu() {
       submenu: [
         { role: 'reload' },
         { role: 'forceReload' },
-        { role: 'toggleDevTools' },
+        ...(!app.isPackaged ? [{ role: 'toggleDevTools' }] : []),
         { type: 'separator' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },
