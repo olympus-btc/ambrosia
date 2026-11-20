@@ -91,6 +91,47 @@ fun computePhoenixdWebhookUrl(
     return "http://$host:$httpBindPort/webhook/phoenixd"
 }
 
+fun isKeyStoreOpenableWithPassword(
+    keyStoreFile: File,
+    storePassword: String,
+): Boolean =
+    runCatching {
+        KeyStore.getInstance("JKS").load(keyStoreFile.inputStream(), storePassword.toCharArray())
+    }.isSuccess
+
+fun generateSelfSignedKeyStore(
+    keyStoreFile: File,
+    storePassword: String,
+    privateKeyPassword: String,
+) {
+    val keyStore =
+        buildKeyStore {
+            certificate("ambrosia") {
+                password = privateKeyPassword
+                domains = listOf("localhost", "127.0.0.1", "0.0.0.0")
+            }
+        }
+    keyStore.saveToFile(keyStoreFile, storePassword)
+}
+
+fun migrateKeyStorePassword(
+    keyStoreFile: File,
+    legacyStorePassword: String,
+    legacyPrivateKeyPassword: String,
+    newStorePassword: String,
+    newPrivateKeyPassword: String,
+): Boolean =
+    runCatching {
+        val legacyKeyStore =
+            KeyStore.getInstance("JKS").apply {
+                load(keyStoreFile.inputStream(), legacyStorePassword.toCharArray())
+            }
+        val privateKey = legacyKeyStore.getKey("ambrosia", legacyPrivateKeyPassword.toCharArray())
+        val certificateChain = legacyKeyStore.getCertificateChain("ambrosia")
+        legacyKeyStore.setKeyEntry("ambrosia", privateKey, newPrivateKeyPassword.toCharArray(), certificateChain)
+        legacyKeyStore.saveToFile(keyStoreFile, newStorePassword)
+    }.isSuccess
+
 class Ambrosia : CliktCommand() {
     val appVersion: String = Ambrosia::class.java.getPackage().implementationVersion ?: "-dev"
     private val confFile = Path(datadir, "ambrosia.conf")
@@ -138,6 +179,18 @@ class Ambrosia : CliktCommand() {
                 val seed = SeedGenerator.generateSeed() // Generate a new seed
                 SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
                     it.writeString("\nsecret=$seed")
+                }
+                seed
+            }
+        val keystorePassword by
+            option(
+                "--keystore-password",
+                help = "Password for the TLS keystore, independent from --secret",
+                envvar = EnvVars.AMBROSIA_KEYSTORE_PASSWORD,
+            ).defaultLazy {
+                val seed = SeedGenerator.generateSeed()
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
+                    it.writeString("\nkeystore-password=$seed")
                 }
                 seed
             }
@@ -325,22 +378,32 @@ class Ambrosia : CliktCommand() {
 
     private fun ensureKeyStore(): KeyStoreInfo {
         val keyStoreFile = File(datadir.toString(), "keystore.jks")
-        val privateKeyPassword = options.secret
-        val storePassword =
-            SeedGenerator.generateSecureSeed(
-                seedInput = options.secret,
-            )
+        val privateKeyPassword = options.keystorePassword
+        val storePassword = SeedGenerator.generateSecureSeed(seedInput = options.keystorePassword)
 
-        if (!keyStoreFile.exists()) {
-            val keyStore =
-                buildKeyStore {
-                    certificate("ambrosia") {
-                        password = privateKeyPassword
-                        domains = listOf("localhost", "127.0.0.1", "0.0.0.0")
-                    }
+        when {
+            !keyStoreFile.exists() -> {
+                generateSelfSignedKeyStore(keyStoreFile, storePassword, privateKeyPassword)
+                echo(yellow("Generated self-signed certificate using the keystore password"))
+            }
+
+            !isKeyStoreOpenableWithPassword(keyStoreFile, storePassword) -> {
+                val legacyStorePassword = SeedGenerator.generateSecureSeed(seedInput = options.secret)
+                val migrated =
+                    migrateKeyStorePassword(
+                        keyStoreFile,
+                        legacyStorePassword,
+                        options.secret,
+                        storePassword,
+                        privateKeyPassword,
+                    )
+                if (migrated) {
+                    echo(yellow("Migrated the existing TLS certificate to an independent keystore password"))
+                } else {
+                    generateSelfSignedKeyStore(keyStoreFile, storePassword, privateKeyPassword)
+                    echo(yellow("Existing keystore could not be read; generated a new self-signed certificate"))
                 }
-            keyStore.saveToFile(keyStoreFile, storePassword)
-            echo(yellow("Generated self-signed certificate using server secret"))
+            }
         }
 
         val keyStore =
