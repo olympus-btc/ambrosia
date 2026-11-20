@@ -165,3 +165,11 @@ class OrderNotRefundableException(
     val code: String = "not_refundable",
     val source: String = "ambrosia",
 ) : IllegalStateException(message)
+
+class RequestValidationException(
+    message: String,
+) : IllegalArgumentException(message)
+
+class MalformedSecretsEnvelopeException(
+    message: String = "Malformed secrets envelope",
+) : RuntimeException(message)
