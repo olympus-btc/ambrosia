@@ -173,7 +173,6 @@ fun Route.users(
             }
 
             val isUpdated = userService.updateUser(id, updatedUser)
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "User with ID: $id not found")

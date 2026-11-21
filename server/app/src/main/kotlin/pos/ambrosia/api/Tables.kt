@@ -85,7 +85,6 @@ fun Route.tables(tableService: TableService) {
 
             val updatedTable = call.receive<Table>()
             val isUpdated = tableService.updateTable(updatedTable.copy(id = id))
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Table with ID: $id not found")
