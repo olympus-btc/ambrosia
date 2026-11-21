@@ -79,6 +79,7 @@ import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.db.tables.InvoiceEntity
 import pos.ambrosia.db.tables.PayoutAccountEntity
 import pos.ambrosia.db.tables.UserEntity
+import pos.ambrosia.logging.RequestDebugLogging
 import pos.ambrosia.services.AdminNotificationService
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.services.SessionResetScheduler
@@ -104,6 +105,7 @@ class Api {
         handler()
         install(ContentNegotiation) { json() }
         configureCors()
+        install(RequestDebugLogging)
         install(DefaultHeaders) {
             header("X-Content-Type-Options", "nosniff")
             header("X-Frame-Options", "DENY")
