@@ -6,6 +6,8 @@ const INVOKE_CHANNELS = [
   'services:get-statuses',
   'services:restart',
   'services:get-logs',
+  'logs:open-folder',
+  'logs:set-level',
   'update:install',
   'update:open-release',
   'phoenixd:get-auto-liquidity',

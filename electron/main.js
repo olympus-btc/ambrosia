@@ -8,6 +8,7 @@ import ServiceManager from './services/ServiceManager.js';
 import { unlockPasswordStore } from './services/UnlockPasswordStore.js';
 import { STARTUP } from './utils/constants.js';
 import { logger } from './utils/logger.js';
+import { applyConfiguredLogLevel, applyLogLevel } from './utils/logLevelConfiguration.js';
 import { getDataDirectory, getLogsDirectory, getPhoenixDataDirectory } from './utils/resourcePaths.js';
 
 const require = createRequire(import.meta.url);
@@ -333,6 +334,7 @@ export function createAppMenu() {
 
 async function initializeApp() {
   try {
+    applyConfiguredLogLevel();
     logger.log('[Electron] Initializing Ambrosia POS...');
 
     createSplashScreen();
@@ -474,6 +476,15 @@ ipcMain.handle('services:restart', async (_event, serviceName) => {
 ipcMain.handle('services:get-logs', () => {
   const logsDirectory = getLogsDirectory();
   return { logsDir: logsDirectory };
+});
+
+ipcMain.handle('logs:set-level', (_event, requestedLogLevel) => ({
+  success: applyLogLevel(requestedLogLevel),
+}));
+
+ipcMain.handle('logs:open-folder', async () => {
+  const openPathErrorMessage = await shell.openPath(getLogsDirectory());
+  return { success: openPathErrorMessage === '', error: openPathErrorMessage || undefined };
 });
 
 ipcMain.handle('app:relaunch', () => {
