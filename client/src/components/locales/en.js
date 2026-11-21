@@ -185,6 +185,12 @@ const componentsEn = {
     testSuccess: "Successfully connected to the remote node",
     testError: "Could not connect to the remote node — check the URL and password",
   },
+  errorFallback: {
+    heading: "Something went wrong",
+    description: "An unexpected error occurred. It has been logged so it can be reviewed.",
+    retryButton: "Try again",
+    goHome: "Back to Home",
+  },
 };
 
 export default componentsEn;
