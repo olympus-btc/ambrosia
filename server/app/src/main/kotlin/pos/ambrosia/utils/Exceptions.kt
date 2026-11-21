@@ -122,6 +122,10 @@ class InvalidTimeEntryException(
     message: String = "Invalid time entry",
 ) : IllegalArgumentException(message)
 
+class InvalidLogRequestException(
+    message: String = "Invalid log request",
+) : IllegalArgumentException(message)
+
 class TimeEntryLockedException(
     message: String = "Time entry is locked because it belongs to an invoice",
 ) : IllegalStateException(message)
