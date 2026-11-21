@@ -53,11 +53,11 @@ import kotlin.system.exitProcess
 val userHome = System.getProperty("user.home")
 
 val datadir: Path =
-    System.getenv()[EnvVars.AMBROSIA_DATADIR]?.let { Path(it) }
+    System.getenv()[EnvVars.AMBROSIA_DATADIR]?.let { ambrosiaDataDirectoryFromEnvironment -> Path(ambrosiaDataDirectoryFromEnvironment) }
         ?: Path(Path(userHome), ".Ambrosia-POS")
 
 val phoenixDatadir: Path =
-    System.getenv()[EnvVars.PHOENIX_DATADIR]?.let { Path(it) }
+    System.getenv()[EnvVars.PHOENIX_DATADIR]?.let { phoenixDataDirectoryFromEnvironment -> Path(phoenixDataDirectoryFromEnvironment) }
         ?: Path(Path(userHome), ".phoenix")
 
 var pendingDataImportWasApplied: Boolean = false
@@ -66,10 +66,10 @@ var pendingDataImportWasApplied: Boolean = false
 var runningEmbeddedServer: EmbeddedServer<*, *>? = null
     private set
 
-fun main(args: Array<String>) {
+fun main(commandLineArguments: Array<String>) {
     LoggingConfiguration.install(datadir.toString())
     pendingDataImportWasApplied = BackupService().applyPendingImport()
-    Ambrosia().main(args)
+    Ambrosia().main(commandLineArguments)
 }
 
 fun scheduleProcessRestart() {
@@ -85,13 +85,13 @@ fun computePhoenixdWebhookUrl(
     httpBindIp: String,
     httpBindPort: Int,
 ): String {
-    val host =
+    val webhookHost =
         when {
             docker -> "ambrosia"
             httpBindIp == "0.0.0.0" || httpBindIp == "::" -> "127.0.0.1"
             else -> httpBindIp
         }
-    return "http://$host:$httpBindPort/webhook/phoenixd"
+    return "http://$webhookHost:$httpBindPort/webhook/phoenixd"
 }
 
 class Ambrosia : CliktCommand() {
@@ -106,42 +106,42 @@ class Ambrosia : CliktCommand() {
 
         context {
             valueSource = ListValueSource.fromFile(confFile)
-            helpFormatter = { MordantHelpFormatter(it, showDefaultValues = true) }
+            helpFormatter = { helpFormatterContext -> MordantHelpFormatter(helpFormatterContext, showDefaultValues = true) }
         }
     }
 
     inner class DaemonOptions : OptionGroup(name = "DaemonOptions") {
         val httpBindIp by
             option("--http-bind-ip", help = "Bind ip for the http api").defaultLazy {
-                val value = "127.0.0.1" // Default value
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nhttp-bind-ip=$value")
+                val defaultHttpBindIp = "127.0.0.1"
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
+                    ambrosiaConfFileSink.writeString("\nhttp-bind-ip=$defaultHttpBindIp")
                 }
-                value
+                defaultHttpBindIp
             }
         val httpBindPort by
             option("--http-bind-port", help = "Bind port for the http api").int().defaultLazy {
-                val value = 9154 // Default value
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nhttp-bind-port=$value")
+                val defaultHttpBindPort = 9154
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
+                    ambrosiaConfFileSink.writeString("\nhttp-bind-port=$defaultHttpBindPort")
                 }
-                value
+                defaultHttpBindPort
             }
         val sslBindPort by
             option("--ssl-bind-port", help = "Bind port for the https api").int().defaultLazy {
-                val value = 9443
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nssl-bind-port=$value")
+                val defaultSslBindPort = 9443
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
+                    ambrosiaConfFileSink.writeString("\nssl-bind-port=$defaultSslBindPort")
                 }
-                value
+                defaultSslBindPort
             }
         val secret by
             option("--secret", help = "Secret key for the server", envvar = EnvVars.AMBROSIA_SECRET).defaultLazy {
-                val seed = SeedGenerator.generateSeed() // Generate a new seed
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nsecret=$seed")
+                val generatedServerSecret = SeedGenerator.generateSeed()
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
+                    ambrosiaConfFileSink.writeString("\nsecret=$generatedServerSecret")
                 }
-                seed
+                generatedServerSecret
             }
         val nwcUri by
             option(
@@ -155,11 +155,11 @@ class Ambrosia : CliktCommand() {
                 help = "phoenixd API url, eg http://phoenixd:9740",
                 envvar = "PHOENIXD_URL",
             ).defaultLazy {
-                val value = "http://localhost:9740" // Default value
-                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use {
-                    it.writeString("\nphoenixd-url=$value")
+                val defaultPhoenixdUrl = "http://localhost:9740"
+                SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
+                    ambrosiaConfFileSink.writeString("\nphoenixd-url=$defaultPhoenixdUrl")
                 }
-                value
+                defaultPhoenixdUrl
             }
         val phoenixdPassword by
             option(
@@ -169,12 +169,12 @@ class Ambrosia : CliktCommand() {
             ).defaultLazy {
                 if (nwcUri != null) return@defaultLazy ""
                 AppConfig.loadConfig()
-                val value =
+                val phoenixdHttpPasswordFromPhoenixConf =
                     AppConfig.getPhoenixProperty("http-password")
                         ?: throw Exception(
                             "phoenixd http-password on found in phoenix.conf, please provide it with --phoenixd-password or in the phoenix.conf file",
                         )
-                value
+                phoenixdHttpPasswordFromPhoenixConf
             }
         val phoenixdRemote by
             option(
@@ -194,8 +194,8 @@ class Ambrosia : CliktCommand() {
             ).defaultLazy {
                 if (nwcUri != null) return@defaultLazy ""
                 AppConfig.loadConfig()
-                val existing = AppConfig.getPhoenixProperty("webhook-secret")
-                existing
+                val phoenixdWebhookSecretFromPhoenixConf = AppConfig.getPhoenixProperty("webhook-secret")
+                phoenixdWebhookSecretFromPhoenixConf
                     ?: throw Exception(
                         "phoenixd webhook-secret not found in phoenix.conf, please provide it with --phoenixd-webhook-secret or set webhook-secret in phoenix.conf",
                     )
@@ -243,17 +243,17 @@ class Ambrosia : CliktCommand() {
                 .default(LogLevels.DEFAULT_SERVER_LEVEL)
     }
 
-    private val options by DaemonOptions()
+    private val daemonOptions by DaemonOptions()
 
     override fun run() {
         echo(green("Running Ambrosia POS Server v$appVersion"))
-        LoggingConfiguration.applyLevel(options.logLevel)
+        LoggingConfiguration.applyLevel(daemonOptions.logLevel)
         logger.info("Starting Ambrosia POS Server v{}", appVersion)
         logger.info("Using data directory: $datadir")
         logger.info(
             "Writing server logs to {} with level {}",
             LoggingConfiguration.logsDirectory(datadir.toString()),
-            options.logLevel,
+            daemonOptions.logLevel,
         )
 
         DatabaseConnection.init()
@@ -272,29 +272,38 @@ class Ambrosia : CliktCommand() {
                         applicationEnvironment {
                             config =
                                 MapApplicationConfig().apply {
-                                    put("jwt.accessTokenExpirationSeconds", options.jwtAccessTokenExpirationSeconds)
-                                    put("rate-limit.requestsPerMinute", options.rateLimitRequestsPerMinute)
+                                    put("jwt.accessTokenExpirationSeconds", daemonOptions.jwtAccessTokenExpirationSeconds)
+                                    put("rate-limit.requestsPerMinute", daemonOptions.rateLimitRequestsPerMinute)
                                     put("jwt.issuer", TokenService.JWT_ISSUER)
                                     put("jwt.audience", TokenService.JWT_AUDIENCE)
-                                    put("docker", options.docker.toString())
-                                    put("secret", options.secret)
-                                    put("phoenixd-url", options.phoenixdUrl)
-                                    put("phoenixd-remote", options.phoenixdRemote.toString())
-                                    options.webPushVapidPublicKey.takeIf { it.isNotBlank() }?.let {
-                                        put("web-push.vapid-public-key", it)
-                                    }
-                                    options.webPushVapidSubject.takeIf { it.isNotBlank() }?.let {
-                                        put("web-push.vapid-subject", it)
-                                    }
-                                    options.webPushEnabled.takeIf { it.isNotBlank() }?.let {
-                                        put("web-push.enabled", it)
-                                    }
+                                    put("docker", daemonOptions.docker.toString())
+                                    put("secret", daemonOptions.secret)
+                                    put("phoenixd-url", daemonOptions.phoenixdUrl)
+                                    put("phoenixd-remote", daemonOptions.phoenixdRemote.toString())
+                                    daemonOptions.webPushVapidPublicKey
+                                        .takeIf { webPushOptionValue ->
+                                            webPushOptionValue.isNotBlank()
+                                        }?.let { webPushOptionValue ->
+                                            put("web-push.vapid-public-key", webPushOptionValue)
+                                        }
+                                    daemonOptions.webPushVapidSubject
+                                        .takeIf { webPushOptionValue ->
+                                            webPushOptionValue.isNotBlank()
+                                        }?.let { webPushOptionValue ->
+                                            put("web-push.vapid-subject", webPushOptionValue)
+                                        }
+                                    daemonOptions.webPushEnabled
+                                        .takeIf { webPushOptionValue ->
+                                            webPushOptionValue.isNotBlank()
+                                        }?.let { webPushOptionValue ->
+                                            put("web-push.enabled", webPushOptionValue)
+                                        }
                                 }
                         },
                     configure = {
                         connector {
-                            port = options.httpBindPort
-                            host = options.httpBindIp
+                            port = daemonOptions.httpBindPort
+                            host = daemonOptions.httpBindIp
                         }
                         sslConnector(
                             keyStore = keyStore,
@@ -302,19 +311,19 @@ class Ambrosia : CliktCommand() {
                             keyStorePassword = { storePassword.toCharArray() },
                             privateKeyPassword = { privateKeyPassword.toCharArray() },
                         ) {
-                            port = options.sslBindPort
-                            host = options.httpBindIp
+                            port = daemonOptions.sslBindPort
+                            host = daemonOptions.httpBindIp
                         }
                     },
                     module = { Api().run { module() } },
                 )
             runningEmbeddedServer = server
             when {
-                options.nwcUri != null -> {
+                daemonOptions.nwcUri != null -> {
                     logger.info("NWC mode active, skipping Phoenix webhook configuration")
                 }
 
-                options.phoenixdRemote -> {
+                daemonOptions.phoenixdRemote -> {
                     logger.info(
                         "Remote phoenixd mode active, skipping local Phoenix webhook configuration. " +
                             "Payment notifications are received via an outbound WebSocket connection " +
@@ -323,13 +332,13 @@ class Ambrosia : CliktCommand() {
                 }
 
                 else -> {
-                    ensurePhoenixWebhookConfigured(options.phoenixdWebhookUrl)
+                    ensurePhoenixWebhookConfigured(daemonOptions.phoenixdWebhookUrl)
                 }
             }
             server.start(wait = true)
-        } catch (e: Exception) {
-            echo("Error starting server: ${e.message}", err = true)
-            throw e
+        } catch (serverStartupException: Exception) {
+            echo("Error starting server: ${serverStartupException.message}", err = true)
+            throw serverStartupException
         }
     }
 
@@ -341,10 +350,10 @@ class Ambrosia : CliktCommand() {
 
     private fun ensureKeyStore(): KeyStoreInfo {
         val keyStoreFile = File(datadir.toString(), "keystore.jks")
-        val privateKeyPassword = options.secret
+        val privateKeyPassword = daemonOptions.secret
         val storePassword =
             SeedGenerator.generateSecureSeed(
-                seedInput = options.secret,
+                seedInput = daemonOptions.secret,
             )
 
         if (!keyStoreFile.exists()) {
@@ -380,7 +389,7 @@ class Ambrosia : CliktCommand() {
     private fun ensureWebPushConfig() {
         val existingValues = readConfValues(confFile)
         val missingVapidConfig =
-            WEB_PUSH_VAPID_CONF_KEYS.any { existingValues[it].isNullOrBlank() }
+            WEB_PUSH_VAPID_CONF_KEYS.any { vapidConfKey -> existingValues[vapidConfKey].isNullOrBlank() }
         val encryptionIsLocked = SecretsStore.isLocked()
         if (missingVapidConfig && encryptionIsLocked) return
 
@@ -410,7 +419,7 @@ class Ambrosia : CliktCommand() {
                 WEB_PUSH_VAPID_PUBLIC_KEY_CONF to vapidKeys.publicKey,
                 WEB_PUSH_VAPID_SUBJECT_CONF to vapidKeys.subject,
             )
-        if (nonSecretValues.any { (key, value) -> existingValues[key] != value }) {
+        if (nonSecretValues.any { (confKey, confValue) -> existingValues[confKey] != confValue }) {
             writeConfValues(confFile, nonSecretValues)
         }
         if (!encryptionIsLocked && vapidKeys.privateKey != currentDecryptedPrivateKeyOrNull) {
@@ -423,7 +432,7 @@ class Ambrosia : CliktCommand() {
     }
 
     private fun ensureNwcUriPersisted() {
-        val nwcUri = options.nwcUri ?: return
+        val nwcUri = daemonOptions.nwcUri ?: return
         if (SecretsStore.isLocked()) return
         if (SecretsStore.getSecretOrNull("nwc-uri") != null) return
 
@@ -433,23 +442,29 @@ class Ambrosia : CliktCommand() {
     private fun ensurePhoenixdPasswordPersisted() {
         if (SecretsStore.isLocked()) return
         if (SecretsStore.getSecretOrNull("phoenixd-password") != null) return
-        if (options.phoenixdPassword.isBlank()) return
+        if (daemonOptions.phoenixdPassword.isBlank()) return
 
-        SecretsStore.setSecret("phoenixd-password", options.phoenixdPassword)
+        SecretsStore.setSecret("phoenixd-password", daemonOptions.phoenixdPassword)
     }
 
     private fun ensurePhoenixdWebhookSecretPersisted() {
         if (SecretsStore.isLocked()) return
         if (SecretsStore.getSecretOrNull("phoenixd-webhook-secret") != null) return
-        if (options.phoenixdWebhookSecret.isBlank()) return
+        if (daemonOptions.phoenixdWebhookSecret.isBlank()) return
 
-        SecretsStore.setSecret("phoenixd-webhook-secret", options.phoenixdWebhookSecret)
+        SecretsStore.setSecret("phoenixd-webhook-secret", daemonOptions.phoenixdWebhookSecret)
     }
 
     private fun readEnvironmentVapidKeysOrNull(): VapidKeys? {
-        val publicKey = System.getenv("WEB_PUSH_VAPID_PUBLIC_KEY")?.takeIf { it.isNotBlank() }
-        val privateKey = System.getenv("WEB_PUSH_VAPID_PRIVATE_KEY")?.takeIf { it.isNotBlank() }
-        val subject = System.getenv("WEB_PUSH_VAPID_SUBJECT")?.takeIf { it.isNotBlank() }
+        val publicKey =
+            System.getenv("WEB_PUSH_VAPID_PUBLIC_KEY")?.takeIf { environmentVariableValue ->
+                environmentVariableValue.isNotBlank()
+            }
+        val privateKey =
+            System.getenv("WEB_PUSH_VAPID_PRIVATE_KEY")?.takeIf { environmentVariableValue ->
+                environmentVariableValue.isNotBlank()
+            }
+        val subject = System.getenv("WEB_PUSH_VAPID_SUBJECT")?.takeIf { environmentVariableValue -> environmentVariableValue.isNotBlank() }
 
         if (publicKey == null && privateKey == null && subject == null) {
             return null
@@ -462,13 +477,13 @@ class Ambrosia : CliktCommand() {
         return VapidKeys(publicKey = publicKey, privateKey = privateKey, subject = subject)
     }
 
-    private fun readRequiredConfigValue(key: String): String =
-        readConfValues(confFile)[key] ?: throw IllegalStateException("$key not found in ambrosia.conf")
+    private fun readRequiredConfigValue(confKey: String): String =
+        readConfValues(confFile)[confKey] ?: throw IllegalStateException("$confKey not found in ambrosia.conf")
 
-    private fun ensurePhoenixWebhookConfigured(url: String) {
+    private fun ensurePhoenixWebhookConfigured(webhookUrl: String) {
         File(phoenixConfFile.toString()).parentFile?.mkdirs()
-        if (replaceConfFileProperty(phoenixConfFile, "webhook", url)) {
-            logger.info("Updated phoenix webhook entry to webhook=$url in $phoenixConfFile")
+        if (replaceConfFileProperty(phoenixConfFile, "webhook", webhookUrl)) {
+            logger.info("Updated phoenix webhook entry to webhook=$webhookUrl in $phoenixConfFile")
         }
     }
 
