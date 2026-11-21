@@ -10,6 +10,13 @@ For more details about the Docker installation, see [ambrosia-tutorial](https://
 docker-compose up -d --wait && docker-compose restart
 ```
 
+> [!NOTE]
+> The app is served at `https://localhost` (or whatever hostname resolves to this machine) — not
+> `localhost:3000` directly. A reverse proxy (Caddy) now sits in front of the backend and
+> frontend, which are no longer reachable on their own ports. Your browser will warn about the
+> certificate being untrusted on first visit — that's expected, it's a self-signed local
+> certificate, not an error.
+
 ## Installation (Native)
 
 > [!WARNING]  
