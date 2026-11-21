@@ -67,7 +67,6 @@ fun Route.spaces(spaceService: SpaceService) {
 
             val updatedSpace = call.receive<Space>()
             val isUpdated = spaceService.updateSpace(updatedSpace.copy(id = id))
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Space with ID: $id not found")

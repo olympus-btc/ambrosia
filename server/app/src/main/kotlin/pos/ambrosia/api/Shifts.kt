@@ -33,14 +33,14 @@ import pos.ambrosia.utils.authorizePermission
 import java.time.LocalDate
 
 private fun parseShiftsReportDateQueryParam(
-    value: String?,
-    name: String,
+    dateQueryParameterValue: String?,
+    queryParameterName: String,
 ): String? {
-    if (value.isNullOrBlank()) return null
+    if (dateQueryParameterValue.isNullOrBlank()) return null
     return try {
-        LocalDate.parse(value).toString()
+        LocalDate.parse(dateQueryParameterValue).toString()
     } catch (_: Exception) {
-        throw IllegalArgumentException("Invalid $name: $value. Expected format YYYY-MM-DD")
+        throw IllegalArgumentException("Invalid $queryParameterName: $dateQueryParameterValue. Expected format YYYY-MM-DD")
     }
 }
 
@@ -96,7 +96,10 @@ fun Route.shifts(
     }
     authorizeAdminPermission("shifts_report_read") {
         get("/report") {
-            val requestedPeriod = call.request.queryParameters["period"]?.takeIf { it.isNotBlank() }
+            val requestedPeriod =
+                call.request.queryParameters["period"]?.takeIf { periodQueryParameter ->
+                    periodQueryParameter.isNotBlank()
+                }
 
             val requestedStartDate: String?
             val requestedEndDate: String?
@@ -174,7 +177,6 @@ fun Route.shifts(
 
                 val updatedShift = call.receive<Shift>()
                 val isUpdated = shiftService.updateShift(updatedShift.copy(id = id))
-                logger.info(isUpdated.toString())
 
                 if (!isUpdated) {
                     call.respond(HttpStatusCode.NotFound, "Shift with ID: $id not found")

@@ -48,6 +48,7 @@ The image is built from the board's official Debian Bookworm base. On top of it 
 - **Orange Pi Wi-Fi workarounds**: `ambrosia-wifi-watchdog.service` and Wi-Fi power saving disabled in NetworkManager
 - Ambrosia server, client and Phoenixd run as the locked `ambrosia-service` account (preferred UID 1002). The SSH operator remains `ambrosia`; Caddy uses its own account.
 - Per-unit TLS export services and the `/trust/` installation assistant are included automatically.
+- **Log limits to protect the microSD card**: the systemd journal is capped at 30 MB and 7 days (`/etc/systemd/journald.conf.d/ambrosia-journald.conf`), and the Ambrosia server keeps at most 20 MB / 7 days of its own logs in `/home/ambrosia-service/.Ambrosia-POS/logs/`. Admins can view them live and download them from Settings → System → Logs.
 
 ## Base image
 

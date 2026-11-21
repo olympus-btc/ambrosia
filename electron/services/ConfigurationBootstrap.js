@@ -2,7 +2,9 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
+import { readConfigurationFile } from '../utils/configurationFile.js';
 import { logger } from '../utils/logger.js';
+import { pruneProcessLogFiles } from '../utils/processLogFiles.js';
 import { getDataDirectory, getPhoenixDataDirectory, getLogsDirectory } from '../utils/resourcePaths.js';
 
 import { phoenixdCredentialsStore } from './PhoenixdCredentialsStore.js';
@@ -28,50 +30,29 @@ function configExists() {
   return fs.existsSync(ambrosiaConfigPath) && fs.existsSync(phoenixConfigPath);
 }
 
-function readConfig(configPath) {
-  if (!fs.existsSync(configPath)) {
-    return {};
-  }
-
-  const configFileContent = fs.readFileSync(configPath, 'utf-8');
-  const configEntries = {};
-
-  configFileContent.split('\n').forEach((line) => {
-    const trimmedLine = line.trim();
-    if (trimmedLine && !trimmedLine.startsWith('#')) {
-      const [key, ...valueParts] = trimmedLine.split('=');
-      if (key && valueParts.length > 0) {
-        configEntries[key.trim()] = valueParts.join('=').trim();
-      }
-    }
-  });
-
-  return configEntries;
-}
-
 function writeConfig(configPath, configEntries) {
-  const configFileLines = Object.entries(configEntries).map(([key, value]) => `${key}=${value}`);
+  const configFileLines = Object.entries(configEntries).map(([configKey, configValue]) => `${configKey}=${configValue}`);
   fs.writeFileSync(configPath, `${configFileLines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
   logger.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
-function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, label) {
+function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, secretDescription) {
   if (readSecret()) {
     return;
   }
 
   if (legacyPlaintextSecret) {
-    logger.log(`[ConfigurationBootstrap] Migrating the existing ${label} to encrypted storage...`);
+    logger.log(`[ConfigurationBootstrap] Migrating the existing ${secretDescription} to encrypted storage...`);
     saveSecret(legacyPlaintextSecret);
   } else {
-    logger.log(`[ConfigurationBootstrap] Generating encrypted ${label}...`);
+    logger.log(`[ConfigurationBootstrap] Generating encrypted ${secretDescription}...`);
     saveSecret(generateRandomHex(32));
   }
 }
 
 function syncRestoredServerSecret() {
   const ambrosiaConfigPath = path.join(getDataDirectory(), 'ambrosia.conf');
-  const ambrosiaConfig = readConfig(ambrosiaConfigPath);
+  const ambrosiaConfig = readConfigurationFile(ambrosiaConfigPath);
 
   if (!ambrosiaConfig.secret || ambrosiaConfig.secret === serverSecretStore.read()) {
     return false;
@@ -94,7 +75,7 @@ function syncRestoredServerSecret() {
 
 function syncRestoredPhoenixdCredentials() {
   const phoenixConfigPath = path.join(getPhoenixDataDirectory(), 'phoenix.conf');
-  const phoenixConfig = readConfig(phoenixConfigPath);
+  const phoenixConfig = readConfigurationFile(phoenixConfigPath);
 
   const httpPasswordDiffers = phoenixConfig['http-password']
     && phoenixConfig['http-password'] !== phoenixdCredentialsStore.readHttpPassword();
@@ -129,12 +110,13 @@ async function ensureConfigurations(ports) {
   ensureDirectoryExists(dataDirectory);
   ensureDirectoryExists(phoenixDirectory);
   ensureDirectoryExists(logsDirectory);
+  pruneProcessLogFiles();
 
   const ambrosiaConfigPath = path.join(dataDirectory, 'ambrosia.conf');
   const phoenixConfigPath = path.join(phoenixDirectory, 'phoenix.conf');
 
-  let ambrosiaConfig = readConfig(ambrosiaConfigPath);
-  let phoenixConfig = readConfig(phoenixConfigPath);
+  let ambrosiaConfig = readConfigurationFile(ambrosiaConfigPath);
+  let phoenixConfig = readConfigurationFile(phoenixConfigPath);
 
   let needsUpdate = false;
 
@@ -220,7 +202,7 @@ async function ensureConfigurations(ports) {
 export const configurationBootstrap = {
   configExists,
   ensureConfigurations,
-  readConfig,
+  readConfig: readConfigurationFile,
   writeConfig,
   generateRandomHex,
   syncRestoredServerSecret,

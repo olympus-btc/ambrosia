@@ -1,8 +1,13 @@
+import { reportClientError } from "@/lib/logging/reportClientError";
+import { CLIENT_LOG_REPORTS_ENDPOINT } from "@/lib/logs";
+
 import { httpWrapper } from "./httpWrapper";
 
-export function dispatchAuthEvent(name) {
+const FIRST_SERVER_ERROR_STATUS = 500;
+
+export function dispatchAuthEvent(authEventName) {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(name));
+    window.dispatchEvent(new Event(authEventName));
   }
 }
 
@@ -16,14 +21,23 @@ export async function refreshAccessToken() {
   return refreshPromise;
 }
 
-export async function httpClient(endpoint, options = {}) {
-  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
+function reportServerErrorResponse(endpoint, httpOptions, httpResponse) {
+  if (!httpResponse || httpResponse.status < FIRST_SERVER_ERROR_STATUS) return;
+  const endpointPath = endpoint.split("?")[0];
+  if (endpointPath.startsWith(CLIENT_LOG_REPORTS_ENDPOINT)) return;
+  const requestMethod = (httpOptions.method || "GET").toUpperCase();
+  reportClientError({
+    message: `HTTP ${httpResponse.status} ${requestMethod} ${endpointPath}`,
+    context: { type: "http", status: String(httpResponse.status) },
+  });
+}
 
+async function sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions }) {
   const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet", "/backup"];
 
-  const shouldRefreshToken = (status, endpoint, skipRefresh) => {
-    if (status !== 401 || skipRefresh) return false;
-    return !AUTH_EXCLUDED_PATHS.some((path) => endpoint.startsWith(path));
+  const shouldRefreshToken = (responseStatus, requestedEndpoint, refreshSkipped) => {
+    if (responseStatus !== 401 || refreshSkipped) return false;
+    return !AUTH_EXCLUDED_PATHS.some((authExcludedPath) => requestedEndpoint.startsWith(authExcludedPath));
   };
 
   const initialResponse = await httpWrapper(endpoint, httpOptions);
@@ -39,11 +53,18 @@ export async function httpClient(endpoint, options = {}) {
   }
 
   if (initialResponse.status === 401 && !skipRefresh) {
-    const event = endpoint.startsWith("/wallet") || endpoint.startsWith("/backup") ? "wallet:unauthorized" : "auth:expired";
-    dispatchAuthEvent(event);
+    const unauthorizedEventName = endpoint.startsWith("/wallet") || endpoint.startsWith("/backup") ? "wallet:unauthorized" : "auth:expired";
+    dispatchAuthEvent(unauthorizedEventName);
   }
   if (initialResponse.status === 403 && !skipForbiddenRedirect)
     dispatchAuthEvent("auth:forbidden");
 
   return initialResponse;
+}
+
+export async function httpClient(endpoint, httpClientOptions = {}) {
+  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = httpClientOptions;
+  const authenticatedResponse = await sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions });
+  reportServerErrorResponse(endpoint, httpOptions, authenticatedResponse);
+  return authenticatedResponse;
 }

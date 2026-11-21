@@ -1,0 +1,53 @@
+const logsEn = {
+  cardLogs: {
+    title: "Logs",
+    subtitle: "Activity and errors from the server, the Lightning node and the app. Useful for diagnosing a problem.",
+    showLogsButton: "Show logs",
+    hideLogsButton: "Hide logs",
+    sourceLabel: "Source",
+    sources: {
+      server: "Server",
+      phoenixd: "Phoenixd",
+      client: "App (client errors)",
+    },
+    levelFilterLabel: "Level",
+    allLevels: "All levels",
+    levelOrHigher: "{level} or higher",
+    searchLabel: "Search",
+    searchPlaceholder: "Text to search in the logs",
+    liveLabel: "Live",
+    liveConnected: "Connected",
+    liveConnecting: "Connecting…",
+    livePaused: "Paused",
+    clearButton: "Clear view",
+    openFolderButton: "Open folder",
+    openFolderError: "Could not open the logs folder.",
+    downloadButton: "Download logs",
+    downloadError: "Could not download the logs.",
+    emptyState: "There are no logs to show.",
+    loading: "Loading logs…",
+    showDetails: "Show details",
+    unavailableReasons: {
+      remote_lightning_backend: "Phoenixd logs are not available because Ambrosia uses a remote node or NWC.",
+      log_file_not_found: "The phoenixd log file was not found on this device.",
+      log_file_not_readable: "Ambrosia does not have permission to read the phoenixd log file.",
+    },
+    serverLogLevelLabel: "Server log level",
+    serverLogLevelDescription: "How much detail the server saves. Use INFO day to day.",
+    levelsGuide: {
+      title: "What does each level mean?",
+      introduction: "Each level also saves every level above it in this list. For example, WARN saves warnings and errors.",
+      recommended: "Recommended",
+      levelDescriptions: {
+        ERROR: "Only failures that need attention, such as a payment that could not be processed or a lost connection to the Lightning node.",
+        WARN: "Errors plus things that went wrong but did not stop Ambrosia, such as an expired session or a rejected request.",
+        INFO: "Warnings and errors plus normal activity: startup, orders, payments and settings changes.",
+        DEBUG: "Everything above plus every request to the server (method, path, status and duration) and more detail from the desktop app. Use it to diagnose a problem and go back to INFO afterwards, because it uses more disk space.",
+      },
+    },
+    serverLogLevelUpdated: "Log level updated.",
+    serverLogLevelUpdateError: "Could not update the log level.",
+  },
+};
+
+export default logsEn;

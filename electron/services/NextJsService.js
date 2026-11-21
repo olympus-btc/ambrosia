@@ -5,7 +5,9 @@ import path from 'path';
 import { STARTUP } from '../utils/constants.js';
 import { healthCheck } from '../utils/healthCheck.js';
 import { logger } from '../utils/logger.js';
-import { getClientPath, getLogsDirectory, isDevelopment, getNodePath } from '../utils/resourcePaths.js';
+import { ProcessLogWriter } from '../utils/processLogFiles.js';
+import { pipeProcessOutputToLogs } from '../utils/processOutputLogging.js';
+import { getClientPath, isDevelopment, getNodePath } from '../utils/resourcePaths.js';
 
 const require = createRequire(import.meta.url);
 const spawn = require('cross-spawn');
@@ -16,34 +18,28 @@ export default class NextJsService {
     this.process = null;
     this.status = 'stopped';
     this.port = null;
-    this.logStream = null;
+    this.processLogWriter = null;
   }
 
-  async start(port, backendConfig = {}) {
+  async start(nextJsPort, backendConfig = {}) {
     if (this.process) {
       throw new Error('Next.js service is already running');
     }
 
-    this.port = port;
+    this.port = nextJsPort;
     this.status = 'starting';
 
     try {
       const clientPath = getClientPath();
-      const logsDirectory = getLogsDirectory();
 
-      if (!fs.existsSync(logsDirectory)) {
-        fs.mkdirSync(logsDirectory, { recursive: true });
-      }
-
-      const logFile = path.join(logsDirectory, `nextjs-${new Date().toISOString().split('T')[0]}.log`);
-      this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
+      this.processLogWriter = new ProcessLogWriter('nextjs');
 
       const isDevelopmentMode = isDevelopment();
       let command, commandArguments, cwd;
 
       if (isDevelopmentMode) {
         command = 'npm';
-        commandArguments = ['run', 'dev', '--', '-p', port.toString()];
+        commandArguments = ['run', 'dev', '--', '-p', nextJsPort.toString()];
         cwd = clientPath;
       } else {
         command = getNodePath();
@@ -51,10 +47,10 @@ export default class NextJsService {
         cwd = clientPath;
       }
 
-      logger.log(`[NextJsService] Starting Next.js at port ${port}...`);
+      logger.log(`[NextJsService] Starting Next.js at port ${nextJsPort}...`);
       logger.log(`[NextJsService] Command: ${command} ${commandArguments.join(' ')}`);
       logger.log(`[NextJsService] Working directory: ${cwd}`);
-      logger.log(`[NextJsService] Environment PORT: ${port}`);
+      logger.log(`[NextJsService] Environment PORT: ${nextJsPort}`);
 
       const backendHost = backendConfig.host || 'localhost';
       const backendPort = backendConfig.port || '9154';
@@ -70,8 +66,8 @@ export default class NextJsService {
         logger.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
       }
 
-      const env = {
-        PORT: port.toString(),
+      const nextJsProcessEnvironment = {
+        PORT: nextJsPort.toString(),
         HOSTNAME: '127.0.0.1',
         NODE_ENV: process.env.NODE_ENV || 'production',
         PATH: process.env.PATH,
@@ -81,10 +77,10 @@ export default class NextJsService {
       };
 
       logger.log(`[NextJsService] Environment variables:`, {
-        PORT: env.PORT,
-        HOSTNAME: env.HOSTNAME,
-        NEXT_PUBLIC_API_URL: env.NEXT_PUBLIC_API_URL,
-        NEXT_PUBLIC_ELECTRON: env.NEXT_PUBLIC_ELECTRON,
+        PORT: nextJsProcessEnvironment.PORT,
+        HOSTNAME: nextJsProcessEnvironment.HOSTNAME,
+        NEXT_PUBLIC_API_URL: nextJsProcessEnvironment.NEXT_PUBLIC_API_URL,
+        NEXT_PUBLIC_ELECTRON: nextJsProcessEnvironment.NEXT_PUBLIC_ELECTRON,
       });
 
       logger.log(`[NextJsService] Spawning process...`);
@@ -92,7 +88,7 @@ export default class NextJsService {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env,
+        env: nextJsProcessEnvironment,
       });
 
       this.process = spawnedProcess;
@@ -102,21 +98,7 @@ export default class NextJsService {
       }
       logger.log(`[NextJsService] Process spawned with PID: ${spawnedProcess.pid}`);
 
-      spawnedProcess.stdout.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.log(`[Next.js] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ${outputText}`);
-        }
-      });
-
-      spawnedProcess.stderr.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.error(`[Next.js ERROR] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${outputText}`);
-        }
-      });
+      pipeProcessOutputToLogs({ spawnedProcess, processLogWriter: this.processLogWriter, consoleLabel: 'Next.js' });
 
       spawnedProcess.on('error', (spawnError) => {
         logger.error('[NextJsService] Failed to start:', spawnError);
@@ -126,8 +108,8 @@ export default class NextJsService {
         }
       });
 
-      spawnedProcess.on('close', (code) => {
-        logger.log(`[NextJsService] Process exited with code ${code}`);
+      spawnedProcess.on('close', (exitCode) => {
+        logger.log(`[NextJsService] Process exited with code ${exitCode}`);
         if (this.process === spawnedProcess) {
           this.status = 'stopped';
           this.cleanup();
@@ -135,12 +117,12 @@ export default class NextJsService {
       });
 
       logger.log('[NextJsService] Waiting for Next.js to be healthy...');
-      await healthCheck.checkNextJs(port);
+      await healthCheck.checkNextJs(nextJsPort);
 
       this.status = 'running';
       logger.log('[NextJsService] Next.js is running and healthy');
 
-      return { port, url: `http://localhost:${port}` };
+      return { port: nextJsPort, url: `http://localhost:${nextJsPort}` };
     } catch (startupError) {
       logger.error('[NextJsService] Startup failed:', startupError);
       this.status = 'error';
@@ -192,9 +174,9 @@ export default class NextJsService {
     }
     this.process = null;
     this.status = 'stopped';
-    if (this.logStream) {
-      this.logStream.end();
-      this.logStream = null;
+    if (this.processLogWriter) {
+      this.processLogWriter.end();
+      this.processLogWriter = null;
     }
   }
 

@@ -61,6 +61,21 @@ The Phoenixd installation script installs Phoenixd automatically. The script dow
 
 Check [Mastering Phoenixd](https://btcgdl.github.io/Mastering-phoenixd/) for more details.
 
+## Logs
+
+Admins can watch the logs in real time and download them as a ZIP from **Settings → System → Logs**. The viewer shows three sources: the Ambrosia server, Phoenixd (only when Phoenixd runs on the same machine) and errors reported by the app in the browser.
+
+The server writes its own log files in every installation mode, keeping at most 7 days and 20 MB:
+
+| Installation | Server log files | Phoenixd log file | Process output |
+|---|---|---|---|
+| Docker | `ambrosia_datadir` volume, `logs/server.log` | `phoenixd_datadir` volume, `phoenix.log` | `docker logs <container>` (10 MB × 3 per container) |
+| Native with systemd | `~/.Ambrosia-POS/logs/server.log` | `~/.phoenix/phoenix.log` | `journalctl -u ambrosia -u ambrosia-client -u phoenixd` |
+| Native without service | `~/.Ambrosia-POS/logs/server.log` | `~/.phoenix/phoenix.log` | The terminal where each command runs |
+| Desktop app | `~/.Ambrosia-POS/logs/server.log` | `~/.phoenix/phoenix.log` | `~/.Ambrosia-POS/logs/electron/` |
+
+To get more detail while diagnosing a problem, change the server log level to `DEBUG` from the same screen, or set `log-level=DEBUG` in `~/.Ambrosia-POS/ambrosia.conf` (or the `AMBROSIA_LOG_LEVEL` environment variable) and restart the server. With `DEBUG` the server also records every HTTP request it answers (method, path without the query string, status and duration; health checks are skipped). In the desktop app the same selector also turns on the detailed messages of the app itself in `~/.Ambrosia-POS/logs/electron/main-*.log`. Return it to `INFO` afterwards. Passwords, tokens, seeds and NWC connection strings are masked before they are written to the logs.
+
 ## Uninstallation 
 
 To uninstall Ambrosia POS and Phoenixd, run the following script:

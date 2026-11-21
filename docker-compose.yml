@@ -1,8 +1,15 @@
+x-logging: &container-log-rotation
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   phoenixd:
     image: acinq/phoenixd:0.9.1
     container_name: phoenixd
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     volumes:
@@ -17,6 +24,7 @@ services:
     image: ambrosia
     container_name: ambrosia
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     ports:
@@ -43,6 +51,7 @@ services:
     image: ambrosia-client
     container_name: ambrosia-client
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     depends_on:

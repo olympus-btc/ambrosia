@@ -1,0 +1,53 @@
+const logsEs = {
+  cardLogs: {
+    title: "Registros",
+    subtitle: "Actividad y errores del servidor, del nodo Lightning y de la app. Útiles para diagnosticar un problema.",
+    showLogsButton: "Ver registros",
+    hideLogsButton: "Ocultar registros",
+    sourceLabel: "Origen",
+    sources: {
+      server: "Servidor",
+      phoenixd: "Phoenixd",
+      client: "Aplicación (errores del cliente)",
+    },
+    levelFilterLabel: "Nivel",
+    allLevels: "Todos los niveles",
+    levelOrHigher: "{level} o superior",
+    searchLabel: "Buscar",
+    searchPlaceholder: "Texto a buscar en los registros",
+    liveLabel: "En vivo",
+    liveConnected: "Conectado",
+    liveConnecting: "Conectando…",
+    livePaused: "En pausa",
+    clearButton: "Limpiar vista",
+    openFolderButton: "Abrir carpeta",
+    openFolderError: "No se pudo abrir la carpeta de registros.",
+    downloadButton: "Descargar registros",
+    downloadError: "No se pudieron descargar los registros.",
+    emptyState: "No hay registros para mostrar.",
+    loading: "Cargando registros…",
+    showDetails: "Ver detalles",
+    unavailableReasons: {
+      remote_lightning_backend: "Los registros de phoenixd no están disponibles porque Ambrosia usa un nodo remoto o NWC.",
+      log_file_not_found: "No se encontró el archivo de registros de phoenixd en este equipo.",
+      log_file_not_readable: "Ambrosia no tiene permisos para leer el archivo de registros de phoenixd.",
+    },
+    serverLogLevelLabel: "Nivel de registro del servidor",
+    serverLogLevelDescription: "Cuánto detalle guarda el servidor. Usa INFO en el día a día.",
+    levelsGuide: {
+      title: "¿Qué significa cada nivel?",
+      introduction: "Cada nivel guarda también todos los niveles que están arriba de él en esta lista. Por ejemplo, WARN guarda advertencias y errores.",
+      recommended: "Recomendado",
+      levelDescriptions: {
+        ERROR: "Solo fallas que necesitan atención, como un pago que no se pudo procesar o la pérdida de conexión con el nodo Lightning.",
+        WARN: "Errores y también cosas que salieron mal pero no detuvieron a Ambrosia, como una sesión vencida o una petición rechazada.",
+        INFO: "Advertencias y errores más la actividad normal: arranque, órdenes, pagos y cambios de configuración.",
+        DEBUG: "Todo lo anterior más cada petición al servidor (método, ruta, estado y duración) y más detalle de la app de escritorio. Úsalo para diagnosticar un problema y vuelve a INFO después, porque ocupa más espacio en disco.",
+      },
+    },
+    serverLogLevelUpdated: "Nivel de registro actualizado.",
+    serverLogLevelUpdateError: "No se pudo actualizar el nivel de registro.",
+  },
+};
+
+export default logsEs;

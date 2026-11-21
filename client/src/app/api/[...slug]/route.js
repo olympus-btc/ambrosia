@@ -1,71 +1,71 @@
 import { API_URL } from "@/config/api";
-
-const apiUrl = API_URL;
+import { reportServerError } from "@/lib/logging/reportServerError";
 
 const HEADERS_EXCLUDED_FROM_PROXY = ["content-length", "origin"];
 
-function buildHeaders(request) {
-  const headers = new Headers();
-  request.headers.forEach((value, key) => {
-    if (HEADERS_EXCLUDED_FROM_PROXY.includes(key.toLowerCase())) return;
-    headers.set(key, value);
+function buildBackendRequestHeaders(incomingRequest) {
+  const backendRequestHeaders = new Headers();
+  incomingRequest.headers.forEach((headerValue, headerName) => {
+    if (HEADERS_EXCLUDED_FROM_PROXY.includes(headerName.toLowerCase())) return;
+    backendRequestHeaders.set(headerName, headerValue);
   });
-  return headers;
+  return backendRequestHeaders;
 }
 
-async function buildResponse(response) {
-  const responseHeaders = {};
+async function buildProxyResponse(backendResponse) {
+  const proxyResponseHeaders = {};
 
-  const setCookieHeaders = response.headers.getSetCookie?.() || [];
+  const setCookieHeaders = backendResponse.headers.getSetCookie?.() || [];
   if (setCookieHeaders.length > 0) {
-    responseHeaders["Set-Cookie"] = setCookieHeaders;
+    proxyResponseHeaders["Set-Cookie"] = setCookieHeaders;
   } else {
-    const setCookieHeader = response.headers.get("set-cookie");
+    const setCookieHeader = backendResponse.headers.get("set-cookie");
     if (setCookieHeader) {
-      responseHeaders["Set-Cookie"] = setCookieHeader;
+      proxyResponseHeaders["Set-Cookie"] = setCookieHeader;
     }
   }
 
-  if (response.status === 204) {
-    return new Response(null, { status: 204, headers: responseHeaders });
+  if (backendResponse.status === 204) {
+    return new Response(null, { status: 204, headers: proxyResponseHeaders });
   }
 
-  const contentType = response.headers.get("content-type");
-  const data = contentType?.includes("application/json")
-    ? await response.json()
-    : await response.text();
+  const backendContentType = backendResponse.headers.get("content-type");
+  const backendResponseBody = backendContentType?.includes("application/json")
+    ? await backendResponse.json()
+    : await backendResponse.text();
 
-  return Response.json(data, { status: response.status, headers: responseHeaders });
+  return Response.json(backendResponseBody, { status: backendResponse.status, headers: proxyResponseHeaders });
 }
 
-async function proxyRequest(request, params, method) {
-  const resolvedParams = await params;
-  const { search } = new URL(request.url);
-  const url = `${apiUrl}/${resolvedParams.slug.join("/")}${search}`;
-  const headers = buildHeaders(request);
+async function proxyRequest(incomingRequest, routeParams, httpMethod) {
+  const resolvedRouteParams = await routeParams;
+  const backendPath = `/${resolvedRouteParams.slug.join("/")}`;
+  const { search: incomingQueryString } = new URL(incomingRequest.url);
+  const backendUrl = `${API_URL}${backendPath}${incomingQueryString}`;
 
-  const fetchOptions = { method, headers };
+  const backendFetchOptions = { method: httpMethod, headers: buildBackendRequestHeaders(incomingRequest) };
 
-  if (method === "POST") {
-    fetchOptions.body = request.body;
-    fetchOptions.duplex = "half";
-  } else if (method === "PUT" || method === "PATCH" || method === "DELETE") {
-    fetchOptions.body = await request.text();
+  if (httpMethod === "POST") {
+    backendFetchOptions.body = incomingRequest.body;
+    backendFetchOptions.duplex = "half";
+  } else if (httpMethod === "PUT" || httpMethod === "PATCH" || httpMethod === "DELETE") {
+    backendFetchOptions.body = await incomingRequest.text();
   }
 
   try {
-    const response = await fetch(url, fetchOptions);
-    return buildResponse(response);
-  } catch (error) {
-    console.error("Error:", error);
+    const backendResponse = await fetch(backendUrl, backendFetchOptions);
+    return await buildProxyResponse(backendResponse);
+  } catch (proxyError) {
+    console.error("Error:", proxyError);
+    reportServerError(incomingRequest, proxyError, { type: "api.proxy", method: httpMethod, path: backendPath });
     return Response.json(
-      { error: "Failed to fetch", details: error.message },
+      { error: "Failed to fetch", details: proxyError.message },
       { status: 500 },
     );
   }
 }
 
-export const GET = (req, { params }) => proxyRequest(req, params, "GET");
-export const POST = (req, { params }) => proxyRequest(req, params, "POST");
-export const PUT = (req, { params }) => proxyRequest(req, params, "PUT");
-export const DELETE = (req, { params }) => proxyRequest(req, params, "DELETE");
+export const GET = (incomingRequest, { params: routeParams }) => proxyRequest(incomingRequest, routeParams, "GET");
+export const POST = (incomingRequest, { params: routeParams }) => proxyRequest(incomingRequest, routeParams, "POST");
+export const PUT = (incomingRequest, { params: routeParams }) => proxyRequest(incomingRequest, routeParams, "PUT");
+export const DELETE = (incomingRequest, { params: routeParams }) => proxyRequest(incomingRequest, routeParams, "DELETE");
