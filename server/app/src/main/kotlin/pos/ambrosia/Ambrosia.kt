@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.mordant.rendering.TextColors.green
 import com.github.ajalt.mordant.rendering.TextColors.yellow
@@ -32,13 +33,14 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.config.EnvVars
-import pos.ambrosia.config.InjectLogs
 import pos.ambrosia.config.ListValueSource
 import pos.ambrosia.config.SeedGenerator
 import pos.ambrosia.config.readConfValues
 import pos.ambrosia.config.replaceConfFileProperty
 import pos.ambrosia.config.writeConfValues
 import pos.ambrosia.db.DatabaseConnection
+import pos.ambrosia.logging.LogLevels
+import pos.ambrosia.logging.LoggingConfiguration
 import pos.ambrosia.services.BackupService
 import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.TokenService
@@ -65,6 +67,7 @@ var runningEmbeddedServer: EmbeddedServer<*, *>? = null
     private set
 
 fun main(args: Array<String>) {
+    LoggingConfiguration.install(datadir.toString())
     pendingDataImportWasApplied = BackupService().applyPendingImport()
     Ambrosia().main(args)
 }
@@ -139,7 +142,6 @@ class Ambrosia : CliktCommand() {
 
     init {
         SystemFileSystem.createDirectories(datadir)
-        InjectLogs.ensureLogConfig(datadir.toString())
         attemptAutoUnlock()
         ensureWebPushConfig()
 
@@ -285,13 +287,27 @@ class Ambrosia : CliktCommand() {
                 help = "Set to false to disable browser Web Push dispatch",
                 envvar = "WEB_PUSH_ENABLED",
             ).defaultLazy { this@Ambrosia.readRequiredConfigValue(WEB_PUSH_ENABLED_CONF) }
+        val logLevel by
+            option(
+                "--log-level",
+                help = "Server log level (ERROR, WARN, INFO, DEBUG)",
+                envvar = "AMBROSIA_LOG_LEVEL",
+            ).choice(*LogLevels.CONFIGURABLE_SERVER_LEVELS.toTypedArray(), ignoreCase = true)
+                .default(LogLevels.DEFAULT_SERVER_LEVEL)
     }
 
     private val options by DaemonOptions()
 
     override fun run() {
         echo(green("Running Ambrosia POS Server v$appVersion"))
+        LoggingConfiguration.applyLevel(options.logLevel)
+        logger.info("Starting Ambrosia POS Server v{}", appVersion)
         logger.info("Using data directory: $datadir")
+        logger.info(
+            "Writing server logs to {} with level {}",
+            LoggingConfiguration.logsDirectory(datadir.toString()),
+            options.logLevel,
+        )
 
         DatabaseConnection.init()
         Runtime.getRuntime().addShutdownHook(Thread { DatabaseConnection.close() })
