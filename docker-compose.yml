@@ -4,12 +4,19 @@ x-container-hardening: &container-hardening
   security_opt:
     - no-new-privileges:true
 
+x-logging: &container-log-rotation
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   phoenixd:
     <<: *container-hardening
     image: acinq/phoenixd:0.9.1
     container_name: phoenixd
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     volumes:
@@ -21,6 +28,7 @@ services:
     image: ambrosia
     container_name: ambrosia
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     volumes:
@@ -41,6 +49,7 @@ services:
     image: ambrosia-client
     container_name: ambrosia-client
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     depends_on:
@@ -60,6 +69,7 @@ services:
     image: ambrosia-caddy
     container_name: caddy
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     ports:
