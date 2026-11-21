@@ -48,6 +48,7 @@ export function createBackendWebSocketEventStreamResponse(incomingRequest, backe
 
       incomingRequest.signal.addEventListener("abort", () => {
         if (backendWebSocket.readyState === WebSocket.OPEN) backendWebSocket.close();
+        if (backendWebSocket.readyState === WebSocket.CONNECTING) backendWebSocket.terminate();
       });
     },
   });
