@@ -174,7 +174,6 @@ fun Route.shifts(
 
                 val updatedShift = call.receive<Shift>()
                 val isUpdated = shiftService.updateShift(updatedShift.copy(id = id))
-                logger.info(isUpdated.toString())
 
                 if (!isUpdated) {
                     call.respond(HttpStatusCode.NotFound, "Shift with ID: $id not found")
