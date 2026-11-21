@@ -1,8 +1,14 @@
+import { reportClientError } from "@/lib/logging/reportClientError";
+
 import { httpClient, refreshAccessToken } from "../httpClient";
 import { httpWrapper } from "../httpWrapper";
 
 jest.mock("../httpWrapper", () => ({
   httpWrapper: jest.fn(),
+}));
+
+jest.mock("@/lib/logging/reportClientError", () => ({
+  reportClientError: jest.fn(),
 }));
 
 function mockResponse(status) {
@@ -102,6 +108,36 @@ describe("httpClient", () => {
       await Promise.all([refreshAccessToken(), refreshAccessToken()]);
 
       expect(httpWrapper).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("server error reporting", () => {
+    it("reports 5xx responses without the query string", async () => {
+      httpWrapper.mockResolvedValueOnce(mockResponse(503));
+
+      await httpClient("/orders?status=open", { method: "post" });
+
+      expect(reportClientError).toHaveBeenCalledWith({
+        message: "HTTP 503 POST /orders",
+        context: { type: "http", status: "503" },
+      });
+    });
+
+    it("does not report successful or client error responses", async () => {
+      httpWrapper.mockResolvedValueOnce(mockResponse(200)).mockResolvedValueOnce(mockResponse(404));
+
+      await httpClient("/products");
+      await httpClient("/products/missing");
+
+      expect(reportClientError).not.toHaveBeenCalled();
+    });
+
+    it("does not report failures of the log report endpoint itself", async () => {
+      httpWrapper.mockResolvedValueOnce(mockResponse(500));
+
+      await httpClient("/logs/client", { method: "POST" });
+
+      expect(reportClientError).not.toHaveBeenCalled();
     });
   });
 });
