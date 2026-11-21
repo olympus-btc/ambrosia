@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 
+import ClientErrorReporter from "@/components/ClientErrorReporter";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { AuthProvider } from "@/providers/auth/AuthProvider";
 import { ConfigurationsProvider } from "@/providers/configurations/configurationsProvider";
@@ -29,6 +30,7 @@ export default function Providers({ children }) {
   return (
     <>
       <AuthProvider>
+        <ClientErrorReporter />
         <ConfigurationsProvider>
           <I18nProvider>
             <TurnProvider>
