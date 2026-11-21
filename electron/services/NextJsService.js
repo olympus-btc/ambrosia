@@ -21,12 +21,12 @@ export default class NextJsService {
     this.processLogWriter = null;
   }
 
-  async start(port, backendConfig = {}) {
+  async start(nextJsPort, backendConfig = {}) {
     if (this.process) {
       throw new Error('Next.js service is already running');
     }
 
-    this.port = port;
+    this.port = nextJsPort;
     this.status = 'starting';
 
     try {
@@ -39,7 +39,7 @@ export default class NextJsService {
 
       if (isDevelopmentMode) {
         command = 'npm';
-        commandArguments = ['run', 'dev', '--', '-p', port.toString()];
+        commandArguments = ['run', 'dev', '--', '-p', nextJsPort.toString()];
         cwd = clientPath;
       } else {
         command = getNodePath();
@@ -47,10 +47,10 @@ export default class NextJsService {
         cwd = clientPath;
       }
 
-      logger.log(`[NextJsService] Starting Next.js at port ${port}...`);
+      logger.log(`[NextJsService] Starting Next.js at port ${nextJsPort}...`);
       logger.log(`[NextJsService] Command: ${command} ${commandArguments.join(' ')}`);
       logger.log(`[NextJsService] Working directory: ${cwd}`);
-      logger.log(`[NextJsService] Environment PORT: ${port}`);
+      logger.log(`[NextJsService] Environment PORT: ${nextJsPort}`);
 
       const backendHost = backendConfig.host || 'localhost';
       const backendPort = backendConfig.port || '9154';
@@ -66,8 +66,8 @@ export default class NextJsService {
         logger.log(`[NextJsService] Verified server.js exists at: ${serverJsPath}`);
       }
 
-      const env = {
-        PORT: port.toString(),
+      const nextJsProcessEnvironment = {
+        PORT: nextJsPort.toString(),
         HOSTNAME: '127.0.0.1',
         NODE_ENV: process.env.NODE_ENV || 'production',
         PATH: process.env.PATH,
@@ -77,10 +77,10 @@ export default class NextJsService {
       };
 
       logger.log(`[NextJsService] Environment variables:`, {
-        PORT: env.PORT,
-        HOSTNAME: env.HOSTNAME,
-        NEXT_PUBLIC_API_URL: env.NEXT_PUBLIC_API_URL,
-        NEXT_PUBLIC_ELECTRON: env.NEXT_PUBLIC_ELECTRON,
+        PORT: nextJsProcessEnvironment.PORT,
+        HOSTNAME: nextJsProcessEnvironment.HOSTNAME,
+        NEXT_PUBLIC_API_URL: nextJsProcessEnvironment.NEXT_PUBLIC_API_URL,
+        NEXT_PUBLIC_ELECTRON: nextJsProcessEnvironment.NEXT_PUBLIC_ELECTRON,
       });
 
       logger.log(`[NextJsService] Spawning process...`);
@@ -88,7 +88,7 @@ export default class NextJsService {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env,
+        env: nextJsProcessEnvironment,
       });
 
       this.process = spawnedProcess;
@@ -108,8 +108,8 @@ export default class NextJsService {
         }
       });
 
-      spawnedProcess.on('close', (code) => {
-        logger.log(`[NextJsService] Process exited with code ${code}`);
+      spawnedProcess.on('close', (exitCode) => {
+        logger.log(`[NextJsService] Process exited with code ${exitCode}`);
         if (this.process === spawnedProcess) {
           this.status = 'stopped';
           this.cleanup();
@@ -117,12 +117,12 @@ export default class NextJsService {
       });
 
       logger.log('[NextJsService] Waiting for Next.js to be healthy...');
-      await healthCheck.checkNextJs(port);
+      await healthCheck.checkNextJs(nextJsPort);
 
       this.status = 'running';
       logger.log('[NextJsService] Next.js is running and healthy');
 
-      return { port, url: `http://localhost:${port}` };
+      return { port: nextJsPort, url: `http://localhost:${nextJsPort}` };
     } catch (startupError) {
       logger.error('[NextJsService] Startup failed:', startupError);
       this.status = 'error';

@@ -31,21 +31,21 @@ function configExists() {
 }
 
 function writeConfig(configPath, configEntries) {
-  const configFileLines = Object.entries(configEntries).map(([key, value]) => `${key}=${value}`);
+  const configFileLines = Object.entries(configEntries).map(([configKey, configValue]) => `${configKey}=${configValue}`);
   fs.writeFileSync(configPath, `${configFileLines.join('\n')}\n`, { encoding: 'utf-8', mode: 0o600 });
   logger.log(`[ConfigurationBootstrap] Written configuration to: ${configPath}`);
 }
 
-function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, label) {
+function migrateOrGenerateSecret(readSecret, saveSecret, legacyPlaintextSecret, secretDescription) {
   if (readSecret()) {
     return;
   }
 
   if (legacyPlaintextSecret) {
-    logger.log(`[ConfigurationBootstrap] Migrating the existing ${label} to encrypted storage...`);
+    logger.log(`[ConfigurationBootstrap] Migrating the existing ${secretDescription} to encrypted storage...`);
     saveSecret(legacyPlaintextSecret);
   } else {
-    logger.log(`[ConfigurationBootstrap] Generating encrypted ${label}...`);
+    logger.log(`[ConfigurationBootstrap] Generating encrypted ${secretDescription}...`);
     saveSecret(generateRandomHex(32));
   }
 }

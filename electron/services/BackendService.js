@@ -29,12 +29,12 @@ export default class BackendService {
     this.processLogWriter = null;
   }
 
-  async start(port, startupConfig) {
+  async start(backendPort, startupConfig) {
     if (this.process) {
       throw new Error('Backend service is already running');
     }
 
-    this.port = port;
+    this.port = backendPort;
     this.status = 'starting';
 
     try {
@@ -47,38 +47,38 @@ export default class BackendService {
         '-jar',
         jarPath,
         `--http-bind-ip=127.0.0.1`,
-        `--http-bind-port=${port}`,
+        `--http-bind-port=${backendPort}`,
       ];
       if (!startupConfig.phoenixdRemoteConfigured) {
         commandArguments.push(`--phoenixd-url=http://localhost:${startupConfig.phoenixdPort}`);
       }
 
-      const env = { ...process.env };
-      stripConflictingJavaEnvVars(env);
-      env.PHOENIXD_WEBHOOK_SECRET = startupConfig.webhookSecret;
-      env.AMBROSIA_DEPLOYMENT = 'electron';
+      const backendProcessEnvironment = { ...process.env };
+      stripConflictingJavaEnvVars(backendProcessEnvironment);
+      backendProcessEnvironment.PHOENIXD_WEBHOOK_SECRET = startupConfig.webhookSecret;
+      backendProcessEnvironment.AMBROSIA_DEPLOYMENT = 'electron';
 
       const phoenixdHttpPassword = phoenixdCredentialsStore.readHttpPassword();
       if (phoenixdHttpPassword) {
-        env.PHOENIXD_PASSWORD = phoenixdHttpPassword;
+        backendProcessEnvironment.PHOENIXD_PASSWORD = phoenixdHttpPassword;
       }
 
       const serverSecret = serverSecretStore.read();
       if (serverSecret) {
-        env.AMBROSIA_SECRET = serverSecret;
+        backendProcessEnvironment.AMBROSIA_SECRET = serverSecret;
       }
 
       const unlockPassword = unlockPasswordStore.read();
       if (unlockPassword) {
-        env.AUTO_UNLOCK_PASSWORD = unlockPassword;
+        backendProcessEnvironment.AUTO_UNLOCK_PASSWORD = unlockPassword;
       }
 
-      logger.log(`[BackendService] Starting backend at port ${port}...`);
+      logger.log(`[BackendService] Starting backend at port ${backendPort}...`);
 
       const spawnedProcess = spawn(javaPath, commandArguments, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env,
+        env: backendProcessEnvironment,
       });
 
       this.process = spawnedProcess;
@@ -93,8 +93,8 @@ export default class BackendService {
         }
       });
 
-      spawnedProcess.on('close', (code) => {
-        logger.log(`[BackendService] Process exited with code ${code}`);
+      spawnedProcess.on('close', (exitCode) => {
+        logger.log(`[BackendService] Process exited with code ${exitCode}`);
         if (this.process === spawnedProcess) {
           this.status = 'stopped';
           this.cleanup();
@@ -102,12 +102,12 @@ export default class BackendService {
       });
 
       logger.log('[BackendService] Waiting for backend to be healthy...');
-      await healthCheck.checkBackend(port);
+      await healthCheck.checkBackend(backendPort);
 
       this.status = 'running';
       logger.log('[BackendService] Backend is running and healthy');
 
-      return { port };
+      return { port: backendPort };
     } catch (startupError) {
       logger.error('[BackendService] Startup failed:', startupError);
       this.status = 'error';
