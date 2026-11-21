@@ -260,7 +260,7 @@ fun Application.handler() {
             call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid request"))
         }
         exception<Exception> { call, cause ->
-            logger.error("Unhandled exception: ${cause.message}")
+            logger.error("Unhandled exception: ${cause.message}", cause)
             call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
         }
         exception<Throwable> { call, cause ->
