@@ -105,6 +105,7 @@ describe('IPC handlers and notifications', () => {
   const appMock = createFakeElectronApp();
   const NotificationMock = createFakeNotificationClass();
   const ipcMainMock = { handle: vi.fn(), on: vi.fn() };
+  const shellMock = { openPath: vi.fn(), openExternal: vi.fn() };
   let ipcHandlersByChannel;
   let ipcListenersByChannel;
 
@@ -118,7 +119,7 @@ describe('IPC handlers and notifications', () => {
       Menu: { buildFromTemplate: vi.fn().mockReturnValue({ items: [] }), setApplicationMenu: vi.fn() },
       Notification: NotificationMock,
       dialog: { showMessageBox: vi.fn(), showErrorBox: vi.fn() },
-      shell: { openPath: vi.fn(), openExternal: vi.fn() },
+      shell: shellMock,
       ipcMain: ipcMainMock,
     });
     require('../main.js');
@@ -156,6 +157,37 @@ describe('IPC handlers and notifications', () => {
       expect(ipcHandlersByChannel['services:get-logs']()).toEqual({
         logsDir: '/fake/home/.Ambrosia-POS/logs',
       });
+    });
+  });
+
+  describe('logs:set-level', () => {
+    it('accepts supported log levels', () => {
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'debug')).toEqual({ success: true });
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'INFO')).toEqual({ success: true });
+    });
+
+    it('rejects unsupported log levels', () => {
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'LOUD')).toEqual({ success: false });
+      expect(ipcHandlersByChannel['logs:set-level']({}, null)).toEqual({ success: false });
+    });
+  });
+
+  describe('logs:open-folder', () => {
+    it('opens the logs directory and reports success', async () => {
+      shellMock.openPath.mockResolvedValueOnce('');
+
+      const openLogsFolderResult = await ipcHandlersByChannel['logs:open-folder']();
+
+      expect(shellMock.openPath).toHaveBeenCalledWith('/fake/home/.Ambrosia-POS/logs');
+      expect(openLogsFolderResult).toEqual({ success: true, error: undefined });
+    });
+
+    it('reports the error returned by the shell', async () => {
+      shellMock.openPath.mockResolvedValueOnce('Failed to open path');
+
+      const openLogsFolderResult = await ipcHandlersByChannel['logs:open-folder']();
+
+      expect(openLogsFolderResult).toEqual({ success: false, error: 'Failed to open path' });
     });
   });
 

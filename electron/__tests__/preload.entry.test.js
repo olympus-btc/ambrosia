@@ -71,6 +71,22 @@ describe('ipc.invoke', () => {
     expect(ipcRendererMock.invoke).toHaveBeenCalledWith('services:get-statuses');
   });
 
+  it('allows changing the desktop log level from the renderer', () => {
+    ipcRendererMock.invoke.mockResolvedValue({ success: true });
+
+    exposedElectronApi.ipc.invoke('logs:set-level', 'DEBUG');
+
+    expect(ipcRendererMock.invoke).toHaveBeenCalledWith('logs:set-level', 'DEBUG');
+  });
+
+  it('allows opening the logs folder from the renderer', () => {
+    ipcRendererMock.invoke.mockResolvedValue({ success: true });
+
+    exposedElectronApi.ipc.invoke('logs:open-folder');
+
+    expect(ipcRendererMock.invoke).toHaveBeenCalledWith('logs:open-folder');
+  });
+
   it('rejects with an Invalid channel error outside the invoke whitelist', async () => {
     await expect(exposedElectronApi.ipc.invoke('not-whitelisted')).rejects.toThrow('Invalid channel: not-whitelisted');
     expect(ipcRendererMock.invoke).not.toHaveBeenCalled();

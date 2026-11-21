@@ -290,7 +290,7 @@ describe('cleanup', () => {
   it('resets process, status, and closes the log stream', async () => {
     const backendService = new BackendService();
     await backendService.start(9154, backendConfig);
-    const logStreamEndSpy = backendService.logStream.end;
+    const logStreamEndSpy = backendService.processLogWriter.logFileStream.end;
 
     backendService.cleanup();
 
