@@ -1,8 +1,8 @@
 export const LOGS_EVENT_SOURCE_ROUTE = "/api/ws-logs";
-export const LOGS_DOWNLOAD_ROUTE = "/api/logs/download";
 export const LOGS_ENDPOINT = "/logs";
 export const LOGS_SOURCES_ENDPOINT = "/logs/sources";
 export const LOGS_LEVEL_ENDPOINT = "/logs/level";
+export const LOGS_DOWNLOAD_ENDPOINT = "/logs/download";
 export const CLIENT_LOG_REPORTS_ENDPOINT = "/logs/client";
 
 export const LOG_SOURCE_SERVER = "server";
