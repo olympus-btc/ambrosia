@@ -11,8 +11,8 @@ jest.mock("@/lib/logging/reportClientError", () => ({
   reportClientError: jest.fn(),
 }));
 
-function mockResponse(status) {
-  return { ok: status >= 200 && status < 300, status };
+function mockResponse(responseStatus) {
+  return { ok: responseStatus >= 200 && responseStatus < 300, status: responseStatus };
 }
 
 describe("httpClient", () => {
