@@ -168,30 +168,30 @@ detach_image_mounts() {
 }
 
 require_nonempty_file() {
-  local path="$1"
-  [[ -f "$path" ]] || fail "Required file is missing: $path"
-  [[ -s "$path" ]] || fail "Required file is empty: $path"
+  local required_file_path="$1"
+  [[ -f "$required_file_path" ]] || fail "Required file is missing: $required_file_path"
+  [[ -s "$required_file_path" ]] || fail "Required file is empty: $required_file_path"
 }
 
 require_valid_json_file() {
-  local path="$1"
-  require_nonempty_file "$path"
-  node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$path" >/dev/null \
-    || fail "Required JSON file is invalid: $path"
+  local required_file_path="$1"
+  require_nonempty_file "$required_file_path"
+  node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$required_file_path" >/dev/null \
+    || fail "Required JSON file is invalid: $required_file_path"
 }
 
 require_sane_json_text_file() {
-  local path="$1"
-  require_nonempty_file "$path"
-  node -e "const fs=require('node:fs'); const path=process.argv[1]; const sample=fs.readFileSync(path); const prefix=sample.subarray(0, Math.min(sample.length, 4096)); if (prefix.includes(0)) { throw new Error('NUL byte found in JSON file prefix: ' + path); } JSON.parse(sample.toString('utf8'));" "$path" >/dev/null \
-    || fail "Required JSON file is invalid or corrupt: $path"
+  local required_file_path="$1"
+  require_nonempty_file "$required_file_path"
+  node -e "const fs=require('node:fs'); const requiredFilePath=process.argv[1]; const fileContents=fs.readFileSync(requiredFilePath); const fileContentsPrefix=fileContents.subarray(0, Math.min(fileContents.length, 4096)); if (fileContentsPrefix.includes(0)) { throw new Error('NUL byte found in JSON file prefix: ' + requiredFilePath); } JSON.parse(fileContents.toString('utf8'));" "$required_file_path" >/dev/null \
+    || fail "Required JSON file is invalid or corrupt: $required_file_path"
 }
 
 require_sane_javascript_text_file() {
-  local path="$1"
-  require_nonempty_file "$path"
-  node -e "const fs=require('node:fs'); const path=process.argv[1]; const sample=fs.readFileSync(path); if (sample.subarray(0,4).equals(Buffer.from([0x7f,0x45,0x4c,0x46]))) { throw new Error('ELF binary found where JavaScript was expected: ' + path); } const prefix=sample.subarray(0, Math.min(sample.length, 4096)); if (prefix.includes(0)) { throw new Error('NUL byte found in JavaScript file prefix: ' + path); }" "$path" >/dev/null \
-    || fail "Required JavaScript file is invalid: $path"
+  local required_file_path="$1"
+  require_nonempty_file "$required_file_path"
+  node -e "const fs=require('node:fs'); const requiredFilePath=process.argv[1]; const fileContents=fs.readFileSync(requiredFilePath); if (fileContents.subarray(0,4).equals(Buffer.from([0x7f,0x45,0x4c,0x46]))) { throw new Error('ELF binary found where JavaScript was expected: ' + requiredFilePath); } const fileContentsPrefix=fileContents.subarray(0, Math.min(fileContents.length, 4096)); if (fileContentsPrefix.includes(0)) { throw new Error('NUL byte found in JavaScript file prefix: ' + requiredFilePath); }" "$required_file_path" >/dev/null \
+    || fail "Required JavaScript file is invalid: $required_file_path"
 }
 
 require_host_dependencies() {
