@@ -555,6 +555,8 @@ install_repo_assets() {
   install -m 0644 "$IMAGE_ROOT/common/systemd/phoenixd.service" "$ROOTFS_MNT/etc/systemd/system/phoenixd.service"
   install -m 0644 "$IMAGE_ROOT/common/systemd/ambrosia-caddy-time-resync.service" "$ROOTFS_MNT/etc/systemd/system/ambrosia-caddy-time-resync.service"
   install -m 0644 "$IMAGE_ROOT/common/systemd/ambrosia-caddy-time-resync.path" "$ROOTFS_MNT/etc/systemd/system/ambrosia-caddy-time-resync.path"
+  install -d -m 0755 "$ROOTFS_MNT/etc/systemd/journald.conf.d"
+  install -m 0644 "$IMAGE_ROOT/common/journald/ambrosia-journald.conf" "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
 
   install -d -m 0755 "$ROOTFS_MNT/usr/lib"
   touch "$ROOTFS_MNT/usr/lib/clock-epoch"
@@ -697,6 +699,7 @@ verify_mounted_image() {
   require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/board-identity"
   require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/Caddyfile.template"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-firstboot.service"
+  require_nonempty_file "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-portal.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-client.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia.service"
