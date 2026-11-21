@@ -5,9 +5,9 @@ import { httpWrapper } from "./httpWrapper";
 
 const FIRST_SERVER_ERROR_STATUS = 500;
 
-export function dispatchAuthEvent(name) {
+export function dispatchAuthEvent(authEventName) {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(name));
+    window.dispatchEvent(new Event(authEventName));
   }
 }
 
@@ -35,9 +35,9 @@ function reportServerErrorResponse(endpoint, httpOptions, httpResponse) {
 async function sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions }) {
   const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet", "/backup"];
 
-  const shouldRefreshToken = (status, endpoint, skipRefresh) => {
-    if (status !== 401 || skipRefresh) return false;
-    return !AUTH_EXCLUDED_PATHS.some((path) => endpoint.startsWith(path));
+  const shouldRefreshToken = (responseStatus, requestedEndpoint, refreshSkipped) => {
+    if (responseStatus !== 401 || refreshSkipped) return false;
+    return !AUTH_EXCLUDED_PATHS.some((authExcludedPath) => requestedEndpoint.startsWith(authExcludedPath));
   };
 
   const initialResponse = await httpWrapper(endpoint, httpOptions);
@@ -53,8 +53,8 @@ async function sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRe
   }
 
   if (initialResponse.status === 401 && !skipRefresh) {
-    const event = endpoint.startsWith("/wallet") || endpoint.startsWith("/backup") ? "wallet:unauthorized" : "auth:expired";
-    dispatchAuthEvent(event);
+    const unauthorizedEventName = endpoint.startsWith("/wallet") || endpoint.startsWith("/backup") ? "wallet:unauthorized" : "auth:expired";
+    dispatchAuthEvent(unauthorizedEventName);
   }
   if (initialResponse.status === 403 && !skipForbiddenRedirect)
     dispatchAuthEvent("auth:forbidden");
@@ -62,8 +62,8 @@ async function sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRe
   return initialResponse;
 }
 
-export async function httpClient(endpoint, options = {}) {
-  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
+export async function httpClient(endpoint, httpClientOptions = {}) {
+  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = httpClientOptions;
   const authenticatedResponse = await sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions });
   reportServerErrorResponse(endpoint, httpOptions, authenticatedResponse);
   return authenticatedResponse;

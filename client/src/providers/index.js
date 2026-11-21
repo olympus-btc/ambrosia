@@ -22,8 +22,8 @@ export default function Providers({ children }) {
     () => false,
   );
 
-  const handleSetDisableAnimation = (value) => {
-    persistDisableAnimation(value);
+  const handleSetDisableAnimation = (shouldDisableAnimation) => {
+    persistDisableAnimation(shouldDisableAnimation);
     window.location.reload();
   };
 
