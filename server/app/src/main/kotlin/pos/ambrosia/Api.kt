@@ -118,7 +118,7 @@ class Api {
         }
         configureRateLimit()
         install(RequestBodyLimit) {
-            bodyLimit { call -> requestBodyLimitFor(call.request.path()) }
+            bodyLimit { applicationCall -> requestBodyLimitFor(applicationCall.request.path()) }
         }
         configureAuthentication()
         configureRouting()
@@ -181,11 +181,11 @@ fun Application.configureRateLimit() {
     install(RateLimit) {
         global {
             rateLimiter(limit = requestsPerMinute, refillPeriod = 60.seconds)
-            requestKey { call -> call.request.origin.remoteAddress }
+            requestKey { applicationCall -> applicationCall.request.origin.remoteAddress }
         }
         register(CLIENT_LOG_REPORTS_RATE_LIMIT) {
             rateLimiter(limit = CLIENT_LOG_REPORTS_PER_MINUTE, refillPeriod = 60.seconds)
-            requestKey { call -> call.getCurrentUser()?.userId ?: call.request.origin.remoteAddress }
+            requestKey { applicationCall -> applicationCall.getCurrentUser()?.userId ?: applicationCall.request.origin.remoteAddress }
         }
     }
 }
@@ -204,8 +204,8 @@ internal const val DEFAULT_MAX_REQUEST_BODY_BYTES = 2L * 1024 * 1024
 internal const val UPLOAD_MAX_REQUEST_BODY_BYTES = 20L * 1024 * 1024
 internal const val BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES = 1024L * 1024 * 1024
 
-internal fun requestBodyLimitFor(path: String): Long =
-    when (path) {
+internal fun requestBodyLimitFor(requestPath: String): Long =
+    when (requestPath) {
         "/uploads" -> UPLOAD_MAX_REQUEST_BODY_BYTES
         "/backup/import" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
         "/initial-setup/restore" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
@@ -218,15 +218,15 @@ fun Application.configureAuthentication() {
 
     install(Authentication) {
         jwt("auth-jwt") {
-            authHeader { call ->
+            authHeader { applicationCall ->
                 try {
-                    val accessToken = call.request.cookies["accessToken"]
+                    val accessToken = applicationCall.request.cookies["accessToken"]
                     if (accessToken != null) {
                         HttpAuthHeader.Single("Bearer", accessToken)
                     } else {
                         null
                     }
-                } catch (cause: Throwable) {
+                } catch (_: Throwable) {
                     null
                 }
             }
@@ -238,9 +238,9 @@ fun Application.configureAuthentication() {
                     .withClaim("realm", "Ambrosia-Server")
                     .build(),
             )
-            validate { credential ->
-                if (credential.payload.getClaim("userId").asString() != "") {
-                    JWTPrincipal(credential.payload)
+            validate { jwtCredential ->
+                if (jwtCredential.payload.getClaim("userId").asString() != "") {
+                    JWTPrincipal(jwtCredential.payload)
                 } else {
                     null
                 }
@@ -249,15 +249,15 @@ fun Application.configureAuthentication() {
         }
 
         jwt("auth-jwt-wallet") {
-            authHeader { call ->
+            authHeader { applicationCall ->
                 try {
-                    val walletAccessToken = call.request.cookies["walletAccessToken"]
+                    val walletAccessToken = applicationCall.request.cookies["walletAccessToken"]
                     if (walletAccessToken != null) {
                         HttpAuthHeader.Single("Bearer", walletAccessToken)
                     } else {
                         null
                     }
-                } catch (cause: Throwable) {
+                } catch (_: Throwable) {
                     null
                 }
             }
@@ -269,9 +269,9 @@ fun Application.configureAuthentication() {
                     .withClaim("realm", "Ambrosia-Server")
                     .build(),
             )
-            validate { credential ->
-                val scope = credential.payload.getClaim("scope").asString()
-                val userId = credential.payload.getClaim("userId").asString()
+            validate { jwtCredential ->
+                val scope = jwtCredential.payload.getClaim("scope").asString()
+                val userId = jwtCredential.payload.getClaim("userId").asString()
                 val walletAccessToken = request.cookies["walletAccessToken"]
                 val tokenService = TokenService(application.environment)
                 val isValidWalletSession =
@@ -279,7 +279,7 @@ fun Application.configureAuthentication() {
                         userId.isNotEmpty() &&
                         walletAccessToken != null &&
                         tokenService.isWalletTokenValid(userId, walletAccessToken)
-                if (isValidWalletSession) JWTPrincipal(credential.payload) else null
+                if (isValidWalletSession) JWTPrincipal(jwtCredential.payload) else null
             }
         }
     }
