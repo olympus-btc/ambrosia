@@ -29,28 +29,11 @@ if [ ! -f "$JAR_PATH" ]; then
     exit 1
 fi
 
-# Custom configuration directory
-CONFIG_DIR="$HOME/.Ambrosia-POS"
-
-# Logging configuration
-LOGBACK_CONFIG="$CONFIG_DIR/Ambrosia-Logs.xml"
-
-# JVM options for logging
-JVM_OPTS=""
-
-# Verify that the log configuration file exists
-if [ -f "$LOGBACK_CONFIG" ]; then
-    echo "Using external logback configuration: $LOGBACK_CONFIG"
-    JVM_OPTS="-Dlogback.configurationFile=file:$LOGBACK_CONFIG"
-else
-    echo "Using embedded logback configuration"
-fi
-
 SHOULD_STOP=0
 trap 'SHOULD_STOP=1; [ -n "$CHILD_PID" ] && kill -TERM "$CHILD_PID" 2>/dev/null' TERM INT
 
 while true; do
-    java $JVM_OPTS -jar "$JAR_PATH" "$@" &
+    java -jar "$JAR_PATH" "$@" &
     CHILD_PID=$!
     wait "$CHILD_PID"
     [ "$SHOULD_STOP" -eq 1 ] && break
