@@ -1,4 +1,5 @@
 import { API_URL } from "@/config/api";
+import { reportServerError } from "@/lib/logging/reportServerError";
 
 const apiUrl = API_URL;
 
@@ -55,9 +56,10 @@ async function proxyRequest(request, params, method) {
 
   try {
     const response = await fetch(url, fetchOptions);
-    return buildResponse(response);
+    return await buildResponse(response);
   } catch (error) {
     console.error("Error:", error);
+    reportServerError(request, error, { type: "api.proxy", method, path: `/${resolvedParams.slug.join("/")}` });
     return Response.json(
       { error: "Failed to fetch", details: error.message },
       { status: 500 },

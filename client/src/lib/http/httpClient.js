@@ -1,4 +1,9 @@
+import { reportClientError } from "@/lib/logging/reportClientError";
+import { CLIENT_LOG_REPORTS_ENDPOINT } from "@/lib/logs";
+
 import { httpWrapper } from "./httpWrapper";
+
+const FIRST_SERVER_ERROR_STATUS = 500;
 
 export function dispatchAuthEvent(name) {
   if (typeof window !== "undefined") {
@@ -16,9 +21,18 @@ export async function refreshAccessToken() {
   return refreshPromise;
 }
 
-export async function httpClient(endpoint, options = {}) {
-  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
+function reportServerErrorResponse(endpoint, httpOptions, httpResponse) {
+  if (!httpResponse || httpResponse.status < FIRST_SERVER_ERROR_STATUS) return;
+  const endpointPath = endpoint.split("?")[0];
+  if (endpointPath.startsWith(CLIENT_LOG_REPORTS_ENDPOINT)) return;
+  const requestMethod = (httpOptions.method || "GET").toUpperCase();
+  reportClientError({
+    message: `HTTP ${httpResponse.status} ${requestMethod} ${endpointPath}`,
+    context: { type: "http", status: String(httpResponse.status) },
+  });
+}
 
+async function sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions }) {
   const AUTH_EXCLUDED_PATHS = ["/auth", "/wallet", "/backup"];
 
   const shouldRefreshToken = (status, endpoint, skipRefresh) => {
@@ -46,4 +60,11 @@ export async function httpClient(endpoint, options = {}) {
     dispatchAuthEvent("auth:forbidden");
 
   return initialResponse;
+}
+
+export async function httpClient(endpoint, options = {}) {
+  const { skipRefresh = false, skipForbiddenRedirect = false, ...httpOptions } = options;
+  const authenticatedResponse = await sendAuthenticatedRequest(endpoint, { skipRefresh, skipForbiddenRedirect, httpOptions });
+  reportServerErrorResponse(endpoint, httpOptions, authenticatedResponse);
+  return authenticatedResponse;
 }
