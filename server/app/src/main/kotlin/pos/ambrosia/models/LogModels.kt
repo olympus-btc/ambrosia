@@ -1,6 +1,8 @@
 package pos.ambrosia.models
 
 import kotlinx.serialization.Serializable
+import pos.ambrosia.utils.requireMaxLength
+import pos.ambrosia.utils.requireValid
 
 object LogSourceIds {
     const val SERVER = "server"
@@ -26,6 +28,18 @@ object ClientLogReportOrigins {
     const val NEXT_SERVER = "next-server"
 
     val ALL = setOf(BROWSER, NEXT_SERVER)
+}
+
+object ClientLogReportLimits {
+    const val MAXIMUM_LEVEL_LENGTH = 10
+    const val MAXIMUM_MESSAGE_LENGTH = 2000
+    const val MAXIMUM_STACK_LENGTH = 8000
+    const val MAXIMUM_URL_LENGTH = 500
+    const val MAXIMUM_USER_AGENT_LENGTH = 300
+    const val MAXIMUM_ORIGIN_LENGTH = 20
+    const val MAXIMUM_CONTEXT_ENTRIES = 10
+    const val MAXIMUM_CONTEXT_KEY_LENGTH = 50
+    const val MAXIMUM_CONTEXT_VALUE_LENGTH = 200
 }
 
 @Serializable
@@ -76,4 +90,20 @@ data class ClientLogReport(
     val userAgent: String? = null,
     val origin: String = ClientLogReportOrigins.BROWSER,
     val context: Map<String, String> = emptyMap(),
-)
+) {
+    init {
+        requireMaxLength(level, ClientLogReportLimits.MAXIMUM_LEVEL_LENGTH, "level")
+        requireMaxLength(message, ClientLogReportLimits.MAXIMUM_MESSAGE_LENGTH, "message")
+        requireMaxLength(stack, ClientLogReportLimits.MAXIMUM_STACK_LENGTH, "stack")
+        requireMaxLength(url, ClientLogReportLimits.MAXIMUM_URL_LENGTH, "url")
+        requireMaxLength(userAgent, ClientLogReportLimits.MAXIMUM_USER_AGENT_LENGTH, "userAgent")
+        requireMaxLength(origin, ClientLogReportLimits.MAXIMUM_ORIGIN_LENGTH, "origin")
+        requireValid(context.size <= ClientLogReportLimits.MAXIMUM_CONTEXT_ENTRIES) {
+            "context must have at most ${ClientLogReportLimits.MAXIMUM_CONTEXT_ENTRIES} entries"
+        }
+        context.forEach { (contextKey, contextValue) ->
+            requireMaxLength(contextKey, ClientLogReportLimits.MAXIMUM_CONTEXT_KEY_LENGTH, "context key")
+            requireMaxLength(contextValue, ClientLogReportLimits.MAXIMUM_CONTEXT_VALUE_LENGTH, "context value")
+        }
+    }
+}
