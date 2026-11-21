@@ -7,7 +7,9 @@ import path from 'path';
 import { STARTUP } from '../utils/constants.js';
 import { healthCheck } from '../utils/healthCheck.js';
 import { logger } from '../utils/logger.js';
-import { getPhoenixdPath, getPhoenixDataDirectory, getLogsDirectory, getBasePath } from '../utils/resourcePaths.js';
+import { ProcessLogWriter } from '../utils/processLogFiles.js';
+import { pipeProcessOutputToLogs } from '../utils/processOutputLogging.js';
+import { getPhoenixdPath, getPhoenixDataDirectory, getBasePath } from '../utils/resourcePaths.js';
 
 import { phoenixdCredentialsStore } from './PhoenixdCredentialsStore.js';
 
@@ -41,7 +43,7 @@ export default class PhoenixdService {
     this.process = null;
     this.status = 'stopped';
     this.port = null;
-    this.logStream = null;
+    this.processLogWriter = null;
     this.credentialsTempDirectory = null;
   }
 
@@ -56,18 +58,12 @@ export default class PhoenixdService {
     try {
       const phoenixdPath = getPhoenixdPath();
       const dataDirectory = getPhoenixDataDirectory();
-      const logsDirectory = getLogsDirectory();
 
       if (!fs.existsSync(dataDirectory)) {
         fs.mkdirSync(dataDirectory, { recursive: true });
       }
 
-      if (!fs.existsSync(logsDirectory)) {
-        fs.mkdirSync(logsDirectory, { recursive: true });
-      }
-
-      const logFile = path.join(logsDirectory, `phoenixd-${new Date().toISOString().split('T')[0]}.log`);
-      this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
+      this.processLogWriter = new ProcessLogWriter('phoenixd');
 
       const httpPassword = phoenixdCredentialsStore.readHttpPassword();
       const httpPasswordLimitedAccess = phoenixdCredentialsStore.readHttpPasswordLimitedAccess();
@@ -114,21 +110,7 @@ export default class PhoenixdService {
 
       this.process = spawnedProcess;
 
-      spawnedProcess.stdout.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.log(`[Phoenixd] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ${outputText}`);
-        }
-      });
-
-      spawnedProcess.stderr.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.error(`[Phoenixd ERROR] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${outputText}`);
-        }
-      });
+      pipeProcessOutputToLogs({ spawnedProcess, processLogWriter: this.processLogWriter, consoleLabel: 'Phoenixd' });
 
       spawnedProcess.on('error', (spawnError) => {
         logger.error('[PhoenixdService] Failed to start:', spawnError);
@@ -233,9 +215,9 @@ export default class PhoenixdService {
     }
     this.process = null;
     this.status = 'stopped';
-    if (this.logStream) {
-      this.logStream.end();
-      this.logStream = null;
+    if (this.processLogWriter) {
+      this.processLogWriter.end();
+      this.processLogWriter = null;
     }
   }
 

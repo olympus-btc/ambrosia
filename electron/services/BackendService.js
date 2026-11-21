@@ -1,11 +1,11 @@
-import fs from 'fs';
 import { createRequire } from 'module';
-import path from 'path';
 
 import { STARTUP } from '../utils/constants.js';
 import { healthCheck } from '../utils/healthCheck.js';
 import { logger } from '../utils/logger.js';
-import { getJavaPath, getBackendJarPath, getLogsDirectory } from '../utils/resourcePaths.js';
+import { ProcessLogWriter } from '../utils/processLogFiles.js';
+import { pipeProcessOutputToLogs } from '../utils/processOutputLogging.js';
+import { getJavaPath, getBackendJarPath } from '../utils/resourcePaths.js';
 
 import { phoenixdCredentialsStore } from './PhoenixdCredentialsStore.js';
 import { serverSecretStore } from './ServerSecretStore.js';
@@ -26,7 +26,7 @@ export default class BackendService {
     this.process = null;
     this.status = 'stopped';
     this.port = null;
-    this.logStream = null;
+    this.processLogWriter = null;
   }
 
   async start(port, startupConfig) {
@@ -40,14 +40,8 @@ export default class BackendService {
     try {
       const javaPath = getJavaPath();
       const jarPath = getBackendJarPath();
-      const logsDirectory = getLogsDirectory();
 
-      if (!fs.existsSync(logsDirectory)) {
-        fs.mkdirSync(logsDirectory, { recursive: true });
-      }
-
-      const logFile = path.join(logsDirectory, `backend-${new Date().toISOString().split('T')[0]}.log`);
-      this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
+      this.processLogWriter = new ProcessLogWriter('backend');
 
       const commandArguments = [
         '-jar',
@@ -62,6 +56,7 @@ export default class BackendService {
       const env = { ...process.env };
       stripConflictingJavaEnvVars(env);
       env.PHOENIXD_WEBHOOK_SECRET = startupConfig.webhookSecret;
+      env.AMBROSIA_DEPLOYMENT = 'electron';
 
       const phoenixdHttpPassword = phoenixdCredentialsStore.readHttpPassword();
       if (phoenixdHttpPassword) {
@@ -88,21 +83,7 @@ export default class BackendService {
 
       this.process = spawnedProcess;
 
-      spawnedProcess.stdout.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.log(`[Backend] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ${outputText}`);
-        }
-      });
-
-      spawnedProcess.stderr.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.error(`[Backend ERROR] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${outputText}`);
-        }
-      });
+      pipeProcessOutputToLogs({ spawnedProcess, processLogWriter: this.processLogWriter, consoleLabel: 'Backend' });
 
       spawnedProcess.on('error', (spawnError) => {
         logger.error('[BackendService] Failed to start:', spawnError);
@@ -185,9 +166,9 @@ export default class BackendService {
     }
     this.process = null;
     this.status = 'stopped';
-    if (this.logStream) {
-      this.logStream.end();
-      this.logStream = null;
+    if (this.processLogWriter) {
+      this.processLogWriter.end();
+      this.processLogWriter = null;
     }
   }
 
