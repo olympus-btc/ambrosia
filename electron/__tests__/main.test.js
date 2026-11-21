@@ -30,8 +30,8 @@ const { installTreeKillMock } = require('../test-utils/treeKillMock.js');
 
 function createFakeNotificationClass() {
   const createdInstances = [];
-  function FakeNotification(options) {
-    this.options = options;
+  function FakeNotification(notificationOptions) {
+    this.options = notificationOptions;
     this.on = vi.fn();
     this.show = vi.fn();
     createdInstances.push(this);
@@ -87,16 +87,16 @@ async function loadFreshMain(configureAppMock, menuMock = createDefaultMenuMock(
 
 function collectHandlersByChannel(ipcMainMock) {
   const handlersByChannel = {};
-  ipcMainMock.handle.mock.calls.forEach(([channel, handler]) => {
-    handlersByChannel[channel] = handler;
+  ipcMainMock.handle.mock.calls.forEach(([ipcChannel, ipcHandler]) => {
+    handlersByChannel[ipcChannel] = ipcHandler;
   });
   return handlersByChannel;
 }
 
 function collectListenersByChannel(ipcMainMock) {
   const listenersByChannel = {};
-  ipcMainMock.on.mock.calls.forEach(([channel, listener]) => {
-    listenersByChannel[channel] = listener;
+  ipcMainMock.on.mock.calls.forEach(([ipcChannel, ipcListener]) => {
+    listenersByChannel[ipcChannel] = ipcListener;
   });
   return listenersByChannel;
 }
