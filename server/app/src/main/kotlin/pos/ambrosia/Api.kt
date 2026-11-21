@@ -24,6 +24,9 @@ import io.ktor.server.websocket.timeout
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
+import pos.ambrosia.api.CLIENT_LOG_REPORTS_PER_MINUTE
+import pos.ambrosia.api.CLIENT_LOG_REPORTS_RATE_LIMIT
+import pos.ambrosia.api.CLIENT_LOG_REPORT_MAX_REQUEST_BODY_BYTES
 import pos.ambrosia.api.configureAdminNotifications
 import pos.ambrosia.api.configureAdminNotificationsWebsocket
 import pos.ambrosia.api.configureAuth
@@ -40,6 +43,8 @@ import pos.ambrosia.api.configureFreelanceReports
 import pos.ambrosia.api.configureHealth
 import pos.ambrosia.api.configureIngredients
 import pos.ambrosia.api.configureInitialSetup
+import pos.ambrosia.api.configureLogs
+import pos.ambrosia.api.configureLogsWebsocket
 import pos.ambrosia.api.configureOrders
 import pos.ambrosia.api.configureOrdersSync
 import pos.ambrosia.api.configurePaymentWebsocket
@@ -80,6 +85,7 @@ import pos.ambrosia.services.SessionResetScheduler
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.SecretsCipher
 import pos.ambrosia.utils.UnauthorizedApiException
+import pos.ambrosia.utils.getCurrentUser
 import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration.Companion.seconds
 
@@ -159,6 +165,8 @@ class Api {
         configurePaymentWebsocket()
         configureHealth()
         configureSystem()
+        configureLogs()
+        configureLogsWebsocket()
     }
 }
 
@@ -172,6 +180,10 @@ fun Application.configureRateLimit() {
         global {
             rateLimiter(limit = requestsPerMinute, refillPeriod = 60.seconds)
             requestKey { call -> call.request.origin.remoteAddress }
+        }
+        register(CLIENT_LOG_REPORTS_RATE_LIMIT) {
+            rateLimiter(limit = CLIENT_LOG_REPORTS_PER_MINUTE, refillPeriod = 60.seconds)
+            requestKey { call -> call.getCurrentUser()?.userId ?: call.request.origin.remoteAddress }
         }
     }
 }
@@ -195,6 +207,7 @@ internal fun requestBodyLimitFor(path: String): Long =
         "/uploads" -> UPLOAD_MAX_REQUEST_BODY_BYTES
         "/backup/import" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
         "/initial-setup/restore" -> BACKUP_IMPORT_MAX_REQUEST_BODY_BYTES
+        "/logs/client" -> CLIENT_LOG_REPORT_MAX_REQUEST_BODY_BYTES
         else -> DEFAULT_MAX_REQUEST_BODY_BYTES
     }
 
