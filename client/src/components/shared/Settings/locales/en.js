@@ -2,6 +2,7 @@ import dailySessionResetEn from "../DailySessionReset/locales/en";
 import exportDataEn from "../ExportData/locales/en";
 import importDataEn from "../ImportData/locales/en";
 import lightningEn from "../Lightning/locales/en";
+import logsEn from "../Logs/locales/en";
 import nwcConnectionEn from "../NwcConnection/locales/en";
 import phoenixdRemoteCardEn from "../PhoenixdRemote/locales/en";
 import secretsEncryptionCardEn from "../SecretsEncryption/locales/en";
@@ -88,6 +89,7 @@ const sharedSettingsEn = {
       androidStep2: "Select \"Add to Home Screen\"",
     },
     ...systemEn,
+    ...logsEn,
     ...dailySessionResetEn,
     ...seedEn,
     ...exportDataEn,
