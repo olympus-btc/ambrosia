@@ -149,7 +149,7 @@ function createSplashScreen() {
   return splashWindow;
 }
 
-function createWindow(url) {
+function createWindow(nextJsUrl) {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -165,7 +165,7 @@ function createWindow(url) {
     show: false,
   });
 
-  mainWindow.loadURL(url);
+  mainWindow.loadURL(nextJsUrl);
 
   mainWindow.once('ready-to-show', () => {
     if (splashWindow && !splashWindow.isDestroyed()) {
@@ -338,7 +338,7 @@ async function initializeApp() {
     logger.log('[Electron] Initializing Ambrosia POS...');
 
     createSplashScreen();
-    await new Promise((resolve) => splashWindow.webContents.once('did-finish-load', resolve));
+    await new Promise((resolveSplashLoaded) => splashWindow.webContents.once('did-finish-load', resolveSplashLoaded));
 
     if (process.env.SPLASH_ONLY === 'true') {
       logger.log('[Electron] SPLASH ONLY MODE: Showing splash for design purposes');
@@ -354,51 +354,55 @@ async function initializeApp() {
 
     serviceManager = new ServiceManager();
 
-    const updateSplash = (service, progress, message) => {
+    const updateSplash = (splashServiceName, splashProgressPercent, splashStatusMessage) => {
       if (splashWindow && !splashWindow.isDestroyed()) {
-        splashWindow.webContents.send('splash:update', { service, progress, message });
+        splashWindow.webContents.send('splash:update', {
+          service: splashServiceName,
+          progress: splashProgressPercent,
+          message: splashStatusMessage,
+        });
       }
     };
 
-    const completeSplashStep = (service) => {
+    const completeSplashStep = (completedServiceName) => {
       if (splashWindow && !splashWindow.isDestroyed()) {
-        splashWindow.webContents.send('splash:complete', { service });
+        splashWindow.webContents.send('splash:complete', { service: completedServiceName });
       }
     };
 
     updateSplash(null, 0, 'Initializing...');
 
-    serviceManager.on('service:started', ({ service, port, skipped }) => {
-      logger.log(`[Electron] Service started: ${service} on port ${port}`);
+    serviceManager.on('service:started', ({ service: startedServiceName, port: startedServicePort, skipped: serviceStartWasSkipped }) => {
+      logger.log(`[Electron] Service started: ${startedServiceName} on port ${startedServicePort}`);
 
-      let progress = 0;
-      let message = '';
+      let splashProgressPercent = 0;
+      let splashStatusMessage = '';
 
-      if (service === 'phoenixd') {
-        progress = 33;
-        message = skipped ? 'NWC wallet configured' : 'Lightning Network ready';
+      if (startedServiceName === 'phoenixd') {
+        splashProgressPercent = 33;
+        splashStatusMessage = serviceStartWasSkipped ? 'NWC wallet configured' : 'Lightning Network ready';
         completeSplashStep('phoenixd');
-        updateSplash('backend', progress, 'Starting Backend...');
-      } else if (service === 'backend') {
-        progress = 66;
-        message = 'Backend server ready';
+        updateSplash('backend', splashProgressPercent, 'Starting Backend...');
+      } else if (startedServiceName === 'backend') {
+        splashProgressPercent = 66;
+        splashStatusMessage = 'Backend server ready';
         completeSplashStep('backend');
-        updateSplash('nextjs', progress, 'Starting Frontend...');
-      } else if (service === 'nextjs') {
-        progress = 100;
-        message = 'Frontend ready';
+        updateSplash('nextjs', splashProgressPercent, 'Starting Frontend...');
+      } else if (startedServiceName === 'nextjs') {
+        splashProgressPercent = 100;
+        splashStatusMessage = 'Frontend ready';
         completeSplashStep('nextjs');
       }
 
-      updateSplash(null, progress, message);
+      updateSplash(null, splashProgressPercent, splashStatusMessage);
     });
 
-    serviceManager.on('service:error', ({ service, serviceError }) => {
-      logger.error(`[Electron] Service error: ${service}`, serviceError);
+    serviceManager.on('service:error', ({ service: failedServiceName, serviceError }) => {
+      logger.error(`[Electron] Service error: ${failedServiceName}`, serviceError);
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.send('splash:error', {
-          service,
-          message: serviceError ? serviceError.message || String(serviceError) : `Failed to start ${service || 'service'}`,
+          service: failedServiceName,
+          message: serviceError ? serviceError.message || String(serviceError) : `Failed to start ${failedServiceName || 'service'}`,
         });
       }
     });
@@ -420,9 +424,9 @@ async function initializeApp() {
       );
     }
 
-    const url = await serviceManager.startAll();
+    const nextJsUrl = await serviceManager.startAll();
 
-    createWindow(url);
+    createWindow(nextJsUrl);
 
     createAppMenu();
 
@@ -441,7 +445,7 @@ async function initializeApp() {
         service: null,
         message: initializationError ? initializationError.message || String(initializationError) : 'Unexpected startup error',
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolveErrorDisplayDelay) => setTimeout(resolveErrorDisplayDelay, 2000));
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.close();
       }
@@ -570,13 +574,13 @@ app.on('activate', () => {
   }
 });
 
-app.on('before-quit', async (event) => {
+app.on('before-quit', async (beforeQuitEvent) => {
   if (autoUpdaterService) {
     autoUpdaterService.destroy();
     autoUpdaterService = null;
   }
   if (serviceManager) {
-    event.preventDefault();
+    beforeQuitEvent.preventDefault();
     logger.log('[Electron] Shutting down services...');
     await serviceManager.stopAll();
     serviceManager = null;
@@ -603,6 +607,6 @@ process.on('uncaughtException', (uncaughtError) => {
   dialog.showErrorBox('Unexpected Error', uncaughtError.message || uncaughtError.toString());
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('[Electron] Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (rejectionReason, rejectedPromise) => {
+  logger.error('[Electron] Unhandled Rejection at:', rejectedPromise, 'reason:', rejectionReason);
 });

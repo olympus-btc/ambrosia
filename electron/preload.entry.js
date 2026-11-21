@@ -29,11 +29,11 @@ const MAX_SANITIZE_DEPTH = 10;
 
 function sanitizeArgument(argument, depth = 0) {
   if (argument === null || argument === undefined) return argument;
-  const type = typeof argument;
-  if (type === 'string' || type === 'number' || type === 'boolean') return argument;
+  const argumentType = typeof argument;
+  if (argumentType === 'string' || argumentType === 'number' || argumentType === 'boolean') return argument;
   if (depth >= MAX_SANITIZE_DEPTH) return null;
   if (Array.isArray(argument)) return argument.map((nestedArgument) => sanitizeArgument(nestedArgument, depth + 1));
-  if (type === 'object') {
+  if (argumentType === 'object') {
     return Object.fromEntries(
       Object.entries(argument).map(([propertyName, propertyValue]) => [
         propertyName,
@@ -53,30 +53,30 @@ contextBridge.exposeInMainWorld('electron', {
   },
 
   ipc: {
-    send: (channel, ...args) => {
-      if (SEND_CHANNELS.includes(channel)) {
-        ipcRenderer.send(channel, ...args);
+    send: (ipcChannel, ...ipcArguments) => {
+      if (SEND_CHANNELS.includes(ipcChannel)) {
+        ipcRenderer.send(ipcChannel, ...ipcArguments);
       }
     },
-    invoke: (channel, ...args) => {
-      if (INVOKE_CHANNELS.includes(channel)) {
-        return ipcRenderer.invoke(channel, ...args.map(sanitizeArgument));
+    invoke: (ipcChannel, ...ipcArguments) => {
+      if (INVOKE_CHANNELS.includes(ipcChannel)) {
+        return ipcRenderer.invoke(ipcChannel, ...ipcArguments.map(sanitizeArgument));
       }
-      return Promise.reject(new Error(`Invalid channel: ${channel}`));
+      return Promise.reject(new Error(`Invalid channel: ${ipcChannel}`));
     },
-    on: (channel, callback) => {
-      if (RECEIVE_CHANNELS.includes(channel)) {
-        ipcRenderer.on(channel, (_event, ...args) => callback(...args));
-      }
-    },
-    once: (channel, callback) => {
-      if (RECEIVE_CHANNELS.includes(channel)) {
-        ipcRenderer.once(channel, (_event, ...args) => callback(...args));
+    on: (ipcChannel, ipcListener) => {
+      if (RECEIVE_CHANNELS.includes(ipcChannel)) {
+        ipcRenderer.on(ipcChannel, (_ipcEvent, ...ipcArguments) => ipcListener(...ipcArguments));
       }
     },
-    removeListener: (channel, callback) => {
-      if (RECEIVE_CHANNELS.includes(channel)) {
-        ipcRenderer.removeListener(channel, callback);
+    once: (ipcChannel, ipcListener) => {
+      if (RECEIVE_CHANNELS.includes(ipcChannel)) {
+        ipcRenderer.once(ipcChannel, (_ipcEvent, ...ipcArguments) => ipcListener(...ipcArguments));
+      }
+    },
+    removeListener: (ipcChannel, ipcListener) => {
+      if (RECEIVE_CHANNELS.includes(ipcChannel)) {
+        ipcRenderer.removeListener(ipcChannel, ipcListener);
       }
     },
   },

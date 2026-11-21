@@ -47,12 +47,12 @@ export default class PhoenixdService {
     this.credentialsTempDirectory = null;
   }
 
-  async start(port) {
+  async start(phoenixdPort) {
     if (this.process) {
       throw new Error('Phoenixd service is already running');
     }
 
-    this.port = port;
+    this.port = phoenixdPort;
     this.status = 'starting';
 
     try {
@@ -81,19 +81,19 @@ export default class PhoenixdService {
       const commandArguments = [
         '--agree-to-terms-of-service',
         `--http-bind-ip=127.0.0.1`,
-        `--http-bind-port=${port}`,
+        `--http-bind-port=${phoenixdPort}`,
         `--http-password-file=${httpPasswordFilePath}`,
         `--http-password-limited-access-file=${httpPasswordLimitedAccessFilePath}`,
       ];
 
-      logger.log(`[PhoenixdService] Starting phoenixd at port ${port}...`);
+      logger.log(`[PhoenixdService] Starting phoenixd at port ${phoenixdPort}...`);
 
-      const env = { ...process.env };
+      const phoenixdProcessEnvironment = { ...process.env };
 
       if (process.platform === 'win32') {
         const bundledJreHome = path.join(getBasePath(), 'jre', 'win-x64');
-        stripConflictingJavaEnvVars(env);
-        env.JAVA_HOME = bundledJreHome;
+        stripConflictingJavaEnvVars(phoenixdProcessEnvironment);
+        phoenixdProcessEnvironment.JAVA_HOME = bundledJreHome;
         logger.log(`[PhoenixdService] Using bundled x64 JRE for phoenixd JVM version (${process.arch})`);
         logger.log(`[PhoenixdService] JAVA_HOME: ${bundledJreHome}`);
       } else if (process.platform === 'linux' && process.arch === 'arm64') {
@@ -105,7 +105,7 @@ export default class PhoenixdService {
       const spawnedProcess = spawn(phoenixdPath, commandArguments, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env,
+        env: phoenixdProcessEnvironment,
       });
 
       this.process = spawnedProcess;
@@ -118,8 +118,8 @@ export default class PhoenixdService {
         if (this.process === spawnedProcess) this.cleanup();
       });
 
-      spawnedProcess.on('close', (code) => {
-        logger.log(`[PhoenixdService] Process exited with code ${code}`);
+      spawnedProcess.on('close', (exitCode) => {
+        logger.log(`[PhoenixdService] Process exited with code ${exitCode}`);
         const isStillTheActiveProcess = this.process === spawnedProcess;
         if (isStillTheActiveProcess) {
           this.status = 'stopped';
@@ -128,12 +128,12 @@ export default class PhoenixdService {
       });
 
       logger.log('[PhoenixdService] Waiting for phoenixd to be healthy...');
-      await healthCheck.checkPhoenixd(port);
+      await healthCheck.checkPhoenixd(phoenixdPort);
 
       this.status = 'running';
       logger.log('[PhoenixdService] Phoenixd is running and healthy');
 
-      return { port };
+      return { port: phoenixdPort };
     } catch (startupError) {
       logger.error('[PhoenixdService] Startup failed:', startupError);
       this.status = 'error';
@@ -147,8 +147,8 @@ export default class PhoenixdService {
     }
   }
 
-  async killByPort(port) {
-    const targetPort = port || this.port;
+  async killByPort(requestedPort) {
+    const targetPort = requestedPort || this.port;
     if (!targetPort) return;
     if (!Number.isInteger(targetPort)) return;
     return new Promise((resolve) => {
