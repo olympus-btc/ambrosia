@@ -71,4 +71,15 @@ describe("backendWebSocketEventStream", () => {
     expect(backendWebSocket.close).toHaveBeenCalled();
     expect(backendWebSocket.terminate).not.toHaveBeenCalled();
   });
+
+  it("aborts a backend WebSocket that is still connecting when the browser disconnects", () => {
+    const { incomingRequest, incomingRequestAbortController } = createIncomingRequestWithAbortController();
+    createBackendWebSocketEventStreamResponse(incomingRequest, "/ws/payments");
+    const backendWebSocket = WebSocket.latestInstance;
+
+    incomingRequestAbortController.abort();
+
+    expect(backendWebSocket.terminate).toHaveBeenCalled();
+    expect(backendWebSocket.close).not.toHaveBeenCalled();
+  });
 });
