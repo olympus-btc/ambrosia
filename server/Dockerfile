@@ -32,6 +32,8 @@ COPY --from=builder --chown=ambrosia:ambrosia /build/app/build/libs/ambrosia-*.j
 
 USER ambrosia
 
+RUN mkdir -p /home/ambrosia/.Ambrosia-POS
+
 EXPOSE 9154
 
 ENTRYPOINT ["java", "-jar", "ambrosia.jar", "--phoenixd-url=http://phoenixd:9740", "--http-bind-ip=0.0.0.0", "--docker"]
