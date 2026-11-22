@@ -120,7 +120,7 @@ class TimezoneValidationRouteTest {
                             "businessType":"store",
                             "userName":"admin",
                             "userPassword":"Password123!",
-                            "userPin":"1234",
+                            "userPin":"123456",
                             "businessName":"Test Store",
                             "businessCurrency":"USD",
                             "timezone":"Not/A_Real_Zone"

@@ -108,7 +108,7 @@ class ActiveLightningBackendTest {
     }
 
     @Test
-    fun `getNodeInfo throws SecretsLockedException when no backend was set and secrets are locked`() {
+    fun `getNodeInfo throws SecretsLockedException when no backend is set and secrets are locked`() {
         configFile.writeText("secrets-encrypted=true\n")
 
         assertFailsWith<SecretsLockedException> {
@@ -117,7 +117,7 @@ class ActiveLightningBackendTest {
     }
 
     @Test
-    fun `getNodeInfo throws the generic not-initialized error when no backend was set and encryption is inactive`() {
+    fun `getNodeInfo throws not-initialized when no backend is set and encryption is inactive`() {
         val thrownException =
             assertFailsWith<IllegalStateException> {
                 runBlocking { ActiveLightningBackend.getNodeInfo() }

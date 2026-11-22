@@ -160,7 +160,7 @@ export function CreateRoleModal({
             placeholder={roleTranslations("roles.create.currentUserPinPlaceholder")}
             isRequired
             minLength={4}
-            maxLength={4}
+            maxLength={6}
             value={form.currentUserPin ?? ""}
             onChange={(event) => {
               const onlyNumbers = event.target.value.replace(/\D/g, "");

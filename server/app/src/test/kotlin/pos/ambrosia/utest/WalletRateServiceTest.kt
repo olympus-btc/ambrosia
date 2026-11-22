@@ -13,17 +13,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class WalletRateServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = WalletRateService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test

@@ -12,18 +12,18 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class BaseCurrencyTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = BaseCurrencyService()
     private val currencyService = CurrencyService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test
