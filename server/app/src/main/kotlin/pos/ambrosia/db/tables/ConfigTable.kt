@@ -21,6 +21,7 @@ object ConfigTable : IntIdTable("config") {
     val tipPercentages = varchar("tip_percentages", 50).default("10,15,20")
     val customTipDefaultType = text("custom_tip_default_type").default("percentage")
     val priceStep = double("price_step").default(0.01)
+    val dailySessionResetHour = integer("daily_session_reset_hour").default(6)
 }
 
 class ConfigEntity(
@@ -42,4 +43,5 @@ class ConfigEntity(
     var tipPercentages by ConfigTable.tipPercentages
     var customTipDefaultType by ConfigTable.customTipDefaultType
     var priceStep by ConfigTable.priceStep
+    var dailySessionResetHour by ConfigTable.dailySessionResetHour
 }

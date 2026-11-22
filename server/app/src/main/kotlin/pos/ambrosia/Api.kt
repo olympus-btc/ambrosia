@@ -75,6 +75,8 @@ import pos.ambrosia.db.tables.InvoiceEntity
 import pos.ambrosia.db.tables.PayoutAccountEntity
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.services.AdminNotificationService
+import pos.ambrosia.services.ConfigService
+import pos.ambrosia.services.SessionResetScheduler
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.SecretsCipher
 import pos.ambrosia.utils.UnauthorizedApiException
@@ -92,6 +94,7 @@ class Api {
         configureUserPiiEncryptionBackfill()
         configurePayoutAccountPiiEncryptionBackfill()
         configureInvoicePayoutSnapshotEncryptionBackfill()
+        configureScheduledSessionReset()
         handler()
         install(ContentNegotiation) { json() }
         configureCors()
@@ -265,6 +268,12 @@ fun Application.configureAuthentication() {
             }
         }
     }
+}
+
+fun Application.configureScheduledSessionReset() {
+    val tokenService = TokenService(environment)
+    val configService = ConfigService()
+    SessionResetScheduler(tokenService, configService).startDailyReset(this)
 }
 
 fun Application.configurePendingImportCleanup() {

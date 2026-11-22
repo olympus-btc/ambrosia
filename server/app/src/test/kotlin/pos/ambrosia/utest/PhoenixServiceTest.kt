@@ -13,6 +13,7 @@ import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.config.ApplicationConfigValue
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -24,9 +25,11 @@ import pos.ambrosia.models.phoenix.NodeInfo
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.services.OutgoingPaymentFailureCategories
 import pos.ambrosia.services.PhoenixService
+import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.UnsupportedBackendOperationException
 import java.io.IOException
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1844,6 +1847,26 @@ class PhoenixServiceTest {
     fun `testCandidateNodeConnection throws PhoenixConnectionException when the candidate node is unreachable`() {
         assertFailsWith<pos.ambrosia.utils.PhoenixConnectionException> {
             runBlocking { PhoenixService.testCandidateNodeConnection("http://127.0.0.1:1", "irrelevant-password") }
+        }
+    }
+
+    @Test
+    fun `readCurrentPhoenixdPassword returns whatever password SecretsStore currently has, not one captured at construction time`() {
+        val secretsStoreConfigFile = Files.createTempFile("phoenixServiceTestSecrets", ".conf").toFile()
+        SecretsStore.resetForTesting()
+        SecretsStore.ambrosiaConfigFile = Path(secretsStoreConfigFile.absolutePath)
+        try {
+            SecretsStore.setSecret("phoenixd-password", "first-password")
+            val firstPasswordRead = PhoenixService.readCurrentPhoenixdPassword()
+
+            SecretsStore.setSecret("phoenixd-password", "second-password")
+            val secondPasswordRead = PhoenixService.readCurrentPhoenixdPassword()
+
+            assertEquals("first-password", firstPasswordRead)
+            assertEquals("second-password", secondPasswordRead)
+        } finally {
+            SecretsStore.resetForTesting()
+            secretsStoreConfigFile.delete()
         }
     }
 

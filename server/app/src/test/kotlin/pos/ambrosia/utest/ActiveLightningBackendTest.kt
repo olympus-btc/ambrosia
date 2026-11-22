@@ -84,7 +84,6 @@ class ActiveLightningBackendTest {
 
         ActiveLightningBackend.reinitializePhoenixBackend(
             "http://127.0.0.1:1",
-            "irrelevant-password",
             isRemote = false,
         )
 

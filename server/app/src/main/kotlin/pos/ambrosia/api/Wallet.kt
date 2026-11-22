@@ -215,7 +215,6 @@ fun Route.wallet(
                 SecretsStore.setSecret("phoenixd-password", trimmedPhoenixdPassword)
                 ActiveLightningBackend.reinitializePhoenixBackend(
                     trimmedPhoenixdUrl,
-                    trimmedPhoenixdPassword,
                     updatePhoenixdRemoteRequest.phoenixdRemote,
                 )
                 ActiveLightningBackend.startPhoenixPaymentEventsListener(
@@ -500,7 +499,7 @@ private fun Application.initializeLightningBackend(walletAdminNotificationServic
     }
 
     val phoenixdPassword = SecretsStore.getSecretOrNull("phoenixd-password") ?: AppConfig.getLocalPhoenixdPassword()
-    ActiveLightningBackend.set(PhoenixService(phoenixdUrl, phoenixdPassword, phoenixdRemote))
+    ActiveLightningBackend.set(PhoenixService(phoenixdUrl, phoenixdRemote))
 
     if (phoenixdRemote) {
         ActiveLightningBackend.startPhoenixPaymentEventsListener(

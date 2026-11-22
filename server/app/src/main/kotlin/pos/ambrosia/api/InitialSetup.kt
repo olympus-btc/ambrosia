@@ -215,7 +215,6 @@ fun Route.initialSetupRoutes(backupService: BackupService) {
                     logger.info("Remote phoenixd node saved to ambrosia.conf — hot-reloading backend")
                     ActiveLightningBackend.reinitializePhoenixBackend(
                         trimmedPhoenixdUrl,
-                        phoenixdPassword,
                         isRemote = true,
                     )
                     true

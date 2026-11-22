@@ -72,7 +72,7 @@ object SecretsCipher {
         secretKey: SecretKeySpec,
     ): String {
         val separatorIndex = envelope.indexOf(ENVELOPE_SEPARATOR)
-        require(separatorIndex > 0) { "Malformed secrets envelope" }
+        if (separatorIndex <= 0) throw MalformedSecretsEnvelopeException()
 
         val initializationVector = Hex.decode(envelope.substring(0, separatorIndex))
         val ciphertext = Hex.decode(envelope.substring(separatorIndex + 1))

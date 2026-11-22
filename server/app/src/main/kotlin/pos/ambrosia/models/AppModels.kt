@@ -2,6 +2,7 @@ package pos.ambrosia.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import pos.ambrosia.utils.requireMaxLength
 import java.time.Instant
 
 object AdminNotificationLiveEventTypes {
@@ -12,7 +13,11 @@ object AdminNotificationLiveEventTypes {
 @Serializable data class AuthRequest(
     val name: String,
     val pin: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable
 data class AuthResponse(
@@ -128,7 +133,13 @@ data class User(
     val email: String? = null,
     val phone: String? = null,
     val isAdmin: Boolean? = false,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(email, 255, "email")
+        requireMaxLength(phone, 50, "phone")
+    }
+}
 
 @Serializable
 data class CreateUserRequest(
@@ -157,7 +168,13 @@ data class UpdateUserRequest(
     val email: String? = null,
     val phone: String? = null,
     val currentUserPin: String? = null,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(email, 255, "email")
+        requireMaxLength(phone, 50, "phone")
+    }
+}
 
 @Serializable
 data class Role(
@@ -165,7 +182,11 @@ data class Role(
     val role: String,
     val password: String? = null,
     val isAdmin: Boolean? = false,
-)
+) {
+    init {
+        requireMaxLength(role, 255, "role")
+    }
+}
 
 @Serializable
 data class UpsertRoleRequest(
@@ -174,12 +195,20 @@ data class UpsertRoleRequest(
     val isAdmin: Boolean? = false,
     val permissions: List<String>? = null,
     val currentUserPin: String? = null,
-)
+) {
+    init {
+        requireMaxLength(role, 255, "role")
+    }
+}
 
 @Serializable data class Space(
     val id: String? = null,
     val name: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable
 data class Table(
@@ -188,7 +217,12 @@ data class Table(
     val status: String? = null,
     val spaceId: String,
     val orderId: String? = null,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(status, 20, "status")
+    }
+}
 
 @Serializable
 data class Dish(
@@ -196,7 +230,11 @@ data class Dish(
     val name: String,
     val price: Double,
     val categoryId: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable
 data class Ingredient(
@@ -207,7 +245,12 @@ data class Ingredient(
     val unit: String,
     val lowStockThreshold: Double,
     val costPerUnit: Double,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(unit, 20, "unit")
+    }
+}
 
 @Serializable
 data class Supplier(
@@ -217,7 +260,15 @@ data class Supplier(
     val phone: String,
     val email: String,
     val address: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(contact, 255, "contact")
+        requireMaxLength(phone, 50, "phone")
+        requireMaxLength(email, 255, "email")
+        requireMaxLength(address, 500, "address")
+    }
+}
 
 @Serializable
 data class Order(
@@ -283,14 +334,22 @@ data class OrderDish(
     val notes: String? = null,
     val status: String,
     val shouldPrepare: Boolean,
-)
+) {
+    init {
+        requireMaxLength(notes, 500, "notes")
+    }
+}
 
 @Serializable
 data class AddOrderDishRequest(
     val dishId: String,
     val priceAtOrder: Double,
     val notes: String? = null,
-)
+) {
+    init {
+        requireMaxLength(notes, 500, "notes")
+    }
+}
 
 data class CompleteOrder(
     val order: Order,
@@ -326,7 +385,11 @@ data class Ticket(
     val totalAmount: Double,
     val notes: String,
     val tipAmount: Double = 0.0,
-)
+) {
+    init {
+        requireMaxLength(notes, 5000, "notes")
+    }
+}
 
 @Serializable data class Currency(
     val id: String? = null,
@@ -364,7 +427,11 @@ data class Shift(
     val initialAmount: Double = 0.0,
     val finalAmount: Double? = null,
     val difference: Double? = null,
-)
+) {
+    init {
+        requireMaxLength(notes, 255, "notes")
+    }
+}
 
 @Serializable
 data class CloseShiftRequest(
@@ -433,7 +500,12 @@ data class Permission(
     val description: String? = null,
     val enabled: Boolean = true,
     val adminOnly: Boolean = false,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(description, 5000, "description")
+    }
+}
 
 @Serializable
 data class AdminNotification(
@@ -497,7 +569,11 @@ data class AdminNotificationPreferenceUpdateRequest(
     val category: String,
     val inAppEnabled: Boolean = true,
     val pushEnabled: Boolean = true,
-)
+) {
+    init {
+        requireMaxLength(category, 50, "category")
+    }
+}
 
 @Serializable
 data class AdminNotificationPreferencesResponse(
@@ -513,19 +589,33 @@ data class AdminNotificationPreferencesResponse(
 data class WebPushKeys(
     val p256dh: String,
     val auth: String,
-)
+) {
+    init {
+        requireMaxLength(p256dh, 255, "p256dh")
+        requireMaxLength(auth, 255, "auth")
+    }
+}
 
 @Serializable
 data class WebPushSubscriptionRequest(
     val endpoint: String,
     val keys: WebPushKeys,
     val userAgent: String? = null,
-)
+) {
+    init {
+        requireMaxLength(endpoint, 2048, "endpoint")
+        requireMaxLength(userAgent, 1000, "userAgent")
+    }
+}
 
 @Serializable
 data class WebPushUnsubscribeRequest(
     val endpoint: String,
-)
+) {
+    init {
+        requireMaxLength(endpoint, 2048, "endpoint")
+    }
+}
 
 @Serializable
 data class WebPushSubscriptionResponse(
@@ -594,7 +684,12 @@ data class PrinterConfigCreateRequest(
     val openCashDrawerOnRefund: Boolean = true,
     val openCashDrawerOnShiftOpen: Boolean = true,
     val openCashDrawerOnShiftClose: Boolean = true,
-)
+) {
+    init {
+        requireMaxLength(printerName, 255, "printerName")
+        requireMaxLength(templateName, 255, "templateName")
+    }
+}
 
 @Serializable
 data class PrinterConfigUpdateRequest(
@@ -609,7 +704,12 @@ data class PrinterConfigUpdateRequest(
     val openCashDrawerOnRefund: Boolean? = null,
     val openCashDrawerOnShiftOpen: Boolean? = null,
     val openCashDrawerOnShiftClose: Boolean? = null,
-)
+) {
+    init {
+        requireMaxLength(printerName, 255, "printerName")
+        requireMaxLength(templateName, 255, "templateName")
+    }
+}
 
 @Serializable
 data class OpenCashDrawerRequest(
@@ -619,7 +719,11 @@ data class OpenCashDrawerRequest(
 @Serializable data class SetPrinterRequest(
     val printerType: PrinterType,
     val printerName: String,
-)
+) {
+    init {
+        requireMaxLength(printerName, 255, "printerName")
+    }
+}
 
 @Serializable
 data class Config(
@@ -638,7 +742,21 @@ data class Config(
     val tipPercentages: String = "10,15,20",
     val customTipDefaultType: String = "percentage",
     val priceStep: Double = 0.01,
-)
+    val dailySessionResetHour: Int = 6,
+) {
+    init {
+        requireMaxLength(businessType, 20, "businessType")
+        requireMaxLength(businessName, 255, "businessName")
+        requireMaxLength(businessProfession, 255, "businessProfession")
+        requireMaxLength(businessAddress, 2000, "businessAddress")
+        requireMaxLength(businessPhone, 50, "businessPhone")
+        requireMaxLength(businessEmail, 255, "businessEmail")
+        requireMaxLength(businessTaxId, 100, "businessTaxId")
+        requireMaxLength(businessLogoUrl, 2048, "businessLogoUrl")
+        requireMaxLength(timezone, 50, "timezone")
+        requireMaxLength(tipPercentages, 50, "tipPercentages")
+    }
+}
 
 @Serializable
 data class PublicConfig(
@@ -659,7 +777,13 @@ data class FreelanceClient(
     val payoutAccountId: String? = null,
     val isDeleted: Boolean = false,
     val createdAt: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(billingCycle, 20, "billingCycle")
+        requireMaxLength(paymentMethod, 20, "paymentMethod")
+    }
+}
 
 @Serializable
 data class FreelanceClientUpsert(
@@ -670,7 +794,13 @@ data class FreelanceClientUpsert(
     val paymentMethod: String? = null,
     val paymentMethods: List<String> = emptyList(),
     val payoutAccountId: String? = null,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(billingCycle, 20, "billingCycle")
+        requireMaxLength(paymentMethod, 20, "paymentMethod")
+    }
+}
 
 @Serializable
 data class FreelanceProject(
@@ -682,7 +812,12 @@ data class FreelanceProject(
     val isBillable: Boolean = true,
     val isDeleted: Boolean = false,
     val createdAt: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(status, 20, "status")
+    }
+}
 
 @Serializable
 data class FreelanceProjectUpsert(
@@ -690,7 +825,12 @@ data class FreelanceProjectUpsert(
     val status: String = "pending",
     val hourlyRateCents: Int? = null,
     val isBillable: Boolean = true,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(status, 20, "status")
+    }
+}
 
 @Serializable
 data class FreelanceTask(
@@ -699,13 +839,21 @@ data class FreelanceTask(
     val isBillable: Boolean = true,
     val isDeleted: Boolean = false,
     val createdAt: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable
 data class FreelanceTaskUpsert(
     val name: String,
     val isBillable: Boolean = true,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable
 data class PayoutAccount(
@@ -721,7 +869,18 @@ data class PayoutAccount(
     val lightningAddress: String? = null,
     val isDeleted: Boolean = false,
     val createdAt: String,
-)
+) {
+    init {
+        requireMaxLength(type, 20, "type")
+        requireMaxLength(accountHolder, 255, "accountHolder")
+        requireMaxLength(bankName, 255, "bankName")
+        requireMaxLength(accountNumber, 50, "accountNumber")
+        requireMaxLength(swift, 15, "swift")
+        requireMaxLength(iban, 40, "iban")
+        requireMaxLength(clabe, 20, "clabe")
+        requireMaxLength(lightningAddress, 255, "lightningAddress")
+    }
+}
 
 @Serializable
 data class PayoutAccountUpsert(
@@ -734,7 +893,18 @@ data class PayoutAccountUpsert(
     val iban: String? = null,
     val clabe: String? = null,
     val lightningAddress: String? = null,
-)
+) {
+    init {
+        requireMaxLength(type, 20, "type")
+        requireMaxLength(accountHolder, 255, "accountHolder")
+        requireMaxLength(bankName, 255, "bankName")
+        requireMaxLength(accountNumber, 50, "accountNumber")
+        requireMaxLength(swift, 15, "swift")
+        requireMaxLength(iban, 40, "iban")
+        requireMaxLength(clabe, 20, "clabe")
+        requireMaxLength(lightningAddress, 255, "lightningAddress")
+    }
+}
 
 @Serializable
 data class CreateFreelanceInvoiceRequest(
@@ -744,7 +914,11 @@ data class CreateFreelanceInvoiceRequest(
     val payoutAccountId: String? = null,
     val exchangeRate: Double? = null,
     val exchangeRateCurrency: String? = null,
-)
+) {
+    init {
+        requireMaxLength(exchangeRateCurrency, 10, "exchangeRateCurrency")
+    }
+}
 
 @Serializable
 data class PayFreelanceInvoiceRequest(
@@ -933,12 +1107,21 @@ data class RefundRequest(
 @Serializable data class CategoryItem(
     val id: String? = null,
     val name: String,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+    }
+}
 
 @Serializable data class CategoryUpsert(
     val name: String,
     val type: String? = null,
-)
+) {
+    init {
+        requireMaxLength(name, 255, "name")
+        requireMaxLength(type, 20, "type")
+    }
+}
 
 @Serializable
 data class InitialSetupRequest(
@@ -961,7 +1144,22 @@ data class InitialSetupRequest(
     val phoenixdRemote: Boolean? = null,
     val phoenixdUrl: String? = null,
     val phoenixdPassword: String? = null,
-)
+) {
+    init {
+        requireMaxLength(businessType, 20, "businessType")
+        requireMaxLength(userName, 255, "userName")
+        requireMaxLength(businessName, 255, "businessName")
+        requireMaxLength(businessProfession, 255, "businessProfession")
+        requireMaxLength(businessAddress, 2000, "businessAddress")
+        requireMaxLength(businessPhone, 50, "businessPhone")
+        requireMaxLength(businessEmail, 255, "businessEmail")
+        requireMaxLength(businessRFC, 20, "businessRFC")
+        requireMaxLength(businessTaxId, 100, "businessTaxId")
+        requireMaxLength(businessCurrency, 3, "businessCurrency")
+        requireMaxLength(timezone, 50, "timezone")
+        requireMaxLength(businessLogoUrl, 2048, "businessLogoUrl")
+    }
+}
 
 @Serializable
 data class InitialSetupResponse(
@@ -1026,7 +1224,12 @@ data class StoreCheckoutRequest(
     val fiatAmountAtPayment: Double? = null,
     val discountAmount: Double = 0.0,
     val tipAmount: Double = 0.0,
-)
+) {
+    init {
+        requireMaxLength(ticketNotes, 5000, "ticketNotes")
+        requireMaxLength(exchangeRateCurrency, 10, "exchangeRateCurrency")
+    }
+}
 
 @Serializable
 data class StoreCheckoutResponse(
@@ -1137,7 +1340,12 @@ data class CreateTimeEntryRequest(
     val endTime: String? = null,
     val description: String? = null,
     val durationMinutes: Int,
-)
+) {
+    init {
+        requireMaxLength(taskName, 255, "taskName")
+        requireMaxLength(description, 1000, "description")
+    }
+}
 
 @Serializable
 data class UpdateTimeEntryRequest(
@@ -1149,7 +1357,12 @@ data class UpdateTimeEntryRequest(
     val endTime: String? = null,
     val description: String? = null,
     val durationMinutes: Int,
-)
+) {
+    init {
+        requireMaxLength(taskName, 255, "taskName")
+        requireMaxLength(description, 1000, "description")
+    }
+}
 
 @Serializable
 data class TimeEntryResponse(

@@ -144,6 +144,25 @@ class ConfigServiceTest {
         }
 
     @Test
+    fun `updateConfig persists a non-default daily session reset hour`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    dailySessionResetHour = 23,
+                ),
+            )
+
+            assertEquals(23, service.getConfig()?.dailySessionResetHour)
+        }
+
+    @Test
     fun `getConfiguredZoneId returns the configured timezone`() =
         runBlocking {
             service.updateConfig(

@@ -30,6 +30,8 @@ private val customTipTypes = setOf("percentage", "fixed")
 
 private fun isPriceStepValid(priceStep: Double): Boolean = priceStep.isFinite() && priceStep > 0.0 && priceStep <= 1000.0
 
+private fun isDailySessionResetHourValid(dailySessionResetHour: Int): Boolean = dailySessionResetHour in 0..23
+
 fun Application.configureConfig() {
     val configService = ConfigService()
     routing { route("/config") { config(configService) } }
@@ -74,6 +76,10 @@ fun Route.config(configService: ConfigService) {
             }
             if (!isPriceStepValid(config.priceStep)) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid price step")
+                return@put
+            }
+            if (!isDailySessionResetHourValid(config.dailySessionResetHour)) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid daily session reset hour")
                 return@put
             }
             val isUpdated = configService.updateConfig(config)

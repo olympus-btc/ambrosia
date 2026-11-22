@@ -11,6 +11,7 @@ import pos.ambrosia.models.Message
 import pos.ambrosia.models.OrderWithPaymentFilters
 import pos.ambrosia.services.ReportService
 import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.requireMaxLength
 import java.time.LocalDate
 
 private fun parseDateQueryParam(
@@ -46,6 +47,7 @@ fun Route.reports(reportService: ReportService) {
         get("") {
             val period = call.request.queryParameters["period"]?.takeIf { it.isNotBlank() }
             val productName = call.request.queryParameters["productName"]?.takeIf { it.isNotBlank() }
+            requireMaxLength(productName, 255, "productName")
             val userId = call.request.queryParameters["userId"]?.takeIf { it.isNotBlank() }
             val paymentMethod = call.request.queryParameters["paymentMethod"]?.takeIf { it.isNotBlank() }
             val utcOffsetMinutes = call.request.queryParameters["utcOffsetMinutes"]?.toIntOrNull()

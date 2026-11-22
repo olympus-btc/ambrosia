@@ -24,6 +24,7 @@ import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
 import pos.ambrosia.utils.LightningBackendUnavailableException
+import pos.ambrosia.utils.MalformedSecretsEnvelopeException
 import pos.ambrosia.utils.MissingRoleException
 import pos.ambrosia.utils.NwcConnectionException
 import pos.ambrosia.utils.NwcServiceException
@@ -39,6 +40,7 @@ import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.ProductIsBundleComponentException
+import pos.ambrosia.utils.RequestValidationException
 import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.SecretsLockedException
 import pos.ambrosia.utils.TimeEntryLockedException
@@ -83,9 +85,17 @@ fun Application.handler() {
             logger.warn("Rejected upload with an unsupported type: ${cause.message}")
             call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Unsupported file type"))
         }
+        exception<RequestValidationException> { call, cause ->
+            logger.warn("Rejected request with an invalid field: ${cause.message}")
+            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid request"))
+        }
         exception<SecretsLockedException> { call, cause ->
             logger.warn("Locked secrets access rejected: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Secrets are locked"))
+        }
+        exception<MalformedSecretsEnvelopeException> { call, cause ->
+            logger.error("Malformed secrets envelope on decrypt: ${cause.message}")
+            call.respond(HttpStatusCode.InternalServerError, Message(cause.message ?: "Database operation failed"))
         }
         exception<InvalidCredentialsException> { call, cause ->
             logger.warn("Invalid login attempt: ${cause.message}")
@@ -244,6 +254,10 @@ fun Application.handler() {
         exception<SQLException> { call, cause ->
             logger.error("Database connection error: ${cause.message}", cause)
             call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
+        }
+        exception<IllegalArgumentException> { call, cause ->
+            logger.warn("Rejected request with an invalid argument: ${cause.message}")
+            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid request"))
         }
         exception<Exception> { call, cause ->
             logger.error("Unhandled exception: ${cause.message}")
