@@ -128,14 +128,14 @@ fun Route.users(
             if (user.role?.let(userService::isRoleAdmin) == true) {
                 call.requireAdmin()
             }
-            val result = userService.addUser(user)
-            if (result == null) {
+            val createdUserId = userService.addUser(user)
+            if (createdUserId == null) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user")
                 return@post
             }
             call.respond(
                 HttpStatusCode.Created,
-                mapOf("id" to result, "message" to "User added successfully"),
+                mapOf("id" to createdUserId, "message" to "User added successfully"),
             )
         }
     }
@@ -175,7 +175,6 @@ fun Route.users(
             }
 
             val isUpdated = userService.updateUser(id, updatedUser)
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "User with ID: $id not found")

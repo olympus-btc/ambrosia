@@ -68,10 +68,6 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
 }
 
-tasks.named<JavaExec>("run") {
-    jvmArgs("-Dlogback.configurationFile=Ambrosia-Logs.xml")
-}
-
 tasks.test {
     testLogging {
         events("passed", "skipped", "failed")

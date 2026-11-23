@@ -393,6 +393,13 @@ phoenixd_update() {
 
 # --- Server update ---
 
+retire_legacy_log_configuration() {
+  local legacy_log_configuration="${AMBROSIA_DATADIR:-$HOME/.Ambrosia-POS}/Ambrosia-Logs.xml"
+  [[ -f "$legacy_log_configuration" ]] || return 0
+  log_info "Server logs are now configured by Ambrosia itself; keeping the old file as ${legacy_log_configuration}.bak"
+  mv -f "$legacy_log_configuration" "${legacy_log_configuration}.bak"
+}
+
 server_update() {
   echo ""
   echo "➡️  Checking Ambrosia Server..."
@@ -436,6 +443,7 @@ server_update() {
 
   mkdir -p "$AMBROSIA_BIN_DIR"
   ln -sf "$AMBROSIA_INSTALL_DIR/run-server.sh" "$AMBROSIA_BIN_DIR/ambrosia"
+  retire_legacy_log_configuration
 
   systemd_start_if_was_active "ambrosia" "$was_active"
 
