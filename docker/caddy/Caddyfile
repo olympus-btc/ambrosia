@@ -1,0 +1,43 @@
+{
+	local_certs
+	skip_install_trust
+	admin unix//data/caddy-admin.sock
+	pki {
+		ca local {
+			name "Ambrosia Local CA"
+			root_cn "Ambrosia Local CA Root"
+		}
+	}
+}
+
+(ambrosia_trust) {
+	handle /trust/ambrosia-ca.crt {
+		@unsupported_method not method GET HEAD
+		respond @unsupported_method "Method not allowed" 405
+		header Cache-Control "no-store"
+		header X-Content-Type-Options "nosniff"
+		header Referrer-Policy "no-referrer"
+		header Content-Type "application/x-x509-ca-cert"
+		root * /data/caddy/pki/authorities/local
+		rewrite * /root.crt
+		file_server
+	}
+}
+
+:80 {
+	import ambrosia_trust
+	handle {
+		redir https://{host}{uri} 308
+	}
+}
+
+:443 {
+	tls internal {
+		on_demand
+	}
+	import ambrosia_trust
+	handle {
+		reverse_proxy /ws/* ambrosia:9154
+		reverse_proxy ambrosia-client:3000
+	}
+}
