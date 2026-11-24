@@ -8,12 +8,12 @@ import kotlin.test.assertEquals
 
 class ClientLogReportServiceTest {
     @Test
-    fun `formats a single summary line followed by user agent and stack`() {
+    fun `formats a single summary line followed by user agent and stack trace`() {
         val formattedReport =
             ClientLogReportService.formatReport(
                 ClientLogReport(
-                    message = "Cannot read properties\nof undefined",
-                    stack = "TypeError: Cannot read properties\n    at Cart (cart.js:1:1)",
+                    errorMessage = "Cannot read properties\nof undefined",
+                    stackTrace = "TypeError: Cannot read properties\n    at Cart (cart.js:1:1)",
                     url = "/store/cart",
                     userAgent = "Mozilla/5.0",
                     origin = ClientLogReportOrigins.NEXT_SERVER,
@@ -35,7 +35,7 @@ class ClientLogReportServiceTest {
     fun `falls back to the browser origin for an unknown origin`() {
         val formattedReport =
             ClientLogReportService.formatReport(
-                ClientLogReport(message = "Render failed", origin = "unknown-origin"),
+                ClientLogReport(errorMessage = "Render failed", origin = "unknown-origin"),
                 reportingUserId = null,
             )
 

@@ -32,8 +32,8 @@ object ClientLogReportOrigins {
 
 object ClientLogReportLimits {
     const val MAXIMUM_LEVEL_LENGTH = 10
-    const val MAXIMUM_MESSAGE_LENGTH = 2000
-    const val MAXIMUM_STACK_LENGTH = 8000
+    const val MAXIMUM_ERROR_MESSAGE_LENGTH = 2000
+    const val MAXIMUM_STACK_TRACE_LENGTH = 8000
     const val MAXIMUM_URL_LENGTH = 500
     const val MAXIMUM_USER_AGENT_LENGTH = 300
     const val MAXIMUM_ORIGIN_LENGTH = 20
@@ -84,8 +84,8 @@ data class LogStreamEvent(
 @Serializable
 data class ClientLogReport(
     val level: String = "ERROR",
-    val message: String,
-    val stack: String? = null,
+    val errorMessage: String,
+    val stackTrace: String? = null,
     val url: String? = null,
     val userAgent: String? = null,
     val origin: String = ClientLogReportOrigins.BROWSER,
@@ -93,8 +93,8 @@ data class ClientLogReport(
 ) {
     init {
         requireMaxLength(level, ClientLogReportLimits.MAXIMUM_LEVEL_LENGTH, "level")
-        requireMaxLength(message, ClientLogReportLimits.MAXIMUM_MESSAGE_LENGTH, "message")
-        requireMaxLength(stack, ClientLogReportLimits.MAXIMUM_STACK_LENGTH, "stack")
+        requireMaxLength(errorMessage, ClientLogReportLimits.MAXIMUM_ERROR_MESSAGE_LENGTH, "errorMessage")
+        requireMaxLength(stackTrace, ClientLogReportLimits.MAXIMUM_STACK_TRACE_LENGTH, "stackTrace")
         requireMaxLength(url, ClientLogReportLimits.MAXIMUM_URL_LENGTH, "url")
         requireMaxLength(userAgent, ClientLogReportLimits.MAXIMUM_USER_AGENT_LENGTH, "userAgent")
         requireMaxLength(origin, ClientLogReportLimits.MAXIMUM_ORIGIN_LENGTH, "origin")
