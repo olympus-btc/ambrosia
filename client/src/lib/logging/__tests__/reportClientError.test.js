@@ -18,7 +18,7 @@ describe("reportClientError", () => {
   });
 
   it("posts the report with the current pathname and browser origin", async () => {
-    await reportClientError({ message: "Cart crashed", stack: "TypeError: x", context: { type: "window.error" } });
+    await reportClientError({ errorMessage: "Cart crashed", stackTrace: "TypeError: x", context: { type: "window.error" } });
 
     expect(httpWrapper).toHaveBeenCalledWith(
       "/logs/client",
@@ -27,8 +27,8 @@ describe("reportClientError", () => {
     const reportBody = JSON.parse(httpWrapper.mock.calls[0][1].body);
     expect(reportBody).toEqual(expect.objectContaining({
       level: "ERROR",
-      message: "Cart crashed",
-      stack: "TypeError: x",
+      errorMessage: "Cart crashed",
+      stackTrace: "TypeError: x",
       url: window.location.pathname,
       origin: "browser",
       context: { type: "window.error" },
@@ -36,14 +36,14 @@ describe("reportClientError", () => {
   });
 
   it("does not send the same error twice within the duplicate window", async () => {
-    await reportClientError({ message: "Same error" });
-    await reportClientError({ message: "Same error" });
+    await reportClientError({ errorMessage: "Same error" });
+    await reportClientError({ errorMessage: "Same error" });
 
     expect(httpWrapper).toHaveBeenCalledTimes(1);
   });
 
-  it("does not send reports without a message", async () => {
-    await reportClientError({ message: "" });
+  it("does not send reports without an error message", async () => {
+    await reportClientError({ errorMessage: "" });
 
     expect(httpWrapper).not.toHaveBeenCalled();
   });
@@ -51,7 +51,7 @@ describe("reportClientError", () => {
   it("never throws when the report request fails", async () => {
     httpWrapper.mockRejectedValueOnce(new Error("offline"));
 
-    await expect(reportClientError({ message: "Offline error" })).resolves.toBeUndefined();
+    await expect(reportClientError({ errorMessage: "Offline error" })).resolves.toBeUndefined();
   });
 
   it("limits how many reports are sent per minute", () => {

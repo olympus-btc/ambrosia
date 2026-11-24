@@ -20,8 +20,8 @@ describe("useReportRenderError", () => {
     renderHook(() => useReportRenderError(renderError, "react.errorBoundary"));
 
     expect(reportClientError).toHaveBeenCalledWith({
-      message: "Cannot render cart",
-      stack: renderError.stack,
+      errorMessage: "Cannot render cart",
+      stackTrace: renderError.stack,
       context: { type: "react.errorBoundary", digest: "digest-123" },
     });
   });

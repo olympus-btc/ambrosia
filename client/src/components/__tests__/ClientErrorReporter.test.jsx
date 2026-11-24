@@ -38,11 +38,11 @@ describe("ClientErrorReporter", () => {
     dispatchUnhandledRejection(new Error("Payment polling failed"));
 
     expect(reportClientError).toHaveBeenCalledWith(expect.objectContaining({
-      message: "Cart total is undefined",
+      errorMessage: "Cart total is undefined",
       context: { type: "window.error", file: "http://localhost:3000/cart.js:10:4" },
     }));
     expect(reportClientError).toHaveBeenCalledWith(expect.objectContaining({
-      message: "Payment polling failed",
+      errorMessage: "Payment polling failed",
       context: { type: "unhandledrejection" },
     }));
   });

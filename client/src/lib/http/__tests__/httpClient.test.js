@@ -118,7 +118,7 @@ describe("httpClient", () => {
       await httpClient("/orders?status=open", { method: "post" });
 
       expect(reportClientError).toHaveBeenCalledWith({
-        message: "HTTP 503 POST /orders",
+        errorMessage: "HTTP 503 POST /orders",
         context: { type: "http", status: "503" },
       });
     });
