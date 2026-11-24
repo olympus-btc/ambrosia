@@ -35,7 +35,7 @@ object ClientLogReportService {
         val summaryLine =
             buildString {
                 append("[$reportOrigin] ")
-                append(report.message.toSingleLine())
+                append(report.errorMessage.toSingleLine())
                 report.url?.takeIf { reportedUrl -> reportedUrl.isNotBlank() }?.let { reportedUrl ->
                     append(" url=${reportedUrl.toSingleLine()}")
                 }
@@ -49,7 +49,7 @@ object ClientLogReportService {
                 report.userAgent?.takeIf { reportedUserAgent -> reportedUserAgent.isNotBlank() }?.let { reportedUserAgent ->
                     "userAgent: ${reportedUserAgent.toSingleLine()}"
                 },
-                report.stack?.takeIf { reportedStack -> reportedStack.isNotBlank() },
+                report.stackTrace?.takeIf { reportedStackTrace -> reportedStackTrace.isNotBlank() },
             )
         return (listOf(summaryLine) + detailLines).joinToString("\n")
     }
