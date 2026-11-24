@@ -102,8 +102,8 @@ class TestClientLogReports:
             "/logs/client",
             json={
                 "level": "ERROR",
-                "message": f"{unique_marker} token=supersecret",
-                "stack": "TypeError: boom\n    at Cart (cart.js:1:1)",
+                "errorMessage": f"{unique_marker} token=supersecret",
+                "stackTrace": "TypeError: boom\n    at Cart (cart.js:1:1)",
                 "url": "/store/cart",
                 "origin": "browser",
                 "context": {"type": "window.error"},
@@ -128,7 +128,7 @@ class TestClientLogReports:
     @pytest.mark.asyncio
     async def test_anonymous_client_report_is_rejected(self, public_client):
         report_response = await public_client.post(
-            "/logs/client", json={"message": "anonymous error"}
+            "/logs/client", json={"errorMessage": "anonymous error"}
         )
 
         assert report_response.status_code == 401
@@ -138,7 +138,7 @@ class TestClientLogReports:
         reporting_client = await client_factory(BASELINE_PERMISSIONS)
 
         report_response = await reporting_client.post(
-            "/logs/client", json={"message": "x" * (32 * 1024)}
+            "/logs/client", json={"errorMessage": "x" * (32 * 1024)}
         )
 
         assert report_response.status_code == 413
@@ -150,7 +150,7 @@ class TestClientLogReports:
         report_status_codes = [
             (
                 await reporting_client.post(
-                    "/logs/client", json={"message": f"rate limit probe {attempt}"}
+                    "/logs/client", json={"errorMessage": f"rate limit probe {attempt}"}
                 )
             ).status_code
             for attempt in range(CLIENT_LOG_REPORTS_PER_MINUTE + 1)
