@@ -13,10 +13,10 @@ export async function reportServerError(incomingRequest, serverError, reportCont
   const incomingRequestCookieHeader = incomingRequest?.headers?.get("cookie");
   if (!incomingRequestCookieHeader) return;
 
-  const { message, stack } = normalizeReportedError(serverError);
+  const { errorMessage, stackTrace } = normalizeReportedError(serverError);
   const clientLogReportPayload = buildClientLogReportPayload({
-    message,
-    stack,
+    errorMessage,
+    stackTrace,
     url: incomingRequest?.url ? new URL(incomingRequest.url).pathname : undefined,
     origin: CLIENT_LOG_REPORT_ORIGIN_NEXT_SERVER,
     context: reportContext,

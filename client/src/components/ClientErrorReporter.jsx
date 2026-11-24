@@ -13,10 +13,10 @@ export default function ClientErrorReporter() {
     if (!isAuth) return undefined;
 
     const handleWindowError = (errorEvent) => {
-      const { message, stack } = normalizeReportedError(errorEvent.error ?? errorEvent.message);
+      const { errorMessage, stackTrace } = normalizeReportedError(errorEvent.error ?? errorEvent.message);
       reportClientError({
-        message,
-        stack,
+        errorMessage,
+        stackTrace,
         context: {
           type: "window.error",
           ...(errorEvent.filename ? { file: `${errorEvent.filename}:${errorEvent.lineno}:${errorEvent.colno}` } : {}),
@@ -25,8 +25,8 @@ export default function ClientErrorReporter() {
     };
 
     const handleUnhandledRejection = (rejectionEvent) => {
-      const { message, stack } = normalizeReportedError(rejectionEvent.reason);
-      reportClientError({ message, stack, context: { type: "unhandledrejection" } });
+      const { errorMessage, stackTrace } = normalizeReportedError(rejectionEvent.reason);
+      reportClientError({ errorMessage, stackTrace, context: { type: "unhandledrejection" } });
     };
 
     window.addEventListener("error", handleWindowError);

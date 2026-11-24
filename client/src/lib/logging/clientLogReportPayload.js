@@ -2,8 +2,8 @@ import { LOG_LEVEL_ERROR } from "@/lib/logs";
 
 export const CLIENT_LOG_REPORT_ORIGIN_BROWSER = "browser";
 export const CLIENT_LOG_REPORT_ORIGIN_NEXT_SERVER = "next-server";
-export const MAXIMUM_REPORTED_MESSAGE_LENGTH = 2000;
-export const MAXIMUM_REPORTED_STACK_LENGTH = 8000;
+export const MAXIMUM_REPORTED_ERROR_MESSAGE_LENGTH = 2000;
+export const MAXIMUM_REPORTED_STACK_TRACE_LENGTH = 8000;
 export const MAXIMUM_REPORTED_URL_LENGTH = 500;
 export const MAXIMUM_REPORTED_USER_AGENT_LENGTH = 300;
 export const MAXIMUM_REPORTED_CONTEXT_ENTRIES = 10;
@@ -29,22 +29,22 @@ function limitReportedContext(reportedContext) {
 export function normalizeReportedError(reportedErrorOrReason) {
   if (reportedErrorOrReason instanceof Error) {
     return {
-      message: reportedErrorOrReason.message || reportedErrorOrReason.name,
-      stack: reportedErrorOrReason.stack,
+      errorMessage: reportedErrorOrReason.message || reportedErrorOrReason.name,
+      stackTrace: reportedErrorOrReason.stack,
     };
   }
-  if (typeof reportedErrorOrReason === "string") return { message: reportedErrorOrReason, stack: undefined };
+  if (typeof reportedErrorOrReason === "string") return { errorMessage: reportedErrorOrReason, stackTrace: undefined };
   try {
-    return { message: JSON.stringify(reportedErrorOrReason), stack: undefined };
+    return { errorMessage: JSON.stringify(reportedErrorOrReason), stackTrace: undefined };
   } catch {
-    return { message: String(reportedErrorOrReason), stack: undefined };
+    return { errorMessage: String(reportedErrorOrReason), stackTrace: undefined };
   }
 }
 
 export function buildClientLogReportPayload({
   level = LOG_LEVEL_ERROR,
-  message,
-  stack,
+  errorMessage,
+  stackTrace,
   url,
   userAgent,
   origin,
@@ -52,8 +52,8 @@ export function buildClientLogReportPayload({
 }) {
   return {
     level,
-    message: String(message).slice(0, MAXIMUM_REPORTED_MESSAGE_LENGTH),
-    stack: stack ? String(stack).slice(0, MAXIMUM_REPORTED_STACK_LENGTH) : undefined,
+    errorMessage: String(errorMessage).slice(0, MAXIMUM_REPORTED_ERROR_MESSAGE_LENGTH),
+    stackTrace: stackTrace ? String(stackTrace).slice(0, MAXIMUM_REPORTED_STACK_TRACE_LENGTH) : undefined,
     url: truncateOptionalText(url, MAXIMUM_REPORTED_URL_LENGTH),
     userAgent: truncateOptionalText(userAgent, MAXIMUM_REPORTED_USER_AGENT_LENGTH),
     origin,

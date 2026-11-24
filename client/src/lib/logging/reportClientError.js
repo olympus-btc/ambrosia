@@ -6,7 +6,7 @@ import { buildClientLogReportPayload, CLIENT_LOG_REPORT_ORIGIN_BROWSER } from ".
 export const DUPLICATE_REPORT_WINDOW_MILLISECONDS = 30000;
 export const MAXIMUM_REPORTS_PER_MINUTE = 10;
 const ONE_MINUTE_MILLISECONDS = 60000;
-const SIGNATURE_STACK_PREFIX_LENGTH = 300;
+const SIGNATURE_STACK_TRACE_PREFIX_LENGTH = 300;
 
 const lastReportTimestampBySignature = new Map();
 let recentReportTimestamps = [];
@@ -32,12 +32,12 @@ export function resetClientErrorReportingState() {
   recentReportTimestamps = [];
 }
 
-export async function reportClientError({ level = LOG_LEVEL_ERROR, message, stack, context = {} }) {
-  if (typeof window === "undefined" || !message) return;
+export async function reportClientError({ level = LOG_LEVEL_ERROR, errorMessage, stackTrace, context = {} }) {
+  if (typeof window === "undefined" || !errorMessage) return;
   const clientLogReportPayload = buildClientLogReportPayload({
     level,
-    message,
-    stack,
+    errorMessage,
+    stackTrace,
     url: window.location.pathname,
     userAgent: window.navigator?.userAgent,
     origin: CLIENT_LOG_REPORT_ORIGIN_BROWSER,
@@ -45,8 +45,8 @@ export async function reportClientError({ level = LOG_LEVEL_ERROR, message, stac
   });
   const reportSignature = [
     clientLogReportPayload.level,
-    clientLogReportPayload.message,
-    (clientLogReportPayload.stack ?? "").slice(0, SIGNATURE_STACK_PREFIX_LENGTH),
+    clientLogReportPayload.errorMessage,
+    (clientLogReportPayload.stackTrace ?? "").slice(0, SIGNATURE_STACK_TRACE_PREFIX_LENGTH),
   ].join("|");
   if (!shouldSendClientLogReport(reportSignature)) return;
 

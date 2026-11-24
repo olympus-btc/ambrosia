@@ -7,10 +7,10 @@ import { reportClientError } from "@/lib/logging/reportClientError";
 
 export function useReportRenderError(renderError, errorBoundaryType) {
   useEffect(() => {
-    const { message, stack } = normalizeReportedError(renderError);
+    const { errorMessage, stackTrace } = normalizeReportedError(renderError);
     reportClientError({
-      message,
-      stack,
+      errorMessage,
+      stackTrace,
       context: {
         type: errorBoundaryType,
         ...(renderError?.digest ? { digest: renderError.digest } : {}),

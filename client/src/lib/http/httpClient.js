@@ -27,7 +27,7 @@ function reportServerErrorResponse(endpoint, httpOptions, httpResponse) {
   if (endpointPath.startsWith(CLIENT_LOG_REPORTS_ENDPOINT)) return;
   const requestMethod = (httpOptions.method || "GET").toUpperCase();
   reportClientError({
-    message: `HTTP ${httpResponse.status} ${requestMethod} ${endpointPath}`,
+    errorMessage: `HTTP ${httpResponse.status} ${requestMethod} ${endpointPath}`,
     context: { type: "http", status: String(httpResponse.status) },
   });
 }
