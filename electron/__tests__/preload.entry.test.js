@@ -71,6 +71,22 @@ describe('ipc.invoke', () => {
     expect(ipcRendererMock.invoke).toHaveBeenCalledWith('services:get-statuses');
   });
 
+  it('allows changing the desktop log level from the renderer', () => {
+    ipcRendererMock.invoke.mockResolvedValue({ success: true });
+
+    exposedElectronApi.ipc.invoke('logs:set-level', 'DEBUG');
+
+    expect(ipcRendererMock.invoke).toHaveBeenCalledWith('logs:set-level', 'DEBUG');
+  });
+
+  it('allows opening the logs folder from the renderer', () => {
+    ipcRendererMock.invoke.mockResolvedValue({ success: true });
+
+    exposedElectronApi.ipc.invoke('logs:open-folder');
+
+    expect(ipcRendererMock.invoke).toHaveBeenCalledWith('logs:open-folder');
+  });
+
   it('rejects with an Invalid channel error outside the invoke whitelist', async () => {
     await expect(exposedElectronApi.ipc.invoke('not-whitelisted')).rejects.toThrow('Invalid channel: not-whitelisted');
     expect(ipcRendererMock.invoke).not.toHaveBeenCalled();
@@ -135,9 +151,9 @@ describe('ipc.invoke', () => {
 
 describe('ipc.on', () => {
   it('registers a listener for a whitelisted receive channel', () => {
-    const callback = vi.fn();
+    const rendererListener = vi.fn();
 
-    exposedElectronApi.ipc.on('pong', callback);
+    exposedElectronApi.ipc.on('pong', rendererListener);
 
     expect(ipcRendererMock.on).toHaveBeenCalledWith('pong', expect.any(Function));
   });
@@ -149,13 +165,13 @@ describe('ipc.on', () => {
   });
 
   it('strips the IPC event object before forwarding to the callback', () => {
-    const callback = vi.fn();
+    const rendererListener = vi.fn();
 
-    exposedElectronApi.ipc.on('pong', callback);
+    exposedElectronApi.ipc.on('pong', rendererListener);
     const registeredListener = ipcRendererMock.on.mock.calls[0][1];
     registeredListener({ senderFrame: {} }, 'arg1', 'arg2');
 
-    expect(callback).toHaveBeenCalledWith('arg1', 'arg2');
+    expect(rendererListener).toHaveBeenCalledWith('arg1', 'arg2');
   });
 });
 
@@ -175,11 +191,11 @@ describe('ipc.once', () => {
 
 describe('ipc.removeListener', () => {
   it('forwards removal for a whitelisted receive channel', () => {
-    const callback = vi.fn();
+    const rendererListener = vi.fn();
 
-    exposedElectronApi.ipc.removeListener('update:available', callback);
+    exposedElectronApi.ipc.removeListener('update:available', rendererListener);
 
-    expect(ipcRendererMock.removeListener).toHaveBeenCalledWith('update:available', callback);
+    expect(ipcRendererMock.removeListener).toHaveBeenCalledWith('update:available', rendererListener);
   });
 
   it('does not forward removal outside the receive whitelist', () => {
