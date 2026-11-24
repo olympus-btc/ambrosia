@@ -21,8 +21,8 @@ class LogModelsValidationTest {
         val clientLogReportAtLimits =
             ClientLogReport(
                 level = textOfLength(ClientLogReportLimits.MAXIMUM_LEVEL_LENGTH),
-                message = textOfLength(ClientLogReportLimits.MAXIMUM_MESSAGE_LENGTH),
-                stack = textOfLength(ClientLogReportLimits.MAXIMUM_STACK_LENGTH),
+                errorMessage = textOfLength(ClientLogReportLimits.MAXIMUM_ERROR_MESSAGE_LENGTH),
+                stackTrace = textOfLength(ClientLogReportLimits.MAXIMUM_STACK_TRACE_LENGTH),
                 url = textOfLength(ClientLogReportLimits.MAXIMUM_URL_LENGTH),
                 userAgent = textOfLength(ClientLogReportLimits.MAXIMUM_USER_AGENT_LENGTH),
                 origin = textOfLength(ClientLogReportLimits.MAXIMUM_ORIGIN_LENGTH),
@@ -35,22 +35,22 @@ class LogModelsValidationTest {
     @Test
     fun `rejects client log report text fields over their length limit`() {
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(level = textOfLength(ClientLogReportLimits.MAXIMUM_LEVEL_LENGTH + 1), message = "failed")
+            ClientLogReport(level = textOfLength(ClientLogReportLimits.MAXIMUM_LEVEL_LENGTH + 1), errorMessage = "failed")
         }
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(message = textOfLength(ClientLogReportLimits.MAXIMUM_MESSAGE_LENGTH + 1))
+            ClientLogReport(errorMessage = textOfLength(ClientLogReportLimits.MAXIMUM_ERROR_MESSAGE_LENGTH + 1))
         }
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(message = "failed", stack = textOfLength(ClientLogReportLimits.MAXIMUM_STACK_LENGTH + 1))
+            ClientLogReport(errorMessage = "failed", stackTrace = textOfLength(ClientLogReportLimits.MAXIMUM_STACK_TRACE_LENGTH + 1))
         }
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(message = "failed", url = textOfLength(ClientLogReportLimits.MAXIMUM_URL_LENGTH + 1))
+            ClientLogReport(errorMessage = "failed", url = textOfLength(ClientLogReportLimits.MAXIMUM_URL_LENGTH + 1))
         }
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(message = "failed", userAgent = textOfLength(ClientLogReportLimits.MAXIMUM_USER_AGENT_LENGTH + 1))
+            ClientLogReport(errorMessage = "failed", userAgent = textOfLength(ClientLogReportLimits.MAXIMUM_USER_AGENT_LENGTH + 1))
         }
         assertFailsWith<RequestValidationException> {
-            ClientLogReport(message = "failed", origin = textOfLength(ClientLogReportLimits.MAXIMUM_ORIGIN_LENGTH + 1))
+            ClientLogReport(errorMessage = "failed", origin = textOfLength(ClientLogReportLimits.MAXIMUM_ORIGIN_LENGTH + 1))
         }
     }
 
@@ -58,19 +58,19 @@ class LogModelsValidationTest {
     fun `rejects a client log report context that is too large`() {
         assertFailsWith<RequestValidationException> {
             ClientLogReport(
-                message = "failed",
+                errorMessage = "failed",
                 context = (0..ClientLogReportLimits.MAXIMUM_CONTEXT_ENTRIES).associate { contextIndex -> "key$contextIndex" to "value" },
             )
         }
         assertFailsWith<RequestValidationException> {
             ClientLogReport(
-                message = "failed",
+                errorMessage = "failed",
                 context = mapOf(textOfLength(ClientLogReportLimits.MAXIMUM_CONTEXT_KEY_LENGTH + 1) to "value"),
             )
         }
         assertFailsWith<RequestValidationException> {
             ClientLogReport(
-                message = "failed",
+                errorMessage = "failed",
                 context = mapOf("type" to textOfLength(ClientLogReportLimits.MAXIMUM_CONTEXT_VALUE_LENGTH + 1)),
             )
         }
