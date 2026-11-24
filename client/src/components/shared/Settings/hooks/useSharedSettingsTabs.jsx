@@ -8,6 +8,7 @@ import { ImportData } from "@components/shared/Settings/ImportData";
 import { InstallPWA } from "@components/shared/Settings/InstallPWA";
 import { Language } from "@components/shared/Settings/Language";
 import { LightningCard } from "@components/shared/Settings/Lightning/LightningCard";
+import { LogsCard } from "@components/shared/Settings/Logs";
 import { NotificationPreferencesCard } from "@components/shared/Settings/Notifications";
 import { NwcConnectionCard } from "@components/shared/Settings/NwcConnection/NwcConnectionCard";
 import { PhoenixdRemoteCard } from "@components/shared/Settings/PhoenixdRemote/PhoenixdRemoteCard";
@@ -77,6 +78,7 @@ export function useSharedSettingsTabs({ homeRoute, tours }) {
         <>
           <SystemCard />
           <NotificationPreferencesCard />
+          <LogsCard />
         </>
       ),
     },
