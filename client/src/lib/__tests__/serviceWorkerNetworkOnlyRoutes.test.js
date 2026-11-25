@@ -2,8 +2,10 @@ import {
   deleteObsoleteRuntimeCaches,
   isApiPath,
   isPageDataRequest,
+  isOfflineFallbackDocumentRequest,
   isPageNavigationRequest,
   isSameOriginApiRequest,
+  isSameOriginTrustRequest,
   OBSOLETE_RUNTIME_CACHE_NAMES,
   OFFLINE_FALLBACK_ROUTE,
 } from "../serviceWorkerNetworkOnlyRoutes";
@@ -28,6 +30,34 @@ describe("isApiPath", () => {
     expect(isApiPath("/apiary")).toBe(false);
     expect(isApiPath("/store/api")).toBe(false);
     expect(isApiPath("/auth")).toBe(false);
+  });
+});
+
+describe("isSameOriginTrustRequest", () => {
+  it("matches same-origin trust requests", () => {
+    const trustRequestUrl = new URL("https://unit.local/trust/check.html");
+    expect(isSameOriginTrustRequest({ sameOrigin: true, url: trustRequestUrl })).toBe(true);
+  });
+
+  it("does not match cross-origin trust requests or other same-origin pages", () => {
+    const crossOriginTrustRequestUrl = new URL("https://other.local/trust/");
+    const pageRequestUrl = new URL("https://unit.local/trusted");
+    expect(isSameOriginTrustRequest({ sameOrigin: false, url: crossOriginTrustRequestUrl })).toBe(false);
+    expect(isSameOriginTrustRequest({ sameOrigin: true, url: pageRequestUrl })).toBe(false);
+  });
+});
+
+describe("isOfflineFallbackDocumentRequest", () => {
+  it("falls back to the offline page for failed page documents", () => {
+    const failedPageRequest = { destination: "document", url: "https://unit.local/store" };
+    expect(isOfflineFallbackDocumentRequest({ request: failedPageRequest })).toBe(true);
+  });
+
+  it("never falls back for trust documents or for requests that are not documents", () => {
+    const failedTrustRequest = { destination: "document", url: "https://unit.local/trust/" };
+    const failedApiRequest = { destination: "", url: "https://unit.local/api/config" };
+    expect(isOfflineFallbackDocumentRequest({ request: failedTrustRequest })).toBe(false);
+    expect(isOfflineFallbackDocumentRequest({ request: failedApiRequest })).toBe(false);
   });
 });
 
