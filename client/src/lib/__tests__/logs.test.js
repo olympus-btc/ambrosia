@@ -1,4 +1,6 @@
 import {
+  buildVisibleLogEntriesFileName,
+  formatLogEntriesAsText,
   isLogLevelAtLeast,
   keepLatestLogEntries,
   LOG_LEVEL_DEBUG,
@@ -52,6 +54,29 @@ describe("logs helpers", () => {
       const latestLogEntries = keepLatestLogEntries(logEntries, 3);
 
       expect(latestLogEntries.map((logEntry) => logEntry.message)).toEqual(["3", "4", "5"]);
+    });
+  });
+
+  describe("formatLogEntriesAsText", () => {
+    it("writes one line per entry with the details below it", () => {
+      const logEntries = [
+        buildLogEntry(),
+        buildLogEntry({ level: LOG_LEVEL_ERROR, logger: "Client", message: "Render failed", details: "TypeError: boom" }),
+      ];
+
+      expect(formatLogEntriesAsText(logEntries)).toBe(
+        "2026-11-19T10:00:00.000-06:00 INFO  [Server] Order created\n"
+          + "2026-11-19T10:00:00.000-06:00 ERROR [Client] Render failed\n"
+          + "TypeError: boom\n",
+      );
+    });
+  });
+
+  describe("buildVisibleLogEntriesFileName", () => {
+    it("names the file after the source and the local date and time", () => {
+      expect(buildVisibleLogEntriesFileName("phoenixd", new Date(2026, 10, 24, 9, 5, 7))).toBe(
+        "ambrosia-phoenixd-logs-2026-11-24-090507.log",
+      );
     });
   });
 });

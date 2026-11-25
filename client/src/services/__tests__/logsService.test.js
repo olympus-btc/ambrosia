@@ -3,12 +3,12 @@ import { downloadBlob } from "@/utils/downloadBlob";
 
 import {
   buildLogHistoryEndpoint,
-  changeServerLogLevel,
   exportLogsArchive,
   getLogHistory,
+  getLogSettings,
   getLogSources,
-  getServerLogLevel,
   readFileNameFromContentDisposition,
+  updateLogSettings,
 } from "../logsService";
 
 jest.mock("@/lib/http", () => ({
@@ -98,31 +98,34 @@ describe("logsService", () => {
     });
   });
 
-  describe("getServerLogLevel", () => {
-    it("returns the current server log level", async () => {
-      httpClient.mockResolvedValueOnce(buildJsonResponse(200, { level: "INFO" }));
+  describe("getLogSettings", () => {
+    it("returns the current log settings", async () => {
+      const currentLogSettings = { level: "INFO", retentionDays: 7, maximumTotalSizeMegabytes: 20, clientErrorReportingEnabled: true };
+      httpClient.mockResolvedValueOnce(buildJsonResponse(200, currentLogSettings));
 
-      await expect(getServerLogLevel()).resolves.toBe("INFO");
-      expect(httpClient).toHaveBeenCalledWith("/logs/level");
+      await expect(getLogSettings()).resolves.toEqual(currentLogSettings);
+      expect(httpClient).toHaveBeenCalledWith("/logs/settings");
     });
   });
 
-  describe("changeServerLogLevel", () => {
-    it("sends the requested level and returns the level confirmed by the server", async () => {
-      httpClient.mockResolvedValueOnce(buildJsonResponse(200, { level: "DEBUG" }));
+  describe("updateLogSettings", () => {
+    const requestedLogSettings = { level: "debug", retentionDays: 14, maximumTotalSizeMegabytes: 50, clientErrorReportingEnabled: false };
 
-      await expect(changeServerLogLevel("debug")).resolves.toBe("DEBUG");
-      expect(httpClient).toHaveBeenCalledWith("/logs/level", {
+    it("sends the requested settings and returns the settings confirmed by the server", async () => {
+      httpClient.mockResolvedValueOnce(buildJsonResponse(200, { ...requestedLogSettings, level: "DEBUG" }));
+
+      await expect(updateLogSettings(requestedLogSettings)).resolves.toEqual({ ...requestedLogSettings, level: "DEBUG" });
+      expect(httpClient).toHaveBeenCalledWith("/logs/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: "debug" }),
+        body: JSON.stringify(requestedLogSettings),
       });
     });
 
-    it("throws when the server rejects the level", async () => {
-      httpClient.mockResolvedValueOnce(buildJsonResponse(400, { message: "Unsupported log level" }));
+    it("throws when the server rejects the settings", async () => {
+      httpClient.mockResolvedValueOnce(buildJsonResponse(400, { message: "Unsupported log retention" }));
 
-      await expect(changeServerLogLevel("LOUD")).rejects.toMatchObject({ status: 400 });
+      await expect(updateLogSettings({ ...requestedLogSettings, retentionDays: 2 })).rejects.toMatchObject({ status: 400 });
     });
   });
 

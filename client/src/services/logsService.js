@@ -4,7 +4,7 @@ import {
   DEFAULT_LOG_HISTORY_LINES,
   LOGS_DOWNLOAD_ENDPOINT,
   LOGS_ENDPOINT,
-  LOGS_LEVEL_ENDPOINT,
+  LOGS_SETTINGS_ENDPOINT,
   LOGS_SOURCES_ENDPOINT,
 } from "@/lib/logs";
 import { downloadBlob } from "@/utils/downloadBlob";
@@ -42,26 +42,25 @@ export async function getLogHistory(logHistoryQuery) {
   return logHistoryResponseBody?.entries ?? [];
 }
 
-export async function getServerLogLevel() {
-  const serverLogLevelResponse = await httpClient(LOGS_LEVEL_ENDPOINT);
-  if (!serverLogLevelResponse.ok) {
-    throw await buildParsedHttpError(serverLogLevelResponse, "Failed to get server log level");
+export async function getLogSettings() {
+  const logSettingsResponse = await httpClient(LOGS_SETTINGS_ENDPOINT);
+  if (!logSettingsResponse.ok) {
+    throw await buildParsedHttpError(logSettingsResponse, "Failed to get log settings");
   }
-  const serverLogLevelResponseBody = await parseJsonResponse(serverLogLevelResponse, null);
-  return serverLogLevelResponseBody?.level ?? null;
+  return parseJsonResponse(logSettingsResponse, null);
 }
 
-export async function changeServerLogLevel(requestedServerLogLevel) {
-  const changeServerLogLevelResponse = await httpClient(LOGS_LEVEL_ENDPOINT, {
+export async function updateLogSettings(requestedLogSettings) {
+  const updateLogSettingsResponse = await httpClient(LOGS_SETTINGS_ENDPOINT, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ level: requestedServerLogLevel }),
+    body: JSON.stringify(requestedLogSettings),
   });
-  if (!changeServerLogLevelResponse.ok) {
-    throw await buildParsedHttpError(changeServerLogLevelResponse, "Failed to update server log level");
+  if (!updateLogSettingsResponse.ok) {
+    throw await buildParsedHttpError(updateLogSettingsResponse, "Failed to update log settings");
   }
-  const changedServerLogLevelResponseBody = await parseJsonResponse(changeServerLogLevelResponse, null);
-  return changedServerLogLevelResponseBody?.level ?? requestedServerLogLevel;
+  const updatedLogSettings = await parseJsonResponse(updateLogSettingsResponse, null);
+  return updatedLogSettings ?? requestedLogSettings;
 }
 
 export async function exportLogsArchive() {

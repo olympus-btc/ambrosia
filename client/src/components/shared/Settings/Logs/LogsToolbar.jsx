@@ -1,14 +1,11 @@
 "use client";
 
-import { addToast, Button, Switch } from "@heroui/react";
-import { Download, FolderOpen, Trash2 } from "lucide-react";
+import { Button, Switch } from "@heroui/react";
+import { Download, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { isElectron } from "@/lib/isElectron";
-
-import { useLogsArchiveDownload } from "./hooks/useLogsArchiveDownload";
-
-export const OPEN_LOGS_FOLDER_IPC_CHANNEL = "logs:open-folder";
+import { buildVisibleLogEntriesFileName, formatLogEntriesAsText } from "@/lib/logs";
+import { downloadBlob } from "@/utils/downloadBlob";
 
 function resolveLiveStatusTranslationKey({ isLiveStreamEnabled, liveLogStreamConnected }) {
   if (!isLiveStreamEnabled) return "cardLogs.livePaused";
@@ -21,24 +18,14 @@ export function LogsToolbar({
   liveLogStreamConnected,
   isLiveStreamToggleDisabled,
   onClearVisibleLogEntries,
+  selectedLogSource,
+  visibleLogEntries,
 }) {
   const logsTranslations = useTranslations("settings");
-  const { downloadingLogsArchive, downloadLogsArchive } = useLogsArchiveDownload();
 
-  const handleDownloadLogsArchive = async () => {
-    const logsArchiveDownloaded = await downloadLogsArchive();
-    if (!logsArchiveDownloaded) {
-      addToast({ color: "danger", description: logsTranslations("cardLogs.downloadError") });
-    }
-  };
-
-  const handleOpenLogsFolder = async () => {
-    try {
-      const openLogsFolderResult = await window.electron.ipc.invoke(OPEN_LOGS_FOLDER_IPC_CHANNEL);
-      if (openLogsFolderResult?.success === false) throw new Error(openLogsFolderResult.error);
-    } catch {
-      addToast({ color: "danger", description: logsTranslations("cardLogs.openFolderError") });
-    }
+  const handleDownloadVisibleLogEntries = () => {
+    const visibleLogEntriesFile = new Blob([formatLogEntriesAsText(visibleLogEntries)], { type: "text/plain;charset=utf-8" });
+    downloadBlob(visibleLogEntriesFile, buildVisibleLogEntriesFileName(selectedLogSource));
   };
 
   return (
@@ -58,22 +45,24 @@ export function LogsToolbar({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="flat" size="sm" startContent={<Trash2 className="h-4 w-4" />} onPress={onClearVisibleLogEntries}>
+        <Button
+          variant="bordered"
+          size="sm"
+          className="border border-green-800 text-green-800"
+          startContent={<Trash2 aria-hidden="true" className="w-3.5 h-3.5" />}
+          onPress={onClearVisibleLogEntries}
+        >
           {logsTranslations("cardLogs.clearButton")}
         </Button>
-        {isElectron && (
-          <Button variant="flat" size="sm" startContent={<FolderOpen className="h-4 w-4" />} onPress={handleOpenLogsFolder}>
-            {logsTranslations("cardLogs.openFolderButton")}
-          </Button>
-        )}
         <Button
-          color="primary"
+          variant="bordered"
           size="sm"
-          startContent={!downloadingLogsArchive && <Download className="h-4 w-4" />}
-          isLoading={downloadingLogsArchive}
-          onPress={handleDownloadLogsArchive}
+          className="border border-green-800 text-green-800"
+          startContent={<Download aria-hidden="true" className="w-3.5 h-3.5" />}
+          isDisabled={visibleLogEntries.length === 0}
+          onPress={handleDownloadVisibleLogEntries}
         >
-          {logsTranslations("cardLogs.downloadButton")}
+          {logsTranslations("cardLogs.downloadVisibleButton")}
         </Button>
       </div>
     </div>

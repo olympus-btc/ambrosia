@@ -1,7 +1,7 @@
 export const LOGS_EVENT_SOURCE_ROUTE = "/api/ws-logs";
 export const LOGS_ENDPOINT = "/logs";
 export const LOGS_SOURCES_ENDPOINT = "/logs/sources";
-export const LOGS_LEVEL_ENDPOINT = "/logs/level";
+export const LOGS_SETTINGS_ENDPOINT = "/logs/settings";
 export const LOGS_DOWNLOAD_ENDPOINT = "/logs/download";
 export const CLIENT_LOG_REPORTS_ENDPOINT = "/logs/client";
 
@@ -17,6 +17,8 @@ export const LOG_LEVEL_WARN = "WARN";
 export const LOG_LEVEL_ERROR = "ERROR";
 export const LOG_FILTER_LEVELS = [LOG_LEVEL_DEBUG, LOG_LEVEL_INFO, LOG_LEVEL_WARN, LOG_LEVEL_ERROR];
 export const CONFIGURABLE_SERVER_LOG_LEVELS = [LOG_LEVEL_ERROR, LOG_LEVEL_WARN, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG];
+export const CONFIGURABLE_LOG_RETENTION_DAYS = [1, 3, 7, 14, 30];
+export const CONFIGURABLE_LOG_MAXIMUM_TOTAL_SIZE_MEGABYTES = [10, 20, 50, 100];
 
 export const LOG_STREAM_EVENT_CONNECTED = "connected";
 export const LOG_STREAM_EVENT_ENTRY = "entry";
@@ -54,4 +56,24 @@ export function buildLogEntryIdentity(logEntry) {
 
 export function keepLatestLogEntries(logEntries, maximumEntries = MAXIMUM_VISIBLE_LOG_ENTRIES) {
   return logEntries.length > maximumEntries ? logEntries.slice(logEntries.length - maximumEntries) : logEntries;
+}
+
+export function formatLogEntriesAsText(logEntries) {
+  return logEntries
+    .map((logEntry) => {
+      const logEntryLine = `${logEntry.timestamp} ${String(logEntry.level).padEnd(5)} [${logEntry.logger}] ${logEntry.message}`;
+      return logEntry.details ? `${logEntryLine}\n${logEntry.details}` : logEntryLine;
+    })
+    .join("\n")
+    .concat("\n");
+}
+
+function padDatePart(datePart) {
+  return String(datePart).padStart(2, "0");
+}
+
+export function buildVisibleLogEntriesFileName(logSource, generatedAt = new Date()) {
+  const fileNameDate = [generatedAt.getFullYear(), padDatePart(generatedAt.getMonth() + 1), padDatePart(generatedAt.getDate())].join("-");
+  const fileNameTime = [generatedAt.getHours(), generatedAt.getMinutes(), generatedAt.getSeconds()].map(padDatePart).join("");
+  return `ambrosia-${logSource}-logs-${fileNameDate}-${fileNameTime}.log`;
 }

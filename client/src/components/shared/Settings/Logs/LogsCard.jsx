@@ -3,16 +3,16 @@
 import { useState } from "react";
 
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
-import { ChevronDown } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { LogsCardContent } from "./LogsCardContent";
-
-const LOGS_CARD_CONTENT_ELEMENT_ID = "logs-card-content";
+import { LogFilesActions } from "./LogFilesActions";
+import { LogSettingsForm } from "./LogSettingsForm";
+import { LogsViewerModal } from "./LogsViewerModal";
 
 export function LogsCard() {
   const logsTranslations = useTranslations("settings");
-  const [isLogsCardExpanded, setIsLogsCardExpanded] = useState(false);
+  const [isLogsViewerModalOpen, setIsLogsViewerModalOpen] = useState(false);
 
   return (
     <Card shadow="none" className="rounded-lg mb-6 p-6 shadow-lg">
@@ -25,30 +25,25 @@ export function LogsCard() {
             {logsTranslations("cardLogs.subtitle")}
           </p>
         </div>
-        <Button
-          variant="flat"
-          size="sm"
-          className="shrink-0"
-          aria-expanded={isLogsCardExpanded}
-          aria-controls={LOGS_CARD_CONTENT_ELEMENT_ID}
-          endContent={(
-            <ChevronDown
-              aria-hidden="true"
-              className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isLogsCardExpanded ? "rotate-180" : ""}`}
-              strokeWidth={1.5}
-            />
-          )}
-          onPress={() => setIsLogsCardExpanded((wasLogsCardExpanded) => !wasLogsCardExpanded)}
-        >
-          {logsTranslations(isLogsCardExpanded ? "cardLogs.hideLogsButton" : "cardLogs.showLogsButton")}
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <LogFilesActions />
+          <Button
+            variant="bordered"
+            size="sm"
+            className="border border-green-800 text-green-800"
+            startContent={<ScrollText aria-hidden="true" className="w-3.5 h-3.5" />}
+            onPress={() => setIsLogsViewerModalOpen(true)}
+          >
+            {logsTranslations("cardLogs.openViewerButton")}
+          </Button>
+        </div>
       </CardHeader>
 
-      {isLogsCardExpanded && (
-        <CardBody id={LOGS_CARD_CONTENT_ELEMENT_ID} className="gap-4">
-          <LogsCardContent />
-        </CardBody>
-      )}
+      <CardBody className="gap-4">
+        <LogSettingsForm />
+      </CardBody>
+
+      <LogsViewerModal isOpen={isLogsViewerModalOpen} onClose={() => setIsLogsViewerModalOpen(false)} />
     </Card>
   );
 }

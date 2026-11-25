@@ -1,7 +1,7 @@
 """End-to-end tests for the logs API used by Settings -> System -> Logs.
 
 Covers reading server logs, the admin-only guard, client error reports,
-the runtime log level switch and the ZIP download.
+the runtime log settings and the ZIP download.
 """
 
 import asyncio
@@ -162,38 +162,65 @@ class TestClientLogReports:
         assert report_status_codes[-1] == 429
 
 
-class TestLogLevel:
+DEFAULT_LOG_SETTINGS = {
+    "level": "INFO",
+    "retentionDays": 7,
+    "maximumTotalSizeMegabytes": 20,
+    "clientErrorReportingEnabled": True,
+}
+
+
+class TestLogSettings:
     @pytest.mark.asyncio
-    async def test_admin_changes_and_persists_server_log_level(
+    async def test_admin_changes_and_persists_every_log_setting(
         self, admin_client, test_server
     ):
-        initial_level_response = await admin_client.get("/logs/level")
-        assert initial_level_response.status_code == 200
-        initial_level = initial_level_response.json()["level"]
+        initial_log_settings_response = await admin_client.get("/logs/settings")
+        assert initial_log_settings_response.status_code == 200
+        initial_log_settings = initial_log_settings_response.json()
+        assert set(initial_log_settings) == set(DEFAULT_LOG_SETTINGS)
 
         try:
-            update_response = await admin_client.put(
-                "/logs/level", json={"level": "debug"}
+            log_settings_update_response = await admin_client.put(
+                "/logs/settings",
+                json={
+                    "level": "debug",
+                    "retentionDays": 14,
+                    "maximumTotalSizeMegabytes": 50,
+                    "clientErrorReportingEnabled": False,
+                },
             )
 
-            assert update_response.status_code == 200
-            assert update_response.json()["level"] == "DEBUG"
-            assert (await admin_client.get("/logs/level")).json()["level"] == "DEBUG"
+            expected_log_settings = {
+                "level": "DEBUG",
+                "retentionDays": 14,
+                "maximumTotalSizeMegabytes": 50,
+                "clientErrorReportingEnabled": False,
+            }
+            assert log_settings_update_response.status_code == 200
+            assert log_settings_update_response.json() == expected_log_settings
             assert (
-                read_ambrosia_conf_values(test_server.datadir)["log-level"] == "DEBUG"
-            )
+                await admin_client.get("/logs/settings")
+            ).json() == expected_log_settings
+            persisted_conf_values = read_ambrosia_conf_values(test_server.datadir)
+            assert persisted_conf_values["log-level"] == "DEBUG"
+            assert persisted_conf_values["log-retention-days"] == "14"
+            assert persisted_conf_values["log-max-total-size-mb"] == "50"
+            assert persisted_conf_values["log-client-errors"] == "false"
         finally:
-            await admin_client.put("/logs/level", json={"level": initial_level})
+            await admin_client.put("/logs/settings", json=initial_log_settings)
 
     @pytest.mark.asyncio
     async def test_debug_level_logs_each_request_without_query_string(
         self, admin_client
     ):
-        initial_level = (await admin_client.get("/logs/level")).json()["level"]
+        initial_log_settings = (await admin_client.get("/logs/settings")).json()
         unique_search_marker = f"query-marker-{uuid.uuid4().hex[:8]}"
 
         try:
-            await admin_client.put("/logs/level", json={"level": "DEBUG"})
+            await admin_client.put(
+                "/logs/settings", json={**initial_log_settings, "level": "DEBUG"}
+            )
             await admin_client.get("/users/me", params={"probe": unique_search_marker})
 
             request_entries = await wait_for_log_entry(
@@ -208,13 +235,66 @@ class TestLogLevel:
                 for request_entry in request_entries
             )
         finally:
-            await admin_client.put("/logs/level", json={"level": initial_level})
+            await admin_client.put("/logs/settings", json=initial_log_settings)
 
     @pytest.mark.asyncio
-    async def test_unsupported_log_level_is_rejected(self, admin_client):
-        update_response = await admin_client.put("/logs/level", json={"level": "TRACE"})
+    async def test_app_errors_are_ignored_while_reporting_is_disabled(
+        self, admin_client, client_factory
+    ):
+        initial_log_settings = (await admin_client.get("/logs/settings")).json()
+        reporting_client = await client_factory(BASELINE_PERMISSIONS)
+        unique_marker = f"e2e-ignored-client-error-{uuid.uuid4().hex[:8]}"
 
-        assert update_response.status_code == 400
+        try:
+            await admin_client.put(
+                "/logs/settings",
+                json={**initial_log_settings, "clientErrorReportingEnabled": False},
+            )
+            ignored_client_report_response = await reporting_client.post(
+                "/logs/client", json={"errorMessage": unique_marker}
+            )
+
+            assert ignored_client_report_response.status_code == 204
+            ignored_client_entries = (
+                await admin_client.get(
+                    "/logs", params={"source": "client", "search": unique_marker}
+                )
+            ).json()["entries"]
+            assert ignored_client_entries == []
+        finally:
+            await admin_client.put("/logs/settings", json=initial_log_settings)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "unsupported_setting",
+        [
+            {"level": "TRACE"},
+            {"retentionDays": 2},
+            {"maximumTotalSizeMegabytes": 1000},
+        ],
+    )
+    async def test_unsupported_log_settings_are_rejected(
+        self, admin_client, unsupported_setting
+    ):
+        unsupported_log_settings_update_response = await admin_client.put(
+            "/logs/settings", json={**DEFAULT_LOG_SETTINGS, **unsupported_setting}
+        )
+
+        assert unsupported_log_settings_update_response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_read_or_change_log_settings(self, client_factory):
+        non_admin_client = await client_factory(BASELINE_PERMISSIONS)
+
+        non_admin_log_settings_read_response = await non_admin_client.get(
+            "/logs/settings"
+        )
+        non_admin_log_settings_update_response = await non_admin_client.put(
+            "/logs/settings", json=DEFAULT_LOG_SETTINGS
+        )
+
+        assert non_admin_log_settings_read_response.status_code == 403
+        assert non_admin_log_settings_update_response.status_code == 403
 
 
 class TestLogsDownload:

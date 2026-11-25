@@ -20,12 +20,12 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.models.ClientLogReport
 import pos.ambrosia.models.LogEntriesResponse
-import pos.ambrosia.models.LogLevelSetting
+import pos.ambrosia.models.LogSettings
 import pos.ambrosia.models.LogSourcesResponse
 import pos.ambrosia.services.ClientLogReportService
+import pos.ambrosia.services.LogSettingsService
 import pos.ambrosia.services.LogsDiagnostics
 import pos.ambrosia.services.LogsService
-import pos.ambrosia.services.ServerLogLevelService
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.deploymentModeName
 import pos.ambrosia.utils.getCurrentUser
@@ -38,14 +38,14 @@ internal const val CLIENT_LOG_REPORT_MAX_REQUEST_BODY_BYTES = 16L * 1024
 
 fun Application.configureLogs(
     logsService: LogsService = LogsService(),
-    serverLogLevelService: ServerLogLevelService = ServerLogLevelService(),
+    logSettingsService: LogSettingsService = LogSettingsService(),
 ) {
-    routing { route("/logs") { logsRoutes(logsService, serverLogLevelService) } }
+    routing { route("/logs") { logsRoutes(logsService, logSettingsService) } }
 }
 
 fun Route.logsRoutes(
     logsService: LogsService,
-    serverLogLevelService: ServerLogLevelService,
+    logSettingsService: LogSettingsService,
 ) {
     authenticate("auth-jwt") {
         rateLimit(CLIENT_LOG_REPORTS_RATE_LIMIT) {
@@ -73,14 +73,13 @@ fun Route.logsRoutes(
             call.respond(HttpStatusCode.OK, LogSourcesResponse(logsService.sources(call.isLocalPhoenixdLogAvailable())))
         }
 
-        get("/level") {
-            call.respond(HttpStatusCode.OK, LogLevelSetting(serverLogLevelService.currentLevel()))
+        get("/settings") {
+            call.respond(HttpStatusCode.OK, logSettingsService.currentSettings())
         }
 
-        put("/level") {
-            val requestedLogLevelSetting = call.receive<LogLevelSetting>()
-            val appliedLogLevel = serverLogLevelService.changeLevel(requestedLogLevelSetting.level)
-            call.respond(HttpStatusCode.OK, LogLevelSetting(appliedLogLevel))
+        put("/settings") {
+            val appliedLogSettings = logSettingsService.updateSettings(call.receive<LogSettings>())
+            call.respond(HttpStatusCode.OK, appliedLogSettings)
         }
 
         get("/download") {
