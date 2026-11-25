@@ -76,41 +76,45 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-function readPushPayload(event) {
+function readPushPayload(pushEvent) {
   try {
-    return event.data?.json?.() || {};
+    return pushEvent.data?.json?.() || {};
   } catch {
     return {};
   }
 }
 
-function resolveAdminPushNotificationCopy(event) {
-  const fallbackCopy = getAdminActivityNotificationCopy(self.navigator?.language);
-  const payload = readPushPayload(event);
+function resolveAdminPushNotificationCopy(pushEvent) {
+  const fallbackNotificationCopy = getAdminActivityNotificationCopy(self.navigator?.language);
+  const pushPayload = readPushPayload(pushEvent);
 
   return {
-    title: typeof payload.title === "string" && payload.title.trim() ? payload.title : fallbackCopy.title,
-    body: typeof payload.body === "string" && payload.body.trim() ? payload.body : fallbackCopy.body,
+    title: typeof pushPayload.title === "string" && pushPayload.title.trim()
+      ? pushPayload.title
+      : fallbackNotificationCopy.title,
+    body: typeof pushPayload.body === "string" && pushPayload.body.trim()
+      ? pushPayload.body
+      : fallbackNotificationCopy.body,
   };
 }
 
 function notifyOpenClientsOfAdminPush() {
-  return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-    clientList.forEach((client) => {
-      client.postMessage({ type: ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT });
+  return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((openWindowClients) => {
+    openWindowClients.forEach((openWindowClient) => {
+      openWindowClient.postMessage({ type: ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT });
     });
   });
 }
 
-self.addEventListener("sync", (event) => {
-  if (event.tag === "btc-checkout") {
-    event.waitUntil(recoverPendingCheckouts());
+self.addEventListener("sync", (backgroundSyncEvent) => {
+  if (backgroundSyncEvent.tag === "btc-checkout") {
+    backgroundSyncEvent.waitUntil(recoverPendingCheckouts());
   }
 });
 
-self.addEventListener("push", (event) => {
-  const notificationCopy = resolveAdminPushNotificationCopy(event);
-  event.waitUntil(
+self.addEventListener("push", (pushEvent) => {
+  const notificationCopy = resolveAdminPushNotificationCopy(pushEvent);
+  pushEvent.waitUntil(
     Promise.all([
       self.registration.showNotification(notificationCopy.title, {
         body: notificationCopy.body,
@@ -127,51 +131,53 @@ self.addEventListener("push", (event) => {
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || ADMIN_NOTIFICATIONS_ROUTE;
+self.addEventListener("notificationclick", (notificationClickEvent) => {
+  notificationClickEvent.notification.close();
+  const notificationTargetUrl = notificationClickEvent.notification.data?.url || ADMIN_NOTIFICATIONS_ROUTE;
 
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      const existingClient = clientList.find((client) => client.url.includes(targetUrl));
-      if (existingClient) {
-        return existingClient.focus();
+  notificationClickEvent.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((openWindowClients) => {
+      const notificationTargetClient = openWindowClients.find(
+        (openWindowClient) => openWindowClient.url.includes(notificationTargetUrl),
+      );
+      if (notificationTargetClient) {
+        return notificationTargetClient.focus();
       }
-      return self.clients.openWindow(targetUrl);
+      return self.clients.openWindow(notificationTargetUrl);
     }),
   );
 });
 
 async function recoverPendingCheckouts() {
-  let pending;
+  let pendingCheckouts;
   try {
-    pending = await getPendingCheckouts();
+    pendingCheckouts = await getPendingCheckouts();
   } catch {
     return;
   }
 
-  for (const entry of pending) {
+  for (const pendingCheckout of pendingCheckouts) {
     try {
-      const statusResponse = await httpClient(
-        buildBtcCheckoutPaymentStatusEndpoint(entry.paymentHash),
+      const paymentStatusResponse = await httpClient(
+        buildBtcCheckoutPaymentStatusEndpoint(pendingCheckout.paymentHash),
       );
-      const statusData = await parseJsonResponse(statusResponse);
-      if (!statusResponse.ok) continue;
+      const paymentStatusData = await parseJsonResponse(paymentStatusResponse);
+      if (!paymentStatusResponse.ok) continue;
 
-      if (statusData?.status === "completed") {
-        await markCheckoutCompleted(entry.paymentHash, statusData);
+      if (paymentStatusData?.status === "completed") {
+        await markCheckoutCompleted(pendingCheckout.paymentHash, paymentStatusData);
         continue;
       }
 
-      if (statusData?.status === "paid") {
-        const checkoutResponse = await httpClient(BTC_CHECKOUT_ENDPOINT, {
+      if (paymentStatusData?.status === "paid") {
+        const checkoutCompletionResponse = await httpClient(BTC_CHECKOUT_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(entry.checkoutPayload),
+          body: JSON.stringify(pendingCheckout.checkoutPayload),
         });
-        const checkoutData = await parseJsonResponse(checkoutResponse);
-        if (checkoutResponse.ok) {
-          await markCheckoutCompleted(entry.paymentHash, checkoutData);
+        const checkoutCompletionData = await parseJsonResponse(checkoutCompletionResponse);
+        if (checkoutCompletionResponse.ok) {
+          await markCheckoutCompleted(pendingCheckout.paymentHash, checkoutCompletionData);
         }
       }
     } catch {
@@ -180,6 +186,6 @@ async function recoverPendingCheckouts() {
   }
 }
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(deleteObsoleteRuntimeCaches());
+self.addEventListener("activate", (activateEvent) => {
+  activateEvent.waitUntil(deleteObsoleteRuntimeCaches());
 });
