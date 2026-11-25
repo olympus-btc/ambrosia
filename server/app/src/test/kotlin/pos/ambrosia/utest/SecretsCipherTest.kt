@@ -1,5 +1,6 @@
 package pos.ambrosia.utest
 
+import pos.ambrosia.utils.MalformedSecretsEnvelopeException
 import pos.ambrosia.utils.SecretsCipher
 import java.security.SecureRandom
 import javax.crypto.BadPaddingException
@@ -40,7 +41,7 @@ class SecretsCipherTest {
     fun `decrypting a malformed envelope fails`() {
         val secretKey = SecretsCipher.deriveKey("correct-unlock-password".toCharArray(), randomSalt())
 
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<MalformedSecretsEnvelopeException> {
             SecretsCipher.decrypt("not-a-valid-envelope", secretKey)
         }
     }

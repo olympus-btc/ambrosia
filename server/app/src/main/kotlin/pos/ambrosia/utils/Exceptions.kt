@@ -1,5 +1,7 @@
 package pos.ambrosia.utils
 
+import java.io.IOException
+
 class InvalidCredentialsException(
     message: String = "Invalid credentials",
 ) : IllegalArgumentException(message)
@@ -60,6 +62,22 @@ class PrintTicketException(
     message: String = "Error processing print job",
 ) : RuntimeException(message)
 
+class PrinterNotFoundException(
+    printerName: String,
+) : IOException("Printer '$printerName' not found on this system.")
+
+class PrinterNotAcceptingJobsException(
+    printerName: String,
+) : IOException("Printer '$printerName' is not accepting print jobs.")
+
+class PrinterNotRespondingException(
+    printerName: String,
+    completionTimeoutMilliseconds: Long,
+) : IOException(
+        "Printer '$printerName' did not finish the job within ${completionTimeoutMilliseconds / 1000} seconds " +
+            "(check paper, cover and connection). The job was cancelled so it will not print later.",
+    )
+
 class NwcConnectionException(
     message: String = "Unable to connect to NWC relay",
     val code: String = "nwc_connection_failed",
@@ -102,6 +120,10 @@ class ResourceNotFoundException(
 
 class InvalidTimeEntryException(
     message: String = "Invalid time entry",
+) : IllegalArgumentException(message)
+
+class InvalidLogRequestException(
+    message: String = "Invalid log request",
 ) : IllegalArgumentException(message)
 
 class TimeEntryLockedException(
@@ -147,3 +169,11 @@ class OrderNotRefundableException(
     val code: String = "not_refundable",
     val source: String = "ambrosia",
 ) : IllegalStateException(message)
+
+class RequestValidationException(
+    message: String,
+) : IllegalArgumentException(message)
+
+class MalformedSecretsEnvelopeException(
+    message: String = "Malformed secrets envelope",
+) : RuntimeException(message)

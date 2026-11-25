@@ -10,6 +10,7 @@ const freelancerEn = {
     clients: "Clients",
     projects: "Projects",
     invoices: "Invoices",
+    wallet: "Wallet",
     reports: "Reports",
     settings: "Settings",
     logout: "Log Out",

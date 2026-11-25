@@ -55,6 +55,7 @@ export default function Reports() {
     avgItemsPerOrder,
     totalDiscounts,
     totalRefunded: ordersRefunded,
+    totalLightningFeeSat,
   } = useOrdersSummaryData(reportData, orders);
   const {
     totalRevenue: productsRevenue,
@@ -63,6 +64,7 @@ export default function Reports() {
     uniqueProducts,
     totalRefunded: productsRefunded,
     totalRefundedSatoshis,
+    totalLightningFeeSat: productsLightningFeeSat,
   } = useSummaryData(reportData);
 
   const orderStats = useMemo(() => {
@@ -74,6 +76,12 @@ export default function Reports() {
     if (totalDiscounts > 0) {
       stats.push({ label: reportsTranslations("summary.totalDiscounts"), value: formatAmount(totalDiscounts) });
     }
+    if (totalLightningFeeSat > 0) {
+      stats.push({
+        label: reportsTranslations("summary.liquidityLightningFee"),
+        value: `${totalLightningFeeSat.toLocaleString()} sats`,
+      });
+    }
     if (ordersRefunded > 0) {
       stats.push({ label: reportsTranslations("summary.totalRefunded"), value: formatAmount(ordersRefunded) });
     }
@@ -83,7 +91,17 @@ export default function Reports() {
       { label: reportsTranslations("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
     );
     return stats;
-  }, [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, totalDiscounts, ordersRefunded, formatAmount]);
+  }, [
+    reportsTranslations,
+    ordersRevenue,
+    orderCount,
+    averageTicket,
+    avgItemsPerOrder,
+    totalDiscounts,
+    totalLightningFeeSat,
+    ordersRefunded,
+    formatAmount,
+  ]);
 
   const totalBtcSatoshis = reportData?.totalBtcSatoshis ?? 0;
 
@@ -97,6 +115,12 @@ export default function Reports() {
       stats.push({
         label: reportsTranslations("summary.totalBtcSatoshis"),
         value: `${totalBtcSatoshis.toLocaleString()} sats`,
+      });
+    }
+    if (productsLightningFeeSat > 0) {
+      stats.push({
+        label: reportsTranslations("summary.liquidityLightningFee"),
+        value: `${productsLightningFeeSat.toLocaleString()} sats`,
       });
     }
     if (productsRefunded > 0) {
@@ -122,6 +146,7 @@ export default function Reports() {
     uniqueProducts,
     formatAmount,
     totalBtcSatoshis,
+    productsLightningFeeSat,
     productsRefunded,
     totalRefundedSatoshis,
   ]);

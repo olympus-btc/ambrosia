@@ -82,7 +82,10 @@ class ActiveLightningBackendTest {
         val previousBackend = FakeLightningBackend("phoenixd-old")
         ActiveLightningBackend.set(previousBackend)
 
-        ActiveLightningBackend.reinitializePhoenixBackend("http://127.0.0.1:1", "irrelevant-password")
+        ActiveLightningBackend.reinitializePhoenixBackend(
+            "http://127.0.0.1:1",
+            isRemote = false,
+        )
 
         assertTrue(previousBackend.closed)
         assertFalse(ActiveLightningBackend.isNwcActive())
@@ -105,7 +108,7 @@ class ActiveLightningBackendTest {
     }
 
     @Test
-    fun `getNodeInfo throws SecretsLockedException when no backend was set and secrets are locked`() {
+    fun `getNodeInfo throws SecretsLockedException when no backend is set and secrets are locked`() {
         configFile.writeText("secrets-encrypted=true\n")
 
         assertFailsWith<SecretsLockedException> {
@@ -114,7 +117,7 @@ class ActiveLightningBackendTest {
     }
 
     @Test
-    fun `getNodeInfo throws the generic not-initialized error when no backend was set and encryption is inactive`() {
+    fun `getNodeInfo throws not-initialized when no backend is set and encryption is inactive`() {
         val thrownException =
             assertFailsWith<IllegalStateException> {
                 runBlocking { ActiveLightningBackend.getNodeInfo() }

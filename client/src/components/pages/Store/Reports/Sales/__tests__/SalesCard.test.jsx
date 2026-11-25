@@ -6,7 +6,10 @@ jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Card = ({ children, className }) => <div className={className}>{children}</div>;
   const CardBody = ({ children, className }) => <div className={className}>{children}</div>;
-  return { ...actual, Card, CardBody };
+  const Popover = ({ children }) => <>{children}</>;
+  const PopoverTrigger = ({ children }) => <>{children}</>;
+  const PopoverContent = ({ children }) => <div data-testid="popover-content">{children}</div>;
+  return { ...actual, Card, CardBody, Popover, PopoverTrigger, PopoverContent };
 });
 
 jest.mock("@/components/shared/AmountDisplay", () => ({
@@ -73,6 +76,18 @@ describe("SalesCard", () => {
     render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} currentRate={95000} />);
     expect(formatCurrency).toHaveBeenCalledWith(3000);
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
+  });
+
+  it("renders the lightning fee info popover when lightningFeeSat is present", () => {
+    render(<SalesCard sale={{ ...baseSale, lightningFeeSat: 50 }} formatCurrency={formatCurrency} />);
+    expect(screen.getByLabelText("sales.lightningFee")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
+    expect(screen.getByTestId("popover-content")).toHaveTextContent("sales.lightningFeeInfo");
+  });
+
+  it("does not render the lightning fee info popover when lightningFeeSat is absent", () => {
+    render(<SalesCard sale={baseSale} formatCurrency={formatCurrency} />);
+    expect(screen.queryByText(/sales\.lightningFee/)).not.toBeInTheDocument();
   });
 
   it("shows the refunded status chip when the sale is refunded", () => {

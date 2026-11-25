@@ -29,15 +29,23 @@ function logPaymentError(context, paymentError) {
   console.error(context, paymentError);
 }
 
-function buildInvoiceDescription(items = []) {
-  if (!Array.isArray(items) || items.length === 0) return "";
+function startCustomerReceiptPrint(printCustomerReceipt, customerReceipt) {
+  if (!printCustomerReceipt) return;
+  Promise.resolve(printCustomerReceipt(customerReceipt)).catch((customerReceiptPrintError) => {
+    console.error("Error printing customer receipt:", customerReceiptPrintError);
+  });
+}
 
-  const lines = items
-    .map((item) => {
-      const name = typeof item?.name === "string" ? item.name.trim() : "";
-      if (!name) return null;
-      const quantity = Number(item?.quantity) || 1;
-      return `${quantity}x ${name}`;
+function buildInvoiceDescription(cartItems = []) {
+  if (!Array.isArray(cartItems) || cartItems.length === 0) return "";
+
+  const lines = cartItems
+    .map((cartItem) => {
+      const cartItemName = typeof cartItem?.name === "string" ? cartItem.name.trim() : "";
+      if (!cartItemName) return null;
+      const cartItemQuantity = Number(cartItem?.quantity) || 1;
+      const variantName = typeof cartItem?.variantName === "string" ? cartItem.variantName.trim() : "";
+      return variantName ? `${cartItemQuantity}x ${cartItemName} (${variantName})` : `${cartItemQuantity}x ${cartItemName}`;
     })
     .filter(Boolean);
 
@@ -174,8 +182,7 @@ export function buildHandlePay({
         user,
       });
 
-      await refreshShiftTickets?.();
-      await printCustomerReceipt?.({
+      startCustomerReceiptPrint(printCustomerReceipt, {
         items: cartItems,
         totalCents: paymentAmounts.total,
         discountAmountCents: paymentAmounts.discountAmount,
@@ -183,6 +190,7 @@ export function buildHandlePay({
         ticketId: storeCheckoutResult.ticketId,
         paymentMethodName: paymentMethodData?.name || "",
       });
+      await refreshShiftTickets?.();
 
       notifySuccess("success.paid");
       onResetCart?.();
@@ -266,8 +274,7 @@ async function runDeferredCheckout({
 
     await onCheckoutSuccess?.(storeCheckoutResult);
 
-    await refreshShiftTickets?.();
-    await printCustomerReceipt?.({
+    startCustomerReceiptPrint(printCustomerReceipt, {
       items: receiptItems,
       totalCents: receiptTotal,
       discountAmountCents: receiptDiscountAmount,
@@ -276,6 +283,7 @@ async function runDeferredCheckout({
       invoice: receiptInvoice,
       paymentMethodName: receiptPaymentMethodName,
     });
+    await refreshShiftTickets?.();
 
     onPay?.(buildOnPayPayload(storeCheckoutResult));
     onResetCart?.();

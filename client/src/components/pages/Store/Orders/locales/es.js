@@ -63,6 +63,8 @@ const ordersEs = {
       total: "Total",
       discount: "Descuento",
       tip: "Propina",
+      lightningFee: "Comisión de Lightning Network",
+      lightningFeeInfo: "Phoenix retuvo esta comisión automáticamente para ampliar la capacidad de tu canal Lightning y poder recibir este pago. No afecta lo que pagó el cliente.",
       createdAt: "Creada el",
       close: "Cerrar",
       unassigned: "Sin asignar",

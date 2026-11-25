@@ -80,7 +80,6 @@ fun Route.ingredients(ingredientService: IngredientService) {
 
             val updatedIngredient = call.receive<Ingredient>()
             val isUpdated = ingredientService.updateIngredient(updatedIngredient.copy(id = id))
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Ingredient with ID: $id not found")

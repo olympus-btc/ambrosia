@@ -25,7 +25,7 @@ const onboardingEn = {
     businessType: {
       store: "Store",
       restaurant: "Restaurant (Coming soon)",
-      freelance: "Freelancer (Coming soon)",
+      freelance: "Freelancer",
     },
     descriptions: {
       store: "A retail business selling products directly to consumers.",
@@ -45,7 +45,7 @@ const onboardingEn = {
       confirmPasswordLabel: "Confirm Password",
       confirmPasswordPlaceholder: "Confirm your secure password",
       userPinLabel: "PIN",
-      userPinPlaceholder: "Enter a 4-digit PIN",
+      userPinPlaceholder: "Enter a 6-digit PIN",
     },
     passwordsDoNotMatch: "Passwords do not match",
     tooltips: {

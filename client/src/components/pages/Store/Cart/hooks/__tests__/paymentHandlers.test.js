@@ -117,6 +117,48 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
+  it("builds the BTC invoice description with the variant name in parentheses", async () => {
+    const setBtcPaymentConfig = jest.fn();
+
+    const handlePay = buildHandlePay({
+      currency: { id: "cur-1", acronym: "MXN" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { btc: { id: "btc", name: "BTC" } },
+      getPaymentCurrencyById: jest.fn(() => Promise.resolve({ acronym: "USD" })),
+      setBtcPaymentConfig,
+      setCashPaymentConfig: jest.fn(),
+      setCardPaymentConfig: jest.fn(),
+      onResetCart: jest.fn(),
+      onPay: jest.fn(),
+      notifyError: jest.fn(),
+      dispatch: jest.fn(),
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        displayTotal: 100,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [
+        { name: "Café", quantity: 1, variantName: "Grande" },
+        { name: "Bagel", quantity: 2 },
+      ],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "btc",
+    });
+
+    expect(setBtcPaymentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ invoiceDescription: "1x Café (Grande), 2x Bagel" }),
+    );
+  });
+
   it("configures cash payment when method is cash", async () => {
     const setCashPaymentConfig = jest.fn();
     const dispatch = jest.fn();
@@ -444,9 +486,9 @@ describe("paymentHandlers", () => {
     const setBtcPaymentConfig = jest.fn((fn) => {
       captured = fn(captured);
     });
-    const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
+    const handleBtcInvoiceReady = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
 
-    handle({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000, paymentId: "pay-1", exchangeRate: 50000 });
+    handleBtcInvoiceReady({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000, paymentId: "pay-1", exchangeRate: 50000 });
 
     expect(captured.invoiceData).toEqual(
       expect.objectContaining({ exchangeRate: 50000, satoshis: 20000 }),
@@ -465,9 +507,9 @@ describe("paymentHandlers", () => {
     const setBtcPaymentConfig = jest.fn((fn) => {
       captured = fn(captured);
     });
-    const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
+    const handleBtcInvoiceReady = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
 
-    handle({
+    handleBtcInvoiceReady({
       invoice: { serialized: "ln-invoice", paymentHash: "hash-1" },
       satoshis: 20000,
       exchangeRate: 50000,
@@ -498,9 +540,9 @@ describe("paymentHandlers", () => {
     const setBtcPaymentConfig = jest.fn((fn) => {
       captured = fn(captured);
     });
-    const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
+    const handleBtcInvoiceReady = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
 
-    handle({ invoice: { serialized: "ln-invoice" }, satoshis: 20000 });
+    handleBtcInvoiceReady({ invoice: { serialized: "ln-invoice" }, satoshis: 20000 });
 
     expect(savePendingCheckout).not.toHaveBeenCalled();
     expect(registerBtcCheckoutSync).not.toHaveBeenCalled();
@@ -508,7 +550,7 @@ describe("paymentHandlers", () => {
 
   it("returns early when BTC config is missing", async () => {
     const dispatch = jest.fn();
-    const handler = buildHandleBtcComplete({
+    const handleBtcComplete = buildHandleBtcComplete({
       getConfig: () => null,
       setConfig: jest.fn(),
       dispatch,
@@ -519,7 +561,7 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(),
     });
 
-    await handler({ invoice: { serialized: "ln" } });
+    await handleBtcComplete({ invoice: { serialized: "ln" } });
 
     expect(dispatch).not.toHaveBeenCalled();
   });
@@ -537,7 +579,7 @@ describe("paymentHandlers", () => {
       paymentId: "pay-1",
     });
 
-    const handler = buildHandleBtcComplete({
+    const handleBtcComplete = buildHandleBtcComplete({
       getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
@@ -559,7 +601,7 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
     });
 
-    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
+    await handleBtcComplete({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(processCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -582,7 +624,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockResolvedValueOnce(checkoutResult);
 
-    const handler = buildHandleBtcComplete({
+    const handleBtcComplete = buildHandleBtcComplete({
       getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
@@ -603,7 +645,7 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(() => Promise.resolve()),
     });
 
-    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
+    await handleBtcComplete({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-1", checkoutResult);
     expect(deleteCheckout).toHaveBeenCalledWith("hash-1");
@@ -617,7 +659,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockResolvedValueOnce({ pending: true });
 
-    const handler = buildHandleBtcComplete({
+    const handleBtcComplete = buildHandleBtcComplete({
       getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
@@ -639,7 +681,7 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(),
     });
 
-    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
+    await handleBtcComplete({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(notifyError).not.toHaveBeenCalled();
     expect(onResetCart).toHaveBeenCalled();
@@ -653,7 +695,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockRejectedValueOnce(new Error("errors.checkout"));
 
-    const handler = buildHandleBtcComplete({
+    const handleBtcComplete = buildHandleBtcComplete({
       getConfig: () => ({
         amountFiat: 1,
         selectedPaymentMethod: "btc",
@@ -674,10 +716,83 @@ describe("paymentHandlers", () => {
       printCustomerReceipt: jest.fn(),
     });
 
-    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
+    await handleBtcComplete({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
 
     expect(notifyError).toHaveBeenCalledWith("errors.checkout");
     expect(setBtcPaymentConfig).toHaveBeenCalled();
+  });
+
+  it("starts printing the receipt before the shift tickets refresh and without waiting for the printer", async () => {
+    const callOrder = [];
+    const printCustomerReceipt = jest.fn(() => {
+      callOrder.push("print");
+      return new Promise(() => {});
+    });
+    const refreshShiftTickets = jest.fn(async () => {
+      callOrder.push("refresh");
+    });
+    const onResetCart = jest.fn();
+    const notifySuccess = jest.fn();
+
+    processCheckout.mockResolvedValueOnce({ orderId: "order-2", ticketId: "ticket-2", paymentId: "pay-2" });
+
+    const handleCashComplete = buildHandleCashComplete({
+      getConfig: () => ({
+        cartItems: [{ id: 1 }],
+        paymentAmounts: { amountFiat: 1, total: 100, discountAmount: 0, tipAmount: 0 },
+        selectedPaymentMethod: "cash",
+        paymentMethodName: "Cash",
+        currencyId: "cur-1",
+      }),
+      setConfig: jest.fn(),
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart,
+      notifyError: jest.fn(),
+      notifySuccess,
+      printCustomerReceipt,
+      refreshShiftTickets,
+      user: { userId: "u1" },
+    });
+
+    await handleCashComplete({ cashReceived: 10, change: 2 });
+
+    expect(callOrder).toEqual(["print", "refresh"]);
+    expect(onResetCart).toHaveBeenCalled();
+    expect(notifySuccess).toHaveBeenCalledWith("success.cashPaid");
+  });
+
+  it("logs a rejected receipt print without failing the payment", async () => {
+    const printCustomerReceipt = jest.fn(() => Promise.reject(new Error("printer offline")));
+    const notifyError = jest.fn();
+    const notifySuccess = jest.fn();
+
+    processCheckout.mockResolvedValueOnce({ orderId: "order-3", ticketId: "ticket-3", paymentId: "pay-3" });
+
+    const handleCashComplete = buildHandleCashComplete({
+      getConfig: () => ({
+        cartItems: [{ id: 1 }],
+        paymentAmounts: { amountFiat: 1, total: 100, discountAmount: 0, tipAmount: 0 },
+        selectedPaymentMethod: "cash",
+        paymentMethodName: "Cash",
+        currencyId: "cur-1",
+      }),
+      setConfig: jest.fn(),
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart: jest.fn(),
+      notifyError,
+      notifySuccess,
+      printCustomerReceipt,
+      user: { userId: "u1" },
+    });
+
+    await handleCashComplete({ cashReceived: 10, change: 2 });
+    await Promise.resolve();
+
+    expect(notifyError).not.toHaveBeenCalled();
+    expect(notifySuccess).toHaveBeenCalledWith("success.cashPaid");
+    expect(console.error).toHaveBeenCalledWith("Error printing customer receipt:", expect.any(Error));
   });
 
   it("completes cash payment flow", async () => {
@@ -694,7 +809,7 @@ describe("paymentHandlers", () => {
       paymentId: "pay-1",
     });
 
-    const handler = buildHandleCashComplete({
+    const handleCashComplete = buildHandleCashComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -721,7 +836,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler({ cashReceived: 10, change: 2 });
+    await handleCashComplete({ cashReceived: 10, change: 2 });
 
     expect(processCheckout).toHaveBeenCalled();
     expect(printCustomerReceipt).toHaveBeenCalledWith(expect.objectContaining({ paymentMethodName: "Cash" }));
@@ -739,7 +854,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
-    const handler = buildHandleCashComplete({
+    const handleCashComplete = buildHandleCashComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -764,7 +879,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler({ cashReceived: 10, change: 2 });
+    await handleCashComplete({ cashReceived: 10, change: 2 });
 
     expect(notifyError).toHaveBeenCalledWith("fail");
     expect(setCashPaymentConfig).toHaveBeenCalledWith(null);
@@ -784,7 +899,7 @@ describe("paymentHandlers", () => {
       paymentId: "pay-1",
     });
 
-    const handler = buildHandleCardComplete({
+    const handleCardComplete = buildHandleCardComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -811,7 +926,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler();
+    await handleCardComplete();
 
     expect(processCheckout).toHaveBeenCalled();
     expect(printCustomerReceipt).toHaveBeenCalledWith(expect.objectContaining({ paymentMethodName: "Credit Card" }));
@@ -829,7 +944,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
-    const handler = buildHandleCardComplete({
+    const handleCardComplete = buildHandleCardComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -855,7 +970,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler();
+    await handleCardComplete();
 
     expect(notifyError).toHaveBeenCalledWith("fail");
     expect(setCardPaymentConfig).toHaveBeenCalledWith(null);
@@ -874,7 +989,7 @@ describe("paymentHandlers", () => {
       paymentId: "pay-1",
     });
 
-    const handler = buildHandleTransferComplete({
+    const handleTransferComplete = buildHandleTransferComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -901,7 +1016,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler({ reference: "REF-123" });
+    await handleTransferComplete({ reference: "REF-123" });
 
     expect(processCheckout).toHaveBeenCalledWith(
       expect.objectContaining({ transactionId: "REF-123" }),
@@ -920,7 +1035,7 @@ describe("paymentHandlers", () => {
 
     processCheckout.mockRejectedValueOnce(new Error("fail"));
 
-    const handler = buildHandleTransferComplete({
+    const handleTransferComplete = buildHandleTransferComplete({
       getConfig: () => ({
         amountDue: 1,
         displayTotal: 100,
@@ -946,7 +1061,7 @@ describe("paymentHandlers", () => {
       user: { userId: "u1" },
     });
 
-    await handler({ reference: "REF-123" });
+    await handleTransferComplete({ reference: "REF-123" });
 
     expect(notifyError).toHaveBeenCalledWith("fail");
     expect(setTransferPaymentConfig).toHaveBeenCalledWith(null);

@@ -1,41 +1,47 @@
+x-container-hardening: &container-hardening
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+x-logging: &container-log-rotation
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   phoenixd:
-    image: acinq/phoenixd:latest
+    <<: *container-hardening
+    image: acinq/phoenixd:0.9.1
     container_name: phoenixd
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     volumes:
       - phoenixd_datadir:/phoenix/.phoenix
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
 
   ambrosia:
+    <<: *container-hardening
     build: server/
     image: ambrosia
     container_name: ambrosia
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
-    ports:
-      - "9154:9154"
-      - "9443:9443"
     volumes:
       - ambrosia_datadir:/home/ambrosia/.Ambrosia-POS
       - phoenixd_datadir:/home/ambrosia/.phoenix
     depends_on:
       - phoenixd
     user: "ambrosia:ambrosia"
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp:exec,size=100m
   ambrosia-client:
+    <<: *container-hardening
     build:
       context: client/
       args:
@@ -43,26 +49,41 @@ services:
     image: ambrosia-client
     container_name: ambrosia-client
     restart: unless-stopped
+    logging: *container-log-rotation
     networks:
       - default
     depends_on:
       - ambrosia
-    ports:
-      - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://ambrosia:9154
       NEXT_PUBLIC_PORT_API: "9154"
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
     user: "node:node"
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp:exec,size=100m
 
+  caddy:
+    build: docker/caddy/
+    image: ambrosia-caddy
+    container_name: caddy
+    restart: unless-stopped
+    logging: *container-log-rotation
+    networks:
+      - default
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_datadir:/data
+    depends_on:
+      - ambrosia
+      - ambrosia-client
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
-  phoenixd_datadir: 
+  phoenixd_datadir:
   ambrosia_datadir:
+  caddy_datadir:

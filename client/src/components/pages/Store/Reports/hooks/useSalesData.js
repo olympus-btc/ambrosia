@@ -42,7 +42,8 @@ export function useSalesData(sales, formatCurrency) {
     try {
       const headers = [
         reportsTranslations("sales.product"), reportsTranslations("sales.user"), reportsTranslations("sales.quantity"),
-        reportsTranslations("sales.price"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"), reportsTranslations("sales.date"),
+        reportsTranslations("sales.price"), reportsTranslations("sales.total"), reportsTranslations("sales.lightningFee"),
+        reportsTranslations("sales.paymentMethod"), reportsTranslations("sales.date"),
         reportsTranslations("orders.statusLabel"),
       ];
       const rows = sales.map((sale) => [
@@ -51,6 +52,7 @@ export function useSalesData(sales, formatCurrency) {
         sale.quantity,
         formatCurrency(sale.priceAtOrder),
         formatCurrency(sale.priceAtOrder * sale.quantity),
+        sale.lightningFeeSat > 0 ? `${sale.lightningFeeSat.toLocaleString()} sats` : "",
         getPaymentMethodLabel(sale.paymentMethod) ?? "",
         sale.saleDate ? formatDate(sale.saleDate) : "",
         statusTranslations(`status.${refundedToStatus(sale.refunded)}`),

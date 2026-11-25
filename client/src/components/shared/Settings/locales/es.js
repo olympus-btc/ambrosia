@@ -1,6 +1,8 @@
+import dailySessionResetEs from "../DailySessionReset/locales/es";
 import exportDataEs from "../ExportData/locales/es";
 import importDataEs from "../ImportData/locales/es";
 import lightningEs from "../Lightning/locales/es";
+import logsEs from "../Logs/locales/es";
 import nwcConnectionEs from "../NwcConnection/locales/es";
 import phoenixdRemoteCardEs from "../PhoenixdRemote/locales/es";
 import secretsEncryptionCardEs from "../SecretsEncryption/locales/es";
@@ -87,6 +89,8 @@ const sharedSettingsEs = {
       androidStep2: "Selecciona \"Agregar a pantalla de inicio\"",
     },
     ...systemEs,
+    ...logsEs,
+    ...dailySessionResetEs,
     ...seedEs,
     ...exportDataEs,
     ...importDataEs,

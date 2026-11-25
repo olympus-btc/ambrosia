@@ -1,6 +1,7 @@
 package pos.ambrosia.models.phoenix
 
 import kotlinx.serialization.Serializable
+import pos.ambrosia.utils.requireMaxLength
 import java.sql.Timestamp
 
 //region Payments
@@ -13,7 +14,13 @@ data class CreateInvoiceRequest(
     val exchangeRate: Double? = null,
     val exchangeRateCurrency: String? = null,
     val fiatAmount: Double? = null,
-)
+) {
+    init {
+        requireMaxLength(description, 5000, "description")
+        requireMaxLength(externalId, 500, "externalId")
+        requireMaxLength(exchangeRateCurrency, 10, "exchangeRateCurrency")
+    }
+}
 
 @Serializable
 data class CreateInvoiceResponse(
@@ -25,7 +32,11 @@ data class CreateInvoiceResponse(
 @Serializable data class CreateOffer(
     val description: String? = null,
     val amountSat: Long? = null,
-)
+) {
+    init {
+        requireMaxLength(description, 5000, "description")
+    }
+}
 
 @Serializable data class DecodeInvoiceRequest(
     val invoice: String,
@@ -41,7 +52,11 @@ data class CreateInvoiceResponse(
     val invoice: String,
     val exchangeRate: Double? = null,
     val exchangeRateCurrency: String? = null,
-)
+) {
+    init {
+        requireMaxLength(exchangeRateCurrency, 10, "exchangeRateCurrency")
+    }
+}
 
 @Serializable
 data class PaymentResponse(
@@ -57,7 +72,11 @@ data class PayOfferRequest(
     val amountSat: Long? = null,
     val offer: String,
     val message: String? = null,
-)
+) {
+    init {
+        requireMaxLength(message, 5000, "message")
+    }
+}
 
 @Serializable
 data class PayOnchainRequest(

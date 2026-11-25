@@ -120,22 +120,22 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user, user name and/or pin cannot be null or blank")
                 return@post
             }
-            if (user.pin.length < 4) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be at least 4 characters long")
+            if (user.pin.length != 6 || !user.pin.all(Char::isDigit)) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to add user, pin must be exactly 6 digits")
                 return@post
             }
             call.requireCurrentUserPin(createUserRequest.currentUserPin)
             if (user.role?.let(userService::isRoleAdmin) == true) {
                 call.requireAdmin()
             }
-            val result = userService.addUser(user)
-            if (result == null) {
+            val createdUserId = userService.addUser(user)
+            if (createdUserId == null) {
                 call.respond(HttpStatusCode.BadRequest, "Failed to add user")
                 return@post
             }
             call.respond(
                 HttpStatusCode.Created,
-                mapOf("id" to result, "message" to "User added successfully"),
+                mapOf("id" to createdUserId, "message" to "User added successfully"),
             )
         }
     }
@@ -163,8 +163,10 @@ fun Route.users(
                 call.respond(HttpStatusCode.BadRequest, "Failed to update user, user name cannot be blank")
                 return@put
             }
-            if (updatedUser.pin != null && updatedUser.pin.isNotBlank() && updatedUser.pin.length < 4) {
-                call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be at least 4 characters long")
+            if (updatedUser.pin != null && updatedUser.pin.isNotBlank() &&
+                (updatedUser.pin.length != 6 || !updatedUser.pin.all(Char::isDigit))
+            ) {
+                call.respond(HttpStatusCode.BadRequest, "Failed to update user, pin must be exactly 6 digits")
                 return@put
             }
             call.requireCurrentUserPin(updatedUser.currentUserPin)
@@ -173,7 +175,6 @@ fun Route.users(
             }
 
             val isUpdated = userService.updateUser(id, updatedUser)
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "User with ID: $id not found")

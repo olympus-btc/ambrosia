@@ -17,6 +17,7 @@ import io.ktor.server.routing.routing
 import io.ktor.util.date.GMTDate
 import pos.ambrosia.logger
 import pos.ambrosia.models.AuthRequest
+import pos.ambrosia.models.CurrentUserPinRequest
 import pos.ambrosia.models.LoginResponse
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.UserResponse
@@ -25,7 +26,9 @@ import pos.ambrosia.services.PermissionsService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.AttemptLockoutTracker
 import pos.ambrosia.utils.InvalidTokenException
+import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.recordFailureAndRespondIfLockedOut
+import pos.ambrosia.utils.requireCurrentUserPin
 import pos.ambrosia.utils.respondIfLockedOut
 
 private val loginAttemptLockout = AttemptLockoutTracker()
@@ -189,6 +192,18 @@ fun Route.auth(
             )
 
             call.respond(Message("Logout successful"))
+        }
+    }
+
+    authenticateAdmin("auth-jwt") {
+        post("/revoke-all-sessions") {
+            val revokeAllSessionsRequest = call.receive<CurrentUserPinRequest>()
+            call.requireCurrentUserPin(revokeAllSessionsRequest.currentUserPin)
+
+            tokenService.revokeAllRefreshTokens()
+            tokenService.revokeAllWalletTokens()
+
+            call.respond(Message("All sessions revoked"))
         }
     }
 }

@@ -67,7 +67,6 @@ fun Route.suppliers(supplierService: SupplierService) {
 
             val updatedSupplier = call.receive<Supplier>()
             val isUpdated = supplierService.updateSupplier(updatedSupplier.copy(id = id))
-            logger.info(isUpdated.toString())
 
             if (!isUpdated) {
                 call.respond(HttpStatusCode.NotFound, "Supplier with ID: $id not found")

@@ -48,13 +48,14 @@ export async function restoreFromBackup(password, backupFile, onProgress) {
     closeBackupProgressChannel(progressChannel);
   }
 
+  const restoreResponseAdapter = { status: restoreRequest.status, text: async () => restoreRequest.responseText };
+  const restoreOutcome = await parseJsonResponse(restoreResponseAdapter, null);
+
   if (restoreRequest.status < 200 || restoreRequest.status >= 300) {
-    const restoreResponseLike = { status: restoreRequest.status, text: async () => restoreRequest.responseText };
-    const restoreBody = await parseJsonResponse(restoreResponseLike, null);
-    return { ok: false, status: restoreRequest.status, message: restoreBody?.message };
+    return { ok: false, status: restoreRequest.status, message: restoreOutcome?.message };
   }
 
-  return { ok: true };
+  return { ok: true, includesPhoenixdData: restoreOutcome?.includesPhoenixdData ?? false };
 }
 
 export async function confirmPendingRestore() {

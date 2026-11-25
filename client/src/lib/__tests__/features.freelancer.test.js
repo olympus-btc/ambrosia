@@ -57,6 +57,21 @@ describe("freelancer feature", () => {
     expect(availableRoutePaths(available)).toContain("/freelancer/projects");
   });
 
+  it("shows /freelancer/wallet to a freelance user with wallet_read and hides /store/wallet", () => {
+    const available = getAvailableFeatures(true, false, [{ name: "wallet_read" }], "freelance");
+    const navigation = getAvailableNavigation(true, false, [{ name: "wallet_read" }], "freelance");
+
+    expect(availableRoutePaths(available)).toContain("/freelancer/wallet");
+    expect(availableRoutePaths(available)).not.toContain("/store/wallet");
+    expect(navigation.map((item) => item.path)).toContain("/freelancer/wallet");
+  });
+
+  it("excludes /freelancer/wallet for a freelance user without wallet_read", () => {
+    const available = getAvailableFeatures(true, false, [{ name: "projects_read" }], "freelance");
+
+    expect(availableRoutePaths(available)).not.toContain("/freelancer/wallet");
+  });
+
   it.each([
     ["freelance", "/freelancer"],
     ["store", "/store"],

@@ -24,6 +24,8 @@ import unauthorizedEn from "@/components/pages/Unauthorized/locales/en";
 import unauthorizedEs from "@/components/pages/Unauthorized/locales/es";
 import sharedSettingsEn from "@/components/shared/Settings/locales/en";
 import sharedSettingsEs from "@/components/shared/Settings/locales/es";
+import sharedWalletEn from "@/components/shared/Wallet/locales/en";
+import sharedWalletEs from "@/components/shared/Wallet/locales/es";
 
 const I18nContext = createContext(null);
 export const useI18n = () => useContext(I18nContext);
@@ -36,6 +38,7 @@ const translations = {
     notFound: notFoundEn,
     onboarding: onboardingEn,
     sharedSettings: sharedSettingsEn,
+    sharedWallet: sharedWalletEn,
     store: storeEn,
     unauthorized: unauthorizedEn,
   },
@@ -46,6 +49,7 @@ const translations = {
     notFound: notFoundEs,
     onboarding: onboardingEs,
     sharedSettings: sharedSettingsEs,
+    sharedWallet: sharedWalletEs,
     store: storeEs,
     unauthorized: unauthorizedEs,
   },

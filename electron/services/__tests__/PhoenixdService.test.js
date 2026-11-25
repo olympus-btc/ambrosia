@@ -303,7 +303,7 @@ describe('cleanup', () => {
   it('resets process, status, and closes the log stream', async () => {
     const phoenixdService = new PhoenixdService();
     await phoenixdService.start(9740);
-    const logStreamEndSpy = phoenixdService.logStream.end;
+    const logStreamEndSpy = phoenixdService.processLogWriter.logFileStream.end;
 
     phoenixdService.cleanup();
 

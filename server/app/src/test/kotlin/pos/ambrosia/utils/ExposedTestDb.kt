@@ -1,5 +1,6 @@
 package pos.ambrosia.utils
 
+import io.ktor.server.application.ApplicationEnvironment
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -259,6 +260,29 @@ object ExposedTestDb {
                         this.phone = phone
                     }.id.value
                     .toString()
+        }
+
+    fun seedUserWithPin(
+        name: String,
+        pin: String,
+        env: ApplicationEnvironment,
+        roleId: String? = null,
+    ): String =
+        transaction {
+            val generatedId = UUID.randomUUID()
+            val hashedPin = SecurePinProcessor.hashPinForStorage(pin.toCharArray(), generatedId.toString(), env)
+            UserEntity
+                .new(generatedId) {
+                    this.name = name
+                    this.pin = SecurePinProcessor.byteArrayToBase64(hashedPin)
+                    this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
+                }.id.value
+                .toString()
+        }
+
+    fun readStoredPin(userId: String): String? =
+        transaction {
+            UserEntity.findById(UUID.fromString(userId))?.pin
         }
 
     fun seedCategory(
@@ -591,11 +615,13 @@ object ExposedTestDb {
         currencyId: String = seedCurrency("USD"),
         transactionId: String = "txn-1",
         amount: Double = 10.0,
+        date: String = "2024-01-01T00:00:00",
         paymentHash: String? = null,
         satoshiAmount: Long? = null,
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
+        lightningFeeSat: Long? = null,
     ): String =
         transaction {
             PaymentEntity
@@ -604,12 +630,13 @@ object ExposedTestDb {
                     this.currencyId = EntityID(UUID.fromString(currencyId), CurrencyTable)
                     this.transactionId = transactionId
                     this.amount = amount
-                    this.date = "2024-01-01T00:00:00"
+                    this.date = date
                     this.paymentHash = paymentHash
                     this.satoshiAmount = satoshiAmount
                     this.exchangeRateAtPayment = exchangeRateAtPayment
                     this.exchangeRateCurrency = exchangeRateCurrency
                     this.fiatAmountAtPayment = fiatAmountAtPayment
+                    this.lightningFeeSat = lightningFeeSat
                 }.id.value
                 .toString()
         }
@@ -702,13 +729,14 @@ object ExposedTestDb {
     fun seedTicket(
         orderId: String,
         userId: String,
+        ticketDate: String = "2024-01-01T00:00:00",
     ): String =
         transaction {
             TicketEntity
                 .new(UUID.randomUUID()) {
                     this.orderId = EntityID(UUID.fromString(orderId), OrdersTable)
                     this.userId = EntityID(UUID.fromString(userId), UsersTable)
-                    this.ticketDate = "2024-01-01T00:00:00"
+                    this.ticketDate = ticketDate
                 }.id.value
                 .toString()
         }

@@ -20,9 +20,6 @@
 #   7. Disables the system dnsmasq (conflicts with the captive portal)
 #   8. Adds 127.0.1.1 <hostname>.local to /etc/hosts so local SSR fetches
 #      in the Next.js middleware resolve correctly
-#   9. (Optional) Applies the reverse-proxy-compat patch to the installed
-#      client's proxy.js and rebuilds — required until Ambrosia PR #507
-#      merges. Skipped by default to keep the script hermetic.
 #
 # After this finishes, shut down the Pi, move the SD card to your laptop,
 # and run prep-opi-as-golden.sh to wipe per-unit state and re-image as the
@@ -35,7 +32,7 @@
 #                             hostname, e.g. ambrosia-opi-1)
 #   --kermes-ssid <name>      Wi-Fi SSID to pre-save as auto-connect
 #   --kermes-password <pw>    WPA password for the above
-#   --ambrosia-tag <vX.Y.Z>   Ambrosia release tag (default: v0.6.0-beta)
+#   --ambrosia-tag <vX.Y.Z>   Ambrosia release tag (default: latest release)
 #   --wordlist <path>         Path to eff_large_wordlist.txt on your laptop
 #                             (default: sibling ambrosia checkout at
 #                              ~/code/ambrosia/scripts/eff_large_wordlist.txt)
@@ -58,7 +55,7 @@ HOST=""
 USER_NAME=""
 KERMES_SSID=""
 KERMES_PW=""
-AMBROSIA_TAG="v0.6.0-beta"
+AMBROSIA_TAG=""
 WORDLIST="$HOME/code/ambrosia/scripts/eff_large_wordlist.txt"
 SKIP_CADDY=0
 SKIP_PORTAL=0
@@ -89,6 +86,18 @@ if [[ $SKIP_WIFI -eq 0 && (-z "$KERMES_SSID" || -z "$KERMES_PW") ]]; then
     echo "--kermes-ssid and --kermes-password are required unless --skip-wifi" >&2
     exit 1
 fi
+
+if [[ -z "$AMBROSIA_TAG" ]]; then
+    LATEST_RELEASE=$(curl -fsSL "https://api.github.com/repos/olympus-btc/ambrosia/releases/latest" || true)
+    AMBROSIA_TAG=$(printf '%s\n' "$LATEST_RELEASE" \
+        | sed -E -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+        | sed -n '1p')
+    if [[ -z "$AMBROSIA_TAG" ]]; then
+        echo "Could not resolve the latest Ambrosia release. Pass --ambrosia-tag vX.Y.Z." >&2
+        exit 1
+    fi
+fi
+AMBROSIA_TAG="v${AMBROSIA_TAG#v}"
 
 # SSH helper. -S reads the sudo password from stdin; pass via echo for
 # commands that need root. `ssh -t` would allocate a tty but breaks piping
@@ -122,7 +131,7 @@ EOF
 fi
 
 banner "Installing Ambrosia ${AMBROSIA_TAG} (this can take 5-10 min)"
-$SSH "curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/${AMBROSIA_TAG}/scripts/install.sh | bash -s -- --yes"
+$SSH "curl -fsSL https://raw.githubusercontent.com/olympus-btc/ambrosia/refs/tags/${AMBROSIA_TAG}/scripts/install.sh | AMBROSIA_TAG=${AMBROSIA_TAG} bash -s -- --yes"
 
 # Stub phoenix.conf / ambrosia.conf always get reset to their minimal form
 # by wipe-and-provision.sh, but we put them here too so the first boot
@@ -196,13 +205,4 @@ Next steps:
   2. Pull the microSD card and insert it into your laptop's reader.
   3. Run prep-opi-as-golden.sh to wipe per-unit state, then dd the card to
      a compressed image file. See clone-fleet.md Step 3 for details.
-
-Important caveat (Ambrosia PR #507):
-  If you installed Caddy and want the HTTPS + captive-portal flow to work
-  with the Ambrosia client, you must also apply the reverse-proxy-compat
-  patch to the installed client until Ambrosia upstreams it. See:
-      https://github.com/olympus-btc/ambrosia/pull/507
-  The installer ships a pre-built Next.js client that doesn't have this
-  fix; patching requires rebuilding the client from source. This script
-  does NOT do that automatically.
 EOF

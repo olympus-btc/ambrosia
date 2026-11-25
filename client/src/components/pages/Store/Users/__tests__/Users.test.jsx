@@ -118,13 +118,13 @@ jest.mock("../../hooks/useUsers", () => ({
         id: 1,
         name: "Jordano Anaya",
         phone: "4431342288",
-        pin: "1234",
+        pin: "123456",
       },
       {
         id: 2,
         name: "Carlos Ruz",
         phone: "4431234567",
-        pin: "5678",
+        pin: "567890",
       },
       {
         id: 0,

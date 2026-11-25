@@ -30,7 +30,10 @@ jest.mock("@heroui/react", () => {
   const Card = ({ children, ...props }) => <div {...props}>{children}</div>;
   const CardBody = ({ children, className }) => <div className={className}>{children}</div>;
   const Chip = ({ children }) => <span>{children}</span>;
-  return { Card, CardBody, Chip };
+  const Popover = ({ children }) => <>{children}</>;
+  const PopoverTrigger = ({ children }) => <>{children}</>;
+  const PopoverContent = ({ children }) => <div data-testid="popover-content">{children}</div>;
+  return { Card, CardBody, Chip, Popover, PopoverTrigger, PopoverContent };
 });
 
 const mockFormatCurrency = jest.fn((cents) => `$${cents / 100}`);
@@ -206,6 +209,51 @@ describe("SalesList", () => {
 
     expect(screen.getByText("amount-display-100000")).toBeInTheDocument();
     expect(mockFormatCurrency).not.toHaveBeenCalledWith(1000);
+  });
+
+  it("renders the lightning fee info popover in the total column when lightningFeeSat is present", () => {
+    const sales = [
+      {
+        productName: "Sticker",
+        quantity: 2,
+        priceAtOrder: 500,
+        userName: "ivan",
+        paymentMethod: "BTC",
+        saleDate: "2024-01-01 00:00:00",
+        satoshiAmount: 100000,
+        exchangeRateAtPayment: 95000,
+        exchangeRateCurrency: "usd",
+        fiatAmountAtPayment: 1.0,
+        lightningFeeSat: 50,
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
+
+    expect(screen.getByLabelText("sales.lightningFee")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
+    expect(screen.getByTestId("popover-content")).toHaveTextContent("sales.lightningFeeInfo");
+  });
+
+  it("does not render the lightning fee info popover when lightningFeeSat is absent", () => {
+    const sales = [
+      {
+        productName: "Sticker",
+        quantity: 2,
+        priceAtOrder: 500,
+        userName: "ivan",
+        paymentMethod: "BTC",
+        saleDate: "2024-01-01 00:00:00",
+        satoshiAmount: 100000,
+        exchangeRateAtPayment: 95000,
+        exchangeRateCurrency: "usd",
+        fiatAmountAtPayment: 1.0,
+      },
+    ];
+
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} currentRate={95000} />);
+
+    expect(screen.queryByLabelText("sales.lightningFee")).not.toBeInTheDocument();
   });
 
   it("uses formatCurrency in total column for non-BTC sale", () => {

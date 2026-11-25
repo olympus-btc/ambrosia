@@ -9,7 +9,7 @@ function createFakeSpawnedProcess(pid = 1234) {
 }
 
 function createFakeWriteStream() {
-  return { write: vi.fn(), end: vi.fn() };
+  return { write: vi.fn(), end: vi.fn(), on: vi.fn() };
 }
 
 module.exports = { createFakeSpawnedProcess, createFakeWriteStream };

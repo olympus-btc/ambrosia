@@ -55,6 +55,35 @@ describe('logger', () => {
     });
   });
 
+  describe('setVerboseLogging', () => {
+    it('enables informational logs at runtime and disables them again', async () => {
+      vi.resetModules();
+      delete process.env.DEBUG;
+      delete process.env.NODE_ENV;
+      const loggerModule = await import('../logger.js');
+
+      loggerModule.setVerboseLogging(true);
+      loggerModule.logger.log('verbose message');
+      loggerModule.setVerboseLogging(false);
+      loggerModule.logger.log('hidden message');
+
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith('verbose message');
+      expect(loggerModule.isVerboseLogging()).toBe(false);
+    });
+
+    it('keeps informational logs on when DEBUG=true even if verbose logging is turned off', async () => {
+      vi.resetModules();
+      process.env.DEBUG = 'true';
+      const loggerModule = await import('../logger.js');
+
+      loggerModule.setVerboseLogging(false);
+      loggerModule.logger.log('debug environment message');
+
+      expect(console.log).toHaveBeenCalledWith('debug environment message');
+    });
+  });
+
   describe('warn', () => {
     it('calls console.warn with the given arguments regardless of DEBUG', async () => {
       const logger = await loadLoggerWithEnv({});

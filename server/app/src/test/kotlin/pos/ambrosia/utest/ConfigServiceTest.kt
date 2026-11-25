@@ -14,17 +14,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ConfigServiceTest {
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
     private val service = ConfigService()
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     @Test
@@ -141,6 +141,25 @@ class ConfigServiceTest {
             )
 
             assertEquals("fixed", service.getConfig()?.customTipDefaultType)
+        }
+
+    @Test
+    fun `updateConfig persists a non-default daily session reset hour`() =
+        runBlocking {
+            service.updateConfig(
+                Config(
+                    businessType = "store",
+                    businessName = "Test Store",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                    dailySessionResetHour = 23,
+                ),
+            )
+
+            assertEquals(23, service.getConfig()?.dailySessionResetHour)
         }
 
     @Test

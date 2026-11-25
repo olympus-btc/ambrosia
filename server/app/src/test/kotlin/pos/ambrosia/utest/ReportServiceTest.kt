@@ -19,16 +19,16 @@ import kotlin.test.assertTrue
 
 class ReportServiceTest {
     private val service = ReportService()
-    private lateinit var dbFile: File
+    private lateinit var databaseFile: File
 
     @Before
     fun setUp() {
-        dbFile = ExposedTestDb.connect()
+        databaseFile = ExposedTestDb.connect()
     }
 
     @After
     fun tearDown() {
-        ExposedTestDb.cleanup(dbFile)
+        ExposedTestDb.cleanup(databaseFile)
     }
 
     private data class Sale(
@@ -49,6 +49,7 @@ class ReportServiceTest {
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
+        lightningFeeSat: Long? = null,
         transactionId: String? = null,
     ): Sale {
         val userId = userId ?: ExposedTestDb.seedUser(userName)
@@ -65,6 +66,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = exchangeRateAtPayment,
                 exchangeRateCurrency = exchangeRateCurrency,
                 fiatAmountAtPayment = fiatAmountAtPayment,
+                lightningFeeSat = lightningFeeSat,
             )
         val ticketId = ExposedTestDb.seedTicket(orderId, userId)
         ExposedTestDb.seedTicketPayment(paymentId, ticketId)
@@ -586,6 +588,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = 95_000.0,
                 exchangeRateCurrency = "usd",
                 fiatAmountAtPayment = 1.0,
+                lightningFeeSat = 50L,
             )
         addOrderProduct(sale.orderId)
 
@@ -603,6 +606,7 @@ class ReportServiceTest {
         assertEquals(95_000.0, report.sales[0].exchangeRateAtPayment)
         assertEquals("usd", report.sales[0].exchangeRateCurrency)
         assertEquals(1.0, report.sales[0].fiatAmountAtPayment)
+        assertEquals(50L, report.sales[0].lightningFeeSat)
         assertEquals(sale.paymentId, report.sales[0].paymentId)
     }
 
@@ -624,6 +628,26 @@ class ReportServiceTest {
 
         assertEquals(2, report.sales.size)
         assertEquals(100_000L, report.totalBtcSatoshis, "Should count 100000 sats once, not twice")
+    }
+
+    @Test
+    fun `totalLightningFeeSat deduplicates by paymentId to avoid double counting`() {
+        val sale = seedSale(paymentMethodName = "BTC", satoshiAmount = 100_000L, lightningFeeSat = 50L)
+        addOrderProduct(sale.orderId, productName = "Widget A", quantity = 1, priceAtOrder = 500)
+        addOrderProduct(sale.orderId, productName = "Widget B", quantity = 1, priceAtOrder = 500)
+
+        val report =
+            service.getProductSalesReport(
+                period = null,
+                startDate = null,
+                endDate = null,
+                productName = null,
+                userId = null,
+                paymentMethod = null,
+            )
+
+        assertEquals(2, report.sales.size)
+        assertEquals(50L, report.totalLightningFeeSat, "Should count the fee once, not twice")
     }
 
     @Test
@@ -959,6 +983,7 @@ class ReportServiceTest {
                 exchangeRateAtPayment = 95_000.0,
                 exchangeRateCurrency = "usd",
                 fiatAmountAtPayment = 1.0,
+                lightningFeeSat = 50L,
             )
 
             val filteredOrders = service.getOrdersWithPaymentsFiltered()
@@ -967,6 +992,7 @@ class ReportServiceTest {
             assertEquals(95_000.0, filteredOrders[0].exchangeRateAtPayment)
             assertEquals("usd", filteredOrders[0].exchangeRateCurrency)
             assertEquals(1.0, filteredOrders[0].fiatAmountAtPayment)
+            assertEquals(50L, filteredOrders[0].lightningFeeSat)
         }
 
     @Test
@@ -980,6 +1006,7 @@ class ReportServiceTest {
             assertNull(filteredOrders[0].exchangeRateAtPayment)
             assertNull(filteredOrders[0].exchangeRateCurrency)
             assertNull(filteredOrders[0].fiatAmountAtPayment)
+            assertNull(filteredOrders[0].lightningFeeSat)
         }
 
     @Test

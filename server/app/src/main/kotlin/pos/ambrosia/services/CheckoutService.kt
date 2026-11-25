@@ -211,6 +211,7 @@ class CheckoutService(
 
         return checkoutMutex.withLock {
             val paymentHash = request.paymentHash
+            var lightningFeeSat: Long? = null
             if (!paymentHash.isNullOrBlank()) {
                 findCheckoutByPaymentHash(paymentHash)?.let { existing ->
                     return@withLock CheckoutResult.Success(
@@ -232,17 +233,24 @@ class CheckoutService(
                 }
 
                 val expectedSatoshiAmount = request.satoshiAmount
-                if (expectedSatoshiAmount == null || incomingPayment.receivedSat < expectedSatoshiAmount) {
+                val invoicedSatoshiAmount = incomingPayment.requestedSat ?: incomingPayment.receivedSat
+                if (expectedSatoshiAmount == null || invoicedSatoshiAmount < expectedSatoshiAmount) {
+                    logger.warn(
+                        "Checkout underpaid paymentHash=$paymentHash requested=$invoicedSatoshiAmount " +
+                            "received=${incomingPayment.receivedSat} fees=${incomingPayment.fees} expected=$expectedSatoshiAmount",
+                    )
                     return@withLock CheckoutResult.Invalid(
                         "checkout_underpaid",
                         "Checkout payment does not cover the order amount",
                     )
                 }
+
+                lightningFeeSat = incomingPayment.fees / 1000
             }
 
-            when (val result = performCheckout(request)) {
-                is CheckoutResult.Invalid -> result
-                is CheckoutResult.Success -> result
+            when (val checkoutResult = performCheckout(request, lightningFeeSat)) {
+                is CheckoutResult.Invalid -> checkoutResult
+                is CheckoutResult.Success -> checkoutResult
                 CheckoutResult.NotPaid -> error("performCheckout cannot return NotPaid")
             }
         }
@@ -294,31 +302,33 @@ class CheckoutService(
     private fun createTicketAndPayment(
         order: OrderEntity,
         userEntityId: EntityID<UUID>,
-        request: StoreCheckoutRequest,
+        checkoutRequest: StoreCheckoutRequest,
         now: String,
+        lightningFeeSat: Long?,
     ): Pair<TicketEntity, PaymentEntity> {
         val ticket =
             TicketEntity.new(UUID.randomUUID()) {
                 this.orderId = order.id
                 this.userId = userEntityId
                 this.ticketDate = now
-                this.totalAmount = request.amount
-                this.tipAmount = request.tipAmount
-                this.notes = request.ticketNotes
+                this.totalAmount = checkoutRequest.amount
+                this.tipAmount = checkoutRequest.tipAmount
+                this.notes = checkoutRequest.ticketNotes
             }
 
         val payment =
             PaymentEntity.new(UUID.randomUUID()) {
-                this.methodId = EntityID(UUID.fromString(request.paymentMethodId), PaymentMethodsTable)
-                this.currencyId = EntityID(UUID.fromString(request.currencyId), CurrencyTable)
-                this.transactionId = request.transactionId ?: ""
-                this.amount = request.amount
+                this.methodId = EntityID(UUID.fromString(checkoutRequest.paymentMethodId), PaymentMethodsTable)
+                this.currencyId = EntityID(UUID.fromString(checkoutRequest.currencyId), CurrencyTable)
+                this.transactionId = checkoutRequest.transactionId ?: ""
+                this.amount = checkoutRequest.amount
                 this.date = now
-                this.satoshiAmount = request.satoshiAmount
-                this.exchangeRateAtPayment = request.exchangeRateAtPayment
-                this.paymentHash = request.paymentHash
-                this.exchangeRateCurrency = request.exchangeRateCurrency
-                this.fiatAmountAtPayment = request.fiatAmountAtPayment
+                this.satoshiAmount = checkoutRequest.satoshiAmount
+                this.exchangeRateAtPayment = checkoutRequest.exchangeRateAtPayment
+                this.paymentHash = checkoutRequest.paymentHash
+                this.exchangeRateCurrency = checkoutRequest.exchangeRateCurrency
+                this.fiatAmountAtPayment = checkoutRequest.fiatAmountAtPayment
+                this.lightningFeeSat = lightningFeeSat
             }
 
         TicketPaymentsTable.insert {
@@ -329,28 +339,31 @@ class CheckoutService(
         return ticket to payment
     }
 
-    private fun performCheckout(request: StoreCheckoutRequest): CheckoutResult {
-        if (!hasValidIds(request)) {
+    private fun performCheckout(
+        checkoutRequest: StoreCheckoutRequest,
+        lightningFeeSat: Long?,
+    ): CheckoutResult {
+        if (!hasValidIds(checkoutRequest)) {
             return CheckoutResult.Invalid("checkout_invalid_reference", "Checkout contains an invalid reference")
         }
 
         return try {
             transaction {
                 val now = LocalDateTime.now(configService.getConfiguredZoneId()).toString()
-                val userEntityId = EntityID(UUID.fromString(request.userId), UsersTable)
+                val userEntityId = EntityID(UUID.fromString(checkoutRequest.userId), UsersTable)
                 val order =
                     OrderEntity.new(UUID.randomUUID()) {
                         this.userId = userEntityId
                         this.tableId = null
                         this.status = "paid"
-                        this.total = request.amount
-                        this.discountAmount = request.discountAmount
-                        this.tipAmount = request.tipAmount
+                        this.total = checkoutRequest.amount
+                        this.discountAmount = checkoutRequest.discountAmount
+                        this.tipAmount = checkoutRequest.tipAmount
                         this.createdAt = now
                     }
 
-                insertOrderLines(order, request.items)
-                val (ticket, payment) = createTicketAndPayment(order, userEntityId, request, now)
+                insertOrderLines(order, checkoutRequest.items)
+                val (ticket, payment) = createTicketAndPayment(order, userEntityId, checkoutRequest, now, lightningFeeSat)
 
                 logger.info("Store checkout: order=${order.id.value} ticket=${ticket.id.value} payment=${payment.id.value}")
                 CheckoutResult.Success(

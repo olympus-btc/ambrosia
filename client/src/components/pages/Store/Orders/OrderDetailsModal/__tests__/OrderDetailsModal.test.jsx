@@ -231,6 +231,66 @@ describe("OrderDetailsModal", () => {
     expect(screen.queryByText(/amount-display/)).not.toBeInTheDocument();
   });
 
+  it("renders the lightning fee section with AmountDisplay when lightningFeeSat is present", () => {
+    const formatAmount = jest.fn((amount) => `fmt-${amount}`);
+    const btcOrder = {
+      id: "order-btc",
+      userName: "Ana",
+      status: "paid",
+      paymentMethod: "BTC",
+      total: 1.0,
+      createdAt: "2024-01-01T10:00:00Z",
+      satoshiAmount: 100000,
+      exchangeRateAtPayment: 95000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+      lightningFeeSat: 50,
+    };
+
+    render(
+      <OrderDetailsModal
+        order={btcOrder}
+        isOpen
+        onClose={jest.fn()}
+        onEdit={jest.fn()}
+        formatAmount={formatAmount}
+        currentRate={95000}
+      />,
+    );
+
+    expect(screen.getByText("details.lightningFee")).toBeInTheDocument();
+    expect(screen.getByText("amount-display-50")).toBeInTheDocument();
+    expect(screen.getByText("details.lightningFeeInfo")).toBeInTheDocument();
+  });
+
+  it("does not render the lightning fee section when lightningFeeSat is absent", () => {
+    const btcOrder = {
+      id: "order-btc",
+      userName: "Ana",
+      status: "paid",
+      paymentMethod: "BTC",
+      total: 1.0,
+      createdAt: "2024-01-01T10:00:00Z",
+      satoshiAmount: 100000,
+      exchangeRateAtPayment: 95000,
+      exchangeRateCurrency: "usd",
+      fiatAmountAtPayment: 1.0,
+    };
+
+    render(
+      <OrderDetailsModal
+        order={btcOrder}
+        isOpen
+        onClose={jest.fn()}
+        onEdit={jest.fn()}
+        formatAmount={jest.fn((amount) => `fmt-${amount}`)}
+        currentRate={95000}
+      />,
+    );
+
+    expect(screen.queryByText("details.lightningFee")).not.toBeInTheDocument();
+  });
+
   it("renders tip as secondary information aligned with the amount column", () => {
     const formatAmount = jest.fn((amount) => `fmt-${amount}`);
 

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { SettingsLayout } from "@components/shared/Settings";
 import { Currency } from "@components/shared/Settings/Currency";
+import { DailySessionResetCard } from "@components/shared/Settings/DailySessionReset";
 import { useSharedSettingsTabs } from "@components/shared/Settings/hooks/useSharedSettingsTabs";
 import { TUTORIAL_TOUR } from "@components/shared/Settings/Tutorials/tutorialTours";
 
@@ -29,6 +30,7 @@ export function StoreSettings() {
         <>
           <StoreInfo />
           <Currency extraCurrencySettings={<PriceStep />} />
+          <DailySessionResetCard />
           <Tips />
         </>
       ),

@@ -13,6 +13,13 @@ const authEs = {
     lockout: {
       message: "Demasiados intentos fallidos. Intenta en",
     },
+    pinDeprecation: {
+      title: "Actualiza tu PIN",
+      body: "Tu PIN tiene 4 dígitos. Por seguridad, los PIN de 4 dígitos serán deprecados. Actualízalo a un PIN de 6 dígitos.",
+      adminNote: "Si no eres administrador, pide a un administrador que actualice tu PIN.",
+      goToUsersButton: "Ir a Usuarios",
+      laterButton: "Más tarde",
+    },
     errorMessages: {
       selectEmployee: "Por favor selecciona un empleado",
       enterPin: "El PIN debe tener al menos 4 dígitos",

@@ -5,7 +5,6 @@ import productsEs from "../Products/locales/es";
 import reportsEs from "../Reports/locales/es";
 import settingsEs from "../Settings/locales/es";
 import usersEs from "../Users/locales/es";
-import walletEs from "../Wallet/locales/es";
 
 const storeEs = {
   errors: {
@@ -45,7 +44,6 @@ const storeEs = {
   ...usersEs,
   ...productsEs,
   ...cartEs,
-  ...walletEs,
   ...ordersEs,
   ...reportsEs,
   ...notificationsEs,

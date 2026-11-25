@@ -51,7 +51,7 @@ cleanup() {
 trap cleanup EXIT
 
 check_dependencies() {
-  local dependencies=("curl" "tar" "unzip" "sha256sum" "gpg")
+  local dependencies=("curl" "tar" "unzip" "sha256sum" "gpg" "node")
   for cmd in "${dependencies[@]}"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       log_error "Missing required dependency: $cmd"
@@ -247,7 +247,7 @@ systemd_stop_if_active() {
   local service_file="/etc/systemd/system/${service}.service"
   if command -v systemctl >/dev/null 2>&1 && [[ -f "$service_file" ]]; then
     if systemctl is-active --quiet "$service" 2>/dev/null; then
-      log_info "Stopping $service service..."
+      log_info "Stopping $service service..." >&2
       sudo systemctl stop "$service"
       echo "true"
       return
@@ -302,6 +302,40 @@ retrofit_ambrosia_service() {
   log_info "Flagging ambrosia.service as service-managed..."
   sudo sed -i "/^ExecStart=/i Environment=AMBROSIA_SERVICE_MANAGED=true" "$service_file"
   sudo systemctl daemon-reload
+}
+
+write_client_launcher() {
+  cat <<EOF > "$AMBROSIA_INSTALL_DIR/run-client.sh"
+#!/bin/bash
+cd "$CLIENT_INSTALL_DIR" || exit 1
+export HOSTNAME=0.0.0.0
+exec node server.js
+EOF
+  chmod +x "$AMBROSIA_INSTALL_DIR/run-client.sh"
+}
+
+retrofit_client_service() {
+  local service_file="/etc/systemd/system/ambrosia-client.service"
+  [[ -f "$service_file" ]] || return 0
+  local service_changed=false
+  if ! grep -q "^ExecStart=.*run-client.sh" "$service_file"; then
+    log_info "Updating ambrosia-client.service to start the standalone server..."
+    sudo sed -i "s#^ExecStart=.*#ExecStart=${AMBROSIA_INSTALL_DIR}/run-client.sh#" "$service_file"
+    service_changed=true
+  fi
+  if ! grep -q "^SuccessExitStatus=143" "$service_file"; then
+    sudo sed -i "/^ExecStart=/a SuccessExitStatus=143" "$service_file"
+    service_changed=true
+  fi
+  if [[ "$service_changed" == true ]]; then
+    sudo systemctl daemon-reload
+  fi
+}
+
+retrofit_client_launcher() {
+  [[ -f "$CLIENT_INSTALL_DIR/server.js" ]] || return 0
+  write_client_launcher
+  retrofit_client_service
 }
 
 # --- phoenixd update ---
@@ -359,6 +393,13 @@ phoenixd_update() {
 
 # --- Server update ---
 
+retire_legacy_log_configuration() {
+  local legacy_log_configuration="${AMBROSIA_DATADIR:-$HOME/.Ambrosia-POS}/Ambrosia-Logs.xml"
+  [[ -f "$legacy_log_configuration" ]] || return 0
+  log_info "Server logs are now configured by Ambrosia itself; keeping the old file as ${legacy_log_configuration}.bak"
+  mv -f "$legacy_log_configuration" "${legacy_log_configuration}.bak"
+}
+
 server_update() {
   echo ""
   echo "➡️  Checking Ambrosia Server..."
@@ -402,6 +443,7 @@ server_update() {
 
   mkdir -p "$AMBROSIA_BIN_DIR"
   ln -sf "$AMBROSIA_INSTALL_DIR/run-server.sh" "$AMBROSIA_BIN_DIR/ambrosia"
+  retire_legacy_log_configuration
 
   systemd_start_if_was_active "ambrosia" "$was_active"
 
@@ -418,6 +460,8 @@ client_update() {
     log_info "Ambrosia Client is not installed here, skipping. Run install.sh first."
     return
   fi
+
+  retrofit_client_launcher
 
   local installed_version
   installed_version=$(get_installed_client_version)
@@ -449,21 +493,14 @@ client_update() {
   mkdir -p "$CLIENT_INSTALL_DIR"
   tar -xzf "$GLOBAL_TEMP_DIR/$client_dist_file" -C "$CLIENT_INSTALL_DIR" --strip-components=1
 
-  echo "   Installing Node.js dependencies..."
-  pushd "$CLIENT_INSTALL_DIR" > /dev/null
-  npm install --production --silent
-  popd > /dev/null
+  if [[ ! -f "$CLIENT_INSTALL_DIR/server.js" ]]; then
+    log_error "The v$AMBROSIA_TAG client build has no standalone server.js."
+    exit 1
+  fi
 
   echo "$AMBROSIA_TAG" > "$CLIENT_INSTALL_DIR/.ambrosia-version"
 
-  # Self-heal the wrapper script and symlink in case they went missing.
-  if [[ ! -f "$AMBROSIA_INSTALL_DIR/run-client.sh" ]]; then
-    cat <<EOF > "$AMBROSIA_INSTALL_DIR/run-client.sh"
-#!/bin/bash
-cd "$CLIENT_INSTALL_DIR" && npm start
-EOF
-    chmod +x "$AMBROSIA_INSTALL_DIR/run-client.sh"
-  fi
+  retrofit_client_launcher
   mkdir -p "$AMBROSIA_BIN_DIR"
   ln -sf "$AMBROSIA_INSTALL_DIR/run-client.sh" "$AMBROSIA_BIN_DIR/ambrosia-client"
 

@@ -211,18 +211,29 @@ export default class ServiceManager extends EventEmitter {
     try {
       switch (serviceName) {
         case 'phoenixd':
+          configurationBootstrap.syncRestoredPhoenixdCredentials();
           await this.phoenixdService.stop();
           await this.phoenixdService.start(this.ports.phoenixd);
           this.externalServices.phoenixd = false;
           break;
-        case 'backend':
-          await this.backendService.stop();
-          await this.backendService.start(this.ports.backend, {
+        case 'backend': {
+          const backendStartupConfig = {
             phoenixdPort: this.ports.phoenixd,
             webhookSecret: this.configs.phoenix['webhook-secret'],
             phoenixdRemoteConfigured: this.phoenixdRemoteConfigured,
-          });
+          };
+
+          await this.backendService.stop();
+          await this.backendService.start(this.ports.backend, backendStartupConfig);
+
+          const serverSecretWasSynced = configurationBootstrap.syncRestoredServerSecret();
+          if (serverSecretWasSynced) {
+            logger.log('[ServiceManager] Server secret was just synced from a restored backup, restarting backend again to pick it up...');
+            await this.backendService.stop();
+            await this.backendService.start(this.ports.backend, backendStartupConfig);
+          }
           break;
+        }
         case 'nextjs':
           await this.nextjsService.stop();
           await this.nextjsService.start(this.ports.nextjs, {

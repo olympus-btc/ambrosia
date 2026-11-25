@@ -30,8 +30,8 @@ const { installTreeKillMock } = require('../test-utils/treeKillMock.js');
 
 function createFakeNotificationClass() {
   const createdInstances = [];
-  function FakeNotification(options) {
-    this.options = options;
+  function FakeNotification(notificationOptions) {
+    this.options = notificationOptions;
     this.on = vi.fn();
     this.show = vi.fn();
     createdInstances.push(this);
@@ -56,7 +56,11 @@ function createFakeElectronApp() {
   };
 }
 
-async function loadFreshMain(configureAppMock) {
+function createDefaultMenuMock() {
+  return { buildFromTemplate: vi.fn().mockReturnValue({ items: [] }), setApplicationMenu: vi.fn() };
+}
+
+async function loadFreshMain(configureAppMock, menuMock = createDefaultMenuMock()) {
   const appMock = createFakeElectronApp();
   const ipcMainMock = { handle: vi.fn(), on: vi.fn() };
   if (configureAppMock) configureAppMock(appMock);
@@ -68,7 +72,7 @@ async function loadFreshMain(configureAppMock) {
   installElectronMock({
     app: appMock,
     BrowserWindow: vi.fn(),
-    Menu: { buildFromTemplate: vi.fn().mockReturnValue({ items: [] }), setApplicationMenu: vi.fn() },
+    Menu: menuMock,
     Notification: createFakeNotificationClass(),
     dialog: { showMessageBox: vi.fn(), showErrorBox: vi.fn() },
     shell: { openPath: vi.fn(), openExternal: vi.fn() },
@@ -76,23 +80,23 @@ async function loadFreshMain(configureAppMock) {
   });
   vi.spyOn(os, 'homedir').mockReturnValue('/fake/home');
   vi.spyOn(fs, 'existsSync').mockReturnValue(false);
-  await import('../main.js');
+  const mainModule = await import('../main.js');
 
-  return appMock;
+  return { appMock, mainModule };
 }
 
 function collectHandlersByChannel(ipcMainMock) {
   const handlersByChannel = {};
-  ipcMainMock.handle.mock.calls.forEach(([channel, handler]) => {
-    handlersByChannel[channel] = handler;
+  ipcMainMock.handle.mock.calls.forEach(([ipcChannel, ipcHandler]) => {
+    handlersByChannel[ipcChannel] = ipcHandler;
   });
   return handlersByChannel;
 }
 
 function collectListenersByChannel(ipcMainMock) {
   const listenersByChannel = {};
-  ipcMainMock.on.mock.calls.forEach(([channel, listener]) => {
-    listenersByChannel[channel] = listener;
+  ipcMainMock.on.mock.calls.forEach(([ipcChannel, ipcListener]) => {
+    listenersByChannel[ipcChannel] = ipcListener;
   });
   return listenersByChannel;
 }
@@ -101,6 +105,7 @@ describe('IPC handlers and notifications', () => {
   const appMock = createFakeElectronApp();
   const NotificationMock = createFakeNotificationClass();
   const ipcMainMock = { handle: vi.fn(), on: vi.fn() };
+  const shellMock = { openPath: vi.fn(), openExternal: vi.fn() };
   let ipcHandlersByChannel;
   let ipcListenersByChannel;
 
@@ -114,7 +119,7 @@ describe('IPC handlers and notifications', () => {
       Menu: { buildFromTemplate: vi.fn().mockReturnValue({ items: [] }), setApplicationMenu: vi.fn() },
       Notification: NotificationMock,
       dialog: { showMessageBox: vi.fn(), showErrorBox: vi.fn() },
-      shell: { openPath: vi.fn(), openExternal: vi.fn() },
+      shell: shellMock,
       ipcMain: ipcMainMock,
     });
     require('../main.js');
@@ -152,6 +157,37 @@ describe('IPC handlers and notifications', () => {
       expect(ipcHandlersByChannel['services:get-logs']()).toEqual({
         logsDir: '/fake/home/.Ambrosia-POS/logs',
       });
+    });
+  });
+
+  describe('logs:set-level', () => {
+    it('accepts supported log levels', () => {
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'debug')).toEqual({ success: true });
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'INFO')).toEqual({ success: true });
+    });
+
+    it('rejects unsupported log levels', () => {
+      expect(ipcHandlersByChannel['logs:set-level']({}, 'LOUD')).toEqual({ success: false });
+      expect(ipcHandlersByChannel['logs:set-level']({}, null)).toEqual({ success: false });
+    });
+  });
+
+  describe('logs:open-folder', () => {
+    it('opens the logs directory and reports success', async () => {
+      shellMock.openPath.mockResolvedValueOnce('');
+
+      const openLogsFolderResult = await ipcHandlersByChannel['logs:open-folder']();
+
+      expect(shellMock.openPath).toHaveBeenCalledWith('/fake/home/.Ambrosia-POS/logs');
+      expect(openLogsFolderResult).toEqual({ success: true, error: undefined });
+    });
+
+    it('reports the error returned by the shell', async () => {
+      shellMock.openPath.mockResolvedValueOnce('Failed to open path');
+
+      const openLogsFolderResult = await ipcHandlersByChannel['logs:open-folder']();
+
+      expect(openLogsFolderResult).toEqual({ success: false, error: 'Failed to open path' });
     });
   });
 
@@ -287,9 +323,10 @@ describe('IPC handlers and notifications', () => {
 
 describe('single-instance lock', () => {
   async function loadFreshMainWithLock(lockAcquired) {
-    return loadFreshMain((appMock) => {
+    const { appMock } = await loadFreshMain((appMock) => {
       appMock.requestSingleInstanceLock.mockReturnValue(lockAcquired);
     });
+    return appMock;
   }
 
   afterEach(() => {
@@ -316,7 +353,8 @@ describe('Linux password-store backend', () => {
     delete process.env.XDG_CURRENT_DESKTOP;
     Object.assign(process.env, environmentVariableOverrides);
 
-    return loadFreshMain();
+    const { appMock } = await loadFreshMain();
+    return appMock;
   }
 
   afterEach(() => {
@@ -348,5 +386,51 @@ describe('Linux password-store backend', () => {
     const appMock = await loadFreshMainWithPlatform('linux', { XDG_CURRENT_DESKTOP: 'KDE' });
 
     expect(appMock.commandLine.appendSwitch).toHaveBeenCalledWith('password-store', 'kwallet6');
+  });
+});
+
+describe('createAppMenu', () => {
+  function buildFakeMenuFromTemplate(templateItems) {
+    return {
+      items: templateItems.map((templateItem) => (
+        templateItem.submenu
+          ? { ...templateItem, submenu: buildFakeMenuFromTemplate(templateItem.submenu) }
+          : templateItem
+      )),
+    };
+  }
+
+  function findSubmenuByLabel(template, label) {
+    return template.find((menuItem) => menuItem.label === label).submenu;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('shows the DevTools menu item outside a packaged build', async () => {
+    const menuMock = { buildFromTemplate: vi.fn(buildFakeMenuFromTemplate), setApplicationMenu: vi.fn() };
+    const { mainModule } = await loadFreshMain((appMock) => {
+      appMock.isPackaged = false;
+    }, menuMock);
+
+    mainModule.createAppMenu();
+
+    const [capturedTemplate] = menuMock.buildFromTemplate.mock.calls[0];
+    const viewSubmenu = findSubmenuByLabel(capturedTemplate, 'View');
+    expect(viewSubmenu).toContainEqual({ role: 'toggleDevTools' });
+  });
+
+  it('hides the DevTools menu item in a packaged build', async () => {
+    const menuMock = { buildFromTemplate: vi.fn(buildFakeMenuFromTemplate), setApplicationMenu: vi.fn() };
+    const { mainModule } = await loadFreshMain((appMock) => {
+      appMock.isPackaged = true;
+    }, menuMock);
+
+    mainModule.createAppMenu();
+
+    const [capturedTemplate] = menuMock.buildFromTemplate.mock.calls[0];
+    const viewSubmenu = findSubmenuByLabel(capturedTemplate, 'View');
+    expect(viewSubmenu).not.toContainEqual({ role: 'toggleDevTools' });
   });
 });

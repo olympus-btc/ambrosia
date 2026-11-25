@@ -18,17 +18,23 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.api.configureAuth
+import pos.ambrosia.api.handler
 import pos.ambrosia.configureAuthentication
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.models.AuthResponse
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.SecurePinProcessor
+import pos.ambrosia.utils.TEST_USER_PIN
 import pos.ambrosia.utils.grantPermission
+import pos.ambrosia.utils.installAdminAuth
+import pos.ambrosia.utils.installNonAdminAuth
+import pos.ambrosia.utils.withAuthCookies
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val TEST_SECRET = "authorize-test-secret"
@@ -124,6 +130,107 @@ class AuthorizeRouteTest {
             assertEquals(HttpStatusCode.OK, refreshResponse.status)
             val setCookieHeader = refreshResponse.headers[HttpHeaders.SetCookie].orEmpty()
             assertTrue(setCookieHeader.contains("SameSite=Strict"))
+        }
+
+    @Test
+    fun `revoke-all-sessions is rejected without an admin session`() =
+        testApplication {
+            val authCookies = installNonAdminAuth()
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configureAuth()
+            }
+
+            val revokeAllSessionsResponse =
+                client.post("/auth/revoke-all-sessions") {
+                    withAuthCookies(authCookies)
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"currentUserPin":"$TEST_USER_PIN"}""")
+                }
+
+            assertEquals(HttpStatusCode.Forbidden, revokeAllSessionsResponse.status)
+        }
+
+    @Test
+    fun `revoke-all-sessions is rejected with an incorrect current PIN`() =
+        testApplication {
+            val authCookies = installAdminAuth()
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configureAuth()
+            }
+
+            val revokeAllSessionsResponse =
+                client.post("/auth/revoke-all-sessions") {
+                    withAuthCookies(authCookies)
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"currentUserPin":"9999"}""")
+                }
+
+            assertEquals(HttpStatusCode.Forbidden, revokeAllSessionsResponse.status)
+        }
+
+    @Test
+    fun `revoke-all-sessions is rejected with a blank current PIN`() =
+        testApplication {
+            val authCookies = installAdminAuth()
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configureAuth()
+            }
+
+            val revokeAllSessionsResponse =
+                client.post("/auth/revoke-all-sessions") {
+                    withAuthCookies(authCookies)
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"currentUserPin":""}""")
+                }
+
+            assertEquals(HttpStatusCode.Forbidden, revokeAllSessionsResponse.status)
+        }
+
+    @Test
+    fun `revoke-all-sessions revokes refresh and wallet tokens for every user`() =
+        testApplication {
+            val authCookies = installAdminAuth()
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configureAuth()
+            }
+
+            val seedTokenService =
+                TokenService(
+                    applicationEnvironment {
+                        config =
+                            MapApplicationConfig(
+                                "secret" to TEST_SECRET,
+                                "jwt.issuer" to TEST_ISSUER,
+                                "jwt.audience" to TEST_AUDIENCE,
+                            )
+                    },
+                )
+            val otherUserId = ExposedTestDb.seedUser("revoke-all-sessions-other-user")
+            seedTokenService.generateRefreshToken(
+                AuthResponse(id = otherUserId, name = "revoke-all-sessions-other-user", role = "role", isAdmin = false),
+            )
+            seedTokenService.generateWalletAccessToken(otherUserId)
+
+            val revokeAllSessionsResponse =
+                client.post("/auth/revoke-all-sessions") {
+                    withAuthCookies(authCookies)
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"currentUserPin":"$TEST_USER_PIN"}""")
+                }
+
+            assertEquals(HttpStatusCode.OK, revokeAllSessionsResponse.status)
+            val otherUserRefreshToken = transaction { UserEntity.findById(UUID.fromString(otherUserId))?.refreshToken }
+            val otherUserWalletToken = transaction { UserEntity.findById(UUID.fromString(otherUserId))?.walletToken }
+            assertNull(otherUserRefreshToken)
+            assertNull(otherUserWalletToken)
         }
 
     private fun seedRealPin(

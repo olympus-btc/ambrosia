@@ -213,7 +213,10 @@ fun Route.wallet(
                 replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-remote", "true")
                 replaceConfFileProperty(ambrosiaConfigFile, "phoenixd-url", trimmedPhoenixdUrl)
                 SecretsStore.setSecret("phoenixd-password", trimmedPhoenixdPassword)
-                ActiveLightningBackend.reinitializePhoenixBackend(trimmedPhoenixdUrl, trimmedPhoenixdPassword)
+                ActiveLightningBackend.reinitializePhoenixBackend(
+                    trimmedPhoenixdUrl,
+                    updatePhoenixdRemoteRequest.phoenixdRemote,
+                )
                 ActiveLightningBackend.startPhoenixPaymentEventsListener(
                     trimmedPhoenixdUrl,
                     trimmedPhoenixdPassword,
@@ -496,7 +499,7 @@ private fun Application.initializeLightningBackend(walletAdminNotificationServic
     }
 
     val phoenixdPassword = SecretsStore.getSecretOrNull("phoenixd-password") ?: AppConfig.getLocalPhoenixdPassword()
-    ActiveLightningBackend.set(PhoenixService(phoenixdUrl, phoenixdPassword))
+    ActiveLightningBackend.set(PhoenixService(phoenixdUrl, phoenixdRemote))
 
     if (phoenixdRemote) {
         ActiveLightningBackend.startPhoenixPaymentEventsListener(

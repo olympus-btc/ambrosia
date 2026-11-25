@@ -13,18 +13,23 @@ import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.config.ApplicationConfigValue
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.Json
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import pos.ambrosia.config.AppConfig
 import pos.ambrosia.models.phoenix.CloseChannelResponse
 import pos.ambrosia.models.phoenix.NodeInfo
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.services.OutgoingPaymentFailureCategories
 import pos.ambrosia.services.PhoenixService
+import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.utils.PhoenixServiceException
+import pos.ambrosia.utils.UnsupportedBackendOperationException
 import java.io.IOException
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1846,6 +1851,26 @@ class PhoenixServiceTest {
     }
 
     @Test
+    fun `readCurrentPhoenixdPassword returns whatever password SecretsStore currently has, not one captured at construction time`() {
+        val secretsStoreConfigFile = Files.createTempFile("phoenixServiceTestSecrets", ".conf").toFile()
+        SecretsStore.resetForTesting()
+        SecretsStore.ambrosiaConfigFile = Path(secretsStoreConfigFile.absolutePath)
+        try {
+            SecretsStore.setSecret("phoenixd-password", "first-password")
+            val firstPasswordRead = PhoenixService.readCurrentPhoenixdPassword()
+
+            SecretsStore.setSecret("phoenixd-password", "second-password")
+            val secondPasswordRead = PhoenixService.readCurrentPhoenixdPassword()
+
+            assertEquals("first-password", firstPasswordRead)
+            assertEquals("second-password", secondPasswordRead)
+        } finally {
+            SecretsStore.resetForTesting()
+            secretsStoreConfigFile.delete()
+        }
+    }
+
+    @Test
     fun `getBalance returns PhoenixBalance on success`() {
         // Arrange
         val mockJsonResponse =
@@ -2013,6 +2038,26 @@ class PhoenixServiceTest {
         assertFailsWith<pos.ambrosia.utils.PhoenixChannelNotAvailableException> {
             runBlocking { phoenixService.closeChannel(request) }
         }
+    }
+
+    @Test
+    fun `getSeed throws UnsupportedBackendOperationException when the node is remote`() {
+        val remotePhoenixService =
+            PhoenixService(phoenixdUrl = "http://example.com", phoenixdPassword = "unused", isRemote = true)
+
+        assertFailsWith<UnsupportedBackendOperationException> {
+            runBlocking { remotePhoenixService.getSeed() }
+        }
+    }
+
+    @Test
+    fun `getSeed delegates to AppConfig's loadPhoenixSeed when the node is not remote`() {
+        val localPhoenixService =
+            PhoenixService(phoenixdUrl = "http://example.com", phoenixdPassword = "unused", isRemote = false)
+
+        val seed = runBlocking { localPhoenixService.getSeed() }
+
+        assertEquals(AppConfig.loadPhoenixSeed(), seed)
     }
     //endregion
 

@@ -1,0 +1,314 @@
+"""End-to-end tests for the logs API used by Settings -> System -> Logs.
+
+Covers reading server logs, the admin-only guard, client error reports,
+the runtime log settings and the ZIP download.
+"""
+
+import asyncio
+import io
+import uuid
+import zipfile
+from pathlib import Path
+
+import pytest
+
+CLIENT_LOG_REPORTS_PER_MINUTE = 30
+BASELINE_PERMISSIONS = ["wallet_read"]
+
+
+def read_ambrosia_conf_values(ambrosia_data_directory: str) -> dict[str, str]:
+    conf_lines = Path(ambrosia_data_directory, "ambrosia.conf").read_text().splitlines()
+    return dict(conf_line.split("=", 1) for conf_line in conf_lines if "=" in conf_line)
+
+
+async def wait_for_log_entry(admin_client, log_source: str, search_text: str) -> list:
+    for _ in range(20):
+        logs_response = await admin_client.get(
+            "/logs", params={"source": log_source, "search": search_text}
+        )
+        assert logs_response.status_code == 200
+        matching_entries = logs_response.json()["entries"]
+        if matching_entries:
+            return matching_entries
+        await asyncio.sleep(0.25)
+    return []
+
+
+class TestLogsAccess:
+    @pytest.mark.asyncio
+    async def test_admin_reads_server_log_entries(self, admin_client):
+        logs_response = await admin_client.get(
+            "/logs", params={"source": "server", "lines": 50}
+        )
+
+        assert logs_response.status_code == 200
+        log_entries = logs_response.json()["entries"]
+        assert len(log_entries) > 0
+        assert {"timestamp", "level", "source", "logger", "message"} <= set(
+            log_entries[0]
+        )
+        assert all(log_entry["source"] == "server" for log_entry in log_entries)
+
+    @pytest.mark.asyncio
+    async def test_admin_lists_log_sources(self, admin_client):
+        sources_response = await admin_client.get("/logs/sources")
+
+        assert sources_response.status_code == 200
+        sources_by_id = {
+            log_source["id"]: log_source
+            for log_source in sources_response.json()["sources"]
+        }
+        assert set(sources_by_id) == {"server", "phoenixd", "client"}
+        assert sources_by_id["server"]["available"] is True
+
+    @pytest.mark.asyncio
+    async def test_unknown_source_and_level_are_rejected(self, admin_client):
+        unknown_source_response = await admin_client.get(
+            "/logs", params={"source": "kernel"}
+        )
+        unknown_level_response = await admin_client.get(
+            "/logs", params={"level": "LOUD"}
+        )
+
+        assert unknown_source_response.status_code == 400
+        assert unknown_level_response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_read_logs(self, client_factory):
+        non_admin_client = await client_factory(BASELINE_PERMISSIONS)
+
+        logs_response = await non_admin_client.get("/logs")
+        download_response = await non_admin_client.get("/logs/download")
+
+        assert logs_response.status_code == 403
+        assert download_response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_anonymous_cannot_read_logs(self, public_client):
+        logs_response = await public_client.get("/logs")
+
+        assert logs_response.status_code == 401
+
+
+class TestClientLogReports:
+    @pytest.mark.asyncio
+    async def test_client_report_is_visible_in_client_source(
+        self, admin_client, client_factory
+    ):
+        reporting_client = await client_factory(BASELINE_PERMISSIONS)
+        unique_marker = f"e2e-client-error-{uuid.uuid4().hex[:8]}"
+
+        report_response = await reporting_client.post(
+            "/logs/client",
+            json={
+                "level": "ERROR",
+                "errorMessage": f"{unique_marker} token=supersecret",
+                "stackTrace": "TypeError: boom\n    at Cart (cart.js:1:1)",
+                "url": "/store/cart",
+                "origin": "browser",
+                "context": {"type": "window.error"},
+            },
+        )
+
+        assert report_response.status_code == 204
+        client_entries = await wait_for_log_entry(admin_client, "client", unique_marker)
+        assert len(client_entries) == 1
+        assert client_entries[0]["level"] == "ERROR"
+        assert "token=***" in client_entries[0]["message"]
+        assert "supersecret" not in client_entries[0]["message"]
+        assert "TypeError: boom" in client_entries[0]["details"]
+
+        server_entries_with_marker = (
+            await admin_client.get(
+                "/logs", params={"source": "server", "search": unique_marker}
+            )
+        ).json()["entries"]
+        assert server_entries_with_marker == []
+
+    @pytest.mark.asyncio
+    async def test_anonymous_client_report_is_rejected(self, public_client):
+        report_response = await public_client.post(
+            "/logs/client", json={"errorMessage": "anonymous error"}
+        )
+
+        assert report_response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_oversized_client_report_is_rejected(self, client_factory):
+        reporting_client = await client_factory(BASELINE_PERMISSIONS)
+
+        report_response = await reporting_client.post(
+            "/logs/client", json={"errorMessage": "x" * (32 * 1024)}
+        )
+
+        assert report_response.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_client_reports_are_rate_limited_per_user(self, client_factory):
+        reporting_client = await client_factory(BASELINE_PERMISSIONS)
+
+        report_status_codes = [
+            (
+                await reporting_client.post(
+                    "/logs/client", json={"errorMessage": f"rate limit probe {attempt}"}
+                )
+            ).status_code
+            for attempt in range(CLIENT_LOG_REPORTS_PER_MINUTE + 1)
+        ]
+
+        assert report_status_codes[:CLIENT_LOG_REPORTS_PER_MINUTE] == [204] * (
+            CLIENT_LOG_REPORTS_PER_MINUTE
+        )
+        assert report_status_codes[-1] == 429
+
+
+DEFAULT_LOG_SETTINGS = {
+    "level": "INFO",
+    "retentionDays": 7,
+    "maximumTotalSizeMegabytes": 20,
+    "clientErrorReportingEnabled": True,
+}
+
+
+class TestLogSettings:
+    @pytest.mark.asyncio
+    async def test_admin_changes_and_persists_every_log_setting(
+        self, admin_client, test_server
+    ):
+        initial_log_settings_response = await admin_client.get("/logs/settings")
+        assert initial_log_settings_response.status_code == 200
+        initial_log_settings = initial_log_settings_response.json()
+        assert set(initial_log_settings) == set(DEFAULT_LOG_SETTINGS)
+
+        try:
+            log_settings_update_response = await admin_client.put(
+                "/logs/settings",
+                json={
+                    "level": "debug",
+                    "retentionDays": 14,
+                    "maximumTotalSizeMegabytes": 50,
+                    "clientErrorReportingEnabled": False,
+                },
+            )
+
+            expected_log_settings = {
+                "level": "DEBUG",
+                "retentionDays": 14,
+                "maximumTotalSizeMegabytes": 50,
+                "clientErrorReportingEnabled": False,
+            }
+            assert log_settings_update_response.status_code == 200
+            assert log_settings_update_response.json() == expected_log_settings
+            assert (
+                await admin_client.get("/logs/settings")
+            ).json() == expected_log_settings
+            persisted_conf_values = read_ambrosia_conf_values(test_server.datadir)
+            assert persisted_conf_values["log-level"] == "DEBUG"
+            assert persisted_conf_values["log-retention-days"] == "14"
+            assert persisted_conf_values["log-max-total-size-mb"] == "50"
+            assert persisted_conf_values["log-client-errors"] == "false"
+        finally:
+            await admin_client.put("/logs/settings", json=initial_log_settings)
+
+    @pytest.mark.asyncio
+    async def test_debug_level_logs_each_request_without_query_string(
+        self, admin_client
+    ):
+        initial_log_settings = (await admin_client.get("/logs/settings")).json()
+        unique_search_marker = f"query-marker-{uuid.uuid4().hex[:8]}"
+
+        try:
+            await admin_client.put(
+                "/logs/settings", json={**initial_log_settings, "level": "DEBUG"}
+            )
+            await admin_client.get("/users/me", params={"probe": unique_search_marker})
+
+            request_entries = await wait_for_log_entry(
+                admin_client, "server", "GET /users/me 200"
+            )
+
+            assert request_entries
+            assert request_entries[-1]["logger"] == "HttpRequests"
+            assert request_entries[-1]["level"] == "DEBUG"
+            assert all(
+                unique_search_marker not in request_entry["message"]
+                for request_entry in request_entries
+            )
+        finally:
+            await admin_client.put("/logs/settings", json=initial_log_settings)
+
+    @pytest.mark.asyncio
+    async def test_app_errors_are_ignored_while_reporting_is_disabled(
+        self, admin_client, client_factory
+    ):
+        initial_log_settings = (await admin_client.get("/logs/settings")).json()
+        reporting_client = await client_factory(BASELINE_PERMISSIONS)
+        unique_marker = f"e2e-ignored-client-error-{uuid.uuid4().hex[:8]}"
+
+        try:
+            await admin_client.put(
+                "/logs/settings",
+                json={**initial_log_settings, "clientErrorReportingEnabled": False},
+            )
+            ignored_client_report_response = await reporting_client.post(
+                "/logs/client", json={"errorMessage": unique_marker}
+            )
+
+            assert ignored_client_report_response.status_code == 204
+            ignored_client_entries = (
+                await admin_client.get(
+                    "/logs", params={"source": "client", "search": unique_marker}
+                )
+            ).json()["entries"]
+            assert ignored_client_entries == []
+        finally:
+            await admin_client.put("/logs/settings", json=initial_log_settings)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "unsupported_setting",
+        [
+            {"level": "TRACE"},
+            {"retentionDays": 2},
+            {"maximumTotalSizeMegabytes": 1000},
+        ],
+    )
+    async def test_unsupported_log_settings_are_rejected(
+        self, admin_client, unsupported_setting
+    ):
+        unsupported_log_settings_update_response = await admin_client.put(
+            "/logs/settings", json={**DEFAULT_LOG_SETTINGS, **unsupported_setting}
+        )
+
+        assert unsupported_log_settings_update_response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_read_or_change_log_settings(self, client_factory):
+        non_admin_client = await client_factory(BASELINE_PERMISSIONS)
+
+        non_admin_log_settings_read_response = await non_admin_client.get(
+            "/logs/settings"
+        )
+        non_admin_log_settings_update_response = await non_admin_client.put(
+            "/logs/settings", json=DEFAULT_LOG_SETTINGS
+        )
+
+        assert non_admin_log_settings_read_response.status_code == 403
+        assert non_admin_log_settings_update_response.status_code == 403
+
+
+class TestLogsDownload:
+    @pytest.mark.asyncio
+    async def test_admin_downloads_logs_archive(self, admin_client):
+        download_response = await admin_client.get("/logs/download")
+
+        assert download_response.status_code == 200
+        assert download_response.headers["content-type"] == "application/zip"
+        assert "ambrosia-logs-" in download_response.headers["content-disposition"]
+        with zipfile.ZipFile(io.BytesIO(download_response.content)) as logs_archive:
+            archived_file_names = logs_archive.namelist()
+            assert "diagnostics.txt" in archived_file_names
+            assert "server/server.log" in archived_file_names
+            diagnostics_text = logs_archive.read("diagnostics.txt").decode()
+        assert "Ambrosia version:" in diagnostics_text
+        assert "Server log level:" in diagnostics_text

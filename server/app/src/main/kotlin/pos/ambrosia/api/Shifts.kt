@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -11,6 +12,9 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import pos.ambrosia.logger
 import pos.ambrosia.models.CloseShiftRequest
 import pos.ambrosia.models.Message
@@ -29,14 +33,14 @@ import pos.ambrosia.utils.authorizePermission
 import java.time.LocalDate
 
 private fun parseShiftsReportDateQueryParam(
-    value: String?,
-    name: String,
+    dateQueryParameterValue: String?,
+    queryParameterName: String,
 ): String? {
-    if (value.isNullOrBlank()) return null
+    if (dateQueryParameterValue.isNullOrBlank()) return null
     return try {
-        LocalDate.parse(value).toString()
+        LocalDate.parse(dateQueryParameterValue).toString()
     } catch (_: Exception) {
-        throw IllegalArgumentException("Invalid $name: $value. Expected format YYYY-MM-DD")
+        throw IllegalArgumentException("Invalid $queryParameterName: $dateQueryParameterValue. Expected format YYYY-MM-DD")
     }
 }
 
@@ -92,7 +96,10 @@ fun Route.shifts(
     }
     authorizeAdminPermission("shifts_report_read") {
         get("/report") {
-            val requestedPeriod = call.request.queryParameters["period"]?.takeIf { it.isNotBlank() }
+            val requestedPeriod =
+                call.request.queryParameters["period"]?.takeIf { periodQueryParameter ->
+                    periodQueryParameter.isNotBlank()
+                }
 
             val requestedStartDate: String?
             val requestedEndDate: String?
@@ -154,7 +161,7 @@ fun Route.shifts(
                 call.respond(HttpStatusCode.BadRequest, "Failed to add shift")
                 return@post
             }
-            cashDrawerService.openForTrigger(CashDrawerTrigger.SHIFT_OPEN)
+            call.application.launch(Dispatchers.IO) { cashDrawerService.openForTrigger(CashDrawerTrigger.SHIFT_OPEN) }
             call.respond(
                 HttpStatusCode.Created,
                 mapOf("id" to createdShift, "message" to "Shift added successfully"),
@@ -170,7 +177,6 @@ fun Route.shifts(
 
                 val updatedShift = call.receive<Shift>()
                 val isUpdated = shiftService.updateShift(updatedShift.copy(id = id))
-                logger.info(isUpdated.toString())
 
                 if (!isUpdated) {
                     call.respond(HttpStatusCode.NotFound, "Shift with ID: $id not found")
@@ -187,7 +193,7 @@ fun Route.shifts(
                 call.respond(HttpStatusCode.NotFound, "Open shift not found")
                 return@post
             }
-            cashDrawerService.openForTrigger(CashDrawerTrigger.SHIFT_CLOSE)
+            call.application.launch(Dispatchers.IO) { cashDrawerService.openForTrigger(CashDrawerTrigger.SHIFT_CLOSE) }
             call.respond(HttpStatusCode.NoContent)
         }
 
@@ -206,7 +212,8 @@ fun Route.shifts(
             }
 
             try {
-                printService.printShiftReport(shiftReport, configService.getConfig())
+                val businessConfig = configService.getConfig()
+                withContext(Dispatchers.IO) { printService.printShiftReport(shiftReport, businessConfig) }
             } catch (printError: Exception) {
                 throw PrintTicketException(printError.message ?: "The shift report could not be printed.")
             }

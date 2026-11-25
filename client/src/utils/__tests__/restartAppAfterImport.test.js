@@ -22,14 +22,27 @@ describe("restartAppAfterImport", () => {
     expect(restartTriggered).toBe(false);
   });
 
-  it("invokes app:relaunch and returns true inside Electron", async () => {
+  it("restarts only the backend inside Electron when includesPhoenixdData is false", async () => {
     mockIsElectron = true;
     const mockInvoke = jest.fn().mockResolvedValue(undefined);
     window.electron = { ipc: { invoke: mockInvoke } };
 
-    const restartTriggered = await restartAppAfterImport();
+    const restartTriggered = await restartAppAfterImport(false);
 
-    expect(mockInvoke).toHaveBeenCalledWith("app:relaunch");
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    expect(mockInvoke).toHaveBeenCalledWith("services:restart", "backend");
+    expect(restartTriggered).toBe(true);
+  });
+
+  it("restarts the backend and then phoenixd inside Electron when includesPhoenixdData is true", async () => {
+    mockIsElectron = true;
+    const mockInvoke = jest.fn().mockResolvedValue(undefined);
+    window.electron = { ipc: { invoke: mockInvoke } };
+
+    const restartTriggered = await restartAppAfterImport(true);
+
+    expect(mockInvoke).toHaveBeenNthCalledWith(1, "services:restart", "backend");
+    expect(mockInvoke).toHaveBeenNthCalledWith(2, "services:restart", "phoenixd");
     expect(restartTriggered).toBe(true);
   });
 });

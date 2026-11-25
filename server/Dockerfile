@@ -22,7 +22,8 @@ RUN ./gradlew jar --no-daemon
 # Runtime stage - slim image with only JRE
 FROM eclipse-temurin:21-jre-alpine
 
-RUN addgroup -S ambrosia && adduser -S -G ambrosia -h /home/ambrosia ambrosia
+ARG PHOENIXD_SHARED_UID=1000
+RUN addgroup -S -g ${PHOENIXD_SHARED_UID} ambrosia && adduser -S -u ${PHOENIXD_SHARED_UID} -G ambrosia -h /home/ambrosia ambrosia
 
 WORKDIR /app
 

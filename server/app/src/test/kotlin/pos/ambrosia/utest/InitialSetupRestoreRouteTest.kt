@@ -6,22 +6,31 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
 import pos.ambrosia.api.configureInitialSetup
 import pos.ambrosia.api.handler
+import pos.ambrosia.api.initialSetupRoutes
+import pos.ambrosia.models.BackupUploadResponse
+import pos.ambrosia.services.BackupService
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.utils.ExposedTestDb
+import pos.ambrosia.utils.buildEncryptedBackupBytes
 import pos.ambrosia.utils.testJwtConfig
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -131,6 +140,45 @@ class InitialSetupRestoreRouteTest {
                 }
 
             assertEquals(HttpStatusCode.BadRequest, restoreResponse.status)
+        }
+
+    @Test
+    fun `restore returns ok with businessName and includesPhoenixdData for a valid backup`() =
+        testApplication {
+            val encryptedBackupBytes = buildEncryptedBackupBytes(databaseFile)
+
+            val destinationImportStagingRoot =
+                Files.createTempDirectory("initialSetupRestoreTestStagingParent").resolve("import-staging")
+            val destinationBackupService = BackupService(importStagingRoot = destinationImportStagingRoot)
+
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                routing { route("/initial-setup") { initialSetupRoutes(destinationBackupService) } }
+            }
+
+            val restoreResponse =
+                client.post("/initial-setup/restore") {
+                    setBody(
+                        MultiPartFormDataContent(
+                            formData {
+                                append("password", "correct-password")
+                                append(
+                                    "backup",
+                                    encryptedBackupBytes,
+                                    Headers.build {
+                                        append(HttpHeaders.ContentDisposition, "filename=\"backup.zip\"")
+                                    },
+                                )
+                            },
+                        ),
+                    )
+                }
+
+            assertEquals(HttpStatusCode.OK, restoreResponse.status)
+            val restoreResponseBody = Json.decodeFromString<BackupUploadResponse>(restoreResponse.bodyAsText())
+            assertEquals("Source Store", restoreResponseBody.businessName)
+            assertEquals(false, restoreResponseBody.includesPhoenixdData)
         }
 
     @Test

@@ -1,7 +1,6 @@
 package pos.ambrosia.services
 
 import com.github.anastaciocintra.escpos.EscPos
-import com.github.anastaciocintra.output.PrinterOutputStream
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -13,6 +12,7 @@ import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.CashDrawerPin
 import pos.ambrosia.models.PrinterConfig
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.UUID
 
@@ -28,31 +28,34 @@ fun interface CashDrawerPulseSender {
     )
 }
 
-object EscPosCashDrawerPulseSender : CashDrawerPulseSender {
-    private const val PULSE_ON_TIME = 25
-    private const val PULSE_OFF_TIME = 250
+class EscPosCashDrawerPulseSender(
+    private val printerJobSender: PrinterJobSender = SystemPrinterJobSender(),
+) : CashDrawerPulseSender {
+    private companion object {
+        const val PULSE_ON_TIME = 25
+        const val PULSE_OFF_TIME = 250
+    }
 
     override fun sendPulse(
         printerName: String,
         cashDrawerPin: CashDrawerPin,
     ) {
-        val printService =
-            PrinterOutputStream.getPrintServiceByName(printerName)
-                ?: throw IOException("Printer '$printerName' not found on this system.")
-        val escpos = EscPos(PrinterOutputStream(printService))
+        val pulseByteStream = ByteArrayOutputStream()
+        val cashDrawerCommandWriter = EscPos(pulseByteStream)
         val pinConnector =
             when (cashDrawerPin) {
                 CashDrawerPin.PIN_2 -> EscPos.PinConnector.Pin_2
                 CashDrawerPin.PIN_5 -> EscPos.PinConnector.Pin_5
             }
-        escpos.pulsePin(pinConnector, PULSE_ON_TIME, PULSE_OFF_TIME)
-        escpos.close()
+        cashDrawerCommandWriter.pulsePin(pinConnector, PULSE_ON_TIME, PULSE_OFF_TIME)
+        cashDrawerCommandWriter.close()
+        printerJobSender.sendRawJob(printerName, "Ambrosia cash drawer", pulseByteStream.toByteArray())
     }
 }
 
 open class CashDrawerService(
     private val printerConfigService: PrinterConfigService = PrinterConfigService(),
-    private val pulseSender: CashDrawerPulseSender = EscPosCashDrawerPulseSender,
+    private val pulseSender: CashDrawerPulseSender = EscPosCashDrawerPulseSender(),
 ) {
     fun openForPaymentMethod(paymentMethodId: String) {
         openCashDrawers { printerConfig -> paymentMethodId in printerConfig.cashDrawerPaymentMethodIds }

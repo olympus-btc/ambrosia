@@ -62,6 +62,7 @@ class ReportService {
                    MAX(p.exchange_rate_at_payment) AS exchange_rate_at_payment,
                    MAX(p.exchange_rate_currency) AS exchange_rate_currency,
                    MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment,
+                   MAX(p.lightning_fee_sat) AS lightning_fee_sat,
                    MAX(p.payment_hash) AS payment_hash,
                    MAX(NULLIF(p.transaction_id, '')) AS transaction_id,
                    MAX(rf.id) AS refund_id,
@@ -149,6 +150,7 @@ class ReportService {
             exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
             exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
             fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
+            lightningFeeSat = (resultSet.getObject("lightning_fee_sat") as? Number)?.toLong(),
             paymentHash = resultSet.getString("payment_hash"),
             transactionId = resultSet.getString("transaction_id"),
             items = parseOrderItems(resultSet.getString("items")),
@@ -308,6 +310,7 @@ class ReportService {
                             exchangeRateAtPayment = row[PaymentsTable.exchangeRateAtPayment],
                             exchangeRateCurrency = row[PaymentsTable.exchangeRateCurrency],
                             fiatAmountAtPayment = row[PaymentsTable.fiatAmountAtPayment],
+                            lightningFeeSat = row[PaymentsTable.lightningFeeSat],
                             paymentId = row[PaymentsTable.id].value.toString(),
                             discountAmount = row[OrdersTable.discountAmount],
                             refunded = row[OrdersTable.status] == "refunded",
@@ -323,6 +326,12 @@ class ReportService {
                     .distinctBy { it.paymentId }
                     .sumOf { it.satoshiAmount!! }
 
+            val totalLightningFeeSat =
+                productSaleItems
+                    .filter { it.lightningFeeSat != null && it.paymentId != null }
+                    .distinctBy { it.paymentId }
+                    .sumOf { it.lightningFeeSat!! }
+
             val (totalRefundedCents, totalRefundedSatoshis, refundCount) =
                 getRefundTotals(dateRange, preciseDateRange, productName, userId, paymentMethod)
 
@@ -331,6 +340,7 @@ class ReportService {
                 totalItemsSold = productSaleItems.sumOf { it.quantity },
                 sales = productSaleItems,
                 totalBtcSatoshis = totalBtcSatoshis,
+                totalLightningFeeSat = totalLightningFeeSat,
                 totalRefundedCents = totalRefundedCents,
                 totalRefundedSatoshis = totalRefundedSatoshis,
                 refundCount = refundCount,
