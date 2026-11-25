@@ -6,11 +6,10 @@ import { useLogsViewer } from "./hooks/useLogsViewer";
 import { LogsFilters } from "./LogsFilters";
 import { LogsToolbar } from "./LogsToolbar";
 import { LogsViewer } from "./LogsViewer";
-import { ServerLogLevelSelect } from "./ServerLogLevelSelect";
 
 const DEFAULT_UNAVAILABLE_REASON = "log_file_not_found";
 
-export function LogsCardContent() {
+export function LogsViewerContent() {
   const logsTranslations = useTranslations("settings");
   const logsViewer = useLogsViewer();
   const unavailableReason = logsViewer.selectedLogSourceAvailability?.unavailableReason ?? DEFAULT_UNAVAILABLE_REASON;
@@ -32,6 +31,8 @@ export function LogsCardContent() {
         liveLogStreamConnected={logsViewer.liveLogStreamConnected}
         isLiveStreamToggleDisabled={!logsViewer.isSelectedLogSourceAvailable}
         onClearVisibleLogEntries={logsViewer.clearVisibleLogEntries}
+        selectedLogSource={logsViewer.selectedLogSource}
+        visibleLogEntries={logsViewer.visibleLogEntries}
       />
 
       {logsViewer.isSelectedLogSourceAvailable ? (
@@ -41,8 +42,6 @@ export function LogsCardContent() {
           {logsTranslations(`cardLogs.unavailableReasons.${unavailableReason}`)}
         </p>
       )}
-
-      <ServerLogLevelSelect />
     </>
   );
 }
