@@ -41,12 +41,19 @@ resolve_commit_sha() {
 }
 
 resolve_version() {
-  if git -C "$REPO_ROOT" describe --tags --always --dirty >/dev/null 2>&1; then
-    git -C "$REPO_ROOT" describe --tags --always --dirty | sed 's/^v//'
-    return
-  fi
+  local package_version
+  package_version=$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_ROOT/client/package.json" | head -n 1)
 
-  sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_ROOT/client/package.json" | head -n 1
+  local short_commit_sha
+  short_commit_sha=$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null) || {
+    printf '%s' "$package_version"
+    return
+  }
+
+  local dirty_suffix=""
+  git -C "$REPO_ROOT" diff --quiet HEAD -- 2>/dev/null || dirty_suffix="-dirty"
+
+  printf '%s-g%s%s' "$package_version" "$short_commit_sha" "$dirty_suffix"
 }
 
 resolve_build_timestamp() {
