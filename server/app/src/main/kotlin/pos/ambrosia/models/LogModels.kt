@@ -71,8 +71,11 @@ data class LogSourcesResponse(
 )
 
 @Serializable
-data class LogLevelSetting(
+data class LogSettings(
     val level: String,
+    val retentionDays: Int,
+    val maximumTotalSizeMegabytes: Int,
+    val clientErrorReportingEnabled: Boolean,
 )
 
 @Serializable

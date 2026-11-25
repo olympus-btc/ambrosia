@@ -11,10 +11,14 @@ object ClientLogReportService {
     private val acceptedClientLevels = setOf(LogLevels.ERROR, LogLevels.WARN, LogLevels.INFO)
     private val clientLogger = LoggerFactory.getLogger(LoggerNames.CLIENT)
 
+    @Volatile
+    var clientErrorReportingEnabled: Boolean = true
+
     fun record(
         report: ClientLogReport,
         reportingUserId: String?,
     ) {
+        if (!clientErrorReportingEnabled) return
         val clientLevel =
             LogLevels.normalizeOrNull(report.level)?.takeIf { normalizedLevel -> normalizedLevel in acceptedClientLevels }
                 ?: LogLevels.ERROR

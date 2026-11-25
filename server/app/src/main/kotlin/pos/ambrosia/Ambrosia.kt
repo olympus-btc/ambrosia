@@ -42,6 +42,8 @@ import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.logging.LogLevels
 import pos.ambrosia.logging.LoggingConfiguration
 import pos.ambrosia.services.BackupService
+import pos.ambrosia.services.ClientLogReportService
+import pos.ambrosia.services.LogSettingsService
 import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.VapidKeyService
@@ -67,7 +69,9 @@ var runningEmbeddedServer: EmbeddedServer<*, *>? = null
     private set
 
 fun main(commandLineArguments: Array<String>) {
-    LoggingConfiguration.install(datadir.toString())
+    val logSettingsService = LogSettingsService()
+    LoggingConfiguration.install(datadir.toString(), logSettingsService.readPersistedFileRetention())
+    ClientLogReportService.clientErrorReportingEnabled = logSettingsService.readPersistedClientErrorReportingEnabled()
     pendingDataImportWasApplied = BackupService().applyPendingImport()
     Ambrosia().main(commandLineArguments)
 }
@@ -303,10 +307,13 @@ class Ambrosia : CliktCommand() {
         LoggingConfiguration.applyLevel(daemonOptions.logLevel)
         logger.info("Starting Ambrosia POS Server v{}", appVersion)
         logger.info("Using data directory: $datadir")
+        val serverLogFileRetention = LoggingConfiguration.currentFileRetention()
         logger.info(
-            "Writing server logs to {} with level {}",
+            "Writing server logs to {} with level {}, keeping {} days up to {} MB",
             LoggingConfiguration.logsDirectory(datadir.toString()),
             daemonOptions.logLevel,
+            serverLogFileRetention.retentionDays,
+            serverLogFileRetention.maximumTotalSizeMegabytes,
         )
 
         DatabaseConnection.init()

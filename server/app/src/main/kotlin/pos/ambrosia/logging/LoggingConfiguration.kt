@@ -14,17 +14,14 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 object LoggingConfiguration {
-    const val LOG_LEVEL_CONFIG_KEY = "log-level"
     const val LOGS_DIRECTORY_NAME = "logs"
     const val SERVER_LOG_FILE_NAME = "server.log"
     const val SERVER_LOG_FILE_PREFIX = "server"
     const val MAXIMUM_SINGLE_FILE_SIZE = "2MB"
-    const val MAXIMUM_TOTAL_SIZE = "20MB"
-    const val RETENTION_DAYS = 7
 
     private const val CONSOLE_APPENDER_NAME = "AMBROSIA_CONSOLE"
-    private const val FILE_APPENDER_NAME = "AMBROSIA_FILE"
-    private const val ASYNC_FILE_APPENDER_NAME = "AMBROSIA_FILE_ASYNC"
+    internal const val FILE_APPENDER_NAME = "AMBROSIA_FILE"
+    internal const val ASYNC_FILE_APPENDER_NAME = "AMBROSIA_FILE_ASYNC"
     private const val MEMORY_BUFFER_APPENDER_NAME = "AMBROSIA_MEMORY_BUFFER"
     private const val XML_CONSOLE_APPENDER_NAME = "STDOUT"
     private const val ASYNC_QUEUE_SIZE = 1024
@@ -43,9 +40,20 @@ object LoggingConfiguration {
             "ch.qos.logback" to Level.OFF,
         )
 
+    private val fileAppenderReplacementLock = Any()
+
+    @Volatile
+    private var serverLogsDirectory: File? = null
+
+    @Volatile
+    private var appliedFileRetention: LogFileRetention = LogFileRetention.DEFAULT
+
     fun logsDirectory(dataDirectory: String): File = File(dataDirectory, LOGS_DIRECTORY_NAME)
 
-    fun install(dataDirectory: String) {
+    fun install(
+        dataDirectory: String,
+        fileRetention: LogFileRetention = LogFileRetention.DEFAULT,
+    ) {
         val loggerContext = LoggerFactory.getILoggerFactory() as? LoggerContext ?: return
         val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
         if (rootLogger.getAppender(MEMORY_BUFFER_APPENDER_NAME) != null) return
@@ -56,13 +64,11 @@ object LoggingConfiguration {
         rootLogger.addAppender(createConsoleAppender(loggerContext))
         rootLogger.addAppender(createMemoryBufferAppender(loggerContext))
 
+        appliedFileRetention = fileRetention
         val logsDirectory = logsDirectory(dataDirectory)
         if (logsDirectory.mkdirs() || logsDirectory.isDirectory) {
-            runCatching { createAsyncFileAppender(loggerContext, logsDirectory) }
-                .onSuccess { asyncFileAppender -> rootLogger.addAppender(asyncFileAppender) }
-                .onFailure { fileAppenderError ->
-                    System.err.println("Unable to write log files to ${logsDirectory.absolutePath}: ${fileAppenderError.message}")
-                }
+            serverLogsDirectory = logsDirectory
+            replaceFileAppender(loggerContext, rootLogger, logsDirectory, fileRetention)
         } else {
             System.err.println("Unable to create logs directory ${logsDirectory.absolutePath}")
         }
@@ -75,6 +81,37 @@ object LoggingConfiguration {
         val loggerContext = LoggerFactory.getILoggerFactory() as? LoggerContext ?: return
         val normalizedLevelName = LogLevels.normalizeOrNull(levelName) ?: LogLevels.DEFAULT_SERVER_LEVEL
         loggerContext.getLogger(Logger.ROOT_LOGGER_NAME).level = Level.toLevel(normalizedLevelName)
+    }
+
+    fun applyFileRetention(fileRetention: LogFileRetention) {
+        val loggerContext = LoggerFactory.getILoggerFactory() as? LoggerContext ?: return
+        synchronized(fileAppenderReplacementLock) {
+            if (fileRetention == appliedFileRetention) return
+            appliedFileRetention = fileRetention
+            val logsDirectory = serverLogsDirectory ?: return
+            replaceFileAppender(loggerContext, loggerContext.getLogger(Logger.ROOT_LOGGER_NAME), logsDirectory, fileRetention)
+        }
+    }
+
+    fun currentFileRetention(): LogFileRetention = appliedFileRetention
+
+    internal fun replaceFileAppender(
+        loggerContext: LoggerContext,
+        rootLogger: Logger,
+        logsDirectory: File,
+        fileRetention: LogFileRetention,
+    ) {
+        (rootLogger.getAppender(ASYNC_FILE_APPENDER_NAME) as? AsyncAppender)?.let { previousAsyncFileAppender ->
+            val previousRollingFileAppender = previousAsyncFileAppender.getAppender(FILE_APPENDER_NAME)
+            rootLogger.detachAppender(previousAsyncFileAppender)
+            previousAsyncFileAppender.stop()
+            previousRollingFileAppender?.stop()
+        }
+        runCatching { createAsyncFileAppender(loggerContext, logsDirectory, fileRetention) }
+            .onSuccess { asyncFileAppender -> rootLogger.addAppender(asyncFileAppender) }
+            .onFailure { fileAppenderError ->
+                System.err.println("Unable to write log files to ${logsDirectory.absolutePath}: ${fileAppenderError.message}")
+            }
     }
 
     fun currentLevel(): String {
@@ -117,6 +154,7 @@ object LoggingConfiguration {
     private fun createAsyncFileAppender(
         loggerContext: LoggerContext,
         logsDirectory: File,
+        fileRetention: LogFileRetention,
     ): AsyncAppender {
         val rollingFileAppender =
             RollingFileAppender<ILoggingEvent>().apply {
@@ -131,8 +169,8 @@ object LoggingConfiguration {
                 setParent(rollingFileAppender)
                 fileNamePattern = File(logsDirectory, "$SERVER_LOG_FILE_PREFIX.%d{yyyy-MM-dd}.%i.log").absolutePath
                 setMaxFileSize(FileSize.valueOf(MAXIMUM_SINGLE_FILE_SIZE))
-                maxHistory = RETENTION_DAYS
-                setTotalSizeCap(FileSize.valueOf(MAXIMUM_TOTAL_SIZE))
+                maxHistory = fileRetention.retentionDays
+                setTotalSizeCap(FileSize.valueOf("${fileRetention.maximumTotalSizeMegabytes}MB"))
                 isCleanHistoryOnStart = true
                 start()
             }
