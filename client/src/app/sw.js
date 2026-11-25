@@ -17,12 +17,14 @@ import {
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import {
   deleteObsoleteRuntimeCaches,
+  isOfflineFallbackDocumentRequest,
   isPageDataRequest,
   isPageNavigationRequest,
   isSameOriginApiRequest,
+  isSameOriginTrustRequest,
   OFFLINE_FALLBACK_ROUTE,
 } from "@/lib/serviceWorkerNetworkOnlyRoutes";
-import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
+import { fetchTrustRequest } from "@/lib/trustCache";
 
 const ASSET_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
@@ -35,15 +37,13 @@ const serwist = new Serwist({
     entries: [
       {
         url: OFFLINE_FALLBACK_ROUTE,
-        matcher({ request }) {
-          return request.destination === "document" && !isTrustPath(new URL(request.url).pathname);
-        },
+        matcher: isOfflineFallbackDocumentRequest,
       },
     ],
   },
   runtimeCaching: [
     {
-      matcher: ({ url }) => url.origin === self.location.origin && isTrustPath(url.pathname),
+      matcher: isSameOriginTrustRequest,
       handler: fetchTrustRequest,
     },
     {

@@ -1,9 +1,19 @@
+import { isTrustPath } from "@/lib/trustCache";
+
 export const OFFLINE_FALLBACK_ROUTE = "/offline";
 
 export const OBSOLETE_RUNTIME_CACHE_NAMES = ["apis", "api-cache", "pages", "pages-rsc", "pages-rsc-prefetch", "others"];
 
 export function isApiPath(requestPath) {
   return requestPath === "/api" || requestPath.startsWith("/api/");
+}
+
+export function isSameOriginTrustRequest({ sameOrigin: isSameOriginRequest, url: interceptedRequestUrl }) {
+  return isSameOriginRequest && isTrustPath(interceptedRequestUrl.pathname);
+}
+
+export function isOfflineFallbackDocumentRequest({ request: failedRequest }) {
+  return failedRequest.destination === "document" && !isTrustPath(new URL(failedRequest.url).pathname);
 }
 
 export function isSameOriginApiRequest({ sameOrigin: isSameOriginRequest, url: interceptedRequestUrl }) {
