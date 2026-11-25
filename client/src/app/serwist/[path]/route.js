@@ -1,6 +1,11 @@
+import { randomUUID } from "crypto";
+
 import { createSerwistRoute } from "@serwist/turbopack";
 
+const offlinePageRevision = randomUUID();
+
 const serwistRoute = createSerwistRoute({
+  additionalPrecacheEntries: [{ url: "/offline", revision: offlinePageRevision }],
   esbuildOptions: {
     target: "es2020",
   },
