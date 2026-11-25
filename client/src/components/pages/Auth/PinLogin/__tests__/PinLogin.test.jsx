@@ -163,6 +163,32 @@ describe("PinLogin", () => {
     expect(screen.getByText(specificMessage)).toBeInTheDocument();
   });
 
+  const buildLoginErrorWithStatus = (loginErrorStatus) => {
+    const loginErrorWithStatus = new Error("Login failed");
+    loginErrorWithStatus.status = loginErrorStatus;
+    return loginErrorWithStatus;
+  };
+
+  it.each([
+    ["the server rejects the PIN with 401", buildLoginErrorWithStatus(401), "errorMessages.incorrectPin"],
+    ["the device cannot reach the network", new TypeError("Failed to fetch"), "errorMessages.deviceConnectionFailed"],
+    ["the server responds with a 5xx error", buildLoginErrorWithStatus(500), "errorMessages.serverError"],
+    ["the server responds with an unexpected status", buildLoginErrorWithStatus(400), "errorMessages.unexpectedLoginError"],
+  ])("shows the matching error message when %s", async (_scenarioDescription, loginError, expectedErrorMessageKey) => {
+    mockLogin.mockRejectedValue(loginError);
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    "1234".split("").forEach((digit) => fireEvent.keyDown(window, { key: digit }));
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText(expectedErrorMessageKey)).toBeInTheDocument();
+  });
+
   it("shows the PIN deprecation modal after a successful login with a 4-digit PIN", async () => {
     mockLogin.mockResolvedValue({});
 
