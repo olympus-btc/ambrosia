@@ -6,12 +6,22 @@ export function isApiPath(requestPath) {
   return requestPath === "/api" || requestPath.startsWith("/api/");
 }
 
-export function isPageNavigationRequest({ request, sameOrigin }) {
-  return sameOrigin && request.mode === "navigate";
+export function isSameOriginApiRequest({ sameOrigin: isSameOriginRequest, url: interceptedRequestUrl }) {
+  return isSameOriginRequest && isApiPath(interceptedRequestUrl.pathname);
 }
 
-export function isPageDataRequest({ request, sameOrigin, url }) {
-  return sameOrigin && request.headers.get("RSC") === "1" && !isApiPath(url.pathname);
+export function isPageNavigationRequest({ request: interceptedRequest, sameOrigin: isSameOriginRequest }) {
+  return isSameOriginRequest && interceptedRequest.mode === "navigate";
+}
+
+export function isPageDataRequest({
+  request: interceptedRequest,
+  sameOrigin: isSameOriginRequest,
+  url: interceptedRequestUrl,
+}) {
+  return isSameOriginRequest
+    && interceptedRequest.headers.get("RSC") === "1"
+    && !isApiPath(interceptedRequestUrl.pathname);
 }
 
 export async function deleteObsoleteRuntimeCaches() {

@@ -17,9 +17,9 @@ import {
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import {
   deleteObsoleteRuntimeCaches,
-  isApiPath,
   isPageDataRequest,
   isPageNavigationRequest,
+  isSameOriginApiRequest,
   OFFLINE_FALLBACK_ROUTE,
 } from "@/lib/serviceWorkerNetworkOnlyRoutes";
 import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
@@ -47,7 +47,7 @@ const serwist = new Serwist({
       handler: fetchTrustRequest,
     },
     {
-      matcher: ({ url, sameOrigin }) => sameOrigin && isApiPath(url.pathname),
+      matcher: isSameOriginApiRequest,
       handler: new NetworkOnly(),
     },
     {
