@@ -44,18 +44,31 @@ describe("Step 1 Business Type Selection", () => {
     expect(screen.getByText("step1.subtitle")).toBeInTheDocument();
   });
 
-  it("renders all business type options", () => {
+  it("renders the store and freelance business type options", () => {
     renderBusinessTypeStep();
     expect(screen.getAllByText("step1.businessType.store").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("step1.businessType.restaurant").length).toBeGreaterThan(0);
     expect(screen.getAllByText("step1.businessType.freelance").length).toBeGreaterThan(0);
   });
 
-  it("renders the descriptions for all options", () => {
+  it("renders the descriptions for the store and freelance options", () => {
     renderBusinessTypeStep();
     expect(screen.getAllByText("step1.descriptions.store").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("step1.descriptions.restaurant").length).toBeGreaterThan(0);
     expect(screen.getAllByText("step1.descriptions.freelance").length).toBeGreaterThan(0);
+  });
+
+  it("hides the restaurant business type option", () => {
+    renderBusinessTypeStep();
+    expect(screen.queryByLabelText("restaurant")).not.toBeInTheDocument();
+    expect(screen.queryByText("step1.businessType.restaurant")).not.toBeInTheDocument();
+    expect(screen.queryByText("step1.descriptions.restaurant")).not.toBeInTheDocument();
+  });
+
+  it("renders only the store and freelance cards in that order", () => {
+    renderBusinessTypeStep();
+    const businessTypeCards = screen.getAllByRole("button");
+    expect(businessTypeCards).toHaveLength(2);
+    expect(businessTypeCards[0]).toHaveAttribute("aria-label", "store");
+    expect(businessTypeCards[1]).toHaveAttribute("aria-label", "freelance");
   });
 
   it("calls onChange with 'store' when store card is clicked", () => {
@@ -65,9 +78,9 @@ describe("Step 1 Business Type Selection", () => {
     expect(mockChange).toHaveBeenCalledWith("store");
   });
 
-  it("keeps the restaurant card disabled and enables the freelancer card", () => {
+  it("keeps the store and freelancer cards enabled", () => {
     renderBusinessTypeStep();
-    expect(screen.getByLabelText("restaurant")).toHaveAttribute("data-disabled", "true");
+    expect(screen.getByLabelText("store")).not.toHaveAttribute("data-disabled", "true");
     expect(screen.getByLabelText("freelance")).not.toHaveAttribute("data-disabled", "true");
   });
 
@@ -109,6 +122,13 @@ describe("Step 1 Business Type Selection", () => {
     renderBusinessTypeStep();
     const storeCard = screen.getByLabelText("store");
     const icon = storeCard.querySelector("svg");
+    expect(icon).toBeInTheDocument();
+  });
+
+  it("renders Freelance icon", () => {
+    renderBusinessTypeStep();
+    const freelanceCard = screen.getByLabelText("freelance");
+    const icon = freelanceCard.querySelector("svg");
     expect(icon).toBeInTheDocument();
   });
 });
