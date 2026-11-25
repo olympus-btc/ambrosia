@@ -82,3 +82,42 @@ describe("proxy onboarding gating when initial-setup cannot be confirmed", () =>
     expect(passThroughResponse.redirectedTo).toBeUndefined();
   });
 });
+
+describe("proxy offline fallback page", () => {
+  function requestWithoutSessionTo(pathname) {
+    return {
+      url: `http://localhost:3000${pathname}`,
+      headers: new Headers(),
+      cookies: { get: () => undefined },
+    };
+  }
+
+  it("serves /offline without a session so the service worker never precaches the login page in its place", async () => {
+    mockBackend("store");
+
+    const passThroughResponse = await proxy(requestWithoutSessionTo("/offline"));
+
+    expect(passThroughResponse.redirectedTo).toBeUndefined();
+    expect(passThroughResponse.headers.get("Content-Security-Policy")).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("serves /offline even when the unit has not finished onboarding", async () => {
+    global.fetch = jest.fn(() => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ initialized: false, needsBusinessType: true }),
+    }));
+
+    const passThroughResponse = await proxy(requestWithoutSessionTo("/offline"));
+
+    expect(passThroughResponse.redirectedTo).toBeUndefined();
+  });
+
+  it("still redirects other pages to /auth without a session", async () => {
+    mockBackend("store");
+
+    const redirectResponse = await proxy(requestWithoutSessionTo("/offline-orders"));
+
+    expect(redirectResponse.redirectedTo).toBe("/auth");
+  });
+});

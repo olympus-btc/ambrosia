@@ -4,7 +4,12 @@ import {
   isPageDataRequest,
   isPageNavigationRequest,
   OBSOLETE_RUNTIME_CACHE_NAMES,
+  OFFLINE_FALLBACK_ROUTE,
 } from "../serviceWorkerNetworkOnlyRoutes";
+
+it("points the offline fallback to the offline page", () => {
+  expect(OFFLINE_FALLBACK_ROUTE).toBe("/offline");
+});
 
 const buildServiceWorkerRequest = ({ mode = "cors", headers = {} } = {}) => ({
   mode,
