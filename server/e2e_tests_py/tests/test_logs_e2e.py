@@ -175,13 +175,13 @@ class TestLogSettings:
     async def test_admin_changes_and_persists_every_log_setting(
         self, admin_client, test_server
     ):
-        initial_settings_response = await admin_client.get("/logs/settings")
-        assert initial_settings_response.status_code == 200
-        initial_log_settings = initial_settings_response.json()
+        initial_log_settings_response = await admin_client.get("/logs/settings")
+        assert initial_log_settings_response.status_code == 200
+        initial_log_settings = initial_log_settings_response.json()
         assert set(initial_log_settings) == set(DEFAULT_LOG_SETTINGS)
 
         try:
-            update_response = await admin_client.put(
+            log_settings_update_response = await admin_client.put(
                 "/logs/settings",
                 json={
                     "level": "debug",
@@ -197,8 +197,8 @@ class TestLogSettings:
                 "maximumTotalSizeMegabytes": 50,
                 "clientErrorReportingEnabled": False,
             }
-            assert update_response.status_code == 200
-            assert update_response.json() == expected_log_settings
+            assert log_settings_update_response.status_code == 200
+            assert log_settings_update_response.json() == expected_log_settings
             assert (
                 await admin_client.get("/logs/settings")
             ).json() == expected_log_settings
@@ -250,11 +250,11 @@ class TestLogSettings:
                 "/logs/settings",
                 json={**initial_log_settings, "clientErrorReportingEnabled": False},
             )
-            report_response = await reporting_client.post(
+            ignored_client_report_response = await reporting_client.post(
                 "/logs/client", json={"errorMessage": unique_marker}
             )
 
-            assert report_response.status_code == 204
+            assert ignored_client_report_response.status_code == 204
             ignored_client_entries = (
                 await admin_client.get(
                     "/logs", params={"source": "client", "search": unique_marker}
@@ -276,23 +276,25 @@ class TestLogSettings:
     async def test_unsupported_log_settings_are_rejected(
         self, admin_client, unsupported_setting
     ):
-        update_response = await admin_client.put(
+        unsupported_log_settings_update_response = await admin_client.put(
             "/logs/settings", json={**DEFAULT_LOG_SETTINGS, **unsupported_setting}
         )
 
-        assert update_response.status_code == 400
+        assert unsupported_log_settings_update_response.status_code == 400
 
     @pytest.mark.asyncio
     async def test_non_admin_cannot_read_or_change_log_settings(self, client_factory):
         non_admin_client = await client_factory(BASELINE_PERMISSIONS)
 
-        read_response = await non_admin_client.get("/logs/settings")
-        update_response = await non_admin_client.put(
+        non_admin_log_settings_read_response = await non_admin_client.get(
+            "/logs/settings"
+        )
+        non_admin_log_settings_update_response = await non_admin_client.put(
             "/logs/settings", json=DEFAULT_LOG_SETTINGS
         )
 
-        assert read_response.status_code == 403
-        assert update_response.status_code == 403
+        assert non_admin_log_settings_read_response.status_code == 403
+        assert non_admin_log_settings_update_response.status_code == 403
 
 
 class TestLogsDownload:
