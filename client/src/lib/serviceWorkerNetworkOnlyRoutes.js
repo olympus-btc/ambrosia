@@ -1,3 +1,5 @@
+export const OFFLINE_FALLBACK_ROUTE = "/offline";
+
 export const OBSOLETE_RUNTIME_CACHE_NAMES = ["apis", "api-cache", "pages", "pages-rsc", "pages-rsc-prefetch", "others"];
 
 export function isApiPath(requestPath) {

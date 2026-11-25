@@ -20,6 +20,7 @@ import {
   isApiPath,
   isPageDataRequest,
   isPageNavigationRequest,
+  OFFLINE_FALLBACK_ROUTE,
 } from "@/lib/serviceWorkerNetworkOnlyRoutes";
 import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
 
@@ -33,7 +34,7 @@ const serwist = new Serwist({
   fallbacks: {
     entries: [
       {
-        url: "/offline",
+        url: OFFLINE_FALLBACK_ROUTE,
         matcher({ request }) {
           return request.destination === "document" && !isTrustPath(new URL(request.url).pathname);
         },
