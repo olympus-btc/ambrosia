@@ -1,5 +1,5 @@
 import { defaultCache } from "@serwist/turbopack/worker";
-import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
+import { CacheFirst, ExpirationPlugin, NetworkOnly, Serwist } from "serwist";
 
 import {
   ADMIN_ACTIVITY_NOTIFICATION_BADGE,
@@ -15,11 +15,15 @@ import {
   markCheckoutCompleted,
 } from "@/lib/btcCheckoutStore";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import {
+  deleteObsoleteRuntimeCaches,
+  isApiPath,
+  isPageDataRequest,
+  isPageNavigationRequest,
+} from "@/lib/serviceWorkerNetworkOnlyRoutes";
 import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
 
 const ASSET_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-const API_CACHE_MAX_AGE_SECONDS = 5 * 60;
-const NETWORK_TIMEOUT_SECONDS = 5;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -42,6 +46,18 @@ const serwist = new Serwist({
       handler: fetchTrustRequest,
     },
     {
+      matcher: ({ url, sameOrigin }) => sameOrigin && isApiPath(url.pathname),
+      handler: new NetworkOnly(),
+    },
+    {
+      matcher: isPageNavigationRequest,
+      handler: new NetworkOnly(),
+    },
+    {
+      matcher: isPageDataRequest,
+      handler: new NetworkOnly(),
+    },
+    {
       matcher: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff2?)$/,
       handler: new CacheFirst({
         cacheName: "static-assets",
@@ -49,19 +65,6 @@ const serwist = new Serwist({
           new ExpirationPlugin({
             maxEntries: 64,
             maxAgeSeconds: ASSET_CACHE_MAX_AGE_SECONDS,
-          }),
-        ],
-      }),
-    },
-    {
-      matcher: /^\/api\//,
-      handler: new NetworkFirst({
-        cacheName: "api-cache",
-        networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
-        plugins: [
-          new ExpirationPlugin({
-            maxEntries: 32,
-            maxAgeSeconds: API_CACHE_MAX_AGE_SECONDS,
           }),
         ],
       }),
@@ -176,10 +179,6 @@ async function recoverPendingCheckouts() {
   }
 }
 
-self.addEventListener("install", (event) => {
-  const requestPromises = Promise.all(
-    ["/"].map((entry) => serwist.handleRequest({ request: new Request(entry), event }),
-    ),
-  );
-  event.waitUntil(requestPromises);
+self.addEventListener("activate", (event) => {
+  event.waitUntil(deleteObsoleteRuntimeCaches());
 });
