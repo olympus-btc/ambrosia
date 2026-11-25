@@ -3,6 +3,7 @@ import {
   isApiPath,
   isPageDataRequest,
   isPageNavigationRequest,
+  isSameOriginApiRequest,
   OBSOLETE_RUNTIME_CACHE_NAMES,
   OFFLINE_FALLBACK_ROUTE,
 } from "../serviceWorkerNetworkOnlyRoutes";
@@ -27,6 +28,20 @@ describe("isApiPath", () => {
     expect(isApiPath("/apiary")).toBe(false);
     expect(isApiPath("/store/api")).toBe(false);
     expect(isApiPath("/auth")).toBe(false);
+  });
+});
+
+describe("isSameOriginApiRequest", () => {
+  it("matches same-origin api requests", () => {
+    const apiRequestUrl = new URL("https://unit.local/api/users/me");
+    expect(isSameOriginApiRequest({ sameOrigin: true, url: apiRequestUrl })).toBe(true);
+  });
+
+  it("does not match cross-origin api requests or same-origin pages", () => {
+    const crossOriginApiRequestUrl = new URL("https://api.coingecko.com/api/v3/simple/price");
+    const pageRequestUrl = new URL("https://unit.local/store");
+    expect(isSameOriginApiRequest({ sameOrigin: false, url: crossOriginApiRequestUrl })).toBe(false);
+    expect(isSameOriginApiRequest({ sameOrigin: true, url: pageRequestUrl })).toBe(false);
   });
 });
 
