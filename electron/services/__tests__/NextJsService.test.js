@@ -217,7 +217,7 @@ describe('cleanup', () => {
   it('resets process, status, and closes the log stream', async () => {
     const nextJsService = new NextJsService();
     await nextJsService.start(3000);
-    const logStreamEndSpy = nextJsService.logStream.end;
+    const logStreamEndSpy = nextJsService.processLogWriter.logFileStream.end;
 
     nextJsService.cleanup();
 

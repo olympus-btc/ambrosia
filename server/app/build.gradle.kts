@@ -1,6 +1,6 @@
 import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 
-version = "0.10.0-beta"
+version = "0.11.0-beta"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -66,10 +66,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.ktor.server.test.host)
-}
-
-tasks.named<JavaExec>("run") {
-    jvmArgs("-Dlogback.configurationFile=Ambrosia-Logs.xml")
 }
 
 tasks.test {

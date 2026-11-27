@@ -61,213 +61,231 @@ private suspend fun ApplicationCall.respondWalletError(
 fun Application.handler() {
     install(StatusPages) {
         // --- Specific Exceptions First ---
-        exception<ResourceNotFoundException> { call, cause ->
-            logger.warn("Resource not found: ${cause.message}")
-            call.respond(HttpStatusCode.NotFound, Message(cause.message ?: "Resource not found"))
+        exception<ResourceNotFoundException> { applicationCall, thrownException ->
+            logger.warn("Resource not found: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.NotFound, Message(thrownException.message ?: "Resource not found"))
         }
-        exception<InvalidTimeEntryException> { call, cause ->
-            logger.warn("Invalid time entry: ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid time entry"))
+        exception<InvalidTimeEntryException> { applicationCall, thrownException ->
+            logger.warn("Invalid time entry: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.BadRequest, Message(thrownException.message ?: "Invalid time entry"))
         }
-        exception<TimeEntryLockedException> { call, cause ->
-            logger.warn("Locked time entry mutation rejected: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Time entry is locked"))
+        exception<TimeEntryLockedException> { applicationCall, thrownException ->
+            logger.warn("Locked time entry mutation rejected: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message(thrownException.message ?: "Time entry is locked"))
         }
-        exception<LightningBackendUnavailableException> { call, cause ->
-            logger.warn("Payout account rejected without a Lightning backend: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Lightning backend is not available"))
+        exception<LightningBackendUnavailableException> { applicationCall, thrownException ->
+            logger.warn("Payout account rejected without a Lightning backend: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message(thrownException.message ?: "Lightning backend is not available"))
         }
-        exception<PayloadTooLargeException> { call, cause ->
-            logger.warn("Rejected an oversized request body: ${cause.message}")
-            call.respond(HttpStatusCode.PayloadTooLarge, Message(cause.message ?: "Request body too large"))
+        exception<PayloadTooLargeException> { applicationCall, thrownException ->
+            logger.warn("Rejected an oversized request body: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.PayloadTooLarge, Message(thrownException.message ?: "Request body too large"))
         }
-        exception<UnsupportedUploadTypeException> { call, cause ->
-            logger.warn("Rejected upload with an unsupported type: ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Unsupported file type"))
+        exception<UnsupportedUploadTypeException> { applicationCall, thrownException ->
+            logger.warn("Rejected upload with an unsupported type: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.BadRequest, Message(thrownException.message ?: "Unsupported file type"))
         }
-        exception<RequestValidationException> { call, cause ->
-            logger.warn("Rejected request with an invalid field: ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid request"))
+        exception<RequestValidationException> { applicationCall, thrownException ->
+            logger.warn("Rejected request with an invalid field: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.BadRequest, Message(thrownException.message ?: "Invalid request"))
         }
-        exception<SecretsLockedException> { call, cause ->
-            logger.warn("Locked secrets access rejected: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Secrets are locked"))
+        exception<SecretsLockedException> { applicationCall, thrownException ->
+            logger.warn("Locked secrets access rejected: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message(thrownException.message ?: "Secrets are locked"))
         }
-        exception<MalformedSecretsEnvelopeException> { call, cause ->
-            logger.error("Malformed secrets envelope on decrypt: ${cause.message}")
-            call.respond(HttpStatusCode.InternalServerError, Message(cause.message ?: "Database operation failed"))
+        exception<MalformedSecretsEnvelopeException> { applicationCall, thrownException ->
+            logger.error("Malformed secrets envelope on decrypt: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.InternalServerError, Message(thrownException.message ?: "Database operation failed"))
         }
-        exception<InvalidCredentialsException> { call, cause ->
-            logger.warn("Invalid login attempt: ${cause.message}")
-            call.respond(HttpStatusCode.Unauthorized, Message(cause.message ?: "Invalid credentials"))
+        exception<InvalidCredentialsException> { applicationCall, thrownException ->
+            logger.warn("Invalid login attempt: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Unauthorized, Message(thrownException.message ?: "Invalid credentials"))
         }
-        exception<MissingRoleException> { call, cause ->
-            logger.warn("Login attempt with missing role: ${cause.message}")
-            call.respond(
+        exception<MissingRoleException> { applicationCall, thrownException ->
+            logger.warn("Login attempt with missing role: ${thrownException.message}")
+            applicationCall.respond(
                 HttpStatusCode.Unauthorized,
-                Message(cause.message ?: "No assigned role for this user, contact Admin"),
+                Message(thrownException.message ?: "No assigned role for this user, contact Admin"),
             )
         }
-        exception<InvalidTokenException> { call, cause ->
-            logger.warn("Invalid token: ${cause.message}")
-            call.respond(HttpStatusCode.Unauthorized, Message("Invalid token"))
+        exception<InvalidTokenException> { applicationCall, thrownException ->
+            logger.warn("Invalid token: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Unauthorized, Message("Invalid token"))
         }
-        exception<UnauthorizedApiException> { call, _ ->
+        exception<UnauthorizedApiException> { applicationCall, _ ->
             logger.warn("Unauthorized API access attempt")
-            call.respond(HttpStatusCode.Unauthorized, Message("Unauthorized API access"))
+            applicationCall.respond(HttpStatusCode.Unauthorized, Message("Unauthorized API access"))
         }
-        exception<DuplicateUserNameException> { call, cause ->
-            logger.warn("Duplicate user name: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("User name already exists"))
+        exception<DuplicateUserNameException> { applicationCall, thrownException ->
+            logger.warn("Duplicate user name: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message("User name already exists"))
         }
-        exception<LastUserDeletionException> { call, cause ->
-            logger.warn("Attempt to delete last user: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
+        exception<LastUserDeletionException> { applicationCall, thrownException ->
+            logger.warn("Attempt to delete last user: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message("Cannot delete the last user"))
         }
-        exception<LastAdminRemovalException> { call, cause ->
-            logger.warn("Attempt to remove last admin user: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("Cannot remove the last admin user"))
+        exception<LastAdminRemovalException> { applicationCall, thrownException ->
+            logger.warn("Attempt to remove last admin user: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message("Cannot remove the last admin user"))
         }
-        exception<PendingImportAlreadyStagedException> { call, cause ->
-            logger.warn("Rejected a new import while a previous one is still pending: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message("A previous import is already staged and waiting for a server restart"))
+        exception<PendingImportAlreadyStagedException> { applicationCall, thrownException ->
+            logger.warn("Rejected a new import while a previous one is still pending: ${thrownException.message}")
+            applicationCall.respond(
+                HttpStatusCode.Conflict,
+                Message("A previous import is already staged and waiting for a server restart"),
+            )
         }
-        exception<AdminOnlyException> { call, _ ->
+        exception<AdminOnlyException> { applicationCall, _ ->
             logger.warn("Non-admin user attempted to access admin-only endpoint")
-            call.respond(HttpStatusCode.Forbidden, Message("Admin privileges required"))
+            applicationCall.respond(HttpStatusCode.Forbidden, Message("Admin privileges required"))
         }
-        exception<PermissionDeniedException> { call, _ ->
+        exception<PermissionDeniedException> { applicationCall, _ ->
             logger.warn("User attempted to access endpoint without required permission")
-            call.respond(HttpStatusCode.Forbidden, Message("Permission required"))
+            applicationCall.respond(HttpStatusCode.Forbidden, Message("Permission required"))
         }
-        exception<InvalidCurrentUserPinException> { call, cause ->
-            logger.warn("Current user PIN verification failed: ${cause.message}")
-            call.respond(HttpStatusCode.Forbidden, Message(cause.message ?: "Invalid current user PIN"))
+        exception<InvalidCurrentUserPinException> { applicationCall, thrownException ->
+            logger.warn("Current user PIN verification failed: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Forbidden, Message(thrownException.message ?: "Invalid current user PIN"))
         }
-        exception<InitialSetupException> { call, cause ->
-            logger.error("Initial setup failed: ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Initial setup failed"))
+        exception<InitialSetupException> { applicationCall, thrownException ->
+            logger.error("Initial setup failed: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.BadRequest, Message(thrownException.message ?: "Initial setup failed"))
         }
-        exception<WalletOnlyException> { call, _ ->
+        exception<WalletOnlyException> { applicationCall, _ ->
             logger.warn("Wallet-only endpoint accessed without wallet token")
-            call.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
+            applicationCall.respond(HttpStatusCode.Forbidden, Message("Wallet access required"))
         }
-        exception<PrintTicketException> { call, cause ->
-            logger.error("Print ticket error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
+        exception<PrintTicketException> { applicationCall, thrownException ->
+            logger.error("Print ticket error: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.ServiceUnavailable, Message("Error processing print job"))
         }
-        exception<PhoenixConnectionException> { call, cause ->
-            logger.error("Phoenix Lightning node connection error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node is unavailable"))
+        exception<PhoenixConnectionException> { applicationCall, thrownException ->
+            logger.error("Phoenix Lightning node connection error: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node is unavailable"))
         }
-        exception<PhoenixNodeInfoException> { call, cause ->
-            logger.error("Phoenix node info error: ${cause.message}")
-            call.respond(
+        exception<PhoenixNodeInfoException> { applicationCall, thrownException ->
+            logger.error("Phoenix node info error: ${thrownException.message}")
+            applicationCall.respond(
                 HttpStatusCode.ServiceUnavailable,
                 Message("Unable to retrieve node information"),
             )
         }
-        exception<PhoenixBalanceException> { call, cause ->
-            logger.error("Phoenix balance error: ${cause.message}")
-            call.respond(
+        exception<PhoenixBalanceException> { applicationCall, thrownException ->
+            logger.error("Phoenix balance error: ${thrownException.message}")
+            applicationCall.respond(
                 HttpStatusCode.ServiceUnavailable,
                 Message("Unable to retrieve balance information"),
             )
         }
-        exception<PhoenixChannelNotAvailableException> { call, cause ->
-            logger.warn("Close channel rejected — channel not available: ${cause.message}")
-            call.respondWalletError(
+        exception<PhoenixChannelNotAvailableException> { applicationCall, thrownException ->
+            logger.warn("Close channel rejected — channel not available: ${thrownException.message}")
+            applicationCall.respondWalletError(
                 HttpStatusCode.UnprocessableEntity,
-                cause.message ?: "Channel is not in a closeable state",
-                cause.code,
-                cause.source,
+                thrownException.message ?: "Channel is not in a closeable state",
+                thrownException.code,
+                thrownException.source,
             )
         }
-        exception<PhoenixServiceException> { call, cause ->
-            logger.error("Phoenix service error [${cause.category}]: ${cause.message}")
-            val statusCode = cause.statusCode?.let(HttpStatusCode::fromValue) ?: HttpStatusCode.ServiceUnavailable
-            call.respondWalletError(
+        exception<PhoenixServiceException> { applicationCall, thrownException ->
+            logger.error("Phoenix service error [${thrownException.category}]: ${thrownException.message}")
+            val statusCode = thrownException.statusCode?.let(HttpStatusCode::fromValue) ?: HttpStatusCode.ServiceUnavailable
+            applicationCall.respondWalletError(
                 statusCode,
-                cause.message ?: "Lightning node service error",
-                cause.code,
-                cause.source,
-                cause.category,
+                thrownException.message ?: "Lightning node service error",
+                thrownException.code,
+                thrownException.source,
+                thrownException.category,
             )
         }
-        exception<NwcConnectionException> { call, cause ->
-            logger.error("NWC relay connection error: ${cause.message}")
-            call.respondWalletError(HttpStatusCode.ServiceUnavailable, "NWC wallet relay is unavailable", cause.code, cause.source)
+        exception<NwcConnectionException> { applicationCall, thrownException ->
+            logger.error("NWC relay connection error: ${thrownException.message}")
+            applicationCall.respondWalletError(
+                HttpStatusCode.ServiceUnavailable,
+                "NWC wallet relay is unavailable",
+                thrownException.code,
+                thrownException.source,
+            )
         }
-        exception<NwcServiceException> { call, cause ->
-            logger.error("NWC service error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet service error"))
+        exception<NwcServiceException> { applicationCall, thrownException ->
+            logger.error("NWC service error: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.ServiceUnavailable, Message("NWC wallet service error"))
         }
-        exception<UnsupportedBackendOperationException> { call, cause ->
-            logger.warn("Unsupported backend operation: ${cause.message}")
-            call.respondWalletError(
+        exception<UnsupportedBackendOperationException> { applicationCall, thrownException ->
+            logger.warn("Unsupported backend operation: ${thrownException.message}")
+            applicationCall.respondWalletError(
                 HttpStatusCode.NotImplemented,
-                cause.message ?: "Operation not supported by current Lightning backend",
-                cause.code,
-                cause.source,
+                thrownException.message ?: "Operation not supported by current Lightning backend",
+                thrownException.code,
+                thrownException.source,
             )
         }
-        exception<PaymentNotConfirmedException> { call, cause ->
-            logger.info("Payment not yet confirmed: ${cause.message}")
-            call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
+        exception<PaymentNotConfirmedException> { applicationCall, thrownException ->
+            logger.info("Payment not yet confirmed: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
         }
-        exception<ProductIsBundleComponentException> { call, cause ->
-            logger.warn("Attempt to delete product used as bundle component: ${cause.message}")
-            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Product is used as a bundle component"))
+        exception<ProductIsBundleComponentException> { applicationCall, thrownException ->
+            logger.warn("Attempt to delete product used as bundle component: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.Conflict, Message(thrownException.message ?: "Product is used as a bundle component"))
         }
-        exception<OrderAlreadyRefundedException> { call, cause ->
-            logger.warn("Refund attempt on already-refunded order: ${cause.message}")
-            call.respondWalletError(HttpStatusCode.Conflict, cause.message ?: "Order has already been refunded", cause.code, cause.source)
+        exception<OrderAlreadyRefundedException> { applicationCall, thrownException ->
+            logger.warn("Refund attempt on already-refunded order: ${thrownException.message}")
+            applicationCall.respondWalletError(
+                HttpStatusCode.Conflict,
+                thrownException.message ?: "Order has already been refunded",
+                thrownException.code,
+                thrownException.source,
+            )
         }
-        exception<OrderNotRefundableException> { call, cause ->
-            logger.warn("Refund rejected: ${cause.message}")
-            call.respondWalletError(HttpStatusCode.Conflict, cause.message ?: "Order cannot be refunded", cause.code, cause.source)
+        exception<OrderNotRefundableException> { applicationCall, thrownException ->
+            logger.warn("Refund rejected: ${thrownException.message}")
+            applicationCall.respondWalletError(
+                HttpStatusCode.Conflict,
+                thrownException.message ?: "Order cannot be refunded",
+                thrownException.code,
+                thrownException.source,
+            )
         }
-        exception<DatabaseException> { call, cause ->
-            logger.error("Database operation failed: ${cause.message}")
-            call.respond(HttpStatusCode.InternalServerError, Message(cause.message ?: "Database operation failed"))
+        exception<DatabaseException> { applicationCall, thrownException ->
+            logger.error("Database operation failed: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.InternalServerError, Message(thrownException.message ?: "Database operation failed"))
         }
 
         // --- Generic and SQL Exceptions Last ---
-        exception<ExposedSQLException> { call, cause ->
+        exception<ExposedSQLException> { applicationCall, thrownException ->
             when {
-                cause.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true -> {
-                    logger.warn("Duplicate product SKU: ${cause.message}")
-                    call.respond(HttpStatusCode.Conflict, Message("SKU already exists"))
+                thrownException.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true -> {
+                    logger.warn("Duplicate product SKU: ${thrownException.message}")
+                    applicationCall.respond(HttpStatusCode.Conflict, Message("SKU already exists"))
                 }
 
-                cause.message?.contains("UNIQUE constraint failed: product_variants.sku", ignoreCase = true) == true -> {
-                    logger.warn("Duplicate variant SKU: ${cause.message}")
-                    call.respond(HttpStatusCode.Conflict, Message("Variant SKU already exists"))
+                thrownException.message?.contains("UNIQUE constraint failed: product_variants.sku", ignoreCase = true) == true -> {
+                    logger.warn("Duplicate variant SKU: ${thrownException.message}")
+                    applicationCall.respond(HttpStatusCode.Conflict, Message("Variant SKU already exists"))
                 }
 
                 else -> {
-                    logger.error("Database operation failed: ${cause.message}", cause)
-                    call.respond(HttpStatusCode.InternalServerError, Message("Database operation failed"))
+                    logger.error("Database operation failed: ${thrownException.message}", thrownException)
+                    applicationCall.respond(HttpStatusCode.InternalServerError, Message("Database operation failed"))
                 }
             }
         }
-        exception<SQLException> { call, cause ->
-            logger.error("Database connection error: ${cause.message}", cause)
-            call.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
+        exception<SQLException> { applicationCall, thrownException ->
+            logger.error("Database connection error: ${thrownException.message}", thrownException)
+            applicationCall.respond(HttpStatusCode.InternalServerError, Message("Error connecting to the database"))
         }
-        exception<IllegalArgumentException> { call, cause ->
-            logger.warn("Rejected request with an invalid argument: ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, Message(cause.message ?: "Invalid request"))
+        exception<IllegalArgumentException> { applicationCall, thrownException ->
+            logger.warn("Rejected request with an invalid argument: ${thrownException.message}")
+            applicationCall.respond(HttpStatusCode.BadRequest, Message(thrownException.message ?: "Invalid request"))
         }
-        exception<Exception> { call, cause ->
-            logger.error("Unhandled exception: ${cause.message}")
-            call.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
+        exception<Exception> { applicationCall, thrownException ->
+            logger.error("Unhandled exception: ${thrownException.message}", thrownException)
+            applicationCall.respond(HttpStatusCode.InternalServerError, Message("Internal server error"))
         }
-        exception<Throwable> { call, cause ->
-            logger.error("Unhandled Throwable: ${cause.message}", cause)
-            call.respondText(
-                text = cause.message ?: "",
-                status = defaultExceptionStatusCode(cause) ?: HttpStatusCode.InternalServerError,
+        exception<Throwable> { applicationCall, thrownException ->
+            logger.error("Unhandled Throwable: ${thrownException.message}", thrownException)
+            applicationCall.respondText(
+                text = thrownException.message ?: "",
+                status = defaultExceptionStatusCode(thrownException) ?: HttpStatusCode.InternalServerError,
             )
         }
     }

@@ -18,6 +18,26 @@ import { PinPad } from "./PinPad";
 
 const PIN_MAX_LENGTH = 6;
 const PIN_MIN_LENGTH = 4;
+const INCORRECT_CREDENTIALS_STATUS = 401;
+const RATE_LIMITED_STATUS = 429;
+const FIRST_SERVER_ERROR_STATUS = 500;
+const MISSING_ROLE_ERROR_MESSAGE = "No assigned role for this user, contact Admin";
+
+function resolveLoginErrorMessage(loginError, pinLoginTranslations) {
+  if (loginError?.message === MISSING_ROLE_ERROR_MESSAGE) return loginError.message;
+
+  const loginErrorStatus = loginError?.status;
+  if (typeof loginErrorStatus !== "number") {
+    return pinLoginTranslations("errorMessages.deviceConnectionFailed");
+  }
+  if (loginErrorStatus === INCORRECT_CREDENTIALS_STATUS) {
+    return pinLoginTranslations("errorMessages.incorrectPin");
+  }
+  if (loginErrorStatus >= FIRST_SERVER_ERROR_STATUS) {
+    return pinLoginTranslations("errorMessages.serverError", { status: loginErrorStatus });
+  }
+  return pinLoginTranslations("errorMessages.unexpectedLoginError", { status: loginErrorStatus });
+}
 
 export default function PinLogin() {
   const pinLoginTranslations = useTranslations("pinLogin");
@@ -123,15 +143,13 @@ export default function PinLogin() {
       }
     } catch (loginError) {
       isPinDeprecationPendingRef.current = false;
-      if (loginError?.status === 429) {
+      if (loginError?.status === RATE_LIMITED_STATUS) {
         const lockoutUntilTimestamp = Date.now() + (loginError.retryAfter ?? 180) * 1000;
         setLockedUntil(lockoutUntilTimestamp);
         localStorage.setItem("pinLockoutUntil", lockoutUntilTimestamp.toString());
         setLoginErrorMessage("");
-      } else if (loginError?.message === "No assigned role for this user, contact Admin") {
-        setLoginErrorMessage(loginError.message);
       } else {
-        setLoginErrorMessage(pinLoginTranslations("errorMessages.incorrectPin"));
+        setLoginErrorMessage(resolveLoginErrorMessage(loginError, pinLoginTranslations));
       }
       setPin("");
     } finally {

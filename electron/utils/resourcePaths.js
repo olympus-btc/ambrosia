@@ -1,7 +1,8 @@
 import fs from 'fs';
 import { createRequire } from 'module';
-import os from 'os';
 import path from 'path';
+
+export { getDataDirectory, getElectronLogsDirectory, getLogsDirectory, getPhoenixDataDirectory } from './dataDirectories.js';
 
 const require = createRequire(import.meta.url);
 const { app } = require('electron');
@@ -86,18 +87,6 @@ export function getClientPath() {
 
   const clientPath = path.join(getBasePath(), 'client');
   return assertExists(clientPath, 'Next.js client');
-}
-
-export function getDataDirectory() {
-  return path.join(os.homedir(), '.Ambrosia-POS');
-}
-
-export function getPhoenixDataDirectory() {
-  return path.join(os.homedir(), '.phoenix');
-}
-
-export function getLogsDirectory() {
-  return path.join(getDataDirectory(), 'logs');
 }
 
 export function getNodePath() {

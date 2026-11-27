@@ -1,11 +1,11 @@
-import fs from 'fs';
 import { createRequire } from 'module';
-import path from 'path';
 
 import { STARTUP } from '../utils/constants.js';
 import { healthCheck } from '../utils/healthCheck.js';
 import { logger } from '../utils/logger.js';
-import { getJavaPath, getBackendJarPath, getLogsDirectory } from '../utils/resourcePaths.js';
+import { ProcessLogWriter } from '../utils/processLogFiles.js';
+import { pipeProcessOutputToLogs } from '../utils/processOutputLogging.js';
+import { getJavaPath, getBackendJarPath } from '../utils/resourcePaths.js';
 
 import { phoenixdCredentialsStore } from './PhoenixdCredentialsStore.js';
 import { serverSecretStore } from './ServerSecretStore.js';
@@ -26,83 +26,64 @@ export default class BackendService {
     this.process = null;
     this.status = 'stopped';
     this.port = null;
-    this.logStream = null;
+    this.processLogWriter = null;
   }
 
-  async start(port, startupConfig) {
+  async start(backendPort, startupConfig) {
     if (this.process) {
       throw new Error('Backend service is already running');
     }
 
-    this.port = port;
+    this.port = backendPort;
     this.status = 'starting';
 
     try {
       const javaPath = getJavaPath();
       const jarPath = getBackendJarPath();
-      const logsDirectory = getLogsDirectory();
 
-      if (!fs.existsSync(logsDirectory)) {
-        fs.mkdirSync(logsDirectory, { recursive: true });
-      }
-
-      const logFile = path.join(logsDirectory, `backend-${new Date().toISOString().split('T')[0]}.log`);
-      this.logStream = fs.createWriteStream(logFile, { flags: 'a' });
+      this.processLogWriter = new ProcessLogWriter('backend');
 
       const commandArguments = [
         '-jar',
         jarPath,
         `--http-bind-ip=127.0.0.1`,
-        `--http-bind-port=${port}`,
+        `--http-bind-port=${backendPort}`,
       ];
       if (!startupConfig.phoenixdRemoteConfigured) {
         commandArguments.push(`--phoenixd-url=http://localhost:${startupConfig.phoenixdPort}`);
       }
 
-      const env = { ...process.env };
-      stripConflictingJavaEnvVars(env);
-      env.PHOENIXD_WEBHOOK_SECRET = startupConfig.webhookSecret;
+      const backendProcessEnvironment = { ...process.env };
+      stripConflictingJavaEnvVars(backendProcessEnvironment);
+      backendProcessEnvironment.PHOENIXD_WEBHOOK_SECRET = startupConfig.webhookSecret;
+      backendProcessEnvironment.AMBROSIA_DEPLOYMENT = 'electron';
 
       const phoenixdHttpPassword = phoenixdCredentialsStore.readHttpPassword();
       if (phoenixdHttpPassword) {
-        env.PHOENIXD_PASSWORD = phoenixdHttpPassword;
+        backendProcessEnvironment.PHOENIXD_PASSWORD = phoenixdHttpPassword;
       }
 
       const serverSecret = serverSecretStore.read();
       if (serverSecret) {
-        env.AMBROSIA_SECRET = serverSecret;
+        backendProcessEnvironment.AMBROSIA_SECRET = serverSecret;
       }
 
       const unlockPassword = unlockPasswordStore.read();
       if (unlockPassword) {
-        env.AUTO_UNLOCK_PASSWORD = unlockPassword;
+        backendProcessEnvironment.AUTO_UNLOCK_PASSWORD = unlockPassword;
       }
 
-      logger.log(`[BackendService] Starting backend at port ${port}...`);
+      logger.log(`[BackendService] Starting backend at port ${backendPort}...`);
 
       const spawnedProcess = spawn(javaPath, commandArguments, {
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
-        env,
+        env: backendProcessEnvironment,
       });
 
       this.process = spawnedProcess;
 
-      spawnedProcess.stdout.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.log(`[Backend] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ${outputText}`);
-        }
-      });
-
-      spawnedProcess.stderr.on('data', (chunk) => {
-        const outputText = chunk.toString();
-        logger.error(`[Backend ERROR] ${outputText.trim()}`);
-        if (this.logStream) {
-          this.logStream.write(`[${new Date().toISOString()}] ERROR: ${outputText}`);
-        }
-      });
+      pipeProcessOutputToLogs({ spawnedProcess, processLogWriter: this.processLogWriter, consoleLabel: 'Backend' });
 
       spawnedProcess.on('error', (spawnError) => {
         logger.error('[BackendService] Failed to start:', spawnError);
@@ -112,8 +93,8 @@ export default class BackendService {
         }
       });
 
-      spawnedProcess.on('close', (code) => {
-        logger.log(`[BackendService] Process exited with code ${code}`);
+      spawnedProcess.on('close', (exitCode) => {
+        logger.log(`[BackendService] Process exited with code ${exitCode}`);
         if (this.process === spawnedProcess) {
           this.status = 'stopped';
           this.cleanup();
@@ -121,12 +102,12 @@ export default class BackendService {
       });
 
       logger.log('[BackendService] Waiting for backend to be healthy...');
-      await healthCheck.checkBackend(port);
+      await healthCheck.checkBackend(backendPort);
 
       this.status = 'running';
       logger.log('[BackendService] Backend is running and healthy');
 
-      return { port };
+      return { port: backendPort };
     } catch (startupError) {
       logger.error('[BackendService] Startup failed:', startupError);
       this.status = 'error';
@@ -185,9 +166,9 @@ export default class BackendService {
     }
     this.process = null;
     this.status = 'stopped';
-    if (this.logStream) {
-      this.logStream.end();
-      this.logStream = null;
+    if (this.processLogWriter) {
+      this.processLogWriter.end();
+      this.processLogWriter = null;
     }
   }
 

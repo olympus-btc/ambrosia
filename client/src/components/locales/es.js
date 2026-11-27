@@ -185,6 +185,12 @@ const componentsEs = {
     testSuccess: "Conexión exitosa con el nodo remoto",
     testError: "No se pudo conectar con el nodo remoto — revisa la URL y la contraseña",
   },
+  errorFallback: {
+    heading: "Algo salió mal",
+    description: "Ocurrió un error inesperado. El error quedó registrado para poder revisarlo.",
+    retryButton: "Intentar de nuevo",
+    goHome: "Volver al Inicio",
+  },
 };
 
 export default componentsEs;

@@ -1,5 +1,5 @@
 import { defaultCache } from "@serwist/turbopack/worker";
-import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
+import { CacheFirst, ExpirationPlugin, NetworkOnly, Serwist } from "serwist";
 
 import {
   ADMIN_ACTIVITY_NOTIFICATION_BADGE,
@@ -15,11 +15,18 @@ import {
   markCheckoutCompleted,
 } from "@/lib/btcCheckoutStore";
 import { httpClient, parseJsonResponse } from "@/lib/http";
-import { fetchTrustRequest, isTrustPath } from "@/lib/trustCache";
+import {
+  deleteObsoleteRuntimeCaches,
+  isOfflineFallbackDocumentRequest,
+  isPageDataRequest,
+  isPageNavigationRequest,
+  isSameOriginApiRequest,
+  isSameOriginTrustRequest,
+  OFFLINE_FALLBACK_ROUTE,
+} from "@/lib/serviceWorkerNetworkOnlyRoutes";
+import { fetchTrustRequest } from "@/lib/trustCache";
 
 const ASSET_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-const API_CACHE_MAX_AGE_SECONDS = 5 * 60;
-const NETWORK_TIMEOUT_SECONDS = 5;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -29,17 +36,27 @@ const serwist = new Serwist({
   fallbacks: {
     entries: [
       {
-        url: "/offline",
-        matcher({ request }) {
-          return request.destination === "document" && !isTrustPath(new URL(request.url).pathname);
-        },
+        url: OFFLINE_FALLBACK_ROUTE,
+        matcher: isOfflineFallbackDocumentRequest,
       },
     ],
   },
   runtimeCaching: [
     {
-      matcher: ({ url }) => url.origin === self.location.origin && isTrustPath(url.pathname),
+      matcher: isSameOriginTrustRequest,
       handler: fetchTrustRequest,
+    },
+    {
+      matcher: isSameOriginApiRequest,
+      handler: new NetworkOnly(),
+    },
+    {
+      matcher: isPageNavigationRequest,
+      handler: new NetworkOnly(),
+    },
+    {
+      matcher: isPageDataRequest,
+      handler: new NetworkOnly(),
     },
     {
       matcher: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff2?)$/,
@@ -53,60 +70,51 @@ const serwist = new Serwist({
         ],
       }),
     },
-    {
-      matcher: /^\/api\//,
-      handler: new NetworkFirst({
-        cacheName: "api-cache",
-        networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
-        plugins: [
-          new ExpirationPlugin({
-            maxEntries: 32,
-            maxAgeSeconds: API_CACHE_MAX_AGE_SECONDS,
-          }),
-        ],
-      }),
-    },
     ...defaultCache,
   ],
 });
 
 serwist.addEventListeners();
 
-function readPushPayload(event) {
+function readPushPayload(pushEvent) {
   try {
-    return event.data?.json?.() || {};
+    return pushEvent.data?.json?.() || {};
   } catch {
     return {};
   }
 }
 
-function resolveAdminPushNotificationCopy(event) {
-  const fallbackCopy = getAdminActivityNotificationCopy(self.navigator?.language);
-  const payload = readPushPayload(event);
+function resolveAdminPushNotificationCopy(pushEvent) {
+  const fallbackNotificationCopy = getAdminActivityNotificationCopy(self.navigator?.language);
+  const pushPayload = readPushPayload(pushEvent);
 
   return {
-    title: typeof payload.title === "string" && payload.title.trim() ? payload.title : fallbackCopy.title,
-    body: typeof payload.body === "string" && payload.body.trim() ? payload.body : fallbackCopy.body,
+    title: typeof pushPayload.title === "string" && pushPayload.title.trim()
+      ? pushPayload.title
+      : fallbackNotificationCopy.title,
+    body: typeof pushPayload.body === "string" && pushPayload.body.trim()
+      ? pushPayload.body
+      : fallbackNotificationCopy.body,
   };
 }
 
 function notifyOpenClientsOfAdminPush() {
-  return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-    clientList.forEach((client) => {
-      client.postMessage({ type: ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT });
+  return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((openWindowClients) => {
+    openWindowClients.forEach((openWindowClient) => {
+      openWindowClient.postMessage({ type: ADMIN_NOTIFICATIONS_REFRESH_UNREAD_COUNT_EVENT });
     });
   });
 }
 
-self.addEventListener("sync", (event) => {
-  if (event.tag === "btc-checkout") {
-    event.waitUntil(recoverPendingCheckouts());
+self.addEventListener("sync", (backgroundSyncEvent) => {
+  if (backgroundSyncEvent.tag === "btc-checkout") {
+    backgroundSyncEvent.waitUntil(recoverPendingCheckouts());
   }
 });
 
-self.addEventListener("push", (event) => {
-  const notificationCopy = resolveAdminPushNotificationCopy(event);
-  event.waitUntil(
+self.addEventListener("push", (pushEvent) => {
+  const notificationCopy = resolveAdminPushNotificationCopy(pushEvent);
+  pushEvent.waitUntil(
     Promise.all([
       self.registration.showNotification(notificationCopy.title, {
         body: notificationCopy.body,
@@ -123,51 +131,53 @@ self.addEventListener("push", (event) => {
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || ADMIN_NOTIFICATIONS_ROUTE;
+self.addEventListener("notificationclick", (notificationClickEvent) => {
+  notificationClickEvent.notification.close();
+  const notificationTargetUrl = notificationClickEvent.notification.data?.url || ADMIN_NOTIFICATIONS_ROUTE;
 
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      const existingClient = clientList.find((client) => client.url.includes(targetUrl));
-      if (existingClient) {
-        return existingClient.focus();
+  notificationClickEvent.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((openWindowClients) => {
+      const notificationTargetClient = openWindowClients.find(
+        (openWindowClient) => openWindowClient.url.includes(notificationTargetUrl),
+      );
+      if (notificationTargetClient) {
+        return notificationTargetClient.focus();
       }
-      return self.clients.openWindow(targetUrl);
+      return self.clients.openWindow(notificationTargetUrl);
     }),
   );
 });
 
 async function recoverPendingCheckouts() {
-  let pending;
+  let pendingCheckouts;
   try {
-    pending = await getPendingCheckouts();
+    pendingCheckouts = await getPendingCheckouts();
   } catch {
     return;
   }
 
-  for (const entry of pending) {
+  for (const pendingCheckout of pendingCheckouts) {
     try {
-      const statusResponse = await httpClient(
-        buildBtcCheckoutPaymentStatusEndpoint(entry.paymentHash),
+      const paymentStatusResponse = await httpClient(
+        buildBtcCheckoutPaymentStatusEndpoint(pendingCheckout.paymentHash),
       );
-      const statusData = await parseJsonResponse(statusResponse);
-      if (!statusResponse.ok) continue;
+      const paymentStatusData = await parseJsonResponse(paymentStatusResponse);
+      if (!paymentStatusResponse.ok) continue;
 
-      if (statusData?.status === "completed") {
-        await markCheckoutCompleted(entry.paymentHash, statusData);
+      if (paymentStatusData?.status === "completed") {
+        await markCheckoutCompleted(pendingCheckout.paymentHash, paymentStatusData);
         continue;
       }
 
-      if (statusData?.status === "paid") {
-        const checkoutResponse = await httpClient(BTC_CHECKOUT_ENDPOINT, {
+      if (paymentStatusData?.status === "paid") {
+        const checkoutCompletionResponse = await httpClient(BTC_CHECKOUT_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(entry.checkoutPayload),
+          body: JSON.stringify(pendingCheckout.checkoutPayload),
         });
-        const checkoutData = await parseJsonResponse(checkoutResponse);
-        if (checkoutResponse.ok) {
-          await markCheckoutCompleted(entry.paymentHash, checkoutData);
+        const checkoutCompletionData = await parseJsonResponse(checkoutCompletionResponse);
+        if (checkoutCompletionResponse.ok) {
+          await markCheckoutCompleted(pendingCheckout.paymentHash, checkoutCompletionData);
         }
       }
     } catch {
@@ -176,10 +186,6 @@ async function recoverPendingCheckouts() {
   }
 }
 
-self.addEventListener("install", (event) => {
-  const requestPromises = Promise.all(
-    ["/"].map((entry) => serwist.handleRequest({ request: new Request(entry), event }),
-    ),
-  );
-  event.waitUntil(requestPromises);
+self.addEventListener("activate", (activateEvent) => {
+  activateEvent.waitUntil(deleteObsoleteRuntimeCaches());
 });

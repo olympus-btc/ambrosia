@@ -63,7 +63,7 @@ Consider creating an AUR package for easier installation and updates. Base your 
 |---------|----------|
 | GTK version conflicts | Ensure GTK 3 is installed |
 | Missing dependencies | JRE and Node.js are bundled, no need to install separately |
-| App won't start | Check logs in `~/.Ambrosia-POS/logs/` |
+| App won't start | Check `~/.Ambrosia-POS/logs/server.log` and the per-process files in `~/.Ambrosia-POS/logs/electron/` |
 | Configuration issues | First run creates config at `~/.Ambrosia-POS/ambrosia.conf` |
 
 ## Uninstallation

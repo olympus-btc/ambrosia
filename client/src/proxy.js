@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { OFFLINE_FALLBACK_ROUTE } from "@/lib/serviceWorkerNetworkOnlyRoutes";
+
 const INTERNAL_ORIGIN =
   process.env.INTERNAL_ORIGIN || `http://127.0.0.1:${process.env.PORT || 3000}`;
 
@@ -14,8 +16,9 @@ export default async function proxy(request) {
     pathname.startsWith("/_next") ||
     pathname.includes(".") ||
     pathname === "/favicon.ico";
+  const isOfflineFallbackRoute = pathname === OFFLINE_FALLBACK_ROUTE;
 
-  if (isApiRoute || isPublicFile) {
+  if (isApiRoute || isPublicFile || isOfflineFallbackRoute) {
     return NextResponse.next();
   }
 
