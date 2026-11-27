@@ -1,6 +1,7 @@
 package pos.ambrosia
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.terminal
@@ -185,6 +186,12 @@ class Ambrosia : CliktCommand() {
             }
         val secret by
             option("--secret", help = "Secret key for the server", envvar = EnvVars.AMBROSIA_SECRET).defaultLazy {
+                if (this@Ambrosia.resetRolePassword != null) {
+                    throw UsageError(
+                        "No server secret found (--secret, AMBROSIA_SECRET or secret= in ambrosia.conf). " +
+                            "Refusing to generate one: it would invalidate every existing PIN and role password.",
+                    )
+                }
                 val generatedServerSecret = SeedGenerator.generateSeed()
                 SystemFileSystem.sink(this@Ambrosia.confFile, append = true).buffered().use { ambrosiaConfFileSink ->
                     ambrosiaConfFileSink.writeString("\nsecret=$generatedServerSecret")
@@ -420,6 +427,7 @@ class Ambrosia : CliktCommand() {
     }
 
     private fun resetRolePasswordAndExit(roleArg: String) {
+        val secret = daemonOptions.secret
         DatabaseConnection.init()
 
         val newPassword = terminal.prompt("New password for role '$roleArg'", hideInput = true)
@@ -433,7 +441,7 @@ class Ambrosia : CliktCommand() {
             exitProcess(1)
         }
 
-        val roleName = RolePasswordResetter.resetPassword(roleArg, newPassword, options.secret)
+        val roleName = RolePasswordResetter.resetPassword(roleArg, newPassword, secret)
         if (roleName == null) {
             echo("No active role found matching: $roleArg", err = true)
             exitProcess(1)
