@@ -29,9 +29,14 @@ object SecurePinProcessor {
         pin: CharArray,
         id: String,
         env: ApplicationEnvironment,
+    ): ByteArray = hashPin(pin, id, getAppMasterKey(env))
+
+    fun hashPin(
+        pin: CharArray,
+        id: String,
+        appMasterKey: ByteArray,
     ): ByteArray {
         try {
-            val appMasterKey = getAppMasterKey(env)
             if (appMasterKey.isEmpty()) {
                 throw IllegalStateException("App Master Key no cargada o está vacía.")
             }
@@ -48,6 +53,12 @@ object SecurePinProcessor {
             throw RuntimeException("Error al hashear el PIN con la clave maestra", e)
         }
     }
+
+    fun hashPin(
+        pin: CharArray,
+        id: String,
+        secret: String,
+    ): ByteArray = hashPin(pin, id, secret.toByteArray(Charsets.UTF_8))
 
     fun verifyPin(
         enteredPin: CharArray,

@@ -3,6 +3,7 @@ package pos.ambrosia
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.provideDelegate
@@ -13,6 +14,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.mordant.rendering.TextColors.green
 import com.github.ajalt.mordant.rendering.TextColors.yellow
+import com.github.ajalt.mordant.terminal.prompt
 import io.ktor.network.tls.certificates.buildKeyStore
 import io.ktor.network.tls.certificates.saveToFile
 import io.ktor.server.config.MapApplicationConfig
@@ -44,6 +46,7 @@ import pos.ambrosia.services.SecretsStore
 import pos.ambrosia.services.TokenService
 import pos.ambrosia.services.VapidKeyService
 import pos.ambrosia.services.VapidKeys
+import pos.ambrosia.utils.RolePasswordResetter
 import java.io.File
 import java.security.KeyStore
 import kotlin.system.exitProcess
@@ -289,7 +292,21 @@ class Ambrosia : CliktCommand() {
 
     private val options by DaemonOptions()
 
+    private val resetRolePassword by
+        option(
+            "--reset-role-password",
+            help =
+                "Reset the password of a role (by name or id) directly in the database and exit. " +
+                    "Does not start the server. The new password is prompted interactively.",
+            metavar = "ROLE",
+        )
+
     override fun run() {
+        resetRolePassword?.let {
+            resetRolePasswordAndExit(it)
+            return
+        }
+
         echo(green("Running Ambrosia POS Server v$appVersion"))
         logger.info("Using data directory: $datadir")
 
@@ -368,6 +385,30 @@ class Ambrosia : CliktCommand() {
             echo("Error starting server: ${e.message}", err = true)
             throw e
         }
+    }
+
+    private fun resetRolePasswordAndExit(roleArg: String) {
+        DatabaseConnection.init()
+
+        val newPassword = terminal.prompt("New password for role '$roleArg'", hideInput = true)
+        if (newPassword.isNullOrBlank()) {
+            echo("Aborted: no password provided", err = true)
+            exitProcess(1)
+        }
+        val confirmPassword = terminal.prompt("Confirm new password", hideInput = true)
+        if (newPassword != confirmPassword) {
+            echo("Passwords do not match", err = true)
+            exitProcess(1)
+        }
+
+        val roleName = RolePasswordResetter.resetPassword(roleArg, newPassword, options.secret)
+        if (roleName == null) {
+            echo("No active role found matching: $roleArg", err = true)
+            exitProcess(1)
+        }
+
+        echo(green("Password updated for role '$roleName'. Restart the server and log in with the new password."))
+        exitProcess(0)
     }
 
     private data class KeyStoreInfo(
