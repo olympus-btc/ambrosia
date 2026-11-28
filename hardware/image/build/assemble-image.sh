@@ -557,6 +557,8 @@ install_repo_assets() {
   install -m 0644 "$IMAGE_ROOT/common/systemd/ambrosia-caddy-time-resync.path" "$ROOTFS_MNT/etc/systemd/system/ambrosia-caddy-time-resync.path"
   install -d -m 0755 "$ROOTFS_MNT/etc/systemd/journald.conf.d"
   install -m 0644 "$IMAGE_ROOT/common/journald/ambrosia-journald.conf" "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
+  install -d -m 0755 "$ROOTFS_MNT/etc/NetworkManager/conf.d"
+  install -m 0644 "$IMAGE_ROOT/common/wifi/ambrosia-wifi-auth-retries.conf" "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf"
 
   install -d -m 0755 "$ROOTFS_MNT/usr/lib"
   touch "$ROOTFS_MNT/usr/lib/clock-epoch"
@@ -700,6 +702,8 @@ verify_mounted_image() {
   require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/Caddyfile.template"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-firstboot.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
+  require_nonempty_file "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf"
+  grep -Eq '^connection\.auth-retries=0$' "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf" || fail "Wi-Fi authentication retries were not made unlimited"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-portal.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-client.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia.service"
