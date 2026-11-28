@@ -33,6 +33,13 @@ HOSTAPD_CONF = Path("/run/ambrosia-wifi-portal/hostapd.conf")
 DNSMASQ_CONF = Path("/run/ambrosia-wifi-portal/dnsmasq.conf")
 DNSMASQ_LEASES = Path("/run/ambrosia-wifi-portal/dnsmasq.leases")
 BOOT_WAIT_SECONDS = 30
+SAVED_NETWORK_BOOT_WAIT_SECONDS = 180
+SAVED_NETWORK_RETRY_INTERVAL_SECONDS = 300
+SAVED_NETWORK_ACTIVATION_WAIT_SECONDS = 60
+SAVED_NETWORK_ACTIVATION_TIMEOUT_SECONDS = 75
+NETWORK_QUERY_TIMEOUT_SECONDS = 20
+WIFI_CONNECTION_TYPE = "802-11-wireless"
+NMCLI_NOTICE_PREFIXES = ("Warning:", "Hint:")
 WIFI_RECOVERY_MARKER = Path("/run/ambrosia-wifi-recovery-attempted")
 
 app = Flask(__name__)
@@ -99,12 +106,93 @@ def cycle_wlan0_for_unisoc_stall():
         )
         if reconnect_process.returncode != 0:
             print(
-                f"Wi-Fi recovery failed: {reconnect_process.stderr.strip()}",
+                f"Wi-Fi recovery failed: {summarize_nmcli_error(reconnect_process.stderr)}",
                 flush=True,
             )
+            enable_wifi_autoconnect()
         time.sleep(3)
     except subprocess.TimeoutExpired:
         print("Wi-Fi recovery timed out.", flush=True)
+        enable_wifi_autoconnect()
+
+
+def summarize_nmcli_error(nmcli_error_output):
+    nmcli_output_lines = (nmcli_error_output or "").strip().splitlines()
+    nmcli_error_lines = [
+        nmcli_output_line
+        for nmcli_output_line in nmcli_output_lines
+        if not nmcli_output_line.strip().startswith(NMCLI_NOTICE_PREFIXES)
+    ] or nmcli_output_lines
+    return " ".join(" ".join(nmcli_error_lines).split())
+
+
+def enable_wifi_autoconnect():
+    try:
+        run_command(
+            ["nmcli", "device", "set", WLAN, "autoconnect", "yes"], timeout_seconds=15
+        )
+    except subprocess.TimeoutExpired:
+        print("Re-enabling wlan0 autoconnect timed out.", flush=True)
+
+
+def find_saved_wifi_connection_uuids():
+    connection_list_process = run_command(
+        ["nmcli", "-t", "-f", "UUID,TYPE,AUTOCONNECT,TIMESTAMP", "connection", "show"],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
+    )
+    saved_wifi_connections = []
+    for connection_line in connection_list_process.stdout.splitlines():
+        connection_fields = connection_line.split(":")
+        if len(connection_fields) != 4:
+            continue
+        connection_uuid, connection_type, autoconnect_setting, last_activation_text = (
+            connection_fields
+        )
+        if connection_type != WIFI_CONNECTION_TYPE or autoconnect_setting != "yes":
+            continue
+        try:
+            last_activation_unix_time = int(last_activation_text)
+        except ValueError:
+            last_activation_unix_time = 0
+        saved_wifi_connections.append((last_activation_unix_time, connection_uuid))
+    saved_wifi_connections.sort(
+        key=lambda saved_wifi_connection: saved_wifi_connection[0], reverse=True
+    )
+    return [
+        connection_uuid for _last_activation, connection_uuid in saved_wifi_connections
+    ]
+
+
+def activate_saved_wifi_connections(saved_wifi_connection_uuids):
+    enable_wifi_autoconnect()
+    for connection_uuid in saved_wifi_connection_uuids:
+        try:
+            activation_process = run_command(
+                [
+                    "nmcli",
+                    "--wait",
+                    str(SAVED_NETWORK_ACTIVATION_WAIT_SECONDS),
+                    "connection",
+                    "up",
+                    "uuid",
+                    connection_uuid,
+                    "ifname",
+                    WLAN,
+                ],
+                timeout_seconds=SAVED_NETWORK_ACTIVATION_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            print(f"Activating saved Wi-Fi {connection_uuid} timed out.", flush=True)
+            continue
+        if activation_process.returncode == 0:
+            print(f"Saved Wi-Fi {connection_uuid} is active again.", flush=True)
+            return True
+        print(
+            f"Activating saved Wi-Fi {connection_uuid} failed: "
+            f"{summarize_nmcli_error(activation_process.stderr)}",
+            flush=True,
+        )
+    return False
 
 
 def recover_orange_pi_wifi_once():
@@ -502,7 +590,55 @@ def prevent_portal_caching(portal_response):
     return portal_response
 
 
+def setup_portal_has_connected_clients():
+    station_process = run_command(
+        ["iw", "dev", WLAN, "station", "dump"], timeout_seconds=10
+    )
+    return bool(station_process.stdout.strip())
+
+
+def restore_setup_portal_or_exit():
+    try:
+        restored = start_ap()
+    except (OSError, subprocess.SubprocessError):
+        restored = False
+    if not restored:
+        print("Could not restore setup portal; restarting service.", flush=True)
+        os._exit(1)
+
+
+def retry_saved_wifi_from_setup_portal():
+    global scanned_ssids
+    try:
+        saved_wifi_connection_uuids = find_saved_wifi_connection_uuids()
+        if not saved_wifi_connection_uuids:
+            return
+        if setup_portal_has_connected_clients():
+            print(
+                "Someone is connected to the setup portal; not retrying the saved Wi-Fi.",
+                flush=True,
+            )
+            return
+    except (OSError, subprocess.SubprocessError):
+        return
+    print("Retrying the saved Wi-Fi from the setup portal.", flush=True)
+    try:
+        stop_ap()
+        if activate_saved_wifi_connections(saved_wifi_connection_uuids):
+            if is_orange_pi():
+                cycle_wlan0_for_unisoc_stall()
+            os._exit(0)
+        scanned_ssids = scan_ssids()
+    except (OSError, subprocess.SubprocessError) as retry_error:
+        print(
+            f"Saved Wi-Fi retry interrupted ({type(retry_error).__name__}).",
+            flush=True,
+        )
+    restore_setup_portal_or_exit()
+
+
 def _monitor_connection():
+    last_saved_wifi_retry_monotonic_time = time.monotonic()
     while True:
         time.sleep(15)
         if not connection_lock.acquire(blocking=False):
@@ -511,6 +647,15 @@ def _monitor_connection():
             if wifi_is_real() or uplink_is_real():
                 stop_ap()
                 os._exit(0)
+            seconds_since_last_saved_wifi_retry = (
+                time.monotonic() - last_saved_wifi_retry_monotonic_time
+            )
+            if (
+                seconds_since_last_saved_wifi_retry
+                >= SAVED_NETWORK_RETRY_INTERVAL_SECONDS
+            ):
+                last_saved_wifi_retry_monotonic_time = time.monotonic()
+                retry_saved_wifi_from_setup_portal()
         finally:
             connection_lock.release()
 
@@ -632,6 +777,16 @@ def captive_probe():
     return redirect("/", code=302)
 
 
+def choose_boot_wait_seconds():
+    try:
+        saved_wifi_connection_uuids = find_saved_wifi_connection_uuids()
+    except (OSError, subprocess.SubprocessError):
+        return SAVED_NETWORK_BOOT_WAIT_SECONDS
+    if saved_wifi_connection_uuids:
+        return SAVED_NETWORK_BOOT_WAIT_SECONDS
+    return BOOT_WAIT_SECONDS
+
+
 def shutdown_on_signal(signum, frame):
     stop_ap()
     os._exit(0)
@@ -644,7 +799,7 @@ def main():
     run_command(["nmcli", "device", "set", WLAN, "managed", "yes"])
     run_command(["nmcli", "radio", "wifi", "on"])
 
-    for _ in range(BOOT_WAIT_SECONDS):
+    for _ in range(choose_boot_wait_seconds()):
         if wifi_is_real():
             recover_orange_pi_wifi_once()
             if wifi_is_real():

@@ -557,6 +557,8 @@ install_repo_assets() {
   install -m 0644 "$IMAGE_ROOT/common/systemd/ambrosia-caddy-time-resync.path" "$ROOTFS_MNT/etc/systemd/system/ambrosia-caddy-time-resync.path"
   install -d -m 0755 "$ROOTFS_MNT/etc/systemd/journald.conf.d"
   install -m 0644 "$IMAGE_ROOT/common/journald/ambrosia-journald.conf" "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
+  install -d -m 0755 "$ROOTFS_MNT/etc/NetworkManager/conf.d"
+  install -m 0644 "$IMAGE_ROOT/common/wifi/ambrosia-wifi-auth-retries.conf" "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf"
 
   install -d -m 0755 "$ROOTFS_MNT/usr/lib"
   touch "$ROOTFS_MNT/usr/lib/clock-epoch"
@@ -594,6 +596,17 @@ board_disables_wifi_power_save() {
 
 board_enables_wifi_stall_watchdog() {
   [[ "${WIFI_STALL_WATCHDOG_ENABLED:-false}" == "true" ]]
+}
+
+board_stores_journal_in_ram() {
+  [[ "${JOURNAL_STORED_IN_RAM:-false}" == "true" ]]
+}
+
+install_board_journal_settings() {
+  if board_stores_journal_in_ram; then
+    install -d -m 0755 "$ROOTFS_MNT/etc/systemd/journald.conf.d"
+    install -m 0644 "$IMAGE_ROOT/common/journald/ambrosia-ramlog-journald.conf" "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-ramlog-journald.conf"
+  fi
 }
 
 install_board_wifi_workarounds() {
@@ -700,6 +713,8 @@ verify_mounted_image() {
   require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/Caddyfile.template"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-firstboot.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-journald.conf"
+  require_nonempty_file "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf"
+  grep -Eq '^connection\.auth-retries=0$' "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf" || fail "Wi-Fi authentication retries were not made unlimited"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-portal.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-client.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia.service"
@@ -723,6 +738,9 @@ verify_mounted_image() {
   fi
   if board_disables_wifi_power_save; then
     grep -Eq '^wifi\.powersave[[:space:]]*=[[:space:]]*2$' "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf" || fail "Wi-Fi power save was not disabled"
+  fi
+  if board_stores_journal_in_ram; then
+    grep -Eq '^SystemKeepFree=5M$' "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-ramlog-journald.conf" || fail "journald free-space reserve was not lowered for the RAM-backed /var/log"
   fi
   if board_enables_wifi_stall_watchdog; then
     require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-wifi-watchdog"
@@ -820,6 +838,8 @@ log "Installing repo assets"
 install_repo_assets
 log "Installing board Wi-Fi workarounds"
 install_board_wifi_workarounds
+log "Installing board journal settings"
+install_board_journal_settings
 log "Verifying staged client runtime dependencies"
 verify_client_runtime_artifacts
 log "Writing base configuration"

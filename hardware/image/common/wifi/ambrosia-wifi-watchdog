@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
+import json
+import os
+import re
 import socket
 import subprocess
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 WLAN = "wlan0"
 WIFI_PORTAL_SERVICE = "ambrosia-wifi-portal.service"
+WIFI_CONNECTION_TYPE = "802-11-wireless"
 CHECK_INTERVAL_SECONDS = 30
 FAILED_CHECKS_BEFORE_RECONNECT = 3
 RECONNECT_COOLDOWN_SECONDS = 300
@@ -14,6 +20,39 @@ GATEWAY_PROBE_PORTS = (80, 443, 53)
 INTERNET_PROBE_ADDRESSES = (("1.1.1.1", 443), ("9.9.9.9", 443))
 LINUX_SO_BINDTODEVICE = 25
 SOCKET_BIND_TO_DEVICE_OPTION = getattr(socket, "SO_BINDTODEVICE", LINUX_SO_BINDTODEVICE)
+NETWORK_QUERY_TIMEOUT_SECONDS = 20
+WIFI_SCAN_TIMEOUT_SECONDS = 30
+NO_NETWORK_GRACE_SECONDS = 120
+SAVED_NETWORK_REACTIVATION_INTERVAL_SECONDS = 120
+SAVED_NETWORK_ACTIVATION_WAIT_SECONDS = 45
+SAVED_NETWORK_ACTIVATION_TIMEOUT_SECONDS = 60
+NETWORK_MANAGER_RESTART_AFTER_SECONDS = 480
+REBOOT_AFTER_SECONDS = 900
+MINIMUM_SECONDS_BETWEEN_WATCHDOG_REBOOTS = 3600
+RECOVERY_LOG_PATH = Path("/var/lib/ambrosia/wifi-watchdog.log")
+RECOVERY_LOG_MAX_BYTES = 256 * 1024
+WATCHDOG_STATE_PATH = Path("/var/lib/ambrosia/wifi-watchdog-state.json")
+WIFI_DRIVER_KERNEL_MESSAGE_PATTERNS = ("sprdwl", "WCN", WLAN)
+WIFI_DRIVER_KERNEL_MESSAGE_LIMIT = 30
+NETWORK_MANAGER_JOURNAL_LINES_TO_SCAN = 300
+NETWORK_MANAGER_EVENT_LIMIT = 15
+RECENT_EVENT_WINDOW_SECONDS = 300
+NETWORK_MANAGER_WIFI_DEVICE_MARKER = f"device ({WLAN}):"
+NETWORK_MANAGER_EVENT_PATTERNS = (
+    "asking for new key",
+    "no secrets",
+    "Activation: failed",
+    "association took too long",
+    "link timed out",
+    "4way_handshake -> disconnected",
+    "-> need-auth (",
+    "-> failed (",
+    "-> unavailable (",
+    "-> disconnected (",
+)
+BRACKETED_MONOTONIC_TIMESTAMP_PATTERN = re.compile(r"^\[\s*(\d+(?:\.\d+)?)\]")
+NMCLI_NOTICE_PREFIXES = ("Warning:", "Hint:")
+COMMAND_ERROR_CHARACTER_LIMIT = 200
 
 
 def run_command(command_arguments, timeout_seconds=None):
@@ -26,6 +65,64 @@ def run_command(command_arguments, timeout_seconds=None):
     )
 
 
+def fsync_directory(directory_path):
+    directory_descriptor = os.open(directory_path, os.O_RDONLY)
+    try:
+        os.fsync(directory_descriptor)
+    finally:
+        os.close(directory_descriptor)
+
+
+def rotate_recovery_log_when_full():
+    try:
+        recovery_log_size = RECOVERY_LOG_PATH.stat().st_size
+    except FileNotFoundError:
+        return
+    if recovery_log_size < RECOVERY_LOG_MAX_BYTES:
+        return
+    rotated_recovery_log_path = RECOVERY_LOG_PATH.with_name(
+        f"{RECOVERY_LOG_PATH.name}.1"
+    )
+    os.replace(RECOVERY_LOG_PATH, rotated_recovery_log_path)
+    fsync_directory(RECOVERY_LOG_PATH.parent)
+
+
+def record_recovery_event(event_message):
+    print(event_message, flush=True)
+    utc_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    recovery_log_line = (
+        f"{utc_timestamp} monotonic={time.monotonic():.0f}s {event_message}\n"
+    )
+    try:
+        RECOVERY_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        rotate_recovery_log_when_full()
+        with RECOVERY_LOG_PATH.open("a", encoding="utf-8") as recovery_log:
+            recovery_log.write(recovery_log_line)
+            recovery_log.flush()
+            os.fsync(recovery_log.fileno())
+    except OSError as recovery_log_error:
+        print(
+            f"Could not write the Wi-Fi recovery log: {recovery_log_error}", flush=True
+        )
+
+
+def summarize_command_error(finished_process):
+    command_output_lines = (
+        (finished_process.stderr or finished_process.stdout or "").strip().splitlines()
+    )
+    command_error_lines = [
+        command_output_line
+        for command_output_line in command_output_lines
+        if not command_output_line.strip().startswith(NMCLI_NOTICE_PREFIXES)
+    ] or command_output_lines
+    command_error = " ".join(" ".join(command_error_lines).split())
+    return command_error[:COMMAND_ERROR_CHARACTER_LIMIT]
+
+
+def unescape_terse_nmcli_value(terse_value):
+    return terse_value.replace("\\:", ":").replace("\\\\", "\\")
+
+
 def wifi_portal_is_active():
     portal_status_process = run_command(
         ["systemctl", "is-active", "--quiet", WIFI_PORTAL_SERVICE]
@@ -33,18 +130,35 @@ def wifi_portal_is_active():
     return portal_status_process.returncode == 0
 
 
-def wifi_is_connected():
+def read_network_device_states():
     device_status_process = run_command(
-        ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+        ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
     )
+    network_device_states = []
     for device_status_line in device_status_process.stdout.splitlines():
         device_fields = device_status_line.split(":")
-        if (
-            len(device_fields) >= 3
-            and device_fields[0] == WLAN
-            and device_fields[1] == "wifi"
-            and device_fields[2] == "connected"
-        ):
+        if len(device_fields) >= 3:
+            network_device_states.append(
+                (device_fields[0], device_fields[1], device_fields[2])
+            )
+    return network_device_states
+
+
+def wifi_is_connected():
+    return any(
+        device_name == WLAN and device_type == "wifi" and device_state == "connected"
+        for device_name, device_type, device_state in read_network_device_states()
+    )
+
+
+def other_uplink_is_connected():
+    for device_name, device_type, device_state in read_network_device_states():
+        if device_state != "connected":
+            continue
+        if device_type == "ethernet":
+            return True
+        if device_type == "wifi" and device_name != WLAN:
             return True
     return False
 
@@ -58,6 +172,310 @@ def find_wifi_gateway():
             if via_index + 1 < len(route_fields):
                 return route_fields[via_index + 1]
     return None
+
+
+def find_saved_wifi_connection_uuids():
+    connection_list_process = run_command(
+        ["nmcli", "-t", "-f", "UUID,TYPE,AUTOCONNECT,TIMESTAMP", "connection", "show"],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
+    )
+    saved_wifi_connections = []
+    for connection_line in connection_list_process.stdout.splitlines():
+        connection_fields = connection_line.split(":")
+        if len(connection_fields) != 4:
+            continue
+        connection_uuid, connection_type, autoconnect_setting, last_activation_text = (
+            connection_fields
+        )
+        if connection_type != WIFI_CONNECTION_TYPE or autoconnect_setting != "yes":
+            continue
+        try:
+            last_activation_unix_time = int(last_activation_text)
+        except ValueError:
+            last_activation_unix_time = 0
+        saved_wifi_connections.append((last_activation_unix_time, connection_uuid))
+    saved_wifi_connections.sort(
+        key=lambda saved_wifi_connection: saved_wifi_connection[0], reverse=True
+    )
+    return [
+        connection_uuid for _last_activation, connection_uuid in saved_wifi_connections
+    ]
+
+
+def read_saved_wifi_ssid(connection_uuid):
+    ssid_process = run_command(
+        [
+            "nmcli",
+            "-g",
+            "802-11-wireless.ssid",
+            "connection",
+            "show",
+            "uuid",
+            connection_uuid,
+        ],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
+    )
+    return unescape_terse_nmcli_value(ssid_process.stdout.strip())
+
+
+def scan_visible_wifi_ssids():
+    scan_process = run_command(
+        [
+            "nmcli",
+            "-t",
+            "-f",
+            "SSID",
+            "device",
+            "wifi",
+            "list",
+            "ifname",
+            WLAN,
+            "--rescan",
+            "yes",
+        ],
+        timeout_seconds=WIFI_SCAN_TIMEOUT_SECONDS,
+    )
+    if scan_process.returncode != 0:
+        return set()
+    return {
+        unescape_terse_nmcli_value(scan_line.strip())
+        for scan_line in scan_process.stdout.splitlines()
+        if scan_line.strip()
+    }
+
+
+def scan_suggests_reboot_can_help(saved_wifi_ssids, visible_wifi_ssids):
+    if not visible_wifi_ssids:
+        return True
+    return bool(saved_wifi_ssids & visible_wifi_ssids)
+
+
+def describe_wifi_device_state():
+    device_details_process = run_command(
+        [
+            "nmcli",
+            "-g",
+            "GENERAL.STATE,GENERAL.REASON,GENERAL.CONNECTION,GENERAL.AUTOCONNECT",
+            "device",
+            "show",
+            WLAN,
+        ],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
+    )
+    device_details = " | ".join(
+        detail_line.strip()
+        for detail_line in device_details_process.stdout.splitlines()
+        if detail_line.strip()
+    )
+    default_route_process = run_command(["ip", "-4", "route", "show", "default"])
+    default_route_lines = default_route_process.stdout.strip().splitlines()
+    default_route = default_route_lines[0] if default_route_lines else "none"
+    return f"wlan0=[{device_details}] default_route=[{default_route}]"
+
+
+def is_recent_wifi_driver_kernel_message(kernel_message_line, oldest_monotonic_seconds):
+    message_monotonic_seconds = read_bracketed_monotonic_seconds(kernel_message_line)
+    if message_monotonic_seconds is None:
+        return False
+    if message_monotonic_seconds < oldest_monotonic_seconds:
+        return False
+    return any(
+        message_pattern in kernel_message_line
+        for message_pattern in WIFI_DRIVER_KERNEL_MESSAGE_PATTERNS
+    )
+
+
+def read_wifi_driver_kernel_messages():
+    oldest_monotonic_seconds = time.monotonic() - RECENT_EVENT_WINDOW_SECONDS
+    kernel_message_process = run_command(
+        ["dmesg"], timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS
+    )
+    wifi_driver_kernel_messages = [
+        kernel_message_line
+        for kernel_message_line in kernel_message_process.stdout.splitlines()
+        if is_recent_wifi_driver_kernel_message(
+            kernel_message_line, oldest_monotonic_seconds
+        )
+    ]
+    return wifi_driver_kernel_messages[-WIFI_DRIVER_KERNEL_MESSAGE_LIMIT:]
+
+
+def record_recent_wifi_driver_kernel_messages():
+    try:
+        wifi_driver_kernel_messages = read_wifi_driver_kernel_messages()
+    except (OSError, subprocess.SubprocessError) as kernel_log_error:
+        record_recovery_event(
+            f"Could not read the kernel log: {type(kernel_log_error).__name__}"
+        )
+        return
+    if not wifi_driver_kernel_messages:
+        record_recovery_event(
+            "Kernel: no Wi-Fi driver messages in the last "
+            f"{RECENT_EVENT_WINDOW_SECONDS}s."
+        )
+        return
+    for wifi_driver_kernel_message in wifi_driver_kernel_messages:
+        record_recovery_event(f"Kernel: {wifi_driver_kernel_message}")
+
+
+def read_bracketed_monotonic_seconds(timestamped_line):
+    timestamp_match = BRACKETED_MONOTONIC_TIMESTAMP_PATTERN.match(timestamped_line)
+    if timestamp_match is None:
+        return None
+    return float(timestamp_match.group(1))
+
+
+def is_recent_wifi_network_manager_event(journal_line, oldest_monotonic_seconds):
+    event_monotonic_seconds = read_bracketed_monotonic_seconds(journal_line)
+    if event_monotonic_seconds is None:
+        return False
+    if event_monotonic_seconds < oldest_monotonic_seconds:
+        return False
+    if NETWORK_MANAGER_WIFI_DEVICE_MARKER not in journal_line:
+        return False
+    return any(
+        event_pattern in journal_line
+        for event_pattern in NETWORK_MANAGER_EVENT_PATTERNS
+    )
+
+
+def read_recent_network_manager_events():
+    oldest_monotonic_seconds = time.monotonic() - RECENT_EVENT_WINDOW_SECONDS
+    journal_process = run_command(
+        [
+            "journalctl",
+            "--boot",
+            "--unit",
+            "NetworkManager",
+            "--lines",
+            str(NETWORK_MANAGER_JOURNAL_LINES_TO_SCAN),
+            "--no-pager",
+            "--output",
+            "short-monotonic",
+        ],
+        timeout_seconds=NETWORK_QUERY_TIMEOUT_SECONDS,
+    )
+    network_manager_events = [
+        " ".join(journal_line.split())
+        for journal_line in journal_process.stdout.splitlines()
+        if is_recent_wifi_network_manager_event(journal_line, oldest_monotonic_seconds)
+    ]
+    return network_manager_events[-NETWORK_MANAGER_EVENT_LIMIT:]
+
+
+def record_recent_network_manager_events():
+    try:
+        network_manager_events = read_recent_network_manager_events()
+    except (OSError, subprocess.SubprocessError) as journal_error:
+        record_recovery_event(
+            f"Could not read the NetworkManager journal: {type(journal_error).__name__}"
+        )
+        return
+    for network_manager_event in network_manager_events:
+        record_recovery_event(f"NetworkManager: {network_manager_event}")
+
+
+def read_watchdog_state():
+    try:
+        watchdog_state = json.loads(WATCHDOG_STATE_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(watchdog_state, dict):
+        return {}
+    return watchdog_state
+
+
+def read_last_watchdog_reboot_unix_time():
+    try:
+        return float(read_watchdog_state()["last_reboot_unix_time"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def save_watchdog_state(watchdog_state):
+    temporary_state_path = WATCHDOG_STATE_PATH.with_name(
+        f"{WATCHDOG_STATE_PATH.name}.tmp"
+    )
+    try:
+        WATCHDOG_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with temporary_state_path.open("w", encoding="utf-8") as temporary_state_file:
+            json.dump(watchdog_state, temporary_state_file)
+            temporary_state_file.flush()
+            os.fsync(temporary_state_file.fileno())
+        os.replace(temporary_state_path, WATCHDOG_STATE_PATH)
+        fsync_directory(WATCHDOG_STATE_PATH.parent)
+        return True
+    except OSError as state_error:
+        record_recovery_event(f"Could not save the watchdog state: {state_error}")
+        return False
+
+
+def record_watchdog_reboot_request(reboot_unix_time):
+    return save_watchdog_state(
+        {"last_reboot_unix_time": reboot_unix_time, "watchdog_reboot_pending": True}
+    )
+
+
+def clear_watchdog_reboot_pending():
+    watchdog_state = read_watchdog_state()
+    watchdog_state["watchdog_reboot_pending"] = False
+    return save_watchdog_state(watchdog_state)
+
+
+def watchdog_reboot_rate_limit_allows_reboot():
+    last_reboot_unix_time = read_last_watchdog_reboot_unix_time()
+    if last_reboot_unix_time is None:
+        return True
+    seconds_since_last_reboot = time.time() - last_reboot_unix_time
+    return seconds_since_last_reboot >= MINIMUM_SECONDS_BETWEEN_WATCHDOG_REBOOTS
+
+
+def run_recovery_command(action_description, command_arguments, timeout_seconds):
+    try:
+        recovery_process = run_command(
+            command_arguments, timeout_seconds=timeout_seconds
+        )
+    except subprocess.TimeoutExpired:
+        record_recovery_event(f"{action_description} timed out.")
+        return False
+    if recovery_process.returncode != 0:
+        record_recovery_event(
+            f"{action_description} failed: {summarize_command_error(recovery_process)}"
+        )
+        return False
+    record_recovery_event(f"{action_description} succeeded.")
+    return True
+
+
+def enable_wifi_autoconnect():
+    return run_recovery_command(
+        "Re-enabling wlan0 autoconnect",
+        ["nmcli", "device", "set", WLAN, "autoconnect", "yes"],
+        timeout_seconds=15,
+    )
+
+
+def activate_saved_wifi_connections(saved_wifi_connection_uuids):
+    enable_wifi_autoconnect()
+    for connection_uuid in saved_wifi_connection_uuids:
+        activation_succeeded = run_recovery_command(
+            f"Activating saved Wi-Fi {connection_uuid}",
+            [
+                "nmcli",
+                "--wait",
+                str(SAVED_NETWORK_ACTIVATION_WAIT_SECONDS),
+                "connection",
+                "up",
+                "uuid",
+                connection_uuid,
+                "ifname",
+                WLAN,
+            ],
+            timeout_seconds=SAVED_NETWORK_ACTIVATION_TIMEOUT_SECONDS,
+        )
+        if activation_succeeded:
+            return True
+    return False
 
 
 def tcp_answers_over_wifi(probe_address, probe_port):
@@ -89,26 +507,97 @@ def wifi_tcp_is_healthy(gateway_address):
 
 
 def reconnect_wifi():
-    print("Wi-Fi TCP traffic is stalled; reconnecting wlan0.", flush=True)
+    record_recovery_event("Wi-Fi TCP traffic is stalled; reconnecting wlan0.")
     try:
         run_command(["nmcli", "device", "disconnect", WLAN], timeout_seconds=15)
         time.sleep(2)
         reconnect_process = run_command(
             ["nmcli", "device", "connect", WLAN], timeout_seconds=45
         )
-        if reconnect_process.returncode != 0:
-            print(
-                f"Wi-Fi reconnect failed: {reconnect_process.stderr.strip()}",
-                flush=True,
-            )
     except subprocess.TimeoutExpired:
-        print("Wi-Fi reconnect timed out.", flush=True)
+        record_recovery_event("Wi-Fi reconnect timed out.")
+        enable_wifi_autoconnect()
+        return
+    if reconnect_process.returncode != 0:
+        record_recovery_event(
+            f"Wi-Fi reconnect failed: {summarize_command_error(reconnect_process)}"
+        )
+        enable_wifi_autoconnect()
+        return
+    record_recovery_event("Wi-Fi reconnect succeeded.")
+
+
+def record_watchdog_start():
+    if read_watchdog_state().get("watchdog_reboot_pending") is not True:
+        record_recovery_event("Wi-Fi watchdog started.")
+        return
+    clear_watchdog_reboot_pending()
+    last_reboot_unix_time = read_last_watchdog_reboot_unix_time()
+    if last_reboot_unix_time is not None:
+        seconds_since_last_reboot = time.time() - last_reboot_unix_time
+        if 0 <= seconds_since_last_reboot < MINIMUM_SECONDS_BETWEEN_WATCHDOG_REBOOTS:
+            record_recovery_event(
+                "Wi-Fi watchdog started "
+                f"{seconds_since_last_reboot:.0f}s after a watchdog reboot."
+            )
+            return
+    record_recovery_event("Wi-Fi watchdog started after a watchdog reboot.")
 
 
 class WifiWatchdog:
     def __init__(self):
         self.consecutive_failed_checks = 0
         self.last_reconnect_monotonic_time = None
+        self.portal_was_active = False
+        self.clear_no_network_episode()
+
+    def clear_no_network_episode(self):
+        self.no_network_started_monotonic_time = None
+        self.last_reactivation_monotonic_time = None
+        self.network_manager_was_restarted = False
+        self.reboot_refusal_was_recorded = False
+        self.last_recovery_step = None
+        self.last_recovery_step_succeeded = False
+        self.last_recovery_step_monotonic_time = None
+
+    def remember_recovery_step(self, recovery_step, recovery_step_succeeded):
+        self.last_recovery_step = recovery_step
+        self.last_recovery_step_succeeded = recovery_step_succeeded
+        self.last_recovery_step_monotonic_time = time.monotonic()
+
+    def describe_episode_resolution(self, finish_monotonic_time):
+        if self.last_recovery_step is None:
+            return "NetworkManager reconnected without any watchdog action"
+        seconds_after_last_step = (
+            finish_monotonic_time - self.last_recovery_step_monotonic_time
+        )
+        if self.last_recovery_step_succeeded:
+            return (
+                f"resolved by the {self.last_recovery_step} "
+                f"{seconds_after_last_step:.0f}s earlier"
+            )
+        return (
+            f"came back {seconds_after_last_step:.0f}s after a failed "
+            f"{self.last_recovery_step}, with no watchdog action confirmed as the fix"
+        )
+
+    def finish_no_network_episode(self, finish_reason, wifi_came_back=False):
+        if self.no_network_started_monotonic_time is not None:
+            finish_monotonic_time = time.monotonic()
+            seconds_without_network = (
+                finish_monotonic_time - self.no_network_started_monotonic_time
+            )
+            finish_description = f"{finish_reason}."
+            if wifi_came_back:
+                episode_resolution = self.describe_episode_resolution(
+                    finish_monotonic_time
+                )
+                finish_description = f"{finish_reason}; {episode_resolution}."
+            record_recovery_event(
+                f"No-network episode ended after {seconds_without_network:.0f}s: "
+                f"{finish_description}"
+            )
+        self.clear_no_network_episode()
 
     def reconnect_cooldown_has_passed(self):
         if self.last_reconnect_monotonic_time is None:
@@ -118,14 +607,43 @@ class WifiWatchdog:
         )
         return seconds_since_last_reconnect >= RECONNECT_COOLDOWN_SECONDS
 
+    def record_portal_transition(self, portal_is_active):
+        if portal_is_active == self.portal_was_active:
+            return
+        self.portal_was_active = portal_is_active
+        if portal_is_active:
+            record_recovery_event(
+                "Wi-Fi setup portal is active; the watchdog stands by."
+            )
+        else:
+            record_recovery_event("Wi-Fi setup portal is no longer active.")
+
     def check_once(self):
-        if wifi_portal_is_active() or not wifi_is_connected():
+        portal_is_active = wifi_portal_is_active()
+        self.record_portal_transition(portal_is_active)
+        if portal_is_active:
             self.consecutive_failed_checks = 0
+            self.finish_no_network_episode("the Wi-Fi setup portal took over")
             return
-        gateway_address = find_wifi_gateway()
-        if gateway_address is None:
-            self.consecutive_failed_checks = 0
+        if wifi_is_connected():
+            gateway_address = find_wifi_gateway()
+            if gateway_address is not None:
+                self.finish_no_network_episode(
+                    "wlan0 is connected with a default route", wifi_came_back=True
+                )
+                self.check_tcp_traffic(gateway_address)
+                return
+        self.consecutive_failed_checks = 0
+        if other_uplink_is_connected():
+            self.finish_no_network_episode("another uplink is connected")
             return
+        saved_wifi_connection_uuids = find_saved_wifi_connection_uuids()
+        if not saved_wifi_connection_uuids:
+            self.finish_no_network_episode("there is no saved Wi-Fi to recover")
+            return
+        self.recover_missing_wifi(saved_wifi_connection_uuids)
+
+    def check_tcp_traffic(self, gateway_address):
         if wifi_tcp_is_healthy(gateway_address):
             self.consecutive_failed_checks = 0
             return
@@ -143,11 +661,126 @@ class WifiWatchdog:
             self.last_reconnect_monotonic_time = time.monotonic()
             self.consecutive_failed_checks = 0
 
+    def recover_missing_wifi(self, saved_wifi_connection_uuids):
+        current_monotonic_time = time.monotonic()
+        if self.no_network_started_monotonic_time is None:
+            self.no_network_started_monotonic_time = current_monotonic_time
+            record_recovery_event(
+                "Wi-Fi has no network; recovery episode started. "
+                f"{describe_wifi_device_state()}"
+            )
+            record_recent_network_manager_events()
+            return
+        seconds_without_network = (
+            current_monotonic_time - self.no_network_started_monotonic_time
+        )
+        if seconds_without_network < NO_NETWORK_GRACE_SECONDS:
+            return
+        if (
+            seconds_without_network >= NETWORK_MANAGER_RESTART_AFTER_SECONDS
+            and not self.network_manager_was_restarted
+        ):
+            self.restart_network_manager(seconds_without_network)
+            self.last_reactivation_monotonic_time = current_monotonic_time
+            return
+        if not self.saved_wifi_reactivation_is_due(current_monotonic_time):
+            return
+        self.last_reactivation_monotonic_time = current_monotonic_time
+        if (
+            seconds_without_network >= REBOOT_AFTER_SECONDS
+            and self.reboot_when_it_can_help(
+                saved_wifi_connection_uuids, seconds_without_network
+            )
+        ):
+            return
+        record_recovery_event(
+            f"Reactivating saved Wi-Fi after {seconds_without_network:.0f}s without network. "
+            f"{describe_wifi_device_state()}"
+        )
+        reactivation_succeeded = activate_saved_wifi_connections(
+            saved_wifi_connection_uuids
+        )
+        self.remember_recovery_step("saved Wi-Fi reactivation", reactivation_succeeded)
+
+    def saved_wifi_reactivation_is_due(self, current_monotonic_time):
+        if self.last_reactivation_monotonic_time is None:
+            return True
+        seconds_since_last_reactivation = (
+            current_monotonic_time - self.last_reactivation_monotonic_time
+        )
+        return (
+            seconds_since_last_reactivation
+            >= SAVED_NETWORK_REACTIVATION_INTERVAL_SECONDS
+        )
+
+    def restart_network_manager(self, seconds_without_network):
+        self.network_manager_was_restarted = True
+        record_recovery_event(
+            f"Restarting NetworkManager after {seconds_without_network:.0f}s without network. "
+            f"{describe_wifi_device_state()}"
+        )
+        restart_succeeded = run_recovery_command(
+            "Restarting NetworkManager",
+            ["systemctl", "restart", "NetworkManager"],
+            timeout_seconds=60,
+        )
+        self.remember_recovery_step("NetworkManager restart", restart_succeeded)
+
+    def record_reboot_refusal_once(self, refusal_reason):
+        if self.reboot_refusal_was_recorded:
+            return
+        self.reboot_refusal_was_recorded = True
+        record_recovery_event(f"Not rebooting: {refusal_reason}.")
+
+    def reboot_when_it_can_help(
+        self, saved_wifi_connection_uuids, seconds_without_network
+    ):
+        if not watchdog_reboot_rate_limit_allows_reboot():
+            self.record_reboot_refusal_once(
+                "the watchdog already rebooted the device within the last hour"
+            )
+            return False
+        visible_wifi_ssids = scan_visible_wifi_ssids()
+        saved_wifi_ssids = {
+            read_saved_wifi_ssid(connection_uuid)
+            for connection_uuid in saved_wifi_connection_uuids
+        } - {""}
+        if not scan_suggests_reboot_can_help(saved_wifi_ssids, visible_wifi_ssids):
+            self.record_reboot_refusal_once(
+                "the saved Wi-Fi is not visible while other networks are, "
+                "so its router is probably down"
+            )
+            return False
+        record_recovery_event(
+            f"Rebooting after {seconds_without_network:.0f}s without network. "
+            f"Visible networks: {len(visible_wifi_ssids)}, "
+            f"saved network visible: {bool(saved_wifi_ssids & visible_wifi_ssids)}. "
+            f"{describe_wifi_device_state()}"
+        )
+        record_recent_network_manager_events()
+        record_recent_wifi_driver_kernel_messages()
+        if not record_watchdog_reboot_request(time.time()):
+            self.record_reboot_refusal_once("the reboot time could not be saved")
+            return False
+        reboot_succeeded = run_recovery_command(
+            "Rebooting", ["systemctl", "reboot"], timeout_seconds=60
+        )
+        if not reboot_succeeded:
+            clear_watchdog_reboot_pending()
+        self.remember_recovery_step("reboot", reboot_succeeded)
+        return True
+
 
 def main():
+    record_watchdog_start()
     wifi_watchdog = WifiWatchdog()
     while True:
-        wifi_watchdog.check_once()
+        try:
+            wifi_watchdog.check_once()
+        except (OSError, subprocess.SubprocessError) as check_error:
+            record_recovery_event(
+                f"Wi-Fi check failed: {type(check_error).__name__}: {check_error}"
+            )
         time.sleep(CHECK_INTERVAL_SECONDS)
 
 
