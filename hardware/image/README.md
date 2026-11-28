@@ -22,7 +22,15 @@ Optional Wi-Fi workarounds for boards with unreliable drivers (both default to o
 | Variable | Effect |
 |---|---|
 | `WIFI_POWER_SAVE_DISABLED="true"` | Installs `/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf`, which turns off Wi-Fi power saving |
-| `WIFI_STALL_WATCHDOG_ENABLED="true"` | Installs and enables `ambrosia-wifi-watchdog.service`, which reconnects `wlan0` when TCP traffic stalls |
+| `WIFI_STALL_WATCHDOG_ENABLED="true"` | Installs and enables `ambrosia-wifi-watchdog.service`, which reconnects `wlan0` when TCP traffic stalls and recovers a Wi-Fi link that stays down |
+
+Every board also gets `/etc/NetworkManager/conf.d/ambrosia-wifi-auth-retries.conf`, which sets `connection.auth-retries=0`. NetworkManager then never gives up when it has to look up the saved password at the start of a connection attempt. It does not cover a password the router rejects: in NetworkManager 1.42, a WPA-PSK disconnect during the 4-way handshake (a wrong password, or a router that is still booting) asks a secret agent for a new password right away, and on a headless device with no agent the connection fails with `no-secrets` and is blocked from autoconnect. Only a newly registered secret agent, a manual activation or a restart of NetworkManager lifts that block, which is why the Orange Pi relies on `ambrosia-wifi-watchdog` to recover the link.
+
+Optional journal setting for boards that keep `/var/log` in RAM (default off; the Orange Pi Zero 2W enables it):
+
+| Variable | Effect |
+|---|---|
+| `JOURNAL_STORED_IN_RAM="true"` | Installs `/etc/systemd/journald.conf.d/ambrosia-ramlog-journald.conf`, which lowers `SystemKeepFree` to 5 MB so journald keeps its history on a small RAM-backed `/var/log` (the Orange Pi base keeps `/var/log` in a ~50 MB zram) |
 
 The separate `ambrosia-device.env` file configures first-boot provisioning; it does not select the board.
 
@@ -45,6 +53,7 @@ The image is built from the board's official Debian Bookworm base. On top of it 
 - **Ambrosia server** at `/opt/ambrosia/server/ambrosia.jar`
 - **Ambrosia client** at `/opt/ambrosia/client/` (Next.js standalone build)
 - **systemd services**: `ambrosia.service`, `ambrosia-client.service`, `phoenixd.service`, `caddy.service`, `ambrosia-firstboot.service`, `ambrosia-wifi-portal.service`
+- **Wi-Fi recovery**: unlimited Wi-Fi authentication retries in NetworkManager on every board
 - **Orange Pi Wi-Fi workarounds**: `ambrosia-wifi-watchdog.service` and Wi-Fi power saving disabled in NetworkManager
 - Ambrosia server, client and Phoenixd run as the locked `ambrosia-service` account (preferred UID 1002). The SSH operator remains `ambrosia`; Caddy uses its own account.
 - Per-unit TLS export services and the `/trust/` installation assistant are included automatically.
@@ -329,7 +338,7 @@ What happens on first boot:
 
 **After first boot:**
 
-- If the device cannot reach a known Wi-Fi network, a setup access point named `<hostname>-setup` will appear. Connect to it and open `http://10.42.1.1` in a browser to configure Wi-Fi via the captive portal.
+- If the device cannot reach a known Wi-Fi network, a setup access point named `<hostname>-setup` will appear. Connect to it and open `http://10.42.1.1` in a browser to configure Wi-Fi via the captive portal. A device that already has a saved Wi-Fi waits up to 3 minutes for it before opening the setup access point, and while nobody is connected to the access point it retries the saved Wi-Fi every 5 minutes, so it rejoins on its own when the router comes back.
 - Once connected, the POS interface is reachable at `http://<hostname>.local` (mDNS via Avahi) or directly at the device IP on port 80.
 - SSH is available:
   - **User**: `ambrosia`
@@ -379,6 +388,13 @@ ssh-keygen -R <device-ip>
 
 **SSH connects over Ethernet but hangs over Wi-Fi on an Orange Pi Zero 2W.**
 The `unisoc_wifi` driver can remain associated while TCP traffic is stalled: the device answers ping, but SSH and the POS do not respond. The Wi-Fi portal cycles an associated Orange Pi link once during boot, Wi-Fi power saving is disabled, and `ambrosia-wifi-watchdog` probes TCP over `wlan0` every 30 seconds and reconnects the link after three failed checks (at most once every 5 minutes). If the problem persists, use Ethernet and inspect `journalctl -u ambrosia-wifi-watchdog`, `journalctl -u ambrosia-wifi-portal` and `nmcli device status`.
+
+**The Orange Pi loses Wi-Fi and does not reconnect on its own.**
+When `wlan0` stays disconnected or without a default route and a saved Wi-Fi exists, `ambrosia-wifi-watchdog` recovers it in steps: after 2 minutes it reactivates the saved Wi-Fi with `nmcli connection up` (and repeats every 2 minutes), after 8 minutes it restarts NetworkManager once, and after 15 minutes it reboots the device. It only reboots when the saved Wi-Fi is visible or the scan finds no networks at all (a stuck driver), never more than once per hour, and never while the setup portal is active. Each reactivation runs `nmcli`, which registers a secret agent and so also lifts the `no-secrets` autoconnect block that a rejected password leaves behind. Each episode is recorded in `/var/lib/ambrosia/wifi-watchdog.log` (rotated to `.1` at 256 KB), which is written to the SD card and survives power loss, unlike the journal on the Orange Pi. When an episode starts and before a reboot, the log also keeps the NetworkManager events for `wlan0` from the last 5 minutes that explain it: `asking for new key` followed by `no secrets` and `failed` means NetworkManager blocked the saved Wi-Fi after a rejected password; `nmcli device show wlan0` reports `GENERAL.REASON` as `0 (No reason given)` in that state, so it does not identify the cause:
+
+```bash
+tail -50 /var/lib/ambrosia/wifi-watchdog.log
+```
 
 **`assemble-image.sh` fails midway.**
 Rerun with `--keep-workdir` to preserve the mounted work directory and inspect what went wrong. Use `--validate-only` first to confirm all host tools are present.
