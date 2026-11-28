@@ -598,6 +598,17 @@ board_enables_wifi_stall_watchdog() {
   [[ "${WIFI_STALL_WATCHDOG_ENABLED:-false}" == "true" ]]
 }
 
+board_stores_journal_in_ram() {
+  [[ "${JOURNAL_STORED_IN_RAM:-false}" == "true" ]]
+}
+
+install_board_journal_settings() {
+  if board_stores_journal_in_ram; then
+    install -d -m 0755 "$ROOTFS_MNT/etc/systemd/journald.conf.d"
+    install -m 0644 "$IMAGE_ROOT/common/journald/ambrosia-ramlog-journald.conf" "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-ramlog-journald.conf"
+  fi
+}
+
 install_board_wifi_workarounds() {
   if board_disables_wifi_power_save; then
     install -d -m 0755 "$ROOTFS_MNT/etc/NetworkManager/conf.d"
@@ -728,6 +739,9 @@ verify_mounted_image() {
   if board_disables_wifi_power_save; then
     grep -Eq '^wifi\.powersave[[:space:]]*=[[:space:]]*2$' "$ROOTFS_MNT/etc/NetworkManager/conf.d/ambrosia-wifi-powersave.conf" || fail "Wi-Fi power save was not disabled"
   fi
+  if board_stores_journal_in_ram; then
+    grep -Eq '^SystemKeepFree=5M$' "$ROOTFS_MNT/etc/systemd/journald.conf.d/ambrosia-ramlog-journald.conf" || fail "journald free-space reserve was not lowered for the RAM-backed /var/log"
+  fi
   if board_enables_wifi_stall_watchdog; then
     require_nonempty_file "$ROOTFS_MNT/opt/ambrosia/bin/ambrosia-wifi-watchdog"
     require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-watchdog.service"
@@ -824,6 +838,8 @@ log "Installing repo assets"
 install_repo_assets
 log "Installing board Wi-Fi workarounds"
 install_board_wifi_workarounds
+log "Installing board journal settings"
+install_board_journal_settings
 log "Verifying staged client runtime dependencies"
 verify_client_runtime_artifacts
 log "Writing base configuration"
